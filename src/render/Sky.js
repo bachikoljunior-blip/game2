@@ -40,6 +40,26 @@ const STEEPNESS = 1.5;
 const SUN_ANGULAR_RADIUS = 0.53 * 0.5 * DEG;
 const MOON_ANGULAR_RADIUS = 0.52 * 0.5 * DEG;
 
+/**
+ * Preetham's closing `pow(x, 1/(1.2+1.2*fade))` is a *display-referred* tone curve: it
+ * lands the zenith near 1.0 but leaves the forward-scatter lobe at 10–100. We hand that
+ * to ACES, which turns a 25° cap of sky around the sun into flat white with no hue left
+ * — and the disc, which used to be summed in *before* that pow, was crushed to within 3×
+ * of its own aureole and disappeared into the haze. So: scale the dome down into a
+ * display range, soft-knee whatever still overshoots, and add the disc afterwards as the
+ * one genuinely HDR emitter in the frame. Everything downstream (bloom, god rays) then
+ * has a single, well-defined, correctly-coloured source to work from.
+ */
+const SKY_LUMINANCE = 0.45;
+/** Ceiling the atmosphere rolls into. ACES puts this at ~0.82 display, just under clip. */
+const SKY_KNEE = 1.15;
+/** Disc radiance is `uSunE * gain * Fex` — ~150 linear at 13° elevation, deep amber. */
+const SUN_DISC_GAIN = 1.8;
+/** The tight forward-scatter glare hugging the limb; this is the bloom pass's skirt. */
+const SUN_GLARE_GAIN = 0.02;
+/** Glare reach, in disc radii. 9 ≈ 2.4°: tight enough to still read as *around* a disc. */
+const SUN_GLARE_SPREAD = 9.0;
+
 /** Shrine latitude (central Honshū) and an autumn solar declination. */
 const LATITUDE = 35.7 * DEG;
 const DECLINATION = -6.5 * DEG;
@@ -98,6 +118,8 @@ const _irr = [0, 0, 0];
 const _skySample = { r: 0, g: 0, b: 0 };
 /** Rec.709 luminance — used to re-hue the ambient without changing its level. */
 const lum = (c) => c.r * 0.2126 + c.g * 0.7152 + c.b * 0.0722;
+/** JS twin of the shader's order-2 soft knee. Transparent below SKY_KNEE, capped above. */
+const knee = (x) => x / Math.sqrt(1 + (x * x) / (SKY_KNEE * SKY_KNEE));
 
 // -------------------------------------------------------------- colour ladder
 //
@@ -299,6 +321,9 @@ uniform float uSkyExposure;
 uniform vec3  uGroundColor;
 uniform float uStarStrength;
 uniform float uMoonStrength;
+uniform float uSkyKnee;
+uniform float uSunDiscGain;
+uniform float uSunGlareGain;
 uniform float uTime;
 
 uniform float uCloudCoverage;
@@ -315,6 +340,7 @@ uniform float uCloudOpacity;
 #define CLOUD_OCT ${cloudOct}
 #define SUN_ANG_R ${SUN_ANGULAR_RADIUS.toFixed(8)}
 #define MOON_ANG_R ${MOON_ANGULAR_RADIUS.toFixed(8)}
+#define SUN_GLARE_R ${(SUN_ANGULAR_RADIUS * SUN_GLARE_SPREAD).toFixed(8)}
 
 ${glslNoise}
 
@@ -334,20 +360,32 @@ float hgPhase( float c, float g ) {
 }
 
 /**
- * Sun disc with quadratic limb darkening. The core stays well above 1.0 so the bloom
- * pass has something real to bleed from — a clamped disc reads as a sticker.
+ * The solar disc, in the sun's own colour — Fex, the extinction along the sun's ray,
+ * which at 13° of elevation is a deep amber (1.0, 0.42, 0.07). Never the sky's colour.
+ *
+ * This is added to the frame *after* the atmosphere's tone curve and after the knee, so
+ * it is the only part of the dome allowed to be a true HDR value. That is what gives it
+ * a limb: the core sits ~130× above the sky it is drawn against, so the tone mapper
+ * clips the disc and nothing else, and the bloom pass gets a real, amber-tinted source
+ * instead of a broad pale wash.
  */
 vec3 sunDisc( float cosTheta, vec3 Fex ) {
-  float ang = acos( clamp( cosTheta, -1.0, 1.0 ) );
-  float t = clamp( ang / SUN_ANG_R, 0.0, 1.0 );
-  float limb = sqrt( max( 1.0 - t * t, 0.0 ) );
-  float darkening = 1.0 - 0.62 * ( 1.0 - limb );
-  float edge = 1.0 - smoothstep( SUN_ANG_R * 0.92, SUN_ANG_R * 1.12, ang );
-  float disc = edge * darkening;
-  // Aureole: the tight forward-scattered glare that sits just outside the limb.
-  float g = max( cosTheta, 0.0 );
-  float aureole = pow( g, 2400.0 ) * 2.2 + pow( g, 220.0 ) * 0.20 + pow( g, 26.0 ) * 0.012;
-  return ( uSunE * 19000.0 * disc + uSunE * 900.0 * aureole ) * Fex;
+  if ( uSunDiscGain <= 0.0 ) return vec3( 0.0 );
+  // acos() is worst-conditioned exactly where the disc lives, and drivers disagree about
+  // its accuracy there. The chord — 2·sin(θ/2) — equals θ to within 3e-9 relative across
+  // a 0.005 rad disc and is a sqrt of an exact subtraction, so it is the same on every GPU.
+  float ang = sqrt( max( 2.0 - 2.0 * min( cosTheta, 1.0 ), 0.0 ) );
+  float t = ang / SUN_ANG_R;
+  float limb = sqrt( max( 1.0 - min( t, 1.0 ) * min( t, 1.0 ), 0.0 ) );
+  // Deeper than the physical 0.34 so the outermost pixels of the disc fall out of clip
+  // and read amber against the white core, which is what sells the edge at 10 px wide.
+  float darkening = 1.0 - 0.55 * ( 1.0 - limb );
+  // ~4% of the radius of softness: one pixel of antialiasing, and no more.
+  float core = ( 1.0 - smoothstep( 0.975, 1.015, t ) ) * darkening;
+  // Tight glare hugging the limb — the skirt bloom widens. Deliberately short-range:
+  // the broad forward-scatter halo is the atmosphere's job, not the disc's.
+  float glare = pow( max( 1.0 - ang / SUN_GLARE_R, 0.0 ), 3.0 );
+  return uSunE * Fex * ( uSunDiscGain * core + uSunGlareGain * glare );
 }
 
 vec3 moonDisc( vec3 rd ) {
@@ -456,8 +494,11 @@ vec3 skyRadiance( vec3 rd, out vec3 FexOut ) {
     clamp( pow( 1.0 - dot( UP, uSunDirection ), 5.0 ), 0.0, 1.0 )
   );
 
-  vec3 L0 = vec3( 0.1 ) * Fex;
-  L0 += sunDisc( cosTheta, Fex );
+  // The aureole — the broad forward-scattered glare — stays *inside* the tone curve with
+  // the rest of the atmosphere. It is sky, not sun. The disc is added by the caller.
+  float g = max( cosTheta, 0.0 );
+  float aureole = pow( g, 2400.0 ) * 2.2 + pow( g, 220.0 ) * 0.20 + pow( g, 26.0 ) * 0.012;
+  vec3 L0 = ( 0.1 + uSunE * 900.0 * aureole ) * Fex;
 
   vec3 tex = ( Lin + L0 ) * 0.04 + vec3( 0.0, 0.0003, 0.00075 );
   return pow( max( tex, vec3( 0.0 ) ), vec3( 1.0 / ( 1.2 + 1.2 * uSunFade ) ) );
@@ -465,6 +506,7 @@ vec3 skyRadiance( vec3 rd, out vec3 FexOut ) {
 
 void main() {
   vec3 rd = normalize( vWorldDirection );
+  float cosTheta = dot( rd, uSunDirection );
 
   vec3 Fex;
   vec3 col = skyRadiance( rd, Fex );
@@ -472,16 +514,28 @@ void main() {
   col += moonDisc( rd );
   col += vec3( 0.86, 0.90, 1.0 ) * stars( rd );
 
+  float cloudAlpha = 0.0;
 #if CLOUD_LAYERS > 0
   vec4 cl = clouds( rd, Fex );
   col = mix( col, cl.rgb, cl.a );
+  cloudAlpha = cl.a;
 #endif
 
   // Below the horizon we fade into the ground haze so the dome never shows a hard seam
   // where the terrain silhouette does not quite reach.
-  col = mix( col, uGroundColor, 1.0 - smoothstep( -0.16, 0.0, rd.y ) );
+  float below = 1.0 - smoothstep( -0.16, 0.0, rd.y );
+  col = mix( col, uGroundColor, below );
 
   col *= uSkyTint * uSkyExposure;
+
+  // Soft knee, order 2: transparent below uSkyKnee, asymptotic to it above. Keeps the
+  // sky under the ACES clip point so the disc — added next, and only next — is the one
+  // thing in frame that saturates.
+  col *= inversesqrt( 1.0 + ( col * col ) / ( uSkyKnee * uSkyKnee ) );
+
+  // A thick deck dims the sun rather than deleting it; thin cloud lets it burn through,
+  // which is the whole look of a low sun behind autumn cloud.
+  col += sunDisc( cosTheta, Fex ) * ( 1.0 - 0.88 * cloudAlpha ) * ( 1.0 - below );
 
   gl_FragColor = vec4( max( col, vec3( 0.0 ) ), 1.0 );
 
@@ -639,6 +693,9 @@ export class SkySystem {
       uGroundColor: { value: new Vector3(0.06, 0.05, 0.04) },
       uStarStrength: { value: 0 },
       uMoonStrength: { value: 0 },
+      uSkyKnee: { value: SKY_KNEE },
+      uSunDiscGain: { value: SUN_DISC_GAIN },
+      uSunGlareGain: { value: SUN_GLARE_GAIN },
       uTime: { value: 0 },
       uCloudCoverage: { value: 0.46 },
       uCloudScale: { value: 0.00055 },
@@ -812,10 +869,12 @@ export class SkySystem {
       u.uMieG.value = g.mieG;
       u.uSunE.value = sunE;
       u.uSkyTint.value.set(g.tint.r, g.tint.g, g.tint.b);
-      u.uSkyExposure.value = g.exposure;
+      u.uSkyExposure.value = g.exposure * SKY_LUMINANCE;
       u.uGroundColor.value.set(g.ground.r, g.ground.g, g.ground.b);
-      u.uStarStrength.value = g.stars;
-      u.uMoonStrength.value = g.moon;
+      // Stars and the moon are emitters, not atmosphere: undo the dome's display scale
+      // for them so pulling the sky down does not also dim the night sky's own lights.
+      u.uStarStrength.value = g.stars / SKY_LUMINANCE;
+      u.uMoonStrength.value = g.moon / SKY_LUMINANCE;
       u.uCloudCoverage.value = g.cloudCoverage;
       u.uCloudLit.value.set(g.cloudLit.r, g.cloudLit.g, g.cloudLit.b);
       u.uCloudDark.value.set(g.cloudDark.r, g.cloudDark.g, g.cloudDark.b);
@@ -939,9 +998,12 @@ export class SkySystem {
       const l0 = 0.1 * fex[i];
       rgb[i] = Math.pow(Math.max((lin + l0) * 0.04 + lift[i], 0), invGamma);
     }
-    out.r = rgb[0] * g.tint.r * g.exposure;
-    out.g = rgb[1] * g.tint.g * g.exposure;
-    out.b = rgb[2] * g.tint.b * g.exposure;
+    // Same display scale and soft knee the dome gets, so the ambient hue is sampled from
+    // the sky that is actually on screen and not from the raw radiance behind it.
+    const e = g.exposure * SKY_LUMINANCE;
+    out.r = knee(rgb[0] * g.tint.r * e);
+    out.g = knee(rgb[1] * g.tint.g * e);
+    out.b = knee(rgb[2] * g.tint.b * e);
     return out;
   }
 
@@ -1006,6 +1068,9 @@ export class SkySystem {
    */
   applyFog(material) {
     if (!material || material.userData?.kagFog) return material;
+    // The dome *is* the aerial perspective. Fogging it would paint the in-scattering term
+    // straight over the sun disc, which is the fastest way to lose it.
+    if (material === this.material) return material;
     if (material.isRawShaderMaterial) return material;   // author owns their own prefix
     // Sprites build gl_Position themselves and never run <project_vertex>, so there is
     // no hook — leave three's own fog on them rather than disabling it for nothing.
@@ -1062,7 +1127,23 @@ export class SkySystem {
     if (!force && !this._envDirty) return;
 
     const renderer = this.ctx.renderer;
+
+    // Capture the atmosphere only. The disc's energy is already carried by Lighting's
+    // directional — baking it into the IBL as well double-counts the sun, and a 128 px
+    // cube face smears a 0.53° disc across a 3° texel anyway. Rendering the cube at the
+    // pre-knee, pre-display-scale level also keeps the environment byte-identical to what
+    // it was before the dome was rescaled, so this change cannot perturb anyone's lighting.
+    const u = this.uniforms;
+    const keepExposure = u.uSkyExposure.value;
+    const keepKnee = u.uSkyKnee.value;
+    const keepDisc = u.uSunDiscGain.value;
+    u.uSkyExposure.value = keepExposure / SKY_LUMINANCE;
+    u.uSkyKnee.value = 1e6;
+    u.uSunDiscGain.value = 0;
     this._cubeCamera.update(renderer, this._envScene);
+    u.uSkyExposure.value = keepExposure;
+    u.uSkyKnee.value = keepKnee;
+    u.uSunDiscGain.value = keepDisc;
 
     const prev = this._pmremRT;
     this._pmremRT = this._pmrem.fromCubemap(this._cubeRT.texture);

@@ -322,6 +322,61 @@ function prepTiling(tex, aniso) {
 //  Terrain
 // ============================================================================
 
+// ------------------------------------------------------------- distant ridges
+//
+// The far horizon is a *baked ridgeline*, not a scatter of noise cones. One
+// continuous polyline per depth rank is authored on the CPU into a texture the
+// band shader reads, because everything that makes a real range read as a range
+// — clustered peaks, asymmetric flanks, saddles at varying heights, apex angles
+// that differ from peak to peak — is trivial to author in a loop and impossible
+// to get out of `1 - abs(fbm)`.
+
+/** Angular resolution of the baked ridgeline. 2048 texels ≈ 0.18° each. */
+const RIDGE_W = 2048;
+/** Texture rows: one per depth rank, plus a padding row. */
+const RIDGE_ROWS = 4;
+/** The baked profile encodes metres relative to the band's base plane. */
+const RIDGE_LOW = -300;
+const RIDGE_SPAN = 1600;
+
+/**
+ * One entry per depth rank, far to near. `massifs` clusters of two to five peaks
+ * with long empty cols between them — real ranges cluster, and the eye reads the
+ * gaps as much as the peaks.
+ */
+const RIDGE_LAYERS = [
+  {
+    seed: 0x2f1103, lift: 115, amp: 620, massifs: 4, groupLo: 0.46, groupHi: 1.00,
+    baseR: 1.55, baseAmp: 0.30, detR: 8.5, detAmp: 0.060, gulR: 23.0, notch: 0.075,
+    presR: 0.75, presOff: 3.1, dirLo: 0.30, par: 0.000024, soft: 12.0, haze: 0.74,
+  },
+  {
+    seed: 0x7a3d19, lift: 66, amp: 450, massifs: 5, groupLo: 0.40, groupHi: 0.98,
+    baseR: 2.30, baseAmp: 0.24, detR: 12.5, detAmp: 0.068, gulR: 34.0, notch: 0.095,
+    presR: 0.95, presOff: 27.7, dirLo: 0.14, par: 0.000053, soft: 8.0, haze: 0.51,
+  },
+  {
+    seed: 0x11c7e5, lift: 24, amp: 320, massifs: 6, groupLo: 0.34, groupHi: 0.94,
+    baseR: 3.10, baseAmp: 0.20, detR: 17.0, detAmp: 0.076, gulR: 44.0, notch: 0.110,
+    presR: 1.30, presOff: 61.3, dirLo: 0.06, par: 0.000094, soft: 5.0, haze: 0.30,
+  },
+];
+
+/** Smooth max — a hard max() between two peak flanks cuts a V; ranges have saddles. */
+function smax(a, b, r) {
+  const h = clamp(0.5 + (0.5 * (a - b)) / r, 0, 1);
+  return lerp(b, a, h) + r * h * (1 - h);
+}
+
+/** Wrap an angular difference into (-π, π]. */
+function wrapPi(d) {
+  const TAU = Math.PI * 2;
+  let v = d % TAU;
+  if (v > Math.PI) v -= TAU;
+  else if (v <= -Math.PI) v += TAU;
+  return v;
+}
+
 /** Droplet budget per tier. The single biggest realism lever we have. */
 const EROSION_DROPLETS = [2000, 6000, 14000, 20000];
 /** Clipmap levels per tier (level 0 is the solid centre block, the rest are rings). */
@@ -368,6 +423,8 @@ export class Terrain {
 
     this.heightTex = null;
     this.macroTex = null;
+    this.ridgeTex = null;
+    this.ridgeMaxTop = 900;
     this.dataTex = null;
     this.splatTex = null;
     this.waterNormalTex = null;
@@ -467,6 +524,7 @@ export class Terrain {
     await nextTick();
     this._buildWater();
     await nextTick();
+    await this._buildRidgeProfiles();
     this._buildDistantBand();
     this._progress(s++, TOTAL, 'flooding the stream');
 
@@ -973,6 +1031,26 @@ export class Terrain {
           rock = lerp(rock, rock * 0.4, w);
         }
 
+        // --- traffic wear -------------------------------------------------
+        // Where feet actually go: up the stair spline, then straight along the
+        // 参道 axis to the honden, widening into an apron in front of the halls.
+        // The shader dresses this band in different stone and polishes it, which
+        // is also the cheapest thing there is that breaks a tiling period along
+        // the one axis the eye walks down.
+        let wear = st.d < STAIR_SHOULDER
+          ? smootherstep(STAIR_HALF * 1.5, STAIR_HALF * 0.45, st.d) : 0;
+        if (z > -16 && z < 104) {
+          const wob = noise.fbm2(x * 0.055 + 2.7, z * 0.055 - 9.4, 2) * 2.6;
+          const halfW = 3.1 + 3.3 * smoothstep(40, 6, z);
+          const band = smootherstep(halfW + 2.6, halfW * 0.45, Math.abs(x + wob));
+          const run = smoothstep(-14, 2, z) * smootherstep(104, 84, z);
+          wear = Math.max(wear, band * run);
+        }
+        wear = clamp(wear * (1 - rock * 0.7), 0, 1);
+        grass *= 1 - wear * 0.88;
+        moss *= 1 - wear * 0.85;
+        gravel = lerp(gravel, Math.max(gravel, 0.76), wear * 0.65);
+
         // Keep dirt as the remainder so there is always a base layer under the blend.
         const sum = grass + rock + gravel + moss;
         if (sum > 1) { const s = 1 / sum; grass *= s; rock *= s; gravel *= s; moss *= s; }
@@ -981,7 +1059,10 @@ export class Terrain {
         data[o] = (wet * 255) | 0;
         data[o + 1] = (ao * 255) | 0;
         data[o + 2] = (flow * 255) | 0;
-        data[o + 3] = ((concave * 0.5 + 0.5) * 255) | 0;
+        // Curvature used to live here and nothing ever read it; the shader now
+        // derives its own from the same height taps it needs for the normal, so
+        // the channel carries the traffic wear instead.
+        data[o + 3] = (wear * 255) | 0;
 
         splat[o] = (grass * 255) | 0;
         splat[o + 1] = (rock * 255) | 0;
@@ -1181,6 +1262,7 @@ attribute float aSkirt;
 varying vec3 vKgWorld;
 varying vec3 vKgNormal;
 varying float vKgCore;
+uniform vec2 uNormalStep;
 ${this._heightGLSL()}
 `,
       normalChunk: /* glsl */`
@@ -1188,7 +1270,9 @@ ${this._heightGLSL()}
   vec2 kgXZ = kgWP.xz;
   float kgCell = length(modelMatrix[0].xyz);
   float kgH = kgHeight(kgXZ);
-  float kgE = max(kgCell, 1.0);
+  // Never difference across less than a heightfield texel: a step finer than the
+  // data samples the bilinear patch and hands back a per-texel faceted normal.
+  float kgE = max(kgCell, uNormalStep.x);
   float kgHL = kgHeightFast(kgXZ - vec2(kgE, 0.0));
   float kgHR = kgHeightFast(kgXZ + vec2(kgE, 0.0));
   float kgHD = kgHeightFast(kgXZ - vec2(0.0, kgE));
@@ -1276,13 +1360,24 @@ ${this._heightGLSL()}
       uWaterLevel: { value: this.waterLevel },
       uSkyTint: { value: new Color(0x9fb4c8) },
       uAerial: { value: new Vector2(90, 0.00085) },
+      // Finite-difference step for the per-pixel normal, in metres: wide enough to
+      // straddle a heightfield texel so the bilinear kink never shows as a lattice,
+      // narrow enough to keep the real relief. x = core field, y = macro field.
+      uNormalStep: { value: new Vector2(this.cell * 1.35, this.macroCell * 0.85) },
+      uWindXZ: { value: new Vector2(0.82, 0.57) },
     };
     this.uniforms = uniforms;
 
+    // Per-pixel normals need four (or two) extra heightfield taps. The 8-bit
+    // encoded path filters by hand and would cost four times that, so it keeps the
+    // vertex normal and leans on the detail normals instead.
+    const ppNormal = this.encodedHeight ? 0 : (q.tier >= 2 ? 2 : q.tier >= 1 ? 1 : 0);
     const defines = [
       this.encodedHeight ? '#define TERRAIN_ENCODED 1' : '',
       hasTex ? '#define TERRAIN_TEXTURED 1' : '',
       triplanar ? '#define TERRAIN_TRIPLANAR 1' : '',
+      ppNormal ? `#define TERRAIN_PPNORMAL ${ppNormal}` : '',
+      q.tier >= 1 ? '#define TERRAIN_STOCHASTIC 1' : '',
     ].join('\n');
 
     chainOnBeforeCompile(mat, (shader) => {
@@ -1305,9 +1400,13 @@ ${this._heightGLSL()}
 #include <opaque_fragment>
   {
     // Aerial perspective. Distant terrain has to desaturate and drift toward the sky
-    // or 1800 m of view distance reads as a flat painted backdrop.
+    // or 1800 m of view distance reads as a flat painted backdrop. The mist term is
+    // what gives a single mountain depth across its own thousand metres: its foot
+    // sits in the valley air and its summit does not.
     float kgDist = length(vKgWorld - cameraPosition);
     float kgA = 1.0 - exp(-pow(max(kgDist - uAerial.x, 0.0) * uAerial.y, 1.18));
+    float kgMist = smoothstep(915.0, 806.0, vKgWorld.y) * smoothstep(130.0, 520.0, kgDist);
+    kgA = clamp(kgA * (1.0 + kgMist * 0.60) + kgMist * 0.10, 0.0, 1.0);
     float kgLum = dot(gl_FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
     vec3 kgFar = mix(vec3(kgLum), uSkyTint, 0.7);
     gl_FragColor.rgb = mix(gl_FragColor.rgb, kgFar, kgA * 0.88);
@@ -1349,6 +1448,8 @@ uniform vec4 uTexScale;
 uniform float uWaterLevel;
 uniform vec3 uSkyTint;
 uniform vec2 uAerial;
+uniform vec2 uNormalStep;
+uniform vec2 uWindXZ;
 varying vec3 vKgWorld;
 varying vec3 vKgNormal;
 varying float vKgCore;
@@ -1358,6 +1459,10 @@ ${glslNoise}
 vec3 kgAlbedo;
 float kgRough;
 vec3 kgShadingNormal;
+
+/** Shared per-fragment tile-breaking state, set once at the top of the surface pass. */
+vec2 kgWarp;
+float kgBlend;
 
 float kgLum(vec3 c){ return dot(c, vec3(0.299, 0.587, 0.114)); }
 
@@ -1369,20 +1474,82 @@ vec3 kgSample(sampler2D t, vec2 uv){
 #endif
 }
 
+/** Rotate a world-plane coordinate. sc is (sin, cos), baked per layer. */
+vec2 kgRot(vec2 p, vec2 sc){ return vec2(p.x * sc.y - p.y * sc.x, p.x * sc.x + p.y * sc.y); }
+
+/**
+ * Tiled ground sample with the wrap seams broken.
+ *
+ * A single planar lookup lays the texture's own UV-wrap edges across the ground as
+ * two families of dead-straight parallel lines at exactly the tile pitch — from a
+ * standing eye that is a checkerboard you can trace stone-for-stone across fifty
+ * metres. Three things kill it, in ascending cost: the whole lookup is domain-warped
+ * (long wavelength to decorrelate distant regions, short wavelength to bend the seam
+ * itself, so no seam stays straight for longer than a stone); each layer is rotated
+ * by its own irrational angle, so no two layers can ever agree on a grid direction;
+ * and a second lookup at 0.617× scale is blended in under a low-frequency mask, which
+ * destroys the period — a repeat is only legible if the *same* stones come back.
+ */
+vec3 kgTiled(sampler2D t, vec2 p, float scale, vec2 r1, vec2 r2){
+#ifdef TERRAIN_STOCHASTIC
+  vec2 q = p + kgWarp;
+  vec3 a = kgSample(t, kgRot(q, r1) * scale);
+  vec3 b = kgSample(t, kgRot(q + vec2(37.13, -18.77), r2) * (scale * 0.617));
+  return mix(a, b, kgBlend);
+#else
+  return kgSample(t, kgRot(p, r1) * scale);
+#endif
+}
+
 void kgComputeSurface(){
   vec3 P = vKgWorld;
   vec3 N = normalize(vKgNormal);
+  float core = clamp(vKgCore, 0.0, 1.0);
+  float dist = length(P - cameraPosition);
+  float curv = 0.0;
+
+  // --- surface normal ------------------------------------------------------
+  // The vertex normal is a lattice sample: on the outer clipmap rings the mesh is
+  // 25–50 m across, so an interpolated per-vertex normal paints the ring's own quad
+  // grid onto the mountain as a checker of alternating value. Re-derive it per pixel
+  // from the heightfield, differencing across a little more than one texel of
+  // whichever field actually holds the data here.
+#ifdef TERRAIN_PPNORMAL
+  float st = mix(uNormalStep.y, uNormalStep.x, core);
+#if TERRAIN_PPNORMAL >= 2
+  float hL = kgHeightFast(P.xz - vec2(st, 0.0));
+  float hR = kgHeightFast(P.xz + vec2(st, 0.0));
+  float hD = kgHeightFast(P.xz - vec2(0.0, st));
+  float hU = kgHeightFast(P.xz + vec2(0.0, st));
+  N = normalize(vec3(hL - hR, 2.0 * st, hD - hU));
+  curv = ((hL + hR + hD + hU) * 0.25 - P.y) / st;
+#else
+  float hR = kgHeightFast(P.xz + vec2(st, 0.0));
+  float hU = kgHeightFast(P.xz + vec2(0.0, st));
+  N = normalize(vec3(P.y - hR, st, P.y - hU));
+  curv = ((hR + hU) * 0.5 - P.y) / st;
+#endif
+#endif
   float slope = 1.0 - clamp(N.y, 0.0, 1.0);
+  float fall = length(N.xz);
 
   vec2 cuv = kgCoreUV(P.xz);
   vec4 data = texture2D(tData, clamp(cuv, 0.0, 1.0));
   vec4 sp = texture2D(tSplat, clamp(cuv, 0.0, 1.0));
-  float core = clamp(vKgCore, 0.0, 1.0);
+
+  // Break-up so no transition lands on a contour line. nA is fine grain and is
+  // faded out before it turns into sub-pixel fizz; nC is the landscape-scale term
+  // that carries the vegetation and snow lines.
+  float nA = fbm2(P.xz * 0.09, 3) * (1.0 - smoothstep(80.0, 240.0, dist));
+  float nB = fbm2(P.xz * 0.021 + 17.0, 3);
+  float nC = fbm2(P.xz * 0.0062 + 41.0, 3);
 
   // Outside the eroded core there is no baked splat, so fall back to the same rules
   // evaluated live. The crossfade is the one the geometry already uses.
-  float fSlope = smoothstep(0.16, 0.46, slope);
-  float fHigh  = smoothstep(915.0, 995.0, P.y);
+  // Widened and noise-broken: this threshold used to bite on a per-vertex normal
+  // and cut the mountain into hard-edged pale facets that read as snow.
+  float fSlope = smoothstep(0.14, 0.52, slope + nB * 0.10 + nA * 0.05);
+  float fHigh  = smoothstep(915.0, 995.0, P.y + nC * 40.0);
   vec4 wild = vec4(
     (1.0 - fSlope) * smoothstep(1000.0, 890.0, P.y) * 0.85,
     max(fSlope, fHigh * 0.9),
@@ -1392,6 +1559,9 @@ void kgComputeSurface(){
   float wet = data.r * core;
   float ao  = mix(1.0, data.g, core);
   float flow = data.b * core;
+  // Three centuries of feet. Baked against the sandō spline, so it curves with the
+  // approach instead of being a straight stripe painted down the axis.
+  float wear = data.a * core;
 
   float wGrass = sp.r, wRock = sp.g, wGravel = sp.b, wMoss = sp.a;
   float wDirt = clamp(1.0 - (wGrass + wRock + wGravel + wMoss), 0.0, 1.0);
@@ -1399,24 +1569,35 @@ void kgComputeSurface(){
   float wBed = smoothstep(2.6, -0.6, P.y - uWaterLevel) * core;
   wBed = max(wBed, wet * smoothstep(0.55, 0.95, flow) * 0.6);
 
-  // Break-up so no transition lands on a contour line.
-  float nA = fbm2(P.xz * 0.09, 3);
-  float nB = fbm2(P.xz * 0.021 + 17.0, 3);
   wGrass = clamp(wGrass * (0.8 + 0.5 * nB) + nA * 0.06, 0.0, 1.0);
   wGravel = clamp(wGravel + nA * 0.09, 0.0, 1.0);
   wRock = clamp(wRock + nB * 0.08, 0.0, 1.0);
 
-  vec3 cDirt   = kgSample(tDirt,   P.xz * uTexScale.x);
-  vec3 cGrass  = kgSample(tMoss,   P.xz * uTexScale.y);
-  vec3 cCobble = kgSample(tCobble, P.xz * uTexScale.w);
+  // --- tile-break state ----------------------------------------------------
+  float gn = 0.0;
+  kgWarp = vec2(0.0);
+  kgBlend = 0.0;
+#ifdef TERRAIN_STOCHASTIC
+  vec2 wLo = vec2(fbm2(P.xz * 0.0730 + 12.7, 2), fbm2(P.xz * 0.0730 - 5.1, 2));
+  vec2 wHi = vec2(fbm2(P.xz * 0.3300 + 41.3, 1), fbm2(P.xz * 0.3300 - 9.6, 1));
+  kgWarp = (wLo * 1.25 + wHi * 0.28) * (1.0 - smoothstep(160.0, 420.0, dist));
+  gn = fbm2(P.xz * 0.058 + 27.5, 2);
+  // Bias the blend where the ground is worn, so the traffic band is dressed in a
+  // visibly different run of stone rather than the same stone slightly darker.
+  kgBlend = smoothstep(-0.24, 0.24, gn + wear * 0.35 - 0.10);
+#endif
+
+  vec3 cDirt   = kgTiled(tDirt,   P.xz, uTexScale.x, vec2(0.0, 1.0), vec2(0.7071, 0.7071));
+  vec3 cGrass  = kgTiled(tMoss,   P.xz, uTexScale.y, vec2(0.5150, 0.8572), vec2(-0.891, 0.4540));
+  vec3 cCobble = kgTiled(tCobble, P.xz, uTexScale.w, vec2(0.2924, 0.9563), vec2(0.9455, -0.3256));
 #ifdef TERRAIN_TRIPLANAR
   vec3 axis = abs(N);
   vec2 rockUV = (axis.x > axis.z) ? P.zy : P.xy;
   float triW = clamp(slope * 1.9, 0.0, 1.0);
-  vec3 cRock = mix(kgSample(tStone, P.xz * uTexScale.z),
+  vec3 cRock = mix(kgTiled(tStone, P.xz, uTexScale.z, vec2(0.7314, 0.6819), vec2(-0.1219, 0.9925)),
                    kgSample(tStone, rockUV * uTexScale.z), triW);
 #else
-  vec3 cRock = kgSample(tStone, P.xz * uTexScale.z);
+  vec3 cRock = kgTiled(tStone, P.xz, uTexScale.z, vec2(0.7314, 0.6819), vec2(-0.1219, 0.9925));
 #endif
 
   // Per-layer tints. Autumn on the mountain: ochre grass, cool wet stone.
@@ -1459,6 +1640,73 @@ void kgComputeSurface(){
   albedo *= mix(1.0, 0.58, wetAmt);
   rough = mix(rough, 0.22, wetAmt * 0.85);
 
+  // --- weathering ----------------------------------------------------------
+  // Grime and damp collect in the hollows and the joints and get scrubbed out of
+  // the traffic band. This runs at roughly ten tile wavelengths, which is what
+  // stops the eye from locking onto the tile period even where a seam survives.
+  float hollow = clamp(curv * 1.4, 0.0, 1.0);
+  float weather = clamp((gn * 0.5 + 0.5) * 0.8 + hollow * 0.45 - wear * 0.75, 0.0, 1.0);
+  albedo *= mix(1.0, 0.76, weather * 0.65);
+  rough = mix(rough, 0.96, weather * 0.30);
+
+  // The sandō is polished pale and smooth, and nothing grows on it.
+  albedo = mix(albedo, albedo * vec3(1.16, 1.12, 1.06), wear * 0.75);
+  rough = mix(rough, 0.52, wear * 0.55);
+
+  // --- the far ground ------------------------------------------------------
+  // Past ~100 m every tiled lookup has mipped down to its own average and the
+  // mountain turns into one grey ramp. Everything it should have had — a tree
+  // line, scree fans, gullies, snow — has to be reconstructed per pixel here.
+  float wild2 = (1.0 - core) * smoothstep(90.0, 300.0, dist);
+  vec3 gp = vec3(0.0);
+  float groove = 0.0;
+  {
+    // Striation runs down the fall line, so the sampling frame is stretched along
+    // it: features come out as gullies and ribs, not as a blanket of noise.
+    vec2 dn2 = fall > 1e-4 ? N.xz / fall : vec2(1.0, 0.0);
+    vec2 ac2 = vec2(-dn2.y, dn2.x);
+    float along = dot(P.xz, dn2);
+    float across = dot(P.xz, ac2);
+    vec3 g1 = texture2D(tDetailN, vec2(along * 0.0138, across * 0.0470)).xyz * 2.0 - 1.0;
+    vec3 g2 = texture2D(tDetailN, vec2(along * 0.0053, across * 0.0181) + 0.31).xyz * 2.0 - 1.0;
+    float amp = smoothstep(0.14, 0.52, fall) * mix(0.30, 1.0, wild2);
+    gp = vec3(g1.xy * 0.60 + g2.xy * 0.95, 0.0) * amp;
+    groove = clamp((1.0 - g1.z) * 1.5 + (1.0 - g2.z) * 1.1, 0.0, 1.0) * amp;
+  }
+  if (wild2 > 0.002) {
+    // Cedar mantle low, bare rock and scree above it, and the line between them
+    // wanders on a 160 m noise so it is never a contour.
+    float treeLine = 1006.0 + nC * 92.0 + nB * 28.0;
+    float veg = smoothstep(treeLine + 34.0, treeLine - 48.0, P.y) *
+                (1.0 - smoothstep(0.40, 0.76, fall));
+    float scree = clamp(smoothstep(0.58, 0.24, fall) * smoothstep(0.18, 0.44, fall) * 3.0, 0.0, 1.0) *
+                  (1.0 - veg) * (0.45 + 0.55 * (nB * 0.5 + 0.5));
+    vec3 far = mix(vec3(0.255, 0.245, 0.232), vec3(0.104, 0.126, 0.082), veg);
+    far = mix(far, vec3(0.300, 0.262, 0.212), scree * 0.7);
+    far *= 0.78 + 0.44 * (nB * 0.5 + 0.5);
+    far *= 0.82 + 0.28 * (nC * 0.5 + 0.5);
+    far *= 1.0 - groove * 0.38;
+    albedo = mix(albedo, far, wild2 * 0.88);
+    rough = mix(rough, mix(0.88, 0.96, veg), wild2 * 0.8);
+  }
+
+  // --- 雪 ------------------------------------------------------------------
+  // Per pixel, never per vertex: an interpolated mask gives snow the silhouette of
+  // the mesh. Altitude sets the band, slope sheds it off anything steeper than
+  // about forty degrees, and it drifts onto the faces the wind runs off.
+  float snowLine = 1162.0 + nC * 96.0 + nB * 30.0;
+  float lee = clamp(0.5 - dot(fall > 1e-4 ? N.xz / fall : vec2(0.0), uWindXZ) * 0.5, 0.0, 1.0);
+  float snow = smoothstep(0.06, 0.58, (P.y - snowLine) * 0.020 + nB * 0.40 + nA * 0.10);
+  snow *= smoothstep(0.66, 0.30, fall) * mix(0.30, 1.0, lee);
+  snow = clamp(snow - groove * 0.5, 0.0, 1.0);
+  if (snow > 0.002) {
+    // Never neutral white: lit snow takes the key, shaded snow the cool sky bounce.
+    vec3 snowCol = mix(vec3(0.470, 0.510, 0.580), vec3(0.840, 0.820, 0.780),
+                       clamp(N.y, 0.0, 1.0));
+    albedo = mix(albedo, snowCol, snow * 0.90);
+    rough = mix(rough, 0.58, snow * 0.8);
+  }
+
   // Large-scale colour variation: nothing in frame may be a flat tint.
   albedo *= 0.86 + 0.28 * (nB * 0.5 + 0.5);
   albedo *= mix(0.72, 1.0, ao);
@@ -1467,16 +1715,19 @@ void kgComputeSurface(){
   kgRough = clamp(rough, 0.06, 1.0);
 
   // Detail normal in an XZ-planar frame, faded out with distance so the far rings do
-  // not shimmer. Two scales: fine grain plus a slow undulation.
+  // not shimmer, plus the slope-aligned striation which deliberately does not fade:
+  // it is the only thing carrying surface at 800 m, and its frequency is chosen not
+  // to be commensurate with either heightfield so it breaks the residual lattice.
   vec3 T = (abs(N.x) > 0.99) ? normalize(vec3(0.0, 0.0, 1.0) - N * N.z)
                              : normalize(vec3(1.0, 0.0, 0.0) - N * N.x);
   vec3 B = cross(N, T);
-  float dist = length(P - cameraPosition);
   float dFade = 1.0 - smoothstep(28.0, 150.0, dist);
-  vec3 t1 = texture2D(tDetailN, P.xz * 0.6).xyz * 2.0 - 1.0;
-  vec3 t2 = texture2D(tDetailN, P.xz * 0.11).xyz * 2.0 - 1.0;
-  vec2 tn = (t1.xy * 0.75 * dFade + t2.xy * 0.55) * mix(1.0, 0.35, wetAmt);
-  kgShadingNormal = normalize(N + T * tn.x + B * tn.y);
+  vec3 t1 = texture2D(tDetailN, kgRot(P.xz + kgWarp, vec2(0.3746, 0.9272)) * 0.6).xyz * 2.0 - 1.0;
+  vec2 tn = t1.xy * 0.75 * dFade * mix(1.0, 0.35, wetAmt);
+  vec3 dn3 = fall > 1e-4 ? normalize(vec3(N.x, 0.0, N.z) / fall - N * fall) : T;
+  vec3 ac3 = cross(N, dn3);
+  kgShadingNormal = normalize(N + T * tn.x + B * tn.y +
+                              dn3 * gp.x * 0.40 + ac3 * gp.y * 0.62);
 }
 `;
   }
@@ -1887,16 +2138,175 @@ void main(){
   // ==========================================================================
 
   /**
-   * Beyond the clipmap, silhouette is all that matters. Three procedurally generated
-   * ridge layers on a camera-locked cylinder, each parallaxing at its own rate, each
-   * pushed further toward the sky colour. No billboards, no textures.
+   * Populate one rank with peaks. Angular budget is handed out in uneven shares,
+   * each share holding a massif and then a col, so nothing is evenly spaced. Every
+   * peak gets its own apex exponent, its own bluntness (needle → dome → mesa) and
+   * its own flank asymmetry — one steep face, one long tail, side chosen at random.
+   */
+  _ridgePeaks(cfg) {
+    const rnd = makeRandom(TERRAIN_SEED ^ cfg.seed);
+    const TAU = Math.PI * 2;
+    const groups = cfg.massifs + ((rnd() * 2.4) | 0);
+
+    const share = new Float64Array(groups);
+    let total = 0;
+    for (let g = 0; g < groups; g++) { share[g] = 0.45 + rnd() * 1.55; total += share[g]; }
+
+    const peaks = [];
+    let a0 = rnd() * TAU;
+    for (let g = 0; g < groups; g++) {
+      const width = (share[g] / total) * TAU;
+      // The massif occupies a third to three quarters of its share; the rest is col.
+      const span = width * (0.34 + rnd() * 0.44);
+      const centre = a0 + width * (0.28 + rnd() * 0.44);
+      const count = 2 + ((rnd() * 3.8) | 0);
+      const gh = cfg.groupLo + rnd() * (cfg.groupHi - cfg.groupLo);
+      const gid = rnd();
+      for (let k = 0; k < count; k++) {
+        // Jittered station inside the massif: never a metronome.
+        const t = (k + 0.5 + (rnd() - 0.5) * 0.9) / count;
+        const w = (span / count) * (0.85 + rnd() * 1.30);
+        const asym = 1.35 + rnd() * 2.35;
+        const flip = rnd() < 0.5;
+        peaks.push({
+          a: centre + (t - 0.5) * span,
+          // Shoulder peaks sit lower than the massif's high point, but not reliably.
+          h: gh * (0.50 + rnd() * 0.50) * (1 - Math.abs(t - 0.5) * 2 * 0.30 * rnd()),
+          wl: flip ? w / asym : w,
+          wr: flip ? w : w / asym,
+          sharp: 0.85 + rnd() * 1.60,
+          blunt: rnd() * rnd(),
+          id: gid,
+        });
+      }
+      a0 += width;
+    }
+    return peaks;
+  }
+
+  /** One peak's contribution at signed angular distance `d`. */
+  _ridgePeak(p, d) {
+    const w = d >= 0 ? p.wr : p.wl;
+    const t = Math.abs(d) / w;
+    if (t >= 1) return 0;
+    const f = 1 - t;
+    // Needle vs. table mountain, from the same two terms.
+    const spike = Math.pow(f, p.sharp);
+    const mesa = 1 - Math.pow(1 - f, 1.7 + p.blunt * 2.6);
+    const b = p.blunt * 0.8;
+    let v = spike * (1 - b) + mesa * b;
+    // Soften the foot so a peak merges into its neighbours without a kink.
+    if (f < 0.16) v *= smoothstep(0, 0.16, f);
+    return p.h * v;
+  }
+
+  /**
+   * Bake the three ridgelines into an RGBA texture: RG is a 16-bit height, B a
+   * crest-relief term the shader lights with, A a per-massif identity so no two
+   * mountains take exactly the same tint.
+   */
+  async _buildRidgeProfiles() {
+    const W = RIDGE_W;
+    const buf = new Uint8Array(W * RIDGE_ROWS * 4);
+    const TAU = Math.PI * 2;
+    let maxTop = -Infinity;
+
+    for (let L = 0; L < RIDGE_LAYERS.length; L++) {
+      const cfg = RIDGE_LAYERS[L];
+      const peaks = this._ridgePeaks(cfg);
+      const np = peaks.length;
+      // Small enough that a cold, un-JITted block is well under 2 ms, so the 6 ms
+      // yield check in _forRange can never overshoot the boot budget.
+      const BLOCK = 48;
+      const row = L * W;
+
+      await this._forRange(Math.ceil(W / BLOCK), 'raising the far ranges', (b) => {
+        const s0 = b * BLOCK, e0 = Math.min(W, s0 + BLOCK);
+        for (let i = s0; i < e0; i++) {
+          // Must match the shader: u = a/2π + 0.5, so column i sits at this angle.
+          const a = ((i + 0.5) / W - 0.5) * TAU;
+          const cx = Math.cos(a), cz = Math.sin(a);
+
+          // The range itself: a smooth-max over the peak set, which is what turns
+          // N separate profiles into one continuous crest with real saddles.
+          let v = 0, ident = 0, best = 0;
+          for (let k = 0; k < np; k++) {
+            const p = peaks[k];
+            const c = this._ridgePeak(p, wrapPi(a - p.a));
+            if (c > best) { best = c; ident = p.id; }
+            if (c > 0) v = smax(v, c, 0.045);
+          }
+          const relief = clamp(v * 0.85, 0, 1);
+
+          // Sampling 2D noise around a circle keeps every term exactly periodic.
+          v += cfg.baseAmp * (0.5 + 0.5 * noise.fbm2(cx * cfg.baseR + 11.7, cz * cfg.baseR - 4.3, 3));
+          const local = Math.sqrt(clamp(v, 0, 2));
+          v += noise.fbm2(cx * cfg.detR + 31.1, cz * cfg.detR + 7.9, 4) * cfg.detAmp * local;
+          // Erosion notches: narrow V-cuts where the gully field crosses zero.
+          const g = noise.fbm2(cx * cfg.gulR - 5.5, cz * cfg.gulR + 21.0, 2);
+          const nk = Math.max(0, 1 - Math.abs(g) * 2.6);
+          v -= nk * nk * nk * cfg.notch * local;
+
+          // The rock rises to the north-west (WORLD.RIDGE_AZIMUTH); to the south-east
+          // the bamboo valley falls away and only a low, drowned rank survives.
+          const nw = -(Math.sin(a) + Math.cos(a)) * 0.70710678;
+          const dirScale = lerp(cfg.dirLo, 1.0, smootherstep(-0.65, 0.92, nw));
+          // No rank rings the horizon at a constant height: each one is present over
+          // two or three broad zones and sinks away between them, so the three ranks
+          // never all march across the same stretch of sky.
+          const pres = 0.24 + 0.76 * smootherstep(-0.36, 0.32,
+            noise.fbm2(cx * cfg.presR + cfg.presOff, cz * cfg.presR - cfg.presOff, 2));
+
+          const metres = (cfg.lift + Math.max(0, v) * cfg.amp) * dirScale * pres;
+          if (metres + cfg.soft > maxTop) maxTop = metres + cfg.soft;
+
+          const enc = clamp((metres - RIDGE_LOW) / RIDGE_SPAN, 0, 0.9999847) * 255;
+          const hi = Math.floor(enc);
+          const o = (row + i) * 4;
+          buf[o] = hi;
+          buf[o + 1] = Math.round((enc - hi) * 255);
+          buf[o + 2] = (relief * 255) | 0;
+          buf[o + 3] = (clamp(ident, 0, 1) * 255) | 0;
+        }
+      });
+      if (this._disposed) return;
+    }
+
+    // Padding row mirrors the last rank so a filtering slip cannot read garbage.
+    buf.copyWithin(3 * W * 4, 2 * W * 4, 3 * W * 4);
+
+    const tex = new DataTexture(buf, W, RIDGE_ROWS, RGBAFormat, UnsignedByteType);
+    tex.minFilter = NearestFilter;
+    tex.magFilter = NearestFilter;
+    tex.wrapS = RepeatWrapping;          // the horizon wraps; the shader relies on it
+    tex.wrapT = ClampToEdgeWrapping;
+    tex.generateMipmaps = false;
+    tex.colorSpace = NoColorSpace;
+    tex.needsUpdate = true;
+    this.ridgeTex = tex;
+    this.ridgeMaxTop = maxTop;
+  }
+
+  /**
+   * Beyond the clipmap, silhouette is all that matters. Three baked ridgelines on a
+   * camera-locked cylinder, each parallaxing at its own rate, each pushed further
+   * toward the sky colour. No billboards, no cones, no tiling.
    */
   _buildDistantBand() {
     const geo = new CylinderGeometry(5000, 5000, 2600, 96, 1, true);
+    const base = WORLD.PLATEAU_HEIGHT + 40;
     const uniforms = {
       uSkyTint: { value: this.uniforms.uSkyTint.value },
       uCam: { value: new Vector3() },
-      uBase: { value: WORLD.PLATEAU_HEIGHT + 40 },
+      uBase: { value: base },
+      tRidge: { value: this.ridgeTex },
+      uRidgeCfg: { value: new Vector4(RIDGE_W, 1 / RIDGE_W, RIDGE_LOW, RIDGE_SPAN) },
+      uMaxTop: { value: base + (this.ridgeMaxTop ?? 900) + 24 },
+      uSunXZ: { value: new Vector2(0.7, -0.7) },
+      // Palette-locked: warm rock takes the key, shadowed rock the cool sky bounce
+      // of ARCHITECTURE §5 — never neutral grey.
+      uRockWarm: { value: new Color(0x7a6a5c) },
+      uRockCool: { value: new Color(0x53667f) },
     };
     this.bandUniforms = uniforms;
 
@@ -1922,40 +2332,84 @@ varying float vWorldY;
 uniform vec3 uSkyTint;
 uniform vec3 uCam;
 uniform float uBase;
+uniform sampler2D tRidge;
+uniform vec4 uRidgeCfg;   // width, 1/width, low metre, span
+uniform float uMaxTop;
+uniform vec2 uSunXZ;
+uniform vec3 uRockWarm;
+uniform vec3 uRockCool;
 
-float ridgeLine(float a, float seed, float freq, float par){
-  // Parallax: shift the sampling angle by the camera's tangential offset, scaled by
-  // how far away this layer is meant to be.
-  float tang = dot(uCam.xz, vec2(cos(a), -sin(a))) * par;
-  float u = a * freq + tang;
-  float r = 1.0 - abs(fbm2(vec2(u, seed), 4));
-  r *= r;
-  return r;
+/**
+ * Read the baked ridgeline. NEAREST + a hand-rolled lerp, because the height is a
+ * 16-bit pair and hardware filtering would blend the high and low bytes apart.
+ * Returns (metres above base, crest relief, massif id, slope along the horizon).
+ */
+vec4 kgRidge(float u, float row){
+  float p = u * uRidgeCfg.x - 0.5;
+  float f = fract(p);
+  float x0 = (floor(p) + 0.5) * uRidgeCfg.y;
+  float rv = (row + 0.5) * 0.25;
+  vec4 A = texture2D(tRidge, vec2(x0, rv));
+  vec4 B = texture2D(tRidge, vec2(x0 + uRidgeCfg.y, rv));
+  float ha = A.r + A.g * (1.0 / 255.0);
+  float hb = B.r + B.g * (1.0 / 255.0);
+  return vec4(
+    uRidgeCfg.z + mix(ha, hb, f) * uRidgeCfg.w,
+    mix(A.b, B.b, f),
+    mix(A.a, B.a, f),
+    (hb - ha) * uRidgeCfg.w);
+}
+
+void kgRank(float row, float u0, float tang, float par, float soft, float haze,
+            float sunT, float h, inout vec3 col, inout float alpha){
+  // Parallax: shift the sampling angle by the camera's tangential offset, scaled
+  // by how far away this rank is meant to be.
+  vec4 r = kgRidge(u0 + tang * par, row);
+  float top = uBase + r.x;
+  float m = smoothstep(top + soft, top - soft, h);
+  if (m <= 0.0) return;
+
+  // Which way this stretch of crest falls, and whether that face sees the sun.
+  float lit = clamp(-r.w * 0.055 * sunT, -1.0, 1.0);
+  vec3 rock = mix(uRockCool, uRockWarm, 0.5 + 0.5 * lit);
+  rock *= 0.90 + 0.20 * r.z;              // per-massif identity
+  rock *= 0.84 + 0.30 * r.y;              // crests catch more than cols
+
+  // Mist pools below every crest — aerial perspective inside a single rank.
+  float pool = smoothstep(top - 20.0, top - 430.0, h);
+  vec3 lay = mix(rock, uSkyTint * 1.06, clamp(haze + (1.0 - haze) * pool * 0.72, 0.0, 1.0));
+  col = mix(col, lay, m);
+  alpha = max(alpha, m);
 }
 
 void main(){
-  float a = atan(vLocal.x, vLocal.z);
   float h = vWorldY;
+  // Cheap rejects first: most of this cylinder is sky or is under the terrain.
+  if (h > uMaxTop || h < uBase - 940.0) discard;
+
+  float a = atan(vLocal.x, vLocal.z);
+  float u0 = a * 0.15915494 + 0.5;
+  vec2 tangent = vec2(cos(a), -sin(a));
+  float tang = dot(uCam.xz, tangent);
+  float sunT = dot(tangent, uSunXZ);
+
   vec3 col = uSkyTint;
   float alpha = 0.0;
 
-  // Back to front. Higher, hazier, slower-parallaxing layers first.
-  for (int i = 0; i < 3; i++){
-    float fi = float(i);
-    float freq = 2.2 + fi * 2.6;
-    float amp = 520.0 - fi * 130.0;
-    float par = 0.000030 + fi * 0.000042;
-    float top = uBase + 120.0 + ridgeLine(a, 11.3 + fi * 7.7, freq, par) * amp;
-    float soft = 26.0 - fi * 7.0;
-    float m = smoothstep(top + soft, top - soft, h);
-    vec3 layer = mix(uSkyTint * 1.02, uSkyTint * 0.60 + vec3(0.035, 0.045, 0.075), 0.28 + fi * 0.24);
-    col = mix(col, layer, m);
-    alpha = max(alpha, m);
-  }
+  // Back to front. Higher, hazier, slower-parallaxing ranks first.
+  kgRank(0.0, u0, tang, ${RIDGE_LAYERS[0].par.toFixed(8)}, ${RIDGE_LAYERS[0].soft.toFixed(1)},
+         ${RIDGE_LAYERS[0].haze.toFixed(2)}, sunT, h, col, alpha);
+  kgRank(1.0, u0, tang, ${RIDGE_LAYERS[1].par.toFixed(8)}, ${RIDGE_LAYERS[1].soft.toFixed(1)},
+         ${RIDGE_LAYERS[1].haze.toFixed(2)}, sunT, h, col, alpha);
+  kgRank(2.0, u0, tang, ${RIDGE_LAYERS[2].par.toFixed(8)}, ${RIDGE_LAYERS[2].soft.toFixed(1)},
+         ${RIDGE_LAYERS[2].haze.toFixed(2)}, sunT, h, col, alpha);
 
   // Fade the very bottom so the band never shows a hard cut under the terrain.
   alpha *= smoothstep(uBase - 900.0, uBase - 320.0, h);
   if (alpha < 0.004) discard;
+
+  // Nothing in frame is a flat tint: a slow grain across the rock faces.
+  col *= 0.97 + 0.06 * (fbm2(vec2(a * 140.0, h * 0.022), 2) * 0.5 + 0.5);
   gl_FragColor = vec4(col, alpha * 0.96);
 }
 `,
@@ -2021,9 +2475,23 @@ void main(){
     if (this.band) {
       const cam = this.ctx.camera;
       this.bandUniforms.uCam.value.copy(cam.position);
+      // Horizontal sun bearing, so the far ranges take warm light on the faces
+      // turned toward it and stay cool-blue on the others.
+      const sx = this._sunDir.x, sz = this._sunDir.z;
+      const sl = Math.sqrt(sx * sx + sz * sz);
+      if (sl > 1e-4) this.bandUniforms.uSunXZ.value.set(sx / sl, sz / sl);
       this.band.position.set(cam.position.x, WORLD.PLATEAU_HEIGHT + 40, cam.position.z);
       this.band.updateMatrix();
       this.band.updateMatrixWorld(true);
+    }
+
+    // The snow drift term needs the prevailing bearing only; WeatherSystem owns
+    // the wind field itself (ARCHITECTURE §10) and this is a read, not a twin.
+    const w = this.ctx.wind;
+    if (w && w.direction && this.uniforms.uWindXZ) {
+      const wx = w.direction.x, wz = w.direction.z;
+      const wl = Math.sqrt(wx * wx + wz * wz);
+      if (wl > 1e-4) this.uniforms.uWindXZ.value.set(wx / wl, wz / wl);
     }
   }
 
@@ -2085,6 +2553,7 @@ void main(){
     this.splatTex?.dispose();
     this.detailNormalTex?.dispose();
     this.waterNormalTex?.dispose();
+    this.ridgeTex?.dispose();
     try { this.ctx.physics?.removeStatic?.(this.physicsHandle); } catch { /* optional */ }
   }
 

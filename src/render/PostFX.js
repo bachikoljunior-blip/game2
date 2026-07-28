@@ -8,8 +8,12 @@
  * Instead this file is a tiny hand-rolled composer: one shared full-screen triangle,
  * a documented render-target pool, and shaders that merge as many stages as possible
  * into a single draw. The composite pass alone does exposure + ACES + LUT + grade +
- * chromatic aberration + vignette + grain + CAS + FXAA + letterbox + all combat
- * feedback in one dependent-texture-light draw.
+ * the filmic toe/shoulder + chromatic aberration + vignette + grain + CAS + FXAA +
+ * letterbox + all combat feedback in one dependent-texture-light draw.
+ *
+ * The print curve is deliberately the *last* thing in that chain (see
+ * `filmicToeShoulder`): it owns the black and white points, so no LUT preset, lift or
+ * cinematic grade override can quietly cost the frame the ends of its range.
  *
  * ---------------------------------------------------------------------------
  * PASS ORDER
@@ -597,6 +601,7 @@ uniform float uMaxCoc;       // half-res pixels
 uniform float uManualFocus;
 uniform float uUseAutoFocus;
 uniform float uResYHalf;
+uniform vec2 uCocScale;      // x = near field, y = far field
 varying vec2 vUv;
 
 float decodeFocus(float e) { return exp2(e * 10.0) - 1.0; }
@@ -605,7 +610,14 @@ float cocPixels(float z, float focus) {
   float f = uFocalLen;
   float denom = max(1e-5, z * uAperture * max(focus - f, 1e-4));
   float cm = (f * f * (z - focus)) / denom;      // signed metres on the sensor
-  return clamp(cm / uSensor * uResYHalf, -uMaxCoc, uMaxCoc);
+  float px = cm / uSensor * uResYHalf;
+  // Readability trim, applied asymmetrically. A physically exact lens puts the whole
+  // background of a 12 m shot outside the depth of field, which costs us the honden,
+  // the ridge and the second torii — the frame stops being architecture and becomes
+  // shapes. The near field is trimmed harder still: a blurred foreground reads as
+  // depth up to a point, past which it is just a smear across the bottom third.
+  px *= (px < 0.0) ? uCocScale.x : uCocScale.y;
+  return clamp(px, -uMaxCoc, uMaxCoc);
 }
 
 void main() {
@@ -672,7 +684,10 @@ void main() {
     }
   }
   vec3 col = acc / max(wsum, 1e-4);
-  float blend = smoothstep(0.6, 2.2, maxAbs);
+  // Nothing under a full half-res pixel of CoC is defocused enough to be worth
+  // replacing: blending it in anyway is what made every "sharp" surface in the frame
+  // slightly soft, because the gather always costs a little detail even at radius 0.
+  float blend = smoothstep(0.9, 2.6, maxAbs);
   gl_FragColor = vec4(col, blend);
 }
 `;
@@ -883,6 +898,8 @@ uniform vec3 uLift;
 uniform vec3 uGamma;
 uniform vec3 uGain;
 uniform float uContrast;
+uniform vec4 uFilmic;        // x = black point, y = white point, z = toe power, w = shoulder power
+uniform float uFilmicPivot;
 uniform float uVignette;
 uniform float uVignetteScale;
 uniform vec3 uVignetteTint;
@@ -965,6 +982,29 @@ vec3 tonemap(vec3 c) {
 
 vec3 sRGBEncode(vec3 c) {
   return mix(c * 12.92, 1.055 * pow(max(c, vec3(0.0)), vec3(0.41666)) - 0.055, step(vec3(0.0031308), c));
+}
+
+/**
+ * The print curve: a real filmic toe and shoulder, in display code values, applied
+ * last so it is authoritative over whatever the LUT did.
+ *
+ * ACES rolls off scene light, but everything after it conspires to eat the ends of the
+ * range — the LUT's shadow split-tone lifts black off zero, its own print curve caps
+ * white below one — and the result is a frame living inside the middle ~140 of 255
+ * code values, which reads as washed before the viewer registers anything else.
+ *
+ * This is deliberately NOT a lift/gamma/gain: those move the whole transfer function,
+ * and the midtones here are already where they should be. Both powers are pinned at
+ * the pivot, so the toe steepens the approach to black and the shoulder straightens
+ * the approach to white while the mids stay put — deep eaves and a hot sky in the same
+ * frame, which is the entire difference between Ashina at dusk and a grey WebGL demo.
+ */
+vec3 filmicToeShoulder(vec3 c) {
+  vec3 x = sat3((c - uFilmic.x) / max(uFilmic.y - uFilmic.x, 1e-3));
+  float p = uFilmicPivot;
+  vec3 toe = p * pow(x / p, vec3(uFilmic.z));
+  vec3 shoulder = 1.0 - (1.0 - p) * pow((1.0 - x) / (1.0 - p), vec3(uFilmic.w));
+  return mix(toe, shoulder, step(vec3(p), x));
 }
 
 #ifdef USE_LUT
@@ -1140,8 +1180,10 @@ void main() {
   // ---- display encode, then grade in display space -------------------------
   color = sRGBEncode(color);
 
-  // ASC-style lift/gamma/gain, neutral at lift=0 / gamma=1 / gain=1. The lift is what
-  // stops blacks from crushing to zero — a printed black is never 0,0,0.
+  // ASC-style lift/gamma/gain, neutral at lift=0 / gamma=1 / gain=1. The lift here
+  // only carries the shadow *hue* — the toe below runs after the LUT and takes the
+  // level back down, so this cannot flatten the bottom of the range the way it did
+  // when it was the last word on black.
   color = color * (1.0 - uLift) + uLift;
   color = sat3(color);
   color = pow(color, 1.0 / max(uGamma, vec3(1e-3))) * uGain;
@@ -1154,6 +1196,8 @@ void main() {
     color = mix(color, graded, uLutStrength);
   }
 #endif
+
+  color = filmicToeShoulder(color);
 
   // ---- rain on the lens, part 2: the drop itself ---------------------------
   // After the grade, with the vignette and grain: water sitting on the front element
@@ -1234,15 +1278,32 @@ export class PostFX {
     this.keyValue = 0.18;
     this.exposureMin = 0.68;
     this.exposureMax = 1.50;
-    this.bloomStrength = 0.055;
-    this.bloomThreshold = 0.9;
-    this.bloomKnee = 0.55;
-    this.bloomRadius = 1.0;
-    this.godRayStrength = 0.34;
+    // The skirt, not the glow. Raising the threshold while roughly doubling the
+    // strength moves bloom off the general sky wash and onto genuine highlights — the
+    // sun disc, wet stone speculars, lantern paper — and the wider tent radius is what
+    // turns that into a soft halation that falls off over a third of the screen
+    // instead of a tight ring.
+    this.bloomStrength = 0.105;
+    this.bloomThreshold = 1.0;
+    this.bloomKnee = 0.62;
+    this.bloomRadius = 1.35;
+    // God rays were authored at roughly a fifth of the weight they need: the shafts
+    // existed in the buffer but sat under the noise floor of the frame. See
+    // _passGodRays for the matching narrowing of the emission field, which is what
+    // turns a milky sky wash into countable shafts.
+    this.godRayStrength = 1.5;
     this.aoStrength = 0.85;
     this.aoRadius = 0.65;
     this.saturation = 1.06;
     this.contrast = 1.045;
+    // Print curve. `toe`/`shoulder` are exponents pinned at `pivot`, so raising either
+    // widens the frame's range without moving the midtones; black/white point are the
+    // small trims that put true black at 0 and let a specular clip clean.
+    this.filmicBlack = 0.004;
+    this.filmicWhite = 0.995;
+    this.filmicToe = 1.50;
+    this.filmicShoulder = 1.14;
+    this.filmicPivot = 0.44;
     this.vignette = 0.42;
     this.grain = 0.028;
     this.sharpen = 0.55;
@@ -1251,8 +1312,21 @@ export class PostFX {
     this.shutterAngle = 180;
     this.focusDistance = 6.0;
     this.aperture = 4.0;
+    // A 50 mm f/1.2 on a 24 mm sensor has about 0.4 m of depth of field at 12 m. That
+    // is a real lens, and it is also unshootable for a game: on the torii beat it puts
+    // the kasagi, the shimenawa, the honden, the ridge and the flagstone all outside
+    // the field, so the one shot dedicated to the gate has nothing critically sharp in
+    // it. Callers author the f-number as *intent* ("shallow, cinematic"), so this is
+    // the floor that turns that intent into something readable. Cinematic beats still
+    // get bokeh — at 1.15 m a closeup is wide open in effect regardless of f-number.
+    this.minAperture = 2.4;
     this.focalLength = 0.05;      // metres (50 mm)
     this.sensorHeight = 0.024;    // metres
+    // Second, independent trim on top of the f-number floor, signed: the near field
+    // is cut harder than the far field because a foreground smear costs more
+    // readability than a soft background does.
+    this.cocScaleNear = 0.42;
+    this.cocScaleFar = 0.62;
     this.dofBlend = 1.0;
     this.autoFocusEnabled = false;
     this.autoFocusSpeed = 3.2;
@@ -1555,10 +1629,14 @@ export class PostFX {
     return {
       wb: [1.032, 1.0, 0.978],
       contrast: 1.14, pivot: 0.44,
-      toe: 0.026, shoulder: 0.985,
-      shadowTint: [0.460, 0.310, 0.200], shadowAmt: 0.175,  // warm lifted black
+      // The LUT no longer sets the black and white points — the composite's toe and
+      // shoulder do, after this, where they can be authoritative. A print black of
+      // 0.026 here plus a shadow tint that lifts to 0.08 was costing us the bottom
+      // 16 code values of every frame, and a 0.985 ceiling capped the top.
+      toe: 0.008, shoulder: 1.0,
+      shadowTint: [0.205, 0.140, 0.090], shadowAmt: 0.085,  // warm shadow *hue*, not a lift
       midTint: [1.000, 0.862, 0.690], midAmt: 0.075,        // #ffd9a8 key light
-      highTint: [0.520, 0.860, 0.930], highAmt: 0.250,      // teal upper highlights
+      highTint: [0.560, 0.870, 0.930], highAmt: 0.210,      // teal upper highlights
       sat: 1.10, satShadow: 0.86,
       crossRG: 0.026, crossGB: -0.016, crossBR: 0.010,
       gain: [1.010, 1.000, 0.996],
@@ -1573,8 +1651,8 @@ export class PostFX {
     return {
       wb: [0.900, 0.968, 1.120],
       contrast: 1.05, pivot: 0.40,
-      toe: 0.048, shoulder: 0.955,
-      shadowTint: [0.086, 0.145, 0.255], shadowAmt: 0.30,
+      toe: 0.014, shoulder: 0.995,
+      shadowTint: [0.086, 0.145, 0.255], shadowAmt: 0.22,
       midTint: [0.620, 0.740, 0.920], midAmt: 0.20,
       highTint: [0.800, 0.900, 1.000], highAmt: 0.16,
       sat: 0.66, satShadow: 0.48,
@@ -1811,6 +1889,7 @@ export class PostFX {
       uManualFocus: { value: this.focusDistance },
       uUseAutoFocus: { value: 0 },
       uResYHalf: { value: 360 },
+      uCocScale: { value: new Vector2(this.cocScaleNear, this.cocScaleFar) },
     });
     this.mDofBokeh = this._mat(FRAG_DOF_BOKEH, {
       tSrc: { value: black },
@@ -1876,15 +1955,21 @@ export class PostFX {
       uExposureRange: { value: new Vector2(this.exposureMin, this.exposureMax) },
       uWhiteBalance: { value: new Color(1.02, 1.0, 0.98) },
       uSaturation: { value: this.saturation },
-      uLift: { value: new Color(0.012, 0.016, 0.030) },
+      // Only enough lift to keep a *hue* in the deep shadow (cool sky bounce, per
+      // ARCHITECTURE §5) — the level it used to carry is now the toe's job, and the
+      // toe runs after the LUT so it can actually reach zero.
+      uLift: { value: new Color(0.004, 0.005, 0.011) },
       uGamma: { value: new Color(1.0, 1.0, 1.0) },
       uGain: { value: new Color(1.0, 1.0, 1.0) },
       uContrast: { value: this.contrast },
+      uFilmic: { value: new Vector4(this.filmicBlack, this.filmicWhite, this.filmicToe, this.filmicShoulder) },
+      uFilmicPivot: { value: this.filmicPivot },
       uVignette: { value: this.vignette },
       uVignetteScale: { value: 1.15 },
       uVignetteTint: { value: new Color(0.72, 0.80, 0.95) },
       uBloomStrength: { value: this.bloomStrength },
-      uBloomTint: { value: new Color(1.0, 0.94, 0.86) },
+      // Amber, not neutral: the halation belongs to a low sun and to lantern paper.
+      uBloomTint: { value: new Color(1.0, 0.905, 0.79) },
       uGodStrength: { value: 0 },
       uGodTint: { value: new Color(1.0, 0.80, 0.55) },
       uDofBlend: { value: this.dofBlend },
@@ -2261,10 +2346,17 @@ export class PostFX {
     if (this._w > 1) this._buildTargets(this._w, this._h);
   }
 
-  /** Manual focus. `distance` in metres, `aperture` as an f-stop (lower = shallower). */
+  /**
+   * Manual focus. `distance` in metres from the camera, `aperture` as an f-stop
+   * (lower = shallower). The f-number is floored at `minAperture` — see the comment
+   * there; callers pass f/1.15–f/1.2 as a stylistic "shallow" and a literal reading of
+   * that leaves nothing in the frame sharp.
+   */
   setFocus(distance, aperture) {
     if (typeof distance === 'number' && isFinite(distance)) this.focusDistance = Math.max(0.08, distance);
-    if (typeof aperture === 'number' && isFinite(aperture)) this.aperture = clamp(aperture, 0.8, 32);
+    if (typeof aperture === 'number' && isFinite(aperture)) {
+      this.aperture = clamp(aperture, this.minAperture, 32);
+    }
     this.autoFocusEnabled = false;
   }
 
@@ -2754,14 +2846,18 @@ export class PostFX {
     ou.uFar.value = this._far;
     ou.uSunUv.value.copy(this._sunUv);
     ou.uAspect.value = this._w / Math.max(1, this._h);
-    ou.uSunRadius.value = 0.30;
+    // Concentrate the emission near the disc. At 0.30 the source was a blob a third of
+    // the screen wide, so every march picked up light from every direction and the
+    // result was a radially-symmetric wash with no legible shafts. A tight source is
+    // what makes an occluder edge cut a *countable* wedge out of the fan.
+    ou.uSunRadius.value = 0.26;
     this._draw(this.mGodOcclusion, this.rtGodA);
 
     const bu = this.mGodBlur.uniforms;
     bu.tSrc.value = this.rtGodA.texture;
     bu.uSunUv.value.copy(this._sunUv);
-    bu.uDensity.value = 0.55;   // march 55% of the way to the sun: longer shafts
-    bu.uDecay.value = 0.962;    // just smear the whole sky into a milky wash
+    bu.uDensity.value = 0.72;   // march 72% of the way to the sun: longer shafts
+    bu.uDecay.value = 0.970;    // slow enough that the far end of the march still reads
     bu.uWeight.value = 3.0;
     bu.uNoise.value = (this._frame & 31) * 0.137;
     this._draw(this.mGodBlur, this.rtGodB);
@@ -2799,9 +2895,12 @@ export class PostFX {
     cu.uFar.value = this._far;
     cu.uTexel.value.set(1 / hw, 1 / hh);
     cu.uFocalLen.value = this.focalLength;
-    cu.uAperture.value = this.aperture;
+    // Floored here as well, not only in setFocus: `aperture` is a public field and
+    // a cinematic that assigns it directly must not be able to reintroduce f/1.2.
+    cu.uAperture.value = Math.max(this.minAperture, this.aperture);
     cu.uSensor.value = this.sensorHeight;
     cu.uMaxCoc.value = maxCoc;
+    cu.uCocScale.value.set(this.cocScaleNear, this.cocScaleFar);
     cu.uManualFocus.value = this.focusDistance;
     cu.uUseAutoFocus.value = this.autoFocusEnabled ? 1 : 0;
     cu.uResYHalf.value = hh;
@@ -2887,6 +2986,8 @@ export class PostFX {
     u.uExposureRange.value.set(this.exposureMin, this.exposureMax);
     u.uSaturation.value = this.saturation;
     u.uContrast.value = this.contrast;
+    u.uFilmic.value.set(this.filmicBlack, this.filmicWhite, this.filmicToe, this.filmicShoulder);
+    u.uFilmicPivot.value = this.filmicPivot;
     u.uVignette.value = this.vignette;
     u.uSharpen.value = this.sharpen;
     u.uTime.value = this._time;

@@ -9,7 +9,10 @@
  *    once, cached by (worldTile, lod), and re-emitted into the batch buffers only when
  *    the grid shifts — never per frame.
  *  - All animation is in the vertex shader. `update()` writes ~20 uniforms and nothing else.
- *  - LOD/cull transitions are a screen-door dither so nothing pops.
+ *  - LOD/cull transitions dissolve per *instance*, not per pixel. Nothing downstream of
+ *    this pass resolves a screen-door dither — no MSAA on the HDR target, no TAA — so a
+ *    stipple here goes straight into the frame. Each plant owns a stable threshold and
+ *    shrinks as it crosses it instead.
  *
  * Wind is NOT implemented here. `WeatherSystem` owns the gust field (ARCHITECTURE.md §10)
  * and Weather boots before Foliage precisely so we can consume it: we import `WIND_GLSL`
@@ -86,6 +89,8 @@ function chainCacheKey(material, token) {
 // Module-scope scratch. Nothing in update() or the tile generator may allocate.
 const _colScratch = new Color();
 const _windScratch = new Vector3();
+/** Scratch for _plantY's out-parameter. Scatter is a build-time pass, but no allocation is free. */
+const _plant = { sag: 0 };
 
 function hashTileSeed(tx, tz, lod) {
   let h = Math.imul(tx | 0, 0x27d4eb2d) ^ Math.imul(tz | 0, 0x165667b1) ^ Math.imul(lod + 7, 0x9e3779b1);
@@ -221,6 +226,7 @@ uniform vec4  uDisturbA[ ${MAX_DISTURB} ];      // x = strength, y = start time
 
 uniform vec2  uFadeNear;    // x = start of fade-in, y = end of fade-in
 uniform vec2  uFadeFar;     // x = start of fade-out, y = fully culled
+uniform vec2  uSink;        // x, y = range over which the clipmap chord sink blends in
 uniform vec2  uSize;        // per-LOD global (height, width) multiplier
 uniform float uBendGain;
 uniform float uFlutter;
@@ -259,12 +265,32 @@ void kagFoliageVertex() {
   float phase  = aFoliageB.w;
 
   float dist = distance( base, uCamPos );
-  vKagFade = smoothstep( uFadeNear.x, uFadeNear.y, dist ) * ( 1.0 - smoothstep( uFadeFar.x, uFadeFar.y, dist ) );
 
-  // Collapse an out-of-range instance to a single point. The dither in the fragment shader
-  // would discard it anyway, but a degenerate triangle is never rasterised at all — this is
-  // what lets one buffer hold every tree in the valley and still cost only the near ones.
-  if ( vKagFade <= 0.0 ) {
+#ifdef KAG_SINK
+  // The ground is a camera-centred clipmap: past the near ring its triangles are chords
+  // several metres wide, and a chord drawn across a convex crest runs *below* the
+  // heightfield the scatter sampled. That gap is what left a whole band of susuki hanging
+  // over the far ridge with open sky under it. aFoliageC.w carries the chord deficit
+  // measured at build time; blend it in across the range where the clipmap coarsens so a
+  // plant sits in the surface actually being drawn, at every distance.
+  base.y -= aFoliageC.w * smoothstep( uSink.x, uSink.y, dist );
+#endif
+
+  float fade = smoothstep( uFadeNear.x, uFadeNear.y, dist ) * ( 1.0 - smoothstep( uFadeFar.x, uFadeFar.y, dist ) );
+
+  // LOD dissolve, per *plant*, not per pixel. A screen-door dither has to be resolved by
+  // MSAA or TAA and this is a forward pass with neither, so the stipple survived all the
+  // way into the frame — a clump sitting at fade 0.5 rendered as a checkerboard block.
+  // Each instance instead owns a stable threshold drawn from its own phase, so the band
+  // thins out plant by plant and leaves no screen-space pattern behind at all.
+  float thr = fract( phase * 31.7 + 0.137 );
+  float grow = smoothstep( thr * 0.72, thr * 0.72 + 0.28, fade );
+  vKagFade = grow > 0.0 ? 1.0 : 0.0;
+
+  // Collapse an out-of-range instance to a single point: a degenerate triangle is never
+  // rasterised at all, which is what lets one buffer hold every plant in the valley and
+  // still cost only the ones in range.
+  if ( grow <= 0.0 ) {
     kagPosG = base;
     kagNrmG = vec3( 0.0, 1.0, 0.0 );
     vKagT = 0.0;
@@ -272,6 +298,13 @@ void kagFoliageVertex() {
     vKagWorld = base;
     return;
   }
+
+  // Shrink on the way out so nothing pops in at full size. The floor keeps the band
+  // reading as a thinning of *count*, which is what a real meadow does at range, rather
+  // than as everything quietly getting smaller.
+  float shrink = mix( 0.62, 1.0, grow );
+  height *= shrink;
+  width *= shrink;
 
   // ---- wind ----------------------------------------------------------------
   // The gust field is Weather's, sampled at the plant's root. kagerouBend with h = 1
@@ -381,24 +414,25 @@ uniform vec3  uSunDir;
 uniform vec3  uSunColor;
 uniform vec3  uSSSColor;
 uniform float uSSSStrength;
+uniform float uSSSFloor;
 uniform float uTipGlow;
 uniform float uBaseAO;
 uniform float uGrain;
+uniform float uBroad;
 uniform float uTintAmount;
 
 varying float vKagFade;
 varying float vKagT;
 varying vec3  vKagTint;
 varying vec3  vKagWorld;
-
-float kagBayer2( vec2 a ) { a = floor( a ); return fract( a.x * 0.5 + a.y * a.y * 0.75 ); }
-#define kagBayer4( a ) ( kagBayer2( 0.5 * ( a ) ) * 0.25 + kagBayer2( a ) )
-#define kagBayer8( a ) ( kagBayer4( 0.5 * ( a ) ) * 0.25 + kagBayer2( a ) )
 `;
 
-/** Discard early — before any texture fetch — so a faded-out LOD costs almost nothing. */
+/**
+ * Discard early — before any texture fetch — so a culled LOD costs almost nothing.
+ * The vertex stage already collapsed these to a point; this is the belt to that braces.
+ */
 const FRAGMENT_DITHER = /* glsl */`
-if ( vKagFade < kagBayer8( gl_FragCoord.xy ) ) discard;
+if ( vKagFade <= 0.0 ) discard;
 `;
 
 /**
@@ -408,6 +442,10 @@ if ( vKagFade < kagBayer8( gl_FragCoord.xy ) ) discard;
 const FRAGMENT_TINT = /* glsl */`
 {
   float grain = fbm2( vKagWorld.xz * 3.7, 2 ) * 0.5 + 0.5;
+  // A second, far coarser octave. The fine grain is sub-pixel past ~30 m and averages
+  // straight back to a flat tone, which is exactly how the distant LOD collapses into one
+  // dark mass with no internal value. This one has ~4 m features, so it survives the trip.
+  float broad = fbm2( vKagWorld.xz * 0.26 + 17.3, 2 ) * 0.5 + 0.5;
   vec3 tint = vKagTint;
 #ifdef KAG_TINT_MODULATE
   // When the material has a map, the map IS the albedo. Multiplying a second albedo on
@@ -419,6 +457,7 @@ const FRAGMENT_TINT = /* glsl */`
 #endif
   tint *= mix( 1.0 - uBaseAO, 1.0 + uTipGlow, vKagT );
   tint *= mix( 1.0 - uGrain, 1.0 + uGrain, grain );
+  tint *= mix( 1.0 - uBroad, 1.0 + uBroad, broad );
   diffuseColor.rgb *= tint;
 }
 `;
@@ -461,7 +500,15 @@ const FRAGMENT_SSS = /* glsl */`
   // sun is what stops pale blossom from coming out of the tone mapper as a hot primary red.
   vec3 sssTint = mix( vec3( 1.0 ), uSSSColor, 0.6 );
   vec3 trans = sssTint * uSunColor * ( forward * 0.85 + 0.10 ) * thin * uSSSStrength * lit;
-  outgoingLight += diffuseColor.rgb * ( trans + uSunColor * wrap * 0.14 * lit );
+
+  // What comes *through* a leaf is not its reflectance. Gating transmission on the albedo
+  // is what turned the backlit grass sea into black paper: a 0.08 linear blade transmitted
+  // 0.08 x 0.08 and landed on nothing. uSSSFloor lifts the transmission colour off the
+  // albedo toward the authored translucency tint — it is 0 for blossom and canopy leaves,
+  // which are already bright and are tuned exactly as they are, and high for grass, susuki
+  // and ferns, whose whole reason to exist in this shot is that the low sun comes through.
+  vec3 through = mix( diffuseColor.rgb, uSSSColor * 0.85, uSSSFloor );
+  outgoingLight += through * trans + diffuseColor.rgb * uSunColor * wrap * 0.14 * lit;
 }
 `;
 
@@ -1323,6 +1370,24 @@ const AUTUMN_A = new Color(0x4e6b3c);
 const AUTUMN_B = new Color(0x9c8548);
 const AUTUMN_C = new Color(0xc07a3a);
 
+/**
+ * Placement against a clipmapped ground (see `_plantY` and KAG_SINK).
+ *
+ * `heightAt()` is the authoritative heightfield, but the *mesh* is a camera-centred
+ * clipmap: past the near ring, a triangle spans several metres and its surface is the
+ * chord, not the field. Across a convex crest the chord runs below the field, so an
+ * instance planted at `heightAt()` hangs in the air over the ridge line — the exact
+ * failure the susuki band showed. We measure that deficit at scatter time and blend it
+ * in over the range where the clipmap actually coarsens.
+ */
+const SINK_FADE = [38, 96];
+/** Fallback chord cell if Terrain has not published its ring sizes; ~ring 2 at ULTRA. */
+const SINK_CELL_FALLBACK = 5.6;
+/** Never trust a measured deficit beyond this — a cliff edge would bury the plant. */
+const SINK_MAX = 3.0;
+/** Bury the base rather than leaving it tangent, so a card never shows daylight under it. */
+const PLANT_BURY = 0.14;
+
 // =============================================================================
 // 8. FoliageSystem
 // =============================================================================
@@ -1360,6 +1425,8 @@ export class FoliageSystem {
       uDisturbA: { value: new Float32Array(MAX_DISTURB * 4) },
       uSunDir: { value: new Vector3(0.3, 0.35, -0.88) },
       uSunColor: { value: new Color(1, 0.86, 0.68) },
+      // Where the terrain clipmap stops resolving crests: see _plantY / KAG_SINK.
+      uSink: { value: new Vector2(SINK_FADE[0], SINK_FADE[1]) },
     };
 
     this._materials = [];
@@ -1440,11 +1507,52 @@ export class FoliageSystem {
   _calibrateTerrain() {
     const h = this.ctx.terrain?.heightAt?.(0, 0);
     this._yBias = (typeof h === 'number' && Math.abs(h) > 1) ? 0 : WORLD.PLATEAU_HEIGHT;
+
+    // Ring 2 is the clipmap level drawing the ground at the distance where a plant first
+    // silhouettes against the sky, so its cell is the span the render chord has to bridge.
+    const rings = this.ctx.terrain?.rings;
+    const cell = Array.isArray(rings) ? rings[2]?.userData?.cell : undefined;
+    this._chordCell = (typeof cell === 'number' && cell > 0.5) ? cell : SINK_CELL_FALLBACK;
+    this._placement = { planted: 0, sunk: 0, maxSink: 0, floating: 0 };
   }
 
   _heightAt(x, z) {
     const h = this.ctx.terrain?.heightAt?.(x, z);
     return (typeof h === 'number' && Number.isFinite(h) ? h : 0) + this._yBias;
+  }
+
+  /**
+   * Where to put the base of an instance, and how far it has to drop once the clipmap
+   * stops resolving the crest it stands on.
+   *
+   * Returns the planted Y (already buried by PLANT_BURY) and writes the far-view sink into
+   * `out.sag`, which the scatterers stash in aFoliageC.w for the KAG_SINK vertex path. The
+   * deficit is the exact first-order error of a bilinear patch at its own centre: the field
+   * height minus the mean of its four cell-corner neighbours, which is positive precisely
+   * where the ground is convex and the chord passes underneath.
+   */
+  _plantY(x, z, out) {
+    const h = this._heightAt(x, z);
+    const e = this._chordCell;
+    const mean = 0.25 * (
+      this._heightAt(x - e, z) + this._heightAt(x + e, z) +
+      this._heightAt(x, z - e) + this._heightAt(x, z + e));
+    const raw = h - mean;
+    const sag = clamp(raw, 0, SINK_MAX);
+
+    const p = this._placement;
+    if (p) {
+      p.planted++;
+      if (sag > 0.05) { p.sunk++; if (sag > p.maxSink) p.maxSink = sag; }
+      // The placement assert. Every instance ends up at least PLANT_BURY below the surface
+      // it was sampled from *and* below the far-view chord — unless the measured deficit
+      // was clipped by SINK_MAX, which is the only way one can still be left in the air.
+      // getStats() reports the count; a non-zero `floating` means SINK_MAX is too tight.
+      if (raw - SINK_MAX > 0.05) p.floating++;
+    }
+
+    if (out) out.sag = sag;
+    return h - PLANT_BURY;
   }
 
   _slopeAt(x, z) {
@@ -1534,7 +1642,8 @@ export class FoliageSystem {
       name, mode = 0, map = null, color = 0xffffff, alphaTest = 0.42,
       bendExp = 2.0, whip = 0, bendGain = 1.0, flutter = 1.0,
       fadeNear = [-2, -1], fadeFar = [30, 34], size = [1, 1],
-      sss = 1.0, sssColor = 0xb8d07a, tipGlow = 0.16, baseAO = 0.34, grain = 0.16,
+      sss = 1.0, sssColor = 0xb8d07a, sssFloor = 0, tipGlow = 0.16, baseAO = 0.34,
+      grain = 0.16, broad = 0.08, sink = false,
       side = DoubleSide, depthWrite = true, tintAmount = 0.85,
     } = opts;
 
@@ -1565,9 +1674,11 @@ export class FoliageSystem {
       uFlutter: { value: flutter },
       uSSSColor: { value: new Color(sssColor) },
       uSSSStrength: { value: sss },
+      uSSSFloor: { value: sssFloor },
       uTipGlow: { value: tipGlow },
       uBaseAO: { value: baseAO },
       uGrain: { value: grain },
+      uBroad: { value: broad },
       uTintAmount: { value: tintAmount },
     };
     mat.userData.kag = local;
@@ -1575,8 +1686,12 @@ export class FoliageSystem {
     const shared = this.uniforms;
     const wind = this._windUniforms;
     const pars = vertexPars();
+    // KAG_SINK claims aFoliageC.w for the clipmap chord deficit, so it is opt-in: trees and
+    // impostors already spend that slot on their atlas row, and bamboo leaves on the attach
+    // parameter. Only the scatterers that go through _plantY() set it.
     const defines = `#define KAG_MODE ${mode}\n#define KAG_BEND_EXP ${bendExp.toFixed(2)}\n` +
       (whip > 0 ? `#define KAG_WHIP ${whip.toFixed(3)}\n` : '') +
+      (sink ? '#define KAG_SINK\n' : '') +
       (tintModulate ? '#define KAG_TINT_MODULATE\n' : '');
 
     chainBeforeCompile(mat, (shader) => {
@@ -1597,7 +1712,7 @@ export class FoliageSystem {
         .replace('#include <lights_fragment_begin>', '#include <lights_fragment_begin>\n' + FRAGMENT_SHADOW_CAPTURE)
         .replace('#include <envmap_fragment>', FRAGMENT_SSS + '\n#include <envmap_fragment>');
     });
-    chainCacheKey(mat, `kagfol|${mode}|${bendExp}|${whip}|${tintModulate ? 'm' : 'a'}`);
+    chainCacheKey(mat, `kagfol|${mode}|${bendExp}|${whip}|${sink ? 's' : '-'}|${tintModulate ? 'm' : 'a'}`);
 
     this.ctx.sky?.applyFog?.(mat);
     this._materials.push(mat);
@@ -1609,7 +1724,7 @@ export class FoliageSystem {
    * the blade it *would* have been if it were standing still.
    */
   _makeDepthMaterial(mat, opts) {
-    const { mode = 0, bendExp = 2.0, whip = 0, map = null, alphaTest = 0.42 } = opts;
+    const { mode = 0, bendExp = 2.0, whip = 0, map = null, alphaTest = 0.42, sink = false } = opts;
     const depth = new MeshDepthMaterial({
       depthPacking: RGBADepthPacking,
       map,
@@ -1622,7 +1737,8 @@ export class FoliageSystem {
     const local = mat.userData.kag;
     const pars = vertexPars();
     const defines = `#define KAG_MODE ${mode}\n#define KAG_BEND_EXP ${bendExp.toFixed(2)}\n` +
-      (whip > 0 ? `#define KAG_WHIP ${whip.toFixed(3)}\n` : '');
+      (whip > 0 ? `#define KAG_WHIP ${whip.toFixed(3)}\n` : '') +
+      (sink ? '#define KAG_SINK\n' : '');
 
     chainBeforeCompile(depth, (shader) => {
       shader.uniforms.uWind = wind.uWind;
@@ -1633,15 +1749,13 @@ export class FoliageSystem {
         .replace('#include <common>', '#include <common>\n' + defines + pars)
         .replace('#include <begin_vertex>', 'kagFoliageVertex();\nvec3 transformed = kagPosG;');
       shader.fragmentShader = shader.fragmentShader
-        .replace('#include <common>', '#include <common>\nvarying float vKagFade;\n' +
-          'float kagBayer2( vec2 a ) { a = floor( a ); return fract( a.x * 0.5 + a.y * a.y * 0.75 ); }\n' +
-          '#define kagBayer4( a ) ( kagBayer2( 0.5 * ( a ) ) * 0.25 + kagBayer2( a ) )\n' +
-          '#define kagBayer8( a ) ( kagBayer4( 0.5 * ( a ) ) * 0.25 + kagBayer2( a ) )')
-        // The shadow must fade out with the blade or a culled LOD keeps casting.
+        .replace('#include <common>', '#include <common>\nvarying float vKagFade;')
+        // The shadow must dissolve on the same per-instance threshold as the lit pass, or a
+        // plant the colour pass has culled keeps casting a shadow onto the ground.
         .replace('#include <clipping_planes_fragment>',
-          '#include <clipping_planes_fragment>\nif ( vKagFade < kagBayer8( gl_FragCoord.xy ) ) discard;');
+          '#include <clipping_planes_fragment>\nif ( vKagFade <= 0.0 ) discard;');
     });
-    chainCacheKey(depth, `kagfold|${mode}|${bendExp}|${whip}`);
+    chainCacheKey(depth, `kagfold|${mode}|${bendExp}|${whip}|${sink ? 's' : '-'}`);
     this._materials.push(depth);
     return depth;
   }
@@ -1685,8 +1799,9 @@ export class FoliageSystem {
     const mk = (name, lod, map, extra) => {
       const opts = Object.assign({
         name, mode: 0, map, bendExp: 2.0, bendGain: 1.0, flutter: 1.0,
-        size: GRASS_LOD_SIZE[lod],
-        sss: 1.25, sssColor: 0xc2d884, tipGlow: 0.22, baseAO: 0.38, grain: 0.18,
+        size: GRASS_LOD_SIZE[lod], sink: true,
+        sss: 1.25, sssColor: 0xc2d884, sssFloor: 0.42,
+        tipGlow: 0.22, baseAO: 0.38, grain: 0.18, broad: 0.12,
       }, extra || {});
       const mat = this._makeMaterial(opts);
       const depth = this._makeDepthMaterial(mat, opts);
@@ -1696,7 +1811,11 @@ export class FoliageSystem {
     this._grassMat = [
       mk('grass-lod0', 0, null, {}),
       mk('grass-lod1', 1, null, { bendGain: 0.92 }),
-      mk('grass-lod2', 2, this.tex.clump, { bendGain: 0.55, flutter: 0.5, alphaTest: 0.34, sss: 1.0 }),
+      // LOD2 is a 24 m-wide clump card seen from 20-60 m: the fine grain is sub-pixel out
+      // there, so it leans on the broad octave to keep any value inside the silhouette.
+      mk('grass-lod2', 2, this.tex.clump, {
+        bendGain: 0.55, flutter: 0.5, alphaTest: 0.34, sss: 1.0, sssFloor: 0.50, broad: 0.22,
+      }),
     ];
     this._grassBase = [bladeHi, bladeLo, clump];
   }
@@ -1814,9 +1933,9 @@ export class FoliageSystem {
       const accept = 0.18 + 0.95 * Math.pow(clamp(clump, 0, 1), 1.6);
       if (rnd() > accept) continue;
 
-      const y = this._heightAt(x, z);
-      const w = this._siteWeight(x, z, y);
+      const w = this._siteWeight(x, z, this._heightAt(x, z));
       if (w <= 0.02 || rnd() > w) continue;
+      const y = this._plantY(x, z, _plant);
 
       // Autumn drift: broad patches turn from moss green through straw to rust.
       const dry = clamp(noise.fbm2(x * 0.021 + 41.3, z * 0.021 - 17.7, 3) * 0.5 + 0.5, 0, 1);
@@ -1836,7 +1955,7 @@ export class FoliageSystem {
       b[o + 2] = 0.42 + rnd() * 0.48;                 // stiffness
       b[o + 3] = rnd();                               // phase
       c[o] = col.r * shade; c[o + 1] = col.g * shade; c[o + 2] = col.b * shade;
-      c[o + 3] = 0;
+      c[o + 3] = _plant.sag;
       n++;
     }
 
@@ -2419,13 +2538,22 @@ ${WIND_GLSL}
   toCam = len > 1e-4 ? toCam / len : vec3( 0.0, 0.0, 1.0 );
   vec3 right = vec3( toCam.z, 0.0, -toCam.x );
 
-  vKagFade = smoothstep( uFadeNear.x, uFadeNear.y, len ) * ( 1.0 - smoothstep( uFadeFar.x, uFadeFar.y, len ) );
+  float fade = smoothstep( uFadeNear.x, uFadeNear.y, len ) * ( 1.0 - smoothstep( uFadeFar.x, uFadeFar.y, len ) );
+  // Per-tree dissolve rather than a screen-door dither: nothing downstream resolves a
+  // stipple, so a card at half fade used to render as a checkerboard of the tree.
+  float thr = fract( aFoliageB.w * 31.7 + 0.137 );
+  float grow = smoothstep( thr * 0.72, thr * 0.72 + 0.28, fade );
+  vKagFade = grow > 0.0 ? 1.0 : 0.0;
   vKagTint = aFoliageC.rgb;
   vMapUv = vec2( 0.0 );
 
-  if ( vKagFade <= 0.0 ) {
+  if ( grow <= 0.0 ) {
     kagPosG = base;      // degenerate: never rasterised
   } else {
+  // Shrink toward the base, not the card centre, or a dissolving tree lifts off the hill.
+  float shrink = mix( 0.62, 1.0, grow );
+  size *= shrink;
+  yOff *= shrink;
 
   // Even a distant grove has to breathe on the same front as the near culms.
   vec3 w = kagerouBend( base, 1.0, 2.4 );
@@ -2457,16 +2585,13 @@ ${WIND_GLSL}
 
       shader.fragmentShader = shader.fragmentShader
         .replace('#include <common>', '#include <common>\n' +
-          'uniform vec3 uSunColor;\nvarying float vKagFade;\nvarying vec3 vKagTint;\n' +
-          'float kagBayer2( vec2 a ) { a = floor( a ); return fract( a.x * 0.5 + a.y * a.y * 0.75 ); }\n' +
-          '#define kagBayer4( a ) ( kagBayer2( 0.5 * ( a ) ) * 0.25 + kagBayer2( a ) )\n' +
-          '#define kagBayer8( a ) ( kagBayer4( 0.5 * ( a ) ) * 0.25 + kagBayer2( a ) )')
+          'uniform vec3 uSunColor;\nvarying float vKagFade;\nvarying vec3 vKagTint;')
         .replace('#include <clipping_planes_fragment>',
-          '#include <clipping_planes_fragment>\nif ( vKagFade < kagBayer8( gl_FragCoord.xy ) ) discard;')
+          '#include <clipping_planes_fragment>\nif ( vKagFade <= 0.0 ) discard;')
         .replace('#include <map_fragment>',
           '#include <map_fragment>\ndiffuseColor.rgb *= vKagTint * mix( vec3( 1.0 ), uSunColor, 0.55 );');
     });
-    chainCacheKey(mat, 'kagimpostor1');
+    chainCacheKey(mat, 'kagimpostor2');
 
     this.ctx.sky?.applyFog?.(mat);
     this._materials.push(mat);
@@ -2619,15 +2744,19 @@ ${WIND_GLSL}
     const fernOpts = {
       name: 'fern', mode: 0, map: this.tex.fern, color: 0xffffff,
       bendExp: 2.1, bendGain: 0.85, flutter: 1.0, alphaTest: 0.40,
-      fadeFar: [radius * 0.85, radius], size: [1, 1],
-      sss: 1.35, sssColor: 0xa8c86a, tipGlow: 0.20, baseAO: 0.42, grain: 0.20,
+      fadeFar: [radius * 0.85, radius], size: [1, 1], sink: true,
+      sss: 1.35, sssColor: 0xa8c86a, sssFloor: 0.45,
+      tipGlow: 0.20, baseAO: 0.42, grain: 0.20, broad: 0.14,
     };
     const susukiOpts = {
       name: 'susuki', mode: 0, map: this.tex.susuki, color: 0xffffff,
       bendExp: 2.2, bendGain: 1.15, flutter: 1.25, alphaTest: 0.18,
-      fadeFar: [radius * 1.35, radius * 1.6], size: [1, 1],
-      // The whole point of susuki is that a low sun blows straight through the plume.
-      sss: 2.6, sssColor: 0xf0e2c0, tipGlow: 0.45, baseAO: 0.30, grain: 0.10,
+      fadeFar: [radius * 1.35, radius * 1.6], size: [1, 1], sink: true,
+      // The whole point of susuki is that a low sun blows straight through the plume, so
+      // it runs the highest transmission floor in the file: the blade strip is an opaque,
+      // dark texture and without the floor the money shot renders as black paper.
+      sss: 2.6, sssColor: 0xf0e2c0, sssFloor: 0.58,
+      tipGlow: 0.45, baseAO: 0.30, grain: 0.10, broad: 0.16,
     };
     const shadows = !!q.foliageShadows;
     const fernMat = this._makeMaterial(fernOpts);
@@ -2642,11 +2771,11 @@ ${WIND_GLSL}
         const ang = rnd() * Math.PI * 2;
         const r = Math.sqrt(rnd()) * cfg.far;
         const x = Math.cos(ang) * r, z = Math.sin(ang) * r;
-        const y = this._heightAt(x, z);
-        const w = this._siteWeight(x, z, y);
+        const w = this._siteWeight(x, z, this._heightAt(x, z));
         if (w <= 0.05 || rnd() > w * cfg.bias) continue;
         const clump = clamp(noise.fbm2(x * cfg.scale + cfg.seed, z * cfg.scale, 3) * 0.5 + 0.5, 0, 1);
         if (rnd() > Math.pow(clump, cfg.clumpPow)) continue;
+        const y = this._plantY(x, z, _plant);
         const h = cfg.hMin + rnd() * (cfg.hMax - cfg.hMin);
         const o = n * 4;
         a[o] = x; a[o + 1] = y; a[o + 2] = z; a[o + 3] = rnd() * Math.PI * 2;
@@ -2655,7 +2784,8 @@ ${WIND_GLSL}
         b[o + 3] = rnd();
         _colScratch.set(cfg.color).lerp(AUTUMN_B, rnd() * cfg.dry);
         const v = 0.82 + rnd() * 0.34;
-        c[o] = _colScratch.r * v; c[o + 1] = _colScratch.g * v; c[o + 2] = _colScratch.b * v; c[o + 3] = 0;
+        c[o] = _colScratch.r * v; c[o + 1] = _colScratch.g * v; c[o + 2] = _colScratch.b * v;
+        c[o + 3] = _plant.sag;
         n++;
       }
       const mesh = this._makeBatchMesh(geo, mat, depth, Math.max(1, n), shadows && cfg.shadow);
@@ -2690,8 +2820,8 @@ ${WIND_GLSL}
     const opts = {
       name: 'ground-cards', mode: 0, map: this.tex.fallen, color: 0xffffff,
       bendExp: 2.0, bendGain: 0.06, flutter: 0.25, alphaTest: 0.34,
-      fadeFar: [radius * 0.82, radius], size: [1, 1],
-      sss: 0.35, sssColor: 0xd8a068, tipGlow: 0.06, baseAO: 0.10, grain: 0.24,
+      fadeFar: [radius * 0.82, radius], size: [1, 1], sink: true,
+      sss: 0.35, sssColor: 0xd8a068, sssFloor: 0.25, tipGlow: 0.06, baseAO: 0.10, grain: 0.24,
     };
     const mat = this._makeMaterial(opts);
 
@@ -2707,23 +2837,26 @@ ${WIND_GLSL}
       const ang = rnd() * Math.PI * 2;
       const r = Math.sqrt(rnd()) * radius * 1.6;
       const x = Math.cos(ang) * r, z = Math.sin(ang) * r;
-      const y = this._heightAt(x, z);
-      if (y < WORLD.WATER_LEVEL + 0.2) continue;
+      if (this._heightAt(x, z) < WORLD.WATER_LEVEL + 0.2) continue;
       const surf = this._surfaceAt(x, z);
       if (surf === 'water') continue;
       if (this._slopeAt(x, z) > 0.55) continue;
+      const y = this._plantY(x, z, _plant);
       // Leaves collect where the ground dips and against the courtyard edge.
       const drift = clamp(noise.fbm2(x * 0.05 + 4.4, z * 0.05 - 2.2, 3) * 0.5 + 0.5, 0, 1);
       if (rnd() > 0.18 + drift * 0.9) continue;
 
       const o = n * 4;
-      a[o] = x; a[o + 1] = y + 0.012; a[o + 2] = z; a[o + 3] = rnd() * Math.PI * 2;
+      // A fallen leaf lies *on* the ground; it is the one thing here that must not be
+      // buried, so undo _plantY's bury and float it a centimetre clear of z-fighting.
+      a[o] = x; a[o + 1] = y + PLANT_BURY + 0.012; a[o + 2] = z; a[o + 3] = rnd() * Math.PI * 2;
       b[o] = 1.0; b[o + 1] = 0.55 + rnd() * 0.75;
       b[o + 2] = 3.0; b[o + 3] = rnd();
       const heat = rnd();
       _colScratch.copy(AUTUMN_B).lerp(AUTUMN_C, heat);
       const v = 0.78 + rnd() * 0.4;
-      c[o] = _colScratch.r * v; c[o + 1] = _colScratch.g * v; c[o + 2] = _colScratch.b * v; c[o + 3] = 0;
+      c[o] = _colScratch.r * v; c[o + 1] = _colScratch.g * v; c[o + 2] = _colScratch.b * v;
+      c[o + 3] = _plant.sag;
       n++;
     }
 
@@ -2985,7 +3118,16 @@ vCanopyG = cg;
       draws++;
       instances += m.geometry.instanceCount || 1;
     }
-    return { draws, instances, meshes, estimate: this._drawEstimate };
+    const p = this._placement;
+    return {
+      draws, instances, meshes, estimate: this._drawEstimate,
+      // Placement audit (see _plantY): `floating` must stay 0. Anything else means the
+      // measured clipmap chord deficit hit SINK_MAX and a plant may still be in the air.
+      planted: p ? p.planted : 0,
+      sunk: p ? p.sunk : 0,
+      maxSink: p ? +p.maxSink.toFixed(3) : 0,
+      floating: p ? p.floating : 0,
+    };
   }
 
   _recomputeDrawEstimate() {

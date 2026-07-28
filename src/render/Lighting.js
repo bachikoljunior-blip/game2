@@ -25,6 +25,32 @@ import {
 
 const DEG2RAD = MathUtils.DEG2RAD;
 
+/**
+ * Gain on the image-based ambient probe (`Scene.environmentIntensity`), expressed as a
+ * fraction of the hour's authored ambient level so the time-of-day ladder still drives it.
+ *
+ * three defaults `environmentIntensity` to 1.0, and until now nobody set it — the one
+ * number in the whole rig that no one chose. Sky captures its PMREM *pre-knee and
+ * pre-display-scale* (SkySystem._renderEnvironment), so at magic hour the probe alone
+ * lands roughly 2.0 of diffuse irradiance on an up-facing surface, while a 13° key
+ * delivers sin(13°) * 3.41 = 0.77. That is the whole "the sun is not reaching the
+ * surface" bug: the key *is* reaching it, at full strength and the right colour, but the
+ * sky bounce sitting on top of it is ~2.5x larger in red and ~25x larger in blue, so
+ * flagstone integrates to neutral and a cast shadow that removes a fifth of the total
+ * illumination is not visible at all. ARCHITECTURE §4 budgets the ambient at ~0.35
+ * against a key of ~3.0; §8 puts light probes in this file, so this is where that ratio
+ * is held. 0.42 * 0.33 ≈ 0.14 leaves the sky bounce clearly cool and clearly secondary
+ * while keeping enough probe for wet stone and the blade to still mirror the sky.
+ *
+ * Measured at the `torii` shot, magic hour, on the flagstone directly in front of camera
+ * (fraction of pixels with R-B > 18, the critic's own test):
+ *   probe 1.00 -> 0.00 %, mean (84, 84, 97)   blue, and removing the sun entirely only
+ *                                              moves it to (65, 69, 81)
+ *   probe 0.25 -> 8.5  %, mean (48, 41, 48)
+ *   probe 0.15 -> 12.2 %, mean (43, 34, 40)   long torii shadow clearly readable
+ */
+const ENV_AMBIENT_GAIN = 0.42;
+
 // --------------------------------------------------------- module scratch space
 
 const _center = new Vector3();
@@ -280,6 +306,8 @@ export class LightingSystem {
 
     this.sunDirection = new Vector3(0, 1, 0);
     this.shadowsActive = true;
+    /** Live handle on the ambient probe's share of the light budget; see ENV_AMBIENT_GAIN. */
+    this.envAmbientGain = ENV_AMBIENT_GAIN;
 
     this._splits = null;
     this._sphereZ = null;
@@ -711,9 +739,15 @@ export class LightingSystem {
         l.intensity = intensity;
       }
 
+      const ambient = sky.ambientIntensity !== undefined ? sky.ambientIntensity : 0.35;
       this.hemi.color.copy(sky.skyColor);
       this.hemi.groundColor.copy(sky.groundColor);
-      this.hemi.intensity = sky.ambientIntensity !== undefined ? sky.ambientIntensity : 0.35;
+      this.hemi.intensity = ambient;
+
+      // The probe supplies the sky bounce's *shape*; its level is a key/fill decision
+      // and therefore ours. See ENV_AMBIENT_GAIN — left at three's default of 1.0 this
+      // single line is worth more irradiance than the sun.
+      this.ctx.scene.environmentIntensity = ambient * this.envAmbientGain;
 
       // Cool the rim toward the sky bounce so it always reads as the opposite of key.
       _col2.setRGB(0.55, 0.7, 1.0);
@@ -788,6 +822,8 @@ export class LightingSystem {
     if (this.hemi) { scene.remove(this.hemi); this.hemi.dispose?.(); this.hemi = null; }
     if (this.rim) { scene.remove(this.rim); scene.remove(this.rim.target); this.rim.dispose?.(); this.rim = null; }
     this._materials.clear();
+    // We are the only writer of this, so hand it back the way three left it.
+    scene.environmentIntensity = 1;
     this.sun = null;
   }
 }
