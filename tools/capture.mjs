@@ -173,12 +173,18 @@ async function main() {
         } catch (e) { logs.push(`shot ${sname}: ${e.message}`); }
         await page.waitForTimeout(shot.wait);
         const file = join(OUT, `${pname}-${sname}${tag}.png`);
-        await page.screenshot({ path: file, type: 'png' });
-        shots[sname] = file;
+        // Playwright blocks the capture on `document.fonts.ready`, and the default 30 s
+        // is not enough while SwiftShader is saturating the one render thread. We load no
+        // webfonts, so this wait has nothing to find — it just needs room to resolve.
+        // One bad shot must not cost us the rest of the profile's set either.
+        try {
+          await page.screenshot({ path: file, type: 'png', timeout: 180000 });
+          shots[sname] = file;
+        } catch (e) { logs.push(`screenshot ${sname}: ${e.message}`); }
       }
     } else {
       const file = join(OUT, `${pname}-FAILED${tag}.png`);
-      await page.screenshot({ path: file, type: 'png' });
+      await page.screenshot({ path: file, type: 'png', timeout: 180000 }).catch(() => {});
       shots.FAILED = file;
     }
 

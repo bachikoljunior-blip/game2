@@ -459,59 +459,117 @@ export class Level {
       path.push({ g, zc });
     }
     for (const p of path) this._pushRaw(p.g, 'cobble', 'static');
-
-    // 玉砂利 the forecourt itself — flat, level, and the fight happens on it.
-    {
-      const a = LAYOUT.arena;
-      const g = new BoxGeometry(a.hx * 2 + 2.4, 0.18, a.hz * 2 + 2.4);
-      g.translate(a.x, this.groundY(a.x, a.z) + 0.05, a.z);
-      normalizeGeo(g);
-      this._shade(g, (x, yy, z) => 0.92 + noise.fbm2(x * 0.35, z * 0.35, 3) * 0.12);
-      this._pushRaw(g, 'cobble', 'static');
-      this._collide(this._box(a.hx * 2 + 2.4, 0.2, a.hz * 2 + 2.4, a.x, this.groundY(a.x, a.z) - 0.05, a.z), 'gravel', true);
-    }
   }
 
-  _buildTorii() {
+  /** 玉砂利 the forecourt itself — flat, level, and the fight happens on it. */
+  _buildForecourt() {
+    const a = LAYOUT.arena;
+    const g = new BoxGeometry(a.hx * 2 + 2.4, 0.18, a.hz * 2 + 2.4);
+    g.translate(a.x, this.groundY(a.x, a.z) + 0.05, a.z);
+    normalizeGeo(g);
+    this._shade(g, (x, yy, z) => 0.92 + noise.fbm2(x * 0.35, z * 0.35, 3) * 0.12);
+    this._pushRaw(g, 'cobble', 'static');
+    this._collide(this._box(a.hx * 2 + 2.4, 0.2, a.hz * 2 + 2.4, a.x, this.groundY(a.x, a.z) - 0.05, a.z), 'gravel', true);
+  }
+
+  _buildTorii(i) {
     const f = this.factory;
-    const q = this.ctx?.quality;
-    for (let i = 0; i < LAYOUT.torii.length; i++) {
-      const t = LAYOUT.torii[i];
-      const build = f.torii({ height: t.height, span: t.span, seed: 700 + i * 13 });
-      const y = this.groundY(0, t.z);
-      _m.makeRotationY(0);
-      _m.setPosition(0, y, t.z);
-      const mat = _m.clone();
-      this._emit(build, mat);
+    const t = LAYOUT.torii[i];
+    const build = f.torii({ height: t.height, span: t.span, seed: 700 + i * 13 });
+    const y = this.groundY(0, t.z);
+    _m.makeRotationY(0);
+    _m.setPosition(0, y, t.z);
+    this._emit(build, _m.clone());
 
-      // 注連縄 strung under the nuki of the two larger gates.
-      if (i >= 1) {
-        const a = build.anchors;
-        const span = Math.abs(a.ropeRight[0] - a.ropeLeft[0]);
-        const rope = f.shimenawa({
-          span: span * 0.98, sag: 0.10 * t.height, radius: 0.045 * t.height,
-          shide: 5, seed: 900 + i,
-        });
-        _m.makeRotationY(0);
-        _m.setPosition(0, y + a.ropeLeft[1], t.z + 0.02);
-        this._emit(rope, _m.clone());
-      }
+    // 注連縄 strung under the nuki of the two larger gates.
+    if (i >= 1) {
+      const a = build.anchors;
+      const span = Math.abs(a.ropeRight[0] - a.ropeLeft[0]);
+      const rope = f.shimenawa({
+        span: span * 0.98, sag: 0.10 * t.height, radius: 0.045 * t.height,
+        shide: 5, seed: 900 + i,
+      });
+      _m.makeRotationY(0);
+      _m.setPosition(0, y + a.ropeLeft[1], t.z + 0.02);
+      this._emit(rope, _m.clone());
     }
   }
 
-  _buildHaiden() {
-    const L = LAYOUT.haiden;
-    const build = this.factory.hall({
-      width: L.w, depth: L.d, floorY: L.floor, wallH: 3.3,
-      veranda: 1.15, eaveOut: 2.05, rise: 3.5,
-      roofMaterial: 'roofTile', wallMaterial: 'plaster',
-      hip: 0.5, seed: 11, segX: 9, segZ: 6,
-    });
-    this._emit(build, this._ground(L.x, L.z, 0));
+  /**
+   * A hall is 80–110 ms of geometry in one call, so it goes in as four tasks.
+   * `optsFn` returns `{ x, z, ry, hall }`; the anchors of the last stage are
+   * stashed so follow-up tasks (hanging lanterns) can hang things off the eaves.
+   */
+  _hallTasks(T, label, optsFn) {
+    const stages = [['frame'], ['walls'], ['brackets'], ['roof', 'silhouette']];
+    for (const s of stages) {
+      T(`${label} · ${s[0]}`, () => {
+        const o = optsFn();
+        const build = this.factory.hall(Object.assign({}, o.hall, { stages: s }));
+        this._emit(build, this._ground(o.x, o.z, o.ry || 0));
+        this._hallAnchors = this._hallAnchors || {};
+        this._hallAnchors[label] = build.anchors;
+      });
+    }
+  }
 
-    // A row of chōchin under the front eave — the lit line that reads at dusk.
+  _haidenOpts() {
+    const L = LAYOUT.haiden;
+    return {
+      x: L.x, z: L.z, ry: 0,
+      hall: {
+        width: L.w, depth: L.d, floorY: L.floor, wallH: 3.3,
+        veranda: 1.15, eaveOut: 2.05, rise: 3.5,
+        roofMaterial: 'roofTile', wallMaterial: 'plaster',
+        hip: 0.5, seed: 11, segX: 9, segZ: 6,
+      },
+    };
+  }
+
+  _hondenOpts() {
+    const L = LAYOUT.honden;
+    return {
+      x: L.x, z: L.z, ry: 0,
+      hall: {
+        width: L.w, depth: L.d, floorY: L.floor, wallH: 2.8,
+        veranda: 0.85, eaveOut: 1.85, rise: 3.2,
+        roofMaterial: 'cedar', soffitMaterial: 'cedar', wallMaterial: 'plaster',
+        hip: 0.42, seed: 23, segX: 7, segZ: 5,
+      },
+    };
+  }
+
+  _kaguraOpts() {
+    const K = LAYOUT.kagura;
+    return {
+      x: K.x, z: K.z, ry: Math.PI * 0.5,
+      hall: {
+        width: K.w, depth: K.d, floorY: K.floor, wallH: 2.5, open: true,
+        veranda: 0.7, eaveOut: 1.7, rise: 2.7, roofMaterial: 'cedar',
+        hip: 0.6, shrineRidge: false, seed: 31, segX: 6, segZ: 5,
+      },
+    };
+  }
+
+  _shamushoOpts() {
+    const S = LAYOUT.shamusho;
+    return {
+      x: S.x, z: S.z, ry: -Math.PI * 0.5,
+      hall: {
+        width: S.w, depth: S.d, floorY: S.floor, wallH: 2.5,
+        veranda: 0.6, eaveOut: 1.35, rise: 2.2, roofMaterial: 'roofTile',
+        hip: 0.28, shrineRidge: false, seed: 37, segX: 6, segZ: 4,
+      },
+    };
+  }
+
+  /** A row of chōchin under the haiden's front eave — the lit line that reads at dusk. */
+  _buildHaidenLanterns() {
+    const L = LAYOUT.haiden;
+    const anchors = this._hallAnchors?.haiden;
+    const eaveY = anchors ? anchors.eaveFront[1] : L.floor + 4.6;
     const proto = this._proto('chochin', () => this.factory.hangingLantern({}), { castShadow: false });
-    const y = this.groundY(L.x, L.z) + build.anchors.eaveFront[1] - 0.15;
+    const y = this.groundY(L.x, L.z) + eaveY - 0.15;
     const n = 7;
     for (let i = 0; i < n; i++) {
       const x = lerp(-L.w * 0.42, L.w * 0.42, i / (n - 1));
@@ -525,17 +583,9 @@ export class Level {
     });
   }
 
-  _buildHonden() {
+  /** 玉垣 the inner fence that keeps you out of the sanctuary, with a gateway. */
+  _buildHondenFence() {
     const L = LAYOUT.honden;
-    const build = this.factory.hall({
-      width: L.w, depth: L.d, floorY: L.floor, wallH: 2.8,
-      veranda: 0.85, eaveOut: 1.85, rise: 3.2,
-      roofMaterial: 'cedar', soffitMaterial: 'cedar', wallMaterial: 'plaster',
-      hip: 0.42, seed: 23, segX: 7, segZ: 5,
-    });
-    this._emit(build, this._ground(L.x, L.z, 0));
-
-    // 玉垣 the inner fence that keeps you out of the sanctuary, with a gateway.
     const fx = L.w * 0.5 + 2.6, fz0 = L.z - L.d * 0.5 - 2.4, fz1 = L.z + L.d * 0.5 + 2.6;
     const fence = this.factory.tamagaki({
       points: [
