@@ -1697,13 +1697,8 @@ export class PropFactory {
     }
 
     // ---- corner columns and walls ------------------------------------------
-    const colR = 0.20;
-    const colTop = floorY + wallH;
     const cols = [];
-    const colXs = [];
-    const colCount = Math.max(2, Math.round(w / 2.4));
-    for (let i = 0; i <= colCount; i++) colXs.push(lerp(-hw, hw, i / colCount));
-    for (const cx of colXs) {
+    if (want('frame')) for (const cx of colXs) {
       for (const cz of [-hd, hd]) {
         cols.push(sweepProfile([
           { x: cx, y: floorY, z: cz, sx: colR * 2.05, sy: colR * 2.05, ao: 0.6 },
@@ -1714,7 +1709,7 @@ export class PropFactory {
     const colZs = [];
     const colZCount = Math.max(2, Math.round(d / 2.4));
     for (let j = 1; j < colZCount; j++) colZs.push(lerp(-hd, hd, j / colZCount));
-    for (const cz of colZs) {
+    if (want('frame')) for (const cz of colZs) {
       for (const cx of [-hw, hw]) {
         cols.push(sweepProfile([
           { x: cx, y: floorY, z: cz, sx: colR * 2.05, sy: colR * 2.05, ao: 0.6 },
@@ -1722,14 +1717,14 @@ export class PropFactory {
         ], circleProfile(10), { smooth: true, uvScale: 1.0, capStart: false, capEnd: false }));
       }
     }
-    {
+    if (cols.length) {
       const merged = mergeGeometries(cols, false);
       bakeAO(merged, { ground: 0, cavity: 0.2, down: 0.3, floor: 0.34 });
       weatherBand(merged, floorY, floorY + 0.7, 0.78, 0.76, 0.72, 0.25);
       PropFactory.add(b, merged, 'cedar');
     }
 
-    if (!open) {
+    if (!open && want('walls')) {
       const panels = [];
       const shoji = [];
       const lattice = [];
@@ -1774,7 +1769,7 @@ export class PropFactory {
       PropFactory.addCollider(b, PropFactory.boxCollider(0.4, wallH, d, hw, floorY, 0), 'wood');
       PropFactory.addCollider(b, PropFactory.boxCollider(w * 0.36, wallH, 0.4, -w * 0.32, floorY, hd), 'wood');
       PropFactory.addCollider(b, PropFactory.boxCollider(w * 0.36, wallH, 0.4, w * 0.32, floorY, hd), 'wood');
-    } else {
+    } else if (open && want('walls')) {
       PropFactory.addCollider(b, PropFactory.boxCollider(0.5, wallH, 0.5, -hw, floorY, -hd), 'wood');
       PropFactory.addCollider(b, PropFactory.boxCollider(0.5, wallH, 0.5, hw, floorY, -hd), 'wood');
       PropFactory.addCollider(b, PropFactory.boxCollider(0.5, wallH, 0.5, -hw, floorY, hd), 'wood');
@@ -1782,7 +1777,7 @@ export class PropFactory {
     }
 
     // ---- head beam (nageshi) + bracket complex -----------------------------
-    {
+    if (want('brackets')) {
       const beams = [];
       const by = colTop + 0.14;
       const mk = (w2, h2, d2, x, y, z) => {
@@ -1822,8 +1817,7 @@ export class PropFactory {
     }
 
     // ---- roof ---------------------------------------------------------------
-    const roofBase = colTop + 0.72;
-    const roof = this.roofIrimoya({
+    const roof = want('roof') ? this.roofIrimoya({
       halfX: hw + eaveOut, halfZ: hd + eaveOut,
       rise, baseY: roofBase, material: roofMat,
       lift: Math.min(hw, hd) * 0.14,
@@ -1831,11 +1825,15 @@ export class PropFactory {
       segX: opts.segX ?? 8, segZ: opts.segZ ?? 5,
       thickness: 0.24,
       gableMaterial: opts.gableMaterial ?? 'cedar',
-    });
+    }) : {
+      // Analytic stand-in so anchors stay correct when the roof stage is skipped.
+      parts: [], ridgeY: roofBase + rise,
+      ridgeHalfX: Math.max((hw + eaveOut) * 0.18, (hw + eaveOut) - (hd + eaveOut) * 0.60),
+    };
     for (const p of roof.parts) PropFactory.add(b, p.geometry, p.material);
 
     // ---- 千木 chigi and 鰹木 katsuogi ---------------------------------------
-    if (shrineRidge) {
+    if (shrineRidge && want('roof')) {
       const ridgeY = roof.ridgeY + 0.16;
       const finials = [];
       for (let side = 0; side < 2; side++) {
@@ -1867,7 +1865,7 @@ export class PropFactory {
     }
 
     // ---- entrance stair ------------------------------------------------------
-    {
+    if (want('frame')) {
       const st = this.stairs({
         width: Math.min(2.6, w * 0.34), steps: Math.max(2, Math.round(floorY / 0.19)),
         rise: floorY / Math.max(2, Math.round(floorY / 0.19)), run: 0.34,
@@ -1882,7 +1880,9 @@ export class PropFactory {
     b.anchors.ridge = [0, roof.ridgeY, 0];
     b.anchors.eaveFront = [0, roofBase, hd + eaveOut];
     b.bounds = { r: Math.hypot(hw + eaveOut, hd + eaveOut), h: roof.ridgeY + 1.6 };
-    b.silhouette = this._hallSilhouette(w, d, floorY, colTop, roofBase, rise, eaveOut, roofMat);
+    if (want('silhouette')) {
+      b.silhouette = this._hallSilhouette(w, d, floorY, colTop, roofBase, rise, eaveOut, roofMat);
+    }
     return b;
   }
 

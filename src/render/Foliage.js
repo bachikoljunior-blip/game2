@@ -1500,16 +1500,16 @@ export class FoliageSystem {
       for (const k in shared) shader.uniforms[k] = shared[k];
       for (const k in local) shader.uniforms[k] = local[k];
       shader.vertexShader = shader.vertexShader
-        .replace('#include <common>', '#include <common>\n' + defines + pars +
-          '\nvarying float vKagFadeD;')
-        .replace('#include <begin_vertex>', 'kagFoliageVertex();\nvKagFadeD = vKagFade;\nvec3 transformed = kagPosG;');
+        .replace('#include <common>', '#include <common>\n' + defines + pars)
+        .replace('#include <begin_vertex>', 'kagFoliageVertex();\nvec3 transformed = kagPosG;');
       shader.fragmentShader = shader.fragmentShader
-        .replace('#include <common>', '#include <common>\nvarying float vKagFadeD;\n' +
+        .replace('#include <common>', '#include <common>\nvarying float vKagFade;\n' +
           'float kagBayer2( vec2 a ) { a = floor( a ); return fract( a.x * 0.5 + a.y * a.y * 0.75 ); }\n' +
           '#define kagBayer4( a ) ( kagBayer2( 0.5 * ( a ) ) * 0.25 + kagBayer2( a ) )\n' +
           '#define kagBayer8( a ) ( kagBayer4( 0.5 * ( a ) ) * 0.25 + kagBayer2( a ) )')
+        // The shadow must fade out with the blade or a culled LOD keeps casting.
         .replace('#include <clipping_planes_fragment>',
-          '#include <clipping_planes_fragment>\nif ( vKagFadeD < kagBayer8( gl_FragCoord.xy ) ) discard;');
+          '#include <clipping_planes_fragment>\nif ( vKagFade < kagBayer8( gl_FragCoord.xy ) ) discard;');
     });
     chainCacheKey(depth, `kagfold|${mode}|${bendExp}|${whip}`);
     this._materials.push(depth);

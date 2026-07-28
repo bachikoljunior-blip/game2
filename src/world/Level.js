@@ -185,14 +185,21 @@ export class Level {
     const T = (label, fn) => tasks.push([label, fn]);
 
     T('terrain probe', () => this._probeGround());
-    T('approach stair', () => this._buildApproach());
-    T('torii', () => this._buildTorii());
-    T('haiden', () => this._buildHaiden());
-    T('honden', () => this._buildHonden());
-    T('side halls', () => this._buildSideHalls());
+    T('approach stair', () => this._buildStairFlight(0));
+    T('approach stair', () => this._buildStairFlight(1));
+    T('the sandō', () => this._buildPath());
+    T('the forecourt', () => this._buildForecourt());
+    for (let i = 0; i < LAYOUT.torii.length; i++) T('torii', () => this._buildTorii(i));
+    this._hallTasks(T, 'haiden', () => this._haidenOpts());
+    T('lanterns of the haiden', () => this._buildHaidenLanterns());
+    this._hallTasks(T, 'honden', () => this._hondenOpts());
+    T('tamagaki', () => this._buildHondenFence());
+    this._hallTasks(T, 'kagura-den', () => this._kaguraOpts());
+    this._hallTasks(T, 'shamusho', () => this._shamushoOpts());
     T('bell tower', () => this._buildBellTower());
     T('chōzuya', () => this._buildChozuya());
-    T('fences', () => this._buildFences());
+    T('fences', () => this._buildFences(0));
+    T('fences', () => this._buildFences(1));
     T('overlook', () => this._buildOverlook());
     T('bridge', () => this._buildBridge());
     T('sacred trees', () => this._buildTrees());
@@ -399,43 +406,44 @@ export class Level {
   //  COMPOSITION
   // =====================================================================
 
-  _buildApproach() {
-    const f = this.factory;
+  /** The stair descends in two flights with a landing, so the climb has a beat. */
+  _flights() {
+    if (this._flightCache) return this._flightCache;
     const topZ = LAYOUT.stairTop;
     const botZ = LAYOUT.stairBottom;
     const yTop = this.groundY(0, topZ);
-    const yBot = this.groundY(0, botZ);
-    const drop = Math.max(1.4, yTop - yBot);
+    const drop = Math.max(1.6, yTop - this.groundY(0, botZ));
+    const a = { z: topZ, drop: drop * 0.52, width: 5.0, y: yTop };
+    a.steps = Math.max(3, Math.round(a.drop / 0.185));
+    const b = { z: topZ + (botZ - topZ) * 0.58, drop: drop * 0.48, width: 5.6, y: yTop - a.drop };
+    b.steps = Math.max(3, Math.round(b.drop / 0.185));
+    this._flightCache = [a, b];
+    return this._flightCache;
+  }
 
-    // Two flights with a landing, so the climb has a beat in it.
-    const flights = [
-      { z: topZ, drop: drop * 0.52, width: 5.0 },
-      { z: topZ + (botZ - topZ) * 0.58, drop: drop * 0.48, width: 5.6 },
-    ];
-    let y = yTop;
-    for (let i = 0; i < flights.length; i++) {
-      const fl = flights[i];
-      const steps = Math.max(3, Math.round(fl.drop / 0.185));
-      const rise = fl.drop / steps;
-      const st = f.stairs({
-        width: fl.width, steps, rise, run: 0.38, wear: 1.2,
-        material: 'stone', cheeks: true, seed: 300 + i * 7,
-      });
-      _m.identity();
-      _m.setPosition(0, y - fl.drop, fl.z);
-      this._emit(st, _m.clone());
-      y -= fl.drop;
-      // Landing slab between flights.
-      if (i < flights.length - 1) {
-        const zA = fl.z + steps * 0.38;
-        const g = new BoxGeometry(fl.width + 1.2, 0.34, 2.2);
-        g.translate(0, y - 0.17, zA + 1.1);
-        normalizeGeo(g);
-        this._pushRaw(g, 'cobble', 'static');
-        this._collide(this._box(fl.width + 1.2, 0.34, 2.2, 0, y - 0.34, zA + 1.1), 'stone', true);
-      }
+  _buildStairFlight(i) {
+    const fl = this._flights()[i];
+    const st = this.factory.stairs({
+      width: fl.width, steps: fl.steps, rise: fl.drop / fl.steps, run: 0.38, wear: 1.2,
+      material: 'stone', cheeks: true, seed: 300 + i * 7,
+    });
+    _m.identity();
+    _m.setPosition(0, fl.y - fl.drop, fl.z);
+    this._emit(st, _m.clone());
+
+    if (i === 0) {
+      const zA = fl.z + fl.steps * 0.38;
+      const y = fl.y - fl.drop;
+      const g = new BoxGeometry(fl.width + 1.2, 0.34, 2.2);
+      g.translate(0, y - 0.17, zA + 1.1);
+      normalizeGeo(g);
+      this._pushRaw(g, 'cobble', 'static');
+      this._collide(this._box(fl.width + 1.2, 0.34, 2.2, 0, y - 0.34, zA + 1.1), 'stone', true);
     }
+  }
 
+  _buildPath() {
+    const topZ = LAYOUT.stairTop;
     // 参道 the gravel approach path from the stair head to the forecourt.
     const path = [];
     const segs = 9;

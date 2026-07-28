@@ -35,7 +35,7 @@ import {
   DataTexture, DoubleSide, FloatType, FrontSide, HalfFloatType, LinearFilter,
   LinearMipmapLinearFilter, Mesh, MeshDepthMaterial, MeshStandardMaterial,
   NearestFilter, NoColorSpace, Object3D, RGBADepthPacking, RGBAFormat, RedFormat,
-  RepeatWrapping, ShaderMaterial, UnsignedByteType, Vector2, Vector3, Vector4, BackSide,
+  RepeatWrapping, ShaderMaterial, Sphere, UnsignedByteType, Vector2, Vector3, Vector4, BackSide,
 } from 'three';
 
 import { noise, clamp, lerp, smoothstep, smootherstep, makeRandom, glslNoise } from '../core/Noise.js';
@@ -1597,9 +1597,8 @@ void kgComputeSurface(){
     geo.setIndex(new BufferAttribute(idx, 1));
     // The vertex shader moves everything; a real bounding sphere would be a lie, and
     // a small one would let three cull the terrain out from under the camera.
-    geo.boundingSphere = null;
     geo.computeBoundingSphere = function () {
-      if (!this.boundingSphere) this.boundingSphere = { center: new Vector3(), radius: 1e7 };
+      if (!this.boundingSphere) this.boundingSphere = new Sphere();
       this.boundingSphere.center.set(0, 0, 0);
       this.boundingSphere.radius = 1e7;
     };
@@ -1879,6 +1878,7 @@ void main(){
     mesh.updateMatrix();
     this.water = mesh;
     this.waterMaterial = mat;
+    this._waterQ = wq;
     this.group.add(mesh);
   }
 
@@ -2064,6 +2064,10 @@ void main(){
 
   dispose() {
     this._disposed = true;
+    // update() early-outs on a null material, so an in-flight frame after disposal
+    // cannot touch freed GPU objects.
+    const mat = this.material;
+    this.material = null;
     this.ctx.scene.remove(this.group);
     for (const m of this.rings) this.group.remove(m);
     this.rings.length = 0;
@@ -2071,7 +2075,7 @@ void main(){
     this.ringGeo?.dispose();
     this.water?.geometry.dispose();
     this.band?.geometry.dispose();
-    this.material?.dispose();
+    mat?.dispose();
     this.depthMaterial?.dispose();
     this.waterMaterial?.dispose();
     this.bandMaterial?.dispose();
