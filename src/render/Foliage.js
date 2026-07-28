@@ -1210,14 +1210,14 @@ function paintBambooClump(w, h, spec, seed) {
       // with no stalk in the silhouette, which is the failure this whole card exists to fix.
       const len = h * spec.sprayLen * (0.55 + rnd() * 0.70) * (0.72 + t * 0.50);
       const wid = len * (0.10 + rnd() * 0.05);
-      const shade = k * (0.66 + rnd() * 0.44);
+      const shade = k * (0.72 + rnd() * 0.40);
       // Kept genuinely green and genuinely light. Under the magic-hour sun the ambient
       // path is the only one that can come out green-dominant, and it can only do that
       // if the albedo it multiplies is not near-black.
-      const cA = `rgb(${(56 * shade) | 0},${(92 * shade) | 0},${(44 * shade) | 0})`;
+      const cA = `rgb(${(70 * shade) | 0},${(110 * shade) | 0},${(52 * shade) | 0})`;
       const cB = rnd() < 0.18
-        ? `rgb(${(186 * shade) | 0},${(178 * shade) | 0},${(96 * shade) | 0})`   // an old, yellowed blade
-        : `rgb(${(126 * shade) | 0},${(174 * shade) | 0},${(84 * shade) | 0})`;
+        ? `rgb(${(198 * shade) | 0},${(188 * shade) | 0},${(104 * shade) | 0})`  // an old, yellowed blade
+        : `rgb(${(148 * shade) | 0},${(196 * shade) | 0},${(102 * shade) | 0})`;
       g.save();
       g.translate(sx + (rnd() - 0.5) * w * 0.02, sy + (rnd() - 0.5) * h * 0.006);
       // Mirror rather than rotate through pi: rotating would carry the droop *upward* on
@@ -1229,7 +1229,7 @@ function paintBambooClump(w, h, spec, seed) {
     }
   }
 
-  // The two nearest culms again, in front of the foliage. A stand seen from outside always
+  // The nearest three culms again, in front of the foliage. A stand seen from outside always
   // has stems crossing the leaf mass, and those pale verticals are the entire reason this
   // silhouette says "bamboo" at 120 m rather than "dark shrub".
   for (let i = culms.length - 1; i >= Math.max(0, culms.length - 3); i--) strokeCulm(culms[i], 0.9);
@@ -1267,26 +1267,43 @@ function paintBambooCard(cellW, cellH) {
   return c;
 }
 
-/** Bamboo leaf cluster — long, narrow, drooping, radiating from one point. */
+/**
+ * The leaf cluster hung on a *near* culm (KAG_MODE 1, inside 38 m). It shares the mid-
+ * ground card's vocabulary — the same weeping blades and the same palette — so walking
+ * from the overlook down into the sea never crosses a seam where the bamboo changes
+ * species. The old version fanned fifteen straight lanceolate blades out of one point,
+ * which is a thistle from any distance at which you cannot count them.
+ */
 function paintBambooLeaves(size) {
   const c = newCanvas(size, size);
   const g = c.getContext('2d');
   g.clearRect(0, 0, size, size);
   const rnd = makeRandom(2205);
-  g.translate(size * 0.5, size * 0.62);
-  for (let i = 0; i < 15; i++) {
-    const a = -Math.PI * 0.5 + (rnd() - 0.5) * 2.5;
-    const len = size * (0.30 + rnd() * 0.28);
-    const wid = size * (0.020 + rnd() * 0.018);
+  // Canvas +y is down, and flipY carries that straight through to down on the card.
+  const ax = size * 0.5, ay = size * 0.34;
+  // The twig the cluster hangs from.
+  g.strokeStyle = 'rgba(146,158,96,0.85)';
+  g.lineCap = 'round';
+  g.lineWidth = Math.max(1, size * 0.014);
+  g.beginPath(); g.moveTo(ax, size * 0.06); g.lineTo(ax, ay + size * 0.06); g.stroke();
+
+  for (let i = 0; i < 22; i++) {
+    const side = rnd() < 0.5 ? -1 : 1;
+    const a = (0.20 + rnd() * 1.25) * (rnd() < 0.22 ? -0.40 : 1.0);
+    const len = size * (0.26 + rnd() * 0.30);
+    const wid = len * (0.10 + rnd() * 0.05);
+    const shade = 0.72 + rnd() * 0.40;
+    const cA = `rgb(${(70 * shade) | 0},${(110 * shade) | 0},${(52 * shade) | 0})`;
+    const cB = rnd() < 0.16
+      ? `rgb(${(198 * shade) | 0},${(188 * shade) | 0},${(104 * shade) | 0})`
+      : `rgb(${(148 * shade) | 0},${(196 * shade) | 0},${(102 * shade) | 0})`;
     g.save();
+    g.translate(ax + (rnd() - 0.5) * size * 0.10, ay + rnd() * size * 0.14);
+    if (side < 0) g.scale(-1, 1);
     g.rotate(a);
-    const shade = 0.62 + rnd() * 0.38;
-    const cA = `rgb(${(46 * shade) | 0},${(84 * shade) | 0},${(40 * shade) | 0})`;
-    const cB = `rgb(${(96 * shade) | 0},${(140 * shade) | 0},${(62 * shade) | 0})`;
-    drawLeafShape(g, len, wid, cA, cB, true);
+    drawDroopLeaf(g, len, wid, cA, cB, 0.40 + rnd() * 0.55);
     g.restore();
   }
-  g.setTransform(1, 0, 0, 1, 0, 0);
   speckle(g, size, size, 0.26, 771);
   return c;
 }
@@ -2580,7 +2597,11 @@ export class FoliageSystem {
       name: 'bamboo-leaf', mode: 1, map: this.tex.bambooLeaf, color: 0xffffff,
       bendExp: 1.6, whip: 0.28, bendGain: 1.35, flutter: 1.6, alphaTest: 0.38,
       fadeFar: fadeOut(RANGE.bambooLeaf), size: [1, 1],
-      sss: 1.45, sssColor: 0xcfe07f, tipGlow: 0.18, baseAO: 0.22, grain: 0.16,
+      // Same transmission as the mid-ground card, for the same reason: a leaf held up to
+      // a low sun passes green, and at the 0.6 default desaturation the amber key turns
+      // that into another orange surface in a frame that already has too many.
+      sss: 1.9, sssColor: 0x5cc233, sssFloor: 0.45, sssSat: 0.92,
+      tipGlow: 0.18, baseAO: 0.22, grain: 0.16,
     };
     const leafMat = this._makeMaterial(leafOpts);
     const leafDepth = this._makeDepthMaterial(leafMat, leafOpts);
@@ -2602,7 +2623,11 @@ export class FoliageSystem {
       bendExp: 1.8, bendGain: 0.9, flutter: 0.6, alphaTest: 0.24,
       fadeNear: fadeIn(RANGE.bambooCard),
       fadeFar: fadeOut(RANGE.bambooCard),
-      size: [1, 1], sss: 1.6, sssColor: 0x86c24a, sssFloor: 0.52, sssSat: 0.95,
+      // 0x4fbf2e is not a leaf's reflectance, it is what a leaf *transmits*: chlorophyll
+      // absorbs red and blue hard, so at uSSSSat 0.95 the product with the (1, 0.41, 0.13)
+      // sun still lands green-dominant at G/R 1.8. Anything paler and the amber wins and
+      // the whole sea comes out orange again.
+      size: [1, 1], sss: 2.2, sssColor: 0x4fbf2e, sssFloor: 0.52, sssSat: 0.95,
       tipGlow: 0.20, baseAO: 0.16, grain: 0.10, broad: 0.20, tintAmount: 0.55,
     };
     const cardMat = this._makeMaterial(cardOpts);
@@ -2678,8 +2703,11 @@ export class FoliageSystem {
     const sample = (maxR) => {
       const a = rnd() * Math.PI * 2;
       const r = Math.sqrt(rnd()) * maxR;
-      // Bias toward the valley azimuth without ever becoming a visible wedge.
-      const bias = 0.55;
+      // Bias toward the valley without ever becoming a visible wedge. Deliberately under
+      // half: the shrine sits *in* the sea, so bamboo has to wrap the plateau below the
+      // lip on every side and only thicken toward the valley. At 0.55 it was a lobe, and
+      // the framings that look up the ridge (wide, torii) saw no bamboo at all.
+      const bias = 0.40;
       const x = Math.cos(a) * r * (1 - bias) + vx * r * bias + (rnd() - 0.5) * r * 0.6;
       const z = Math.sin(a) * r * (1 - bias) + vz * r * bias + (rnd() - 0.5) * r * 0.6;
       return [x, z];
@@ -2742,8 +2770,12 @@ export class FoliageSystem {
       }
     }
 
+    // The card fades out 190 m from the *camera* and no camera sits more than ~90 m from
+    // the origin, so a card past ~280 m can never be rasterised. Sampling to 420 spent
+    // more than half the budget on instances the frustum and the fade window both throw
+    // away; pulling the disc in concentrates the same count where the band is actually read.
     for (let i = 0; i < cardTarget * 3 && cn < cardTarget; i++) {
-      const [x, z] = sample(420);
+      const [x, z] = sample(260);
       const d = Math.hypot(x, z);
       if (d < RANGE.bambooCard[0] * 0.5) continue;
       const y = this._heightAt(x, z);
