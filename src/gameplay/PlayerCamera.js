@@ -31,6 +31,27 @@ const PIVOT_HEIGHT = 1.42;        // chest, not eyes — eye height makes the ca
 const SHOULDER = 0.44;
 const CAM_RADIUS = 0.22;          // sphere-cast probe
 
+/**
+ * Aperture is an f-number: **lower is shallower**. These are the only three
+ * values the camera ever hands to `pipeline.setFocus`.
+ *
+ * A third-person action camera is not a portrait lens. At f/1.15 on a 50 mm lens
+ * the circle of confusion runs ~15 px on the near ground and ~3 px across the mid
+ * and far field — only a ~0.4 m slab is sharp, which is narrower than the player
+ * character is tall. The character's head and feet cannot both resolve, and any
+ * enemy half a metre off the focal plane turns to mush. Gameplay therefore sits at
+ * f/5.6, which keeps the fighter and everyone they are fighting inside the sharp
+ * range while still separating the valley behind them.
+ *
+ * Shallow depth of field is a deliberate beat, not a default: the lock-on rack
+ * eases to f/4 and an execution close-up to f/2.8. PostFX clamps at f/2.4 as a
+ * backstop; nothing here should ever reach it.
+ */
+const APERTURE_GAMEPLAY = 5.6;
+const APERTURE_LOCK = 4.0;        // rack focus onto a locked duel
+const APERTURE_CINEMATIC = 2.8;   // execution / scripted close-up
+const APERTURE_NO_DOF = 8.0;      // DOF off — keep the value honest anyway
+
 const LOCK_ACQUIRE_DIST = 19;
 const LOCK_BREAK_DIST = 24;
 const LOCK_CONE = Math.cos(62 * DEG);
@@ -82,7 +103,9 @@ export class PlayerCamera {
     this.invertY = false;
     this.shakeScale = 1.0;
     this.shoulderSide = 1;                // +1 right shoulder, -1 mirrored
-    this.aperture = 1.15;
+    /** Gameplay f-number. Shallower values are opt-in, per beat — see the block above. */
+    this.aperture = APERTURE_GAMEPLAY;
+    this._apertureNow = APERTURE_GAMEPLAY;
 
     // ---- spring state -------------------------------------------------------
     this._pivot = new Vector3();
@@ -261,7 +284,7 @@ export class PlayerCamera {
 
     this._applyPose(rdt);
     this._updateFade(sdt);
-    this._updateFocus();
+    this._updateFocus(rdt);
   }
 
   // -------------------------------------------------------------------- look
@@ -562,9 +585,12 @@ export class PlayerCamera {
 
   // ------------------------------------------------------------------- focus
 
-  _updateFocus() {
+  _updateFocus(dt) {
     const pipe = this.ctx.pipeline;
     if (!pipe?.setFocus) return;
+
+    // Distance is measured camera→subject every frame, so it is independent of
+    // where in the world the shrine plateau happens to sit.
     let dist;
     if (this.lockTarget?.position && this._lockBlend > 0.4) {
       _v1.copy(this.lockTarget.position);
@@ -573,8 +599,16 @@ export class PlayerCamera {
     } else {
       dist = this.camera.position.distanceTo(this._pivotSmooth);
     }
-    // Open up a little when locked so the background separates behind the duel.
-    pipe.setFocus(dist, lerp(this.aperture, this.aperture * 1.5, this._lockBlend));
+
+    // Rack, never cut: an aperture step reads as a lens swap. Lock-on eases one
+    // stop open onto the duel; an execution opens further, and both restore to the
+    // gameplay value on their own blends.
+    let want = this.aperture;
+    if (this._lockBlend > 0) want = lerp(want, APERTURE_LOCK, this._lockBlend);
+    if (this._cine) want = APERTURE_CINEMATIC;
+    this._apertureNow = damp(this._apertureNow, want, 3.5, dt);
+
+    pipe.setFocus(dist, this._apertureNow);
   }
 
   lateUpdate() {
@@ -587,7 +621,7 @@ export class PlayerCamera {
   }
 
   applyQuality(q) {
-    this.aperture = q?.dof ? 1.15 : 0.9;
+    this.aperture = q?.dof ? APERTURE_GAMEPLAY : APERTURE_NO_DOF;
   }
 
   dispose() {
