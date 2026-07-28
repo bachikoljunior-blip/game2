@@ -172,7 +172,12 @@ async function main() {
     const page = await context.newPage();
     const logs = [];
     page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') logs.push(`${m.type()}: ${m.text()}`); });
-    page.on('pageerror', (e) => logs.push(`pageerror: ${e.message}`));
+    // A bare message is not enough to route a crash — `i.toArray is not a function`
+    // could be any of a dozen systems. Keep the first few frames of the stack.
+    page.on('pageerror', (e) => {
+      const stack = (e.stack || '').split('\n').slice(1, 5).map((l) => l.trim()).join(' | ');
+      logs.push(`pageerror: ${e.message}${stack ? ' @ ' + stack : ''}`);
+    });
 
     const url = `${base}?autostart&q=${prof.tier}&capture`;
     await page.goto(url, { waitUntil: 'load', timeout: 120000 });
