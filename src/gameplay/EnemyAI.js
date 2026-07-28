@@ -89,6 +89,7 @@ const _a2 = new Vector3();
 const _a3 = new Vector3();
 const _a4 = new Vector3();
 const _a5 = new Vector3();
+const _a6 = new Vector3();
 
 // ============================================================================= AI
 
@@ -131,8 +132,10 @@ export class EnemyAI {
     this._feintCooldown = 2 + this._rng() * 3;
     this._tauntCooldown = 6;
     this._lastHitLandedAt = -99;
+    this._lastAttackTime = -99;
     this._riposteUrge = 0;
     this._morale = 1;
+    this.difficulty = 1;
 
     // ---- reaction system ----------------------------------------------------
     this._reaction = { armed: false, timer: 0, type: 'none', unblockable: false };

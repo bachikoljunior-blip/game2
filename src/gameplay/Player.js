@@ -48,9 +48,13 @@ const TURN_IN_PLACE_DOT = Math.cos(110 * DEG);
 const TURN_IN_PLACE_RATE = 8.2;
 
 const DODGE_COST = 24;
-const DODGE_TIME = 0.56;
-const DODGE_IFRAME_IN = 0.10;
-const DODGE_IFRAME_OUT = 0.36;
+/** Per-clip dodge timelines, mirrored from the iframe markers in Poses.js. */
+const DODGE_T = {
+  dodge_roll: { in: 0.09, out: 0.56, cancel: 0.68, dur: 0.88 },
+  dodge_back: { in: 0.085, out: 0.32, cancel: 0.39, dur: 0.52 },
+  dodge_step_l: { in: 0.07, out: 0.27, cancel: 0.32, dur: 0.44 },
+  dodge_step_r: { in: 0.07, out: 0.27, cancel: 0.32, dur: 0.44 },
+};
 
 const PARRY_WINDOW = 0.18;     // ~180 ms from the guard press/release
 const BLADE_LENGTH = 1.02;     // 三尺 katana blade, tsuba to kissaki
@@ -1040,7 +1044,7 @@ export class Player {
       const node = this.chain[this.chainIndex];
       key = node.key;
       finisher = node.finisher;
-      if (finisher) heavy = true;
+      if (key === 'heavy') heavy = true;   // the string's own heavy ender
     } else {
       this.chain = CHAINS[key] || CHAINS.h_r;
       this.chainIndex = 0;
@@ -1194,24 +1198,25 @@ export class Player {
 
     this.stamina = Math.max(0, this.stamina - DODGE_COST);
     this._staminaHold = 0.6;
-    // i-frames open at 0.10 s and close at 0.36 s — see _updateDodge. Dodging on
-    // reaction has to be a read, not a panic button.
+    // i-frames open on the clip's `iframe-start` marker, not on the input — a
+    // dodge has to be a read, not a panic button.
     this.invulnerable = false;
     this._iframe = 0;
 
     // Rolling breaks lock-on framing; a locked player steps instead.
-    let clip = 'dodge_roll_f';
+    let clip = 'dodge_roll';
     if (this.lockTarget) {
       const fdot = this._dodgeDir.x * this.forward.x + this._dodgeDir.z * this.forward.z;
       const side = this._dodgeDir.x * -this.forward.z + this._dodgeDir.z * this.forward.x;
-      if (fdot > 0.5) clip = 'dodge_step_f';
-      else if (fdot < -0.5) clip = 'dodge_step_b';
+      if (fdot > 0.5) clip = 'dodge_roll';
+      else if (fdot < -0.5) clip = 'dodge_back';
       else clip = side > 0 ? 'dodge_step_r' : 'dodge_step_l';
     } else if (mag <= 0.15) {
-      clip = 'dodge_step_b';
+      clip = 'dodge_back';
     } else {
       this.desiredYaw = Math.atan2(-this._dodgeDir.x, -this._dodgeDir.z);
     }
+    this._dodgeT = DODGE_T[clip] || DODGE_T.dodge_roll;
     this._play(clip, 0.05, 1, false);
 
     const burst = 8.4;
@@ -1223,22 +1228,23 @@ export class Player {
 
   _updateDodge(dt) {
     const t = this.stateTime;
-    if (!this.invulnerable && t >= DODGE_IFRAME_IN && t < DODGE_IFRAME_OUT) {
+    const T = this._dodgeT || DODGE_T.dodge_roll;
+    if (!this.invulnerable && t >= T.in && t < T.out) {
       this.invulnerable = true;
-      this._iframe = DODGE_IFRAME_OUT - t;
+      this._iframe = T.out - t;
     }
-    if (t >= DODGE_IFRAME_OUT) this.invulnerable = false;
+    if (t >= T.out && this._iframe <= 0) this.invulnerable = false;
 
     // Speed curve: fast out of the gate, decaying into the recovery.
     const k = Math.exp(-6.5 * dt);
     this.velocity.x *= k;
     this.velocity.z *= k;
 
-    if (t > DODGE_TIME * 0.62) {
+    if (t > T.cancel || this.canCancel) {
       if (this._tryAttack()) return;
       if (this._tryDodge()) return;
     }
-    if (t >= DODGE_TIME) this._setState(this.guarding ? 'guard' : 'idle');
+    if (t >= T.dur) this._setState(this.guarding ? 'guard' : 'idle');
   }
 
   // ------------------------------------------------------------- guard/parry
@@ -1270,15 +1276,18 @@ export class Player {
     const b = this._takeBuffered('sheathe');
     if (!b) return false;
     if (this.sheathed) {
-      // Drawing without attacking: a plain 抜刀 into seigan.
+      // Drawing without attacking: a plain 抜刀 into seigan. The clip carries a
+      // hit-active window we deliberately ignore — see _setWeaponActive.
       this.sheathed = false;
-      this._play('draw', 0.10, 1, false);
+      this._play('draw_iai', 0.10, 0.85, false);
       this._locoClip = '';
       return false;
     }
-    this.sheathed = true;
+    // 血振り — the full flourish only when nothing is about to kill us for it.
+    const threat = this._findTarget(9, Math.PI);
     this.guarding = false;
-    this._play('sheathe_chiburi', 0.10, 1, false);   // 血振り — flick the blood off
+    this._play(threat ? 'sheathe' : 'taunt_sheathe_flourish', 0.10, 1, false);
+    this.sheathed = true;         // the rig's `sheathe-click` marker re-confirms
     this._locoClip = '';
     this._setWeaponActive(false);
     this.chain = null;

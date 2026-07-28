@@ -123,6 +123,20 @@ export class TouchControls {
 
   applyQuality(q) { this.fancy = (q?.tier ?? 3) >= 1; }
 
+  /**
+   * Which half the analogue stick lives on. Input is authoritative (main.js maps
+   * handedness onto it); the settings flag is only a fallback for the frame
+   * before that mapping has run.
+   */
+  stickSide() {
+    const side = this.ctx.input?.stickSide;
+    if (side === 'left' || side === 'right') return side;
+    return this.ctx.settings?.leftHanded ? 'right' : 'left';
+  }
+
+  /** True when the action cluster sits bottom-left, i.e. the stick is on the right. */
+  get mirrored() { return this.stickSide() === 'right'; }
+
   // ------------------------------------------------------------------ layout
 
   resize(w, h) {
@@ -135,7 +149,8 @@ export class TouchControls {
     if (this.ctx.input) this.ctx.input.uiScale = s;
     this._stickR = STICK_RADIUS * s;
 
-    const mirror = this.ctx.settings?.leftHanded === true;
+    // The buttons always take the half the stick does not own.
+    const mirror = this.mirrored;
     // Absolute minimums are in CSS px, not scaled units: a small phone must not
     // shrink a 56 px target into something a thumb cannot hit.
     const D = Math.max(56, 62 * s);
@@ -283,10 +298,14 @@ export class TouchControls {
     this._demoTimer = 45;
     const hud = this.hud;
     const R = this._stickR;
-    const ox = (hud?.safe.left || 0) + R + 34 * hud.s;
-    const oy = (hud?.h || 400) - (hud?.safe.bottom || 0) - R - 34 * hud.s;
+    const s = hud?.s || 1;
+    const right = this.mirrored;
+    const ox = right
+      ? (hud?.w || 800) - (hud?.safe.right || 0) - R - 34 * s
+      : (hud?.safe.left || 0) + R + 34 * s;
+    const oy = (hud?.h || 400) - (hud?.safe.bottom || 0) - R - 34 * s;
     this._demoStick = {
-      ox, oy, kx: ox + R * 0.62, ky: oy - R * 0.48, r: R,
+      ox, oy, kx: ox + (right ? -1 : 1) * R * 0.62, ky: oy - R * 0.48, r: R,
     };
     this._demoGesture = true;
     this.setCooldown('special', 3.2);
@@ -428,9 +447,11 @@ export class TouchControls {
     let gv = this.ctx.input?.gestureVisual?.() || null;
 
     if (!gv && this._demoGesture) {
-      // A believable flick for the capture rig: up-right, mid-charge.
-      const x0 = this.w * 0.70, y0 = this.h * 0.62;
-      const x = x0 + 78 * s, y = y0 - 62 * s;
+      // A believable flick for the capture rig, mid-charge, on the half the
+      // stick does not own.
+      const away = this.mirrored ? -1 : 1;
+      const x0 = this.w * (this.mirrored ? 0.30 : 0.70), y0 = this.h * 0.62;
+      const x = x0 + away * 78 * s, y = y0 - 62 * s;
       this._demoGV = this._demoGV || { x0: 0, y0: 0, x: 0, y: 0, dist: 0 };
       this._demoGV.x0 = x0; this._demoGV.y0 = y0;
       this._demoGV.x = x; this._demoGV.y = y;
@@ -554,9 +575,10 @@ export class TouchControls {
     if (!sp) return;
     const hud = this.hud, s = hud.s;
     const a = Math.min(1, this._hintTimer / 1.2) * (hud.alpha === undefined ? 1 : hud.alpha) * 0.92;
-    hud.ink.blit(g, sp,
-      hud.w - hud.safe.right - sp.w - 18 * s,
-      hud.h - hud.safe.bottom - sp.h - 18 * s, a);
+    const x = this.mirrored
+      ? hud.safe.left + 18 * s
+      : hud.w - hud.safe.right - sp.w - 18 * s;
+    hud.ink.blit(g, sp, x, hud.h - hud.safe.bottom - sp.h - 18 * s, a);
   }
 }
 

@@ -189,6 +189,10 @@ export class Menus {
 
     this._applyQualitySetting();
 
+    // Announce before relaying out: main.js maps handedness onto
+    // `input.stickSide`, and TouchControls reads that value when it re-bakes.
+    c.bus?.emit('settings-changed', s);
+
     // Only the mirrored layout invalidates the baked UI sprites — re-baking on
     // every slider tick would allocate dozens of canvases per drag.
     if (this._appliedMirror !== s.leftHanded) {

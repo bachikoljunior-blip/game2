@@ -819,6 +819,29 @@ export class AudioSystem {
     return this.ac.createBuffer(channels || 1, n, this.sr);
   }
 
+  /**
+   * Buffers may be rendered at a lower rate than the context and are resampled on
+   * playback. Every bed here is band-limited well under 12 kHz, so half rate halves both
+   * the synthesis cost and the memory for no audible loss. (Convolver IRs cannot do this
+   * — a ConvolverNode rejects any buffer whose rate differs from its context.)
+   */
+  _allocAt(sec, channels, rate) {
+    const n = Math.max(2, Math.floor(sec * rate));
+    return this.ac.createBuffer(channels || 1, n, rate);
+  }
+
+  get bedRate() { return Math.max(11025, Math.round(this.sr / 2)); }
+
+  /** One channel of a seamless stereo bed; the buffer is published on the last channel. */
+  _bedChannel(name, secs, fade, ch, rate, fill) {
+    if (!this._bedBuild) this._bedBuild = new Map();
+    let buf = this._bedBuild.get(name);
+    if (!buf) { buf = this._allocAt(secs, 2, rate); this._bedBuild.set(name, buf); }
+    const data = fill();
+    buf.copyToChannel(crossfadeLoop(data, rate, fade), ch, 0);
+    if (ch === 1) { this._bedBuild.delete(name); this._store(name, buf); }
+  }
+
   _store(name, buffer, base) {
     let l = this.buffers.get(name);
     if (!l) { l = []; this.buffers.set(name, l); }
@@ -1356,8 +1379,8 @@ export class AudioSystem {
   /* ── renderers: world ───────────────────────────────────────────────────── */
 
   _rWindGust(seed) {
-    const sr = this.sr, rng = mulberry32(seed);
-    const buf = this._alloc(4.2, 1);
+    const sr = this.bedRate, rng = mulberry32(seed);
+    const buf = this._allocAt(4.2, 1, sr);
     const d = buf.getChannelData(0);
     const n = d.length;
     const nz = new Float32Array(n);
@@ -1382,13 +1405,12 @@ export class AudioSystem {
   }
 
   /** The always-on wind bed: a seamless stereo loop, decorrelated between channels. */
-  _rWindBed(seed) {
-    const sr = this.sr;
+  _rWindBed(seed, ch) {
+    const sr = this.bedRate;
     const secs = 7.5, fade = 0.9;
-    const nFull = Math.floor((secs + fade) * sr);
-    const buf = this._alloc(secs, 2);
-    for (let c = 0; c < 2; c++) {
-      const rng = mulberry32(seed + c * 7919);
+    this._bedChannel('windBed', secs, fade, ch, sr, () => {
+      const nFull = Math.floor((secs + fade) * sr);
+      const rng = mulberry32(seed + ch * 7919);
       const tmp = new Float32Array(nFull);
       fillPink(tmp, rng, 1);
       const bq = new BQ(sr);
@@ -1401,9 +1423,8 @@ export class AudioSystem {
       }
       filt(tmp, sr, 'hp', 60, 0.7, 0);
       normalize(tmp, 0.7);
-      buf.copyToChannel(crossfadeLoop(tmp, sr, fade), c, 0);
-    }
-    this._store('windBed', buf);
+      return tmp;
+    });
   }
 
   /** ししおどし flavour: a struck bamboo tube — closed-pipe modes plus a hard clack. */
@@ -1441,13 +1462,12 @@ export class AudioSystem {
     this._store('leafRustle', buf);
   }
 
-  _rWaterStream(seed) {
-    const sr = this.sr;
+  _rWaterStream(seed, ch) {
+    const sr = this.bedRate;
     const secs = 6.0, fade = 0.8;
-    const nFull = Math.floor((secs + fade) * sr);
-    const buf = this._alloc(secs, 2);
-    for (let c = 0; c < 2; c++) {
-      const rng = mulberry32(seed + c * 104729);
+    this._bedChannel('waterStream', secs, fade, ch, sr, () => {
+      const nFull = Math.floor((secs + fade) * sr);
+      const rng = mulberry32(seed + ch * 104729);
       const tmp = new Float32Array(nFull);
       fillWhite(tmp, rng, 1);
       filt(tmp, sr, 'bp', 1500, 0.55, 0);
@@ -1459,28 +1479,26 @@ export class AudioSystem {
         addPartial(tmp, sr, f, 0.05 + rng() * 0.07, 0.008 + rng() * 0.02, rng() * 6.28, Math.floor(at * sr));
       }
       normalize(tmp, 0.6);
-      buf.copyToChannel(crossfadeLoop(tmp, sr, fade), c, 0);
-    }
-    this._store('waterStream', buf);
+      return tmp;
+    });
   }
 
-  _rRain(seed) {
-    const sr = this.sr;
+  _rRain(seed, ch) {
+    const sr = this.bedRate;
     const secs = 5.0, fade = 0.7;
-    const nFull = Math.floor((secs + fade) * sr);
-    const buf = this._alloc(secs, 2);
-    for (let c = 0; c < 2; c++) {
-      const rng = mulberry32(seed + c * 15485863);
+    this._bedChannel('rain', secs, fade, ch, sr, () => {
+      const nFull = Math.floor((secs + fade) * sr);
+      const rng = mulberry32(seed + ch * 15485863);
       const tmp = new Float32Array(nFull);
       fillWhite(tmp, rng, 1);
       filt(tmp, sr, 'hp', 700, 0.7, 0);
       filt(tmp, sr, 'lp', 7000, 0.6, 0);
       for (let i = 0; i < nFull; i++) tmp[i] *= 0.5;
       // Individual drops land on top of the hiss; density is what sells the downpour.
-      const drops = Math.floor(secs * 260);
+      const drops = Math.floor(secs * 240);
       for (let k = 0; k < drops; k++) {
         const at = Math.floor(rng() * nFull);
-        const len = 40 + ((rng() * 90) | 0);
+        const len = 20 + ((rng() * 45) | 0);
         const f = 2200 + rng() * 6000;
         const a = 0.04 + rng() * 0.1;
         const to = Math.min(nFull, at + len);
@@ -1488,14 +1506,13 @@ export class AudioSystem {
         for (let i = at; i < to; i++) tmp[i] += Math.sin((i - at) * w) * a * Math.exp(-(i - at) / (len * 0.35));
       }
       normalize(tmp, 0.65);
-      buf.copyToChannel(crossfadeLoop(tmp, sr, fade), c, 0);
-    }
-    this._store('rain', buf);
+      return tmp;
+    });
   }
 
   _rThunder(seed) {
-    const sr = this.sr, rng = mulberry32(seed);
-    const buf = this._alloc(5.2, 1);
+    const sr = this.bedRate, rng = mulberry32(seed);
+    const buf = this._allocAt(4.6, 1, sr);
     const d = buf.getChannelData(0);
     const n = d.length;
     const nz = new Float32Array(n);
