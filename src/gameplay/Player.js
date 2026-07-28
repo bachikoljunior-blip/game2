@@ -277,6 +277,10 @@ export class Player {
     this._footSide = 0;
     this._rigFootsteps = false;
     this._trailOpen = false;
+    this._chainGrace = 0;
+    this._ragdollAt = -1;
+    this._dodgeT = null;
+    this._staggerTime = 0.6;
     this._prevYaw = 0;
     this._yawRate = 0;
     this._locoClip = '';
@@ -534,6 +538,10 @@ export class Player {
     }
     if (this._staminaHold > 0) this._staminaHold -= dt;
     if (this._postureHold > 0) this._postureHold -= dt;
+    if (this._chainGrace > 0) {
+      this._chainGrace -= dt;
+      if (this._chainGrace <= 0) { this._chainGrace = 0; this.chain = null; }
+    }
   }
 
   _regen(dt) {
@@ -1039,9 +1047,9 @@ export class Player {
       return true;
     }
 
-    // Chain advance only inside the cancel window; otherwise the direction opens
-    // a fresh string.
-    if (this.canCancel && this.chain && this.chainIndex + 1 < this.chain.length) {
+    // Chain advance inside the cancel window (or its grace tail); otherwise the
+    // gesture direction opens a fresh string.
+    if ((this.canCancel || this._chainGrace > 0) && this.chain && this.chainIndex + 1 < this.chain.length) {
       this.chainIndex++;
       const node = this.chain[this.chainIndex];
       key = node.key;
@@ -1144,7 +1152,10 @@ export class Player {
     }
 
     if (t >= a.total || a.markerEnd) {
-      this.chain = this.canCancel ? this.chain : null;
+      // A short grace period after the clip ends keeps the string alive. Without
+      // it the combo window closes on the exact frame the animation does, which
+      // players read as the game dropping their input.
+      this._chainGrace = this.chainIndex + 1 < (this.chain?.length ?? 0) ? 0.22 : 0;
       this._setState(this.guarding ? 'guard' : 'idle');
     }
   }
@@ -1493,8 +1504,8 @@ export class Player {
     if (this.posture >= this.maxPosture) {
       // Posture break: a long stagger. Combat owns the `posture-break` event.
       this.posture = this.maxPosture;
-      this._staggerTime = 1.35;
-      this._setState('stagger', { clip: 'stagger_break' }, true);
+      this._staggerTime = 1.18;                 // matches the posture_break clip
+      this._setState('stagger', { clip: 'posture_break' }, true);
     }
     return true;
   }

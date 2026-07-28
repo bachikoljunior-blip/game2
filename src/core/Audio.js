@@ -560,6 +560,7 @@ export class AudioSystem {
       name: '',
       priority: 0,
       startTime: 0,
+      endTime: 0,
       onEnded: null,
     };
     ch.lp.type = 'lowpass';
@@ -733,6 +734,10 @@ export class AudioSystem {
     ch.name = name;
     ch.priority = priority;
     ch.startTime = when;
+    // Belt and braces: if an `ended` event is ever dropped (it happens on some mobile
+    // browsers when the page is backgrounded mid-sound) the sweep in update() reclaims
+    // the voice, so the pool cannot silently fill up and mute the game.
+    ch.endTime = (o && o.loop) ? Infinity : when + (entry.buffer.duration / rate) + 0.12;
     src.onended = ch.onEnded;
     try { src.start(when); } catch { this._release(ch); return null; }
     return ch;
@@ -875,8 +880,12 @@ export class AudioSystem {
     for (let v = 0; v < 3; v++) push('forging steel', () => this._rHit('Armor', nx()));
     for (let v = 0; v < 2; v++) push('forging steel', () => this._rHit('Wood', nx()));
     for (let v = 0; v < 2; v++) push('forging steel', () => this._rHit('Stone', nx()));
-    for (let v = 0; v < 3; v++) push('striking sparks', () => this._rClash(nx(), false));
-    for (let v = 0; v < 2; v++) push('striking sparks', () => this._rClash(nx(), true));
+    for (let v = 0; v < 5; v++) {
+      const st = { seed: nx(), perfect: v >= 3, data: null };
+      push('striking sparks', () => this._clashBegin(st));
+      for (let g = 0; g < 3; g++) push('striking sparks', () => this._clashGroup(st, g));
+      push('striking sparks', () => this._clashFinish(st));
+    }
     for (let v = 0; v < 2; v++) push('抜刀', () => this._rDrawBlade(nx()));
     for (let v = 0; v < 2; v++) push('鯉口', () => this._rSheathe(nx()));
     for (let v = 0; v < 2; v++) push('forging steel', () => this._rBloodSpray(nx()));
@@ -897,11 +906,14 @@ export class AudioSystem {
 
     // ── world ───────────────────────────────────────────────────────────────
     for (let v = 0; v < 2; v++) push('raising the wind', () => this._rWindGust(nx()));
-    push('raising the wind', () => this._rWindBed(nx()));
+    const windSeed = nx();
+    for (let c = 0; c < 2; c++) { const ch = c; push('raising the wind', () => this._rWindBed(windSeed, ch)); }
     for (let v = 0; v < 3; v++) push('the bamboo sea', () => this._rBamboo(nx()));
     for (let v = 0; v < 3; v++) push('the bamboo sea', () => this._rLeafRustle(nx()));
-    push('the valley stream', () => this._rWaterStream(nx()));
-    push('the coming rain', () => this._rRain(nx()));
+    const streamSeed = nx();
+    for (let c = 0; c < 2; c++) { const ch = c; push('the valley stream', () => this._rWaterStream(streamSeed, ch)); }
+    const rainSeed = nx();
+    for (let c = 0; c < 2; c++) { const ch = c; push('the coming rain', () => this._rRain(rainSeed, ch)); }
     for (let v = 0; v < 2; v++) push('distant thunder', () => this._rThunder(nx()));
     for (let v = 0; v < 3; v++) push('crows', () => this._rCrow(nx(), v === 2));
     for (let v = 0; v < 2; v++) push('windchime', () => this._rWindChime(nx()));
@@ -911,7 +923,7 @@ export class AudioSystem {
     for (let v = 0; v < 2; v++) {
       const st = { seed: nx(), data: null, sr: 0 };
       push('鋳造 the temple bell', () => this._bellBegin(st));
-      for (let g = 0; g < 5; g++) push('鋳造 the temple bell', () => this._bellGroup(st, g));
+      for (let g = 0; g < 10; g++) push('鋳造 the temple bell', () => this._bellGroup(st, g));
       push('鋳造 the temple bell', () => this._bellFinish(st));
     }
 
@@ -939,8 +951,9 @@ export class AudioSystem {
     const zones = ['forest', 'stoneCourtyard', 'interiorWood', 'valley'];
     for (let i = 0; i < zones.length; i++) {
       for (let c = 0; c < 2; c++) {
-        const z = zones[i], ch = c;
-        push('measuring the room', () => this._rIRChannel(z, ch, nx()));
+        const z = zones[i], ch = c, s = nx();
+        push('measuring the room', () => this._irTail(z, ch, s));
+        push('measuring the room', () => this._irFinish(z, ch, s));
       }
     }
   }
@@ -1013,7 +1026,7 @@ export class AudioSystem {
 
   _rHit(kind, seed) {
     const sr = this.sr, rng = mulberry32(seed);
-    const dur = kind === 'Armor' ? 0.95 : kind === 'Wood' ? 0.45 : kind === 'Stone' ? 0.4 : 0.5;
+    const dur = kind === 'Armor' ? 0.8 : kind === 'Wood' ? 0.45 : kind === 'Stone' ? 0.4 : 0.5;
     const buf = this._alloc(dur, 1);
     const d = buf.getChannelData(0);
     const n = d.length;
@@ -1744,9 +1757,9 @@ export class AudioSystem {
   /** 琴 — Karplus-Strong through a bridge filter, with the plectrum noise left in. */
   _rKoto(base, seed) {
     const sr = this.sr, rng = mulberry32(seed);
-    const buf = this._alloc(2.6, 1);
+    const buf = this._alloc(1.9, 1);
     const d = buf.getChannelData(0);
-    karplus(d, sr, base, 0.65, 0.9975, 0.42 + rng() * 0.12, rng, 0);
+    karplus(d, sr, base, 0.65, 0.9968, 0.42 + rng() * 0.12, rng, 0);
     // Body: a paulownia soundboard is warm and slightly nasal.
     filt(d, sr, 'peak', 420, 1.1, 5);
     filt(d, sr, 'peak', 1250, 1.6, 3);
@@ -1765,7 +1778,7 @@ export class AudioSystem {
    */
   _rTaiko(low, seed) {
     const sr = this.sr, rng = mulberry32(seed);
-    const dur = low ? 1.6 : 1.0;
+    const dur = low ? 1.3 : 0.9;
     const buf = this._alloc(dur, 1);
     const d = buf.getChannelData(0);
     const skin = new Float32Array(Math.floor(dur * 0.5 * sr));
@@ -1806,7 +1819,7 @@ export class AudioSystem {
   /** 鈴 — a fistful of tiny bells; dozens of short, very high inharmonic taps. */
   _rSuzu(seed) {
     const sr = this.sr, rng = mulberry32(seed);
-    const buf = this._alloc(1.6, 1);
+    const buf = this._alloc(1.25, 1);
     const d = buf.getChannelData(0);
     const hits = 16 + ((rng() * 12) | 0);
     for (let k = 0; k < hits; k++) {
@@ -1831,50 +1844,66 @@ export class AudioSystem {
    * the tail into a bright bed that dies fast and a dark bed that lingers is a cheap,
    * convincing stand-in for air absorption.
    */
-  _rIRChannel(zone, channel, seed) {
+  _irConfig(zone) {
     const CFG = {
-      forest: { len: 2.0, pre: 0.012, er: 16, erGain: 0.42, lp: 3000, hiTau: 0.20, loTau: 0.5, spread: 0.09 },
-      stoneCourtyard: { len: 2.9, pre: 0.020, er: 11, erGain: 0.72, lp: 6800, hiTau: 0.30, loTau: 0.62, spread: 0.06 },
-      interiorWood: { len: 1.1, pre: 0.005, er: 20, erGain: 0.65, lp: 2500, hiTau: 0.22, loTau: 0.45, spread: 0.025 },
-      valley: { len: 4.2, pre: 0.055, er: 7, erGain: 0.34, lp: 4200, hiTau: 0.26, loTau: 0.58, spread: 0.24 },
+      forest: { len: 1.7, pre: 0.012, er: 16, erGain: 0.42, lp: 3000, hiTau: 0.20, loTau: 0.5, spread: 0.09 },
+      stoneCourtyard: { len: 2.4, pre: 0.020, er: 11, erGain: 0.72, lp: 6800, hiTau: 0.30, loTau: 0.62, spread: 0.06 },
+      interiorWood: { len: 0.95, pre: 0.005, er: 20, erGain: 0.65, lp: 2500, hiTau: 0.22, loTau: 0.45, spread: 0.025 },
+      valley: { len: 3.3, pre: 0.055, er: 7, erGain: 0.34, lp: 4200, hiTau: 0.26, loTau: 0.58, spread: 0.24 },
     };
-    const cfg = CFG[zone];
+    return CFG[zone];
+  }
+
+  /** Pass one: the diffuse tail, split into a bright bed and a dark one. */
+  _irTail(zone, channel, seed) {
+    const cfg = this._irConfig(zone);
     if (!cfg) return;
     const sr = this.sr;
     if (!this._irBuild) this._irBuild = new Map();
     let buf = this._irBuild.get(zone);
     if (!buf) { buf = this._alloc(cfg.len, 2); this._irBuild.set(zone, buf); }
-
     const rng = mulberry32(seed);
     const d = buf.getChannelData(channel);
     const n = d.length;
     const hi = new Float32Array(n);
-    const lo = new Float32Array(n);
     fillWhite(hi, rng, 1);
-    fillWhite(lo, rng, 1);
     filt(hi, sr, 'lp', cfg.lp, 0.7, 0);
     filt(hi, sr, 'hp', 260, 0.7, 0);
+    const lo = new Float32Array(n);
+    fillWhite(lo, rng, 1);
     filt(lo, sr, 'lp', cfg.lp * 0.22, 0.7, 0);
     const pre = Math.floor(cfg.pre * sr);
     for (let i = pre; i < n; i++) {
       const t = (i - pre) / sr;
-      const eHi = Math.exp(-t / (cfg.len * cfg.hiTau));
-      const eLo = Math.exp(-t / (cfg.len * cfg.loTau));
-      d[i] = hi[i] * eHi * 0.75 + lo[i] * eLo * 0.55;
+      // Two decay rates standing in for air absorption: treble dies first.
+      d[i] = hi[i] * Math.exp(-t / (cfg.len * cfg.hiTau)) * 0.75 +
+        lo[i] * Math.exp(-t / (cfg.len * cfg.loTau)) * 0.55;
     }
     for (let i = 0; i < pre; i++) d[i] = 0;
-    // Early reflections: the geometry cue. A courtyard slaps; a valley answers late.
+    if (zone === 'valley') {
+      // A real slapback off the far ridge — the reason a valley reads as a valley.
+      const at = pre + Math.floor((0.28 + rng() * 0.06) * sr);
+      if (at < n) for (let i = 0; i < 2400 && at + i < n; i++) d[at + i] += hi[i] * 0.35 * Math.exp(-i / 900);
+    }
+  }
+
+  /** Pass two: early reflections — the geometry cue — then trim and normalise. */
+  _irFinish(zone, channel, seed) {
+    const cfg = this._irConfig(zone);
+    if (!cfg || !this._irBuild) return;
+    const buf = this._irBuild.get(zone);
+    if (!buf) return;
+    const sr = this.sr;
+    const rng = mulberry32(seed ^ 0x9e37);
+    const d = buf.getChannelData(channel);
+    const n = d.length;
+    const pre = Math.floor(cfg.pre * sr);
     for (let k = 0; k < cfg.er; k++) {
       const at = pre + Math.floor((0.004 + Math.pow(rng(), 1.3) * cfg.spread) * sr) + channel * 17;
       if (at >= n) continue;
       const a = cfg.erGain * (1 - k / cfg.er) * (0.5 + rng() * 0.7) * (rng() < 0.5 ? -1 : 1);
       d[at] += a;
       if (at + 2 < n) { d[at + 1] += a * 0.5; d[at + 2] += a * 0.22; }
-    }
-    // A valley has a real slapback off the far ridge.
-    if (zone === 'valley') {
-      const at = pre + Math.floor((0.28 + rng() * 0.06) * sr);
-      if (at < n) for (let i = 0; i < 2400 && at + i < n; i++) d[at + i] += hi[i] * 0.35 * Math.exp(-i / 900);
     }
     filt(d, sr, 'hp', zone === 'interiorWood' ? 130 : 85, 0.7, 0);
     fadeEdges(d, sr, 0.0002, cfg.len * 0.25);
@@ -2486,6 +2515,7 @@ export class AudioSystem {
       this._updateZone();
       this._updateBeds();
       this._updateCombatState();
+      this._sweepVoices();
     }
     this._acc2 += rd;
     if (this._acc2 >= 2) { this._acc2 = 0; this._loadSettings(); }
@@ -2651,6 +2681,15 @@ export class AudioSystem {
     const a = Math.random() * Math.PI * 2;
     this._playInternal(name, { gain, bus: 'ambience', priority: 1, minGap: 0.5 },
       true, this._lx + Math.cos(a) * dist, this._ly + height, this._lz + Math.sin(a) * dist);
+  }
+
+  /** Reclaim voices whose buffer must have finished but whose `ended` never arrived. */
+  _sweepVoices() {
+    const now = this.ac.currentTime;
+    for (let i = this._chans.length - 1; i >= 0; i--) {
+      const c = this._chans[i];
+      if ((c.active || c.retiring) && now > c.endTime) this._release(c);
+    }
   }
 
   _readEngaged() {

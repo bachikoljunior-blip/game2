@@ -61,7 +61,7 @@ const CHUNK_MS = 11;
  * than a 1024px tile stretched over a whole wall — and it keeps us inside the
  * 48 MB texture budget with room for the sky/env targets.
  */
-const HERO_CAP = 512;        // cedar / stone / steel / vermilion, doubled on HIGH+
+const HERO_CAP = 512;        // cedar / stone / steel / vermilion, doubled on ULTRA
 const PROP_CAP = 256;
 
 // ------------------------------------------------------------------- palette
@@ -186,7 +186,11 @@ class Tiler {
     return this.fbmA(u + strength * qx, v + strength * qy, pu, pv, oct);
   }
 
-  /** Periodic cellular noise. `.f2 - .f1` is the crack/grout signal. */
+  /**
+   * Periodic cellular noise. `.f2 - .f1` is the crack/grout signal.
+   * WARNING: the return value is a per-Tiler scratch object, so consume the fields
+   * you need before the next worleyA call — holding two results at once aliases.
+   */
   worleyA(u, v, pu, pv, jitter = 1.0) {
     const x = u * pu, y = v * pv;
     const xi = Math.floor(x), yi = Math.floor(y);
@@ -979,9 +983,10 @@ RECIPES.push({
 
     // Hairline shrinkage: very thin, very shallow, branching at two scales.
     const h1 = t.worleyA(u + 0.11, v + 0.29, 9, 9, 1.0);
+    const hairCoarse = 1 - smoothstep(0.0, 0.022, h1.f2 - h1.f1);
     const h2 = t.worleyA(u + 0.6, v + 0.4, 32, 32, 1.0);
-    const hair = clamp((1 - smoothstep(0.0, 0.022, h1.f2 - h1.f1))
-      + (1 - smoothstep(0.0, 0.016, h2.f2 - h2.f1)) * 0.55, 0, 1);
+    const hairFine = 1 - smoothstep(0.0, 0.016, h2.f2 - h2.f1);
+    const hair = clamp(hairCoarse + hairFine * 0.55, 0, 1);
 
     const trowel = cs(c.trowel, u, v);
     const grimeF = cs(c.grime, u, v);
@@ -1612,10 +1617,13 @@ RECIPES.push({
   shade(u, v, s, c, t) {
     // Pebble grain: two cellular scales, the finer one modulating the coarser.
     const p1 = t.worleyA(u, v, c.hf >> 2, c.hf >> 2, 1.0);
+    const grainA = smoothstep(0.45, 0.05, p1.f1);
+    const valleyA = 1 - smoothstep(0.0, 0.10, p1.f2 - p1.f1);
     const p2 = t.worleyA(u + 0.3, v + 0.9, c.hf, c.hf, 1.0);
-    const pebble = smoothstep(0.45, 0.05, p1.f1) * 0.7 + smoothstep(0.40, 0.05, p2.f1) * 0.3;
-    const valley = (1 - smoothstep(0.0, 0.10, p1.f2 - p1.f1)) * 0.7
-      + (1 - smoothstep(0.0, 0.08, p2.f2 - p2.f1)) * 0.3;
+    const grainB = smoothstep(0.40, 0.05, p2.f1);
+    const valleyB = 1 - smoothstep(0.0, 0.08, p2.f2 - p2.f1);
+    const pebble = grainA * 0.7 + grainB * 0.3;
+    const valley = valleyA * 0.7 + valleyB * 0.3;
     const micro = t.fbmA(u, v, c.hf, c.hf, 2) * 0.5 + 0.5;
 
     // Lacing runs as flat braided cords: 8 diagonal bands across the tile.
@@ -2006,7 +2014,7 @@ export class MaterialLibrary {
 
   _resFor(rec) {
     const base = this._baseSize;
-    const cap = rec.hero ? (this._tier >= TIER.HIGH ? HERO_CAP * 2 : HERO_CAP) : PROP_CAP;
+    const cap = rec.hero ? (this._tier >= TIER.ULTRA ? HERO_CAP * 2 : HERO_CAP) : PROP_CAP;
     // §4: never larger than quality.textureSize. Deliberately smaller than the
     // ceiling — the shared detail normal buys back the close-range frequency far
     // more cheaply than quadrupling every map would.
@@ -2293,9 +2301,10 @@ export class MaterialLibrary {
     const tier = this._tier;
     const paper = this.materials.get('paper');
     if (paper) {
-      paper.transmission = tier >= TIER.HIGH ? 0.55 : 0.0;
-      paper.transparent = tier >= TIER.HIGH ? true : true;
-      paper.opacity = tier >= TIER.HIGH ? 1.0 : 0.94;
+      const trans = tier >= TIER.HIGH;
+      paper.transmission = trans ? 0.55 : 0.0;
+      paper.transparent = true;
+      paper.opacity = trans ? 1.0 : 0.94;
       paper.needsUpdate = true;
     }
     for (const key of ['clothIndigo', 'clothCrimson', 'moss']) {

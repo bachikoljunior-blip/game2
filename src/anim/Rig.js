@@ -677,4 +677,740 @@ function loftSphere(mesher, cx, cy, cz, rx, ry, rz, nLat, nLon, shape) {
   return start;
 }
 
-export { loftTube, loftSphere };
+// ===========================================================================
+// BODY / COSTUME GEOMETRY
+// ===========================================================================
+
+/** Ring and station density per tier. Bone count is fixed; only the skin scales. */
+function meshDensity(quality) {
+  const tier = quality ? quality.tier : 1;
+  if (tier <= 0) return { ringL: 6, ringT: 8, lon: 0.72, sphere: [6, 8] };
+  if (tier === 1) return { ringL: 10, ringT: 14, lon: 1.0, sphere: [8, 12] };
+  return { ringL: 14, ringT: 18, lon: 1.35, sphere: [11, 16] };
+}
+
+const _P3 = new Vector3();
+/** Bind-pose world position of a bone, root space. */
+function bindPos(bones, name, out) {
+  const b = bones[name];
+  out.setFromMatrixPosition(b.matrixWorld);
+  return out;
+}
+
+/**
+ * The skinned body. Torso is one loft from the crotch to the neck with an elliptical
+ * section that widens at the ribcage; the limbs are tapered tubes; hands and feet are
+ * short lofts with flattened sections. Candidate bone lists are scoped per part, which
+ * is what stops the left thigh from claiming vertices on the right thigh at the crotch.
+ */
+function buildBody(rig, dens) {
+  const bones = rig.bones;
+  const mesher = new Mesher(rig._segA, rig._segB, 0.055);
+  const S = rig.scale;
+  const a = _v[0], b = _v[1], c = _v[2];
+  const L = dens.lon;
+  const R = (n) => Math.max(3, Math.round(n * L));
+
+  const hips = bindPos(bones, 'hips', a).clone();
+  const sp1 = bindPos(bones, 'spine1', a).clone();
+  const sp2 = bindPos(bones, 'spine2', a).clone();
+  const sp3 = bindPos(bones, 'spine3', a).clone();
+  const neck = bindPos(bones, 'neck', a).clone();
+  const head = bindPos(bones, 'head', a).clone();
+
+  // ---- torso
+  mesher.begin(rig._candTorso, 1.0);
+  loftTube(mesher, [
+    [hips.x, hips.y - 0.105 * S, hips.z + 0.010 * S, 0.108 * S, 0.098 * S],
+    [hips.x, hips.y - 0.020 * S, hips.z + 0.004 * S, 0.136 * S, 0.110 * S],
+    [sp1.x, sp1.y, sp1.z, 0.122 * S, 0.099 * S],
+    [sp2.x, sp2.y, sp2.z, 0.142 * S, 0.107 * S],
+    [sp3.x, sp3.y - 0.020 * S, sp3.z, 0.163 * S, 0.114 * S],
+    [sp3.x, sp3.y + 0.075 * S, sp3.z - 0.004 * S, 0.150 * S, 0.104 * S],
+    [neck.x, neck.y + 0.006 * S, neck.z + 0.006 * S, 0.076 * S, 0.074 * S],
+  ], R(11), dens.ringT, { capStart: true, capEnd: false });
+
+  // ---- neck + skull
+  mesher.begin(rig._candHead, 0.94);
+  loftTube(mesher, [
+    [neck.x, neck.y - 0.020 * S, neck.z + 0.004 * S, 0.070 * S, 0.070 * S],
+    [neck.x, neck.y + 0.040 * S, neck.z + 0.006 * S, 0.062 * S, 0.062 * S],
+    [head.x, head.y + 0.010 * S, head.z + 0.010 * S, 0.066 * S, 0.068 * S],
+  ], R(4), dens.ringT, { capStart: false, capEnd: false });
+  // Jaw is narrower than the cranium; the shape function does that in one line.
+  loftSphere(mesher, head.x, head.y + 0.098 * S, head.z + 0.008 * S,
+    0.089 * S, 0.116 * S, 0.099 * S, dens.sphere[0], dens.sphere[1],
+    (v) => 0.72 + 0.30 * Math.sin(Math.min(1, v * 1.22) * Math.PI * 0.86));
+
+  // ---- arms
+  for (const side of ['R', 'L']) {
+    const sh = bindPos(bones, 'upperArm' + side, a).clone();
+    const el = bindPos(bones, 'foreArm' + side, b).clone();
+    const wr = bindPos(bones, 'hand' + side, c).clone();
+    const sgn = side === 'R' ? 1 : -1;
+    mesher.begin(side === 'R' ? rig._candArmR : rig._candArmL, 0.97);
+    loftTube(mesher, [
+      [sh.x - sgn * 0.030 * S, sh.y + 0.048 * S, sh.z, 0.050 * S, 0.052 * S],
+      [sh.x, sh.y - 0.010 * S, sh.z, 0.059 * S, 0.058 * S],
+      [lerp(sh.x, el.x, 0.45), lerp(sh.y, el.y, 0.45), lerp(sh.z, el.z, 0.45), 0.050 * S, 0.049 * S],
+      [el.x, el.y, el.z, 0.043 * S, 0.044 * S],
+      [lerp(el.x, wr.x, 0.30), lerp(el.y, wr.y, 0.30), lerp(el.z, wr.z, 0.30), 0.046 * S, 0.045 * S],
+      [lerp(el.x, wr.x, 0.72), lerp(el.y, wr.y, 0.72), lerp(el.z, wr.z, 0.72), 0.034 * S, 0.033 * S],
+      [wr.x, wr.y, wr.z, 0.028 * S, 0.026 * S],
+    ], R(9), dens.ringL, { capStart: true, capEnd: false });
+
+    // Hand: a flattened mitten. Fingers would cost more than they are worth at this
+    // silhouette scale, and the hands are wrapped around a tsuka most of the time.
+    const dx = (wr.x - el.x), dy = (wr.y - el.y), dz = (wr.z - el.z);
+    const dl = Math.hypot(dx, dy, dz) || 1;
+    const ux = dx / dl, uy = dy / dl, uz = dz / dl;
+    mesher.begin(side === 'R' ? rig._candHandR : rig._candHandL, 0.93);
+    loftTube(mesher, [
+      [wr.x, wr.y, wr.z, 0.028 * S, 0.024 * S],
+      [wr.x + ux * 0.035 * S, wr.y + uy * 0.035 * S, wr.z + uz * 0.035 * S, 0.040 * S, 0.023 * S],
+      [wr.x + ux * 0.085 * S, wr.y + uy * 0.085 * S, wr.z + uz * 0.085 * S, 0.041 * S, 0.021 * S],
+      [wr.x + ux * 0.125 * S, wr.y + uy * 0.125 * S, wr.z + uz * 0.125 * S, 0.032 * S, 0.017 * S],
+      [wr.x + ux * 0.155 * S, wr.y + uy * 0.155 * S, wr.z + uz * 0.155 * S, 0.014 * S, 0.010 * S],
+    ], R(5), Math.max(6, dens.ringL - 2), { capStart: false, capEnd: true });
+  }
+
+  // ---- legs
+  for (const side of ['R', 'L']) {
+    const hp = bindPos(bones, 'thigh' + side, a).clone();
+    const kn = bindPos(bones, 'shin' + side, b).clone();
+    const an = bindPos(bones, 'foot' + side, c).clone();
+    mesher.begin(side === 'R' ? rig._candLegR : rig._candLegL, 0.98);
+    loftTube(mesher, [
+      [hp.x, hp.y + 0.050 * S, hp.z, 0.088 * S, 0.092 * S],
+      [hp.x, hp.y - 0.030 * S, hp.z, 0.097 * S, 0.098 * S],
+      [lerp(hp.x, kn.x, 0.45), lerp(hp.y, kn.y, 0.45), lerp(hp.z, kn.z, 0.45), 0.085 * S, 0.088 * S],
+      [kn.x, kn.y + 0.030 * S, kn.z, 0.068 * S, 0.071 * S],
+      [kn.x, kn.y, kn.z, 0.064 * S, 0.066 * S],
+      [lerp(kn.x, an.x, 0.28), lerp(kn.y, an.y, 0.28), lerp(kn.z, an.z, 0.28) + 0.012 * S, 0.070 * S, 0.072 * S],
+      [lerp(kn.x, an.x, 0.68), lerp(kn.y, an.y, 0.68), lerp(kn.z, an.z, 0.68), 0.048 * S, 0.049 * S],
+      [an.x, an.y, an.z, 0.037 * S, 0.040 * S],
+    ], R(10), dens.ringL, { capStart: true, capEnd: false });
+
+    // Foot: heel behind the ankle, ball forward, tapering toe box.
+    const to = bindPos(bones, 'toe' + side, _v[3]).clone();
+    mesher.begin(side === 'R' ? rig._candFootR : rig._candFootL, 0.86);
+    loftTube(mesher, [
+      [an.x, an.y + 0.012 * S, an.z + 0.070 * S, 0.032 * S, 0.036 * S],
+      [an.x, an.y - 0.020 * S, an.z + 0.045 * S, 0.040 * S, 0.043 * S],
+      [an.x, an.y - 0.048 * S, an.z - 0.010 * S, 0.043 * S, 0.038 * S],
+      [to.x, to.y - 0.005 * S, to.z + 0.010 * S, 0.045 * S, 0.030 * S],
+      [to.x, to.y - 0.002 * S, to.z - 0.048 * S, 0.038 * S, 0.024 * S],
+      [to.x, to.y + 0.004 * S, to.z - 0.070 * S, 0.020 * S, 0.014 * S],
+    ], R(6), Math.max(6, dens.ringL - 2), { capStart: true, capEnd: true });
+  }
+
+  return mesher.toGeometry('kagerou-body');
+}
+
+/**
+ * The kimono / haori upper: an inflated shell over the torso and upper arms, skinned
+ * to the same skeleton so it deforms with the body for free. The wide sleeve *hems*
+ * are cloth-simulated separately; this is only the part that stays on the arm.
+ */
+function buildUpperGarment(rig, dens, opts) {
+  const bones = rig.bones;
+  const mesher = new Mesher(rig._segA, rig._segB, 0.065);
+  const S = rig.scale;
+  const a = _v[0], b = _v[1], c = _v[2];
+  const L = dens.lon;
+  const R = (n) => Math.max(3, Math.round(n * L));
+  const puff = opts.puff === undefined ? 0.022 : opts.puff;
+
+  const hips = bindPos(bones, 'hips', a).clone();
+  const sp1 = bindPos(bones, 'spine1', a).clone();
+  const sp2 = bindPos(bones, 'spine2', a).clone();
+  const sp3 = bindPos(bones, 'spine3', a).clone();
+  const neck = bindPos(bones, 'neck', a).clone();
+
+  mesher.begin(rig._candTorso, 1.0);
+  loftTube(mesher, [
+    [hips.x, hips.y - 0.150 * S, hips.z, (0.128 + puff) * S, (0.116 + puff) * S],
+    [hips.x, hips.y - 0.020 * S, hips.z, (0.140 + puff) * S, (0.114 + puff) * S],
+    [sp1.x, sp1.y, sp1.z, (0.128 + puff) * S, (0.104 + puff) * S],
+    [sp2.x, sp2.y, sp2.z, (0.148 + puff) * S, (0.112 + puff) * S],
+    [sp3.x, sp3.y - 0.020 * S, sp3.z, (0.170 + puff) * S, (0.120 + puff) * S],
+    [sp3.x, sp3.y + 0.080 * S, sp3.z - 0.004 * S, (0.156 + puff) * S, (0.110 + puff) * S],
+    // The collar stands away from the neck — that gap is most of the kimono read.
+    [neck.x, neck.y + 0.030 * S, neck.z + 0.030 * S, 0.098 * S, 0.100 * S],
+  ], R(10), dens.ringT, { capStart: true, capEnd: true });
+
+  // Sleeves: they start tight at the shoulder and flare hard past the elbow.
+  for (const side of ['R', 'L']) {
+    const sh = bindPos(bones, 'upperArm' + side, a).clone();
+    const el = bindPos(bones, 'foreArm' + side, b).clone();
+    const wr = bindPos(bones, 'hand' + side, c).clone();
+    const sgn = side === 'R' ? 1 : -1;
+    mesher.begin(side === 'R' ? rig._candArmR : rig._candArmL, 0.96);
+    loftTube(mesher, [
+      [sh.x - sgn * 0.020 * S, sh.y + 0.055 * S, sh.z, 0.070 * S, 0.072 * S],
+      [sh.x, sh.y - 0.010 * S, sh.z, 0.082 * S, 0.080 * S],
+      [lerp(sh.x, el.x, 0.5), lerp(sh.y, el.y, 0.5), lerp(sh.z, el.z, 0.5), 0.082 * S, 0.082 * S],
+      [el.x, el.y, el.z, 0.088 * S, 0.090 * S],
+      [lerp(el.x, wr.x, 0.45), lerp(el.y, wr.y, 0.45), lerp(el.z, wr.z, 0.45), 0.096 * S, 0.098 * S],
+    ], R(6), dens.ringL, { capStart: true, capEnd: false });
+  }
+  return mesher.toGeometry('kagerou-kimono');
+}
+
+/** 帯 obi — a flat wrapped band. Rigid, parented to spine1; it never needs to flex. */
+function buildObi(rig, dens) {
+  const mesher = new Mesher(rig._segA, rig._segB, 0.08);
+  const S = rig.scale;
+  const p = bindPos(rig.bones, 'spine1', _v[0]).clone();
+  mesher.begin(rig._candTorso, 0.88);
+  loftTube(mesher, [
+    [p.x, p.y - 0.075 * S, p.z, 0.152 * S, 0.126 * S],
+    [p.x, p.y - 0.040 * S, p.z, 0.160 * S, 0.132 * S],
+    [p.x, p.y + 0.030 * S, p.z, 0.158 * S, 0.130 * S],
+    [p.x, p.y + 0.062 * S, p.z, 0.148 * S, 0.122 * S],
+  ], Math.max(4, Math.round(5 * dens.lon)), dens.ringT, { capStart: true, capEnd: true });
+  // Knot at the back — a small offset lump, but it is what makes the obi read as tied.
+  mesher.begin(rig._candTorso, 0.8);
+  loftSphere(mesher, p.x, p.y - 0.005 * S, p.z + 0.140 * S,
+    0.062 * S, 0.048 * S, 0.045 * S, Math.max(4, dens.sphere[0] - 3), Math.max(6, dens.sphere[1] - 4));
+  return mesher.toGeometry('kagerou-obi');
+}
+
+/**
+ * 胴 dō — the oni's lamellar cuirass, built as instanced plates laced in rows. One
+ * InstancedMesh for the plates and one for the lacing keeps the whole torso armour at
+ * two draw calls, which is what the ARCHITECTURE §7 budget demands with 8 enemies up.
+ */
+function buildLamellar(rig, dens, materials) {
+  const S = rig.scale;
+  const group = new Group();
+  group.name = 'do';
+  const rows = dens.lon > 1.1 ? 6 : 5;
+  const cols = dens.lon > 1.1 ? 16 : 13;
+  const plateGeo = plateGeometry(0.030 * S, 0.040 * S, 0.005 * S);
+  const cordGeo = plateGeometry(0.006 * S, 0.030 * S, 0.004 * S);
+
+  const plates = new InstancedMesh(plateGeo, materials.lamellar, rows * cols);
+  const cords = new InstancedMesh(cordGeo, materials.lacing, rows * cols);
+  plates.name = 'do-plates'; cords.name = 'do-lacing';
+  plates.castShadow = true;
+
+  const m4 = _m[0], qq = _q[0], pv = _v[0], sv = _v[1].set(1, 1, 1);
+  const sp1 = bindPos(rig.bones, 'spine1', _v[2]).clone();
+  const sp3 = bindPos(rig.bones, 'spine3', _v[3]).clone();
+  let n = 0;
+  for (let r = 0; r < rows; r++) {
+    const t = r / (rows - 1);
+    const y = lerp(sp1.y - 0.055 * S, sp3.y + 0.045 * S, t);
+    // The cuirass is barrel-shaped: widest at the ribs, drawn in at the waist.
+    const flare = 1 + 0.16 * Math.sin(t * Math.PI);
+    const rx = (0.168 * S) * flare, rz = (0.128 * S) * flare;
+    for (let cI = 0; cI < cols; cI++) {
+      const ang = (cI / cols) * Math.PI * 2 + (r % 2) * (Math.PI / cols) * 0.5;
+      const ca = Math.cos(ang), sa = Math.sin(ang);
+      pv.set(ca * rx, y, sa * rz);
+      _v[4].set(ca / rx, 0.16, sa / rz).normalize();
+      qq.setFromUnitVectors(_FWD, _v[4].multiplyScalar(-1));
+      m4.compose(pv, qq, sv);
+      plates.setMatrixAt(n, m4);
+      pv.set(ca * (rx + 0.006 * S), y - 0.018 * S, sa * (rz + 0.006 * S));
+      m4.compose(pv, qq, sv);
+      cords.setMatrixAt(n, m4);
+      n++;
+    }
+  }
+  plates.instanceMatrix.needsUpdate = true;
+  cords.instanceMatrix.needsUpdate = true;
+  plates.frustumCulled = false; cords.frustumCulled = false;
+  group.add(plates, cords);
+  return group;
+}
+
+/** 袖 sode — the big square shoulder guards. Four descending plates per side. */
+function buildSode(rig, dens, materials, side) {
+  const S = rig.scale;
+  const rows = 4;
+  const geo = plateGeometry(0.085 * S, 0.048 * S, 0.006 * S);
+  const im = new InstancedMesh(geo, materials.lamellar, rows);
+  im.name = 'sode' + side;
+  im.castShadow = true;
+  const sgn = side === 'R' ? 1 : -1;
+  const m4 = _m[0], qq = _q[0], pv = _v[0], sv = _v[1].set(1, 1, 1);
+  for (let r = 0; r < rows; r++) {
+    const t = r / (rows - 1);
+    pv.set(sgn * (0.055 + t * 0.030) * S, (-0.010 - t * 0.088) * S, 0.004 * S);
+    _e.set(0.12 * t, 0, sgn * (0.34 + t * 0.22));
+    qq.setFromEuler(_e);
+    m4.compose(pv, qq, sv);
+    im.setMatrixAt(r, m4);
+  }
+  im.instanceMatrix.needsUpdate = true;
+  im.frustumCulled = false;
+  return im;
+}
+
+/** A slightly domed rounded plate — flat quads read as cardboard under a rim light. */
+function plateGeometry(w, h, d) {
+  const g = new BufferGeometry();
+  const pos = [], nor = [], uv = [], idx = [];
+  const nx = 4, ny = 4;
+  for (let s = 0; s < 2; s++) {
+    const sign = s === 0 ? 1 : -1;
+    const base = pos.length / 3;
+    for (let j = 0; j <= ny; j++) {
+      for (let i = 0; i <= nx; i++) {
+        const u = i / nx, v = j / ny;
+        const x = (u - 0.5) * w, y = (v - 0.5) * h;
+        const dome = Math.cos((u - 0.5) * Math.PI) * Math.cos((v - 0.5) * Math.PI * 0.5);
+        const z = sign * (d * 0.5 + d * 0.9 * dome);
+        pos.push(x, y, z);
+        const gx = -sign * (Math.sin((u - 0.5) * Math.PI) * d * 1.6) / Math.max(1e-4, w);
+        const gy = -sign * (Math.sin((v - 0.5) * Math.PI * 0.5) * d * 0.8) / Math.max(1e-4, h);
+        const l = Math.hypot(gx, gy, 1);
+        nor.push(gx / l, gy / l, sign / l);
+        uv.push(u, v);
+      }
+    }
+    for (let j = 0; j < ny; j++) {
+      for (let i = 0; i < nx; i++) {
+        const a = base + j * (nx + 1) + i;
+        if (sign > 0) idx.push(a, a + 1, a + nx + 2, a, a + nx + 2, a + nx + 1);
+        else idx.push(a, a + nx + 2, a + 1, a, a + nx + 1, a + nx + 2);
+      }
+    }
+  }
+  g.setAttribute('position', new Float32BufferAttribute(pos, 3));
+  g.setAttribute('normal', new Float32BufferAttribute(nor, 3));
+  g.setAttribute('uv', new Float32BufferAttribute(uv, 2));
+  g.setIndex(idx);
+  return g;
+}
+
+/** 面頬 menpō — the snarling half mask. Built as a shell swept under the cheekbones. */
+function buildMenpo(rig, dens, materials) {
+  const S = rig.scale;
+  const g = new BufferGeometry();
+  const pos = [], nor = [], uv = [], idx = [];
+  const cols = dens.ringT >= 14 ? 11 : 8;
+  const rowsDef = [
+    // [y, zFront, halfWidth, bulge]
+    [0.070, -0.086, 0.082, 0.30],
+    [0.030, -0.098, 0.080, 0.55],
+    [-0.005, -0.100, 0.072, 0.70],
+    [-0.042, -0.088, 0.058, 0.85],
+    [-0.072, -0.058, 0.040, 0.60],
+  ];
+  for (let r = 0; r < rowsDef.length; r++) {
+    const [y, zf, hw, bl] = rowsDef[r];
+    for (let cI = 0; cI <= cols; cI++) {
+      const u = cI / cols;
+      const ang = (u - 0.5) * Math.PI * 1.08;
+      const x = Math.sin(ang) * hw * S;
+      const z = (zf + (1 - Math.cos(ang)) * 0.085) * S;
+      pos.push(x, y * S, z);
+      const l = Math.hypot(Math.sin(ang), 0.22 * bl, -Math.cos(ang));
+      nor.push(Math.sin(ang) / l, (0.22 * bl) / l, -Math.cos(ang) / l);
+      uv.push(u, r / (rowsDef.length - 1));
+    }
+  }
+  for (let r = 0; r < rowsDef.length - 1; r++) {
+    for (let cI = 0; cI < cols; cI++) {
+      const a = r * (cols + 1) + cI;
+      idx.push(a, a + 1, a + cols + 2, a, a + cols + 2, a + cols + 1);
+    }
+  }
+  g.setAttribute('position', new Float32BufferAttribute(pos, 3));
+  g.setAttribute('normal', new Float32BufferAttribute(nor, 3));
+  g.setAttribute('uv', new Float32BufferAttribute(uv, 2));
+  g.setIndex(idx);
+  const mesh = new Mesh(g, materials.lacquerRed);
+  mesh.name = 'menpo';
+  mesh.castShadow = true;
+  return mesh;
+}
+
+/** 陣笠 jingasa — the conical field hat. A lathe with a flat brim and a shallow dome. */
+function buildJingasa(rig, dens, materials) {
+  const S = rig.scale;
+  const seg = Math.max(10, dens.ringT);
+  const g = new BufferGeometry();
+  const pos = [], nor = [], uv = [], idx = [];
+  const prof = [
+    [0.000, 0.098], [0.070, 0.088], [0.140, 0.060], [0.205, 0.024], [0.255, 0.000], [0.250, -0.012],
+  ];
+  for (let r = 0; r < prof.length; r++) {
+    for (let cI = 0; cI <= seg; cI++) {
+      const u = cI / seg, th = u * Math.PI * 2;
+      const rad = prof[r][0] * S, y = prof[r][1] * S;
+      pos.push(Math.cos(th) * rad, y, Math.sin(th) * rad);
+      const dr = (prof[Math.min(prof.length - 1, r + 1)][0] - prof[Math.max(0, r - 1)][0]);
+      const dy = (prof[Math.min(prof.length - 1, r + 1)][1] - prof[Math.max(0, r - 1)][1]);
+      const l = Math.hypot(dr, dy) || 1;
+      nor.push(Math.cos(th) * (-dy / l), (dr / l), Math.sin(th) * (-dy / l));
+      uv.push(u, r / (prof.length - 1));
+    }
+  }
+  for (let r = 0; r < prof.length - 1; r++) {
+    for (let cI = 0; cI < seg; cI++) {
+      const a = r * (seg + 1) + cI;
+      idx.push(a, a + seg + 2, a + 1, a, a + seg + 1, a + seg + 2);
+    }
+  }
+  g.setAttribute('position', new Float32BufferAttribute(pos, 3));
+  g.setAttribute('normal', new Float32BufferAttribute(nor, 3));
+  g.setAttribute('uv', new Float32BufferAttribute(uv, 2));
+  g.setIndex(idx);
+  const mesh = new Mesh(g, materials.lacquer);
+  mesh.name = 'jingasa';
+  mesh.castShadow = true;
+  mesh.position.set(0, 0.145 * S, 0.012 * S);
+  return mesh;
+}
+
+// ===========================================================================
+// KATANA + SAYA
+// ===========================================================================
+
+const KATANA = {
+  nagasa: 0.720,     // blade length, machi to kissaki
+  sori: 0.019,       // max deviation from the chord — this is what "curved" means
+  motohaba: 0.0320,  // width at the machi
+  sakihaba: 0.0225,  // width at the yokote
+  kasane: 0.0072,    // thickness at the mune
+  tsuka: 0.258,      // handle length
+  yokoteU: 0.955,    // where the kissaki facet begins
+};
+
+/** Blade spine at parameter u ∈ [-tsuka/nagasa, 1]: chord along +Y, sori toward +Z. */
+function bladePoint(u, out, s) {
+  const K = KATANA;
+  const y = u * K.nagasa * s;
+  // Parabolic arc: zero at both ends of the chord, max `sori` at the middle. The
+  // handle continues the same curve backwards, which is exactly how a mounted
+  // katana's tsuka ends up angled relative to the blade.
+  const z = K.sori * s * (1 - (2 * u - 1) * (2 * u - 1));
+  out[0] = 0; out[1] = y; out[2] = z;
+  return out;
+}
+
+/**
+ * The blade. Five flat-shaded bands — mune, two ji faces, two ha bevels — so the
+ * shinogi ridge stays a crisp highlight line instead of a smeared gradient. That
+ * ridge is where the anisotropic specular in Materials.js does its work.
+ */
+function buildBlade(seg, scale, material) {
+  const K = KATANA;
+  const g = new BufferGeometry();
+  const pos = [], nor = [], uv = [], idx = [];
+  const p = [0, 0, 0], pn = [0, 0, 0];
+  const S = scale;
+
+  // Section outline in (x, zOffsetFromMune) as fractions of kasane/width.
+  const ring = new Float64Array(10);
+  const bands = 5;
+  const vertsPerStation = bands * 2;
+
+  for (let i = 0; i < seg; i++) {
+    const u = i / (seg - 1);
+    bladePoint(u, p, S);
+    bladePoint(Math.min(1, u + 0.01), pn, S);
+    let ty = pn[1] - p[1], tz = pn[2] - p[2];
+    const tl = Math.hypot(ty, tz) || 1; ty /= tl; tz /= tl;
+
+    let w = lerp(K.motohaba, K.sakihaba, u) * S;
+    let k = K.kasane * S * lerp(1.0, 0.72, u);
+    if (u > K.yokoteU) {
+      const kt = (u - K.yokoteU) / (1 - K.yokoteU);
+      const shrink = Math.sqrt(Math.max(0, 1 - kt * kt));
+      w *= shrink; k *= Math.max(0.12, shrink);
+    }
+    // Outline points: mune+, shinogi+, ha, shinogi-, mune-
+    ring[0] = k * 0.16; ring[1] = 0;
+    ring[2] = k * 0.5; ring[3] = -0.30 * w;
+    ring[4] = 0; ring[5] = -w;
+    ring[6] = -k * 0.5; ring[7] = -0.30 * w;
+    ring[8] = -k * 0.16; ring[9] = 0;
+
+    for (let bIdx = 0; bIdx < bands; bIdx++) {
+      const a0 = bIdx * 2, a1 = ((bIdx + 1) % bands) * 2;
+      const x0 = ring[a0], d0 = ring[a0 + 1];
+      const x1 = ring[a1], d1 = ring[a1 + 1];
+      // Facet normal in the section plane, lifted into world by the tangent frame.
+      let ex = x1 - x0, ed = d1 - d0;
+      const el = Math.hypot(ex, ed) || 1; ex /= el; ed /= el;
+      const nx = ed, nd = -ex;
+      const wnx = nx;
+      const wny = nd * -tz;
+      const wnz = nd * ty;
+      const nl = Math.hypot(wnx, wny, wnz) || 1;
+      for (const [xx, dd] of [[x0, d0], [x1, d1]]) {
+        pos.push(p[0] + xx, p[1] + dd * -tz, p[2] + dd * ty);
+        nor.push(wnx / nl, wny / nl, wnz / nl);
+        // U runs along the blade so the tangent (and the anisotropy) does too.
+        uv.push(u, bIdx / bands);
+      }
+    }
+  }
+  for (let i = 0; i < seg - 1; i++) {
+    for (let bIdx = 0; bIdx < bands; bIdx++) {
+      const a = i * vertsPerStation + bIdx * 2;
+      const c = a + vertsPerStation;
+      idx.push(a, a + 1, c + 1, a, c + 1, c);
+    }
+  }
+  g.setAttribute('position', new Float32BufferAttribute(pos, 3));
+  g.setAttribute('normal', new Float32BufferAttribute(nor, 3));
+  g.setAttribute('uv', new Float32BufferAttribute(uv, 2));
+  g.setIndex(idx);
+  const mesh = new Mesh(g, material);
+  mesh.name = 'blade';
+  mesh.castShadow = true;
+  return mesh;
+}
+
+/** Lathed ring solid — tsuba, habaki, fuchi, kashira all come out of this. */
+function latheRing(profile, seg, material, name) {
+  const g = new BufferGeometry();
+  const pos = [], nor = [], uv = [], idx = [];
+  const rows = profile.length;
+  for (let r = 0; r < rows; r++) {
+    for (let cI = 0; cI <= seg; cI++) {
+      const u = cI / seg, th = u * Math.PI * 2;
+      const ca = Math.cos(th), sa = Math.sin(th);
+      // Tsuba and fuchi are ovals, not discs — the third profile column squashes Z.
+      const rad = profile[r][0];
+      pos.push(ca * rad, profile[r][1], sa * rad * (profile[r][2] || 1));
+      const rp = profile[Math.max(0, r - 1)], rn = profile[Math.min(rows - 1, r + 1)];
+      const dr = rn[0] - rp[0], dy = rn[1] - rp[1];
+      const l = Math.hypot(dr, dy) || 1;
+      nor.push(ca * (dy / l), -(dr / l), sa * (dy / l));
+      uv.push(u, r / (rows - 1));
+    }
+  }
+  for (let r = 0; r < rows - 1; r++) {
+    for (let cI = 0; cI < seg; cI++) {
+      const a = r * (seg + 1) + cI;
+      idx.push(a, a + 1, a + seg + 2, a, a + seg + 2, a + seg + 1);
+    }
+  }
+  g.setAttribute('position', new Float32BufferAttribute(pos, 3));
+  g.setAttribute('normal', new Float32BufferAttribute(nor, 3));
+  g.setAttribute('uv', new Float32BufferAttribute(uv, 2));
+  g.setIndex(idx);
+  const mesh = new Mesh(g, material);
+  mesh.name = name || 'lathe';
+  mesh.castShadow = true;
+  return mesh;
+}
+
+/**
+ * 柄巻き ito wrap, in geometry. Two pairs of counter-wound ribbons laid on the tsuka
+ * surface; where they cross they form the diamond lattice, and the gaps between the
+ * crossings show the samegawa underneath. Doing this with geometry rather than a
+ * normal map means the silhouette of the handle is correct in a close-up finisher.
+ */
+function buildItoWrap(scale, turns, ribbons, material) {
+  const S = scale;
+  const L = KATANA.tsuka * S;
+  const rx = 0.0175 * S, rz = 0.0128 * S;
+  const g = new BufferGeometry();
+  const pos = [], nor = [], uv = [], idx = [];
+  const samples = 26;
+  const halfW = 0.0062 * S;
+
+  for (let rb = 0; rb < ribbons; rb++) {
+    const dir = rb % 2 === 0 ? 1 : -1;
+    const phase = Math.floor(rb / 2) * Math.PI;
+    const base = pos.length / 3;
+    for (let i = 0; i < samples; i++) {
+      const t = i / (samples - 1);
+      const y = 0.012 * S + t * (L - 0.030 * S);
+      const ang = dir * (t * turns * Math.PI * 2) + phase;
+      const ca = Math.cos(ang), sa = Math.sin(ang);
+      // Surface tangent along the helix, used to widen the ribbon across the wrap.
+      const cx = ca * rx, cz = sa * rz;
+      const nx = ca / rx, nz = sa / rz;
+      const nl = Math.hypot(nx, nz) || 1;
+      const ux = -sa * rx * dir, uz = ca * rz * dir;
+      const dy = (L - 0.030 * S) / (samples - 1);
+      const tl = Math.hypot(ux, dy, uz) || 1;
+      // Across-vector = tangent × normal.
+      let ax = (dy / tl) * (nz / nl) - 0;
+      let az = 0 - (dy / tl) * (nx / nl);
+      const al = Math.hypot(ax, az) || 1; ax /= al; az /= al;
+      for (let s = -1; s <= 1; s += 2) {
+        pos.push(cx + ax * halfW * s + (nx / nl) * 0.0016 * S, y,
+          cz + az * halfW * s + (nz / nl) * 0.0016 * S);
+        nor.push(nx / nl, 0.12, nz / nl);
+        uv.push(t * 4, (s + 1) * 0.5);
+      }
+    }
+    for (let i = 0; i < samples - 1; i++) {
+      const a = base + i * 2;
+      idx.push(a, a + 1, a + 3, a, a + 3, a + 2);
+    }
+  }
+  g.setAttribute('position', new Float32BufferAttribute(pos, 3));
+  g.setAttribute('normal', new Float32BufferAttribute(nor, 3));
+  g.setAttribute('uv', new Float32BufferAttribute(uv, 2));
+  g.setIndex(idx);
+  const mesh = new Mesh(g, material);
+  mesh.name = 'ito';
+  mesh.castShadow = true;
+  return mesh;
+}
+
+/**
+ * The full koshirae. Local origin sits at the grip point on the tsuka with the blade
+ * running along +Y; the attachment node on the hand supplies the rest of the transform
+ * so Player.js can tune the grip without touching geometry.
+ */
+export function buildKatana(quality, materials, scale) {
+  const S = scale === undefined ? 1 : scale;
+  const dens = meshDensity(quality);
+  const seg = dens.lon > 1.1 ? 22 : dens.lon > 0.8 ? 16 : 11;
+  const latheSeg = dens.lon > 1.1 ? 16 : dens.lon > 0.8 ? 12 : 8;
+  const g = new Group();
+  g.name = 'katana';
+
+  const blade = buildBlade(seg, S, materials.steel);
+  blade.position.y = KATANA.tsuka * S * 0.42;
+  g.add(blade);
+
+  const habaki = latheRing([
+    [0.0125 * S, -0.004 * S, 0.62], [0.0142 * S, 0.000, 0.62],
+    [0.0140 * S, 0.026 * S, 0.62], [0.0118 * S, 0.030 * S, 0.62],
+  ], latheSeg, materials.brass, 'habaki');
+  habaki.position.y = blade.position.y - 0.002 * S;
+  g.add(habaki);
+
+  const tsuba = latheRing([
+    [0.0110 * S, -0.0026 * S, 0.68], [0.0380 * S, -0.0030 * S, 0.86],
+    [0.0392 * S, 0.0000, 0.88], [0.0380 * S, 0.0030 * S, 0.86],
+    [0.0110 * S, 0.0026 * S, 0.68],
+  ], latheSeg, materials.iron, 'tsuba');
+  tsuba.position.y = blade.position.y - 0.006 * S;
+  g.add(tsuba);
+
+  // Tsuka core, tapering slightly toward the kashira like a real oval handle.
+  const core = latheRing([
+    [0.0176 * S, 0.006 * S, 0.73], [0.0182 * S, 0.030 * S, 0.73],
+    [0.0170 * S, KATANA.tsuka * S * 0.55, 0.72], [0.0166 * S, KATANA.tsuka * S - 0.020 * S, 0.72],
+    [0.0150 * S, KATANA.tsuka * S - 0.004 * S, 0.72],
+  ], latheSeg, materials.samegawa, 'tsuka');
+  core.position.y = blade.position.y - KATANA.tsuka * S;
+  g.add(core);
+
+  const wrap = buildItoWrap(S, dens.lon > 1.1 ? 5 : 4, dens.lon > 0.8 ? 4 : 2, materials.ito);
+  wrap.position.y = core.position.y;
+  g.add(wrap);
+
+  const fuchi = latheRing([
+    [0.0184 * S, 0.000, 0.73], [0.0196 * S, 0.004 * S, 0.74],
+    [0.0192 * S, 0.016 * S, 0.74], [0.0176 * S, 0.018 * S, 0.73],
+  ], latheSeg, materials.brass, 'fuchi');
+  fuchi.position.y = core.position.y + KATANA.tsuka * S - 0.020 * S;
+  g.add(fuchi);
+
+  const kashira = latheRing([
+    [0.0120 * S, -0.002 * S, 0.72], [0.0168 * S, 0.002 * S, 0.72],
+    [0.0164 * S, 0.014 * S, 0.72], [0.0090 * S, 0.019 * S, 0.72],
+  ], latheSeg, materials.brass, 'kashira');
+  kashira.position.y = core.position.y - 0.014 * S;
+  g.add(kashira);
+
+  // Socket at the kissaki: Combat.js reads this for the weapon capsule and Effects.js
+  // hangs the blade trail off it, so it must be an object, not a computed offset.
+  const tip = new Object3D();
+  tip.name = 'kissaki';
+  tip.position.set(0, blade.position.y + KATANA.nagasa * S, KATANA.sori * S * 0.05);
+  g.add(tip);
+  const guard = new Object3D();
+  guard.name = 'tsuba-point';
+  guard.position.copy(tsuba.position);
+  g.add(guard);
+
+  g.userData.tip = tip;
+  g.userData.guard = guard;
+  g.userData.length = KATANA.nagasa * S;
+  return g;
+}
+
+/** 鞘 saya — the lacquered scabbard, curved to match the blade, with a kurigata knob. */
+export function buildSaya(quality, materials, scale) {
+  const S = scale === undefined ? 1 : scale;
+  const dens = meshDensity(quality);
+  const seg = dens.lon > 1.1 ? 14 : dens.lon > 0.8 ? 10 : 7;
+  const latheSeg = dens.lon > 1.1 ? 12 : 8;
+  const g = new Group();
+  g.name = 'saya';
+
+  const geo = new BufferGeometry();
+  const pos = [], nor = [], uv = [], idx = [];
+  const ringSeg = dens.lon > 0.8 ? 8 : 6;
+  const p = [0, 0, 0], pn = [0, 0, 0];
+  for (let i = 0; i < seg; i++) {
+    const u = (i / (seg - 1)) * 1.028 - 0.010;
+    bladePoint(u, p, S);
+    bladePoint(u + 0.01, pn, S);
+    let ty = pn[1] - p[1], tz = pn[2] - p[2];
+    const tl = Math.hypot(ty, tz) || 1; ty /= tl; tz /= tl;
+    const t = clamp(u, 0, 1);
+    let hw = lerp(KATANA.motohaba, KATANA.sakihaba, t) * 0.5 * S + 0.0052 * S;
+    let hk = KATANA.kasane * S * lerp(1.0, 0.78, t) * 0.5 + 0.0048 * S;
+    if (u > 0.99) { const k = (u - 0.99) / 0.038; hw *= Math.max(0.25, 1 - k); hk *= Math.max(0.25, 1 - k); }
+    for (let j = 0; j <= ringSeg; j++) {
+      const a = (j / ringSeg) * Math.PI * 2;
+      const ca = Math.cos(a), sa = Math.sin(a);
+      const ox = ca * hk, od = sa * hw - lerp(KATANA.motohaba, KATANA.sakihaba, t) * 0.5 * S;
+      pos.push(p[0] + ox, p[1] + od * -tz, p[2] + od * ty);
+      let gx = ca / hk, gd = sa / hw;
+      const gl = Math.hypot(gx, gd) || 1;
+      nor.push(gx / gl, (gd / gl) * -tz, (gd / gl) * ty);
+      uv.push(j / ringSeg, u * KATANA.nagasa * S * UV_PER_METRE);
+    }
+  }
+  for (let i = 0; i < seg - 1; i++) {
+    for (let j = 0; j < ringSeg; j++) {
+      const a = i * (ringSeg + 1) + j, c = a + ringSeg + 1;
+      idx.push(a, a + 1, c + 1, a, c + 1, c);
+    }
+  }
+  geo.setAttribute('position', new Float32BufferAttribute(pos, 3));
+  geo.setAttribute('normal', new Float32BufferAttribute(nor, 3));
+  geo.setAttribute('uv', new Float32BufferAttribute(uv, 2));
+  geo.setIndex(idx);
+  const body = new Mesh(geo, materials.lacquer);
+  body.name = 'saya-body';
+  body.castShadow = true;
+  g.add(body);
+
+  const koiguchi = latheRing([
+    [0.0150 * S, -0.004 * S, 0.60], [0.0166 * S, 0.000, 0.60],
+    [0.0162 * S, 0.020 * S, 0.60], [0.0148 * S, 0.024 * S, 0.60],
+  ], latheSeg, materials.horn, 'koiguchi');
+  g.add(koiguchi);
+
+  const kojiri = latheRing([
+    [0.0090 * S, KATANA.nagasa * S * 0.985, 0.58], [0.0116 * S, KATANA.nagasa * S * 0.995, 0.58],
+    [0.0110 * S, KATANA.nagasa * S * 1.020, 0.58], [0.0040 * S, KATANA.nagasa * S * 1.030, 0.58],
+  ], latheSeg, materials.horn, 'kojiri');
+  kojiri.position.z = KATANA.sori * S * 0.06;
+  g.add(kojiri);
+
+  // 栗形 kurigata: the little knob the sageo threads through.
+  const kurigata = latheRing([
+    [0.0040 * S, 0.000, 1], [0.0072 * S, 0.004 * S, 1],
+    [0.0070 * S, 0.016 * S, 1], [0.0038 * S, 0.020 * S, 1],
+  ], 8, materials.horn, 'kurigata');
+  kurigata.rotation.z = Math.PI * 0.5;
+  kurigata.position.set(0.0, 0.100 * S, -0.014 * S);
+  g.add(kurigata);
+
+  const mouth = new Object3D();
+  mouth.name = 'koiguchi-point';
+  g.add(mouth);
+  g.userData.mouth = mouth;
+  g.userData.cordAnchor = kurigata;
+  return g;
+}

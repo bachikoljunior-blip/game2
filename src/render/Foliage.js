@@ -260,4 +260,288 @@ class GeoBuilder {
   }
 }
 
-//@@SECTION_3@@
+// =============================================================================
+// 3. The foliage shader
+// =============================================================================
+
+const MAX_CHARACTERS = 8;
+const MAX_DISTURB = 4;
+
+/**
+ * Vertex pars. Injected after `#include <common>` so declarations and functions land at
+ * file scope. Two placement modes:
+ *
+ *   KAG_MODE 0 (upright)  — geometry is canonical unit space, t = position.y.
+ *   KAG_MODE 1 (attached) — geometry is a card in metres attached at parameter
+ *                           aFoliageC.w along a parent stem (bamboo leaf clusters).
+ */
+function vertexPars(windGLSL) {
+  return /* glsl */`
+attribute vec4 aFoliageA;   // xyz = world base, w = yaw
+attribute vec4 aFoliageB;   // x = height (m), y = width (m), z = stiffness, w = phase
+attribute vec4 aFoliageC;   // rgb = tint, w = attach param / variant
+attribute vec2 aFlex;       // x = flutter flexibility, y = per-vertex jitter
+
+uniform vec3  uCamPos;
+uniform vec4  uChars[ ${MAX_CHARACTERS} ];      // xyz = world pos, w = influence radius
+uniform vec4  uDisturbP[ ${MAX_DISTURB} ];      // xyz = world pos, w = radius
+uniform vec4  uDisturbA[ ${MAX_DISTURB} ];      // x = strength, y = start time
+
+uniform vec2  uFadeNear;    // x = start of fade-in, y = end of fade-in
+uniform vec2  uFadeFar;     // x = start of fade-out, y = fully culled
+uniform vec2  uSize;        // per-LOD global (height, width) multiplier
+uniform float uBendGain;
+uniform float uFlutter;
+
+varying float vKagFade;
+varying float vKagT;
+varying vec3  vKagTint;
+varying vec3  vKagWorld;
+
+vec3 kagPosG;
+vec3 kagNrmG;
+
+${glslNoise}
+${windGLSL}
+
+vec3 kagRodrigues( vec3 v, vec3 axis, float ang ) {
+  float c = cos( ang ), s = sin( ang );
+  return v * c + cross( axis, v ) * s + axis * dot( axis, v ) * ( 1.0 - c );
+}
+
+/**
+ * The money function.
+ *
+ * Deflection is a *rotation about the base* whose angle grows with the height parameter
+ * (theta(t) = theta0 * t^KAG_BEND_EXP). Because every vertex is rotated by its own angle
+ * about the same origin, the blade's arc length is preserved — it bends, it does not
+ * shear, and shear is what makes cheap grass read as a wobbling decal.
+ */
+void kagFoliageVertex() {
+
+  vec3  base   = aFoliageA.xyz;
+  float yaw    = aFoliageA.w;
+  float height = aFoliageB.x * uSize.x;
+  float width  = aFoliageB.y * uSize.y;
+  float stiff  = max( aFoliageB.z, 0.12 );
+  float phase  = aFoliageB.w;
+
+  float dist = distance( base, uCamPos );
+  vKagFade = smoothstep( uFadeNear.x, uFadeNear.y, dist ) * ( 1.0 - smoothstep( uFadeFar.x, uFadeFar.y, dist ) );
+
+  // ---- wind ----------------------------------------------------------------
+  vec3  wf   = kagWindField( base.xz, uWindTime );
+  vec2  flow = wf.xy;
+  float gust = wf.z;
+
+  float f1 = sin( uWindTime * ( 2.1 + 2.6 * gust ) + phase * KAG_TAU + dot( base.xz, vec2( 0.31, 0.27 ) ) );
+  float f2 = sin( uWindTime * 5.7 + phase * 12.566 + aFlex.y * 9.42 );
+  flow += uWindDir * ( ( f1 * 0.17 + f2 * 0.07 ) * ( 0.35 + uWindStrength ) );
+
+  // ---- characters part the grass ------------------------------------------
+  vec2  push = vec2( 0.0 );
+  float trample = 0.0;
+  for ( int i = 0; i < ${MAX_CHARACTERS}; i++ ) {
+    vec4 ch = uChars[ i ];
+    if ( ch.w > 0.001 ) {
+      vec2 d = base.xz - ch.xz;
+      float dd = length( d ) + 1e-4;
+      float vert = 1.0 - smoothstep( 1.4, 3.4, abs( base.y - ch.y ) );
+      float infl = ( 1.0 - smoothstep( ch.w * 0.22, ch.w, dd ) ) * vert;
+      push += ( d / dd ) * infl * 2.4;
+      trample = max( trample, infl );
+    }
+  }
+
+  // ---- slashes and impacts -------------------------------------------------
+  for ( int i = 0; i < ${MAX_DISTURB}; i++ ) {
+    vec4 dp = uDisturbP[ i ];
+    if ( dp.w > 0.001 ) {
+      vec4 da = uDisturbA[ i ];
+      float age = uWindTime - da.y;
+      if ( age >= 0.0 && age < 2.4 ) {
+        vec2 d = base.xz - dp.xz;
+        float dd = length( d ) + 1e-4;
+        float ring = 1.0 - smoothstep( 0.0, dp.w, dd );
+        float env = exp( -age * 2.8 ) * ( 0.55 + 0.45 * cos( age * 30.0 - dd * 2.4 ) );
+        push += ( d / dd ) * ring * env * da.x * 3.6;
+      }
+    }
+  }
+
+  vec2  total = flow + push;
+  float mag   = length( total );
+  vec2  dirn  = mag > 1e-4 ? total / mag : uWindDir;
+  vec3  axis  = vec3( dirn.y, 0.0, -dirn.x );   // = normalize( cross( up, flow ) )
+  float a     = mag * uBendGain / stiff;
+  float theta = 1.5 * a / ( 1.0 + a );          // saturating: a blade never folds past ~86 deg
+
+  // Trampled blades also lose height, which is what actually reads as "flattened".
+  height *= ( 1.0 - 0.45 * trample );
+
+  // ---- placement -----------------------------------------------------------
+  float sy = sin( yaw ), cy = cos( yaw );
+  mat2 rot = mat2( cy, sy, -sy, cy );
+
+  vec3 nrm = normal;
+  nrm.xz = rot * nrm.xz;
+
+#if KAG_MODE == 1
+  float t = clamp( aFoliageC.w, 0.0, 1.0 );
+  vec3 off = position * width;
+  off.xz = rot * off.xz;
+  // Leaf clusters flutter about their own attachment point at a higher frequency.
+  float lf = sin( uWindTime * ( 6.5 + 3.4 * gust ) + phase * 21.0 + aFlex.y * 15.0 );
+  float la = lf * ( 0.24 + 0.55 * mag ) * aFlex.x * uFlutter;
+  off = kagRodrigues( off, axis, la );
+  nrm = kagRodrigues( nrm, axis, la );
+  vec3 local = vec3( 0.0, t * height, 0.0 ) + off;
+#else
+  float t = clamp( position.y, 0.0, 1.0 );
+  vec3 local = vec3( position.x * width, position.y * height, position.z * width );
+  local.xz = rot * local.xz;
+  // Leaf-tip shiver: small, tangential, scaled by the authored flexibility.
+  float lf = sin( uWindTime * ( 5.2 + 2.4 * gust ) + phase * 7.0 + aFlex.y * 19.0 + t * 4.0 );
+  local += vec3( dirn.x, 0.0, dirn.y ) * ( lf * 0.045 * aFlex.x * ( 0.3 + mag ) * uFlutter * height );
+#endif
+
+  float prof = pow( t, KAG_BEND_EXP );
+#ifdef KAG_WHIP
+  // A tall culm does not simply arc: the top overshoots and whips back a beat late.
+  prof += KAG_WHIP * sin( uWindTime * 3.1 + phase * KAG_TAU - t * 2.2 ) * t * t * t;
+#endif
+
+  float ang = theta * prof;
+  kagPosG = base + kagRodrigues( local, axis, ang );
+  kagNrmG = normalize( kagRodrigues( nrm, axis, ang ) + 1e-6 );
+
+  vKagT = t;
+  vKagTint = aFoliageC.rgb;
+  vKagWorld = kagPosG;
+}
+`;
+}
+
+/** Fragment pars: screen-door dither, subsurface term, and a little grain. */
+const FRAGMENT_PARS = /* glsl */`
+uniform vec3  uSunDir;
+uniform vec3  uSunColor;
+uniform vec3  uSSSColor;
+uniform float uSSSStrength;
+uniform float uTipGlow;
+uniform float uBaseAO;
+uniform float uGrain;
+
+varying float vKagFade;
+varying float vKagT;
+varying vec3  vKagTint;
+varying vec3  vKagWorld;
+
+float kagBayer2( vec2 a ) { a = floor( a ); return fract( a.x * 0.5 + a.y * a.y * 0.75 ); }
+#define kagBayer4( a ) ( kagBayer2( 0.5 * ( a ) ) * 0.25 + kagBayer2( a ) )
+#define kagBayer8( a ) ( kagBayer4( 0.5 * ( a ) ) * 0.25 + kagBayer2( a ) )
+`;
+
+/** Discard early — before any texture fetch — so a faded-out LOD costs almost nothing. */
+const FRAGMENT_DITHER = /* glsl */`
+if ( vKagFade < kagBayer8( gl_FragCoord.xy ) ) discard;
+`;
+
+/**
+ * Albedo shaping: per-instance tint, a base-to-tip gradient (roots sit in their own
+ * shadow, tips catch the gold), and a world-space grain so nothing is ever flat colour.
+ */
+const FRAGMENT_TINT = /* glsl */`
+{
+  float grain = fbm2( vKagWorld.xz * 3.7, 2 ) * 0.5 + 0.5;
+  vec3 tint = vKagTint * mix( 1.0 - uBaseAO, 1.0 + uTipGlow, vKagT );
+  tint *= mix( 1.0 - uGrain, 1.0 + uGrain, grain );
+  diffuseColor.rgb *= tint;
+}
+`;
+
+/**
+ * r180 has no `getShadowMask()` any more, so grab the near cascade's shadow term
+ * ourselves. One extra fetch, and it is what stops backlit grass glowing *through*
+ * the shrine roof.
+ */
+const FRAGMENT_SHADOW_CAPTURE = /* glsl */`
+float kagLit = 1.0;
+#if defined( USE_SHADOWMAP ) && ( NUM_DIR_LIGHT_SHADOWS > 0 )
+  kagLit = getShadow(
+    directionalShadowMap[ 0 ],
+    directionalLightShadows[ 0 ].shadowMapSize,
+    directionalLightShadows[ 0 ].shadowIntensity,
+    directionalLightShadows[ 0 ].shadowBias,
+    directionalLightShadows[ 0 ].shadowRadius,
+    vDirectionalShadowCoord[ 0 ]
+  );
+#endif
+`;
+
+/**
+ * Translucency. A blade backlit by a low sun has to glow or golden hour reads as cardboard.
+ * Wrapped diffuse pulls the terminator around the thin blade; the forward-scatter lobe is
+ * what actually sells it, and it is strongest at the thin tips.
+ */
+const FRAGMENT_SSS = /* glsl */`
+{
+  vec3 V = normalize( cameraPosition - vKagWorld );
+  vec3 N = normalize( normal );
+  float forward = pow( clamp( dot( V, -uSunDir ) * 0.5 + 0.5, 0.0, 1.0 ), 4.0 );
+  float wrap = clamp( ( dot( N, uSunDir ) + 0.55 ) / 1.55, 0.0, 1.0 );
+  float thin = mix( 0.30, 1.0, vKagT );
+  float lit = mix( 0.35, 1.0, kagLit );
+  vec3 trans = uSSSColor * uSunColor * ( forward * 1.7 + 0.18 ) * thin * uSSSStrength * lit;
+  outgoingLight += diffuseColor.rgb * ( trans + uSunColor * wrap * 0.16 * lit );
+}
+`;
+
+// =============================================================================
+// 4. Material + instanced-geometry factories
+// =============================================================================
+
+/**
+ * Wrap a base geometry for instancing and attach the three per-instance vec4s.
+ * `capacity` is the instance count the buffers are sized for; `instanceCount` is what
+ * actually gets drawn and is what the tile system moves around.
+ */
+function makeInstanced(base, capacity) {
+  const g = new InstancedBufferGeometry();
+  g.index = base.index;
+  g.attributes = base.attributes;
+  g.groups = base.groups;
+  g.drawRange = base.drawRange;
+  g.boundingSphere = base.boundingSphere;
+  g.boundingBox = base.boundingBox;
+
+  const a = new InstancedBufferAttribute(new Float32Array(capacity * 4), 4);
+  const b = new InstancedBufferAttribute(new Float32Array(capacity * 4), 4);
+  const c = new InstancedBufferAttribute(new Float32Array(capacity * 4), 4);
+  a.setUsage(DynamicDrawUsage);
+  b.setUsage(DynamicDrawUsage);
+  c.setUsage(DynamicDrawUsage);
+  g.setAttribute('aFoliageA', a);
+  g.setAttribute('aFoliageB', b);
+  g.setAttribute('aFoliageC', c);
+  g.instanceCount = 0;
+  g.userData.capacity = capacity;
+  return g;
+}
+
+/** Grow an instanced geometry's buffers in place (quality changes, denser tiers). */
+function resizeInstanced(g, capacity) {
+  if (g.userData.capacity >= capacity) return g;
+  for (const key of ['aFoliageA', 'aFoliageB', 'aFoliageC']) {
+    const attr = g.getAttribute(key);
+    const next = new Float32Array(capacity * 4);
+    next.set(attr.array.subarray(0, Math.min(attr.array.length, next.length)));
+    attr.array = next;
+    attr.count = capacity;
+    attr.needsUpdate = true;
+  }
+  g.userData.capacity = capacity;
+  return g;
+}
+
+//@@SECTION_5@@

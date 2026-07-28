@@ -56,8 +56,8 @@ ${glslNoise}
 ${WIND_UNIFORMS_GLSL}
 
 /**
- * The gust envelope. `phase` travels along the wind direction, so the ridge of
- * the wave sweeps across the world instead of pulsing everywhere at once.
+ * The gust envelope. The phase term travels along the wind direction, so the
+ * ridge of the wave sweeps across the world instead of pulsing everywhere.
  */
 float kagerouGust(vec2 xz){
   vec2 dir = normalize(uWind.xy + vec2(1e-5, 0.0));
@@ -84,7 +84,7 @@ vec3 kagerouWind(vec3 wp){
 
 /**
  * Displacement for something rooted at wp with normalised height h (0 at the
- * root, 1 at the tip). `stiffness` > 1 is a bamboo culm, < 1 is a grass blade.
+ * root, 1 at the tip). stiffness > 1 is a bamboo culm, < 1 is a grass blade.
  */
 vec3 kagerouBend(vec3 wp, float h, float stiffness){
   vec3 w = kagerouWind(wp);
@@ -754,6 +754,534 @@ export class WeatherSystem {
   }
 }
 
-// FIELDS_MARKER
+// =============================================================================
+//  GLSL
+// =============================================================================
 
-// SHADERS_MARKER
+const FIELD_VERT = /* glsl */`
+attribute vec4 aRand;    // rx, ry, rz, seed
+attribute vec4 aRand2;   // sizeVar, speedVar, tumbleVar, phase
+attribute vec3 aAxis;
+
+uniform float uTime;
+uniform vec3  uOrigin;
+uniform vec3  uBox;
+uniform float uBaseY;
+uniform float uGroundY;
+uniform float uSize;
+uniform float uFall;
+uniform float uTumble;
+uniform float uFlutter;
+uniform float uDrag;
+uniform float uSprite;
+uniform vec3  uColorA;
+uniform vec3  uColorB;
+uniform vec3  uSunDir;
+uniform vec3  uSunColor;
+uniform float uTransmit;
+uniform float uOpacity;
+uniform float uFade;
+
+varying vec2 vUv;
+varying vec4 vColor;
+
+${WIND_GLSL}
+
+vec3 rotAxis(vec3 v, vec3 a, float ang){
+  float c = cos(ang), s = sin(ang);
+  return v * c + cross(a, v) * s + a * dot(a, v) * (1.0 - c);
+}
+
+#include <fog_pars_vertex>
+
+void main(){
+  float seed = aRand.w;
+  vec2 wdir = normalize(uWind.xy + vec2(1e-5, 0.0));
+
+  // Vertical: a plain wrap through the box. Negative uFall rises (embers).
+  float fall = uFall * aRand2.y;
+  float y = mod(aRand.y * uBox.y - fall * uTime, uBox.y);
+
+  // Horizontal: bulk advection by the wind plus a per-particle wander.
+  vec2 drift = wdir * (uWind.z * uTime * uDrag);
+  drift += vec2(
+    snoise2(vec2(seed * 57.0, uTime * 0.33)),
+    snoise2(vec2(seed * 57.0 + 31.0, uTime * 0.29))
+  ) * uFlutter * 1.6;
+
+  vec2 hbox = uBox.xz * 0.5;
+  vec2 basePos = vec2(aRand.x, aRand.z) * uBox.xz + drift;
+  vec2 xz = mod(basePos - uOrigin.xz + hbox, uBox.xz) - hbox + uOrigin.xz;
+
+  vec3 wp = vec3(xz.x, uBaseY + y - uBox.y * 0.18, xz.y);
+
+  // The gust surge: as a front sweeps past, everything inside it leans together.
+  vec3 wnd = kagerouWind(wp);
+  wp.xz += wnd.xz * uFlutter * 0.16;
+
+#if MODE == 2
+  wp.y += sin(uTime * (0.7 + aRand2.z) + seed * 6.2831) * 0.55;
+  wp.xz += vec2(sin(uTime * 0.6 + seed * 12.0), cos(uTime * 0.53 + seed * 9.0)) * 0.65;
+#endif
+#if MODE == 4
+  wp += vec3(
+    sin(uTime * 0.40 + seed * 21.0),
+    sin(uTime * 0.31 + seed * 13.0),
+    cos(uTime * 0.37 + seed * 17.0)
+  ) * 0.35;
+#endif
+
+  float size = uSize * aRand2.x;
+
+  float aGround = smoothstep(uGroundY - 0.5, uGroundY + 1.1, wp.y);
+  float aTop = 1.0 - smoothstep(uBox.y * 0.74, uBox.y * 0.96, y);
+  float rad = length(wp.xz - uOrigin.xz);
+  float aDist = 1.0 - smoothstep(max(hbox.x, hbox.y) * 0.70, max(hbox.x, hbox.y) * 0.98, rad);
+  float alpha = uOpacity * uFade * aGround * aTop * aDist;
+
+  vec3 nrm = vec3(0.0, 0.0, 1.0);
+  vec4 mvPosition;
+
+#if MODE == 0 || MODE == 1
+  // True 3-axis tumble with a flutter phase — a spin about the view axis reads
+  // as a rotating sticker and instantly kills the illusion.
+  float ph = uTime * uTumble * aRand2.z + aRand2.w * 6.2831;
+  float ph2 = ph * 0.43 + seed * 6.2831;
+  vec3 ax = normalize(aAxis);
+  vec3 corner = vec3(position.x * size, position.y * size * 1.3, 0.0);
+  corner = rotAxis(corner, ax, ph);
+  corner = rotAxis(corner, vec3(0.0, 1.0, 0.0), ph2);
+  nrm = rotAxis(rotAxis(vec3(0.0, 0.0, 1.0), ax, ph), vec3(0.0, 1.0, 0.0), ph2);
+  mvPosition = viewMatrix * vec4(wp + corner, 1.0);
+#elif MODE == 3
+  // Rain: stretch the quad along the drop's velocity.
+  vec3 vel = vec3(wnd.x * 0.35, -fall, wnd.z * 0.35);
+  vec3 vv = mat3(viewMatrix) * vel;
+  mvPosition = viewMatrix * vec4(wp, 1.0);
+  float vl = length(vv.xy);
+  vec2 off = position.xy * size;
+  if (vl > 1e-4){
+    vec2 axv = vv.xy / vl;
+    vec2 ayv = vec2(-axv.y, axv.x);
+    off = axv * (position.y * size * (2.5 + vl * 0.30)) + ayv * (position.x * size);
+  }
+  mvPosition.xy += off;
+#else
+  mvPosition = viewMatrix * vec4(wp, 1.0);
+  mvPosition.xy += position.xy * size;
+#endif
+
+  gl_Position = projectionMatrix * mvPosition;
+
+  float cell = floor(uSprite + 0.5);
+  vec2 grid = vec2(mod(cell, 4.0), floor(cell / 4.0));
+  vUv = (uv + grid) * 0.25;
+
+  vec3 col = mix(uColorA, uColorB, fract(seed * 7.3));
+
+#if MODE == 0 || MODE == 1
+  // Subsurface: a petal lit from behind glows, and that is the shot.
+  float facing = abs(dot(nrm, uSunDir));
+  vec3 V = normalize(wp - cameraPosition);
+  float back = pow(max(dot(V, -uSunDir), 0.0), 3.0);
+  col *= 0.45 + 0.65 * facing;
+  col += uSunColor * back * uTransmit * (1.0 - facing * 0.55) * 0.55;
+#endif
+#if MODE == 2
+  float pulse = 0.55 + 0.45 * sin(uTime * (2.0 + aRand2.z * 3.0) + seed * 20.0);
+  col *= pulse * 1.7;
+  alpha *= 0.5 + 0.5 * pulse;
+#endif
+#if MODE == 4
+  vec3 Vm = normalize(wp - cameraPosition);
+  float shaft = pow(max(dot(Vm, -uSunDir), 0.0), 8.0);
+  alpha *= 0.12 + 0.88 * shaft;
+  col *= 1.4;
+#endif
+#if MODE == 3
+  alpha *= 0.55;
+#endif
+
+  vColor = vec4(col, alpha);
+
+  #include <fog_vertex>
+}
+`;
+
+const FIELD_FRAG = /* glsl */`
+uniform sampler2D uMap;
+varying vec2 vUv;
+varying vec4 vColor;
+
+#include <fog_pars_fragment>
+
+void main(){
+  vec4 tex = texture2D(uMap, vUv);
+  float a = tex.a * vColor.a;
+  if (a < 0.004) discard;
+  gl_FragColor = vec4(vColor.rgb * tex.rgb, a);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+  #include <fog_fragment>
+}
+`;
+
+const FOG_VERT = /* glsl */`
+attribute vec4 fPar;    // height, scale, phase, speed
+
+uniform float uTime;
+uniform vec3 uOrigin;
+uniform float uBaseY;
+
+varying vec3 vWorld;
+varying vec2 vQuad;
+varying float vViewZ;
+varying float vPhase;
+varying float vSpeed;
+
+void main(){
+  vQuad = position.xy + 0.5;
+  vPhase = fPar.z;
+  vSpeed = fPar.w;
+  // The layer is a horizontal plane parked around the camera at valley altitude.
+  vec3 wp = vec3(position.x, 0.0, position.y) * fPar.y
+          + vec3(uOrigin.x, uBaseY + fPar.x, uOrigin.z);
+  vWorld = wp;
+  vec4 mv = viewMatrix * vec4(wp, 1.0);
+  vViewZ = mv.z;
+  gl_Position = projectionMatrix * mv;
+}
+`;
+
+const FOG_FRAG = /* glsl */`
+uniform sampler2D uDepth;
+uniform vec4 uResolution;
+uniform float uNear;
+uniform float uFar;
+uniform float uSoftness;
+uniform float uDensity;
+uniform float uTime;
+uniform vec3 uColor;
+uniform vec3 uSunColor;
+uniform vec3 uSunDir;
+
+varying vec3 vWorld;
+varying vec2 vQuad;
+varying float vViewZ;
+varying float vPhase;
+varying float vSpeed;
+
+${WIND_GLSL}
+
+float perspectiveDepthToViewZ_(float invClipZ, float near, float far){
+  return (near * far) / ((far - near) * invClipZ - far);
+}
+
+void main(){
+  vec2 wdir = normalize(uWind.xy + vec2(1e-5, 0.0));
+  vec2 q = vWorld.xz * 0.018 - wdir * (uWind.w * (0.05 + vSpeed * 0.05)) + vPhase;
+  float n = fbm2(q, 4);
+  float n2 = fbm2(q * 2.7 + vec2(vPhase, -vPhase), 3);
+  float density = smoothstep(-0.28, 0.52, n + n2 * 0.35);
+
+  float radial = 1.0 - smoothstep(0.30, 0.50, length(vQuad - 0.5));
+
+  vec3 V = vWorld - cameraPosition;
+  float dist = length(V);
+  V /= max(dist, 1e-4);
+
+  // Mist reads as volume edge-on; looking straight down at a plane exposes it.
+  float grazing = pow(clamp(1.0 - abs(V.y), 0.0, 1.0), 0.65);
+  // ...and never reveal the sheet while the camera sits inside it.
+  float camFade = smoothstep(0.0, 1.8, abs(cameraPosition.y - vWorld.y));
+
+  float alpha = density * radial * grazing * camFade * uDensity * 0.32;
+  alpha *= 0.15 + 0.85 * smoothstep(3.0, 24.0, dist);
+
+  #ifdef SOFT_DEPTH
+    vec2 suv = gl_FragCoord.xy * uResolution.zw;
+    float sceneZ = perspectiveDepthToViewZ_(texture2D(uDepth, suv).x, uNear, uFar);
+    alpha *= clamp((vViewZ - sceneZ) / uSoftness, 0.0, 1.0);
+  #endif
+
+  if (alpha < 0.003) discard;
+
+  float scat = pow(max(dot(V, uSunDir), 0.0), 4.0);
+  vec3 col = mix(uColor, uSunColor, scat * 0.55);
+
+  gl_FragColor = vec4(col, alpha);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+}
+`;
+
+const SPLASH_VERT = /* glsl */`
+attribute vec4 sT;      // spawn, life, seed, unused
+attribute vec3 sPos;
+
+uniform float uTime;
+uniform float uSize;
+
+varying vec2 vUv;
+varying float vAlpha;
+
+void main(){
+  float life = max(sT.y, 1e-4);
+  float t01 = (uTime - sT.x) / life;
+  if (t01 < 0.0 || t01 > 1.0){
+    vUv = vec2(0.0); vAlpha = 0.0;
+    gl_Position = vec4(0.0, 0.0, -2.0, 1.0);
+    return;
+  }
+  float e = 1.0 - pow(1.0 - t01, 2.0);
+  float s = uSize * (0.15 + e) * (0.6 + sT.z * 0.8);
+  vec3 wp = sPos + vec3(position.x * s, 0.0, position.y * s);
+  gl_Position = projectionMatrix * viewMatrix * vec4(wp, 1.0);
+  vUv = (uv + vec2(1.0, 1.0)) * 0.25;      // cell 5 = splash ring
+  vAlpha = (1.0 - t01) * 0.5;
+}
+`;
+
+const SPLASH_FRAG = /* glsl */`
+uniform sampler2D uMap;
+uniform vec3 uColor;
+varying vec2 vUv;
+varying float vAlpha;
+void main(){
+  vec4 tex = texture2D(uMap, vUv);
+  float a = tex.a * vAlpha;
+  if (a < 0.004) discard;
+  gl_FragColor = vec4(uColor * tex.rgb, a);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+}
+`;
+
+// =============================================================================
+//  Procedural textures
+// =============================================================================
+
+function cellCtx(g, size, i) {
+  const cell = size / 4;
+  g.save();
+  g.beginPath();
+  g.rect((i % 4) * cell, Math.floor(i / 4) * cell, cell, cell);
+  g.clip();
+  g.translate((i % 4) * cell + cell * 0.5, Math.floor(i / 4) * cell + cell * 0.5);
+  return cell;
+}
+
+function makeWeatherAtlas(size) {
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = size;
+  const g = cv.getContext('2d');
+  const rnd = makeRandom(31337);
+  g.clearRect(0, 0, size, size);
+  const R = (i) => cellCtx(g, size, i) * 0.5 * 0.88;
+  const done = () => g.restore();
+
+  // 0 — sakura petal, notched tip, slightly cupped shading
+  {
+    const r = R(W_PETAL);
+    const grd = g.createLinearGradient(0, -r, 0, r);
+    grd.addColorStop(0, 'rgba(255,255,255,0.78)');
+    grd.addColorStop(0.5, 'rgba(255,255,255,1)');
+    grd.addColorStop(1, 'rgba(255,255,255,0.88)');
+    g.fillStyle = grd;
+    g.beginPath();
+    g.moveTo(0, r * 0.94);
+    g.bezierCurveTo(r * 0.82, r * 0.34, r * 0.58, -r * 0.60, r * 0.15, -r * 0.88);
+    g.quadraticCurveTo(0, -r * 0.60, -r * 0.15, -r * 0.88);
+    g.bezierCurveTo(-r * 0.58, -r * 0.60, -r * 0.82, r * 0.34, 0, r * 0.94);
+    g.fill();
+    g.globalCompositeOperation = 'destination-out';
+    g.strokeStyle = 'rgba(0,0,0,0.14)';
+    g.lineWidth = Math.max(1, r * 0.05);
+    g.beginPath(); g.moveTo(0, r * 0.82); g.lineTo(0, -r * 0.66); g.stroke();
+    done();
+  }
+
+  // 1 — autumn leaf
+  {
+    const r = R(W_LEAF);
+    g.fillStyle = 'rgba(255,255,255,0.97)';
+    g.beginPath();
+    g.moveTo(0, -r * 0.94);
+    g.bezierCurveTo(r * 0.70, -r * 0.34, r * 0.56, r * 0.54, 0, r * 0.94);
+    g.bezierCurveTo(-r * 0.56, r * 0.54, -r * 0.70, -r * 0.34, 0, -r * 0.94);
+    g.fill();
+    g.globalCompositeOperation = 'destination-out';
+    g.strokeStyle = 'rgba(0,0,0,0.28)';
+    g.lineWidth = Math.max(1, r * 0.055);
+    g.beginPath(); g.moveTo(0, -r * 0.9); g.lineTo(0, r * 0.9); g.stroke();
+    g.lineWidth = Math.max(1, r * 0.03);
+    for (let k = -3; k <= 3; k++) {
+      if (k === 0) continue;
+      const y = k * r * 0.22;
+      g.beginPath(); g.moveTo(0, y); g.lineTo(r * 0.44, y + r * 0.2); g.stroke();
+      g.beginPath(); g.moveTo(0, y); g.lineTo(-r * 0.44, y + r * 0.2); g.stroke();
+    }
+    done();
+  }
+
+  // 2 — ember
+  {
+    const r = R(W_EMBER);
+    const grd = g.createRadialGradient(0, 0, 0, 0, 0, r);
+    grd.addColorStop(0, 'rgba(255,255,255,1)');
+    grd.addColorStop(0.14, 'rgba(255,255,255,0.85)');
+    grd.addColorStop(0.38, 'rgba(255,255,255,0.22)');
+    grd.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = grd;
+    g.beginPath(); g.arc(0, 0, r, 0, 6.2832); g.fill();
+    done();
+  }
+
+  // 3 — rain streak (vertical, stretched by the shader)
+  {
+    const r = R(W_STREAK);
+    const grd = g.createLinearGradient(0, -r, 0, r);
+    grd.addColorStop(0, 'rgba(255,255,255,0)');
+    grd.addColorStop(0.25, 'rgba(255,255,255,0.55)');
+    grd.addColorStop(0.6, 'rgba(255,255,255,0.9)');
+    grd.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = grd;
+    g.beginPath();
+    g.moveTo(0, -r);
+    g.quadraticCurveTo(r * 0.34, 0, 0, r);
+    g.quadraticCurveTo(-r * 0.34, 0, 0, -r);
+    g.fill();
+    done();
+  }
+
+  // 4 — dust mote
+  {
+    const r = R(W_MOTE);
+    const grd = g.createRadialGradient(0, 0, 0, 0, 0, r);
+    grd.addColorStop(0, 'rgba(255,255,255,0.9)');
+    grd.addColorStop(0.45, 'rgba(255,255,255,0.28)');
+    grd.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = grd;
+    g.beginPath(); g.arc(0, 0, r, 0, 6.2832); g.fill();
+    done();
+  }
+
+  // 5 — splash ring with a small crown
+  {
+    const r = R(W_RING);
+    g.strokeStyle = 'rgba(255,255,255,0.85)';
+    g.lineWidth = Math.max(1, r * 0.09);
+    g.beginPath(); g.arc(0, 0, r * 0.7, 0, 6.2832); g.stroke();
+    g.globalAlpha = 0.5;
+    g.lineWidth = Math.max(1, r * 0.05);
+    g.beginPath(); g.arc(0, 0, r * 0.42, 0, 6.2832); g.stroke();
+    g.globalAlpha = 0.75;
+    g.fillStyle = '#fff';
+    for (let k = 0; k < 8; k++) {
+      const a = (k / 8) * 6.2832 + rnd() * 0.3;
+      const h = r * (0.10 + rnd() * 0.18);
+      g.save(); g.rotate(a);
+      g.beginPath();
+      g.moveTo(r * 0.64, -r * 0.04); g.lineTo(r * 0.70 + h, 0); g.lineTo(r * 0.64, r * 0.04);
+      g.closePath(); g.fill();
+      g.restore();
+    }
+    g.globalAlpha = 1;
+    done();
+  }
+
+  // 6 — mist blob (unused by the layered fog, handy for one-off puffs)
+  {
+    const r = R(W_MIST);
+    for (let k = 0; k < 8; k++) {
+      const a = rnd() * 6.2832, d = rnd() * r * 0.45, rr = r * (0.4 + rnd() * 0.45);
+      const grd = g.createRadialGradient(0, 0, 0, 0, 0, rr);
+      grd.addColorStop(0, 'rgba(255,255,255,0.22)');
+      grd.addColorStop(0.6, 'rgba(255,255,255,0.09)');
+      grd.addColorStop(1, 'rgba(255,255,255,0)');
+      g.save(); g.translate(Math.cos(a) * d, Math.sin(a) * d);
+      g.fillStyle = grd;
+      g.beginPath(); g.arc(0, 0, rr, 0, 6.2832); g.fill();
+      g.restore();
+    }
+    done();
+  }
+
+  // 7 — wide soft glow (firefly halo)
+  {
+    const r = R(W_GLOW);
+    const grd = g.createRadialGradient(0, 0, 0, 0, 0, r);
+    grd.addColorStop(0, 'rgba(255,255,255,0.55)');
+    grd.addColorStop(0.3, 'rgba(255,255,255,0.16)');
+    grd.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = grd;
+    g.beginPath(); g.arc(0, 0, r, 0, 6.2832); g.fill();
+    done();
+  }
+
+  const tex = new CanvasTexture(cv);
+  tex.colorSpace = SRGBColorSpace;
+  tex.generateMipmaps = false;      // 4×4 atlas: mips bleed between cells
+  tex.minFilter = LinearFilter;
+  tex.magFilter = LinearFilter;
+  tex.wrapS = tex.wrapT = ClampToEdgeWrapping;
+  tex.needsUpdate = true;
+  return tex;
+}
+
+/**
+ * Raindrop-on-lens overlay for PostFX to composite.
+ *   RG — screen-space refraction offset, remapped to [0,1]
+ *   B  — a broad smear/streak mask
+ *   A  — droplet coverage
+ */
+function makeLensTexture(size) {
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = size;
+  const g = cv.getContext('2d');
+  const rnd = makeRandom(777);
+
+  g.fillStyle = 'rgba(128,128,0,0)';
+  g.fillRect(0, 0, size, size);
+
+  const drop = (x, y, r, squash) => {
+    // Offset field: a fake normal, encoded so 0.5 is "no deflection".
+    const grd = g.createRadialGradient(x - r * 0.28, y - r * 0.28, 0, x, y, r);
+    grd.addColorStop(0, 'rgba(215,215,255,0.95)');
+    grd.addColorStop(0.55, 'rgba(150,150,190,0.75)');
+    grd.addColorStop(0.86, 'rgba(60,60,120,0.55)');
+    grd.addColorStop(1, 'rgba(128,128,90,0)');
+    g.save();
+    g.translate(x, y); g.scale(1, squash); g.translate(-x, -y);
+    g.fillStyle = grd;
+    g.beginPath(); g.arc(x, y, r, 0, 6.2832); g.fill();
+    g.restore();
+  };
+
+  for (let i = 0; i < 90; i++) {
+    drop(rnd() * size, rnd() * size, size * (0.008 + Math.pow(rnd(), 2.2) * 0.055), 1 + rnd() * 0.6);
+  }
+  // A few running streaks: the drops that have already been dragged down the glass.
+  for (let i = 0; i < 14; i++) {
+    const x = rnd() * size, y = rnd() * size;
+    const len = size * (0.05 + rnd() * 0.18);
+    const w = size * (0.004 + rnd() * 0.010);
+    const grd = g.createLinearGradient(x, y, x, y + len);
+    grd.addColorStop(0, 'rgba(150,150,190,0.5)');
+    grd.addColorStop(1, 'rgba(128,128,90,0)');
+    g.fillStyle = grd;
+    g.beginPath();
+    g.ellipse(x, y + len * 0.5, w, len * 0.5, 0, 0, 6.2832);
+    g.fill();
+    drop(x, y + len, w * 2.1, 1.25);
+  }
+
+  const tex = new CanvasTexture(cv);
+  tex.colorSpace = SRGBColorSpace;
+  tex.wrapS = tex.wrapT = RepeatWrapping;
+  tex.minFilter = LinearFilter;
+  tex.magFilter = LinearFilter;
+  tex.generateMipmaps = false;
+  tex.needsUpdate = true;
+  return tex;
+}

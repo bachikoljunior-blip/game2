@@ -984,6 +984,430 @@ export class PropFactory {
     return build;
   }
 
+  // =====================================================================
+  //  鳥居  TORII — the hero prop
+  // =====================================================================
+
+  /**
+   * A myōjin-style gate. Everything is proportional to `h`, the height of the
+   * underside of the shimaki, which is how a carpenter would actually set it out.
+   *
+   * Parts, bottom to top: nemaki stone collar, battered and tapered round pillars
+   * with entasis, the nuki crossbeam driven through them and protruding, the
+   * gakuzuka strut with its plaque, the shimaki, and the kasagi — the curved top
+   * lintel whose upturned ends are the entire silhouette of the thing.
+   */
+  torii(opts = {}) {
+    const h = opts.height ?? 5.0;
+    const s = h / 5.0;
+    const rnd = makeRandom(opts.seed ?? 7);
+    const b = PropFactory.build();
+
+    const span = (opts.span ?? 4.3) * s;      // pillar centre to pillar centre
+    const rBase = 0.235 * s;
+    const rTop = 0.196 * s;
+    const batter = 0.052 * s * (h / 5.0);     // top leans inward
+    const halfSpan = span * 0.5;
+
+    const nukiY = h * 0.735;
+    const nukiH = 0.30 * s, nukiD = 0.26 * s, nukiOut = 0.46 * s;
+    const shimakiL = span + 1.62 * s;
+    const shimakiH = 0.30 * s, shimakiD = 0.56 * s;
+    const kasagiL = span + 2.16 * s;
+    const kasagiH = 0.30 * s, kasagiD = 0.70 * s;
+    const sori = 0.20 * s;                    // arc rise at the ends
+    const flick = 0.13 * s;                   // extra kick in the last tenth
+
+    const pillarProfile = circleProfile(12);
+    const SEG = 9;
+
+    for (let side = 0; side < 2; side++) {
+      const sx = side === 0 ? -1 : 1;
+      const x0 = sx * halfSpan;
+      const samples = [];
+      for (let i = 0; i <= SEG; i++) {
+        const t = i / SEG;
+        // Entasis: a shallow swell at a third height keeps the column from
+        // reading as a cone. Real torii have it and you feel it more than see it.
+        const swell = Math.sin(t * Math.PI) * 0.012 * s;
+        const r = lerp(rBase, rTop, t * t * 0.82 + t * 0.18) + swell;
+        samples.push({
+          x: x0 - sx * batter * t * t,
+          y: h * t + (i === 0 ? -0.14 * s : 0),
+          z: 0,
+          sx: r * 2, sy: r * 2,
+          ao: lerp(0.52, 1.0, smoothstep(0, 0.28, t)),
+        });
+      }
+      const pillar = sweepProfile(samples, pillarProfile, { smooth: true, uvScale: 0.9, capStart: false });
+      bakeAO(pillar, { ground: 0.42, groundH: 0.55 * s, cavity: 0.12, down: 0.2, floor: 0.34 });
+      weatherBand(pillar, 0.0, 1.05 * s, 0.70, 0.66, 0.60, 0.22);
+      PropFactory.add(b, pillar, 'vermilion');
+
+      // Bare cedar showing through where the lacquer has gone at the foot.
+      this._lacquerChips(b, x0, 0, rBase, 0.95 * s, 7, rnd, s);
+
+      // 根巻き nemaki — the stone collar that keeps the post out of the wet.
+      const collar = sweepProfile([
+        { x: x0, y: -0.06 * s, z: 0, sx: (rBase + 0.075 * s) * 2, sy: (rBase + 0.075 * s) * 2, ao: 0.5 },
+        { x: x0, y: 0.20 * s, z: 0, sx: (rBase + 0.062 * s) * 2, sy: (rBase + 0.062 * s) * 2, ao: 0.72 },
+        { x: x0, y: 0.30 * s, z: 0, sx: (rBase + 0.030 * s) * 2, sy: (rBase + 0.030 * s) * 2, ao: 0.9 },
+      ], circleProfile(12), { smooth: true, capStart: false, uvScale: 1.4 });
+      roughen(collar, 0.011 * s, 5.0);
+      bakeAO(collar, { ground: 0.5, groundH: 0.3 * s, cavity: 0.2, floor: 0.35 });
+      PropFactory.add(b, collar, 'stone');
+
+      PropFactory.addCollider(b, PropFactory.boxCollider(
+        rBase * 2.3, h, rBase * 2.3, x0, 0, 0), 'wood', true, false);
+    }
+
+    // 貫 nuki — driven through both pillars, protruding with a chamfered end.
+    {
+      const half = halfSpan + nukiOut;
+      const samples = [];
+      for (let i = 0; i <= 6; i++) {
+        const t = i / 6;
+        const x = lerp(-half, half, t);
+        const taper = 1 - Math.pow(Math.abs(t * 2 - 1), 6) * 0.22;
+        samples.push({ x, y: nukiY, z: 0, sx: nukiD * taper, sy: nukiH * taper, ao: 0.92 });
+      }
+      const nuki = sweepProfile(samples, rectProfile(0.16), { ref: [0, 0, -1], uvScale: 1.0 });
+      bakeAO(nuki, { ground: 0, cavity: 0.22, down: 0.34, floor: 0.4 });
+      PropFactory.add(b, nuki, 'vermilion');
+      PropFactory.addCollider(b, PropFactory.boxCollider(
+        half * 2, nukiH, nukiD, 0, nukiY - nukiH * 0.5, 0), 'wood', true, false);
+    }
+
+    // 額束 gakuzuka — centre strut, with the shrine plaque hung on it.
+    {
+      const y0 = nukiY + nukiH * 0.5 - 0.02 * s;
+      const y1 = h - shimakiH * 0.1;
+      const strut = sweepProfile([
+        { x: 0, y: y0, z: 0, sx: 0.20 * s, sy: 0.19 * s, ao: 0.62 },
+        { x: 0, y: y1, z: 0, sx: 0.19 * s, sy: 0.18 * s, ao: 0.9 },
+      ], rectProfile(0.14), { uvScale: 1.2 });
+      bakeAO(strut, { ground: 0, cavity: 0.3, down: 0.3, floor: 0.38 });
+      PropFactory.add(b, strut, 'vermilion');
+
+      const plaqueH = (y1 - y0) * 0.62;
+      const plaque = new BoxGeometry(0.46 * s, plaqueH, 0.07 * s);
+      plaque.translate(0, (y0 + y1) * 0.5, 0.15 * s);
+      normalizeGeo(plaque);
+      bakeAO(plaque, { ground: 0, cavity: 0.25, down: 0.3, floor: 0.42 });
+      tintGeo(plaque, 0.92, 0.86, 0.72);
+      PropFactory.add(b, plaque, 'gold');
+    }
+
+    // 島木 shimaki and 笠木 kasagi — the curved pair that crowns the gate.
+    const curved = (length, height, depth, yAt, rise, kick, profile, aoTop) => {
+      const N = 21;
+      const samples = [];
+      for (let i = 0; i <= N; i++) {
+        const t = i / N;
+        const u = t * 2 - 1;
+        const x = u * length * 0.5;
+        const y = yAt + rise * u * u + kick * Math.pow(Math.abs(u), 8);
+        const taper = 1 - Math.pow(Math.abs(u), 3) * 0.16;
+        samples.push({ x, y, z: 0, sx: depth * taper, sy: height * taper, ao: aoTop });
+      }
+      return sweepProfile(samples, profile, { ref: [0, 0, -1], uvScale: 1.0 });
+    };
+
+    const shimaki = curved(shimakiL, shimakiH, shimakiD, h + shimakiH * 0.5, sori * 0.55, flick * 0.5, rectProfile(0.10), 0.88);
+    bakeAO(shimaki, { ground: 0, cavity: 0.2, down: 0.42, floor: 0.36 });
+    PropFactory.add(b, shimaki, 'vermilion');
+
+    const kasagiY = h + shimakiH + kasagiH * 0.5;
+    const kasagi = curved(kasagiL, kasagiH, kasagiD, kasagiY, sori, flick, kasagiProfile(), 1.0);
+    bakeAO(kasagi, { ground: 0, cavity: 0.16, down: 0.4, floor: 0.38 });
+    PropFactory.add(b, kasagi, 'vermilion');
+
+    // Copper cap along the ridge of the kasagi — one bright specular line that
+    // separates the gate from the sky at magic hour.
+    const cap = curved(kasagiL * 0.995, kasagiH * 0.28, kasagiD * 0.34, kasagiY + kasagiH * 0.42, sori, flick, rectProfile(0.3), 1.0);
+    tintGeo(cap, 0.85, 0.9, 0.95);
+    PropFactory.add(b, cap, 'steelDark');
+
+    b.anchors.ropeLeft = [-halfSpan + 0.1 * s, nukiY - 0.1 * s, 0];
+    b.anchors.ropeRight = [halfSpan - 0.1 * s, nukiY - 0.1 * s, 0];
+    b.anchors.top = [0, kasagiY + kasagiH, 0];
+    b.anchors.span = [span, h, 0];
+    b.bounds = { r: kasagiL * 0.5 + 0.2, h: kasagiY + kasagiH };
+    return b;
+  }
+
+  /** Flakes of bare cedar where the vermilion has come off the foot of a post. */
+  _lacquerChips(build, cx, cz, radius, maxY, count, rnd, s) {
+    for (let i = 0; i < count; i++) {
+      const a = rnd() * Math.PI * 2;
+      const y = Math.pow(rnd(), 1.9) * maxY;
+      const w = (0.05 + rnd() * 0.11) * s;
+      const hh = (0.05 + rnd() * 0.16) * s;
+      const g = new BoxGeometry(w, hh, 0.014 * s);
+      const m = new Matrix4().makeRotationY(-a);
+      m.setPosition(cx + Math.sin(a) * (radius * 0.995), y + hh * 0.5, cz + Math.cos(a) * (radius * 0.995));
+      g.applyMatrix4(m);
+      normalizeGeo(g);
+      tintGeo(g, 0.9 + rnd() * 0.2, 0.86 + rnd() * 0.16, 0.8 + rnd() * 0.14);
+      shadeGeo(g, (x, yy) => lerp(0.55, 1.0, clamp(yy / (maxY + 0.2), 0, 1)));
+      PropFactory.add(build, g, 'cedar');
+    }
+  }
+
+  // =====================================================================
+  //  注連縄  SHIMENAWA
+  // =====================================================================
+
+  /**
+   * Twisted straw rope with a catenary sag, tapering from a fat middle, hung with
+   * shide zigzags and straw tassels. `span` is the horizontal distance between the
+   * two anchors; `sag` is how far the belly drops below them.
+   */
+  shimenawa(opts = {}) {
+    const span = opts.span ?? 4.0;
+    const sag = opts.sag ?? 0.42;
+    const rMid = opts.radius ?? 0.19;
+    const rEnd = rMid * (opts.taper ?? 0.42);
+    const shideCount = opts.shide ?? 5;
+    const rnd = makeRandom(opts.seed ?? 31);
+    const b = PropFactory.build();
+
+    const N = 26;
+    const samples = [];
+    for (let i = 0; i <= N; i++) {
+      const t = i / N;
+      const u = t * 2 - 1;
+      // cosh-ish belly; the ends are pulled up hard so it looks tied, not draped.
+      const y = -sag * (1 - u * u) * (1 - 0.22 * u * u);
+      const r = lerp(rEnd, rMid, Math.pow(1 - Math.abs(u), 0.55));
+      samples.push({
+        x: u * span * 0.5,
+        y,
+        z: noise.noise2(t * 4.1, 0.3) * 0.012,
+        sx: r * 2, sy: r * 2,
+        roll: t * Math.PI * 2.4,             // the twist of the plait
+        ao: lerp(0.78, 1.0, 1 - Math.abs(u) * 0.5),
+      });
+    }
+    const rope = sweepProfile(samples, ropeProfile(14, 3, 0.17), { smooth: true, uvScale: 1.6, ref: [0, 0, -1] });
+    bakeAO(rope, { ground: 0, cavity: 0.34, down: 0.3, floor: 0.34 });
+    PropFactory.add(b, rope, 'rope');
+
+    // 紙垂 shide — folded paper zigzags, and the straw tassels between them.
+    for (let i = 0; i < shideCount; i++) {
+      const t = (i + 0.5) / shideCount;
+      const u = t * 2 - 1;
+      const x = u * span * 0.42;
+      const y = -sag * (1 - u * u) * (1 - 0.22 * u * u) - rMid * 0.8;
+      const g = this._shide(0.13 + rnd() * 0.03, 0.40 + rnd() * 0.14, rnd);
+      g.translate(x, y, 0.02);
+      bakeFlutter(g, i * 2.13 + rnd() * 3, (px, py) => clamp((y - py) / 0.45, 0, 1) * 0.55);
+      PropFactory.add(b, g, 'paper');
+
+      if (i < shideCount - 1) {
+        const tx = lerp(u, ((i + 1.5) / shideCount) * 2 - 1, 0.5) * span * 0.42;
+        const ty = -sag * (1 - (tx / (span * 0.5)) ** 2) - rMid * 0.7;
+        const tas = sweepProfile([
+          { x: tx, y: ty, z: 0, sx: 0.075, sy: 0.075, ao: 0.6 },
+          { x: tx + (rnd() - 0.5) * 0.03, y: ty - 0.20 - rnd() * 0.1, z: 0, sx: 0.03, sy: 0.03, ao: 0.95 },
+        ], circleProfile(6), { smooth: true, uvScale: 2 });
+        PropFactory.add(b, tas, 'rope');
+      }
+    }
+
+    b.bounds = { r: span * 0.5, h: sag + 0.6 };
+    return b;
+  }
+
+  /** One folded paper streamer: alternating quads stepping down and sideways. */
+  _shide(w, h, rnd) {
+    const folds = 4;
+    const verts = [];
+    const uvs = [];
+    const cols = [];
+    const idx = [];
+    let y = 0;
+    let x = -w * 0.5;
+    const step = h / folds;
+    for (let i = 0; i < folds; i++) {
+      const dir = i % 2 === 0 ? 1 : -1;
+      const x0 = x, x1 = x + dir * w;
+      const y0 = y, y1 = y - step;
+      const base = verts.length / 3;
+      const jitter = (rnd() - 0.5) * 0.012;
+      verts.push(x0, y0, 0, x1, y0, jitter, x1, y1, jitter, x0, y1, 0);
+      uvs.push(0, 0, 1, 0, 1, 1, 0, 1);
+      const c0 = 1 - i * 0.06;
+      for (let k = 0; k < 4; k++) cols.push(c0, c0, c0);
+      idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
+      x = x1;
+      y = y1;
+    }
+    const geo = new BufferGeometry();
+    geo.setAttribute('position', new BufferAttribute(new Float32Array(verts), 3));
+    geo.setAttribute('uv', new BufferAttribute(new Float32Array(uvs), 2));
+    geo.setAttribute('color', new BufferAttribute(new Float32Array(cols), 3));
+    geo.setIndex(idx);
+    geo.computeVertexNormals();
+    return geo;
+  }
+
+  // =====================================================================
+  //  石灯籠  STONE LANTERN (kasuga-dōrō)
+  // =====================================================================
+
+  /**
+   * Six parts stacked the way a real one is dry-stacked: kiso, sao, chūdai,
+   * hibukuro (fire box, pierced with a full moon and a crescent), kasa with
+   * upturned warabi-te corners, and the hōju jewel. The fire box gets an emissive
+   * core and, when the lighting system will take it, a real flickering point light.
+   */
+  stoneLantern(opts = {}) {
+    const H = opts.height ?? 2.05;
+    const s = H / 2.05;
+    const rnd = makeRandom(opts.seed ?? 91);
+    const b = PropFactory.build();
+    const hex = hexProfile();
+
+    const stone = [];
+    const push = (g) => stone.push(g);
+
+    // 基礎 kiso — a squat hexagonal footing, half-sunk and lipped.
+    push(sweepProfile([
+      { x: 0, y: -0.10 * s, z: 0, sx: 0.62 * s, sy: 0.62 * s, ao: 0.42 },
+      { x: 0, y: 0.16 * s, z: 0, sx: 0.60 * s, sy: 0.60 * s, ao: 0.6 },
+      { x: 0, y: 0.24 * s, z: 0, sx: 0.50 * s, sy: 0.50 * s, ao: 0.78 },
+      { x: 0, y: 0.30 * s, z: 0, sx: 0.40 * s, sy: 0.40 * s, ao: 0.85 },
+    ], hex, { uvScale: 1.1, capStart: false }));
+
+    // 竿 sao — the shaft, with two swollen nodes.
+    const saoTop = 1.06 * s;
+    const saoSamples = [];
+    for (let i = 0; i <= 12; i++) {
+      const t = i / 12;
+      const y = lerp(0.28 * s, saoTop, t);
+      const node = Math.exp(-Math.pow((t - 0.34) * 7, 2)) + Math.exp(-Math.pow((t - 0.74) * 7, 2));
+      const r = (0.145 - t * 0.016 + node * 0.038) * s;
+      saoSamples.push({ x: 0, y, z: 0, sx: r * 2, sy: r * 2, ao: lerp(0.7, 1.0, t) });
+    }
+    push(sweepProfile(saoSamples, circleProfile(10), { smooth: true, uvScale: 1.4 }));
+
+    // 中台 chūdai — the flared platform the fire box sits on.
+    push(sweepProfile([
+      { x: 0, y: saoTop - 0.01 * s, z: 0, sx: 0.30 * s, sy: 0.30 * s, ao: 0.55 },
+      { x: 0, y: saoTop + 0.10 * s, z: 0, sx: 0.52 * s, sy: 0.52 * s, ao: 0.78 },
+      { x: 0, y: saoTop + 0.20 * s, z: 0, sx: 0.55 * s, sy: 0.55 * s, ao: 0.92 },
+      { x: 0, y: saoTop + 0.26 * s, z: 0, sx: 0.47 * s, sy: 0.47 * s, ao: 0.85 },
+    ], hex, { uvScale: 1.1, capStart: false, capEnd: false }));
+
+    // 火袋 hibukuro — six panels: moon, crescent, two windows, two solid.
+    const fbY = saoTop + 0.26 * s;
+    const fbH = 0.44 * s;
+    const fbR = 0.235 * s;
+    const panelW = fbR * 1.02;
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2 + Math.PI / 6;
+      let panel;
+      if (i === 0) {
+        panel = panelWithHole(panelW, fbH * 0.86, 0.035 * s, circleProfile(12).map((p) => [p[0] * fbH * 0.46, p[1] * fbH * 0.46]));
+      } else if (i === 3) {
+        // Crescent: a circle with a shallow bite, kept star-shaped so the
+        // outward projection in panelWithHole stays well defined.
+        const pts = [];
+        for (let k = 0; k < 14; k++) {
+          const th = (k / 14) * Math.PI * 2;
+          const r = fbH * (0.24 - 0.11 * Math.max(0, Math.cos(th)));
+          pts.push([Math.cos(th) * r, Math.sin(th) * r]);
+        }
+        panel = panelWithHole(panelW, fbH * 0.86, 0.035 * s, pts);
+      } else if (i === 1 || i === 4) {
+        const w2 = panelW * 0.30, h2 = fbH * 0.28;
+        panel = panelWithHole(panelW, fbH * 0.86, 0.035 * s,
+          [[-w2, -h2], [w2, -h2], [w2, h2], [-w2, h2]]);
+      } else {
+        panel = new BoxGeometry(panelW, fbH * 0.86, 0.035 * s);
+        normalizeGeo(panel);
+      }
+      const m = new Matrix4().makeRotationY(a);
+      m.setPosition(Math.sin(a) * fbR, fbY + fbH * 0.5, Math.cos(a) * fbR);
+      panel.applyMatrix4(m);
+      normalizeGeo(panel);
+      push(panel);
+      // Corner posts between panels so the box does not read as a paper drum.
+      const ap = a + Math.PI / 6;
+      const post = new BoxGeometry(0.05 * s, fbH, 0.05 * s);
+      post.translate(Math.sin(ap) * fbR * 1.03, fbY + fbH * 0.5, Math.cos(ap) * fbR * 1.03);
+      normalizeGeo(post);
+      push(post);
+    }
+
+    // 笠 kasa — hexagonal roof with a concave sweep and lifted corners.
+    const kasaY = fbY + fbH;
+    const kasaRings = [];
+    const RINGS = 5;
+    for (let i = 0; i <= RINGS; i++) {
+      const t = i / RINGS;
+      const r = lerp(0.60 * s, 0.13 * s, t);
+      const y = kasaY + Math.pow(t, 1.55) * 0.30 * s;
+      const pts = [];
+      const pao = [];
+      const SEG = 6, SUB = 4;
+      for (let e = 0; e < SEG; e++) {
+        for (let k = 0; k < SUB; k++) {
+          const f = k / SUB;
+          const a0 = ((e + f) / SEG) * Math.PI * 2 + Math.PI / 6;
+          // Flat-sided hexagon, not a cone: interpolate along the chord.
+          const aA = (e / SEG) * Math.PI * 2 + Math.PI / 6;
+          const aB = ((e + 1) / SEG) * Math.PI * 2 + Math.PI / 6;
+          const x = lerp(Math.cos(aA), Math.cos(aB), f) * r;
+          const z = lerp(Math.sin(aA), Math.sin(aB), f) * r;
+          const corner = Math.pow(Math.abs(f * 2 - 1), 3);
+          pts.push([x, y + corner * 0.085 * s * (1 - t), z]);
+          pao.push(lerp(0.66, 1.0, t) * lerp(1.0, 1.12, corner));
+        }
+      }
+      kasaRings.push({ pts, pao });
+    }
+    const kasa = loftRings(kasaRings, { uvScale: 1.2 });
+    push(kasa);
+    // Underside so the deep eave is not a one-sided sheet.
+    const under = loftRings(kasaRings.map((r, i) => ({
+      pts: r.pts.map((p) => [p[0] * 0.985, p[1] - 0.055 * s, p[2] * 0.985]),
+      pao: r.pao.map((v) => v * 0.5),
+    })), { flip: true, uvScale: 1.2 });
+    push(under);
+
+    // 宝珠 hōju — the jewel finial.
+    const jewel = sweepProfile([
+      { x: 0, y: kasaY + 0.30 * s, z: 0, sx: 0.13 * s, sy: 0.13 * s, ao: 0.7 },
+      { x: 0, y: kasaY + 0.36 * s, z: 0, sx: 0.17 * s, sy: 0.17 * s, ao: 0.9 },
+      { x: 0, y: kasaY + 0.46 * s, z: 0, sx: 0.13 * s, sy: 0.13 * s, ao: 1.0 },
+      { x: 0, y: kasaY + 0.53 * s, z: 0, sx: 0.045 * s, sy: 0.045 * s, ao: 1.0 },
+    ], circleProfile(8), { smooth: true, uvScale: 1.6, capStart: false });
+    push(jewel);
+
+    let merged = stone.length === 1 ? stone[0] : mergeGeometries(stone.map((g) => normalizeGeo(g)), false);
+    roughen(merged, 0.006 * s, 6.5);
+    bakeAO(merged, { ground: 0.5, groundH: 0.4 * s, cavity: 0.3, down: 0.34, floor: 0.3 });
+    weatherBand(merged, 0, 0.5 * s, 0.72, 0.82, 0.66, 0.3);   // moss creeping up the base
+    PropFactory.add(b, merged, 'stone');
+
+    // The flame itself: a small emissive core that reads through the cutouts.
+    const flame = new BoxGeometry(fbR * 0.9, fbH * 0.5, fbR * 0.9);
+    flame.translate(0, fbY + fbH * 0.44, 0);
+    normalizeGeo(flame);
+    PropFactory.add(b, flame, '__ember');
+
+    PropFactory.addCollider(b, PropFactory.boxCollider(0.7 * s, kasaY, 0.7 * s, 0, 0, 0), 'stone', true, false);
+    b.lights.push({
+      x: 0, y: fbY + fbH * 0.5, z: 0,
+      color: 0xffa martial => 0, intensity: 2.6 * s, distance: 6.5 * s, flicker: 1,
+    });
+    b.anchors.fire = [0, fbY + fbH * 0.5, 0];
+    b.bounds = { r: 0.62 * s, h: kasaY + 0.55 * s };
+    return b;
+  }
+
   /** Wrap a finished build as an instancing prototype. */
   proto(build, opts) { return new InstancedProto(this, build, opts); }
 
