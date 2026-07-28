@@ -44,12 +44,18 @@ const MOON_ANGULAR_RADIUS = 0.52 * 0.5 * DEG;
 const LATITUDE = 35.7 * DEG;
 const DECLINATION = -6.5 * DEG;
 /**
- * Offset between the game clock and solar time. The valley sits at the western edge of
- * its timezone, so solar noon lands at 13:32 and the sun is still 6° up at t = 0.78 —
- * which is precisely where the art direction wants magic hour. Without this the autumn
- * sun at this latitude has already set by 17:45 and the grade ladder would be lying.
+ * Offset between the game clock and solar time — the game's day is a stylised 24 h, and
+ * this is the one knob that decides where in the clock the interesting light lands.
+ *
+ * It is tuned so the default magic hour (t = 0.78) sits at **13° of solar elevation**,
+ * not the 6° a literal autumn sun at this latitude would give. That is deliberate and it
+ * is the difference between the shot working and not: at 6°, a horizontal surface only
+ * receives sin(6°) = 0.10 of the key, so the cool sky ambient out-competes it and every
+ * cobblestone reads blue-grey. At 13° it receives 0.22, and with the low-sun boost below
+ * the ground visibly *catches* the light — which is the whole point of golden hour.
+ * Still low enough for long raking shadows and a backlit valley.
  */
-const SOLAR_OFFSET = 0.064;
+const SOLAR_OFFSET = 0.0887;
 
 /** The default magic-hour time of day. ARCHITECTURE §5: this is the shot. */
 const MAGIC_HOUR = 0.78;
@@ -87,6 +93,11 @@ const AZIMUTH_OFFSET = WORLD.SUN_AZIMUTH_DEFAULT * DEG - solarAzimuthRaw(MAGIC_H
 // Pre-allocated so update() never allocates. Never hold a reference to these.
 
 const _colA = new Color();
+const _colB = new Color();
+const _irr = [0, 0, 0];
+const _skySample = { r: 0, g: 0, b: 0 };
+/** Rec.709 luminance — used to re-hue the ambient without changing its level. */
+const lum = (c) => c.r * 0.2126 + c.g * 0.7152 + c.b * 0.0722;
 
 // -------------------------------------------------------------- colour ladder
 //
@@ -790,6 +801,9 @@ export class SkySystem {
 
     const zenithCos = clamp(sunY, -1, 1);
     const sunE = SUN_E0 * Math.max(0, 1 - Math.pow(Math.E, -((CUTOFF_ANGLE - Math.acos(zenithCos)) / STEEPNESS)));
+    // Cached for _evalSky, which mirrors the shader exactly.
+    this._sunE = sunE;
+    this._sunFade = sunFade;
 
     if (u) {
       u.uBetaR.value.copy(this._betaR);
@@ -822,10 +836,30 @@ export class SkySystem {
     this.sunColor.multiplyScalar(1 / peak);
     // Below the ridge line the key light has to die or shadows go black-on-black.
     const horizonFade = smoothstep(-0.09, 0.06, sunY);
-    this.sunIntensity = g.sunIntensity * lerp(0.18, 1, horizonFade);
+    // Low-sun key boost. A raking sun deposits N·L = sin(elev) of its energy on flat
+    // ground — a tenth of it at 6°, a fifth at 13° — so without a compensating gain the
+    // cool ambient wins on every horizontal surface and the golden hour reads grey.
+    // Standard practice, costs nothing, and it only lifts the *key*, never the ambient.
+    const lowSunBoost = 1 + 0.9 * (1 - smoothstep(0, 0.45, Math.max(sunY, 0)));
+    this.sunIntensity = g.sunIntensity * lerp(0.18, 1, horizonFade) * lowSunBoost;
     this.ambientIntensity = g.ambient;
-    this.skyColor.copy(g.sky);
-    this.groundColor.copy(g.ground);
+
+    // --- ambient ---------------------------------------------------------------
+    // The sky bounce is taken from the irradiance of our own atmosphere rather than a
+    // hand-picked constant, so it is amber-biased at a low sun by construction instead
+    // of by an artist remembering to do it. We keep the ladder's authored *level* and
+    // only borrow the computed hue, so this can never turn into a global exposure lift,
+    // and we only lerp part way — ARCHITECTURE §5 wants shadows to stay recognisably
+    // cool (#4a6b8f), not to go warm along with everything else.
+    this._skyIrradiance(_colB);
+    const lAuthored = lum(g.sky);
+    const lComputed = lum(_colB);
+    if (lComputed > 1e-5) _colB.multiplyScalar(lAuthored / lComputed);
+    this.skyColor.copy(g.sky).lerp(_colB, 0.5);
+
+    // Down-facing normals see light bounced off warm autumn ground; nudge the bounce
+    // toward the key as the sun drops and the whole valley turns amber.
+    this.groundColor.copy(g.ground).lerp(this.sunColor, 0.22 * (1 - smoothstep(0, 0.5, Math.max(sunY, 0))) * horizonFade);
     this.moonColor.setRGB(0.62, 0.72, 1.0);
 
     // --- fog -----------------------------------------------------------------
@@ -856,6 +890,89 @@ export class SkySystem {
       fog.color.copy(fp.color);
       if ('density' in fog) fog.density = fp.density * 0.55;
     }
+  }
+
+  /**
+   * Evaluate the same Preetham radiance the fragment shader does, in JS, for one
+   * direction. Writes into `out` ({r,g,b}); no allocation. The sun disc is deliberately
+   * excluded — that energy is carried by the DirectionalLight, and double-counting it
+   * would blow the ambient out every time the camera faced the sun.
+   */
+  _evalSky(dx, dy, dz, out) {
+    const g = this._grade;
+    const cosUp = Math.max(dy, 0);
+    const zenithAngle = Math.acos(clamp(cosUp, -1, 1));
+    const deg = zenithAngle * (180 / Math.PI);
+    const denom = Math.cos(zenithAngle) + 0.15 * Math.pow(Math.max(93.885 - deg, 1e-3), -1.253);
+    const inverse = 1 / Math.max(denom, 1e-4);
+    const sR = RAYLEIGH_ZENITH_LENGTH * inverse;
+    const sM = MIE_ZENITH_LENGTH * inverse;
+
+    const bR = this._betaR, bM = this._betaM;
+    const fx = Math.exp(-(bR.x * sR + bM.x * sM));
+    const fy = Math.exp(-(bR.y * sR + bM.y * sM));
+    const fz = Math.exp(-(bR.z * sR + bM.z * sM));
+
+    const s = this.sunDirection;
+    const cosTheta = dx * s.x + dy * s.y + dz * s.z;
+    const c = cosTheta * 0.5 + 0.5;
+    const rPhase = (3 / (16 * Math.PI)) * (1 + c * c);
+    const gg = g.mieG, g2 = gg * gg;
+    const mPhase = (1 / (4 * Math.PI)) * ((1 - g2) /
+      Math.max(Math.pow(1 - 2 * gg * cosTheta + g2, 1.5), 1e-4));
+
+    const sunE = this._sunE;
+    const sunFade = this._sunFade;
+    const horizonMix = clamp(Math.pow(1 - s.y, 5), 0, 1);
+    const invGamma = 1 / (1.2 + 1.2 * sunFade);
+    const lift = [0, 0.0003, 0.00075];
+    const bRc = [bR.x, bR.y, bR.z], bMc = [bM.x, bM.y, bM.z];
+    const fex = [fx, fy, fz];
+    const rgb = _irr;
+
+    for (let i = 0; i < 3; i++) {
+      const ratio = (bRc[i] * rPhase + bMc[i] * mPhase) / (bRc[i] + bMc[i]);
+      let lin = Math.pow(Math.max(sunE * ratio * (1 - fex[i]), 0), 1.5);
+      lin *= lerp(1, Math.sqrt(Math.max(sunE * ratio * fex[i], 0)), horizonMix);
+      const l0 = 0.1 * fex[i];
+      rgb[i] = Math.pow(Math.max((lin + l0) * 0.04 + lift[i], 0), invGamma);
+    }
+    out.r = rgb[0] * g.tint.r * g.exposure;
+    out.g = rgb[1] * g.tint.g * g.exposure;
+    out.b = rgb[2] * g.tint.b * g.exposure;
+    return out;
+  }
+
+  /**
+   * Cosine-weighted irradiance arriving on an up-facing surface from our own sky —
+   * i.e. the colour a HemisphereLight's `skyColor` should actually be. 32 samples,
+   * rotated so one azimuth column always faces the sun, which is where all the
+   * interesting (amber, forward-scattered) energy lives at a low sun.
+   */
+  _skyIrradiance(out) {
+    const s = this.sunDirection;
+    let hx = s.x, hz = s.z;
+    const hl = Math.hypot(hx, hz);
+    if (hl > 1e-5) { hx /= hl; hz /= hl; } else { hx = 0; hz = -1; }
+
+    let r = 0, g = 0, b = 0, wsum = 0;
+    for (let ring = 0; ring < 4; ring++) {
+      const e = (ring + 0.5) * (Math.PI / 8);          // 11.25° .. 78.75°
+      const se = Math.sin(e), ce = Math.cos(e);
+      const w = se * ce;                                // cosθ · sinθ from dω
+      for (let a = 0; a < 8; a++) {
+        const ang = a * (Math.PI / 4);
+        const ca = Math.cos(ang), sa = Math.sin(ang);
+        // Rotate the sample ring so a = 0 points at the sun's azimuth.
+        const dx = (ca * hx - sa * hz) * ce;
+        const dz = (ca * hz + sa * hx) * ce;
+        this._evalSky(dx, se, dz, _skySample);
+        r += _skySample.r * w; g += _skySample.g * w; b += _skySample.b * w;
+        wsum += w;
+      }
+    }
+    out.setRGB(r / wsum, g / wsum, b / wsum);
+    return out;
   }
 
   /** Atmospheric extinction along the ray to the sun, normalised to a Color. */

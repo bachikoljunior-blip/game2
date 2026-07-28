@@ -25,14 +25,11 @@
  * `update()` allocates nothing.
  */
 
-import {
-  Group, Mesh, Vector3, Matrix4, Box3, Sphere, Color, MeshBasicMaterial,
-  BoxGeometry, DoubleSide,
-} from 'three';
+import { Group, Mesh, Vector3, Matrix4, Sphere, BoxGeometry } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { PropFactory, InstancedProto, normalizeGeo, CLOTH_MATERIALS } from './Props.js';
-import { WORLD, toWorldY, inPlayable } from './Constants.js';
-import { makeRandom, clamp, lerp, smoothstep, noise } from '../core/Noise.js';
+import { WORLD, inPlayable } from './Constants.js';
+import { makeRandom, clamp, lerp, noise } from '../core/Noise.js';
 
 // ------------------------------------------------------------------ layout
 
@@ -126,9 +123,6 @@ export const ENCOUNTERS = [
 const _v = new Vector3();
 const _v2 = new Vector3();
 const _m = new Matrix4();
-const _box = new Box3();
-const _sphere = new Sphere();
-const _color = new Color();
 
 // ============================================================== Level
 
@@ -179,27 +173,29 @@ export class Level {
     const q = this.ctx?.quality;
     this._applyQualityKnobs(q);
 
-    await this.factory.init();
-
     const tasks = [];
     const T = (label, fn) => tasks.push([label, fn]);
 
+    // Material resolution can synthesise fallback textures, so it gets its own
+    // budgeted slot rather than being lumped into the first geometry task.
+    T('shrine materials', () => { this._matWarm = this.factory.init(); });
     T('terrain probe', () => this._probeGround());
-    T('approach stair', () => this._buildStairFlight(0));
-    T('approach stair', () => this._buildStairFlight(1));
+    for (let i = 0; i < 4; i++) {
+      T('the approach stair', () => this._buildStairFlight(i, 0));
+      T('the approach stair', () => this._buildStairFlight(i, 1));
+    }
     T('the sandō', () => this._buildPath());
     T('the forecourt', () => this._buildForecourt());
     for (let i = 0; i < LAYOUT.torii.length; i++) T('torii', () => this._buildTorii(i));
     this._hallTasks(T, 'haiden', () => this._haidenOpts());
     T('lanterns of the haiden', () => this._buildHaidenLanterns());
     this._hallTasks(T, 'honden', () => this._hondenOpts());
-    T('tamagaki', () => this._buildHondenFence());
+    for (let i = 0; i < 5; i++) T('tamagaki', () => this._buildHondenFence(i));
     this._hallTasks(T, 'kagura-den', () => this._kaguraOpts());
     this._hallTasks(T, 'shamusho', () => this._shamushoOpts());
     T('bell tower', () => this._buildBellTower());
     T('chōzuya', () => this._buildChozuya());
-    T('fences', () => this._buildFences(0));
-    T('fences', () => this._buildFences(1));
+    for (let i = 0; i < 4; i++) T('fences', () => this._buildFences(i));
     T('overlook', () => this._buildOverlook());
     T('bridge', () => this._buildBridge());
     T('sacred trees', () => this._buildTrees());
@@ -212,6 +208,8 @@ export class Level {
     T('boundary', () => this._buildBoundary());
 
     await this._run(tasks, 0, 0.62);
+
+    this._collapseSmallBuckets();
 
     const mergeTasks = [];
     for (const key of this._buckets.keys()) {
@@ -247,7 +245,7 @@ export class Level {
       try { fn(); }
       catch (err) { console.error(`[level] task "${label}" failed`, err); }
       this.onProgress?.(i + 1, tasks.length, label);
-      if (now() - t0 > 9) {
+      if (now() - t0 > 7) {
         await new Promise((r) => (typeof requestAnimationFrame === 'function'
           ? requestAnimationFrame(() => setTimeout(r, 0))
           : setTimeout(r, 0)));
@@ -406,39 +404,51 @@ export class Level {
   //  COMPOSITION
   // =====================================================================
 
-  /** The stair descends in two flights with a landing, so the climb has a beat. */
+  /**
+   * The stair descends in four flights separated by landings, so the climb has a
+   * beat in it and each flight stays a bite-sized build task.
+   */
   _flights() {
     if (this._flightCache) return this._flightCache;
     const topZ = LAYOUT.stairTop;
-    const botZ = LAYOUT.stairBottom;
     const yTop = this.groundY(0, topZ);
-    const drop = Math.max(1.6, yTop - this.groundY(0, botZ));
-    const a = { z: topZ, drop: drop * 0.52, width: 5.0, y: yTop };
-    a.steps = Math.max(3, Math.round(a.drop / 0.185));
-    const b = { z: topZ + (botZ - topZ) * 0.58, drop: drop * 0.48, width: 5.6, y: yTop - a.drop };
-    b.steps = Math.max(3, Math.round(b.drop / 0.185));
-    this._flightCache = [a, b];
-    return this._flightCache;
+    const drop = Math.max(2.2, yTop - this.groundY(0, LAYOUT.stairBottom));
+    const N = 4;
+    const out = [];
+    let y = yTop, z = topZ;
+    for (let i = 0; i < N; i++) {
+      const d = drop / N;
+      const steps = Math.max(3, Math.round(d / 0.185));
+      const fl = { z, y, drop: d, steps, width: 5.0 + i * 0.22, landing: i < N - 1 };
+      out.push(fl);
+      y -= d;
+      z += steps * 0.38 + (fl.landing ? 2.4 : 0);
+    }
+    this._flightCache = out;
+    return out;
   }
 
-  _buildStairFlight(i) {
+  _buildStairFlight(i, half) {
     const fl = this._flights()[i];
+    const mid = Math.ceil(fl.steps / 2);
     const st = this.factory.stairs({
       width: fl.width, steps: fl.steps, rise: fl.drop / fl.steps, run: 0.38, wear: 1.2,
-      material: 'stone', cheeks: true, seed: 300 + i * 7,
+      material: 'stone', cheeks: i === 0 || i === 3, seed: 300 + i * 7,
+      stepFrom: half === 0 ? 1 : mid + 1,
+      stepTo: half === 0 ? mid : fl.steps,
     });
     _m.identity();
     _m.setPosition(0, fl.y - fl.drop, fl.z);
     this._emit(st, _m.clone());
 
-    if (i === 0) {
+    if (fl.landing && half === 1) {
       const zA = fl.z + fl.steps * 0.38;
       const y = fl.y - fl.drop;
-      const g = new BoxGeometry(fl.width + 1.2, 0.34, 2.2);
-      g.translate(0, y - 0.17, zA + 1.1);
+      const g = new BoxGeometry(fl.width + 1.2, 0.34, 2.5);
+      g.translate(0, y - 0.17, zA + 1.2);
       normalizeGeo(g);
       this._pushRaw(g, 'cobble', 'static');
-      this._collide(this._box(fl.width + 1.2, 0.34, 2.2, 0, y - 0.34, zA + 1.1), 'stone', true);
+      this._collide(this._box(fl.width + 1.2, 0.34, 2.5, 0, y - 0.34, zA + 1.2), 'stone', true);
     }
   }
 
@@ -583,17 +593,24 @@ export class Level {
     });
   }
 
-  /** 玉垣 the inner fence that keeps you out of the sanctuary, with a gateway. */
-  _buildHondenFence() {
+  /**
+   * 玉垣 the inner fence that keeps you out of the sanctuary, gated on the axis.
+   * One run per build task — a 50 m fence is ~260 individually swept slats.
+   */
+  _buildHondenFence(run) {
     const L = LAYOUT.honden;
     const fx = L.w * 0.5 + 2.6, fz0 = L.z - L.d * 0.5 - 2.4, fz1 = L.z + L.d * 0.5 + 2.6;
-    const fence = this.factory.tamagaki({
-      points: [
-        [1.5, fz1], [fx, fz1], [fx, fz0], [-fx, fz0], [-fx, fz1], [-1.5, fz1],
-      ],
-      height: 1.42, slatSpacing: 0.19, seed: 55,
-    });
-    this._emit(fence, this._ground(0, L.z, 0));
+    const runs = [
+      [[1.5, fz1], [fx, fz1]],
+      [[fx, fz1], [fx, fz0]],
+      [[fx, fz0], [-fx, fz0]],
+      [[-fx, fz0], [-fx, fz1]],
+      [[-fx, fz1], [-1.5, fz1]],
+    ];
+    if (!runs[run]) return;
+    this._emit(this.factory.tamagaki({
+      points: runs[run], height: 1.42, slatSpacing: 0.21, seed: 55 + run,
+    }), this._ground(0, L.z, 0));
   }
 
   _buildBellTower() {
@@ -614,27 +631,28 @@ export class Level {
     this._chozuyaPos = _v.clone();
   }
 
-  _buildFences() {
+  _buildFences(part) {
     const f = this.factory;
     const a = LAYOUT.arena;
-    // Low tamagaki along the west edge of the forecourt: cover and a sightline.
-    this._emit(f.tamagaki({
-      points: [[-a.hx - 1.6, a.z - a.hz + 1.5], [-a.hx - 1.6, a.z + a.hz - 2.0]],
-      height: 1.15, seed: 61,
-    }), this._ground(a.x, a.z, 0));
-
-    // Bamboo fence flanking the approach between the outer torii.
-    for (const sx of [-1, 1]) {
+    // Low tamagaki down both sides of the forecourt: cover, and it keeps the
+    // arena readable without walling the fight in. Bamboo flanks the approach.
+    if (part === 0) {
+      this._emit(f.tamagaki({
+        points: [[-a.hx - 1.6, a.z - a.hz + 1.5], [-a.hx - 1.6, a.z + a.hz - 2.0]],
+        height: 1.15, slatSpacing: 0.22, seed: 61,
+      }), this._ground(a.x, a.z, 0));
+    } else if (part === 1) {
+      this._emit(f.tamagaki({
+        points: [[a.hx + 1.6, a.z + a.hz - 1.0], [a.hx + 1.6, a.z - a.hz + 3.0]],
+        height: 1.15, slatSpacing: 0.22, seed: 71,
+      }), this._ground(a.x, a.z, 0));
+    } else {
+      const sx = part === 2 ? -1 : 1;
       this._emit(f.bambooFence({
         points: [[sx * 4.6, 66.0], [sx * 4.6, 40.0]],
-        height: 1.45, seed: 67 + (sx > 0 ? 1 : 0),
+        height: 1.45, seed: 67 + part,
       }), this._ground(0, 53, 0));
     }
-    // And the east side of the forecourt, screening the shamusho yard.
-    this._emit(f.tamagaki({
-      points: [[a.hx + 1.6, a.z + a.hz - 1.0], [a.hx + 1.6, a.z - a.hz + 3.0]],
-      height: 1.15, seed: 71,
-    }), this._ground(a.x, a.z, 0));
   }
 
   _buildOverlook() {
@@ -700,7 +718,10 @@ export class Level {
   }
 
   _buildLanterns() {
-    const proto = this._proto('lantern', () => this.factory.stoneLantern({ height: 2.05, seed: 91 }));
+    const build = this.factory.stoneLantern({ height: 2.05, seed: 91 });
+    const fireY = build.anchors.fire ? build.anchors.fire[1] : 1.6;
+    const fireLight = build.lights[0];
+    const proto = this._proto('lantern', () => build);
     const place = (x, z, s) => {
       const y = this.groundY(x, z);
       _m.makeRotationY(this.rnd() * Math.PI * 2);
@@ -708,6 +729,14 @@ export class Level {
       _m.setPosition(x, y - 0.04, z);
       const k = 0.88 + this.rnd() * 0.24;
       proto.place(_m, [k, k * (0.98 + this.rnd() * 0.05), k * (0.94 + this.rnd() * 0.08)]);
+      // Instanced props never pass through `_emit`, so hoist their flame here.
+      if (fireLight) {
+        this._lightRequests.push({
+          x, y: y + fireY * s, z,
+          color: fireLight.color, intensity: fireLight.intensity * s,
+          distance: fireLight.distance * s, flicker: fireLight.flicker,
+        });
+      }
     };
     // Paired down the approach, then scattered round the forecourt.
     for (let z = 40; z <= 70; z += 6.2) {
@@ -864,11 +893,10 @@ export class Level {
       [-16.0, 42.0], [15.0, 48.0], [-19.0, 56.0], [11.5, 60.0],
     ];
     for (const [x, z] of spots) {
-      _m.makeRotationY(this.rnd() * Math.PI * 2);
-      _m.scale(_v.set(1, 1, 1).multiplyScalar(0.82 + this.rnd() * 0.5));
-      _m.setPosition(x, this.groundY(x, z) - 0.03, z);
+      // Cairns sit *on* the ground, so they lean with it.
+      const m = this._grounded(x, z, this.rnd() * Math.PI * 2, 0.82 + this.rnd() * 0.5, -0.03, 0.8);
       const k = 0.85 + this.rnd() * 0.3;
-      cairn.place(_m, [k, k, k * 0.98]);
+      cairn.place(m, [k, k, k * 0.98]);
     }
   }
 
@@ -884,12 +912,10 @@ export class Level {
       const z = Math.sin(a) * r + 22;
       if (!inPlayable(x, z, -6)) continue;
       if (Math.hypot(x, z - 12) > 66) continue;
-      _m.makeRotationY(this.rnd() * Math.PI * 2);
-      const s = 0.7 + this.rnd() * 0.8;
-      _m.scale(_v.set(s, 1, s));
-      _m.setPosition(x, this.groundY(x, z) + 0.012, z);
+      // Leaves lie flat on whatever they landed on — fully normal-aligned.
+      const m = this._grounded(x, z, this.rnd() * Math.PI * 2, 0.7 + this.rnd() * 0.8, 0.012, 1.0);
       const k = 0.75 + this.rnd() * 0.5;
-      proto.place(_m, [k, k * (0.92 + this.rnd() * 0.18), k * 0.85]);
+      proto.place(m, [k, k * (0.92 + this.rnd() * 0.18), k * 0.85]);
     }
   }
 
@@ -967,6 +993,39 @@ export class Level {
   // =====================================================================
   //  REALIZE
   // =====================================================================
+
+  /**
+   * Spatial cells only pay for themselves when there is enough geometry in them
+   * to be worth culling. A material that totals a few hundred triangles across
+   * the whole shrine — the gold plaques, the copper ridge caps — is cheaper as
+   * one draw call than as four cullable ones.
+   */
+  _collapseSmallBuckets() {
+    const THRESHOLD = 4200;                 // triangles, per layer+material
+    const totals = new Map();
+    for (const [key, list] of this._buckets) {
+      if (!list) continue;
+      const [layer, , , material] = key.split('|');
+      const id = `${layer}|${material}`;
+      let t = totals.get(id) || 0;
+      for (const g of list) t += g.index ? g.index.count / 3 : 0;
+      totals.set(id, t);
+    }
+    const moves = [];
+    for (const [key, list] of this._buckets) {
+      if (!list) continue;
+      const [layer, , , material] = key.split('|');
+      if ((totals.get(`${layer}|${material}`) || 0) > THRESHOLD) continue;
+      moves.push([key, `${layer}|0|0|${material}`, list]);
+    }
+    for (const [from, to, list] of moves) {
+      if (from === to) continue;
+      this._buckets.delete(from);
+      let dst = this._buckets.get(to);
+      if (!dst) { dst = []; this._buckets.set(to, dst); }
+      for (const g of list) dst.push(g);
+    }
+  }
 
   _materialFor(name) {
     if (name === '__ember') return this.factory.emberMaterial;

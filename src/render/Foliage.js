@@ -158,8 +158,13 @@ class GeoBuilder {
     return start;
   }
 
+  /**
+   * Bridge two rings. The winding matters: `ring()` walks its vertices anticlockwise
+   * about the tube axis, so the quad has to go up-then-around, not around-then-up, or
+   * every culm and every trunk is built inside out and renders as an unlit black shell.
+   */
   linkRings(a, b, sides) {
-    for (let s = 0; s < sides; s++) this.quad(a + s, a + s + 1, b + s + 1, b + s);
+    for (let s = 0; s < sides; s++) this.quad(a + s, b + s, b + s + 1, a + s + 1);
   }
 
   scaleAll(s) {
@@ -379,6 +384,7 @@ uniform float uSSSStrength;
 uniform float uTipGlow;
 uniform float uBaseAO;
 uniform float uGrain;
+uniform float uTintAmount;
 
 varying float vKagFade;
 varying float vKagT;
@@ -402,7 +408,16 @@ if ( vKagFade < kagBayer8( gl_FragCoord.xy ) ) discard;
 const FRAGMENT_TINT = /* glsl */`
 {
   float grain = fbm2( vKagWorld.xz * 3.7, 2 ) * 0.5 + 0.5;
-  vec3 tint = vKagTint * mix( 1.0 - uBaseAO, 1.0 + uTipGlow, vKagT );
+  vec3 tint = vKagTint;
+#ifdef KAG_TINT_MODULATE
+  // When the material has a map, the map IS the albedo. Multiplying a second albedo on
+  // top of it is how every leaf card in the frame ends up near black: two 0.1-ish linear
+  // values multiply to 0.01. Normalise the tint to unit luminance so it shifts hue and
+  // saturation per instance without ever removing energy.
+  float lum = max( dot( tint, vec3( 0.2126, 0.7152, 0.0722 ) ), 1e-3 );
+  tint = mix( vec3( 1.0 ), tint / lum, uTintAmount );
+#endif
+  tint *= mix( 1.0 - uBaseAO, 1.0 + uTipGlow, vKagT );
   tint *= mix( 1.0 - uGrain, 1.0 + uGrain, grain );
   diffuseColor.rgb *= tint;
 }
@@ -594,8 +609,8 @@ function buildSusukiGeometry(seed = 5) {
       const px = dx * rad, pz = dz * rad;
       const nx = -dz, nz = dx;
       const n = nrm3([dx * 0.35, 0.5, dz * 0.35]);
-      const l = g.vert(px - nx * w, y, pz - nz * w, n[0], n[1], n[2], 0, t, t, i * 0.31);
-      const r = g.vert(px + nx * w, y, pz + nz * w, n[0], n[1], n[2], 1, t, t, i * 0.31);
+      const l = g.vert(px - nx * w, y, pz - nz * w, n[0], n[1], n[2], SUSUKI_UV.bladeU0, t, t, i * 0.31);
+      const r = g.vert(px + nx * w, y, pz + nz * w, n[0], n[1], n[2], SUSUKI_UV.bladeU1, t, t, i * 0.31);
       if (pl >= 0) g.quad(pl, pr, r, l);
       pl = l; pr = r;
     }
@@ -611,7 +626,7 @@ function buildSusukiGeometry(seed = 5) {
       const r = [Math.cos(pa) * 0.11, 0, Math.sin(pa) * 0.11];
       const u = [0, 0.17, 0];
       const n = nrm3([Math.sin(pa) * 0.4, 0.9, -Math.cos(pa) * 0.4]);
-      g.card([cx, h, cz], r, u, n, 0, 0, 1, 1, 1.0, rnd());
+      g.card([cx, h, cz], r, u, n, SUSUKI_UV.plumeU0, 0, SUSUKI_UV.plumeU1, 1, 1.0, rnd());
     }
   }
   return g.toGeometry();
@@ -1057,27 +1072,63 @@ function paintFern(size) {
   return c;
 }
 
-/** Silvery susuki plume — deliberately low alpha so a low sun blows through it. */
-function paintSusukiPlume(size) {
+/**
+ * Susuki, in two zones of one texture: the left quarter is an OPAQUE blade strip and the
+ * right three quarters is the silvery plume. The arching blades sample the strip and the
+ * plume cards sample the plume — sampling one texture for both is what turned every clump
+ * into a black spiky starburst, because the blades were reading empty plume space.
+ */
+const SUSUKI_UV = { bladeU0: 0.02, bladeU1: 0.22, plumeU0: 0.30, plumeU1: 0.99 };
+
+function paintSusuki(size) {
   const c = newCanvas(size, size);
   const g = c.getContext('2d');
   g.clearRect(0, 0, size, size);
   const rnd = makeRandom(1919);
+
+  // --- blade strip (opaque) --------------------------------------------------
+  const bw = Math.round(size * 0.25);
+  const grad = g.createLinearGradient(0, size, 0, 0);
+  grad.addColorStop(0, '#43552c');
+  grad.addColorStop(0.45, '#7d8a45');
+  grad.addColorStop(1, '#b39a5c');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, bw, size);
+  // A central rib and some lengthwise streaking so the blade is never a flat fill.
+  for (let i = 0; i < 70; i++) {
+    const x = rnd() * bw;
+    g.strokeStyle = `rgba(${rnd() < 0.5 ? '32,44,22' : '198,182,120'},${0.06 + rnd() * 0.16})`;
+    g.lineWidth = Math.max(1, size * 0.004);
+    g.beginPath();
+    g.moveTo(x, rnd() * size);
+    g.lineTo(x + (rnd() - 0.5) * size * 0.01, rnd() * size);
+    g.stroke();
+  }
+  g.strokeStyle = 'rgba(30,40,20,0.35)';
+  g.lineWidth = Math.max(1, size * 0.006);
+  g.beginPath(); g.moveTo(bw * 0.5, 0); g.lineTo(bw * 0.5, size); g.stroke();
+
+  // --- plume (low alpha, so a low sun blows straight through it) --------------
+  const px0 = size * 0.30, pw = size * 0.70;
   g.lineCap = 'round';
-  for (let i = 0; i < 150; i++) {
+  for (let i = 0; i < 220; i++) {
     const t = rnd();
-    const x = size * (0.5 + (rnd() - 0.5) * (0.24 + t * 0.5));
-    const y = size * (0.92 - t * 0.86);
-    const len = size * (0.06 + rnd() * 0.13);
+    const x = px0 + pw * (0.5 + (rnd() - 0.5) * (0.24 + t * 0.62));
+    const y = size * (0.94 - t * 0.88);
+    const len = size * (0.05 + rnd() * 0.12);
     const a = -Math.PI * 0.5 + (rnd() - 0.5) * 1.5;
     const v = 190 + rnd() * 60;
-    g.strokeStyle = `rgba(${v | 0},${(v * 0.93) | 0},${(v * 0.80) | 0},${0.30 + rnd() * 0.42})`;
+    g.strokeStyle = `rgba(${v | 0},${(v * 0.93) | 0},${(v * 0.80) | 0},${0.34 + rnd() * 0.44})`;
     g.lineWidth = Math.max(1, size * 0.006);
     g.beginPath();
     g.moveTo(x, y);
     g.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len);
     g.stroke();
   }
+  // A stem so the plume is attached to something.
+  g.strokeStyle = 'rgba(150,142,96,0.75)';
+  g.lineWidth = Math.max(1, size * 0.008);
+  g.beginPath(); g.moveTo(px0 + pw * 0.5, size); g.lineTo(px0 + pw * 0.5, size * 0.35); g.stroke();
   return c;
 }
 
@@ -1191,6 +1242,14 @@ const GRASS_BATCHES = {
 };
 
 /** Everything else keys its cull radius off these, scaled by grassRadius where it makes sense. */
+/**
+ * A fade *window* from a [near, far] range: full strength until 88% of the far distance,
+ * gone by the far distance. Passing a raw [near, far] pair as a window is the bug that
+ * had every bamboo culm fading from zero metres and thus invisible everywhere.
+ */
+const fadeOut = (range) => [range[1] * 0.88, range[1]];
+const fadeIn = (range) => [range[0], range[0] + Math.max(6, range[0] * 0.25)];
+
 const RANGE = {
   bambooCulm: [0, 46],
   bambooLeaf: [0, 38],
@@ -1281,7 +1340,7 @@ export class FoliageSystem {
 
   async init() {
     const q = this.ctx.quality;
-    const steps = 11;
+    const steps = 12;
     let done = 0;
     const step = async (label, fn) => {
       this.onProgress?.(done, steps, label);
@@ -1304,6 +1363,7 @@ export class FoliageSystem {
     await step('seeding undergrowth', () => this._buildUndergrowth(q));
     await step('scattering leaves', () => this._buildGroundCards(q));
     await step('hanging the canopy', () => this._buildCanopy(q));
+    await step('sowing the meadow', () => this._primeGrass());
 
     this.ctx.scene.add(this.group);
     this.ctx.bus?.on?.('slash', this._onSlash);
@@ -1386,7 +1446,7 @@ export class FoliageSystem {
       momiji: T(paintMomiji(px)),
       cedar: T(paintCedarSpray(px)),
       fern: T(paintFern(px)),
-      susuki: T(paintSusukiPlume(px)),
+      susuki: T(paintSusuki(px)),
       fallen: T(paintFallenLeaves(px)),
     };
 
@@ -1413,8 +1473,14 @@ export class FoliageSystem {
       bendExp = 2.0, whip = 0, bendGain = 1.0, flutter = 1.0,
       fadeNear = [-2, -1], fadeFar = [30, 34], size = [1, 1],
       sss = 1.0, sssColor = 0xb8d07a, tipGlow = 0.16, baseAO = 0.34, grain = 0.16,
-      side = DoubleSide, depthWrite = true,
+      side = DoubleSide, depthWrite = true, tintAmount = 0.85,
     } = opts;
+
+    // A mapped material's albedo comes from the texture; the instance tint may only
+    // modulate it. An unmapped one (a grass blade, a culm) carries its albedo in the tint.
+    const tintModulate = !!map;
+
+    if (map === undefined) throw new Error(`foliage material "${name}" has an undefined map`);
 
     const mat = new MeshLambertMaterial({
       name: `foliage/${name}`,
@@ -1440,6 +1506,7 @@ export class FoliageSystem {
       uTipGlow: { value: tipGlow },
       uBaseAO: { value: baseAO },
       uGrain: { value: grain },
+      uTintAmount: { value: tintAmount },
     };
     mat.userData.kag = local;
 
@@ -1447,7 +1514,8 @@ export class FoliageSystem {
     const wind = this._windUniforms;
     const pars = vertexPars();
     const defines = `#define KAG_MODE ${mode}\n#define KAG_BEND_EXP ${bendExp.toFixed(2)}\n` +
-      (whip > 0 ? `#define KAG_WHIP ${whip.toFixed(3)}\n` : '');
+      (whip > 0 ? `#define KAG_WHIP ${whip.toFixed(3)}\n` : '') +
+      (tintModulate ? '#define KAG_TINT_MODULATE\n' : '');
 
     chainBeforeCompile(mat, (shader) => {
       shader.uniforms.uWind = wind.uWind;   // same object as Weather's — never a copy
@@ -1467,7 +1535,7 @@ export class FoliageSystem {
         .replace('#include <lights_fragment_begin>', '#include <lights_fragment_begin>\n' + FRAGMENT_SHADOW_CAPTURE)
         .replace('#include <envmap_fragment>', FRAGMENT_SSS + '\n#include <envmap_fragment>');
     });
-    chainCacheKey(mat, `kagfol|${mode}|${bendExp}|${whip}`);
+    chainCacheKey(mat, `kagfol|${mode}|${bendExp}|${whip}|${tintModulate ? 'm' : 'a'}`);
 
     this.ctx.sky?.applyFog?.(mat);
     this._materials.push(mat);
@@ -1693,7 +1761,9 @@ export class FoliageSystem {
       const burn = clamp(noise.fbm2(x * 0.055 - 7.1, z * 0.055 + 3.9, 2) * 0.5 + 0.5, 0, 1);
       col.copy(AUTUMN_A).lerp(AUTUMN_B, Math.pow(dry, 1.35));
       col.lerp(AUTUMN_C, Math.pow(burn, 2.6) * dry * 0.85);
-      const shade = 0.80 + rnd() * 0.40;
+      // The tint IS the albedo for unmapped blades, so keep it in the 0.10-0.20 linear
+      // band real grass actually sits in rather than the near-black it started at.
+      const shade = 1.15 + rnd() * 0.55;
 
       const lush = 0.7 + 0.6 * clump;
       const o = n * 4;
@@ -1792,7 +1862,7 @@ export class FoliageSystem {
     if (g.queue.length) {
       // Two tiles a frame keeps the spike under ~1 ms; if we are falling behind (fast
       // sprint across the meadow) the budget opens up rather than letting the ring lag.
-      const budget = g.sinceShift > 0.5 ? 6 : 2;
+      const budget = g.sinceShift > 0.3 ? 8 : 4;
       for (let i = 0; i < budget && g.queue.length; i++) {
         const slot = g.queue.shift();
         const entry = this._generateGrassTile(slot.tx, slot.tz, slot.lod);
@@ -1803,7 +1873,25 @@ export class FoliageSystem {
     }
 
     // Emit once the queue drains, or force it if we have been waiting too long.
-    if (g.emitDirty && (g.queue.length === 0 || g.sinceShift > 0.45)) this._emitGrass();
+    if (g.emitDirty && (g.queue.length === 0 || g.sinceShift > 0.25)) this._emitGrass();
+  }
+
+  /**
+   * Fill the whole ring once at boot. Without this the first second of gameplay — and
+   * every screenshot the capture rig takes — is a bald field, because the runtime queue
+   * deliberately dribbles tiles in a few per frame.
+   */
+  _primeGrass() {
+    const g = this._grass;
+    if (!g || !g.enabled) return;
+    this._updateGrass(0);
+    let guard = g.slots.length + 8;
+    while (g.queue.length && guard-- > 0) {
+      const slot = g.queue.shift();
+      g.cache.set(slot.key, this._generateGrassTile(slot.tx, slot.tz, slot.lod));
+      slot.ready = true;
+    }
+    this._emitGrass();
   }
 
   _trimGrassCache(target) {
@@ -1841,9 +1929,10 @@ export class FoliageSystem {
 
     // Culms: stiff, and they whip. A bamboo sea reads as bamboo because the tops lag.
     const culmOpts = {
-      name: 'bamboo-culm', mode: 0, map: null, color: 0x9fae5c,
+      // No map: the per-instance tint carries the albedo, so the material must be white.
+      name: 'bamboo-culm', mode: 0, map: null, color: 0xffffff,
       bendExp: 1.6, whip: 0.28, bendGain: 1.35, flutter: 0.35,
-      fadeFar: RANGE.bambooCulm, size: [1, 1], side: FrontSide,
+      fadeFar: fadeOut(RANGE.bambooCulm), size: [1, 1], side: DoubleSide,
       sss: 0.55, sssColor: 0xd9dd8e, tipGlow: 0.10, baseAO: 0.28, grain: 0.20,
     };
     const culmMat = this._makeMaterial(culmOpts);
@@ -1853,7 +1942,7 @@ export class FoliageSystem {
     const leafOpts = {
       name: 'bamboo-leaf', mode: 1, map: this.tex.bambooLeaf, color: 0xffffff,
       bendExp: 1.6, whip: 0.28, bendGain: 1.35, flutter: 1.6, alphaTest: 0.38,
-      fadeFar: RANGE.bambooLeaf, size: [1, 1],
+      fadeFar: fadeOut(RANGE.bambooLeaf), size: [1, 1],
       sss: 1.45, sssColor: 0xcfe07f, tipGlow: 0.18, baseAO: 0.22, grain: 0.16,
     };
     const leafMat = this._makeMaterial(leafOpts);
@@ -1861,10 +1950,10 @@ export class FoliageSystem {
 
     // Impostor cards for the mid distance: cheap, still bending on the same front.
     const cardOpts = {
-      name: 'bamboo-card', mode: 0, map: this.tex.bambooLeaf, color: 0xbcc978,
+      name: 'bamboo-card', mode: 0, map: this.tex.bambooLeaf, color: 0xffffff,
       bendExp: 1.8, bendGain: 0.9, flutter: 0.6, alphaTest: 0.30,
-      fadeNear: [RANGE.bambooCard[0], RANGE.bambooCard[0] + 9],
-      fadeFar: [RANGE.bambooCard[1] * 0.86, RANGE.bambooCard[1]],
+      fadeNear: fadeIn(RANGE.bambooCard),
+      fadeFar: fadeOut(RANGE.bambooCard),
       size: [1, 1], sss: 1.1, sssColor: 0xc8d884, tipGlow: 0.14, baseAO: 0.30, grain: 0.14,
     };
     const cardMat = this._makeMaterial(cardOpts);
@@ -2052,13 +2141,13 @@ export class FoliageSystem {
       const woodOpts = {
         name: `${def.key}-wood`, mode: 0, map: null, color: spec.wood,
         bendExp: 2.4, bendGain: 0.55, flutter: 0.20, side: FrontSide,
-        fadeFar: RANGE.treeMesh, size: [1, 1],
+        fadeFar: fadeOut(RANGE.treeMesh), size: [1, 1],
         sss: 0.10, sssColor: 0x8a6a4a, tipGlow: 0.10, baseAO: 0.30, grain: 0.22,
       };
       const leafOpts = {
         name: `${def.key}-leaf`, mode: 0, map: def.tex, color: 0xffffff,
         bendExp: 2.4, bendGain: 0.60, flutter: 1.35, alphaTest: 0.36,
-        fadeFar: RANGE.treeMesh, size: [1, 1],
+        fadeFar: fadeOut(RANGE.treeMesh), size: [1, 1],
         sss: def.sss, sssColor: def.tint, tipGlow: 0.20, baseAO: 0.18, grain: 0.15,
       };
       const woodMat = this._makeMaterial(woodOpts);

@@ -27,9 +27,8 @@
 
 import {
   BufferGeometry, BufferAttribute, BoxGeometry, Matrix4, Vector3, Color,
-  MeshStandardMaterial, DoubleSide, InstancedMesh, Mesh, DataTexture, RGBAFormat,
+  MeshStandardMaterial, DoubleSide, InstancedMesh, DataTexture, RGBAFormat,
   SRGBColorSpace, RepeatWrapping, LinearMipmapLinearFilter, LinearFilter,
-  InstancedBufferAttribute, Sphere,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { noise, makeRandom, clamp, lerp, smoothstep, worley2 } from '../core/Noise.js';
@@ -617,15 +616,19 @@ export function panelWithHole(w, h, thick, holePts, opts = {}) {
 
 // ------------------------------------------------------------- fallback maps
 
-/** Tiny procedural grain so a missing library material is never a flat colour. */
+/**
+ * Tiny procedural grain so a missing library material is never a flat colour.
+ * Deliberately cheap — this only ever runs when Materials.js failed to provide a
+ * name, and it must not cost a frame to synthesise.
+ */
 function grainTexture(hex, seed) {
-  const S = 64;
+  const S = 32;
   const data = new Uint8Array(S * S * 4);
   const base = new Color(hex);
   const rnd = makeRandom(seed);
   for (let y = 0; y < S; y++) {
     for (let x = 0; x < S; x++) {
-      const n = noise.warp2((x / S) * 4 + seed * 0.11, (y / S) * 4 - seed * 0.07, 0.7, 4);
+      const n = noise.fbm2((x / S) * 5 + seed * 0.11, (y / S) * 5 - seed * 0.07, 4);
       const wl = worley2((x / S) * 5.3, (y / S) * 5.3, 0.9);
       const crack = smoothstep(0.02, 0.16, wl.f2 - wl.f1);
       let k = 0.78 + n * 0.28;
@@ -1948,13 +1951,18 @@ export class PropFactory {
     const mat = opts.material ?? 'stone';
     const rnd = makeRandom(opts.seed ?? 17);
     const b = PropFactory.build();
+    // A long flight is sliced across build tasks; the RNG is advanced for the
+    // skipped steps so the slices still line up with the un-sliced flight.
+    const from = Math.max(1, opts.stepFrom ?? 1);
+    const to = Math.min(steps, opts.stepTo ?? steps);
 
     const blocks = [];
     for (let k = 1; k <= steps; k++) {
+      if (k < from || k > to) { rnd(); rnd(); rnd(); continue; }
       const yTop = k * rise;
       const z0 = (steps - k) * run;
       const h = rise + 0.10;
-      const g = new BoxGeometry(width + (rnd() - 0.5) * 0.05, h, run + 0.02, 6, 1, 2);
+      const g = new BoxGeometry(width + (rnd() - 0.5) * 0.05, h, run + 0.02, 5, 1, 1);
       const cz = z0 + run * 0.5;
       const cy = yTop - h * 0.5;
       // Dish the tread and knock the nosing about.
@@ -1963,12 +1971,9 @@ export class PropFactory {
         const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
         if (y > h * 0.4) {
           const u = clamp((x / (width * 0.5)) ** 2, 0, 1);
-          const n = noise.fbm2(x * 1.3 + k * 3.1, z * 2.6, 3);
+          const n = noise.noise2(x * 1.3 + k * 3.1, z * 2.6);
           pos.setY(i, y - wear * (0.020 * (1 - u) + 0.012 * n) - 0.004);
-        }
-        if (z > run * 0.35) {
-          const n = noise.fbm2(x * 2.1 - k * 1.7, y * 3.0, 2);
-          pos.setZ(i, z + n * 0.012 * wear);
+          if (z > 0) pos.setZ(i, z + n * 0.012 * wear);
         }
       }
       pos.needsUpdate = true;
@@ -1984,7 +1989,7 @@ export class PropFactory {
       PropFactory.addCollider(b, PropFactory.boxCollider(width, yTop, run + 0.02, 0, 0, cz), mat === 'stone' ? 'stone' : 'wood', true, true);
     }
 
-    if (opts.cheeks) {
+    if (opts.cheeks && from === 1) {
       for (let side = 0; side < 2; side++) {
         const sx = side === 0 ? -1 : 1;
         const samples = [];
@@ -2001,10 +2006,12 @@ export class PropFactory {
       }
     }
 
-    const merged = mergeGeometries(blocks.map((g) => normalizeGeo(g)), false);
-    bakeAO(merged, { ground: 0, cavity: 0.28, down: 0.3, floor: 0.34 });
-    weatherBand(merged, 0, 0.25, 0.74, 0.84, 0.68, 0.4);
-    PropFactory.add(b, merged, mat);
+    if (blocks.length) {
+      const merged = mergeGeometries(blocks.map((g) => normalizeGeo(g)), false);
+      bakeAO(merged, { ground: 0, cavity: 0.28, down: 0.3, floor: 0.34 });
+      weatherBand(merged, 0, 0.25, 0.74, 0.84, 0.68, 0.4);
+      PropFactory.add(b, merged, mat);
+    }
 
     b.anchors.top = [0, steps * rise, 0];
     b.anchors.bottom = [0, 0, steps * run];
