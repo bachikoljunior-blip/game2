@@ -20,6 +20,7 @@ import {
   HalfFloatType, Scene,
 } from 'three';
 import { glslNoise, clamp, lerp, smoothstep } from '../core/Noise.js';
+import { WORLD } from '../world/Constants.js';
 
 // ------------------------------------------------------------------ constants
 
@@ -42,6 +43,45 @@ const MOON_ANGULAR_RADIUS = 0.52 * 0.5 * DEG;
 /** Shrine latitude (central Honshū) and an autumn solar declination. */
 const LATITUDE = 35.7 * DEG;
 const DECLINATION = -6.5 * DEG;
+/**
+ * Offset between the game clock and solar time. The valley sits at the western edge of
+ * its timezone, so solar noon lands at 13:32 and the sun is still 6° up at t = 0.78 —
+ * which is precisely where the art direction wants magic hour. Without this the autumn
+ * sun at this latitude has already set by 17:45 and the grade ladder would be lying.
+ */
+const SOLAR_OFFSET = 0.064;
+
+/** The default magic-hour time of day. ARCHITECTURE §5: this is the shot. */
+const MAGIC_HOUR = 0.78;
+
+/**
+ * Solar elevation and compass azimuth (radians, clockwise from world −Z) for a day
+ * fraction. Split out because the module needs it once at load to solve the site
+ * rotation below.
+ */
+function solarElevation(t) {
+  const hourAngle = (t - 0.5 - SOLAR_OFFSET) * 2 * Math.PI;
+  const sinEl = Math.sin(DECLINATION) * Math.sin(LATITUDE) +
+    Math.cos(DECLINATION) * Math.cos(LATITUDE) * Math.cos(hourAngle);
+  return Math.asin(clamp(sinEl, -1, 1));
+}
+
+function solarAzimuthRaw(t) {
+  const hourAngle = (t - 0.5 - SOLAR_OFFSET) * 2 * Math.PI;
+  // Measured from due south, then rotated to a compass bearing from north.
+  return Math.atan2(
+    Math.sin(hourAngle),
+    Math.cos(hourAngle) * Math.sin(LATITUDE) - Math.tan(DECLINATION) * Math.cos(LATITUDE),
+  ) + Math.PI;
+}
+
+/**
+ * The shrine's site is not aligned to true north. ARCHITECTURE §9 fixes the magic-hour
+ * sun at `WORLD.SUN_AZIMUTH_DEFAULT` (118°) so it rakes straight down the bamboo valley
+ * at azimuth 135 and backlights it; we rotate the whole solar arc to land there. The
+ * path stays internally consistent — same elevation profile, same arc, rotated site.
+ */
+const AZIMUTH_OFFSET = WORLD.SUN_AZIMUTH_DEFAULT * DEG - solarAzimuthRaw(MAGIC_HOUR);
 
 // --------------------------------------------------------- module scratch space
 // Pre-allocated so update() never allocates. Never hold a reference to these.
@@ -65,7 +105,7 @@ const LADDER = [
     fogDensity: 0.0085, stars: 1.0, cloudCoverage: 0.56,
     cloudLit: new Color(0x39456a), cloudDark: new Color(0x10151f), moon: 1.0,
   }),
-  K(0.19, {   // 04:33 — astronomical to nautical twilight, the deepest blue
+  K(0.29, {   // 06:58 — sun 11 degrees down: nautical twilight, the deepest blue
     turbidity: 2.6, rayleigh: 1.9, mie: 0.0045, mieG: 0.78,
     exposure: 0.50, sunIntensity: 0.22, ambient: 0.24,
     tint: new Color(0.66, 0.78, 1.05), sunTint: new Color(0.80, 0.82, 1.00),
@@ -74,7 +114,7 @@ const LADDER = [
     fogDensity: 0.0125, stars: 0.55, cloudCoverage: 0.53,
     cloudLit: new Color(0x5a5f84), cloudDark: new Color(0x1b2130), moon: 0.7,
   }),
-  K(0.265, {  // 06:22 — sunrise, the coldest warm light of the day
+  K(0.335, {  // 08:02 — sunrise, the coldest warm light of the day
     turbidity: 4.2, rayleigh: 2.6, mie: 0.011, mieG: 0.80,
     exposure: 0.78, sunIntensity: 1.5, ambient: 0.30,
     tint: new Color(1.02, 0.95, 0.94), sunTint: new Color(1.00, 0.68, 0.44),
@@ -83,7 +123,7 @@ const LADDER = [
     fogDensity: 0.020, stars: 0.0, cloudCoverage: 0.48,
     cloudLit: new Color(0xffc79a), cloudDark: new Color(0x4a4a5c), moon: 0.0,
   }),
-  K(0.35, {   // 08:24 — morning, air still cold, contrast climbing
+  K(0.41, {   // 09:50 — morning, air still cold, contrast climbing
     turbidity: 3.4, rayleigh: 2.1, mie: 0.006, mieG: 0.78,
     exposure: 0.98, sunIntensity: 2.6, ambient: 0.34,
     tint: new Color(1.00, 1.00, 1.02), sunTint: new Color(1.00, 0.90, 0.76),
@@ -92,7 +132,7 @@ const LADDER = [
     fogDensity: 0.013, stars: 0.0, cloudCoverage: 0.50,
     cloudLit: new Color(0xfff0dc), cloudDark: new Color(0x63697c), moon: 0.0,
   }),
-  K(0.50, {   // noon — flattest, least interesting light; we grade it down deliberately
+  K(0.564, {  // 13:32 solar noon — flattest light of the day; graded down deliberately
     turbidity: 2.9, rayleigh: 1.7, mie: 0.0042, mieG: 0.76,
     exposure: 1.05, sunIntensity: 3.2, ambient: 0.36,
     tint: new Color(0.99, 1.00, 1.03), sunTint: new Color(1.00, 0.97, 0.92),
@@ -101,7 +141,7 @@ const LADDER = [
     fogDensity: 0.0105, stars: 0.0, cloudCoverage: 0.52,
     cloudLit: new Color(0xffffff), cloudDark: new Color(0x6f7688), moon: 0.0,
   }),
-  K(0.66, {   // 15:50 — the light starts to lengthen and warm
+  K(0.70, {   // 16:48 — the light starts to lengthen and warm
     turbidity: 3.6, rayleigh: 2.0, mie: 0.0062, mieG: 0.79,
     exposure: 1.02, sunIntensity: 3.0, ambient: 0.35,
     tint: new Color(1.03, 0.99, 0.97), sunTint: new Color(1.00, 0.90, 0.74),
@@ -119,7 +159,7 @@ const LADDER = [
     fogDensity: 0.0215, stars: 0.0, cloudCoverage: 0.455,
     cloudLit: new Color(0xffb06a), cloudDark: new Color(0x4e4f68), moon: 0.0,
   }),
-  K(0.845, {  // 20:17 — dusk, the sun is under the ridge, only the top of the sky is lit
+  K(0.815, {  // 19:34 — dusk, the sun is under the ridge, only the top of the sky is lit
     turbidity: 4.4, rayleigh: 3.3, mie: 0.013, mieG: 0.80,
     exposure: 0.68, sunIntensity: 0.75, ambient: 0.28,
     tint: new Color(0.94, 0.90, 1.02), sunTint: new Color(1.00, 0.47, 0.30),
@@ -128,7 +168,7 @@ const LADDER = [
     fogDensity: 0.0185, stars: 0.18, cloudCoverage: 0.49,
     cloudLit: new Color(0xc4664a), cloudDark: new Color(0x2e3348), moon: 0.25,
   }),
-  K(0.90, {   // 21:36 — civil twilight gone, stars in
+  K(0.87, {   // 20:53 — civil twilight gone, stars in
     turbidity: 3.0, rayleigh: 1.8, mie: 0.0055, mieG: 0.77,
     exposure: 0.48, sunIntensity: 0.18, ambient: 0.22,
     tint: new Color(0.70, 0.80, 1.05), sunTint: new Color(0.78, 0.80, 1.00),
@@ -320,7 +360,8 @@ float stars( vec3 rd ) {
   if ( h < 0.955 ) return 0.0;
   vec2 o = hash22( cell + 3.7 ) * 0.72 + 0.14;
   float d = length( fract( uv ) - o );
-  float s = smoothstep( 0.13, 0.0, d );
+  // GLSL smoothstep is undefined for edge0 > edge1, so always invert rather than swap.
+  float s = 1.0 - smoothstep( 0.0, 0.13, d );
   float mag = ( h - 0.955 ) * 22.2;
   float twinkle = 0.62 + 0.38 * sin( uTime * ( 1.4 + h * 9.0 ) + h * 61.0 );
   return s * mag * twinkle * uStarStrength * smoothstep( -0.02, 0.14, rd.y );
@@ -427,7 +468,7 @@ void main() {
 
   // Below the horizon we fade into the ground haze so the dome never shows a hard seam
   // where the terrain silhouette does not quite reach.
-  col = mix( col, uGroundColor, smoothstep( 0.0, -0.16, rd.y ) );
+  col = mix( col, uGroundColor, 1.0 - smoothstep( -0.16, 0.0, rd.y ) );
 
   col *= uSkyTint * uSkyExposure;
 
@@ -441,19 +482,22 @@ void main() {
 
 // ------------------------------------------------------------------- helpers
 
-/** Chain onto an existing onBeforeCompile instead of stomping another author's patch. */
-function chainBeforeCompile(material, fn) {
+/**
+ * Chain onto an existing onBeforeCompile instead of stomping another author's patch.
+ * three's default program cache key is `onBeforeCompile.toString()`, so the wrapper
+ * forwards the original's source — otherwise every wrapped material would hash to the
+ * same key and two materials with different author patches would share one program.
+ */
+function chainBeforeCompile(material, fn, tag) {
   const prev = material.onBeforeCompile;
-  if (prev && prev !== Material_noop) {
-    material.onBeforeCompile = function (shader, renderer) {
-      prev.call(this, shader, renderer);
-      fn.call(this, shader, renderer);
-    };
-  } else {
-    material.onBeforeCompile = fn;
-  }
+  const prevSrc = prev ? String(prev) : '';   // String() so a chained wrapper's own toString wins
+  const wrapper = function (shader, renderer) {
+    if (prev) prev.call(this, shader, renderer);
+    fn.call(this, shader, renderer);
+  };
+  wrapper.toString = () => prevSrc + '|' + tag;
+  material.onBeforeCompile = wrapper;
 }
-function Material_noop() {}
 
 /** Program cache keys must differ once we inject code, or three hands us a stale program. */
 function chainCacheKey(material, token) {
@@ -471,7 +515,7 @@ export class SkySystem {
     ctx.sky = this;
 
     /** Fraction of a 24 h day. Magic hour is the shot we are chasing. */
-    this.time = 0.78;
+    this.time = MAGIC_HOUR;
     /** Day fractions advanced per second of wall clock. 0 = frozen. */
     this.autoAdvance = 0;
 
@@ -492,7 +536,10 @@ export class SkySystem {
       sunColor: new Color(0xff9b52),
       density: 0.0215,
       heightFalloff: 26,
-      baseHeight: 0,
+      // ARCHITECTURE §9: world Y is absolute metres above sea level. The mist deck sits
+      // on the stream at 782 and thins with height, so the valley pools and the shrine
+      // plateau 30 m above it keeps roughly a third of the density — which is the shot.
+      baseHeight: WORLD.WATER_LEVEL,
       start: 6,
       maxOpacity: 0.96,
       sunPower: 9,
@@ -507,7 +554,7 @@ export class SkySystem {
       uFogSunDir: { value: new Vector3(0, 0.2, -1) },
       uFogDensity: { value: 0.0215 },
       uFogHeightFalloff: { value: 26 },
-      uFogBaseHeight: { value: 0 },
+      uFogBaseHeight: { value: WORLD.WATER_LEVEL },
       uFogStart: { value: 6 },
       uFogMaxOpacity: { value: 0.96 },
       uFogSunPower: { value: 9 },
@@ -538,9 +585,29 @@ export class SkySystem {
     this._envDirty = true;
 
     this._grade = this._makeGrade();
+    this._betaR = new Vector3();
+    this._betaM = new Vector3();
     this._cloudWind = new Vector2(0, 0);
     this._elapsed = 0;
     this._windSpeed = 0.012;
+
+    /**
+     * Sweep the scene periodically and fog anything new. Aerial perspective is not
+     * optional in this art direction, and it is not reasonable to make every author
+     * remember to call applyFog. Set false to take manual control.
+     */
+    this.autoFog = true;
+    this._fogScanTimer = 0;
+    this._onFogScan = (o) => {
+      const m = o.material;
+      if (!m || o === this.mesh) return;
+      if (Array.isArray(m)) { for (let i = 0; i < m.length; i++) this.applyFog(m[i]); }
+      else this.applyFog(m);
+    };
+
+    // Resolve the sun and the whole grade immediately, so a system constructed before
+    // our init() (Lighting reads ctx.sky) never sees placeholder values.
+    this.setTime(this.time);
   }
 
   // ----------------------------------------------------------------- lifecycle
@@ -639,18 +706,9 @@ export class SkySystem {
    */
   setTime(t) {
     this.time = t - Math.floor(t);
-    const hourAngle = (this.time - 0.5) * 2 * Math.PI;
 
-    const sinDec = Math.sin(DECLINATION), cosDec = Math.cos(DECLINATION);
-    const sinLat = Math.sin(LATITUDE), cosLat = Math.cos(LATITUDE);
-    const sinEl = sinDec * sinLat + cosDec * cosLat * Math.cos(hourAngle);
-    const elevation = Math.asin(clamp(sinEl, -1, 1));
-    // Azimuth measured from due south, then rotated to a compass bearing from north.
-    const azSouth = Math.atan2(
-      Math.sin(hourAngle),
-      Math.cos(hourAngle) * sinLat - Math.tan(DECLINATION) * cosLat,
-    );
-    const azimuth = azSouth + Math.PI;
+    const elevation = solarElevation(this.time);
+    const azimuth = solarAzimuthRaw(this.time) + AZIMUTH_OFFSET;
 
     const ce = Math.cos(elevation);
     this.sunDirection.set(ce * Math.sin(azimuth), Math.sin(elevation), -ce * Math.cos(azimuth)).normalize();
@@ -720,7 +778,6 @@ export class SkySystem {
   _applyGrade() {
     const g = this._grade;
     const u = this.uniforms;
-    if (!u) return;
 
     // Preetham's per-frame constants; all direction-independent, so JS not GLSL.
     const sunY = this.sunDirection.y;
@@ -728,27 +785,38 @@ export class SkySystem {
     const rayleighCoefficient = g.rayleigh - 1.0 * (1 - sunFade);
     const c = 0.2 * g.turbidity * 10e-18;
 
-    u.uBetaR.value.copy(TOTAL_RAYLEIGH).multiplyScalar(rayleighCoefficient);
-    u.uBetaM.value.copy(MIE_CONST).multiplyScalar(0.434 * c * g.mie);
-    u.uSunFade.value = sunFade;
-    u.uMieG.value = g.mieG;
+    this._betaR.copy(TOTAL_RAYLEIGH).multiplyScalar(rayleighCoefficient);
+    this._betaM.copy(MIE_CONST).multiplyScalar(0.434 * c * g.mie);
 
     const zenithCos = clamp(sunY, -1, 1);
-    u.uSunE.value = SUN_E0 * Math.max(0, 1 - Math.pow(Math.E, -((CUTOFF_ANGLE - Math.acos(zenithCos)) / STEEPNESS)));
+    const sunE = SUN_E0 * Math.max(0, 1 - Math.pow(Math.E, -((CUTOFF_ANGLE - Math.acos(zenithCos)) / STEEPNESS)));
 
-    u.uSkyTint.value.set(g.tint.r, g.tint.g, g.tint.b);
-    u.uSkyExposure.value = g.exposure;
-    u.uGroundColor.value.set(g.ground.r, g.ground.g, g.ground.b);
-    u.uStarStrength.value = g.stars;
-    u.uMoonStrength.value = g.moon;
-    u.uCloudCoverage.value = g.cloudCoverage;
-    u.uCloudLit.value.set(g.cloudLit.r, g.cloudLit.g, g.cloudLit.b);
-    u.uCloudDark.value.set(g.cloudDark.r, g.cloudDark.g, g.cloudDark.b);
+    if (u) {
+      u.uBetaR.value.copy(this._betaR);
+      u.uBetaM.value.copy(this._betaM);
+      u.uSunFade.value = sunFade;
+      u.uMieG.value = g.mieG;
+      u.uSunE.value = sunE;
+      u.uSkyTint.value.set(g.tint.r, g.tint.g, g.tint.b);
+      u.uSkyExposure.value = g.exposure;
+      u.uGroundColor.value.set(g.ground.r, g.ground.g, g.ground.b);
+      u.uStarStrength.value = g.stars;
+      u.uMoonStrength.value = g.moon;
+      u.uCloudCoverage.value = g.cloudCoverage;
+      u.uCloudLit.value.set(g.cloudLit.r, g.cloudLit.g, g.cloudLit.b);
+      u.uCloudDark.value.set(g.cloudDark.r, g.cloudDark.g, g.cloudDark.b);
+    }
 
     // --- key light -----------------------------------------------------------
-    // Extinction along the sun's own ray gives the physically-motivated warm shift;
-    // the ladder's sunTint is the art direction on top of it.
+    // Extinction along the sun's own ray gives the physically-motivated warm shift.
+    // Taken neat it collapses to a saturated red at 6° of elevation — true, but not
+    // what a DP would put on a face — so we lerp it against white and let the ladder's
+    // authored sunTint carry the rest. At magic hour this lands on ~#ff9760.
     this._sunTransmittance(_colA);
+    // Below the ridge the extinction model saturates and would hand us a red key at
+    // midnight; fade it out there and let the ladder's cool moonlight tint take over.
+    const w = 0.65 * smoothstep(-0.12, 0.02, sunY);
+    _colA.setRGB(lerp(1, _colA.r, w), lerp(1, _colA.g, w), lerp(1, _colA.b, w));
     this.sunColor.copy(_colA).multiply(g.sunTint);
     const peak = Math.max(this.sunColor.r, this.sunColor.g, this.sunColor.b, 1e-4);
     this.sunColor.multiplyScalar(1 / peak);
@@ -799,8 +867,8 @@ export class SkySystem {
     const inverse = 1 / Math.max(denom, 1e-4);
     const sR = RAYLEIGH_ZENITH_LENGTH * inverse;
     const sM = MIE_ZENITH_LENGTH * inverse;
-    const bR = this.uniforms.uBetaR.value;
-    const bM = this.uniforms.uBetaM.value;
+    const bR = this._betaR;
+    const bM = this._betaM;
     out.setRGB(
       Math.exp(-(bR.x * sR + bM.x * sM)),
       Math.exp(-(bR.y * sR + bM.y * sM)),
@@ -820,6 +888,9 @@ export class SkySystem {
   applyFog(material) {
     if (!material || material.userData?.kagFog) return material;
     if (material.isRawShaderMaterial) return material;   // author owns their own prefix
+    // Sprites build gl_Position themselves and never run <project_vertex>, so there is
+    // no hook — leave three's own fog on them rather than disabling it for nothing.
+    if (material.isSpriteMaterial) return material;
 
     material.userData = material.userData || {};
     material.userData.kagFog = true;
@@ -847,7 +918,7 @@ export class SkySystem {
         }
         shader.fragmentShader = fs;
       }
-    });
+    }, 'kagfog1');
     chainCacheKey(material, 'kagfog1');
     material.needsUpdate = true;
     return material;
@@ -901,6 +972,14 @@ export class SkySystem {
 
     // The dome rides the camera so a 420 m sphere behaves like an infinite one.
     this.mesh.position.copy(this.ctx.camera.position);
+
+    if (this.autoFog) {
+      this._fogScanTimer -= dt;
+      if (this._fogScanTimer <= 0) {
+        this._fogScanTimer = 0.5;
+        this.ctx.scene.traverse(this._onFogScan);
+      }
+    }
 
     // Environment refresh: only when the sun has actually moved, and never more than
     // four times a second. A PMREM every frame is a guaranteed mobile stall.

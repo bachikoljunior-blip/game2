@@ -3,9 +3,9 @@
  *
  * Everything downstream (Player, Combat, Camera) reads `input.state`, which is
  * identical whether the frame was driven by a thumb, a mouse or a gamepad. The
- * touch layer is the primary target: the left half of the screen is a floating
- * analogue stick, the right half is camera look *and* the slash gesture surface,
- * and HUD buttons register themselves as named zones.
+ * touch layer is the primary target: one side of the screen is a floating analogue
+ * stick (`stickSide`, mirrored by the left-handed setting), the other is camera look
+ * *and* the slash gesture surface, and HUD buttons register themselves as named zones.
  */
 
 import { Vector2 } from 'three';
@@ -30,6 +30,16 @@ export class Input {
     this.enabled = true;
     this.usingTouch = false;
     this.uiScale = 1;
+    /**
+     * Touch layout. `stickSide` mirrors with the left-handed setting; the HUD mirrors
+     * its own buttons independently, so both halves have to be told, not inferred.
+     * `stickHalf` is the fraction of the viewport the stick owns — the rest is the
+     * camera/gesture surface.
+     */
+    this.stickSide = 'left';
+    this.stickHalf = 0.42;
+    this.invertY = false;
+    this.lookSensitivity = 1;
 
     this.state = {
       move: new Vector2(),        // -1..1, y = forward
@@ -143,8 +153,11 @@ export class Input {
     }
 
     if (touch) {
-      const half = window.innerWidth * 0.42;
-      if (x < half && this._moveId === null) {
+      const w = window.innerWidth;
+      const onStickSide = this.stickSide === 'left'
+        ? x < w * this.stickHalf
+        : x > w * (1 - this.stickHalf);
+      if (onStickSide && this._moveId === null) {
         rec.role = 'stick';
         this._moveId = e.pointerId;
       } else {
@@ -171,8 +184,9 @@ export class Input {
     // Mouse look while pointer-locked has no button held.
     if (!rec) {
       if (this.pointerLocked && e.pointerType === 'mouse') {
-        this._pendingLook.x -= (e.movementX || 0) * this._lookSens.mouse;
-        this._pendingLook.y -= (e.movementY || 0) * this._lookSens.mouse;
+        const s = this._lookSens.mouse * this.lookSensitivity;
+        this._pendingLook.x -= (e.movementX || 0) * s;
+        this._pendingLook.y -= (e.movementY || 0) * s * (this.invertY ? -1 : 1);
       }
       return;
     }
@@ -202,9 +216,9 @@ export class Input {
       else this.state.move.normalize().multiplyScalar(this.state.moveMag);
       this.state.run = this.state.moveMag > 0.82;
     } else if (rec.role === 'look' && e.pointerId === this._lookId) {
-      const s = rec.type === 'mouse' ? this._lookSens.mouse : this._lookSens.touch;
+      const s = (rec.type === 'mouse' ? this._lookSens.mouse : this._lookSens.touch) * this.lookSensitivity;
       this._pendingLook.x -= dx * s;
-      this._pendingLook.y -= dy * s;
+      this._pendingLook.y -= dy * s * (this.invertY ? -1 : 1);
     }
   }
 
@@ -276,8 +290,8 @@ export class Input {
       this.state.run = !!gp.buttons[10]?.pressed || this.state.moveMag > 0.9;
     }
     const lx = dz(gp.axes[2] || 0), ly = dz(gp.axes[3] || 0);
-    this._pendingLook.x -= lx * 0.055;
-    this._pendingLook.y -= ly * 0.045;
+    this._pendingLook.x -= lx * 0.055 * this.lookSensitivity;
+    this._pendingLook.y -= ly * 0.045 * this.lookSensitivity * (this.invertY ? -1 : 1);
 
     const edge = (i, name) => {
       const p = !!gp.buttons[i]?.pressed;

@@ -175,6 +175,15 @@ async function boot() {
     }
   }
 
+  // Menus owns the persisted settings but Input owns the touch layout, so the
+  // left-handed flag has to be pushed across the seam — and re-pushed whenever the
+  // player changes it, since the stick half is resolved on every touch-down.
+  const applyHandedness = () => {
+    ctx.input.stickSide = ctx.settings?.leftHanded ? 'right' : 'left';
+  };
+  applyHandedness();
+  ctx.bus.on('settings-changed', applyHandedness);
+
   installCinematic(ctx);
 
   engine.resize();
