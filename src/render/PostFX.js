@@ -280,20 +280,30 @@ varying vec2 vUv;
 void main() {
   vec2 c = texture2D(tAO, vUv).rg;
   float centerDepth = c.g;
-  float sum = c.r, wsum = 1.0;
-  // The depth tolerance has to be *relative* to the centre depth: a fixed epsilon
-  // that keeps silhouettes crisp at 2 m rejects every tap on a hillside at 200 m.
+
+  // Slope compensation. A plain depth bilateral rejects every tap on a surface seen
+  // at a grazing angle — which is most of a hillside — leaving the raw 4x4 blue-noise
+  // pattern visible as 8 px blocks. Estimating the local depth gradient from the two
+  // nearest taps and comparing against the *predicted* depth keeps silhouettes crisp
+  // while letting the filter run along any plane, at any angle.
+  vec2 o1 = uDir * uTexel;
+  vec2 p1 = texture2D(tAO, vUv + o1).rg;
+  vec2 m1 = texture2D(tAO, vUv - o1).rg;
+  float slope = (p1.g - m1.g) * 0.5;
+  // A silhouette also produces a large gradient, so cap what we are willing to track.
   float tol = 1.0 / (centerDepth * uDepthSigma + 1e-6);
-  // 4 taps each side, gaussian x depth falloff — a bilateral cross that survives
-  // silhouettes without the box-blur bleed that makes AO look like dirt.
+  if (abs(slope) * tol > 1.5) slope = 0.0;
+
+  float sum = c.r, wsum = 1.0;
+  // 4 taps each side at a 1.5-texel stride: wide enough to bury the 4x4 tile.
   for (int i = 1; i <= 4; i++) {
-    float fi = float(i);
-    float g = exp(-fi * fi * 0.14);
+    float fi = float(i) * 1.5;
+    float g = exp(-fi * fi * 0.06);
     vec2 o = uDir * uTexel * fi;
     vec2 a = texture2D(tAO, vUv + o).rg;
     vec2 b = texture2D(tAO, vUv - o).rg;
-    float wa = g * exp(-abs(a.g - centerDepth) * tol);
-    float wb = g * exp(-abs(b.g - centerDepth) * tol);
+    float wa = g * exp(-abs(a.g - (centerDepth + slope * fi)) * tol);
+    float wb = g * exp(-abs(b.g - (centerDepth - slope * fi)) * tol);
     sum += a.r * wa + b.r * wb;
     wsum += wa + wb;
   }
@@ -638,10 +648,11 @@ void main() {
       vec4 sm = texture2D(tSrc, suv);
       float cocS = (sm.a * 2.0 - 1.0) * uMaxCoc;
       maxAbs = max(maxAbs, abs(cocS));
-      // Scatter-as-gather: a sample only contributes if its own circle reaches here,
-      // which stops sharp foreground from smearing into a blurred background.
-      float reach = max(abs(cocS), (cocS < 0.0) ? abs(cocS) : radius);
-      float w = sat(reach - dist + 1.0);
+      // Scatter-as-gather: a sample contributes only if its *own* circle of confusion
+      // reaches this pixel. Falling back to the centre radius for the far field (a
+      // common shortcut) lets an in-focus subject bleed a halo into the blurred
+      // background behind it, which is the tell that DOF is faked.
+      float w = sat(abs(cocS) - dist + 1.0);
       acc += sm.rgb * w;
       wsum += w;
     }
@@ -2580,7 +2591,10 @@ export class PostFX {
 
   _passDof(camera, colorTex, depthTex) {
     const hw = this.rtDofA.width, hh = this.rtDofA.height;
-    const maxCoc = Math.max(3, Math.min(18, hh * 0.028));
+    // Headroom, not the operating point: a 50 mm/f4 gameplay setup only ever produces
+    // 1-2 px of CoC. This ceiling exists so a cinematic beat can call
+    // setFocalLength(85) + setFocus(d, 1.4) and actually get a bokeh.
+    const maxCoc = Math.max(4, Math.min(22, hh * 0.045));
     const cu = this.mDofCoc.uniforms;
     cu.tColor.value = colorTex;
     cu.tDepth.value = depthTex;

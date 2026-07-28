@@ -2621,3 +2621,312 @@ export class Rig {
     else target.setFromMatrixPosition(b.matrixWorld);
     return target;
   }
+
+  // ================================================================== update
+
+  /**
+   * One frame. Order matters and is not negotiable:
+   *   locomotion phase → layer advance + events → pose compose → procedural additives
+   *   → write bones → world matrices → look-at → foot IK → cloth.
+   * Look-at and IK need world matrices, so they run after the first update and each
+   * refreshes only the subtree it touched.
+   */
+  update(dt, elapsed) {
+    if (this.disposed || !this.built) return;
+    const d = Math.min(0.1, (dt || 0) * this.timeScale);
+    this.time += d;
+
+    // At LOD 2 the character is a distant silhouette: pose it at 10 Hz and skip
+    // everything else. Twelve rigs at full fidelity does not fit the frame budget.
+    if (this.lod >= 2) {
+      this._lodSkip += d;
+      if (this._lodSkip < 0.1) return;
+      this._lodSkip = 0;
+    }
+
+    this._advanceLoco(d);
+    this._advanceLayers(d);
+    this._compose();
+    if (this.lod === 0) this._procedural(d);
+    this._writeBones();
+    this.root.updateMatrixWorld(true);
+
+    if (this.lod >= 2) return;
+    if (this._lookActive || this._lookWeight > 0.001) this._applyLookAt(d);
+    if (this._ik && this.lod === 0) this._applyFootIK(d);
+    if (this.lod === 0 || this._cloth) this._updateCloth(d);
+  }
+
+  /** Nothing here needs the render to have happened; kept for interface symmetry. */
+  lateUpdate() {}
+
+  // -------------------------------------------------------------- locomotion
+
+  /**
+   * Phase advances by *distance travelled over stride length*, never by wall time.
+   * That single choice is what makes the feet stick: at 3 m/s in a 2.05 m stride the
+   * cycle runs at 1.46 Hz, and it keeps doing so through every blend.
+   */
+  _advanceLoco(dt) {
+    const L = this._loco;
+    const sp = Math.max(Math.abs(L.forward), Math.hypot(L.forward, L.strafe));
+    L.speed = sp;
+    let stride = 1.34;
+    if (sp > 5.9) stride = 2.48;
+    else if (sp > 3.4) stride = lerp(2.05, 2.48, (sp - 3.4) / 2.5);
+    else if (sp > 1.9) stride = lerp(1.34, 2.05, (sp - 1.9) / 1.5);
+    if (L.forward < -0.2 && Math.abs(L.forward) > Math.abs(L.strafe)) stride = 1.05;
+    else if (Math.abs(L.strafe) > Math.abs(L.forward) * 1.15) stride = 1.15;
+    // Idle still ticks so a stopped character resumes on the correct foot.
+    const cadence = sp > 0.06 ? sp / stride : 0.5;
+    this.locoPhase = (this.locoPhase + cadence * dt) % 1;
+    if (this.locoPhase < 0) this.locoPhase += 1;
+  }
+
+  /**
+   * The 2D blend space. At most three clips are sampled: the two gaits bracketing the
+   * current speed (or walk_back when reversing) and one strafe, cross-faded by the
+   * lateral fraction. All three are sampled at the same phase.
+   */
+  _sampleLocomotion(outQ, outP, outDef) {
+    const L = this._loco;
+    const phase = this.locoPhase;
+    const q0 = this._lb[0], p0 = this._lbp[0], d0 = this._lbd[0];
+    const q1 = this._lb[1], p1 = this._lbp[1], d1 = this._lbd[1];
+    const q2 = this._lb[2], p2 = this._lbp[2], d2 = this._lbd[2];
+
+    const fwd = L.forward, lat = L.strafe;
+    const absF = Math.abs(fwd), absL = Math.abs(lat);
+    const speed = Math.hypot(fwd, lat);
+
+    // --- forward/backward axis
+    let clipA, clipB, tAB;
+    if (fwd < -0.25 && absF >= absL * 0.6) {
+      const back = compileClip(CLIPS.walk_back);
+      const idle = compileClip(CLIPS[this._stanceClip] || CLIPS.idle_drawn_seigan);
+      clipA = idle; clipB = back; tAB = clamp(absF / 1.7, 0, 1);
+    } else {
+      const table = LOCOMOTION_FORWARD;
+      let i = 0;
+      while (i < table.length - 2 && speed > table[i + 1].speed) i++;
+      const a = table[i], b = table[i + 1];
+      const nameA = a.speed === 0 ? (this._stanceClip || a.clip) : a.clip;
+      clipA = compileClip(CLIPS[nameA] || CLIPS[a.clip]);
+      clipB = compileClip(CLIPS[b.clip]);
+      tAB = clamp((speed - a.speed) / Math.max(0.001, b.speed - a.speed), 0, 1);
+    }
+    sampleClip(clipA, phase * clipA.duration, q0, p0, d0);
+    sampleClip(clipB, phase * clipB.duration, q1, p1, d1);
+    blendBuffers(q0, p0, d0, q1, p1, d1, tAB, outQ, outP, outDef);
+
+    // --- lateral axis
+    const latW = clamp((absL - absF * 0.25) / 2.4, 0, 1);
+    if (latW > 0.002) {
+      const strafe = compileClip(CLIPS[lat < 0 ? 'strafe_l' : 'strafe_r']);
+      sampleClip(strafe, phase * strafe.duration, q2, p2, d2);
+      blendBuffers(outQ, outP, outDef, q2, p2, d2, latW, outQ, outP, outDef);
+    }
+
+    // Footstep markers come from the dominant clip's authored phase, so they stay in
+    // sync with whatever the blend space is actually showing.
+    const prev = this._phasePrev === undefined ? phase : this._phasePrev;
+    if (speed > 0.35) {
+      if (crossedPhase(prev, phase, 0.02)) this._fire('footstep', 'R', phase, 'locomotion', 'base');
+      if (crossedPhase(prev, phase, 0.52)) this._fire('footstep', 'L', phase, 'locomotion', 'base');
+    }
+    this._phasePrev = phase;
+  }
+
+  // ------------------------------------------------------------- layer state
+
+  _advanceLayers(dt) {
+    for (let i = 0; i < this.layers.length; i++) {
+      const l = this.layers[i];
+      l.weight = approach(l.weight, l.targetWeight, l.fadeRate, dt);
+      if (l.blend < 1) l.blend = Math.min(1, l.blend + l.blendRate * dt);
+      if (!l.clip) continue;
+
+      const prevT = l.time;
+      l.time += dt * l.speed;
+      if (l.prev) l.prevTime += dt * l.prevSpeed;
+
+      const dur = l.clip.duration;
+      if (l.loop) {
+        if (l.time >= dur) {
+          this._fireRange(l, prevT, dur);
+          l.time -= dur * Math.floor(l.time / dur);
+          l._eventCursor = 0;
+          this._fireRange(l, -1e-6, l.time);
+        } else this._fireRange(l, prevT, l.time);
+      } else if (l.time >= dur) {
+        this._fireRange(l, prevT, dur + 1e-6);
+        l.time = dur;
+        if (!l.finished) {
+          l.finished = true;
+          this._fire('clip-end', null, dur, l.clip.name, l.name);
+          if (l.onEnd) { const f = l.onEnd; l.onEnd = null; try { f(l.clip.name); } catch { /* ignore */ } }
+          // Action and upper layers release themselves; the base layer holds its pose
+          // (a death must not fade back to idle).
+          if (i !== LAYER_BASE) { l.targetWeight = 0; l.fadeRate = 1 / 0.18; }
+        }
+      } else this._fireRange(l, prevT, l.time);
+    }
+  }
+
+  _fireRange(l, t0, t1) {
+    const ev = l.clip.events;
+    if (!ev || ev.length === 0) return;
+    for (let i = 0; i < ev.length; i++) {
+      const e = ev[i];
+      if (e.t > t0 && e.t <= t1) this._fire(e.name, e.foot, e.t, l.clip.name, l.name);
+    }
+  }
+
+  // ----------------------------------------------------------- pose compose
+
+  _compose() {
+    const outQ = this._outQ, outP = this._outP;
+    for (let i = 0; i < NB; i++) {
+      outQ[i * 4] = 0; outQ[i * 4 + 1] = 0; outQ[i * 4 + 2] = 0; outQ[i * 4 + 3] = 1;
+      outP[i * 3] = 0; outP[i * 3 + 1] = 0; outP[i * 3 + 2] = 0;
+    }
+
+    for (let li = 0; li < this.layers.length; li++) {
+      const l = this.layers[li];
+      if (l.weight <= 0.0008) continue;
+
+      if (li === LAYER_BASE && this._locoMode && !l.clip) {
+        this._sampleLocomotion(l.q, l.p, l.def);
+      } else if (l.clip) {
+        sampleClip(l.clip, l.time, l.q, l.p, l.def);
+        if (l.prev && l.blend < 1) {
+          sampleClip(l.prev, l.prevTime, l.qb, l.pb, l.defb);
+          blendBuffers(l.qb, l.pb, l.defb, l.q, l.p, l.def, EASE_FN.smooth(l.blend), l.q, l.p, l.def);
+        }
+      } else continue;
+
+      const mask = l.mask, w = l.weight;
+      if (l.additive) {
+        for (let b = 0; b < NB; b++) {
+          const bw = w * mask[b] * l.def[b];
+          if (bw <= 0.0008) continue;
+          qAddDelta(outQ, b * 4, l.q, b * 4, bw);
+          outP[b * 3] += l.p[b * 3] * bw;
+          outP[b * 3 + 1] += l.p[b * 3 + 1] * bw;
+          outP[b * 3 + 2] += l.p[b * 3 + 2] * bw;
+        }
+      } else {
+        for (let b = 0; b < NB; b++) {
+          const bw = w * mask[b] * l.def[b];
+          if (bw <= 0.0008) continue;
+          qSlerp(outQ, b * 4, l.q, b * 4, bw, outQ, b * 4);
+          const o = b * 3;
+          outP[o] += (l.p[o] - outP[o]) * bw;
+          outP[o + 1] += (l.p[o + 1] - outP[o + 1]) * bw;
+          outP[o + 2] += (l.p[o + 2] - outP[o + 2]) * bw;
+        }
+      }
+    }
+  }
+
+  // ------------------------------------------------- procedural motion layer
+
+  /**
+   * The layer that costs almost nothing and does most of the work of making a
+   * character look expensive: breathing, weight shift, the spine and head lagging
+   * behind a fast turn, and the flinch/recoil springs.
+   */
+  _procedural(dt) {
+    const Q = this._outQ, I = BONE_INDEX;
+    const t = this.time;
+    const still = 1 - clamp(this._loco.speed / 2.2, 0, 1);
+    const combat = this.stance === 'sheathed' ? 0.6 : 1.0;
+
+    // --- breathing: two sines an octave apart plus a slow noise wander, so it never
+    //     lands on an obvious period.
+    this._breath += dt * (1.05 + this._loco.norm * 1.9);
+    const br = Math.sin(this._breath) * 0.55 + Math.sin(this._breath * 2.13 + 1.1) * 0.18;
+    const ba = (0.014 + 0.010 * this._loco.norm) * combat;
+    qAddEuler(Q, I.spine1 * 4, br * ba * 0.8, 0, 0, 1);
+    qAddEuler(Q, I.spine2 * 4, br * ba, 0, 0, 1);
+    qAddEuler(Q, I.spine3 * 4, br * ba * 0.7, 0, 0, 1);
+    qAddEuler(Q, I.clavicleR * 4, 0, 0, -br * ba * 1.4, 1);
+    qAddEuler(Q, I.clavicleL * 4, 0, 0, br * ba * 1.4, 1);
+    qAddEuler(Q, I.head * 4, br * ba * 0.35, 0, 0, 1);
+
+    // --- idle sway and weight shift: noise, not sine, so two enemies standing side
+    //     by side never move in lockstep.
+    if (still > 0.02) {
+      const n1 = noise.noise2(t * 0.23 + this.seed * 0.017, 0.0);
+      const n2 = noise.noise2(0.0, t * 0.19 + this.seed * 0.031);
+      const n3 = noise.noise2(t * 0.11 + this.seed * 0.007, 4.7);
+      const s = still * 0.7;
+      qAddEuler(Q, I.hips * 4, n3 * 0.010, n1 * 0.030, n2 * 0.026, s);
+      qAddEuler(Q, I.spine2 * 4, 0, -n1 * 0.018, -n2 * 0.016, s);
+      qAddEuler(Q, I.neck * 4, n3 * 0.012, n1 * 0.020, 0, s);
+      qAddEuler(Q, I.head * 4, n2 * 0.014, n1 * 0.034, n3 * 0.016, s);
+      this._outP[I.hips * 3 + 1] += n2 * 0.004 * s * this.scale;
+    }
+
+    // --- secondary motion: the chest and head lag a fast turn by a few frames. One
+    //     spring per bone; this is the cheapest "expensive" effect in the file.
+    this.root.updateWorldMatrix(true, false);
+    const yaw = Math.atan2(this.root.matrixWorld.elements[8], this.root.matrixWorld.elements[10]);
+    let dyaw = yaw - this._yawPrev;
+    while (dyaw > Math.PI) dyaw -= Math.PI * 2;
+    while (dyaw < -Math.PI) dyaw += Math.PI * 2;
+    this._yawPrev = yaw;
+    this._yawVel = damp(this._yawVel, dt > 1e-5 ? dyaw / dt : 0, 14, dt);
+    const drive = clamp(this._yawVel * 0.085, -0.30, 0.30);
+    this._lagSpineV += (drive - this._lagSpine) * 190 * dt - this._lagSpineV * 21 * dt;
+    this._lagSpine += this._lagSpineV * dt;
+    this._lagHeadV += (drive * 1.5 - this._lagHead) * 130 * dt - this._lagHeadV * 17 * dt;
+    this._lagHead += this._lagHeadV * dt;
+    qAddEuler(Q, I.spine1 * 4, 0, -this._lagSpine * 0.35, 0, 1);
+    qAddEuler(Q, I.spine2 * 4, 0, -this._lagSpine * 0.45, 0, 1);
+    qAddEuler(Q, I.spine3 * 4, 0, -this._lagSpine * 0.40, 0, 1);
+    qAddEuler(Q, I.neck * 4, 0, -this._lagHead * 0.50, 0, 1);
+    qAddEuler(Q, I.head * 4, 0, -this._lagHead * 0.35, 0, 1);
+
+    // --- flinch: critically damped, so a hit reads as one sharp displacement and a
+    //     settle rather than a wobble.
+    const K = 165, C = 2 * Math.sqrt(K) * 0.85;
+    this._flinchVX += (-K * this._flinchX - C * this._flinchVX) * dt;
+    this._flinchVZ += (-K * this._flinchZ - C * this._flinchVZ) * dt;
+    this._flinchX += this._flinchVX * dt;
+    this._flinchZ += this._flinchVZ * dt;
+    if (Math.abs(this._flinchX) > 1e-4 || Math.abs(this._flinchZ) > 1e-4) {
+      const fx = clamp(this._flinchX, -0.55, 0.55), fz = clamp(this._flinchZ, -0.55, 0.55);
+      qAddEuler(Q, I.spine1 * 4, fx * 0.22, 0, fz * 0.22, 1);
+      qAddEuler(Q, I.spine2 * 4, fx * 0.30, 0, fz * 0.30, 1);
+      qAddEuler(Q, I.spine3 * 4, fx * 0.26, 0, fz * 0.26, 1);
+      qAddEuler(Q, I.neck * 4, fx * 0.32, 0, fz * 0.30, 1);
+      qAddEuler(Q, I.head * 4, fx * 0.40, 0, fz * 0.36, 1);
+      qAddEuler(Q, I.clavicleR * 4, fx * 0.18, 0, -fz * 0.22, 1);
+      qAddEuler(Q, I.clavicleL * 4, fx * 0.18, 0, -fz * 0.22, 1);
+      this._outP[I.hips * 3 + 1] -= Math.abs(fx) * 0.035 * this.scale;
+    }
+
+    // --- clash recoil, arms only
+    this._recoilV += (-260 * this._recoil - 2 * Math.sqrt(260) * 0.9 * this._recoilV) * dt;
+    this._recoil += this._recoilV * dt;
+    if (Math.abs(this._recoil) > 1e-4) {
+      const r = clamp(this._recoil, -0.6, 0.6);
+      qAddEuler(Q, I.upperArmR * 4, -r * 0.40, 0, r * 0.14, 1);
+      qAddEuler(Q, I.foreArmR * 4, -r * 0.30, 0, 0, 1);
+      qAddEuler(Q, I.upperArmL * 4, -r * 0.40, 0, -r * 0.14, 1);
+      qAddEuler(Q, I.foreArmL * 4, -r * 0.30, 0, 0, 1);
+      qAddEuler(Q, I.spine2 * 4, r * 0.16, 0, 0, 1);
+    }
+  }
+
+  _writeBones() {
+    const Q = this._outQ, P = this._outP, R = this._restP, S = this.scale;
+    for (let i = 0; i < NB; i++) {
+      const b = this.boneList[i], o4 = i * 4, o3 = i * 3;
+      b.quaternion.set(Q[o4], Q[o4 + 1], Q[o4 + 2], Q[o4 + 3]);
+      b.position.set(R[o3] + P[o3] * S, R[o3 + 1] + P[o3 + 1] * S + (i === 1 ? this._hipDrop : 0),
+        R[o3 + 2] + P[o3 + 2] * S);
+      b.matrixWorldNeedsUpdate = true;
+    }
+  }

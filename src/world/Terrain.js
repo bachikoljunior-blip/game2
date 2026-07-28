@@ -1433,4 +1433,470 @@ void kgComputeSurface(){
 `;
   }
 
-//__CHUNK4__
+  // ==========================================================================
+  //  7 — clipmap
+  // ==========================================================================
+
+  /**
+   * One geometry in *cell units*; the ring meshes scale it. `hollow` cuts the centre
+   * out for the annuli.
+   *
+   * Nesting: level k snaps to its own 2·cell grid, so its centre can sit up to one
+   * coarse cell away from level k-1's. The hole is therefore cut two cells smaller
+   * than nominal, and the ring's innermost band is sunk slightly, so the finer level
+   * always covers it and always wins the depth test. The finer level's outer skirt
+   * hides the resulting ledge — that is the whole crack-fixing story.
+   */
+  _makeClipGeometry(res, hollow) {
+    const half = res / 2;
+    const holeHalf = hollow ? Math.max(1, res / 4 - 2) : 0;
+    const V = res + 1;
+    const idMap = new Int32Array(V * V).fill(-1);
+    const cellI = [], cellJ = [];
+
+    for (let j = 0; j < res; j++) {
+      for (let i = 0; i < res; i++) {
+        if (hollow) {
+          const x0 = i - half, z0 = j - half;
+          if (x0 >= -holeHalf && x0 + 1 <= holeHalf && z0 >= -holeHalf && z0 + 1 <= holeHalf) continue;
+        }
+        cellI.push(i); cellJ.push(j);
+        idMap[j * V + i] = 0;
+        idMap[j * V + i + 1] = 0;
+        idMap[(j + 1) * V + i] = 0;
+        idMap[(j + 1) * V + i + 1] = 0;
+      }
+    }
+    let vcount = 0;
+    for (let k = 0; k < idMap.length; k++) if (idMap[k] === 0) idMap[k] = vcount++;
+
+    // Perimeter walks (ordered loops) for the skirts.
+    const perimeter = (k) => {
+      const lo = half - k, hi = half + k, pts = [];
+      for (let i = lo; i < hi; i++) pts.push(i, lo);
+      for (let j = lo; j < hi; j++) pts.push(hi, j);
+      for (let i = hi; i > lo; i--) pts.push(i, hi);
+      for (let j = hi; j > lo; j--) pts.push(lo, j);
+      return pts;
+    };
+    const outerLoop = perimeter(half);
+    const skirtVerts = outerLoop.length / 2;
+
+    const total = vcount + skirtVerts;
+    const pos = new Float32Array(total * 3);
+    const skirt = new Float32Array(total);
+
+    for (let j = 0; j < V; j++) {
+      for (let i = 0; i < V; i++) {
+        const id = idMap[j * V + i];
+        if (id < 0) continue;
+        const x = i - half, z = j - half;
+        pos[id * 3] = x;
+        pos[id * 3 + 1] = 0;
+        pos[id * 3 + 2] = z;
+        if (hollow) {
+          // Sink the innermost band so the finer level always wins the depth test.
+          const m = Math.max(Math.abs(x), Math.abs(z));
+          const t = clamp((m - holeHalf) / 3, 0, 1);
+          skirt[id] = 0.055 * (1 - t);
+        }
+      }
+    }
+
+    const idx = [];
+    for (let c = 0; c < cellI.length; c++) {
+      const i = cellI[c], j = cellJ[c];
+      const a = idMap[j * V + i];
+      const b = idMap[j * V + i + 1];
+      const cc = idMap[(j + 1) * V + i];
+      const d = idMap[(j + 1) * V + i + 1];
+      idx.push(a, cc, b, b, cc, d);
+    }
+
+    // Outer skirt. Emitted with both windings so it is correct from either face
+    // without paying for DoubleSide across the whole terrain.
+    const base = vcount;
+    for (let p = 0; p < skirtVerts; p++) {
+      const i = outerLoop[p * 2], j = outerLoop[p * 2 + 1];
+      const id = base + p;
+      pos[id * 3] = i - half;
+      pos[id * 3 + 1] = 0;
+      pos[id * 3 + 2] = j - half;
+      skirt[id] = 1;
+    }
+    for (let p = 0; p < skirtVerts; p++) {
+      const q = (p + 1) % skirtVerts;
+      const su = idMap[outerLoop[p * 2 + 1] * V + outerLoop[p * 2]];
+      const sv = idMap[outerLoop[q * 2 + 1] * V + outerLoop[q * 2]];
+      const du = base + p, dv = base + q;
+      idx.push(su, du, sv, sv, du, dv);
+      idx.push(su, sv, du, sv, dv, du);
+    }
+
+    const geo = new BufferGeometry();
+    geo.setAttribute('position', new BufferAttribute(pos, 3));
+    geo.setAttribute('normal', new BufferAttribute(new Float32Array(total * 3), 3));
+    geo.setAttribute('uv', new BufferAttribute(new Float32Array(total * 2), 2));
+    geo.setAttribute('aSkirt', new BufferAttribute(skirt, 1));
+    geo.setIndex(idx);
+    // The vertex shader moves everything; a real bounding sphere would be a lie, and
+    // a small one would let three cull the terrain out from under the camera.
+    geo.boundingSphere = null;
+    geo.computeBoundingSphere = function () {
+      if (!this.boundingSphere) this.boundingSphere = { center: new Vector3(), radius: 1e7 };
+      this.boundingSphere.center.set(0, 0, 0);
+      this.boundingSphere.radius = 1e7;
+    };
+    geo.computeBoundingSphere();
+    return geo;
+  }
+
+  _buildClipmap() {
+    const tier = clamp(this.quality.tier | 0, 0, 3);
+    const res = CLIPMAP_RES[tier];
+    const levels = CLIPMAP_LEVELS[tier];
+    // Cell size chosen so the outermost level always reaches past VIEW_DISTANCE.
+    const c0 = [3.0, 2.0, 1.6, 1.4][tier];
+
+    this.blockGeo = this._makeClipGeometry(res, false);
+    this.ringGeo = this._makeClipGeometry(res, true);
+    this.rings.length = 0;
+
+    for (let k = 0; k < levels; k++) {
+      const c = c0 * Math.pow(2, k);
+      const mesh = new Mesh(k === 0 ? this.blockGeo : this.ringGeo, this.material);
+      mesh.name = `terrain-l${k}`;
+      mesh.scale.set(c, 1, c);
+      mesh.frustumCulled = false;
+      mesh.matrixAutoUpdate = false;
+      mesh.receiveShadow = true;
+      // Only the near levels cast; a 4 km ring in the shadow atlas buys nothing.
+      mesh.castShadow = k <= 1 && !!this.quality.shadows;
+      mesh.customDepthMaterial = this.depthMaterial;
+      mesh.renderOrder = -10 + k;
+      mesh.userData.cell = c;
+      mesh.userData.snap = c * 2;
+      this.rings.push(mesh);
+      this.group.add(mesh);
+    }
+    this.group.updateMatrix();
+  }
+
+  /** Slide the rings onto the camera. Called every frame; must not allocate. */
+  _snapRings(force) {
+    const cam = this.ctx.camera;
+    if (!cam) return;
+    const cx = cam.position.x, cz = cam.position.z;
+    for (let k = 0; k < this.rings.length; k++) {
+      const m = this.rings[k];
+      const s = m.userData.snap;
+      const px = Math.round(cx / s) * s;
+      const pz = Math.round(cz / s) * s;
+      if (force || px !== m.position.x || pz !== m.position.z) {
+        m.position.set(px, 0, pz);
+        m.updateMatrix();
+        m.updateMatrixWorld(true);
+      }
+    }
+  }
+
+  // ==========================================================================
+  //  8 — water
+  // ==========================================================================
+
+  _buildWater() {
+    const river = this.river;
+    const tail = Math.min(river.tail, river.n - 1);
+    const CROSS = [-1, -0.62, -0.24, 0.24, 0.62, 1];
+    const cols = CROSS.length;
+    const rows = tail + 1;
+
+    const pos = new Float32Array(rows * cols * 3);
+    const attr = new Float32Array(rows * cols * 3);   // bankT, flowT, fade
+    const idx = [];
+
+    for (let i = 0; i <= tail; i++) {
+      // Perpendicular from the local tangent.
+      const a = Math.max(0, i - 1), b = Math.min(tail, i + 1);
+      let tx = river.x[b] - river.x[a];
+      let tz = river.z[b] - river.z[a];
+      const tl = Math.hypot(tx, tz) || 1;
+      tx /= tl; tz /= tl;
+      const px = -tz, pz = tx;
+      const wHalf = CHANNEL_HALF * river.width[i] * 1.9;
+      const y = river.surface[i] + 0.06;
+      const fadeHead = smoothstep(0, 6, i);
+      const fadeTail = smoothstep(tail, tail - 10, i);
+      for (let c = 0; c < cols; c++) {
+        const o = (i * cols + c) * 3;
+        pos[o] = river.x[i] + px * CROSS[c] * wHalf;
+        pos[o + 1] = y;
+        pos[o + 2] = river.z[i] + pz * CROSS[c] * wHalf;
+        attr[o] = Math.abs(CROSS[c]);
+        attr[o + 1] = i / tail;
+        attr[o + 2] = Math.min(fadeHead, fadeTail);
+      }
+    }
+    for (let i = 0; i < tail; i++) {
+      for (let c = 0; c < cols - 1; c++) {
+        const a = i * cols + c, b = a + 1;
+        const d = (i + 1) * cols + c, e = d + 1;
+        idx.push(a, d, b, b, d, e);
+      }
+    }
+
+    const geo = new BufferGeometry();
+    geo.setAttribute('position', new BufferAttribute(pos, 3));
+    geo.setAttribute('aWater', new BufferAttribute(attr, 3));
+    geo.setIndex(idx);
+    geo.computeBoundingSphere();
+
+    const wq = clamp(this.quality.waterQuality | 0, 0, 2);
+    const env = this.ctx.sky?.envMap || null;
+    const useCube = !!(env && env.isCubeTexture);
+
+    const uniforms = {
+      tHeight: { value: this.heightTex },
+      tMacro: { value: this.macroTex },
+      tWaterN: { value: this.waterNormalTex },
+      tEnv: { value: useCube ? env : null },
+      uCoreRect: { value: this.uniforms.uCoreRect.value },
+      uMacroRect: { value: this.uniforms.uMacroRect.value },
+      uCoreUV: { value: this.uniforms.uCoreUV.value },
+      uMacroUV: { value: this.uniforms.uMacroUV.value },
+      uHeightRange: { value: this.uniforms.uHeightRange.value },
+      uTime: { value: 0 },
+      uSunDir: { value: this._sunDir },
+      uSunColor: { value: new Color(0xffb173) },
+      uSkyTint: { value: this.uniforms.uSkyTint.value },
+      uDeepColor: { value: new Color(0x1d3a3a) },
+      uShallowColor: { value: new Color(0x54705e) },
+      uAerial: { value: this.uniforms.uAerial.value },
+    };
+    this.waterUniforms = uniforms;
+
+    const defs = [
+      `#define WATER_Q ${wq}`,
+      this.encodedHeight ? '#define TERRAIN_ENCODED 1' : '',
+      useCube ? '#define WATER_ENVCUBE 1' : '',
+    ].join('\n');
+
+    const mat = new ShaderMaterial({
+      uniforms,
+      transparent: true,
+      depthWrite: false,
+      side: DoubleSide,
+      vertexShader: defs + '\n' + /* glsl */`
+attribute vec3 aWater;
+varying vec3 vWPos;
+varying vec3 vWater;
+void main(){
+  vWater = aWater;
+  vec4 wp = modelMatrix * vec4(position, 1.0);
+  vWPos = wp.xyz;
+  gl_Position = projectionMatrix * viewMatrix * wp;
+}
+`,
+      fragmentShader: defs + '\n' + this._heightGLSL() + '\n' + glslNoise + '\n' + /* glsl */`
+uniform sampler2D tWaterN;
+#ifdef WATER_ENVCUBE
+uniform samplerCube tEnv;
+#endif
+uniform float uTime;
+uniform vec3 uSunDir;
+uniform vec3 uSunColor;
+uniform vec3 uSkyTint;
+uniform vec3 uDeepColor;
+uniform vec3 uShallowColor;
+uniform vec2 uAerial;
+varying vec3 vWPos;
+varying vec3 vWater;
+
+vec3 skyProbe(vec3 dir){
+#ifdef WATER_ENVCUBE
+  return textureCube(tEnv, dir).rgb;
+#else
+  // Analytic stand-in: horizon haze grading into deeper sky, plus the sun's flare.
+  float up = clamp(dir.y, 0.0, 1.0);
+  vec3 c = mix(uSkyTint * 1.12, uSkyTint * 0.52 + vec3(0.02, 0.05, 0.11), pow(up, 0.62));
+  float sun = pow(max(dot(dir, uSunDir), 0.0), 26.0);
+  return c + uSunColor * sun * 1.6;
+#endif
+}
+
+void main(){
+  vec3 V = normalize(cameraPosition - vWPos);
+  float bank = vWater.x;
+  float flowT = vWater.y;
+  float fade = vWater.z;
+
+  // Depth against the carved bed. This is the terrain heightfield, not a depth
+  // buffer, so it is exact and costs nothing extra to be correct at the shoreline.
+  float bed = kgHeight(vWPos.xz);
+  float depth = max(vWPos.y - bed, 0.0);
+
+  float t = uTime;
+  vec2 flowDir = vec2(0.24, 1.0);
+  vec2 uv1 = vWPos.xz * 0.42 + flowDir * t * 0.55;
+  vec3 n1 = texture2D(tWaterN, uv1).xyz * 2.0 - 1.0;
+  vec3 nrm = vec3(n1.x, 0.0, n1.y);
+#if WATER_Q >= 2
+  vec2 uv2 = vWPos.xz * 0.13 - flowDir * t * 0.21 + 0.37;
+  vec3 n2 = texture2D(tWaterN, uv2).xyz * 2.0 - 1.0;
+  nrm += vec3(n2.x, 0.0, n2.y) * 0.75;
+  // Faster, choppier water where it is shallow and running over stones.
+  vec2 uv3 = vWPos.xz * 0.95 + flowDir * t * 1.15;
+  nrm += (texture2D(tWaterN, uv3).xzy * 2.0 - 1.0).xzy * 0.4 * smoothstep(1.2, 0.15, depth);
+#endif
+  float chop = mix(0.28, 0.85, smoothstep(0.0, 1.0, flowT));
+  vec3 N = normalize(vec3(nrm.x * chop, 1.0, nrm.z * chop));
+
+  float fres = pow(1.0 - clamp(dot(N, V), 0.0, 1.0), 4.0);
+  fres = mix(0.03, 1.0, fres);
+
+  // Transmission: shallow water shows the bed's tint, deep water goes green-black.
+  vec3 through = mix(uShallowColor, uDeepColor, smoothstep(0.15, 2.6, depth));
+  through *= mix(0.55, 1.0, smoothstep(0.0, 1.4, depth));
+
+  vec3 col = through;
+#if WATER_Q >= 1
+  vec3 R = reflect(-V, N);
+  R.y = abs(R.y);
+  vec3 refl = skyProbe(R);
+  col = mix(through, refl, clamp(fres, 0.0, 0.92));
+
+  // Sun glitter — a tight specular lobe on the perturbed normal.
+  vec3 H = normalize(uSunDir + V);
+  float spec = pow(max(dot(N, H), 0.0), 220.0);
+  col += uSunColor * spec * 2.4;
+#else
+  col = mix(through, uSkyTint, 0.28 + fres * 0.25);
+#endif
+
+#if WATER_Q >= 1
+  // Shoreline foam, driven by the depth difference against the bed.
+  float shore = smoothstep(0.52, 0.02, depth);
+  float band = fbm2(vWPos.xz * 1.6 + vec2(0.0, -t * 0.9), 3) * 0.5 + 0.5;
+  float foam = shore * smoothstep(0.32, 0.75, band + shore * 0.35);
+  foam += smoothstep(0.78, 1.0, bank) * 0.35 * band;
+  foam = clamp(foam, 0.0, 1.0);
+  col = mix(col, vec3(0.86, 0.88, 0.86), foam * 0.85);
+#else
+  float foam = 0.0;
+#endif
+
+  float alpha = mix(0.62, 0.95, clamp(depth * 0.8, 0.0, 1.0));
+  alpha = max(alpha, foam);
+  alpha *= fade * smoothstep(-0.05, 0.12, depth);
+
+  // Same aerial perspective law as the ground, so the stream sits in the same air.
+  float dist = length(vWPos - cameraPosition);
+  float a = 1.0 - exp(-pow(max(dist - uAerial.x, 0.0) * uAerial.y, 1.18));
+  col = mix(col, uSkyTint, a * 0.8);
+
+  gl_FragColor = vec4(col, alpha);
+}
+`,
+    });
+    mat.name = 'terrain-water';
+    try { this.ctx.sky?.applyFog?.(mat); } catch { /* optional */ }
+
+    const mesh = new Mesh(geo, mat);
+    mesh.name = 'stream';
+    mesh.renderOrder = 4;
+    mesh.matrixAutoUpdate = false;
+    mesh.updateMatrix();
+    this.water = mesh;
+    this.waterMaterial = mat;
+    this.group.add(mesh);
+  }
+
+  // ==========================================================================
+  //  9 — distant ridge band
+  // ==========================================================================
+
+  /**
+   * Beyond the clipmap, silhouette is all that matters. Three procedurally generated
+   * ridge layers on a camera-locked cylinder, each parallaxing at its own rate, each
+   * pushed further toward the sky colour. No billboards, no textures.
+   */
+  _buildDistantBand() {
+    const geo = new CylinderGeometry(5000, 5000, 2600, 96, 1, true);
+    const uniforms = {
+      uSkyTint: { value: this.uniforms.uSkyTint.value },
+      uCam: { value: new Vector3() },
+      uBase: { value: WORLD.PLATEAU_HEIGHT + 40 },
+    };
+    this.bandUniforms = uniforms;
+
+    const mat = new ShaderMaterial({
+      uniforms,
+      transparent: true,
+      depthWrite: false,
+      side: BackSide,
+      fog: false,
+      vertexShader: /* glsl */`
+varying vec3 vLocal;
+void main(){
+  vLocal = position;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
+`,
+      fragmentShader: glslNoise + '\n' + /* glsl */`
+varying vec3 vLocal;
+uniform vec3 uSkyTint;
+uniform vec3 uCam;
+uniform float uBase;
+
+float ridgeLine(float a, float seed, float freq, float par){
+  // Parallax: shift the sampling angle by the camera's tangential offset, scaled by
+  // how far away this layer is meant to be.
+  float tang = dot(uCam.xz, vec2(cos(a), -sin(a))) * par;
+  float u = a * freq + tang;
+  float r = 1.0 - abs(fbm2(vec2(u, seed), 4));
+  r *= r;
+  return r;
+}
+
+void main(){
+  float a = atan(vLocal.x, vLocal.z);
+  float h = vLocal.y;
+  vec3 col = uSkyTint;
+  float alpha = 0.0;
+
+  // Back to front. Higher, hazier, slower-parallaxing layers first.
+  for (int i = 0; i < 3; i++){
+    float fi = float(i);
+    float freq = 2.2 + fi * 2.6;
+    float amp = 520.0 - fi * 130.0;
+    float par = 0.000030 + fi * 0.000042;
+    float top = uBase + 120.0 + ridgeLine(a, 11.3 + fi * 7.7, freq, par) * amp;
+    float soft = 26.0 - fi * 7.0;
+    float m = smoothstep(top + soft, top - soft, h);
+    vec3 layer = mix(uSkyTint * 1.02, uSkyTint * 0.60 + vec3(0.035, 0.045, 0.075), 0.28 + fi * 0.24);
+    col = mix(col, layer, m);
+    alpha = max(alpha, m);
+  }
+
+  // Fade the very bottom so the band never shows a hard cut under the terrain.
+  alpha *= smoothstep(uBase - 900.0, uBase - 320.0, h);
+  if (alpha < 0.004) discard;
+  gl_FragColor = vec4(col, alpha * 0.96);
+}
+`,
+    });
+    mat.name = 'distant-ridges';
+
+    const mesh = new Mesh(geo, mat);
+    mesh.name = 'distant-ridges';
+    mesh.frustumCulled = false;
+    mesh.matrixAutoUpdate = false;
+    mesh.renderOrder = -20;
+    mesh.position.set(0, WORLD.PLATEAU_HEIGHT + 40, 0);
+    mesh.updateMatrix();
+    this.band = mesh;
+    this.bandMaterial = mat;
+    this.group.add(mesh);
+  }
+
+//__CHUNK5__

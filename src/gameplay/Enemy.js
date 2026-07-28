@@ -416,6 +416,7 @@ function normalizeArchetypes() {
     for (let i = 0; i < ids.length; i++) {
       const m = def.moves[ids[i]];
       m.id = ids[i];
+      m.index = i;              // slot in the per-enemy cooldown array
       m.archetype = def.key;
       m.hold = m.hold || 0;
       m.active = m.active || 0;
@@ -554,7 +555,9 @@ export class Enemy {
     this.lastAttackAt = -99;
     this.lastDamagedAt = -99;
     this.comboIndex = 0;
-    this.moveCooldowns = Object.create(null);
+    /** Per-move cooldowns, indexed by `move.index` — a typed array so the
+     *  per-frame tick never walks an object's key list. */
+    this.moveCooldowns = new Float32Array(this.def.moveList.length);
     this.stateTime = 0;
     this.stateDuration = 0;
     this.staggerDir = new Vector3(0, 0, 1);
@@ -802,7 +805,7 @@ export class Enemy {
     this._idleTimer = 1.5 + Math.random() * 3;
     this._lastClip = null;
     this._footPhase = 0;
-    for (const k in this.moveCooldowns) this.moveCooldowns[k] = 0;
+    this.moveCooldowns.fill(0);
 
     if (position) this.position.set(position.x, position.y, position.z);
     const th = this.ctx.terrain?.heightAt?.(this.position.x, this.position.z);
@@ -894,10 +897,8 @@ export class Enemy {
   }
 
   _tickTimers(dt) {
-    for (const k in this.moveCooldowns) {
-      const v = this.moveCooldowns[k];
-      if (v > 0) this.moveCooldowns[k] = v - dt;
-    }
+    const cd = this.moveCooldowns;
+    for (let i = 0; i < cd.length; i++) if (cd[i] > 0) cd[i] -= dt;
     if (this.riposteWindow > 0) this.riposteWindow -= dt;
     if (this.postureLocked > 0) {
       this.postureLocked -= dt;
@@ -1022,7 +1023,7 @@ export class Enemy {
   /** Cooldown + token gate. Returns true only if the swing actually started. */
   _tryAttack(move) {
     if (!move || !this._canAct()) return false;
-    if ((this.moveCooldowns[move.id] || 0) > 0) return false;
+    if (this.moveCooldowns[move.index] > 0) return false;
 
     // Feints are pressure theatre: no damage window, no token, so they never
     // block the one enemy who is actually allowed to swing.
@@ -1055,7 +1056,7 @@ export class Enemy {
     this.weapon.unblockable = move.unblockable;
     this.weapon.guardBreak = move.guardBreak;
     this.weapon.moveId = move.id;
-    this.moveCooldowns[move.id] = move.cooldown;
+    this.moveCooldowns[move.index] = move.cooldown;
     this.lastAttackAt = this.ctx.engine?.elapsed ?? 0;
 
     // The readable tell. This is the contract with the player's eyes.
@@ -2156,7 +2157,15 @@ export class EnemyManager {
     for (let i = 0; i < n; i++) {
       eng[i]._angleCache = Math.atan2(eng[i].position.x - p.x, eng[i].position.z - p.z);
     }
-    eng.sort(_byAngle);
+    // Insertion sort: n <= maxEnemies and the array is almost always already
+    // ordered from the previous pass, so this beats Array#sort and allocates nothing.
+    for (let i = 1; i < n; i++) {
+      const v = eng[i];
+      const k = v._angleCache;
+      let j = i - 1;
+      while (j >= 0 && eng[j]._angleCache > k) { eng[j + 1] = eng[j]; j--; }
+      eng[j + 1] = v;
+    }
     // Mean heading via vector sum — a plain average wraps badly at ±π.
     let sx = 0, sz = 0;
     for (let i = 0; i < n; i++) { sx += Math.sin(eng[i]._angleCache); sz += Math.cos(eng[i]._angleCache); }
@@ -2209,6 +2218,5 @@ const WAVE_TABLE = ['ashigaru', 'ronin', 'ashigaru', 'shinobi', 'oyoroi', 'ronin
 const _mixScratch = [];
 const _spawnResult = [];
 const _deathPayload = { entity: null, point: new Vector3(), direction: new Vector3() };
-function _byAngle(a, b) { return a._angleCache - b._angleCache; }
 
 export default EnemyManager;

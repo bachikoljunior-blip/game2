@@ -918,7 +918,7 @@ export class PhysicsWorld {
     if (t && typeof t.normalAt === 'function') {
       const n = t.normalAt(x, z);
       if (n && typeof n.x === 'number') {
-        const l = Math.hypot(n.x, n.y, n.z) || 1;
+        const l = Math.sqrt(n.x * n.x + n.y * n.y + n.z * n.z) || 1;
         out.nx = n.x / l; out.ny = n.y / l; out.nz = n.z / l;
         return out;
       }
@@ -929,8 +929,8 @@ export class PhysicsWorld {
     if (hl === null || hr === null || hd === null || hu === null) {
       out.nx = 0; out.ny = 1; out.nz = 0; return out;
     }
-    let nx = hl - hr, ny = 2 * e, nz = hd - hu;
-    const l = Math.hypot(nx, ny, nz) || 1;
+    const nx = hl - hr, ny = 2 * e, nz = hd - hu;
+    const l = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
     out.nx = nx / l; out.ny = ny / l; out.nz = nz / l;
     return out;
   }
@@ -1486,16 +1486,16 @@ export class PhysicsWorld {
   _rayNormalFor(c, ox, oy, oz, dx, dy, dz, t, out) {
     switch (c.kind) {
       case 'sphere': {
-        let nx = ox + dx * t - c.cx, ny = oy + dy * t - c.cy, nz = oz + dz * t - c.cz;
-        const l = Math.hypot(nx, ny, nz) || 1;
+        const nx = ox + dx * t - c.cx, ny = oy + dy * t - c.cy, nz = oz + dz * t - c.cz;
+        const l = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
         out.nx = nx / l; out.ny = ny / l; out.nz = nz / l;
         break;
       }
       case 'capsule': {
         closestPtSegment(ox + dx * t, oy + dy * t, oz + dz * t,
           c.ax, c.ay, c.az, c.bx, c.by, c.bz, _p0);
-        let nx = ox + dx * t - _p0.x, ny = oy + dy * t - _p0.y, nz = oz + dz * t - _p0.z;
-        const l = Math.hypot(nx, ny, nz) || 1;
+        const nx = ox + dx * t - _p0.x, ny = oy + dy * t - _p0.y, nz = oz + dz * t - _p0.z;
+        const l = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
         out.nx = nx / l; out.ny = ny / l; out.nz = nz / l;
         break;
       }
@@ -1825,7 +1825,7 @@ export class PhysicsWorld {
           const d = ch.velocity.y * _slideA.ny;
           ch.velocity.y -= d * _slideA.ny * 0.5;
           const slideSpeed = -GRAVITY * dt * 0.55;
-          const hl = Math.hypot(_slideA.nx, _slideA.nz) || 1;
+          const hl = Math.sqrt(_slideA.nx * _slideA.nx + _slideA.nz * _slideA.nz) || 1;
           pos.x += (_slideA.nx / hl) * slideSpeed * dt;
           pos.z += (_slideA.nz / hl) * slideSpeed * dt;
         }
@@ -1896,7 +1896,7 @@ export class PhysicsWorld {
         // Steeper than the slope limit — behave like a vertical wall so the
         // character neither walks up it nor gets flung along it.
         out.steep = true;
-        const hl = Math.hypot(nx, nz);
+        const hl = Math.sqrt(nx * nx + nz * nz);
         if (hl > 1e-6) { nx /= hl; ny = 0; nz /= hl; }
       }
       const dot = rx * nx + ry * ny + rz * nz;
@@ -2073,7 +2073,7 @@ export class PhysicsWorld {
 
     if (kind === 'box') {
       b.boundRadius = b.half.length();
-      const i = (mass / 12) * (4 * (b.half.x * b.half.x + b.half.y * b.half.y + b.half.z * b.half.z) / 3);
+      const i = (2 / 9) * mass * (b.half.x * b.half.x + b.half.y * b.half.y + b.half.z * b.half.z);
       b.invInertia = i > 0 ? 1 / i : 0;
     } else {
       b.boundRadius = b.radius;
@@ -2175,7 +2175,8 @@ export class PhysicsWorld {
       b.position.y += b.velocity.y * dt;
       b.position.z += b.velocity.z * dt;
       const w = b.angularVelocity;
-      const wl = w.length();
+      let wl = w.length();
+      if (wl > 22) { w.multiplyScalar(22 / wl); wl = 22; }
       if (wl > 1e-5) {
         _q0.setFromAxisAngle(_v0.set(w.x / wl, w.y / wl, w.z / wl), wl * dt);
         b.quaternion.premultiply(_q0).normalize();
@@ -2219,17 +2220,17 @@ export class PhysicsWorld {
     }
 
     // --- solve --------------------------------------------------------------
-    for (let it = 0; it < 4; it++) this._solveContacts(dt);
-    this._projectContacts();
+    for (let it = 0; it < 4; it++) this._solveContacts();
+    for (let it = 0; it < 2; it++) this._projectContacts();
 
     // --- sleeping -----------------------------------------------------------
     for (let i = 0; i < n; i++) {
       const b = bodies[i];
       if (!b.enabled || b.sleeping) continue;
-      const e = b.velocity.lengthSq() + b.angularVelocity.lengthSq() * 0.25;
-      if (e < 0.035) {
+      const e = b.velocity.lengthSq() + b.angularVelocity.lengthSq() * 0.05;
+      if (e < 0.05) {
         b.sleepTimer += dt;
-        if (b.sleepTimer > 0.55) {
+        if (b.sleepTimer > 0.5) {
           b.sleeping = true;
           b.velocity.set(0, 0, 0);
           b.angularVelocity.set(0, 0, 0);
@@ -2300,8 +2301,8 @@ export class PhysicsWorld {
    * vn = 0 in the following iterations simply cancels the push-out again,
    * which is how bodies end up slowly sinking through the floor.
    */
-  _solveContacts(dt) {
-    const SLOP = 0.004, BETA = 0.2, MAX_BIAS = 3, REST_THRESHOLD = 1.1;
+  _solveContacts() {
+    const REST_THRESHOLD = 1.1;
     for (let i = 0; i < this._contactCount; i++) {
       const c = this._contacts[i];
       const a = c.a, b = c.b;
@@ -2333,8 +2334,7 @@ export class PhysicsWorld {
       if (denom < 1e-9) continue;
 
       const e = (-vn > REST_THRESHOLD) ? c.restitution : 0;
-      const bias = Math.min(MAX_BIAS, (BETA / dt) * Math.max(0, c.depth - SLOP));
-      let jn = (-(1 + e) * vn + bias) / denom;
+      let jn = (-(1 + e) * vn) / denom;
       const oldJn = c.jn;
       c.jn = Math.max(0, oldJn + jn);
       jn = c.jn - oldJn;
@@ -2377,10 +2377,10 @@ export class PhysicsWorld {
   }
 
   /**
-   * Positional pass after the velocity solve. Baumgarte alone leaves a resting
-   * body permanently sunk by however much penetration the bias needs to fight
-   * gravity; correcting position directly means props sit exactly on the stone
-   * and their velocities fall low enough to sleep.
+   * Split-impulse position pass. Penetration is resolved here and *only* here:
+   * feeding a Baumgarte bias into the velocity solve as well makes the two
+   * corrections compound, which pumps energy into a resting stack until it
+   * buzzes and never sleeps.
    */
   _projectContacts() {
     const SLOP = 0.002;
@@ -2388,10 +2388,11 @@ export class PhysicsWorld {
       const c = this._contacts[i];
       const pen = c.depth - SLOP;
       if (pen <= 0) continue;
+      c.depth = SLOP;
       const a = c.a, b = c.b;
       const im = a._im + (b ? b._im : 0);
       if (im < 1e-9) continue;
-      const s = (pen * 0.65) / im;
+      const s = (pen * 0.7) / im;
       a.position.x += c.nx * s * a._im;
       a.position.y += c.ny * s * a._im;
       a.position.z += c.nz * s * a._im;
@@ -2530,7 +2531,7 @@ export class PhysicsWorld {
       const ci = index[spec.j], pi = index[spec.p];
       if (ci === undefined || pi === undefined) continue;
       const a = particles[pi], b = particles[ci];
-      const len = Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z);
+      const len = Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2 + (b.z - a.z) ** 2);
       if (len < 1e-4) continue;
 
       const half = spec.m * 0.5;
@@ -2580,8 +2581,8 @@ export class PhysicsWorld {
       const gi = index[gp];
       if (gi === undefined) continue;
       const A = particles[gi], B = particles[pi], C = particles[ci];
-      const l1 = Math.hypot(B.x - A.x, B.y - A.y, B.z - A.z);
-      const l2 = Math.hypot(C.x - B.x, C.y - B.y, C.z - B.z);
+      const l1 = Math.sqrt((B.x - A.x) ** 2 + (B.y - A.y) ** 2 + (B.z - A.z) ** 2);
+      const l2 = Math.sqrt((C.x - B.x) ** 2 + (C.y - B.y) ** 2 + (C.z - B.z) ** 2);
       const cone = clampf(spec.cone, 1, 170) * Math.PI / 180;
       const bend = clampf(spec.bend || 0, 0, 170) * Math.PI / 180;
       const minD = Math.sqrt(Math.max(1e-6, l1 * l1 + l2 * l2 + 2 * l1 * l2 * Math.cos(cone)));
@@ -2644,7 +2645,7 @@ export class PhysicsWorld {
 
   _launchRagdoll(rd, dir, strength) {
     const s = strength !== undefined ? strength : 4;
-    const l = Math.hypot(dir.x, dir.y, dir.z) || 1;
+    const l = Math.sqrt(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z) || 1;
     for (let i = 0; i < rd.particles.length; i++) {
       const p = rd.particles[i];
       // Upper body takes more of the hit so the body folds instead of skidding.

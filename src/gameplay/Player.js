@@ -255,7 +255,7 @@ export class Player {
     this.aimAssist = ctx.quality?.device?.isMobile === false ? 0.6 : 1.0;  // §6 — on by default
     this.allowRagdoll = ctx.quality?.ragdoll !== false;
 
-    this.attackInfo = {                // handed to ctx.combat.beginAttack, reused
+    this.attackInfo = {                // opts object handed to combat.beginSwing, reused
       entity: this, move: 'h_r', clip: 'slash_horizontal_r', damage: 16, poise: 12,
       kind: 'slash', reach: 2.15, heavy: false, finisher: false, stance: 'seigan',
       combo: 0, base: this.bladeBase, tip: this.bladeTip,
@@ -1703,7 +1703,13 @@ export class Player {
     this._setState('stagger', { clip }, true);
   }
 
+  /**
+   * Idempotent: Combat's `_kill` sets `isAlive = false`, pushes `setState('dead')`
+   * and *then* calls `onDeath`, so this can arrive by three routes for one death.
+   */
   _die(payload) {
+    if (this._deathHandled) return;
+    this._deathHandled = true;
     this.isAlive = false;
     this.health = 0;
     this.invulnerable = true;

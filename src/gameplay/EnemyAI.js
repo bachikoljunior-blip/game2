@@ -804,7 +804,7 @@ export class EnemyAI {
     // ---- ranged -------------------------------------------------------------
     if (this.def.rangedMove) {
       const m = this.def.rangedMove;
-      if ((e.moveCooldowns[m.id] || 0) <= 0 && s.dist >= m.minRange && s.dist <= m.maxRange && s.los) {
+      if (e.moveCooldowns[m.index] <= 0 && s.dist >= m.minRange && s.dist <= m.maxRange && s.los) {
         sc[B.ranged] = 0.5 + p.ranged * 0.5 + (s.token ? -0.2 : 0.35)
           + (s.dist > s.wantRange * 2.4 ? 0.4 : 0);
       }
@@ -881,7 +881,7 @@ export class EnemyAI {
 
     // Riposte first — the punish window is short and it is the whole point.
     const punish = this.def.punishMove;
-    if (punish && e.riposteWindow > 0 && (e.moveCooldowns[punish.id] || 0) <= 0 &&
+    if (punish && e.riposteWindow > 0 && e.moveCooldowns[punish.index] <= 0 &&
       s.dist <= punish.maxRange + 0.4) {
       this._moveScore = 1.4;
       return punish;
@@ -892,7 +892,7 @@ export class EnemyAI {
     for (let i = 0; i < list.length; i++) {
       const m = list[i];
       if (m.follower || m.feint || m.punish) continue;
-      if ((e.moveCooldowns[m.id] || 0) > 0) continue;
+      if (e.moveCooldowns[m.index] > 0) continue;
       const lo = m.minRange;
       const hi = m.maxRange + m.advance * 0.65;
       if (s.dist < lo - 0.35 || s.dist > hi) continue;

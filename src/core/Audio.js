@@ -374,6 +374,7 @@ export class AudioSystem {
     this._gustArmed = true;
 
     // Combat / mood heuristics
+    this._paused = false;
     this._heat = 0;
     this._engaged = 0;
     this._silentUntil = 0;
@@ -414,6 +415,7 @@ export class AudioSystem {
     this._onDamage = (p) => this._handleDamage(p);
     this._onStance = (p) => this._handleStance(p);
     this._onObjective = (p) => this._handleObjective(p);
+    this._onSettings = (s) => this._applySettings(s);
     this._onStorage = () => { this._settingsRaw = ''; this._loadSettings(); };
     this._onVisibility = () => {
       if (!document.hidden && this._unlockWanted) this.unlock();
@@ -821,6 +823,7 @@ export class AudioSystem {
     if (!this.ok || !this.ac) return;
     const t = this.ac.currentTime;
     const target = clamp(1 - (amount === undefined ? 0.4 : amount), 0.02, 1);
+    if (this._paused) return;
     const hold = Math.max(0.02, (ms === undefined ? 220 : ms) / 1000);
     for (let i = 0; i < this.busList.length; i++) {
       const b = this.busList[i];
@@ -2362,6 +2365,9 @@ export class AudioSystem {
     u.push(bus.on('damage-taken', this._onDamage));
     u.push(bus.on('stance-change', this._onStance));
     u.push(bus.on('objective', this._onObjective));
+    // Menus pushes this on every slider drag; the localStorage poll is only the fallback
+    // for a settings write that happened in another tab or before we booted.
+    u.push(bus.on('settings-changed', this._onSettings));
   }
 
   _isPlayer(e) {
@@ -2687,6 +2693,7 @@ export class AudioSystem {
 
   /** Sparse one-shots placed around the listener; the shrine should never feel dead. */
   _updateAmbience(rd) {
+    if (this._paused) return;
     const q = this._ambDensity === undefined ? 1 : this._ambDensity;
     this._tCrow -= rd;
     if (this._tCrow <= 0) {
@@ -2781,10 +2788,41 @@ export class AudioSystem {
     if (!raw) return;
     let s = null;
     try { s = JSON.parse(raw); } catch { return; }
+    this._applySettings(s);
+  }
+
+  /**
+   * Accepts both spellings: `volMaster/volSfx/volMusic` and the `master/sfx/music` that
+   * the Menus system actually writes. Ambience rides the SFX slider — a player who turns
+   * the music off still wants the mountain to sound alive.
+   */
+  _applySettings(s) {
     if (!s || typeof s !== 'object') return;
-    if (typeof s.volMaster === 'number') this.setVolume('master', s.volMaster);
-    if (typeof s.volSfx === 'number') { this.setVolume('sfx', s.volSfx); this.setVolume('ui', s.volSfx * 0.7); }
-    if (typeof s.volMusic === 'number') { this.setVolume('music', s.volMusic * 0.62); this.setVolume('ambience', s.volMusic * 0.5); }
+    const num = (a, b) => (typeof a === 'number' ? a : (typeof b === 'number' ? b : null));
+    const master = num(s.volMaster, s.master);
+    const sfx = num(s.volSfx, s.sfx);
+    const music = num(s.volMusic, s.music);
+    if (master !== null) this.setVolume('master', master);
+    if (sfx !== null) {
+      this.setVolume('sfx', sfx);
+      this.setVolume('ui', sfx * 0.78);
+      this.setVolume('ambience', sfx * 0.55);
+    }
+    if (music !== null) this.setVolume('music', music * 0.88);
+  }
+
+  /**
+   * Called by Menus when the pause panel opens. The world drops away and the score is
+   * left holding the room, which is what a pause should feel like.
+   */
+  setPaused(flag) {
+    if (!this.ok || !this.ac) return;
+    this._paused = !!flag;
+    const t = this.ac.currentTime;
+    const on = this._paused;
+    this.buses.sfx.duck.gain.setTargetAtTime(on ? 0.0001 : 1, t, 0.12);
+    this.buses.ambience.duck.gain.setTargetAtTime(on ? 0.12 : 1, t, 0.25);
+    this.buses.music.duck.gain.setTargetAtTime(on ? 0.45 : 1, t, 0.3);
   }
 
   applyQuality(q) {

@@ -11,11 +11,12 @@
  *  - All animation is in the vertex shader. `update()` writes ~20 uniforms and nothing else.
  *  - LOD/cull transitions are a screen-door dither so nothing pops.
  *
- * The wind field is the contract that ties grass, bamboo, banners and cloth together.
- * `FOLIAGE_WIND_GLSL` below is the authoritative implementation; Weather.js must publish
- * a byte-identical `WIND_GLSL` or the gust wavefronts will disagree across systems.
- * If `ctx.weather.WIND_GLSL` exists at init we use theirs instead, so there is exactly
- * one field in the build either way.
+ * Wind is NOT implemented here. `WeatherSystem` owns the gust field (ARCHITECTURE.md §10)
+ * and Weather boots before Foliage precisely so we can consume it: we import `WIND_GLSL`
+ * and splice `ctx.weather.windUniforms` in by object identity, so one wavefront crosses
+ * the valley and bends grass, bamboo, banners and petals on the same beat. There is
+ * deliberately no local fallback — if Weather is missing the foliage stands still, which
+ * is far better than a second implementation quietly drifting out of phase.
  */
 
 import {
@@ -29,6 +30,7 @@ import {
   Sphere,
   Vector2,
   Vector3,
+  Vector4,
   Color,
   MeshLambertMaterial,
   MeshBasicMaterial,
@@ -52,90 +54,12 @@ import {
 
 import { WORLD, plateauMask } from '../world/Constants.js';
 import { glslNoise, noise, makeRandom, clamp, lerp, smoothstep } from '../core/Noise.js';
+// ARCHITECTURE.md §10: Weather owns the wind. This is the only wind implementation in the
+// build; `WIND_GLSL` already carries `glslNoise` and the `uWind`/`uGust` uniform block.
+import { WIND_GLSL } from '../fx/Weather.js';
 
 // =============================================================================
-// 1. Wind field — the authoritative formula
-// =============================================================================
-
-/** Metres between successive gust wavefronts. */
-export const WIND_WAVELENGTH = 34.0;
-/** Metres per second the gust front travels along the wind axis. */
-export const WIND_SPEED = 11.0;
-
-/**
- * The shared wind field.
- *
- *   kagGustField(p, t) -> 0..1   scalar gust strength, a wavefront travelling along uWindDir
- *   kagWindField(p, t) -> vec3   xy = horizontal flow vector, z = gust 0..1
- *
- * Requires `snoise2`/`fbm2` from `glslNoise` to already be present in the shader, plus
- * these uniforms: uWindDir (vec2, normalised), uWindStrength, uWindGust, uWindTime.
- *
- * WEATHER.JS MUST MATCH THIS EXACTLY, or the gust that sweeps the grass will not be the
- * gust that sweeps the banners and the illusion dies.
- */
-export const FOLIAGE_WIND_GLSL = /* glsl */`
-#ifndef KAG_WIND_FIELD
-#define KAG_WIND_FIELD
-
-#define KAG_WIND_WAVELENGTH ${WIND_WAVELENGTH.toFixed(1)}
-#define KAG_WIND_SPEED ${WIND_SPEED.toFixed(1)}
-#define KAG_TAU 6.28318530718
-
-uniform vec2  uWindDir;
-uniform float uWindStrength;
-uniform float uWindGust;
-uniform float uWindTime;
-
-// A gust is a travelling wavefront, not a global oscillation: the phase depends on how
-// far the sample sits *along* the wind axis, so you watch the gust arrive.
-float kagGustField( vec2 p, float t ) {
-  float travel = dot( p, uWindDir );
-  float ph = ( travel - t * KAG_WIND_SPEED ) / KAG_WIND_WAVELENGTH;
-  float w = 0.62 * sin( ph * KAG_TAU ) + 0.38 * sin( ph * KAG_TAU * 0.437 + 1.7 );
-  // Broad patchiness, advected downwind at half the front speed so patches travel too.
-  vec2 adv = p - uWindDir * ( t * KAG_WIND_SPEED * 0.5 );
-  float env = fbm2( adv * 0.0125, 3 );
-  return clamp( ( w * ( 0.55 + 0.45 * env ) ) * 0.5 + 0.5, 0.0, 1.0 );
-}
-
-vec3 kagWindField( vec2 p, float t ) {
-  float g = kagGustField( p, t );
-  vec2 sw = p * 0.085 - uWindDir * ( t * 1.65 );
-  float tx = snoise2( sw );
-  float tz = snoise2( sw + vec2( 37.2, 11.9 ) );
-  vec2 dir = normalize( uWindDir + vec2( tx, tz ) * 0.35 );
-  float amp = uWindStrength * ( 0.45 + 0.55 * g ) + uWindGust * g * 0.9;
-  return vec3( dir * amp, g );
-}
-
-#endif
-`;
-
-/** CPU twin of the field. Structurally identical; the simplex permutation tables differ. */
-function windFieldJS(x, z, t, dirX, dirZ, strength, gust, out) {
-  const TAU = Math.PI * 2;
-  const travel = x * dirX + z * dirZ;
-  const ph = (travel - t * WIND_SPEED) / WIND_WAVELENGTH;
-  const w = 0.62 * Math.sin(ph * TAU) + 0.38 * Math.sin(ph * TAU * 0.437 + 1.7);
-  const ax = x - dirX * (t * WIND_SPEED * 0.5);
-  const az = z - dirZ * (t * WIND_SPEED * 0.5);
-  const env = noise.fbm2(ax * 0.0125, az * 0.0125, 3);
-  const g = clamp((w * (0.55 + 0.45 * env)) * 0.5 + 0.5, 0, 1);
-
-  const sx = x * 0.085 - dirX * (t * 1.65);
-  const sz = z * 0.085 - dirZ * (t * 1.65);
-  let nx = dirX + noise.noise2(sx, sz) * 0.35;
-  let nz = dirZ + noise.noise2(sx + 37.2, sz + 11.9) * 0.35;
-  const inv = 1 / Math.max(Math.hypot(nx, nz), 1e-5);
-  nx *= inv; nz *= inv;
-  const amp = strength * (0.45 + 0.55 * g) + gust * g * 0.9;
-  out.x = nx * amp; out.y = nz * amp; out.z = g;
-  return out;
-}
-
-// =============================================================================
-// 2. Shared helpers
+// 1. Shared helpers
 // =============================================================================
 
 /** three's onBeforeCompile is a single slot; chain so Sky's fog injection survives ours. */
@@ -275,8 +199,10 @@ const MAX_DISTURB = 4;
  *   KAG_MODE 1 (attached) — geometry is a card in metres attached at parameter
  *                           aFoliageC.w along a parent stem (bamboo leaf clusters).
  */
-function vertexPars(windGLSL) {
+function vertexPars() {
   return /* glsl */`
+#define KAG_TAU 6.28318530718
+
 attribute vec4 aFoliageA;   // xyz = world base, w = yaw
 attribute vec4 aFoliageB;   // x = height (m), y = width (m), z = stiffness, w = phase
 attribute vec4 aFoliageC;   // rgb = tint, w = attach param / variant
@@ -301,8 +227,8 @@ varying vec3  vKagWorld;
 vec3 kagPosG;
 vec3 kagNrmG;
 
-${glslNoise}
-${windGLSL}
+// The shared field. Brings in glslNoise, `uWind`/`uGust`, kagerouGust/Wind/Bend.
+${WIND_GLSL}
 
 vec3 kagRodrigues( vec3 v, vec3 axis, float ang ) {
   float c = cos( ang ), s = sin( ang );
@@ -330,13 +256,21 @@ void kagFoliageVertex() {
   vKagFade = smoothstep( uFadeNear.x, uFadeNear.y, dist ) * ( 1.0 - smoothstep( uFadeFar.x, uFadeFar.y, dist ) );
 
   // ---- wind ----------------------------------------------------------------
-  vec3  wf   = kagWindField( base.xz, uWindTime );
-  vec2  flow = wf.xy;
-  float gust = wf.z;
+  // The gust field is Weather's, sampled at the plant's root. `kagerouBend` with h = 1
+  // gives the tip deflection for this stiffness; the falloff along the stem is ours
+  // (see KAG_BEND_EXP below), because rotating about the base is what makes it bend
+  // rather than shear.
+  float gust = kagerouGust( base.xz );
+  vec3  bendV = kagerouBend( base, 1.0, stiff );
+  vec2  flow = bendV.xz;
+  vec2  wdir = normalize( uWind.xy + vec2( 1e-5, 0.0 ) );
+  float wtime = uWind.w;
 
-  float f1 = sin( uWindTime * ( 2.1 + 2.6 * gust ) + phase * KAG_TAU + dot( base.xz, vec2( 0.31, 0.27 ) ) );
-  float f2 = sin( uWindTime * 5.7 + phase * 12.566 + aFlex.y * 9.42 );
-  flow += uWindDir * ( ( f1 * 0.17 + f2 * 0.07 ) * ( 0.35 + uWindStrength ) );
+  // Per-blade turbulence and phase offset on top of the shared front, so neighbours
+  // never march in step even inside one gust.
+  float f1 = sin( wtime * ( 2.1 + 2.6 * gust ) + phase * KAG_TAU + dot( base.xz, vec2( 0.31, 0.27 ) ) );
+  float f2 = sin( wtime * 5.7 + phase * 12.566 + aFlex.y * 9.42 );
+  flow += wdir * ( ( f1 * 0.17 + f2 * 0.07 ) * ( 0.35 + uWind.z ) * 0.28 );
 
   // ---- characters part the grass ------------------------------------------
   vec2  push = vec2( 0.0 );
@@ -358,7 +292,7 @@ void kagFoliageVertex() {
     vec4 dp = uDisturbP[ i ];
     if ( dp.w > 0.001 ) {
       vec4 da = uDisturbA[ i ];
-      float age = uWindTime - da.y;
+      float age = wtime - da.y;
       if ( age >= 0.0 && age < 2.4 ) {
         vec2 d = base.xz - dp.xz;
         float dd = length( d ) + 1e-4;
@@ -371,7 +305,7 @@ void kagFoliageVertex() {
 
   vec2  total = flow + push;
   float mag   = length( total );
-  vec2  dirn  = mag > 1e-4 ? total / mag : uWindDir;
+  vec2  dirn  = mag > 1e-4 ? total / mag : wdir;
   vec3  axis  = vec3( dirn.y, 0.0, -dirn.x );   // = normalize( cross( up, flow ) )
   float a     = mag * uBendGain / stiff;
   float theta = 1.5 * a / ( 1.0 + a );          // saturating: a blade never folds past ~86 deg
@@ -391,7 +325,7 @@ void kagFoliageVertex() {
   vec3 off = position * width;
   off.xz = rot * off.xz;
   // Leaf clusters flutter about their own attachment point at a higher frequency.
-  float lf = sin( uWindTime * ( 6.5 + 3.4 * gust ) + phase * 21.0 + aFlex.y * 15.0 );
+  float lf = sin( wtime * ( 6.5 + 3.4 * gust ) + phase * 21.0 + aFlex.y * 15.0 );
   float la = lf * ( 0.24 + 0.55 * mag ) * aFlex.x * uFlutter;
   off = kagRodrigues( off, axis, la );
   nrm = kagRodrigues( nrm, axis, la );
@@ -401,14 +335,14 @@ void kagFoliageVertex() {
   vec3 local = vec3( position.x * width, position.y * height, position.z * width );
   local.xz = rot * local.xz;
   // Leaf-tip shiver: small, tangential, scaled by the authored flexibility.
-  float lf = sin( uWindTime * ( 5.2 + 2.4 * gust ) + phase * 7.0 + aFlex.y * 19.0 + t * 4.0 );
+  float lf = sin( wtime * ( 5.2 + 2.4 * gust ) + phase * 7.0 + aFlex.y * 19.0 + t * 4.0 );
   local += vec3( dirn.x, 0.0, dirn.y ) * ( lf * 0.045 * aFlex.x * ( 0.3 + mag ) * uFlutter * height );
 #endif
 
   float prof = pow( t, KAG_BEND_EXP );
 #ifdef KAG_WHIP
   // A tall culm does not simply arc: the top overshoots and whips back a beat late.
-  prof += KAG_WHIP * sin( uWindTime * 3.1 + phase * KAG_TAU - t * 2.2 ) * t * t * t;
+  prof += KAG_WHIP * sin( wtime * 3.1 + phase * KAG_TAU - t * 2.2 ) * t * t * t;
 #endif
 
   float ang = theta * prof;
@@ -1294,17 +1228,18 @@ export class FoliageSystem {
     this.leafEmitters = [];
 
     /**
-     * The authoritative wind field GLSL. If Weather already published one we defer to it
-     * so there is exactly one field in the build; otherwise ours is the source of truth.
+     * Weather's wind uniforms, spliced in BY IDENTITY so its per-frame write reaches every
+     * foliage material for free. No local fallback field exists: if Weather is somehow
+     * absent these stay zeroed and the foliage simply stands still, which is the correct
+     * failure mode — a second gust implementation is what desynchronises a scene.
      */
-    this.WIND_GLSL = ctx?.weather?.WIND_GLSL || FOLIAGE_WIND_GLSL;
+    this._windUniforms = ctx?.weather?.windUniforms || {
+      uWind: { value: new Vector4(0, 0, 0, 0) },
+      uGust: { value: new Vector4(0, 0, 0, 0) },
+    };
 
     // --- shared uniform objects (written once per frame, read by every material) ------
     this.uniforms = {
-      uWindDir: { value: new Vector2(0.82, 0.57) },
-      uWindStrength: { value: 0.45 },
-      uWindGust: { value: 0.0 },
-      uWindTime: { value: 0.0 },
       uCamPos: { value: new Vector3() },
       uChars: { value: new Float32Array(MAX_CHARACTERS * 4) },
       uDisturbP: { value: new Float32Array(MAX_DISTURB * 4) },

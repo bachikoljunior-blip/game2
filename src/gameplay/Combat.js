@@ -340,12 +340,15 @@ class CombatRecord {
     this.iframeUntil = 0;
     this.punishUntil = 0;
 
-    // posture
+    // posture (mode: 0 unknown, +1 fills 0→max, −1 drains max→0)
     this.lastPressure = -999;
     this.calm = 0;
     this.brokenUntil = 0;
     this.breaks = 0;
     this.staggerUntil = 0;
+    this.postureMode = 0;
+    this.postureSeen = 0;
+    this.selfRegen = false;
 
     // impulses
     this.knock = new Vector3();
@@ -394,6 +397,9 @@ class CombatRecord {
     this.brokenUntil = 0;
     this.breaks = 0;
     this.staggerUntil = 0;
+    this.postureMode = 0;
+    this.postureSeen = entity?.posture ?? 0;
+    this.selfRegen = false;
     this.knock.set(0, 0, 0);
     this.lungeUntil = 0;
     this.lungeTarget = null;
@@ -753,14 +759,25 @@ export class CombatDirector {
   /** Direct posture pressure (a shove, a heavy block, a shout). */
   addPosture(entity, amount, sourceDir) { this._addPosture(entity, amount, sourceDir); }
 
-  /** 0..1 posture pressure — 1 means broken. Written for the HUD. */
+  /**
+   * 0..1 posture *pressure* — 0 is composed, 1 is broken — regardless of whether the
+   * entity counts posture up (Player) or down (Enemy). This is the HUD's read.
+   */
   getPostureRatio(entity) {
     if (!entity) return 0;
-    return clamp01((entity.posture || 0) / (entity.maxPosture || 100));
+    const rec = this._records.get(entity);
+    if (!rec) {
+      const max = entity.maxPosture || 100;
+      return clamp01((entity.posture ?? 0) / max);
+    }
+    this._classifyPosture(entity, rec);
+    return this._pressureOf(entity, rec);
   }
 
   /** True while the entity is in the helpless window after a posture break. */
   isPostureBroken(entity) {
+    if (!entity) return false;
+    if (entity.state === 'postureBroken' || entity.state === 'posture_break') return true;
     const rec = this._records.get(entity);
     return !!rec && this.time < rec.brokenUntil;
   }
@@ -1627,7 +1644,8 @@ export class CombatDirector {
     p.defender = defender; p.attacker = attacker; p.point.copy(point); p.perfect = perfect;
     this.ctx?.bus?.emit?.('parry', p);
     defender.onParry?.(p);
-    attacker?.onParried?.(p);
+    // Enemy.onParried(defender) runs its own recoil, posture loss and stagger clip.
+    attacker?.onParried?.(defender, p);
 
     const sp = this._streakP();
     sp.defender = defender; sp.streak = drec.streak; sp.perfect = perfect;
@@ -1648,40 +1666,45 @@ export class CombatDirector {
         if (attacker.weapon) attacker.weapon.active = false;
         attacker.onDeflected?.(defender, true);
       }
+      defender.onParrySuccess?.(attacker);
       drec.punishUntil = 0;
       this._hitStop(TUNING.HITSTOP_PARRY, TUNING.HITSTOP_SCALE);
       this._shake(TUNING.SHAKE_PARRY * (1 + drec.streak * 0.06),
         TUNING.SHAKE_DURATION * 1.2, dir);
       this._parryFX(point, dir, true, drec.streak);
-      this.ctx?.audio?.cue?.('parry_perfect', drec.streak);
     } else {
       // late: reduced damage still lands, moderate posture, a duller clash
       const dmg = rawDamage * TUNING.PARRY_LATE_DAMAGE *
         ((defender === this.ctx?.player) ? this.diff.enemyDamage : this.diff.playerDamage);
-      const before = defender.health != null ? defender.health : 0;
+      const h0 = defender.health, p0 = defender.posture;
 
       const hp = this._hitP();
       hp.attacker = attacker; hp.target = defender;
-      hp.point.copy(point); hp.normal.copy(_vC);
-      hp.damage = dmg; hp.poise = this._poiseOf(defender);
-      hp.kind = 'slash'; hp.crit = false;
-      hp.blocked = false; hp.parried = true;
-      defender.onDamage?.(hp);
-      if (defender.health === before) defender.health = Math.max(0, before - dmg);
+      hp.point.copy(point); hp.normal.copy(_vC); hp.direction.copy(dir);
+      hp.damage = dmg;
+      hp.poise = this._poiseFor(defender, this._attackPoise(attacker) * 0.3);
+      hp.posture = TUNING.PARRY_SELF_POSTURE;
+      hp.kind = 'slash'; hp.crit = false; hp.heavy = false; hp.unblockable = false;
+      hp.blocked = false; hp.parried = true; hp.guarded = true;
+      const verdict = defender.onDamage?.(hp);
+      if (defender.health === h0) this._safeSet(defender, 'health', Math.max(0, (h0 ?? 0) - dmg));
       this.ctx?.bus?.emit?.('hit', hp);
 
-      const dp = this._dmgP();
-      dp.entity = defender; dp.amount = dmg; dp.direction.copy(dir);
-      this.ctx?.bus?.emit?.('damage-taken', dp);
+      if (verdict !== true) {
+        const dp = this._dmgP();
+        dp.entity = defender; dp.amount = dmg; dp.direction.copy(dir);
+        this.ctx?.bus?.emit?.('damage-taken', dp);
+      }
 
       if (attacker) this._addPosture(attacker, TUNING.PARRY_LATE_POSTURE, _vC);
-      this._addPosture(defender, TUNING.PARRY_SELF_POSTURE, dir);
+      if (defender.posture === p0) this._addPosture(defender, TUNING.PARRY_SELF_POSTURE, dir);
       this._hitStop(TUNING.HITSTOP_LIGHT, TUNING.HITSTOP_SCALE);
       this._shake(TUNING.SHAKE_LIGHT * 1.3, TUNING.SHAKE_DURATION, dir);
       this._parryFX(point, dir, false, drec.streak);
-      this.ctx?.audio?.cue?.('parry_late');
       attacker?.onDeflected?.(defender, false);
-      if (defender.health <= 0) this._kill(defender, attacker, point, dir);
+      if ((defender.health ?? 0) <= 0 && defender.isAlive !== false) {
+        this._kill(defender, attacker, point, dir);
+      }
     }
   }
 
@@ -1739,47 +1762,106 @@ export class CombatDirector {
    *  posture
    * ══════════════════════════════════════════════════════════════════════════ */
 
+  /**
+   * Two conventions exist in this codebase and both are legitimate: Player counts
+   * posture UP from 0 to maxPosture (break at max), Enemy counts it DOWN from
+   * maxPosture to 0 (break at zero). We detect which an entity uses the first time we
+   * see it — a full bar at first sight means the draining kind — and then speak its
+   * language for the rest of its life. `pressure` is always 0 (fresh) → 1 (broken).
+   */
+  _classifyPosture(entity, rec) {
+    if (rec.postureMode !== 0) return;
+    const max = entity.maxPosture || 100;
+    rec.postureMode = (entity.posture ?? 0) >= max * 0.75 ? -1 : 1;   // -1 drains, +1 fills
+    rec.postureSeen = entity.posture ?? 0;
+  }
+
+  /** Pressure 0..1 in whichever convention the entity uses. */
+  _pressureOf(entity, rec) {
+    const max = entity.maxPosture || 100;
+    if (max <= 0) return 0;
+    const v = entity.posture ?? 0;
+    return rec.postureMode < 0 ? clamp01(1 - v / max) : clamp01(v / max);
+  }
+
   _addPosture(entity, amount, dir) {
     if (!entity || !(amount > 0)) return;
     const rec = this._rec(entity);
     if (!rec) return;
     const now = this.time;
     if (now < rec.brokenUntil) return;    // already helpless; more pressure means nothing
+    this._classifyPosture(entity, rec);
 
     const max = entity.maxPosture || 100;
-    if (entity.posture == null) entity.posture = 0;
+    if (entity.posture == null) this._safeSet(entity, 'posture', rec.postureMode < 0 ? max : 0);
     // Each break makes the next one easier — pressure compounds, exactly like Sekiro.
     const escalate = 1 + Math.min(0.36, rec.breaks * TUNING.POSTURE_ESCALATE);
-    entity.posture += amount * escalate;
+    const delta = amount * escalate * (rec.postureMode < 0 ? -1 : 1);
+    this._safeSet(entity, 'posture', clamp((entity.posture || 0) + delta, 0, max));
+    rec.postureSeen = entity.posture;
     rec.lastPressure = now;
     rec.calm = 0;
     entity.onPosture?.(entity.posture, max);
+    this._checkBreak(entity, rec, dir);
+  }
 
-    if (entity.posture >= max) {
-      entity.posture = max;
-      this._breakPosture(entity, rec, dir);
+  /** The entity moved its own posture — adopt the value and keep the break check honest. */
+  _noteExternalPosture(entity, rec, dir) {
+    if (!rec) return;
+    this._classifyPosture(entity, rec);
+    rec.postureSeen = entity.posture;
+    rec.lastPressure = this.time;
+    rec.calm = 0;
+    this._checkBreak(entity, rec, dir);
+  }
+
+  _checkBreak(entity, rec, dir) {
+    if (this.time < rec.brokenUntil) return;
+    const stateBroken = entity.state === 'postureBroken' || entity.state === 'posture_break';
+    if (stateBroken || this._pressureOf(entity, rec) >= 0.999) {
+      this._breakPosture(entity, rec, dir, stateBroken);
     }
   }
 
-  /** Slower at low health, faster the longer the entity goes unpressured. */
+  /**
+   * Slower at low health, faster the longer the entity goes unpressured — but only for
+   * entities that do not already regenerate for themselves. Player and Enemy both do;
+   * we detect their drift and stand down rather than fight them.
+   */
   _regenPosture(entity, rec, rdt, now) {
     if (entity.posture == null) return;
+    this._classifyPosture(entity, rec);
+
+    const drift = entity.posture - rec.postureSeen;
+    if (Math.abs(drift) > 1e-4) {
+      // Movement we did not cause. If it is heading away from a break, the entity owns
+      // its own regeneration and we must never write posture on idle frames again.
+      const towardBreak = rec.postureMode < 0 ? drift < 0 : drift > 0;
+      if (!towardBreak) rec.selfRegen = true;
+      rec.postureSeen = entity.posture;
+      if (towardBreak) this._checkBreak(entity, rec, null);
+    }
+    if (rec.selfRegen) return;
     if (now < rec.brokenUntil) return;
-    if (entity.posture <= 0) { entity.posture = 0; return; }
     if (now - rec.lastPressure < TUNING.POSTURE_REGEN_DELAY) return;
+    const pressure = this._pressureOf(entity, rec);
+    if (pressure <= 0) return;
 
     rec.calm = Math.min(TUNING.POSTURE_REGEN_RAMP, rec.calm + rdt);
-    const calmT = rec.calm / TUNING.POSTURE_REGEN_RAMP;
-    const calmMult = 1 + (TUNING.POSTURE_REGEN_CALM_MULT - 1) * calmT;
+    const calmMult = 1 + (TUNING.POSTURE_REGEN_CALM_MULT - 1) *
+      (rec.calm / TUNING.POSTURE_REGEN_RAMP);
 
     const hpFrac = entity.maxHealth ? clamp01((entity.health || 0) / entity.maxHealth) : 1;
     const hpMult = TUNING.POSTURE_REGEN_LOW_HP +
       (1 - TUNING.POSTURE_REGEN_LOW_HP) * (hpFrac * hpFrac);
 
-    entity.posture = Math.max(0, entity.posture - TUNING.POSTURE_REGEN * calmMult * hpMult * rdt);
+    const max = entity.maxPosture || 100;
+    const step = TUNING.POSTURE_REGEN * calmMult * hpMult * rdt * (rec.postureMode < 0 ? 1 : -1);
+    this._safeSet(entity, 'posture', clamp((entity.posture || 0) + step, 0, max));
+    rec.postureSeen = entity.posture;
   }
 
-  _breakPosture(entity, rec, dir) {
+  _breakPosture(entity, rec, dir, alreadyStaged) {
     const now = this.time;
     rec.breaks++;
     rec.brokenUntil = now + TUNING.POSTURE_BREAK_TIME;
@@ -1789,30 +1871,39 @@ export class CombatDirector {
     this.endSwing(entity);
     if (entity.weapon) entity.weapon.active = false;
     this.releaseToken(entity);
-    this._setState(entity, 'stagger');
-    this._playClip(entity, 'posture_break', TUNING.POSTURE_BREAK_TIME);
-    entity.onPostureBreak?.();
+    if (!alreadyStaged) {
+      // Let the entity run its own break if it has one (Enemy sets its FSM, clip and
+      // timers); only pose it ourselves when it has no idea what a break is.
+      let handled = false;
+      try {
+        handled = entity.onPostureBreak?.() !== undefined || entity.breakPosture?.() !== undefined;
+        if (!handled && typeof entity._breakPosture === 'function') { entity._breakPosture(); handled = true; }
+      } catch { handled = false; }
+      if (!handled) {
+        this._setState(entity, 'stagger', TUNING.POSTURE_BREAK_TIME);
+        this._playClip(entity, 'posture_break', TUNING.POSTURE_BREAK_TIME);
+      }
+    }
 
     const bp = this._breakP();
     bp.entity = entity;
     this.ctx?.bus?.emit?.('posture-break', bp);
 
-    this._centerOf(entity, _vD);
-    this.ctx?.fx?.postureBreak?.(_vD, 1);
     this._shake(TUNING.SHAKE_BREAK, TUNING.SHAKE_DURATION * 1.6, dir || _fwdDefault);
     this._slowMo(TUNING.SLOWMO_BREAK, TUNING.SLOWMO_BREAK_TIME);
-    this.ctx?.audio?.cue?.('posture_break');
   }
 
   /* ══════════════════════════════════════════════════════════════════════════
    *  death, stagger, impulses
    * ══════════════════════════════════════════════════════════════════════════ */
 
+  /**
+   * Combat is the only emitter of `death` (EnemyManager explicitly defers to us).
+   * The entity's own death path runs first when it has one — ragdoll, loot, pooling.
+   */
   _kill(entity, attacker, point, dir) {
     if (!entity || entity.isAlive === false) return;
-    entity.health = 0;
-    entity.isAlive = false;
-    this._setState(entity, 'dead');
+    this._safeSet(entity, 'health', 0);
     this.endSwing(entity);
     if (entity.weapon) entity.weapon.active = false;
     this.releaseToken(entity);
@@ -1821,14 +1912,22 @@ export class CombatDirector {
 
     const dp = this._deathP();
     dp.entity = entity; dp.point.copy(point); dp.direction.copy(dir);
-    entity.onDeath?.(dp);
+
+    let handled = false;
+    try {
+      if (typeof entity.die === 'function') { entity.die(dp); handled = true; }
+    } catch { handled = false; }
+    if (!handled) {
+      entity.onDeath?.(dp);
+      // `isAlive` is a getter on some entities — never let that throw.
+      this._safeSet(entity, 'isAlive', false);
+      this._setState(entity, 'dead');
+    }
     attacker?.onKill?.(entity);
     this.ctx?.bus?.emit?.('death', dp);
 
     this._hitStop(TUNING.HITSTOP_HEAVY, TUNING.HITSTOP_SCALE);
     this._shake(TUNING.SHAKE_HEAVY, TUNING.SHAKE_DURATION * 1.4, dir);
-    this.ctx?.fx?.bloodMist?.(point, dir, 1.4);
-    this.ctx?.audio?.cue?.('death');
   }
 
   /** Pick stagger_l / stagger_r / stagger_back from where the blow came from. */
@@ -1847,9 +1946,9 @@ export class CombatDirector {
     this.endSwing(entity);
     if (entity.weapon) entity.weapon.active = false;
     this.releaseToken(entity);
-    this._setState(entity, 'stagger');
+    if (typeof entity.onStagger === 'function') { entity.onStagger(clip, dur); return; }
+    this._setState(entity, 'stagger', dur);
     this._playClip(entity, clip, dur);
-    entity.onStagger?.(clip, dur);
   }
 
   _knockback(entity, dir, speed) {
@@ -2367,8 +2466,33 @@ export class CombatDirector {
     return TUNING.ARCHETYPES[key] || TUNING.ARCHETYPES.default;
   }
 
+  /** The victim's poise *resistance*, in whatever units that entity authored. */
   _poiseOf(e) {
     return e?.poise ?? this._archetype(e).poise ?? 18;
+  }
+
+  /** The attacking move's poise weight (Player: 10–26; enemy moves: their posture value). */
+  _attackPoise(attacker) {
+    const rec = attacker ? this._records.get(attacker) : null;
+    if (rec?.swingPoise != null) return rec.swingPoise;
+    const w = attacker?.weapon;
+    return w?.poise ?? w?.posture ?? TUNING.BASE_DAMAGE;
+  }
+
+  /**
+   * Poise scales differ per author: Player rates its cuts 10–26 and calls anything
+   * over 22 heavy, while enemy archetypes rate their own resistance 0.05–1.0. Report
+   * the blow in the *victim's* units so both read it the way they were designed to.
+   */
+  _poiseFor(target, attackPoise) {
+    const resist = target?.poise;
+    if (resist != null && resist <= 3) return attackPoise / 20;
+    return attackPoise;
+  }
+
+  /** Assign a field that may be a read-only accessor on the entity. */
+  _safeSet(obj, key, value) {
+    try { obj[key] = value; } catch { /* getter-only — the entity owns it */ }
   }
 
   _weaponDamage(e) {
@@ -2414,12 +2538,19 @@ export class CombatDirector {
     e.onFace?.(_vC);
   }
 
-  _setState(e, state) {
-    if (!e) return;
+  /**
+   * Entities that expose `setState` run their own FSM — we ask, we never assign. An
+   * entity with an `onDamage` handler also owns its reactions, so we leave its `state`
+   * alone entirely; only a passive entity gets its field written.
+   */
+  _setState(e, state, duration) {
+    if (!e) return false;
     if (typeof e.setState === 'function') {
-      try { e.setState(state); return; } catch { /* fall back to the field */ }
+      try { e.setState(state, duration || 0); return true; } catch { /* fall through */ }
     }
-    e.state = state;
+    if (typeof e.onDamage === 'function' || typeof e._setState === 'function') return false;
+    this._safeSet(e, 'state', state);
+    return true;
   }
 
   _playClip(e, clip, duration) {

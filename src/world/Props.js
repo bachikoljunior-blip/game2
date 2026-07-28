@@ -33,6 +33,7 @@ import {
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { noise, makeRandom, clamp, lerp, smoothstep, worley2 } from '../core/Noise.js';
+import { WIND_GLSL } from '../fx/Weather.js';
 
 // ---------------------------------------------------------------- scratch
 
@@ -40,29 +41,6 @@ const _v3 = new Vector3();
 
 /** Materials whose geometry carries the wind attribute. Kept in its own bucket. */
 export const CLOTH_MATERIALS = new Set(['clothIndigo', 'clothCrimson', 'paper']);
-
-/**
- * Wind hook. `ctx.weather?.WIND_GLSL` is expected to define
- * `vec3 kagWind(vec3 worldPos, float phase, float stiffness)`. Weather boots after
- * Level, so in practice we use this fallback and drive it from `ctx.wind`, which
- * Weather writes every frame — the gusts still propagate.
- */
-export const FALLBACK_WIND_GLSL = /* glsl */`
-uniform float uWindTime;
-uniform vec4  uWindParams;      // xy = direction, z = strength, w = gust
-vec3 kagWind(vec3 wp, float phase, float stiffness){
-  float t = uWindTime;
-  float amp = (uWindParams.z + uWindParams.w * 1.6) * stiffness;
-  float travel = wp.x * uWindParams.x + wp.z * uWindParams.y;
-  float w1 = sin(t * 2.15 - travel * 0.55 + phase);
-  float w2 = sin(t * 4.30 - travel * 1.30 + phase * 1.73);
-  float w3 = sin(t * 8.10 + phase * 3.11);
-  float f  = w1 * 0.58 + w2 * 0.29 + w3 * 0.13;
-  vec3 d = vec3(uWindParams.x, 0.0, uWindParams.y);
-  vec3 side = vec3(-uWindParams.y, 0.0, uWindParams.x);
-  return d * (amp * (f * 0.55 + 0.45)) + side * (amp * f * 0.42) + vec3(0.0, amp * 0.16 * f, 0.0);
-}
-`;
 
 // ------------------------------------------------------------ geometry utils
 
@@ -203,14 +181,19 @@ export function weatherBand(geo, y0, y1, r, g, b, jitter = 0.35) {
   return geo;
 }
 
-/** Add the wind attribute. `stiffFn` returns 0 at the anchor, ~1 at the free edge. */
-export function bakeFlutter(geo, phase, stiffFn) {
+/**
+ * Add the wind attribute consumed by `kagerouBend` (ARCHITECTURE §10):
+ * `aFlutter = (h01, stiffness)` where h01 is 0 at the anchor and 1 at the free
+ * edge, and stiffness > 1 is rigid (a pole, a rope), < 1 is limp (banner cloth).
+ */
+export function bakeFlutter(geo, stiffness, h01Fn) {
   const pos = geo.getAttribute('position');
   const n = pos.count;
   const arr = new Float32Array(n * 2);
+  const st = Math.max(0.25, stiffness);
   for (let i = 0; i < n; i++) {
-    arr[i * 2] = clamp(stiffFn(pos.getX(i), pos.getY(i), pos.getZ(i)), 0, 4);
-    arr[i * 2 + 1] = phase;
+    arr[i * 2] = clamp(h01Fn(pos.getX(i), pos.getY(i), pos.getZ(i)), 0, 1);
+    arr[i * 2 + 1] = st;
   }
   geo.setAttribute('aFlutter', new BufferAttribute(arr, 2));
   return geo;
@@ -791,17 +774,13 @@ export class PropFactory {
     this.rnd = makeRandom(0x5aac1e);
     this._mats = new Map();
     this._fallbackTex = new Map();
-    this.windUniforms = {
-      uWindTime: { value: 0 },
-      uWindParams: { value: [0.82, 0.57, 0.45, 0] },
-    };
-    this.windGLSL = FALLBACK_WIND_GLSL;
     this.disposables = [];
   }
 
   async init() {
-    const w = this.ctx?.weather?.WIND_GLSL;
-    if (typeof w === 'string' && w.indexOf('kagWind') >= 0) this.windGLSL = w;
+    if (!this.ctx?.weather?.windUniforms) {
+      console.warn('[props] WeatherSystem absent — wind-driven props will stand still');
+    }
     // Touch the common names up front so the first merge does not stall on
     // material cloning halfway through a frame budget.
     for (const n of ['cedar', 'cedarBeam', 'vermilion', 'roofTile', 'stone', 'cobble', 'plaster', 'rope', 'paper']) {
@@ -881,34 +860,45 @@ export class PropFactory {
       transparent: true, opacity: 0.55, vertexColors: true, depthWrite: false,
     });
     m.name = 'prop:water';
-    const u = this.windUniforms;
+    // Time comes from the wind field's `uWind.w` so nothing in the level runs on
+    // a private clock (ARCHITECTURE §10).
+    const wu = () => this.ctx?.weather?.windUniforms;
     m.onBeforeCompile = (shader) => {
-      shader.uniforms.uWindTime = u.uWindTime;
+      const u = wu();
+      if (!u) return;
+      shader.uniforms.uWind = u.uWind;
+      shader.uniforms.uGust = u.uGust;
       shader.vertexShader = shader.vertexShader
-        .replace('#include <common>', '#include <common>\nuniform float uWindTime;')
+        .replace('#include <common>', '#include <common>\nuniform vec4 uWind;\nuniform vec4 uGust;')
         .replace('#include <begin_vertex>', /* glsl */`
           #include <begin_vertex>
-          transformed.x += sin(uWindTime * 9.0 + transformed.y * 22.0) * 0.012;
-          transformed.z += cos(uWindTime * 11.0 + transformed.y * 19.0) * 0.012;
+          transformed.x += sin(uWind.w * 9.0 + transformed.y * 22.0) * 0.012;
+          transformed.z += cos(uWind.w * 11.0 + transformed.y * 19.0) * 0.012;
         `);
     };
-    m.customProgramCacheKey = () => 'kagWater1';
+    m.customProgramCacheKey = () => 'kagWater2';
     this.ctx?.sky?.applyFog?.(m);
     this._water = m;
     this.disposables.push(m);
     return m;
   }
 
+  /**
+   * Bend a cloth/paper material with the shared wind field. The uniform objects
+   * are spliced in **by identity** so a gust crossing the bamboo is the same gust
+   * that snaps the nobori beside it (ARCHITECTURE §5.5, §10).
+   */
   _installWind(mat) {
-    const u = this.windUniforms;
-    const glsl = this.windGLSL;
+    const ctx = this.ctx;
     const prev = Object.prototype.hasOwnProperty.call(mat, 'onBeforeCompile') ? mat.onBeforeCompile : null;
     mat.onBeforeCompile = (shader, renderer) => {
       if (prev) prev.call(mat, shader, renderer);
-      shader.uniforms.uWindTime = u.uWindTime;
-      shader.uniforms.uWindParams = u.uWindParams;
+      const u = ctx?.weather?.windUniforms;
+      if (!u) return;                     // no Weather: props stand still, deliberately
+      shader.uniforms.uWind = u.uWind;
+      shader.uniforms.uGust = u.uGust;
       shader.vertexShader = shader.vertexShader
-        .replace('#include <common>', '#include <common>\nattribute vec2 aFlutter;\n' + glsl)
+        .replace('#include <common>', '#include <common>\nattribute vec2 aFlutter;\n' + WIND_GLSL)
         .replace('#include <begin_vertex>', /* glsl */`
           #include <begin_vertex>
           {
@@ -917,23 +907,11 @@ export class PropFactory {
             #else
               vec3 kagWp = (modelMatrix * vec4(transformed, 1.0)).xyz;
             #endif
-            transformed += kagWind(kagWp, aFlutter.y, aFlutter.x);
+            transformed += kagerouBend(kagWp, aFlutter.x, aFlutter.y);
           }
         `);
     };
-    mat.customProgramCacheKey = () => 'kagWind1';
-  }
-
-  /** Feed `ctx.wind` into the cloth shaders. Called once per frame by Level. */
-  updateWind(elapsed, wind) {
-    this.windUniforms.uWindTime.value = elapsed;
-    const p = this.windUniforms.uWindParams.value;
-    if (wind) {
-      p[0] = wind.direction?.x ?? 0.82;
-      p[1] = wind.direction?.z ?? 0.57;
-      p[2] = wind.strength ?? 0.45;
-      p[3] = wind.gust ?? 0;
-    }
+    mat.customProgramCacheKey = () => 'kagWindShared1';
   }
 
   // ------------------------------------------------------------- build util
@@ -1201,7 +1179,8 @@ export class PropFactory {
       const y = -sag * (1 - u * u) * (1 - 0.22 * u * u) - rMid * 0.8;
       const g = this._shide(0.13 + rnd() * 0.03, 0.40 + rnd() * 0.14, rnd);
       g.translate(x, y, 0.02);
-      bakeFlutter(g, i * 2.13 + rnd() * 3, (px, py) => clamp((y - py) / 0.45, 0, 1) * 0.55);
+      // Paper shide: limp, hanging free below the rope.
+      bakeFlutter(g, 0.55, (px, py) => clamp((y - py) / 0.45, 0, 1));
       PropFactory.add(b, g, 'paper');
 
       if (i < shideCount - 1) {
@@ -1776,7 +1755,7 @@ export class PropFactory {
       if (shoji.length) {
         const paper = mergeGeometries(shoji, false);
         normalizeGeo(paper, true);
-        bakeFlutter(paper, 0, () => 0);
+        bakeFlutter(paper, 4, () => 0);        // glazed into a frame: does not move
         PropFactory.add(b, paper, 'paper');
       }
       PropFactory.addCollider(b, PropFactory.boxCollider(w, wallH, 0.4, 0, floorY, -hd), 'wood');
@@ -1938,6 +1917,635 @@ export class PropFactory {
     normalizeGeo(paper);
     shadeGeo(paper, () => 1.05);
     return paper;
+  }
+
+  // =====================================================================
+  //  STONE STEPS
+  // =====================================================================
+
+  /**
+   * A flight whose top edge sits at z = 0, y = steps·rise, descending toward +Z.
+   * Treads are dished in the middle where three centuries of feet have worn them,
+   * and each block is nudged and rolled a little so the nosings are never a line.
+   */
+  stairs(opts = {}) {
+    const width = opts.width ?? 3.2;
+    const steps = Math.max(1, Math.round(opts.steps ?? 8));
+    const rise = opts.rise ?? 0.19;
+    const run = opts.run ?? 0.36;
+    const wear = opts.wear ?? 1;
+    const mat = opts.material ?? 'stone';
+    const rnd = makeRandom(opts.seed ?? 17);
+    const b = PropFactory.build();
+
+    const blocks = [];
+    for (let k = 1; k <= steps; k++) {
+      const yTop = k * rise;
+      const z0 = (steps - k) * run;
+      const h = rise + 0.10;
+      const g = new BoxGeometry(width + (rnd() - 0.5) * 0.05, h, run + 0.02, 6, 1, 2);
+      const cz = z0 + run * 0.5;
+      const cy = yTop - h * 0.5;
+      // Dish the tread and knock the nosing about.
+      const pos = g.getAttribute('position');
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+        if (y > h * 0.4) {
+          const u = clamp((x / (width * 0.5)) ** 2, 0, 1);
+          const n = noise.fbm2(x * 1.3 + k * 3.1, z * 2.6, 3);
+          pos.setY(i, y - wear * (0.020 * (1 - u) + 0.012 * n) - 0.004);
+        }
+        if (z > run * 0.35) {
+          const n = noise.fbm2(x * 2.1 - k * 1.7, y * 3.0, 2);
+          pos.setZ(i, z + n * 0.012 * wear);
+        }
+      }
+      pos.needsUpdate = true;
+      g.computeVertexNormals();
+      const m = new Matrix4().makeRotationY((rnd() - 0.5) * 0.018);
+      m.setPosition((rnd() - 0.5) * 0.02, cy, cz);
+      g.applyMatrix4(m);
+      normalizeGeo(g);
+      const t = 0.9 + rnd() * 0.2;
+      tintGeo(g, t, t * (0.98 + rnd() * 0.05), t * (0.95 + rnd() * 0.06));
+      shadeGeo(g, (x, y) => (y < cy - h * 0.2 ? 0.62 : 1));
+      blocks.push(g);
+      PropFactory.addCollider(b, PropFactory.boxCollider(width, yTop, run + 0.02, 0, 0, cz), mat === 'stone' ? 'stone' : 'wood', true, true);
+    }
+
+    if (opts.cheeks) {
+      for (let side = 0; side < 2; side++) {
+        const sx = side === 0 ? -1 : 1;
+        const samples = [];
+        for (let k = 0; k <= steps; k++) {
+          samples.push({
+            x: sx * (width * 0.5 + 0.22), y: k * rise + 0.16, z: (steps - k) * run,
+            sx: 0.44, sy: 0.5 + k * rise * 0.1, ao: 0.85,
+          });
+        }
+        const cheek = sweepProfile(samples, rectProfile(0.12), { ref: [1, 0, 0], uvScale: 0.9 });
+        roughen(cheek, 0.016, 3.4);
+        blocks.push(cheek);
+        PropFactory.addCollider(b, PropFactory.boxCollider(0.5, steps * rise + 0.6, steps * run, sx * (width * 0.5 + 0.22), 0, steps * run * 0.5), 'stone');
+      }
+    }
+
+    const merged = mergeGeometries(blocks.map((g) => normalizeGeo(g)), false);
+    bakeAO(merged, { ground: 0, cavity: 0.28, down: 0.3, floor: 0.34 });
+    weatherBand(merged, 0, 0.25, 0.74, 0.84, 0.68, 0.4);
+    PropFactory.add(b, merged, mat);
+
+    b.anchors.top = [0, steps * rise, 0];
+    b.anchors.bottom = [0, 0, steps * run];
+    b.bounds = { r: Math.max(width, steps * run) * 0.6, h: steps * rise };
+    return b;
+  }
+
+  // =====================================================================
+  //  手水舎  CHŌZUYA
+  // =====================================================================
+
+  /** Water pavilion: four battered posts, a small roof, a basin, ladles, a spout. */
+  chozuya(opts = {}) {
+    const w = opts.width ?? 3.4;
+    const d = opts.depth ?? 2.8;
+    const postH = opts.postH ?? 2.35;
+    const rnd = makeRandom(opts.seed ?? 55);
+    const b = PropFactory.build();
+    const hw = w * 0.5, hd = d * 0.5;
+
+    // posts on stone pads
+    const posts = [];
+    const pads = [];
+    for (const sx of [-1, 1]) {
+      for (const sz of [-1, 1]) {
+        const x = sx * hw, z = sz * hd;
+        posts.push(sweepProfile([
+          { x, y: 0.16, z, sx: 0.28, sy: 0.28, ao: 0.5 },
+          { x: x - sx * 0.05, y: postH, z: z - sz * 0.05, sx: 0.24, sy: 0.24, ao: 1.0 },
+        ], rectProfile(0.16), { uvScale: 1.0, capStart: false }));
+        pads.push(sweepProfile([
+          { x, y: -0.06, z, sx: 0.56, sy: 0.56, ao: 0.42 },
+          { x, y: 0.18, z, sx: 0.46, sy: 0.46, ao: 0.75 },
+        ], circleProfile(7), { smooth: true, capStart: false, uvScale: 1.5 }));
+        PropFactory.addCollider(b, PropFactory.boxCollider(0.36, postH, 0.36, x, 0, z), 'wood');
+      }
+    }
+    // tie beams
+    for (const sz of [-1, 1]) {
+      const g = new BoxGeometry(w + 0.5, 0.22, 0.18);
+      g.translate(0, postH - 0.06, sz * (hd - 0.05));
+      normalizeGeo(g);
+      posts.push(g);
+    }
+    for (const sx of [-1, 1]) {
+      const g = new BoxGeometry(0.18, 0.22, d + 0.5);
+      g.translate(sx * (hw - 0.05), postH - 0.06, 0);
+      normalizeGeo(g);
+      posts.push(g);
+    }
+    {
+      const merged = mergeGeometries(posts, false);
+      bakeAO(merged, { ground: 0.4, groundH: 0.5, cavity: 0.24, down: 0.34, floor: 0.32 });
+      weatherBand(merged, 0, 0.9, 0.7, 0.74, 0.62, 0.3);
+      PropFactory.add(b, merged, 'cedar');
+      const pm = mergeGeometries(pads, false);
+      roughen(pm, 0.012, 5);
+      bakeAO(pm, { ground: 0.5, groundH: 0.3, floor: 0.34 });
+      PropFactory.add(b, pm, 'stone');
+    }
+
+    const roof = this.roofIrimoya({
+      halfX: hw + 0.85, halfZ: hd + 0.85, rise: 1.25, baseY: postH + 0.16,
+      material: opts.roofMaterial ?? 'cedar', soffitMaterial: 'cedar',
+      hip: 0.75, segX: 5, segZ: 4, thickness: 0.16, lift: 0.24,
+      gableMaterial: 'cedar',
+    });
+    for (const p of roof.parts) PropFactory.add(b, p.geometry, p.material);
+
+    // 水盤 basin — a hollowed hexagonal block on a plinth.
+    const basinY = 0.62;
+    const basin = [];
+    basin.push(sweepProfile([
+      { x: 0, y: -0.05, z: 0, sx: 1.05, sy: 0.95, ao: 0.4 },
+      { x: 0, y: 0.22, z: 0, sx: 0.98, sy: 0.88, ao: 0.62 },
+    ], hexProfile(), { uvScale: 1.1, capStart: false, capEnd: false }));
+    basin.push(sweepProfile([
+      { x: 0, y: 0.20, z: 0, sx: 1.26, sy: 1.05, ao: 0.7 },
+      { x: 0, y: basinY, z: 0, sx: 1.30, sy: 1.08, ao: 0.98 },
+    ], hexProfile(), { uvScale: 1.0, capStart: false, capEnd: false }));
+    // rim + inner well
+    const rim = [];
+    const RN = 6;
+    for (let i = 0; i < RN; i++) {
+      const a0 = (i / RN) * Math.PI * 2 + Math.PI / 6;
+      const a1 = ((i + 1) / RN) * Math.PI * 2 + Math.PI / 6;
+      const outer = 0.65, inner = 0.46;
+      const verts = [];
+      const push = (r, y) => { verts.push([Math.cos(a0) * r, y, Math.sin(a0) * r * 0.84], [Math.cos(a1) * r, y, Math.sin(a1) * r * 0.84]); };
+      push(outer, basinY); push(inner, basinY);
+      const g = new BufferGeometry();
+      const arr = new Float32Array(verts.length * 3);
+      for (let k = 0; k < verts.length; k++) { arr[k * 3] = verts[k][0]; arr[k * 3 + 1] = verts[k][1]; arr[k * 3 + 2] = verts[k][2]; }
+      g.setAttribute('position', new BufferAttribute(arr, 3));
+      g.setIndex([0, 2, 3, 0, 3, 1]);
+      g.computeVertexNormals();
+      normalizeGeo(g);
+      rim.push(g);
+      // inner wall dropping to the water
+      const wall = sweepProfile([
+        { x: 0, y: basinY, z: 0, sx: 0.92, sy: 0.77, ao: 0.55 },
+        { x: 0, y: basinY - 0.26, z: 0, sx: 0.88, sy: 0.74, ao: 0.24 },
+      ], hexProfile(), { uvScale: 1.4, capStart: false });
+      rim.push(wall);
+    }
+    const basinGeo = mergeGeometries(basin.concat(rim).map((g) => normalizeGeo(g)), false);
+    roughen(basinGeo, 0.009, 5.5);
+    bakeAO(basinGeo, { ground: 0.45, groundH: 0.4, cavity: 0.34, down: 0.3, floor: 0.28 });
+    weatherBand(basinGeo, 0, 0.45, 0.66, 0.80, 0.62, 0.35);
+    PropFactory.add(b, basinGeo, 'stone');
+    PropFactory.addCollider(b, PropFactory.boxCollider(1.5, basinY, 1.25, 0, 0), 'stone', true, false);
+
+    // still water surface
+    {
+      const g = new BoxGeometry(0.86, 0.02, 0.72);
+      g.translate(0, basinY - 0.10, 0);
+      normalizeGeo(g);
+      PropFactory.add(b, g, '__water');
+    }
+
+    // 竹 bamboo spout and the falling thread of water
+    {
+      const spout = sweepProfile([
+        { x: -0.95, y: 0.10, z: -0.28, sx: 0.10, sy: 0.10, ao: 0.5 },
+        { x: -0.95, y: 1.02, z: -0.28, sx: 0.09, sy: 0.09, ao: 0.9 },
+        { x: -0.62, y: 1.06, z: -0.16, sx: 0.085, sy: 0.085, ao: 1.0 },
+        { x: -0.24, y: 0.98, z: -0.05, sx: 0.075, sy: 0.075, ao: 1.0 },
+      ], circleProfile(8), { smooth: true, uvScale: 1.6 });
+      bakeAO(spout, { ground: 0.4, groundH: 0.4, cavity: 0.14, down: 0.3, floor: 0.4 });
+      PropFactory.add(b, spout, 'bambooCulm');
+      const stream = sweepProfile([
+        { x: -0.22, y: 0.95, z: -0.04, sx: 0.035, sy: 0.035, ao: 1 },
+        { x: -0.19, y: basinY - 0.10, z: -0.02, sx: 0.022, sy: 0.022, ao: 1 },
+      ], circleProfile(6), { smooth: true, uvScale: 2 });
+      PropFactory.add(b, stream, '__water');
+    }
+
+    // 柄杓 ladles resting on a bamboo rack across the basin
+    {
+      const rack = [];
+      for (const sz of [-0.22, 0.22]) {
+        rack.push(sweepProfile([
+          { x: -0.72, y: basinY + 0.05, z: sz, sx: 0.05, sy: 0.05, ao: 0.8 },
+          { x: 0.72, y: basinY + 0.05, z: sz, sx: 0.05, sy: 0.05, ao: 0.9 },
+        ], circleProfile(6), { smooth: true, ref: [0, 0, -1], uvScale: 2 }));
+      }
+      for (let i = 0; i < 3; i++) {
+        const x = lerp(-0.44, 0.44, i / 2);
+        rack.push(sweepProfile([
+          { x, y: basinY + 0.09, z: 0.05, sx: 0.035, sy: 0.035, ao: 0.9 },
+          { x: x + 0.05, y: basinY + 0.11, z: 0.62, sx: 0.032, sy: 0.032, ao: 1.0 },
+        ], circleProfile(5), { smooth: true, uvScale: 2 }));
+        const cup = sweepProfile([
+          { x, y: basinY + 0.08, z: -0.02, sx: 0.16, sy: 0.16, ao: 0.6 },
+          { x, y: basinY + 0.17, z: -0.02, sx: 0.17, sy: 0.17, ao: 0.95 },
+        ], circleProfile(8), { smooth: true, uvScale: 2, capEnd: false });
+        rack.push(cup);
+      }
+      const merged = mergeGeometries(rack.map((g) => normalizeGeo(g)), false);
+      bakeAO(merged, { ground: 0, cavity: 0.24, down: 0.3, floor: 0.4 });
+      PropFactory.add(b, merged, 'bambooCulm');
+    }
+
+    b.anchors.basin = [0, basinY, 0];
+    b.bounds = { r: Math.hypot(hw + 0.85, hd + 0.85), h: roof.ridgeY + 0.4 };
+    return b;
+  }
+
+  // =====================================================================
+  //  鐘楼  BELL TOWER
+  // =====================================================================
+
+  /** Shōrō: a raised platform on four battered posts carrying a bronze bell. */
+  bellTower(opts = {}) {
+    const s = opts.size ?? 4.4;
+    const floorY = opts.floorY ?? 1.55;
+    const postH = opts.postH ?? 3.5;
+    const b = PropFactory.build();
+    const h = s * 0.5;
+    const rnd = makeRandom(opts.seed ?? 77);
+
+    const timber = [];
+    for (const sx of [-1, 1]) {
+      for (const sz of [-1, 1]) {
+        const x = sx * h, z = sz * h;
+        timber.push(sweepProfile([
+          { x: x * 1.10, y: 0.18, z: z * 1.10, sx: 0.42, sy: 0.42, ao: 0.45 },
+          { x, y: floorY, z, sx: 0.38, sy: 0.38, ao: 0.78 },
+          { x: x * 0.90, y: floorY + postH, z: z * 0.90, sx: 0.32, sy: 0.32, ao: 1.0 },
+        ], rectProfile(0.14), { uvScale: 0.9, capStart: false }));
+        PropFactory.addCollider(b, PropFactory.boxCollider(0.5, floorY + postH, 0.5, x, 0, z), 'wood');
+        // diagonal braces under the platform
+        const g = new BoxGeometry(0.16, 0.16, h * 1.3);
+        const m = new Matrix4().makeRotationY(sx * sz > 0 ? Math.PI / 4 : -Math.PI / 4);
+        m.setPosition(x * 0.55, floorY - 0.5, z * 0.55);
+        g.applyMatrix4(m);
+        normalizeGeo(g);
+        timber.push(g);
+      }
+    }
+    // platform beams + deck
+    for (const sz of [-1, 1]) {
+      const g = new BoxGeometry(s + 0.9, 0.30, 0.26);
+      g.translate(0, floorY - 0.16, sz * h);
+      normalizeGeo(g); timber.push(g);
+      const t = new BoxGeometry(s + 0.9, 0.24, 0.22);
+      t.translate(0, floorY + postH - 0.14, sz * h * 0.9);
+      normalizeGeo(t); timber.push(t);
+    }
+    for (const sx of [-1, 1]) {
+      const g = new BoxGeometry(0.26, 0.30, s + 0.9);
+      g.translate(sx * h, floorY - 0.16, 0);
+      normalizeGeo(g); timber.push(g);
+      const t = new BoxGeometry(0.22, 0.24, s + 0.9);
+      t.translate(sx * h * 0.9, floorY + postH - 0.14, 0);
+      normalizeGeo(t); timber.push(t);
+    }
+    {
+      const deck = new BoxGeometry(s + 0.7, 0.16, s + 0.7);
+      deck.translate(0, floorY + 0.08, 0);
+      normalizeGeo(deck); timber.push(deck);
+      PropFactory.addCollider(b, PropFactory.boxCollider(s + 0.7, floorY + 0.16, s + 0.7, 0, 0), 'wood', true, true);
+    }
+    // railing
+    for (const sz of [-1, 1]) {
+      const g = new BoxGeometry(s + 0.7, 0.10, 0.14);
+      g.translate(0, floorY + 0.72, sz * (h + 0.3));
+      normalizeGeo(g); timber.push(g);
+    }
+    for (const sx of [-1, 1]) {
+      const g = new BoxGeometry(0.14, 0.10, s + 0.7);
+      g.translate(sx * (h + 0.3), floorY + 0.72, 0);
+      normalizeGeo(g); timber.push(g);
+    }
+    {
+      const merged = mergeGeometries(timber, false);
+      bakeAO(merged, { ground: 0.42, groundH: 0.6, cavity: 0.26, down: 0.36, floor: 0.3 });
+      weatherBand(merged, 0, 1.1, 0.74, 0.76, 0.68, 0.3);
+      PropFactory.add(b, merged, 'cedar');
+    }
+
+    const roof = this.roofIrimoya({
+      halfX: h + 1.5, halfZ: h + 1.5, rise: 2.0, baseY: floorY + postH + 0.18,
+      material: opts.roofMaterial ?? 'roofTile', hip: 0.62, segX: 6, segZ: 6,
+      thickness: 0.2, lift: 0.42, gableMaterial: 'cedar',
+    });
+    for (const p of roof.parts) PropFactory.add(b, p.geometry, p.material);
+
+    // 梵鐘 the bell — a bronze bell with a ribbed crown and lotus bosses.
+    const bellTop = floorY + postH - 0.32;
+    const bellH = 1.85;
+    const bell = sweepProfile([
+      { x: 0, y: bellTop, z: 0, sx: 0.30, sy: 0.30, ao: 0.5 },
+      { x: 0, y: bellTop - 0.16, z: 0, sx: 0.62, sy: 0.62, ao: 0.7 },
+      { x: 0, y: bellTop - 0.55, z: 0, sx: 0.86, sy: 0.86, ao: 0.86 },
+      { x: 0, y: bellTop - 1.30, z: 0, sx: 1.02, sy: 1.02, ao: 0.95 },
+      { x: 0, y: bellTop - bellH + 0.10, z: 0, sx: 1.14, sy: 1.14, ao: 1.0 },
+      { x: 0, y: bellTop - bellH, z: 0, sx: 1.16, sy: 1.16, ao: 0.7 },
+    ], circleProfile(16), { smooth: true, uvScale: 1.0, capStart: false });
+    bakeAO(bell, { ground: 0, cavity: 0.2, down: 0.4, floor: 0.34 });
+    tintGeo(bell, 0.72, 0.78, 0.72);
+    PropFactory.add(b, bell, 'steelDark');
+    PropFactory.addCollider(b, PropFactory.boxCollider(1.2, bellH, 1.2, 0, bellTop - bellH, 0), 'stone');
+
+    // 撞木 shumoku — the swinging striker on two ropes.
+    {
+      const beam = sweepProfile([
+        { x: 0, y: bellTop - 0.95, z: h + 1.05, sx: 0.17, sy: 0.17, ao: 0.8 },
+        { x: 0, y: bellTop - 0.95, z: 1.05, sx: 0.21, sy: 0.21, ao: 1.0 },
+      ], circleProfile(8), { smooth: true, ref: [1, 0, 0], uvScale: 1.5 });
+      bakeAO(beam, { ground: 0, cavity: 0.2, down: 0.34, floor: 0.42 });
+      PropFactory.add(b, beam, 'cedarBeam');
+      const ropes = [];
+      for (const rz of [1.35, h + 0.85]) {
+        ropes.push(sweepProfile([
+          { x: 0, y: floorY + postH - 0.22, z: rz * 0.86, sx: 0.05, sy: 0.05, ao: 0.7 },
+          { x: 0, y: bellTop - 0.92, z: rz, sx: 0.045, sy: 0.045, ao: 1.0 },
+        ], circleProfile(5), { smooth: true, uvScale: 3 }));
+      }
+      PropFactory.add(b, mergeGeometries(ropes, false), 'rope');
+    }
+
+    b.anchors.bell = [0, bellTop - bellH * 0.5, 0];
+    b.anchors.striker = [0, bellTop - 0.95, h + 1.4];
+    b.bounds = { r: h + 1.7, h: roof.ridgeY + 0.6 };
+    return b;
+  }
+
+  // =====================================================================
+  //  BRIDGE
+  // =====================================================================
+
+  /**
+   * 太鼓橋 drum bridge: a curved deck of individual planks, curved handrails on
+   * turned posts, and a mossy underside. `dropL`/`dropR` extend the abutments
+   * down to whatever the terrain is doing at each bank, so it can never float.
+   */
+  bridge(opts = {}) {
+    const span = opts.span ?? 7.0;
+    const width = opts.width ?? 2.2;
+    const camber = opts.camber ?? 0.85;
+    const dropL = opts.dropL ?? 1.2;
+    const dropR = opts.dropR ?? 1.2;
+    const rnd = makeRandom(opts.seed ?? 23);
+    const b = PropFactory.build();
+
+    const yAt = (t) => Math.sin(t * Math.PI) * camber;
+    const N = 16;
+
+    // stringers
+    const stringers = [];
+    for (const sx of [-1, 1]) {
+      const samples = [];
+      for (let i = 0; i <= N; i++) {
+        const t = i / N;
+        samples.push({ x: sx * (width * 0.5 - 0.14), y: yAt(t) - 0.16, z: lerp(-span * 0.5, span * 0.5, t), sx: 0.20, sy: 0.30, ao: 0.55 });
+      }
+      stringers.push(sweepProfile(samples, rectProfile(0.12), { ref: [1, 0, 0], uvScale: 0.9 }));
+    }
+    {
+      const merged = mergeGeometries(stringers, false);
+      bakeAO(merged, { ground: 0, cavity: 0.3, down: 0.5, floor: 0.24 });
+      weatherBand(merged, -0.4, 0.35, 0.62, 0.86, 0.58, 0.5);   // moss on the underside
+      PropFactory.add(b, merged, 'cedarBeam');
+    }
+
+    // deck planks laid across, each rolled a hair
+    {
+      const planks = [];
+      const n = Math.max(10, Math.round(span / 0.24));
+      for (let i = 0; i < n; i++) {
+        const t = (i + 0.5) / n;
+        const z = lerp(-span * 0.5, span * 0.5, t);
+        const y = yAt(t);
+        const slope = (yAt(t + 0.5 / n) - yAt(t - 0.5 / n)) * n;
+        const g = new BoxGeometry(width, 0.075, span / n - 0.012);
+        const m = new Matrix4().makeRotationX(-Math.atan(slope));
+        m.setPosition((rnd() - 0.5) * 0.012, y + (rnd() - 0.5) * 0.006, z);
+        g.applyMatrix4(m);
+        normalizeGeo(g);
+        const k = 0.88 + rnd() * 0.22;
+        tintGeo(g, k, k * 0.98, k * 0.94);
+        planks.push(g);
+      }
+      const deck = mergeGeometries(planks, false);
+      bakeAO(deck, { ground: 0, cavity: 0.14, down: 0.45, floor: 0.4 });
+      PropFactory.add(b, deck, 'cedar');
+      for (let i = 0; i < 6; i++) {
+        const t = (i + 0.5) / 6;
+        PropFactory.addCollider(b, PropFactory.boxCollider(width, 0.3, span / 6, 0, yAt(t) - 0.2, lerp(-span * 0.5, span * 0.5, t)), 'wood', true, true);
+      }
+    }
+
+    // handrails
+    {
+      const rails = [];
+      for (const sx of [-1, 1]) {
+        const samples = [];
+        for (let i = 0; i <= N; i++) {
+          const t = i / N;
+          samples.push({ x: sx * (width * 0.5 + 0.02), y: yAt(t) + 0.94, z: lerp(-span * 0.5, span * 0.5, t), sx: 0.13, sy: 0.11, ao: 1.0 });
+        }
+        rails.push(sweepProfile(samples, rectProfile(0.25), { ref: [1, 0, 0], uvScale: 1.1 }));
+        const np = 7;
+        for (let i = 0; i <= np; i++) {
+          const t = i / np;
+          const z = lerp(-span * 0.5, span * 0.5, t);
+          const g = sweepProfile([
+            { x: sx * (width * 0.5 + 0.02), y: yAt(t) - 0.05, z, sx: 0.13, sy: 0.13, ao: 0.6 },
+            { x: sx * (width * 0.5 + 0.02), y: yAt(t) + 0.96, z, sx: 0.11, sy: 0.11, ao: 1.0 },
+          ], rectProfile(0.2), { uvScale: 1.2 });
+          rails.push(g);
+          if (i === 0 || i === np) {
+            const knob = sweepProfile([
+              { x: sx * (width * 0.5 + 0.02), y: yAt(t) + 0.96, z, sx: 0.19, sy: 0.19, ao: 0.85 },
+              { x: sx * (width * 0.5 + 0.02), y: yAt(t) + 1.12, z, sx: 0.22, sy: 0.22, ao: 1.0 },
+              { x: sx * (width * 0.5 + 0.02), y: yAt(t) + 1.24, z, sx: 0.08, sy: 0.08, ao: 1.0 },
+            ], circleProfile(8), { smooth: true, uvScale: 1.6 });
+            rails.push(knob);
+          }
+        }
+      }
+      const merged = mergeGeometries(rails.map((g) => normalizeGeo(g)), false);
+      bakeAO(merged, { ground: 0, cavity: 0.26, down: 0.34, floor: 0.36 });
+      PropFactory.add(b, merged, 'vermilion');
+    }
+
+    // stone abutments driven down into the bank
+    for (const [sz, drop] of [[-1, dropL], [1, dropR]]) {
+      const g = new BoxGeometry(width + 0.9, drop + 0.7, 1.5);
+      g.translate(0, -drop * 0.5 - 0.05, sz * (span * 0.5 + 0.55));
+      normalizeGeo(g);
+      roughen(g, 0.03, 2.2, [1, 0, 1]);
+      bakeAO(g, { ground: 0, cavity: 0.2, down: 0.3, floor: 0.3 });
+      weatherBand(g, -drop, -drop * 0.2, 0.6, 0.78, 0.56, 0.6);
+      PropFactory.add(b, g, 'stone');
+      PropFactory.addCollider(b, PropFactory.boxCollider(width + 0.9, drop + 0.7, 1.5, 0, -drop - 0.05, sz * (span * 0.5 + 0.55)), 'stone', true, true);
+    }
+
+    b.anchors.north = [0, 0, -span * 0.5];
+    b.anchors.south = [0, 0, span * 0.5];
+    b.bounds = { r: span * 0.6 + 1, h: camber + 1.4 };
+    return b;
+  }
+
+  // =====================================================================
+  //  FENCES
+  // =====================================================================
+
+  /**
+   * 玉垣 tamagaki — the vertical-slat shrine fence. `pts` is a polyline in the
+   * local XZ frame; `gaps` are [t0,t1] parameter ranges left open for gateways.
+   */
+  tamagaki(opts = {}) {
+    const pts = opts.points ?? [[-4, 0], [4, 0]];
+    const h = opts.height ?? 1.35;
+    const slat = opts.slatSpacing ?? 0.20;
+    const mat = opts.material ?? 'cedar';
+    const rnd = makeRandom(opts.seed ?? 41);
+    const b = PropFactory.build();
+    const geos = [];
+
+    for (let i = 0; i < pts.length - 1; i++) {
+      const [x0, z0] = pts[i];
+      const [x1, z1] = pts[i + 1];
+      const len = Math.hypot(x1 - x0, z1 - z0);
+      if (len < 0.1) continue;
+      const ang = Math.atan2(x1 - x0, z1 - z0);
+      const n = Math.max(1, Math.round(len / slat));
+      for (let k = 0; k <= n; k++) {
+        const t = k / n;
+        const x = lerp(x0, x1, t), z = lerp(z0, z1, t);
+        const hh = h * (0.97 + rnd() * 0.06);
+        const g = sweepProfile([
+          { x, y: 0, z, sx: 0.085, sy: 0.055, ao: 0.42 },
+          { x, y: hh - 0.06, z, sx: 0.082, sy: 0.052, ao: 0.95 },
+          { x, y: hh, z, sx: 0.055, sy: 0.036, ao: 1.0 },
+        ], rectProfile(0.18), { uvScale: 1.4, ref: [Math.cos(ang), 0, -Math.sin(ang)] });
+        geos.push(g);
+      }
+      // posts, top rail and bottom rail
+      const rail = (y, w, d) => {
+        const g = new BoxGeometry(w, 0.10, len);
+        const m = new Matrix4().makeRotationY(ang);
+        m.setPosition((x0 + x1) * 0.5, y, (z0 + z1) * 0.5);
+        g.applyMatrix4(m);
+        normalizeGeo(g);
+        geos.push(g);
+      };
+      rail(h * 0.92, 0.14);
+      rail(0.16, 0.13);
+      const np = Math.max(1, Math.round(len / 2.1));
+      for (let k = 0; k <= np; k++) {
+        const t = k / np;
+        const x = lerp(x0, x1, t), z = lerp(z0, z1, t);
+        const g = sweepProfile([
+          { x, y: -0.05, z, sx: 0.20, sy: 0.20, ao: 0.4 },
+          { x, y: h + 0.14, z, sx: 0.17, sy: 0.17, ao: 0.95 },
+          { x, y: h + 0.24, z, sx: 0.10, sy: 0.10, ao: 1.0 },
+        ], rectProfile(0.16), { uvScale: 1.1 });
+        geos.push(g);
+      }
+      PropFactory.addCollider(b, (() => {
+        const g = new BoxGeometry(0.3, h, len);
+        const m = new Matrix4().makeRotationY(ang);
+        m.setPosition((x0 + x1) * 0.5, h * 0.5, (z0 + z1) * 0.5);
+        g.applyMatrix4(m);
+        g.deleteAttribute('uv'); g.deleteAttribute('normal');
+        return g;
+      })(), 'wood', true, false);
+    }
+
+    if (!geos.length) return b;
+    const merged = mergeGeometries(geos.map((g) => normalizeGeo(g)), false);
+    bakeAO(merged, { ground: 0.5, groundH: 0.45, cavity: 0.24, down: 0.28, floor: 0.3 });
+    weatherBand(merged, 0, 0.55, 0.7, 0.76, 0.64, 0.35);
+    PropFactory.add(b, merged, mat);
+    b.bounds = { r: 1, h: h + 0.3 };
+    return b;
+  }
+
+  /** 竹垣 a rustic bamboo fence — uneven culms lashed to two horizontal rails. */
+  bambooFence(opts = {}) {
+    const pts = opts.points ?? [[-4, 0], [4, 0]];
+    const h = opts.height ?? 1.5;
+    const rnd = makeRandom(opts.seed ?? 63);
+    const b = PropFactory.build();
+    const culms = [];
+    const ropes = [];
+
+    for (let i = 0; i < pts.length - 1; i++) {
+      const [x0, z0] = pts[i];
+      const [x1, z1] = pts[i + 1];
+      const len = Math.hypot(x1 - x0, z1 - z0);
+      if (len < 0.1) continue;
+      const ang = Math.atan2(x1 - x0, z1 - z0);
+      const n = Math.max(2, Math.round(len / 0.13));
+      for (let k = 0; k <= n; k++) {
+        const t = k / n;
+        const x = lerp(x0, x1, t) + (rnd() - 0.5) * 0.02;
+        const z = lerp(z0, z1, t) + (rnd() - 0.5) * 0.02;
+        const hh = h * (0.86 + rnd() * 0.28);
+        const r = 0.032 + rnd() * 0.014;
+        const lean = (rnd() - 0.5) * 0.06;
+        const g = sweepProfile([
+          { x, y: 0, z, sx: r * 2.1, sy: r * 2.1, ao: 0.4 },
+          { x: x + lean * 0.4, y: hh * 0.55, z: z + lean * 0.2, sx: r * 2, sy: r * 2, ao: 0.85 },
+          { x: x + lean, y: hh, z: z + lean * 0.5, sx: r * 1.7, sy: r * 1.7, ao: 1.0 },
+        ], circleProfile(6), { smooth: true, uvScale: 1.6, capStart: false });
+        const k2 = 0.82 + rnd() * 0.34;
+        tintGeo(g, k2, k2 * (0.95 + rnd() * 0.12), k2 * 0.85);
+        culms.push(g);
+      }
+      for (const ry of [h * 0.3, h * 0.78]) {
+        const g = sweepProfile([
+          { x: x0, y: ry, z: z0, sx: 0.055, sy: 0.055, ao: 0.75 },
+          { x: x1, y: ry, z: z1, sx: 0.055, sy: 0.055, ao: 0.9 },
+        ], circleProfile(6), { smooth: true, ref: [Math.cos(ang), 0, -Math.sin(ang)], uvScale: 2.4 });
+        culms.push(g);
+        // diagonal lashings at intervals
+        const nl = Math.max(1, Math.round(len / 0.85));
+        for (let k = 0; k < nl; k++) {
+          const t = (k + 0.5) / nl;
+          const x = lerp(x0, x1, t), z = lerp(z0, z1, t);
+          const lg = sweepProfile([
+            { x: x - Math.cos(ang) * 0.05, y: ry - 0.08, z: z + Math.sin(ang) * 0.05, sx: 0.028, sy: 0.028, ao: 0.7 },
+            { x: x + Math.cos(ang) * 0.05, y: ry + 0.08, z: z - Math.sin(ang) * 0.05, sx: 0.028, sy: 0.028, ao: 1.0 },
+          ], circleProfile(5), { smooth: true, uvScale: 3 });
+          ropes.push(lg);
+        }
+      }
+      PropFactory.addCollider(b, (() => {
+        const g = new BoxGeometry(0.22, h, len);
+        const m = new Matrix4().makeRotationY(ang);
+        m.setPosition((x0 + x1) * 0.5, h * 0.5, (z0 + z1) * 0.5);
+        g.applyMatrix4(m);
+        g.deleteAttribute('uv'); g.deleteAttribute('normal');
+        return g;
+      })(), 'wood', true, false);
+    }
+
+    if (culms.length) {
+      const merged = mergeGeometries(culms.map((g) => normalizeGeo(g)), false);
+      bakeAO(merged, { ground: 0.48, groundH: 0.4, cavity: 0.18, down: 0.24, floor: 0.32 });
+      PropFactory.add(b, merged, 'bambooCulm');
+    }
+    if (ropes.length) {
+      const merged = mergeGeometries(ropes.map((g) => normalizeGeo(g)), false);
+      PropFactory.add(b, merged, 'rope');
+    }
+    b.bounds = { r: 1, h: h + 0.2 };
+    return b;
   }
 
   /** Wrap a finished build as an instancing prototype. */
