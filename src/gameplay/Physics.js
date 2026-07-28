@@ -2224,9 +2224,14 @@ export class PhysicsWorld {
     b.sleeping = false;
   }
 
-  /** One sequential-impulse pass. Baumgarte only on the first iteration. */
-  _solveContacts(dt, applyBias) {
-    const SLOP = 0.004, BETA = 0.22, REST_THRESHOLD = 1.1;
+  /**
+   * One sequential-impulse pass. The Baumgarte bias is applied on *every*
+   * iteration (Box2D-lite style) — applying it once and then solving for
+   * vn = 0 in the following iterations simply cancels the push-out again,
+   * which is how bodies end up slowly sinking through the floor.
+   */
+  _solveContacts(dt) {
+    const SLOP = 0.004, BETA = 0.2, MAX_BIAS = 3, REST_THRESHOLD = 1.1;
     for (let i = 0; i < this._contactCount; i++) {
       const c = this._contacts[i];
       const a = c.a, b = c.b;
@@ -2258,8 +2263,7 @@ export class PhysicsWorld {
       if (denom < 1e-9) continue;
 
       const e = (-vn > REST_THRESHOLD) ? c.restitution : 0;
-      let bias = 0;
-      if (applyBias) bias = (BETA / dt) * Math.max(0, c.depth - SLOP);
+      const bias = Math.min(MAX_BIAS, (BETA / dt) * Math.max(0, c.depth - SLOP));
       let jn = (-(1 + e) * vn + bias) / denom;
       const oldJn = c.jn;
       c.jn = Math.max(0, oldJn + jn);
@@ -2859,7 +2863,6 @@ export class PhysicsWorld {
     }
 
     attr.needsUpdate = true;
-    attr.updateRanges = [{ start: 0, count: _sink.i }];
     this._debug.dynamic.geometry.setDrawRange(0, _sink.i / 3);
     _sink.buf = null;
   }

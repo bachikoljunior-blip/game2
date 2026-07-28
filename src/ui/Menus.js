@@ -165,14 +165,11 @@ export class Menus {
 
     const input = c.input;
     if (input) {
+      // Input owns the look pipeline — it applies both of these to pointer drag,
+      // pointer-lock mouse and the gamepad stick. Never touch `_lookSens` here or
+      // the multiplier gets applied twice.
       input.lookSensitivity = s.lookSensitivity;
       input.invertY = s.invertY;
-      // Input keeps its base sensitivities here; scaling them is the only hook
-      // it exposes, and PlayerCamera can read ctx.settings for the rest.
-      if (input._lookSens) {
-        input._lookSens.mouse = 0.0022 * s.lookSensitivity;
-        input._lookSens.touch = 0.0040 * s.lookSensitivity;
-      }
     }
 
     c.aimAssist = s.aimAssist;

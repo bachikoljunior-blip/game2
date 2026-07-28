@@ -945,18 +945,14 @@ export class Player {
     const acting = this.state === 'attack' || this.state === 'drawing' || this.state === 'dodge'
       || this.state === 'stagger' || this.state === 'parry' || this.state === 'execution'
       || this.state === 'dead';
-    if (!acting && !this.turningInPlace) {
-      const clip = this.guarding ? 'locomotion_guard' : (this.sheathed ? 'locomotion_sheathed' : 'locomotion');
-      if (this._locoClip !== clip) {
-        this._locoClip = clip;
-        this._play(clip, 0.20, 1, true);
-      }
-      // Blend params are shared by reference, but push them through the setters
-      // too — whichever the rig implements, it gets fresh numbers.
-      rig.setBlend?.(clip, b.x, b.y);
-      rig.setLocomotion?.(b.forward, b.strafe, b.normalized);
-      rig.setParam?.('speed', b.speed);
-      rig.setParam?.('strafe', b.strafe);
+    if (!acting) {
+      // Blend params are shared by reference, but push them through every setter
+      // the rig might implement — whichever exists gets fresh numbers.
+      let handled = false;
+      if (rig.setLocomotion) { rig.setLocomotion(b.forward, b.strafe, b.normalized); handled = true; }
+      if (rig.setBlend) { rig.setBlend('locomotion', b.x, b.y); handled = true; }
+      if (rig.setParam) { rig.setParam('speed', b.speed); rig.setParam('strafe', b.strafe); }
+      if (!handled) this._driveLocoClip(b);
     }
     rig.setStance?.(this.stance);
 
@@ -973,6 +969,39 @@ export class Player {
     // Foot planting wants the ground under each foot; hand the rig what we know.
     rig.setGround?.(this.groundNormal, this.grounded, this.groundSurface);
     rig.update?.(dt);
+  }
+
+  /**
+   * Fallback blend space: pick the clip from the authored gait table and set the
+   * playback rate from ground speed so the feet do not skate. Only runs when the
+   * rig has no blend-space API of its own.
+   */
+  _driveLocoClip(b) {
+    let clip, rate = 1;
+    const sp = b.speed;
+    if (sp < 0.25) {
+      clip = this.sheathed ? 'idle_sheathed' : 'idle_drawn_' + this.stance;
+    } else if (Math.abs(b.strafe) > Math.abs(b.forward) * 1.15) {
+      clip = b.strafe > 0 ? LOCO_STRAFE.r : LOCO_STRAFE.l;
+      rate = clamp(sp / LOCO_STRAFE.speed, 0.55, 1.7);
+    } else if (b.forward < -0.35) {
+      clip = LOCO_BACK.clip;
+      rate = clamp(sp / LOCO_BACK.speed, 0.55, 1.7);
+    } else {
+      let e = LOCO_FWD[1];
+      for (let i = 1; i < LOCO_FWD.length; i++) {
+        e = LOCO_FWD[i];
+        if (sp <= LOCO_FWD[i].speed || i === LOCO_FWD.length - 1) break;
+      }
+      clip = e.clip;
+      rate = clamp(sp / e.speed, 0.55, 1.6);
+    }
+    if (this._locoClip !== clip) {
+      this._locoClip = clip;
+      this._play(clip, 0.20, rate, true);
+    } else {
+      this.rig?.setSpeed?.(clip, rate);
+    }
   }
 
   _play(clip, fade = 0.15, speed = 1, loop = false) {
@@ -1023,28 +1052,36 @@ export class Player {
   }
 
   _beginAttack(data) {
-    const key = data?.key || 'h_r';
+    let key = data?.key || 'h_r';
     const heavy = !!data?.heavy;
-    const src = heavy ? (HEAVY[key] || HEAVY.h_r) : (MOVES[key] || MOVES.h_r);
+    // A heavy on a vertical gesture becomes the authored 大上段; on anything else
+    // it is the same cut, slowed and committed.
+    if (heavy && HEAVY_PROMOTE[key]) key = HEAVY_PROMOTE[key];
+    const src = MOVES[key] || MOVES.h_r;
     const s = this.stanceDef;
+
+    // One playback rate scales the clip and our timeline together, so the marker
+    // times and the fallback timers can never drift apart.
+    const rate = (1 / s.startup) * (heavy && key !== 'heavy' ? HEAVY_RATE : 1);
+    const T = CLIP_T[src.clip] || CLIP_T.slash_horizontal_r;
+    const hv = heavy && key !== 'heavy' ? 1 : 0;   // same-clip heavy gets the bonus
 
     const a = this.attack = this.attack || {};
     a.key = key;
     a.heavy = heavy;
     a.finisher = !!data?.finisher;
     a.clip = src.clip;
-    a.startup = src.startup * s.startup;
-    a.active = src.active;
-    a.recover = src.recover * (a.finisher ? 1.25 : 1);
-    a.damage = src.damage * s.damage * (a.finisher ? 1.35 : 1) * (key === 'iai' ? 1.0 : 1);
-    a.poise = src.poise * s.poise * (a.finisher ? 1.4 : 1);
-    a.reach = src.reach * s.reach;
-    a.lunge = src.lunge * (a.finisher ? 1.3 : 1);
+    a.rate = rate;
+    a.damage = src.damage * s.damage * (a.finisher ? 1.3 : 1) * (hv ? 1.5 : 1);
+    a.poise = src.poise * s.poise * (a.finisher ? 1.35 : 1) * (hv ? 1.6 : 1);
+    a.reach = src.reach * s.reach * (hv ? 1.06 : 1);
+    a.lunge = src.lunge * (a.finisher ? 1.25 : 1) * (hv ? 1.3 : 1);
     a.kind = src.kind;
-    a.activeAt = a.startup;
-    a.activeEnd = a.startup + a.active;
-    a.cancelAt = a.activeEnd + a.recover * 0.34;
-    a.total = a.activeEnd + a.recover;
+    a.activeAt = T.hit / rate;
+    a.activeEnd = T.end / rate;
+    a.cancelAt = T.cancel / rate;
+    a.total = T.dur / rate;
+    a.active = a.activeEnd - a.activeAt;
     a.opened = false;
     a.closed = false;
     a.markerEnd = false;
@@ -1070,7 +1107,7 @@ export class Player {
     }
 
     this.weapon.damage = a.damage;
-    this._play(a.clip, 0.07, 1, false);
+    this._play(a.clip, 0.07, a.rate, false);
     this._clearBuffer();
   }
 

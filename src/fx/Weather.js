@@ -393,6 +393,330 @@ export class WeatherSystem {
     return typeof h === 'number' && isFinite(h) ? h : 0;
   }
 
+  // ==================================================================== fields
+
+  _quadGeometry() {
+    const g = new InstancedBufferGeometry();
+    g.setAttribute('position', new Float32BufferAttribute(
+      [-0.5, -0.5, 0, 0.5, -0.5, 0, 0.5, 0.5, 0, -0.5, 0.5, 0], 3));
+    g.setAttribute('uv', new Float32BufferAttribute([0, 0, 1, 0, 1, 1, 0, 1], 2));
+    g.setIndex([0, 1, 2, 0, 2, 3]);
+    g.instanceCount = 0;
+    return g;
+  }
+
+  /**
+   * One instanced quad field. Every particle's whole life is a pure function of
+   * (uTime, its own random attributes) — nothing is ever written back, so a
+   * 1800-drop rainstorm costs one draw call and zero JS.
+   */
+  _buildField(o) {
+    const count = Math.max(8, o.count | 0);
+    const geo = this._quadGeometry();
+    const rnd = this.rng;
+
+    const aRand = new Float32Array(count * 4);   // rx, ry, rz, seed
+    const aRand2 = new Float32Array(count * 4);  // sizeVar, speedVar, tumbleVar, phase
+    const aAxis = new Float32Array(count * 3);   // tumble axis
+
+    for (let i = 0; i < count; i++) {
+      aRand[i * 4] = rnd(); aRand[i * 4 + 1] = rnd(); aRand[i * 4 + 2] = rnd(); aRand[i * 4 + 3] = rnd();
+      aRand2[i * 4] = 1 + (rnd() - 0.5) * o.sizeVar;
+      aRand2[i * 4 + 1] = 0.7 + rnd() * 0.6;
+      aRand2[i * 4 + 2] = 0.6 + rnd() * 0.9;
+      aRand2[i * 4 + 3] = rnd();
+      // uniform-ish axis on the sphere
+      const z = rnd() * 2 - 1, a = rnd() * TAU, s = Math.sqrt(Math.max(0, 1 - z * z));
+      aAxis[i * 3] = Math.cos(a) * s; aAxis[i * 3 + 1] = z; aAxis[i * 3 + 2] = Math.sin(a) * s;
+    }
+
+    const bind = (key, arr, size) => {
+      const at = new InstancedBufferAttribute(arr, size);
+      at.setUsage(DynamicDrawUsage);
+      geo.setAttribute(key, at);
+    };
+    bind('aRand', aRand, 4); bind('aRand2', aRand2, 4); bind('aAxis', aAxis, 3);
+
+    const mat = new ShaderMaterial({
+      name: 'weather-' + o.name,
+      defines: { MODE: o.mode },
+      uniforms: {
+        uWind: this.windUniforms.uWind,        // shared by identity
+        uGust: this.windUniforms.uGust,
+        uTime: { value: 0 },
+        uMap: { value: this.atlas },
+        uOrigin: { value: new Vector3() },
+        uBox: { value: o.box.clone() },
+        uBaseY: { value: 0 },
+        uGroundY: { value: 0 },
+        uSize: { value: o.size },
+        uFall: { value: o.fall },
+        uTumble: { value: o.tumble },
+        uFlutter: { value: o.flutter },
+        uDrag: { value: o.drag },
+        uSprite: { value: o.sprite },
+        uColorA: { value: new Color(o.colorA) },
+        uColorB: { value: new Color(o.colorB) },
+        uSunDir: { value: new Vector3(0, 1, 0) },
+        uSunColor: { value: new Color('#ffd9a8') },
+        uTransmit: { value: o.transmit },
+        uOpacity: { value: 1 },
+        uFade: { value: 1 },
+      },
+      vertexShader: FIELD_VERT,
+      fragmentShader: FIELD_FRAG,
+      transparent: true,
+      depthTest: true,
+      depthWrite: false,
+      blending: o.additive ? AdditiveBlending : NormalBlending,
+      side: DoubleSide,
+      fog: !!o.fogged,
+      toneMapped: true,
+    });
+
+    const mesh = new Mesh(geo, mat);
+    mesh.frustumCulled = false;
+    mesh.matrixAutoUpdate = false;
+    mesh.renderOrder = o.additive ? 11 : 9;
+    this.ctx.scene?.add(mesh);
+
+    return { name: o.name, mode: o.mode, capacity: count, geo, mat, mesh, additive: !!o.additive };
+  }
+
+  _updateFields(rdt) {
+    const q = this.ctx.quality;
+    const wq = clamp(q?.weather ?? 0.7, 0, 1.6);
+
+    for (let i = 0; i < this.fields.length; i++) {
+      const f = this.fields[i];
+      const u = f.mat.uniforms;
+
+      let density = 0;
+      switch (f.name) {
+        case 'petals': density = this.current.petals; break;
+        case 'leaves': density = this.current.leaves; break;
+        // Embers and fireflies only exist once the light goes; motes need the sun.
+        case 'embers': density = this.current.embers * (0.25 + 0.75 * this.nightFactor); break;
+        case 'motes': density = this.current.motes * (1 - this.nightFactor * 0.9); break;
+        case 'rain': density = this.current.rain; break;
+        default: density = 0;
+      }
+      density = clamp(density, 0, 1.6) * wq;
+
+      const n = Math.round(f.capacity * clamp(density, 0, 1));
+      f.geo.instanceCount = n;
+      f.mesh.visible = n > 0;
+      if (n === 0) continue;
+
+      u.uTime.value = this.time;
+      u.uOrigin.value.copy(this.origin);
+      u.uBaseY.value = this.baseY;
+      u.uGroundY.value = this.groundY;
+      u.uSunDir.value.copy(this.sunDir);
+      u.uSunColor.value.copy(this.sunColor);
+      // The last 25% of density fades out rather than popping instances off.
+      u.uFade.value = clamp(density * 4, 0, 1);
+      u.uOpacity.value = f.name === 'rain' ? clamp(this.current.rain, 0, 1) : 1;
+    }
+  }
+
+  // ======================================================================= fog
+
+  /**
+   * Layered horizontal noise planes at valley altitude. Horizontal layers are the
+   * only volumetric-looking mist that stays inside a mobile budget; the tell-tale
+   * flatness is hidden by a grazing-angle term, a camera-plane proximity fade and
+   * a soft-particle depth fade against the scene.
+   */
+  _buildFog(weather) {
+    const layers = weather >= 0.9 ? 7 : weather >= 0.6 ? 5 : 3;
+    const geo = this._quadGeometry();
+
+    const fPar = new Float32Array(layers * 4);   // height, scale, phase, speed
+    for (let i = 0; i < layers; i++) {
+      const t = i / Math.max(1, layers - 1);
+      fPar[i * 4] = -0.6 + t * 7.5;                        // metres above the valley floor
+      fPar[i * 4 + 1] = 110 + t * 130;                     // plane size
+      fPar[i * 4 + 2] = this.rng() * 100;
+      fPar[i * 4 + 3] = 0.35 + this.rng() * 0.5;
+    }
+    const at = new InstancedBufferAttribute(fPar, 4);
+    geo.setAttribute('fPar', at);
+    geo.instanceCount = layers;
+
+    const mat = new ShaderMaterial({
+      name: 'weather-fog',
+      uniforms: {
+        uWind: this.windUniforms.uWind,
+        uGust: this.windUniforms.uGust,
+        uTime: { value: 0 },
+        uOrigin: { value: new Vector3() },
+        uBaseY: { value: 0 },
+        uDensity: { value: 0.6 },
+        uColor: { value: new Color('#9fb0c4') },
+        uSunColor: { value: new Color('#ffd9a8') },
+        uSunDir: { value: new Vector3(0, 1, 0) },
+        uResolution: { value: this._resolution.clone() },
+        uDepth: { value: null },
+        uNear: { value: 0.12 },
+        uFar: { value: 900 },
+        uSoftness: { value: 4.5 },
+      },
+      vertexShader: FOG_VERT,
+      fragmentShader: FOG_FRAG,
+      transparent: true,
+      depthTest: true,
+      depthWrite: false,
+      blending: NormalBlending,
+      side: DoubleSide,
+      toneMapped: true,
+    });
+
+    const mesh = new Mesh(geo, mat);
+    mesh.frustumCulled = false;
+    mesh.matrixAutoUpdate = false;
+    mesh.renderOrder = 8;
+    this.ctx.scene?.add(mesh);
+
+    this.fog = { layers, geo, mat, mesh };
+  }
+
+  _updateFog(rdt) {
+    const f = this.fog;
+    if (!f) return;
+    const u = f.mat.uniforms;
+    const density = clamp(this.current.fog, 0, 1.4) * clamp(this.ctx.quality?.weather ?? 0.7, 0.2, 1.2);
+    f.mesh.visible = density > 0.01;
+    if (!f.mesh.visible) return;
+
+    u.uTime.value = this.time;
+    u.uOrigin.value.copy(this.origin);
+    u.uBaseY.value = this.baseY;
+    u.uDensity.value = density;
+    u.uColor.value.copy(this.fogColor);
+    u.uSunColor.value.copy(this.sunColor);
+    u.uSunDir.value.copy(this.sunDir);
+
+    const cam = this.ctx.camera;
+    if (cam) { u.uNear.value = cam.near; u.uFar.value = cam.far; }
+
+    // PostFX boots after us, so the depth texture is wired the first frame it
+    // exists. One recompile, then soft particles for the rest of the session.
+    if (!this._depthWired) {
+      const dt = this.ctx.pipeline?.depthTexture;
+      if (dt && dt.isTexture) {
+        u.uDepth.value = dt;
+        f.mat.defines.SOFT_DEPTH = 1;
+        f.mat.needsUpdate = true;
+        this._depthWired = true;
+      }
+    }
+  }
+
+  // =================================================================== splashes
+
+  /** Rain hitting the ground. A ring card per impact, spawned into a ring buffer. */
+  _buildSplash(capacity) {
+    const geo = this._quadGeometry();
+    const sT = new Float32Array(capacity * 4);   // spawn, life, seed, unused
+    const sPos = new Float32Array(capacity * 3);
+    for (let i = 0; i < capacity; i++) { sT[i * 4] = -1e6; sT[i * 4 + 1] = 1; }
+
+    const attrs = [];
+    const bind = (key, arr, size) => {
+      const a = new InstancedBufferAttribute(arr, size);
+      a.setUsage(DynamicDrawUsage);
+      geo.setAttribute(key, a); attrs.push(a);
+    };
+    bind('sT', sT, 4); bind('sPos', sPos, 3);
+
+    const mat = new ShaderMaterial({
+      name: 'weather-splash',
+      uniforms: {
+        uTime: { value: 0 },
+        uMap: { value: this.atlas },
+        uColor: { value: new Color('#d7e6f0') },
+        uSize: { value: 0.26 },
+      },
+      vertexShader: SPLASH_VERT,
+      fragmentShader: SPLASH_FRAG,
+      transparent: true,
+      depthTest: true,
+      depthWrite: false,
+      blending: NormalBlending,
+      side: DoubleSide,
+      toneMapped: true,
+    });
+
+    const mesh = new Mesh(geo, mat);
+    mesh.frustumCulled = false;
+    mesh.matrixAutoUpdate = false;
+    mesh.renderOrder = 10;
+    this.ctx.scene?.add(mesh);
+
+    this.splash = {
+      capacity, geo, mat, mesh, attrs, sT, sPos,
+      head: 0, used: 0, wrapped: false, deadAfter: -1,
+      dirtyMin: 1e9, dirtyMax: -1,
+    };
+  }
+
+  _updateSplashes(rdt) {
+    const s = this.splash;
+    if (!s) return;
+    const rain = clamp(this.current.rain, 0, 1.6);
+    s.mat.uniforms.uTime.value = this.time;
+
+    if (rain > 0.02) {
+      // Rate is per second; the accumulator keeps it frame-rate independent.
+      const rate = 70 * rain * clamp(this.ctx.quality?.weather ?? 0.7, 0.2, 1.2);
+      this._splashTimer += rdt * rate;
+      let budget = 8;                       // never more than 8 heightAt calls a frame
+      while (this._splashTimer >= 1 && budget-- > 0) {
+        this._splashTimer -= 1;
+        const a = this.rng() * TAU;
+        const r = Math.sqrt(this.rng()) * 14;
+        const x = this.origin.x + Math.cos(a) * r;
+        const z = this.origin.z + Math.sin(a) * r;
+        this._emitSplash(x, this._groundY(x, z) + 0.015, z);
+      }
+      if (this._splashTimer > 4) this._splashTimer = 4;
+    }
+
+    if (s.deadAfter >= 0 && this.time > s.deadAfter) {
+      s.geo.instanceCount = 0;
+      s.head = 0; s.used = 0; s.wrapped = false; s.deadAfter = -1;
+    } else {
+      s.geo.instanceCount = s.used;
+    }
+
+    if (s.dirtyMin > s.dirtyMax) return;
+    const lo = s.dirtyMin, hi = s.dirtyMax;
+    for (let i = 0; i < s.attrs.length; i++) {
+      const at = s.attrs[i];
+      if (at.clearUpdateRanges) { at.clearUpdateRanges(); at.addUpdateRange(lo * at.itemSize, (hi - lo + 1) * at.itemSize); }
+      at.needsUpdate = true;
+    }
+    s.dirtyMin = 1e9; s.dirtyMax = -1;
+  }
+
+  _emitSplash(x, y, z) {
+    const s = this.splash;
+    const i = s.head;
+    s.head = (i + 1) % s.capacity;
+    if (s.head === 0) s.wrapped = true;
+    s.used = s.wrapped ? s.capacity : Math.max(s.used, s.head);
+    if (i < s.dirtyMin) s.dirtyMin = i;
+    if (i > s.dirtyMax) s.dirtyMax = i;
+
+    const life = 0.32 + this.rng() * 0.16;
+    s.sT[i * 4] = this.time; s.sT[i * 4 + 1] = life;
+    s.sT[i * 4 + 2] = this.rng(); s.sT[i * 4 + 3] = 0;
+    s.sPos[i * 3] = x; s.sPos[i * 3 + 1] = y; s.sPos[i * 3 + 2] = z;
+    const dead = this.time + life;
+    if (dead > s.deadAfter) s.deadAfter = dead;
+  }
+
   // ------------------------------------------------------------------ lifecycle
 
   resize(w, h, bufW, bufH) {

@@ -281,6 +281,9 @@ void main() {
   vec2 c = texture2D(tAO, vUv).rg;
   float centerDepth = c.g;
   float sum = c.r, wsum = 1.0;
+  // The depth tolerance has to be *relative* to the centre depth: a fixed epsilon
+  // that keeps silhouettes crisp at 2 m rejects every tap on a hillside at 200 m.
+  float tol = 1.0 / (centerDepth * uDepthSigma + 1e-6);
   // 4 taps each side, gaussian x depth falloff — a bilateral cross that survives
   // silhouettes without the box-blur bleed that makes AO look like dirt.
   for (int i = 1; i <= 4; i++) {
@@ -289,8 +292,8 @@ void main() {
     vec2 o = uDir * uTexel * fi;
     vec2 a = texture2D(tAO, vUv + o).rg;
     vec2 b = texture2D(tAO, vUv - o).rg;
-    float wa = g * exp(-abs(a.g - centerDepth) * uDepthSigma);
-    float wb = g * exp(-abs(b.g - centerDepth) * uDepthSigma);
+    float wa = g * exp(-abs(a.g - centerDepth) * tol);
+    float wb = g * exp(-abs(b.g - centerDepth) * tol);
     sum += a.r * wa + b.r * wb;
     wsum += wa + wb;
   }
@@ -1652,7 +1655,7 @@ export class PostFX {
       uNoiseScale: { value: new Vector2() },
       uRadius: { value: this.aoRadius },
       uBias: { value: 0.06 },
-      uIntensity: { value: 1.35 },
+      uIntensity: { value: 1.2 },
       uMaxRadiusPx: { value: 48 },
       uProjScale: { value: 500 },
       uTemporal: { value: 0 },
@@ -1662,7 +1665,7 @@ export class PostFX {
       tAO: { value: black },
       uTexel: { value: new Vector2() },
       uDir: { value: new Vector2(1, 0) },
-      uDepthSigma: { value: 160 },
+      uDepthSigma: { value: 0.05 },
     });
 
     const resolveDefines = {};
@@ -2485,7 +2488,7 @@ export class PostFX {
 
     const bu = this.mAOBlur.uniforms;
     bu.uTexel.value.set(1 / aow, 1 / aoh);
-    bu.uDepthSigma.value = 220;
+    bu.uDepthSigma.value = 0.05;   // 5% relative depth tolerance
     bu.tAO.value = this.rtAO.texture;
     bu.uDir.value.set(1, 0);
     this._draw(this.mAOBlur, this.rtAOTmp);

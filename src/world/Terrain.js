@@ -178,14 +178,55 @@ function resampleSpline(ctrl, spacing) {
 }
 
 /**
+ * Uniform-grid index over a polyline's segments. Without it the carve is O(cells ×
+ * segments) — 40 million segment tests on ULTRA — and the queries below are called
+ * several times per character per frame by foot IK.
+ */
+function buildPolylineIndex(poly, reach) {
+  const cs = 32;
+  const pad = reach + cs * 1.5;
+  let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+  for (let i = 0; i < poly.n; i++) {
+    if (poly.x[i] < minX) minX = poly.x[i];
+    if (poly.x[i] > maxX) maxX = poly.x[i];
+    if (poly.z[i] < minZ) minZ = poly.z[i];
+    if (poly.z[i] > maxZ) maxZ = poly.z[i];
+  }
+  minX -= pad; maxX += pad; minZ -= pad; maxZ += pad;
+  const nx = Math.max(1, Math.ceil((maxX - minX) / cs));
+  const nz = Math.max(1, Math.ceil((maxZ - minZ) / cs));
+  const lists = new Array(nx * nz);
+  for (let s = 0; s < poly.n - 1; s++) {
+    const ax = poly.x[s], az = poly.z[s], bx = poly.x[s + 1], bz = poly.z[s + 1];
+    const i0 = clamp(Math.floor((Math.min(ax, bx) - pad - minX) / cs), 0, nx - 1);
+    const i1 = clamp(Math.floor((Math.max(ax, bx) + pad - minX) / cs), 0, nx - 1);
+    const j0 = clamp(Math.floor((Math.min(az, bz) - pad - minZ) / cs), 0, nz - 1);
+    const j1 = clamp(Math.floor((Math.max(az, bz) + pad - minZ) / cs), 0, nz - 1);
+    for (let j = j0; j <= j1; j++) {
+      for (let i = i0; i <= i1; i++) {
+        const k = j * nx + i;
+        (lists[k] || (lists[k] = [])).push(s);
+      }
+    }
+  }
+  const buckets = new Array(nx * nz);
+  for (let k = 0; k < lists.length; k++) buckets[k] = lists[k] ? Int32Array.from(lists[k]) : null;
+  poly.index = { minX, minZ, cs, nx, nz, buckets, reach };
+  return poly;
+}
+
+/**
  * Closest point on a polyline. Allocation-free — results land in the shared scratch.
  * `station` is a continuous node index, so per-node data (bed height) can be lerped.
+ * Returns d = Infinity when the point is beyond the index's reach.
  */
 const _seg = { d: 0, station: 0 };
-function closestOnPolyline(poly, px, pz) {
+function _scanSegments(poly, px, pz, list) {
   let bestD2 = Infinity, bestT = 0, bestI = 0;
-  const X = poly.x, Z = poly.z, n = poly.n;
-  for (let i = 0; i < n - 1; i++) {
+  const X = poly.x, Z = poly.z;
+  const count = list ? list.length : poly.n - 1;
+  for (let q = 0; q < count; q++) {
+    const i = list ? list[q] : q;
     const ax = X[i], az = Z[i];
     const ex = X[i + 1] - ax, ez = Z[i + 1] - az;
     const len2 = ex * ex + ez * ez;
@@ -195,9 +236,19 @@ function closestOnPolyline(poly, px, pz) {
     const d2 = cx * cx + cz * cz;
     if (d2 < bestD2) { bestD2 = d2; bestT = t; bestI = i; }
   }
-  _seg.d = Math.sqrt(bestD2);
+  _seg.d = bestD2 === Infinity ? Infinity : Math.sqrt(bestD2);
   _seg.station = bestI + bestT;
   return _seg;
+}
+function closestOnPolyline(poly, px, pz) {
+  const idx = poly.index;
+  if (!idx) return _scanSegments(poly, px, pz, null);
+  const i = Math.floor((px - idx.minX) / idx.cs);
+  const j = Math.floor((pz - idx.minZ) / idx.cs);
+  if (i < 0 || j < 0 || i >= idx.nx || j >= idx.nz) { _seg.d = Infinity; _seg.station = 0; return _seg; }
+  const list = idx.buckets[j * idx.nx + i];
+  if (!list) { _seg.d = Infinity; _seg.station = 0; return _seg; }
+  return _scanSegments(poly, px, pz, list);
 }
 
 /** Sample a per-node float array at a continuous station. */
@@ -472,8 +523,8 @@ export class Terrain {
   async _buildSplines() {
     // Node spacing is deliberately finer than the coarsest grid cell so the carve
     // never staircases along the spline on LOW.
-    this.stair = resampleSpline(STAIR_CTRL, 3);
-    const river = resampleSpline(RIVER_CTRL, 4);
+    this.stair = buildPolylineIndex(resampleSpline(STAIR_CTRL, 3), STAIR_SHOULDER + 4);
+    const river = buildPolylineIndex(resampleSpline(RIVER_CTRL, 4), GORGE_HALF * 2.2);
     river.bed = new Float32Array(river.n);
     river.surface = new Float32Array(river.n);
     river.width = new Float32Array(river.n);
