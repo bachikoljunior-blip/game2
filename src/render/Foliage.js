@@ -687,7 +687,7 @@ const TREE_SPECIES = {
     height: 13.5, trunkRadius: 0.32, depth: 2, segs: 7, sides: 6,
     children: [3, 2], split: 1.05, splitJitter: 0.18, lengthRatio: 0.42,
     radiusRatio: 0.34, upBias: 0.02, gravity: -0.12, wobble: 0.07, trunkFrac: 1.0,
-    phyllotaxis: 1.2566, leavesPerTip: 4, leafSize: 0.62, leafSpread: 0.34,
+    phyllotaxis: 1.2566, leavesPerTip: 3, leafSize: 0.70, leafSpread: 0.36,
     leafFrom: 1, wood: 0x4b3a2c, foliage: 0x2f4a33,
     whorls: true,
   },
