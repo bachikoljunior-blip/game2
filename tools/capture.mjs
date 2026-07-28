@@ -19,6 +19,7 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -100,11 +101,47 @@ const SHOTS = {
   hud: { wait: 2400, script: `k.hud?.__demo?.()` },
 };
 
+/**
+ * SwiftShader renders on one thread and saturates it, so two capture runs do not take
+ * twice as long — they starve each other. A boot that normally takes 200 s has been
+ * measured at 639 s under contention, past the point where it times out and produces
+ * nothing. Several agents share this repo, so serialise at the file level rather than
+ * trusting everyone to coordinate.
+ */
+async function acquireLock() {
+  const lock = join(OUT, '.capture.lock');
+  mkdirSync(OUT, { recursive: true });
+  const deadline = Date.now() + 30 * 60 * 1000;
+  for (;;) {
+    try {
+      writeFileSync(lock, String(process.pid), { flag: 'wx' });
+      return () => { try { rmSync(lock, { force: true }); } catch { /* ignore */ } };
+    } catch {
+      // Reclaim a lock whose owner died without releasing it.
+      try {
+        const owner = Number(readFileSync(lock, 'utf8'));
+        process.kill(owner, 0);
+      } catch {
+        rmSync(lock, { force: true });
+        continue;
+      }
+      if (Date.now() > deadline) throw new Error('capture lock held for over 30 min');
+      console.log('[capture] another run holds the lock; waiting…');
+      await new Promise((r) => setTimeout(r, 15000));
+    }
+  }
+}
+
 async function main() {
   if (!existsSync(DIST)) {
     console.error('dist/ is missing — run `npm run build` first.');
     process.exit(2);
   }
+  const releaseLock = await acquireLock();
+  process.on('exit', releaseLock);
+  process.on('SIGINT', () => { releaseLock(); process.exit(130); });
+  process.on('SIGTERM', () => { releaseLock(); process.exit(143); });
+
   const port = 4319 + (process.pid % 200);
   const server = await serve(DIST, port);
   const base = `http://127.0.0.1:${port}/index.html`;
@@ -267,6 +304,7 @@ async function main() {
 
   await browser.close();
   server.close();
+  releaseLock();
   writeFileSync(join(OUT, `report${tag}.json`), JSON.stringify(report, null, 2));
   console.log(`\nwrote ${OUT}/report${tag}.json`);
 

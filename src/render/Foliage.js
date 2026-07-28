@@ -1412,6 +1412,27 @@ export class FoliageSystem {
     this.leafEmitters = [];
 
     /**
+     * PUBLIC — read outside this file. Do not rename without checking consumers.
+     *
+     * The two blossom cards, published so a prop author does not have to reach into
+     * `this.tex` or hand-roll a card of their own. Props.js's sacred tree binds
+     * `blossomTexture`, and the dead tree `momijiTexture`; that makes these part of the
+     * contract, not an implementation detail.
+     *
+     * Both are 512² feathered cutout cards: alpha is zero along all four borders, so a
+     * card can never show its own quad, and they are authored for `alphaTest` ~0.36 with
+     * `transparent: false`. `blossomTexture` is the pale sakura in ARCHITECTURE §5's
+     * pink-to-bone band; `momijiTexture` is the crimson maple.
+     *
+     * Null until `init()` runs. They are assigned eagerly in `_buildTextures()` — the
+     * first step of `init()` — and never lazily, because FoliageSystem boots after Level:
+     * a consumer polling for them on a later frame has to be able to treat "not null" as
+     * "ready to bind", with no chance of observing a half-built texture.
+     */
+    this.blossomTexture = null;
+    this.momijiTexture = null;
+
+    /**
      * Weather's wind uniforms, spliced in BY IDENTITY so its per-frame write reaches every
      * foliage material for free. No local fallback field exists: if Weather is somehow
      * absent these stay zeroed and the foliage simply stands still, which is the correct
@@ -1624,6 +1645,12 @@ export class FoliageSystem {
       susuki: T(paintSusuki(px)),
       fallen: T(feather(paintFallenLeaves(px), { inner: 0.50, power: 1.2 })),
     };
+
+    // Publish the two blossom cards (see the constructor). Assigned here, at the end of
+    // init()'s first step, so the fields are live for the whole rest of the boot and for
+    // any consumer that binds later — never populated on first use.
+    this.blossomTexture = this.tex.blossom;
+    this.momijiTexture = this.tex.momiji;
 
     const gd = paintGroundDetail(Math.min(512, px * 2));
     const gdAlbedo = texFromCanvas(gd.albedo, true, aniso);
