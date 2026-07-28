@@ -464,6 +464,11 @@ export class Player {
       this.guarding = wantGuard;
       this._parryTimer = PARRY_WINDOW;
       if (wantGuard) this._guardTime = 0;
+      // Combat's guard cone reads `rec.guarding` (or state === 'guard'); tell it
+      // on the edge rather than every frame.
+      this.ctx.combat?.setGuard?.(this, wantGuard);
+      // The edge is also the deflect attempt — Combat owns the window timing.
+      if (this.ctx.combat?.requestParry) this.ctx.combat.requestParry(this);
     }
     if (this.guarding) this._guardTime += dt;
 
@@ -1375,7 +1380,7 @@ export class Player {
     } else if (this._trailOpen) {
       this._trailOpen = false;
       this.ctx.fx?.endTrail?.(this);
-      this.ctx.combat?.endAttack?.(this);
+      this.ctx.combat?.endSwing?.(this);
     }
   }
 

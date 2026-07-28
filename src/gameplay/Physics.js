@@ -99,8 +99,8 @@ const _hF = makeHit();   // rigid body contact probe
 /** Point-on-segment / point-on-shape scratch. */
 const _p0 = { x: 0, y: 0, z: 0, t: 0 };
 const _p1 = { x: 0, y: 0, z: 0, t: 0 };
-const _p2 = { x: 0, y: 0, z: 0, t: 0, inside: false, nx: 0, ny: 0, nz: 0, depth: 0 };
-const _p3 = { x: 0, y: 0, z: 0, t: 0, inside: false, nx: 0, ny: 0, nz: 0, depth: 0 };
+const _p2 = { x: 0, y: 0, z: 0, t: 0, inside: false, nx: 0, ny: 0, nz: 0, depth: 0, fnx: 0, fny: 1, fnz: 0 };
+const _p3 = { x: 0, y: 0, z: 0, t: 0, inside: false, nx: 0, ny: 0, nz: 0, depth: 0, fnx: 0, fny: 1, fnz: 0 };
 const _ss = { s: 0, t: 0, ax: 0, ay: 0, az: 0, bx: 0, by: 0, bz: 0 };
 const _clip = { x: 0, y: 0, z: 0 };
 
@@ -408,6 +408,8 @@ function segToTriangle(ax, ay, az, bx, by, bz,
   out.px = _p3.x; out.py = _p3.y; out.pz = _p3.z; out.t = t;
   out.inside = false;
   let ox = sx - _p3.x, oy = sy - _p3.y, oz = sz - _p3.z;
+  const side = (ox * fnx + oy * fny + oz * fnz) < 0 ? -1 : 1;
+  out.fnx = fnx * side; out.fny = fny * side; out.fnz = fnz * side;
   const len = Math.sqrt(ox * ox + oy * oy + oz * oz);
   if (len > 1e-7) {
     out.d = len; out.nx = ox / len; out.ny = oy / len; out.nz = oz / len;
