@@ -373,7 +373,9 @@ export class PlayerCamera {
   }
 
   _updateFraming(player, dt) {
-    const sp = player.speed ?? 0;
+    // `clamp()` is a comparison chain, so NaN falls through it unchanged — the
+    // read has to be validated, not clamped.
+    const sp = Number.isFinite(player.speed) ? player.speed : 0;
     this._speedNorm = damp(this._speedNorm, clamp(sp / 7.2, 0, 1), 4.5, dt);
     const sprinting = player.state === 'sprint';
 
@@ -634,6 +636,12 @@ export class PlayerCamera {
     if (!Number.isFinite(this._fov)) this._fov = this._baseFov;
     if (!Number.isFinite(this.trauma)) this.trauma = 0;
     if (!Number.isFinite(this._apertureNow)) this._apertureNow = this.aperture;
+    // Smoothed scalars poison the next frame's target if left non-finite, which
+    // is what turns one bad frame into a permanently frozen camera.
+    if (!Number.isFinite(this._speedNorm)) this._speedNorm = 0;
+    if (!Number.isFinite(this._lockBlend)) this._lockBlend = 0;
+    if (!Number.isFinite(this._punch)) this._punch = 0;
+    if (!Number.isFinite(this._fade)) this._fade = 1;
     this._shakePos.set(0, 0, 0);
     this._shakeQuat.identity();
     if (!this._warnedNaN) {

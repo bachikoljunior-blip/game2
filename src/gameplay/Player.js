@@ -311,6 +311,7 @@ export class Player {
     this._disp = new Vector3();
     this._lastGoodPos = new Vector3();
     this._warnedNaN = false;
+    this._warnedBladeNaN = false;
     this._lungeVel = new Vector3();
     this._dodgeDir = new Vector3();
     this._lookAt = new Vector3();
@@ -946,6 +947,7 @@ export class Player {
   }
 
   _land(fallSpeed) {
+    if (!Number.isFinite(fallSpeed)) return;      // clamp() would pass NaN through
     const impact = clamp((fallSpeed - 3.0) / 12, 0, 1);
     if (impact <= 0.001) return;
     // No landing clip is authored — the absorb is the procedural dip below plus
@@ -1555,7 +1557,23 @@ export class Player {
       this.bladeTip.copy(this.bladeBase).addScaledVector(this.forward, this.weapon.length);
     }
 
-    if (this.prevBladeTip.lengthSq() === 0) {
+    // The blade is read by Combat's sweep and by Effects, which derives impact
+    // points — and therefore camera shake — from it. A NaN bone would launder
+    // itself into the camera transform that way, so the export is validated at
+    // the same boundary as the body transform: fall back to a body-relative
+    // blade rather than publishing a poisoned one.
+    if (!isFiniteVec(this.bladeBase) || !isFiniteVec(this.bladeTip)) {
+      this.bladeBase.copy(this.position);
+      this.bladeBase.y += 1.15;
+      this.bladeTip.copy(this.bladeBase).addScaledVector(this.forward, this.weapon.length);
+      if (!isFiniteVec(this.bladeBase)) { this.bladeBase.set(0, 0, 0); this.bladeTip.set(0, 0, 1); }
+      if (!this._warnedBladeNaN) {
+        this._warnedBladeNaN = true;
+        console.warn('[player] non-finite blade transform from the rig; using the body fallback');
+      }
+    }
+
+    if (this.prevBladeTip.lengthSq() === 0 || !isFiniteVec(this.prevBladeTip)) {
       this.prevBladeBase.copy(this.bladeBase);
       this.prevBladeTip.copy(this.bladeTip);
     }
@@ -1885,6 +1903,9 @@ export class Player {
 
   /** Called by PlayerCamera when the boom pulls in close enough to clip us. */
   setOpacity(a) {
+    // clamp() is a comparison chain and lets NaN through; a NaN opacity reaches
+    // the GL uniform and every subsequent frame renders the character wrong.
+    if (!Number.isFinite(a)) return;
     a = clamp(a, 0, 1);
     if (Math.abs(a - this._opacity) < 0.01 && a !== 1) return;
     this._opacity = a;
