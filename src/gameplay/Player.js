@@ -278,6 +278,7 @@ export class Player {
     this._rigFootsteps = false;
     this._trailOpen = false;
     this._chainGrace = 0;
+    this._deathHandled = false;
     this._ragdollAt = -1;
     this._dodgeT = null;
     this._staggerTime = 0.6;
@@ -1613,8 +1614,8 @@ export class Player {
           this._setState('stagger', null, true);
           break;
         case 'dead':
-          if (this.isAlive) this._die(null);
-          else this._setState('dead', null, true);
+          this._die(null);
+          if (this.state !== 'dead') this._setState('dead', null, true);
           break;
         case 'parry':
           this._setState('parry', null, true);
@@ -1666,10 +1667,11 @@ export class Player {
   }
 
   onDeath(payload) {
-    if (this.state !== 'dead') {
-      this.isAlive = false;
-      this._die(payload);
-    }
+    // `_die` is idempotent; this route is the one that carries the impulse
+    // direction the ragdoll handoff wants.
+    if (payload?.direction) this._deathDir = payload.direction;
+    if (payload?.point) this._deathPoint = payload.point;
+    this._die(payload);
   }
 
   onExecuteStart(target) {

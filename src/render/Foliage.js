@@ -83,8 +83,9 @@ function chainCacheKey(material, token) {
   };
 }
 
-const _wind3 = { x: 0, y: 0, z: 0 };
-const _sphereScratch = new Sphere();
+// Module-scope scratch. Nothing in update() or the tile generator may allocate.
+const _colScratch = new Color();
+const _windScratch = new Vector3();
 
 function hashTileSeed(tx, tz, lod) {
   let h = Math.imul(tx | 0, 0x27d4eb2d) ^ Math.imul(tz | 0, 0x165667b1) ^ Math.imul(lod + 7, 0x9e3779b1);
@@ -1446,12 +1447,14 @@ export class FoliageSystem {
     mat.userData.kag = local;
 
     const shared = this.uniforms;
-    const windGLSL = this.WIND_GLSL;
-    const pars = vertexPars(windGLSL);
+    const wind = this._windUniforms;
+    const pars = vertexPars();
     const defines = `#define KAG_MODE ${mode}\n#define KAG_BEND_EXP ${bendExp.toFixed(2)}\n` +
       (whip > 0 ? `#define KAG_WHIP ${whip.toFixed(3)}\n` : '');
 
     chainBeforeCompile(mat, (shader) => {
+      shader.uniforms.uWind = wind.uWind;   // same object as Weather's — never a copy
+      shader.uniforms.uGust = wind.uGust;
       for (const k in shared) shader.uniforms[k] = shared[k];
       for (const k in local) shader.uniforms[k] = local[k];
 
@@ -1488,12 +1491,15 @@ export class FoliageSystem {
     });
 
     const shared = this.uniforms;
+    const wind = this._windUniforms;
     const local = mat.userData.kag;
-    const pars = vertexPars(this.WIND_GLSL);
+    const pars = vertexPars();
     const defines = `#define KAG_MODE ${mode}\n#define KAG_BEND_EXP ${bendExp.toFixed(2)}\n` +
       (whip > 0 ? `#define KAG_WHIP ${whip.toFixed(3)}\n` : '');
 
     chainBeforeCompile(depth, (shader) => {
+      shader.uniforms.uWind = wind.uWind;
+      shader.uniforms.uGust = wind.uGust;
       for (const k in shared) shader.uniforms[k] = shared[k];
       for (const k in local) shader.uniforms[k] = local[k];
       shader.vertexShader = shader.vertexShader

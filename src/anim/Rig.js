@@ -2930,3 +2930,378 @@ export class Rig {
       b.matrixWorldNeedsUpdate = true;
     }
   }
+
+  // ------------------------------------------------------------------ IK
+
+  /**
+   * Analytic two-bone IK. `chain` is three bone names or Bones (root, mid, end);
+   * `pole` steers the elbow/knee plane. Solved entirely in world quaternions so no
+   * matrix rebuild is needed between the two joints.
+   */
+  solveIK(chain, target, poleTarget, weight) {
+    const w = weight === undefined ? 1 : clamp(weight, 0, 1);
+    if (w <= 0.001) return false;
+    const b0 = typeof chain[0] === 'string' ? this.bones[chain[0]] : chain[0];
+    const b1 = typeof chain[1] === 'string' ? this.bones[chain[1]] : chain[1];
+    const b2 = typeof chain[2] === 'string' ? this.bones[chain[2]] : chain[2];
+    if (!b0 || !b1 || !b2) return false;
+
+    const A = _v[0].setFromMatrixPosition(b0.matrixWorld);
+    const B = _v[1].setFromMatrixPosition(b1.matrixWorld);
+    const C = _v[2].setFromMatrixPosition(b2.matrixWorld);
+    const l1 = A.distanceTo(B), l2 = B.distanceTo(C);
+    if (l1 < 1e-5 || l2 < 1e-5) return false;
+
+    const T = _v[3].copy(target);
+    const toT = _v[4].subVectors(T, A);
+    let dist = toT.length();
+    const maxLen = (l1 + l2) * 0.998;
+    if (dist > maxLen) { toT.multiplyScalar(maxLen / dist); dist = maxLen; T.copy(A).add(toT); }
+    if (dist < 1e-4) return false;
+    const dir = _v[5].copy(toT).divideScalar(dist);
+
+    // Bend plane: prefer the pole, fall back to the current elbow offset so a
+    // straight-armed chain does not snap to an arbitrary axis.
+    const pole = _v[6];
+    if (poleTarget) pole.copy(poleTarget).sub(A);
+    else pole.copy(B).sub(A);
+    pole.addScaledVector(dir, -pole.dot(dir));
+    if (pole.lengthSq() < 1e-8) {
+      pole.copy(_UP).addScaledVector(dir, -_UP.dot(dir));
+      if (pole.lengthSq() < 1e-8) pole.set(1, 0, 0).addScaledVector(dir, -dir.x);
+    }
+    pole.normalize();
+
+    const cosA = clamp((l1 * l1 + dist * dist - l2 * l2) / (2 * l1 * dist), -1, 1);
+    const angA = Math.acos(cosA);
+    // Desired mid-joint position: swing `dir` toward the pole by the root angle.
+    const Bd = _v[7].copy(dir).multiplyScalar(Math.cos(angA))
+      .addScaledVector(pole, Math.sin(angA)).multiplyScalar(l1).add(A);
+
+    // --- root bone
+    const cur0 = _v[8].subVectors(B, A).normalize();
+    const want0 = _v[9].subVectors(Bd, A).normalize();
+    const d0 = _q[0].setFromUnitVectors(cur0, want0);
+    if (w < 1) d0.slerp(_q[5].identity(), 1 - w);
+    const w0 = _q[1].setFromRotationMatrix(_m[0].extractRotation(b0.matrixWorld));
+    const n0 = _q[2].copy(d0).multiply(w0);
+    const p0 = b0.parent
+      ? _q[3].setFromRotationMatrix(_m[1].extractRotation(b0.parent.matrixWorld)).invert()
+      : _q[3].identity();
+    b0.quaternion.copy(p0).multiply(n0);
+
+    // --- mid bone: its world position is Bd and its world rotation picked up d0.
+    const curC = _v[10].copy(C).sub(B).applyQuaternion(d0).normalize();
+    const wantC = _v[11].subVectors(T, Bd).normalize();
+    const d1 = _q[4].setFromUnitVectors(curC, wantC);
+    if (w < 1) d1.slerp(_q[5].identity(), 1 - w);
+    const w1 = _q[5].setFromRotationMatrix(_m[2].extractRotation(b1.matrixWorld));
+    const n1 = _q[6].copy(d1).multiply(_q[7].copy(d0).multiply(w1));
+    b1.quaternion.copy(_q[8].copy(n0).invert()).multiply(n1);
+
+    b0.updateMatrixWorld(true);
+    return true;
+  }
+
+  /**
+   * Foot planting. Probes the ground under each ankle, drops the hips so the lower
+   * foot can reach without the higher one hyperextending, runs two-bone IK per leg
+   * and tilts each foot onto the surface normal. This is what stops a character from
+   * floating up a stone stair or standing on air on a slope.
+   */
+  _applyFootIK(dt) {
+    const S = this.scale;
+    const ankleLift = 0.085 * S;
+    const maxLift = 0.42 * S, maxDrop = 0.34 * S;
+    const feet = ['footR', 'footL'];
+    let lowest = 0;
+    let anyHit = false;
+
+    for (let i = 0; i < 2; i++) {
+      const foot = this.bones[feet[i]];
+      const a = _v[12].setFromMatrixPosition(foot.matrixWorld);
+      const hit = this._probeGround(a.x, a.y + 0.60 * S, a.z, 1.4 * S);
+      if (!hit) { this._footY[i] = a.y; this._footN[i].copy(this.groundNormal); continue; }
+      anyHit = true;
+      const want = clamp(this._groundY + ankleLift, a.y - maxDrop, a.y + maxLift);
+      this._footY[i] = damp(this._footY[i] || want, want, 16, dt);
+      this._footN[i].lerp(this._groundNrm, 1 - Math.exp(-12 * dt)).normalize();
+      lowest = Math.min(lowest, this._footY[i] - a.y);
+    }
+    if (!anyHit) { this._hipDrop = damp(this._hipDrop, 0, 10, dt); return; }
+
+    // Counter-rotate — really counter-translate — the hips so the character does not
+    // grow taller on a slope.
+    this._hipDrop = damp(this._hipDrop, clamp(lowest, -maxDrop, 0), 11, dt);
+    const hips = this.bones.hips;
+    hips.position.y = this._restP[1 * 3 + 1] + this._outP[1 * 3 + 1] * S + this._hipDrop;
+    hips.updateMatrixWorld(true);
+
+    for (let i = 0; i < 2; i++) {
+      const sideU = i === 0 ? 'R' : 'L';
+      const foot = this.bones['foot' + sideU];
+      const a = _v[13].setFromMatrixPosition(foot.matrixWorld);
+      // Knee pole: forward of the knee in the rig's own frame, so it never inverts.
+      const knee = _v[14].setFromMatrixPosition(this.bones['shin' + sideU].matrixWorld);
+      const hip = _v[15].setFromMatrixPosition(this.bones['thigh' + sideU].matrixWorld);
+      _v[16].copy(knee).sub(hip);
+      _v[17].copy(a).sub(hip).normalize();
+      _v[16].addScaledVector(_v[17], -_v[16].dot(_v[17]));
+      if (_v[16].lengthSq() < 1e-7) this.root.getWorldDirection(_v[16]).multiplyScalar(-1);
+      _v[16].normalize().multiplyScalar(0.9 * S).add(knee);
+
+      _v[18].set(a.x, this._footY[i], a.z);
+      // Standing still is where foot skate is most visible, so lock the plant only
+      // then — at speed the phase-driven cadence already keeps the feet honest.
+      if (this._loco.speed < 0.4) {
+        if (!this._footLocked[i]) { this._footLock[i].copy(_v[18]); this._footLocked[i] = 1; }
+        _v[18].x = lerp(_v[18].x, this._footLock[i].x, 0.35);
+        _v[18].z = lerp(_v[18].z, this._footLock[i].z, 0.35);
+      } else this._footLocked[i] = 0;
+
+      this.solveIK(['thigh' + sideU, 'shin' + sideU, 'foot' + sideU], _v[18], _v[16], 1);
+
+      // Roll the sole onto the surface, clamped so a steep face does not snap the ankle.
+      const n = this._footN[i];
+      const up = _v[19].set(0, 1, 0).applyQuaternion(
+        _q[9].setFromRotationMatrix(_m[3].extractRotation(foot.matrixWorld))).normalize();
+      const dot = clamp(up.dot(n), -1, 1);
+      if (dot < 0.9995) {
+        const ang = Math.acos(dot);
+        const lim = Math.min(ang, 0.42);
+        const d = _q[10].setFromUnitVectors(up, n);
+        if (lim < ang) d.slerp(_q[11].identity(), 1 - lim / ang);
+        const wq = _q[11].setFromRotationMatrix(_m[4].extractRotation(foot.matrixWorld));
+        const nq = _q[12].copy(d).multiply(wq);
+        const pq = _q[13].setFromRotationMatrix(_m[5].extractRotation(foot.parent.matrixWorld)).invert();
+        foot.quaternion.copy(pq).multiply(nq);
+        foot.updateMatrixWorld(true);
+      }
+    }
+  }
+
+  /**
+   * Ground query. `ctx.physics.raycastDown` is the intended path, but Physics.js is
+   * written in parallel and its return shape is not pinned, so every plausible shape
+   * is accepted and the working one is cached. Terrain height is the fallback, and a
+   * flat plane at the root is the fallback's fallback.
+   */
+  _probeGround(x, y, z, maxDist) {
+    const phys = this.ctx.physics;
+    if (this._groundMode !== 1 && phys && typeof phys.raycastDown === 'function') {
+      try {
+        const r = phys.raycastDown(x, y, z, maxDist);
+        if (r === null || r === undefined || r === false) { this._groundMode = 0; return false; }
+        if (typeof r === 'number') {
+          this._groundMode = 0; this._groundY = r; this._groundNrm = this.groundNormal; return true;
+        }
+        if (r.point) {
+          this._groundMode = 0;
+          this._groundY = r.point.y;
+          this._groundNrm = r.normal || this.groundNormal;
+          return true;
+        }
+        if (typeof r.distance === 'number') {
+          this._groundMode = 0;
+          this._groundY = y - r.distance;
+          this._groundNrm = r.normal || this.groundNormal;
+          return true;
+        }
+        if (typeof r.y === 'number') {
+          this._groundMode = 0; this._groundY = r.y; this._groundNrm = r.normal || this.groundNormal; return true;
+        }
+      } catch { this._groundMode = 1; }
+    }
+    const terr = this.ctx.terrain;
+    if (terr) {
+      const fn = terr.heightAt || terr.getHeight || terr.sampleHeight;
+      if (typeof fn === 'function') {
+        try {
+          const h = fn.call(terr, x, z);
+          if (typeof h === 'number' && Number.isFinite(h)) {
+            this._groundY = h; this._groundNrm = this.groundNormal; return true;
+          }
+        } catch { /* fall through */ }
+      }
+    }
+    this._groundY = this.root.matrixWorld.elements[13];
+    this._groundNrm = this.groundNormal;
+    return this.grounded;
+  }
+
+  // --------------------------------------------------------------- look-at
+
+  /**
+   * Head/neck/spine aim with per-bone weight and an angular limit, applied outward
+   * along the chain so the spine contributes a little and the head does most of it.
+   */
+  _applyLookAt(dt) {
+    this._lookWeight = damp(this._lookWeight, this._lookActive ? this._lookTargetWeight : 0, 9, dt);
+    if (this._lookWeight <= 0.004) return;
+    const chain = LOOK_CHAIN;
+    for (let i = 0; i < chain.length; i++) {
+      const c = chain[i];
+      const bone = this.bones[c.bone];
+      if (!bone) continue;
+      const p = _v[0].setFromMatrixPosition(bone.matrixWorld);
+      const wq = _q[0].setFromRotationMatrix(_m[0].extractRotation(bone.matrixWorld));
+      const fwd = _v[1].copy(_FWD).applyQuaternion(wq).normalize();
+      const want = _v[2].copy(this._look).sub(p);
+      if (want.lengthSq() < 1e-6) continue;
+      want.normalize();
+      const dot = clamp(fwd.dot(want), -1, 1);
+      const ang = Math.acos(dot);
+      if (ang < 1e-4) continue;
+      const w = this._lookWeight * c.weight;
+      const applied = Math.min(ang * w, c.limit);
+      const d = _q[1].setFromUnitVectors(fwd, want);
+      d.slerp(_q[2].identity(), 1 - applied / ang);
+      const nq = _q[3].copy(d).multiply(wq);
+      const pq = _q[4].setFromRotationMatrix(_m[1].extractRotation(bone.parent.matrixWorld)).invert();
+      bone.quaternion.copy(pq).multiply(nq);
+      bone.updateMatrixWorld(true);
+    }
+  }
+
+  // ----------------------------------------------------------------- cloth
+
+  _updateCloth(dt) {
+    if (this.cloths.length === 0) return;
+    const q = this.ctx.quality;
+    const simulate = this._cloth && this.lod === 0 && (!q || q.cloth !== false);
+
+    this._rootInv.copy(this.root.matrixWorld).invert();
+    for (let i = 0; i < this.cloths.length; i++) this.cloths[i].updateAnchors(this.bones, this._rootInv);
+
+    this._sampleWind(this._wind);
+    const w = this._wind;
+
+    if (!simulate) {
+      // LOW tier / distant LOD: a travelling wave instead of a solver.
+      for (let i = 0; i < this.cloths.length; i++) {
+        const c = this.cloths[i];
+        c.sway(this.time, w.x, w.y, w.z);
+        c.flush();
+      }
+      return;
+    }
+
+    // Fixed 60 Hz substeps: Verlet with a variable timestep is not stable, and a
+    // hakama that explodes once is a hakama the player never trusts again.
+    const iters = q && q.tier >= 2 ? 6 : q && q.tier >= 1 ? 4 : 3;
+    this._updateColliders();
+    this._clothAccum = Math.min(this._clothAccum + dt, 0.05);
+    const h = 1 / 60;
+    let steps = 0;
+    while (this._clothAccum >= h && steps < 3) {
+      for (let i = 0; i < this.cloths.length; i++) {
+        this.cloths[i].step(h, w.x, w.y, w.z, this._colliders, iters);
+      }
+      this._clothAccum -= h;
+      steps++;
+    }
+    if (steps > 0) for (let i = 0; i < this.cloths.length; i++) this.cloths[i].flush();
+  }
+
+  _updateColliders() {
+    const defs = this._colliderDefs;
+    const inv = this._rootInv;
+    for (let i = 0; i < defs.length; i++) {
+      const d = defs[i], c = this._colliders[i];
+      const a = this.bones[d[0]], b = this.bones[d[1]];
+      if (!a || !b) continue;
+      _v[0].setFromMatrixPosition(a.matrixWorld).applyMatrix4(inv);
+      _v[1].setFromMatrixPosition(b.matrixWorld).applyMatrix4(inv);
+      c[0] = _v[0].x; c[1] = _v[0].y; c[2] = _v[0].z;
+      c[3] = _v[1].x; c[4] = _v[1].y; c[5] = _v[1].z;
+      c[6] = d[2];
+    }
+  }
+
+  /**
+   * Wind in the rig's local frame. Reads `ctx.wind` (written by Weather) when present
+   * so cloth gusts in step with the grass and the bamboo — ARCHITECTURE §5.5 asks for
+   * wind that visibly propagates, and cloth moving on its own private schedule breaks
+   * that illusion instantly. Falls back to a built-in gust field.
+   */
+  _sampleWind(out) {
+    const w = this.ctx.wind;
+    let dx = 0.82, dz = 0.57, strength = 0.45, gust = 0;
+    if (w) {
+      if (w.direction) { dx = w.direction.x; dz = w.direction.z; }
+      else if (typeof w.x === 'number') { dx = w.x; dz = w.z; }
+      if (typeof w.strength === 'number') strength = w.strength;
+      if (typeof w.gust === 'number') gust = w.gust;
+    } else {
+      dx = Math.cos(this.time * 0.11);
+      dz = Math.sin(this.time * 0.09);
+    }
+    const l = Math.hypot(dx, dz) || 1;
+    // Two noise fields an octave apart: a slow swell and the sharp leading edge.
+    const g = 0.62 + 0.42 * noise.noise2(this.time * 0.33, this.seed * 0.011)
+      + 0.20 * noise.noise2(this.time * 0.95, 7.3) + gust;
+    const mag = WIND_FORCE * strength * Math.max(0, g);
+    out.set((dx / l) * mag, Math.abs(noise.noise2(this.time * 0.5, 2.2)) * mag * 0.16, (dz / l) * mag);
+    // Into rig space, so a character running crosswind gets the right side loading.
+    _q[0].setFromRotationMatrix(_m[0].extractRotation(this.root.matrixWorld)).invert();
+    out.applyQuaternion(_q[0]);
+    return out;
+  }
+
+  // ------------------------------------------------------------- lifecycle
+
+  /** Return to the bind pose and clear every layer, spring and lock. Pool-safe. */
+  reset() {
+    for (const l of this.layers) {
+      l.clip = null; l.prev = null; l.time = 0; l.blend = 1;
+      l.weight = l.index === LAYER_BASE ? 1 : 0;
+      l.targetWeight = l.weight;
+      l.finished = false; l.onEnd = null; l._eventCursor = 0;
+    }
+    this._locoMode = true;
+    this._locoDriven = false;
+    this._loco.forward = 0; this._loco.strafe = 0; this._loco.speed = 0; this._loco.norm = 0;
+    this.locoPhase = 0;
+    this._phasePrev = undefined;
+    this._hipDrop = 0;
+    this._flinchX = this._flinchZ = this._flinchVX = this._flinchVZ = 0;
+    this._recoil = this._recoilV = 0;
+    this._lagSpine = this._lagSpineV = this._lagHead = this._lagHeadV = 0;
+    this._lookActive = false; this._lookWeight = 0; this._lookTargetWeight = 0;
+    this._footLocked[0] = 0; this._footLocked[1] = 0;
+    this.lod = 0; this._ik = true;
+    this._applyClothVisibility();
+    for (let i = 0; i < NB; i++) {
+      this._outQ[i * 4] = 0; this._outQ[i * 4 + 1] = 0; this._outQ[i * 4 + 2] = 0; this._outQ[i * 4 + 3] = 1;
+      this._outP[i * 3] = 0; this._outP[i * 3 + 1] = 0; this._outP[i * 3 + 2] = 0;
+    }
+    this._writeBones();
+    this.root.updateMatrixWorld(true);
+    for (const c of this.cloths) { c.updateAnchors(this.bones, this._rootInv.copy(this.root.matrixWorld).invert()); }
+    return this;
+  }
+
+  /** Tier changed at runtime. Mesh density is baked, so only the live knobs move. */
+  applyQuality(quality) {
+    const q = quality || this.ctx.quality;
+    if (q && q.cloth === false) this.setCloth(false);
+    else if (this.lod === 0) this.setCloth(true);
+  }
+
+  dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
+    this._listeners.clear();
+    for (const c of this.cloths) c.dispose();
+    this.cloths.length = 0;
+    this.root.traverse((o) => {
+      // Materials are shared by palette across every instance of an archetype, so
+      // only geometry is ours to free here.
+      if (o.geometry && o.geometry.dispose) o.geometry.dispose();
+    });
+    if (this.root.parent) this.root.parent.remove(this.root);
+    if (this.skeleton && this.skeleton.dispose) this.skeleton.dispose();
+    this.mesh = null;
+    this.built = false;
+  }
+}

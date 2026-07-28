@@ -324,6 +324,8 @@ class CombatRecord {
     this.swingHeavy = false;
     this.swingKind = 'slash';
     this.swingDamage = null;
+    this.swingPoise = null;
+    this.swingPosture = null;
     this.swingMulti = false;
     this.hitIds = [];
     this.hitTimes = [];
@@ -377,6 +379,8 @@ class CombatRecord {
     this.swinging = false;
     this.swingId = 0;
     this.swingDamage = null;
+    this.swingPoise = null;
+    this.swingPosture = null;
     this.swingMulti = false;
     this.swingHeavy = false;
     this.swingKind = 'slash';
@@ -2199,6 +2203,17 @@ export class CombatDirector {
           Number.isFinite(outTip.x) && Number.isFinite(outBase.x)) return true;
       } catch { /* fall through to the next strategy */ }
     }
+    // Enemy exports on the weapon, Player on the entity; both keep them live each frame.
+    if (w.bladeBase?.isVector3 && w.bladeTip?.isVector3 &&
+      (w.bladeTip.lengthSq() > 0 || w.bladeBase.lengthSq() > 0)) {
+      outBase.copy(w.bladeBase); outTip.copy(w.bladeTip);
+      if (Number.isFinite(outTip.x)) return true;
+    }
+    if (e.bladeBase?.isVector3 && e.bladeTip?.isVector3 &&
+      (e.bladeTip.lengthSq() > 0 || e.bladeBase.lengthSq() > 0)) {
+      outBase.copy(e.bladeBase); outTip.copy(e.bladeTip);
+      if (Number.isFinite(outTip.x)) return true;
+    }
     if (w.base?.isVector3 && w.tip?.isVector3) {
       outBase.copy(w.base); outTip.copy(w.tip);
       if (Number.isFinite(outTip.x)) return true;
@@ -2336,6 +2351,8 @@ export class CombatDirector {
     rec.swingKind = opts?.kind || e.weapon?.kind || 'slash';
     rec.swingMulti = opts?.multiHit ?? !!e.weapon?.multiHit;
     rec.swingDamage = opts?.damage ?? null;
+    rec.swingPoise = opts?.poise ?? e.weapon?.poise ?? e.weapon?.posture ?? null;
+    rec.swingPosture = opts?.posture ?? e.weapon?.posture ?? null;
   }
 
   _openSwing(rec, e, opts, now) {
