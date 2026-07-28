@@ -455,8 +455,13 @@ const FRAGMENT_SSS = /* glsl */`
   float wrap = clamp( ( dot( N, uSunDir ) + 0.55 ) / 1.55, 0.0, 1.0 );
   float thin = mix( 0.30, 1.0, vKagT );
   float lit = mix( 0.35, 1.0, kagLit );
-  vec3 trans = uSSSColor * uSunColor * ( forward * 1.7 + 0.18 ) * thin * uSSSStrength * lit;
-  outgoingLight += diffuseColor.rgb * ( trans + uSunColor * wrap * 0.16 * lit );
+
+  // Transmission is a *tint on the light*, not a second saturated colour multiplied into
+  // it. Desaturating uSSSColor toward white before it meets the (strongly amber) magic-hour
+  // sun is what stops pale blossom from coming out of the tone mapper as a hot primary red.
+  vec3 sssTint = mix( vec3( 1.0 ), uSSSColor, 0.6 );
+  vec3 trans = sssTint * uSunColor * ( forward * 0.85 + 0.10 ) * thin * uSSSStrength * lit;
+  outgoingLight += diffuseColor.rgb * ( trans + uSunColor * wrap * 0.14 * lit );
 }
 `;
 
@@ -666,15 +671,17 @@ const TREE_SPECIES = {
     height: 6.4, trunkRadius: 0.185, depth: 4, segs: 5, sides: 5,
     children: [3, 3, 3, 2], split: 0.62, splitJitter: 0.26, lengthRatio: 0.72,
     radiusRatio: 0.66, upBias: 0.10, gravity: -0.055, wobble: 0.14, trunkFrac: 0.30,
-    phyllotaxis: 2.39996, leavesPerTip: 5, leafSize: 0.95, leafSpread: 0.60,
-    leafFrom: 2, wood: 0x4a3a33, foliage: 0xf3c9d6,
+    // leafFrom 3 + 3 per tip keeps the crown at ~4x overdraw instead of 15x. Past 6x the
+    // alpha holes of neighbouring cards fill each other in and the crown fuses solid.
+    phyllotaxis: 2.39996, leavesPerTip: 3, leafSize: 1.05, leafSpread: 0.62,
+    leafFrom: 3, wood: 0x4a3a33, foliage: 0xf6e2e4,
   },
   momiji: {
     height: 4.6, trunkRadius: 0.145, depth: 4, segs: 4, sides: 5,
     children: [3, 3, 2, 2], split: 0.80, splitJitter: 0.30, lengthRatio: 0.70,
     radiusRatio: 0.63, upBias: 0.04, gravity: -0.075, wobble: 0.18, trunkFrac: 0.24,
-    phyllotaxis: 2.39996, leavesPerTip: 6, leafSize: 0.80, leafSpread: 0.52,
-    leafFrom: 2, wood: 0x4d4038, foliage: 0xb02418,
+    phyllotaxis: 2.39996, leavesPerTip: 3, leafSize: 0.88, leafSpread: 0.54,
+    leafFrom: 3, wood: 0x4d4038, foliage: 0xb02418,
   },
   cedar: {
     height: 13.5, trunkRadius: 0.32, depth: 2, segs: 7, sides: 6,
@@ -859,6 +866,40 @@ function speckle(c2d, w, h, amount, seed) {
   c2d.putImageData(img, 0, 0);
 }
 
+/**
+ * Force a card texture's alpha to zero at its own border.
+ *
+ * A foliage card must never be able to show its quad. If the painted content runs to the
+ * edge of the canvas — which every dense cluster texture does — then the outermost cards
+ * in a crown read as hard-edged rectangular slabs, because the rectangle IS the silhouette.
+ * Feathering the alpha guarantees the card dissolves before it reaches the geometry.
+ *
+ * `keepBottom` is for ground-rooted cards (grass clumps, ferns): with flipY the canvas's
+ * bottom row is v=0, which is where the plant meets the soil, and fading that would leave
+ * the clump hovering.
+ */
+function feather(canvas, { inner = 0.46, power = 1.35, keepBottom = false } = {}) {
+  const g = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const img = g.getImageData(0, 0, w, h);
+  const d = img.data;
+  for (let y = 0; y < h; y++) {
+    const ny = ((y + 0.5) / h) * 2 - 1;
+    for (let x = 0; x < w; x++) {
+      const nx = ((x + 0.5) / w) * 2 - 1;
+      // Blend a box distance (kills the straight edges) with a radial one (rounds it off).
+      const box = Math.max(Math.abs(nx), keepBottom ? Math.max(ny, 0) : Math.abs(ny));
+      const rad = Math.min(1, Math.hypot(nx, keepBottom ? Math.max(ny, 0) : ny));
+      const r = box * 0.55 + rad * 0.45;
+      const a = Math.pow(1 - smoothstep(inner, 0.99, r), power);
+      const i = (y * w + x) * 4 + 3;
+      d[i] = d[i] * a;
+    }
+  }
+  g.putImageData(img, 0, 0);
+  return canvas;
+}
+
 /** One lanceolate leaf, drawn from base to tip along +y. */
 function drawLeafShape(g, len, wid, colA, colB, veins) {
   const grad = g.createLinearGradient(0, 0, 0, -len);
@@ -930,49 +971,65 @@ function paintBambooLeaves(size) {
   return c;
 }
 
-/** Sakura past peak: pale petals, a few gone brown, gaps where the wind already took them. */
+/**
+ * Sakura past peak (ARCHITECTURE §5). Deliberately pale — bone and blush, not blossom-pink
+ * and certainly not red. The crimson accent in this frame belongs to the momiji, and the
+ * vermilion belongs to the torii; a third saturated red here would fight both of them.
+ *
+ * Past peak also means gaps: clusters are sparse, a fifth of them have gone brown, and
+ * bare twig shows through where the wind has already stripped the branch.
+ */
 function paintBlossom(size) {
   const c = newCanvas(size, size);
   const g = c.getContext('2d');
   g.clearRect(0, 0, size, size);
   const rnd = makeRandom(3312);
-  const flowers = 13;
+
+  // Bare twig first, so blossom sits on top of it.
+  g.strokeStyle = 'rgba(74,58,51,0.72)';
+  g.lineCap = 'round';
+  for (let i = 0; i < 5; i++) {
+    const x0 = size * (0.42 + (rnd() - 0.5) * 0.2);
+    const y0 = size * 0.94;
+    g.lineWidth = Math.max(1, size * (0.012 - i * 0.0015));
+    g.beginPath();
+    g.moveTo(x0, y0);
+    g.quadraticCurveTo(size * (0.3 + rnd() * 0.4), size * (0.5 + rnd() * 0.2),
+      size * (0.15 + rnd() * 0.7), size * (0.14 + rnd() * 0.3));
+    g.stroke();
+  }
+
+  // Sparse clusters, biased to the middle so the feather pass has room to work.
+  const flowers = 9;
   for (let f = 0; f < flowers; f++) {
-    const cx = size * (0.15 + rnd() * 0.70);
-    const cy = size * (0.15 + rnd() * 0.70);
-    const r = size * (0.055 + rnd() * 0.055);
-    const spent = rnd() < 0.22;
+    const cx = size * (0.24 + rnd() * 0.52);
+    const cy = size * (0.20 + rnd() * 0.56);
+    const r = size * (0.048 + rnd() * 0.048);
+    const spent = rnd() < 0.30;
     for (let p = 0; p < 5; p++) {
       const a = (p / 5) * Math.PI * 2 + rnd() * 0.3;
       const px = cx + Math.cos(a) * r * 0.72;
       const py = cy + Math.sin(a) * r * 0.72;
-      const grad = g.createRadialGradient(px, py, 0, px, py, r * 0.8);
+      const grad = g.createRadialGradient(px, py, 0, px, py, r * 0.85);
       if (spent) {
-        grad.addColorStop(0, 'rgba(214,186,170,0.95)');
-        grad.addColorStop(1, 'rgba(180,146,132,0.0)');
+        // Browning off — the bone end of the range.
+        grad.addColorStop(0, 'rgba(226,212,196,0.92)');
+        grad.addColorStop(0.6, 'rgba(202,182,163,0.72)');
+        grad.addColorStop(1, 'rgba(186,164,146,0.0)');
       } else {
-        grad.addColorStop(0, 'rgba(255,246,248,1)');
-        grad.addColorStop(0.55, 'rgba(247,205,218,1)');
-        grad.addColorStop(1, 'rgba(233,168,190,0.0)');
+        grad.addColorStop(0, 'rgba(255,252,250,1)');
+        grad.addColorStop(0.5, 'rgba(250,232,234,0.96)');
+        grad.addColorStop(1, 'rgba(240,214,219,0.0)');
       }
       g.fillStyle = grad;
       g.beginPath();
       g.ellipse(px, py, r * 0.62, r * 0.48, a, 0, Math.PI * 2);
       g.fill();
     }
-    g.fillStyle = 'rgba(196,140,72,0.85)';
-    g.beginPath(); g.arc(cx, cy, r * 0.16, 0, Math.PI * 2); g.fill();
+    g.fillStyle = 'rgba(188,150,96,0.6)';
+    g.beginPath(); g.arc(cx, cy, r * 0.14, 0, Math.PI * 2); g.fill();
   }
-  // A few dark twigs so the cluster is not a floating cloud of pink.
-  g.strokeStyle = 'rgba(58,44,40,0.8)';
-  g.lineWidth = Math.max(1, size * 0.010);
-  for (let i = 0; i < 6; i++) {
-    g.beginPath();
-    g.moveTo(size * rnd(), size * rnd());
-    g.lineTo(size * rnd(), size * rnd());
-    g.stroke();
-  }
-  speckle(g, size, size, 0.16, 5521);
+  speckle(g, size, size, 0.12, 5521);
   return c;
 }
 
@@ -1438,15 +1495,21 @@ export class FoliageSystem {
     };
 
     const palette = ['#4e6b3c', '#5d7a41', '#77883f', '#9c8548', '#c07a3a'];
+
+    // Every cluster card gets its alpha feathered to zero at the quad border, or the
+    // outermost cards in a crown read as hard rectangular slabs. Ground-rooted cards keep
+    // their bottom edge so they stay planted, and susuki is excluded entirely because its
+    // left-hand blade strip has to stay opaque edge to edge.
+    const rooted = { keepBottom: true, inner: 0.52, power: 1.1 };
     this.tex = {
-      clump: T(paintGrassClump(px, palette)),
-      bambooLeaf: T(paintBambooLeaves(px)),
-      blossom: T(paintBlossom(px)),
-      momiji: T(paintMomiji(px)),
-      cedar: T(paintCedarSpray(px)),
-      fern: T(paintFern(px)),
+      clump: T(feather(paintGrassClump(px, palette), rooted)),
+      bambooLeaf: T(feather(paintBambooLeaves(px))),
+      blossom: T(feather(paintBlossom(px), { inner: 0.34, power: 1.5 })),
+      momiji: T(feather(paintMomiji(px), { inner: 0.40, power: 1.4 })),
+      cedar: T(feather(paintCedarSpray(px), { inner: 0.42, power: 1.3 })),
+      fern: T(feather(paintFern(px), rooted)),
       susuki: T(paintSusuki(px)),
-      fallen: T(paintFallenLeaves(px)),
+      fallen: T(feather(paintFallenLeaves(px), { inner: 0.50, power: 1.2 })),
     };
 
     const gd = paintGroundDetail(Math.min(512, px * 2));
@@ -2126,9 +2189,10 @@ export class FoliageSystem {
 
   _buildTreeAssets(q) {
     const defs = [
-      { key: 'sakura', seed: 0x5A1201, tex: this.tex.blossom, tint: 0xf3c9d6, sss: 1.5, emitter: 'petal' },
-      { key: 'momiji', seed: 0x30D311, tex: this.tex.momiji, tint: 0xc2381f, sss: 1.7, emitter: 'leaf' },
-      { key: 'cedar', seed: 0x0CED11, tex: this.tex.cedar, tint: 0x8fae86, sss: 0.55, emitter: null },
+      // Sakura sits in the pale-pink-to-bone band and stays there; momiji owns the crimson.
+      { key: 'sakura', seed: 0x5A1201, tex: this.tex.blossom, tint: 0xf6e2e4, sss: 0.55, emitter: 'petal' },
+      { key: 'momiji', seed: 0x30D311, tex: this.tex.momiji, tint: 0xb02418, sss: 0.95, emitter: 'leaf' },
+      { key: 'cedar', seed: 0x0CED11, tex: this.tex.cedar, tint: 0x8fae86, sss: 0.30, emitter: null },
     ];
 
     const list = [];
