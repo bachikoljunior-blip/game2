@@ -1597,6 +1597,12 @@ export class FoliageSystem {
   /**
    * How much vegetation belongs at this spot, 0..1. Stone, gravel, water and the shrine's
    * swept courtyard get none; soil gets all of it; slope thins it out.
+   *
+   * The surface classification is the single source of truth for "is this swept ground".
+   * There used to be a second `plateauMask` multiplier here, from when Terrain reported the
+   * whole plateau as gravel and this needed its own defence; now that the courtyard is
+   * classified honestly it was thinning the entire rim out to r = 78 to 18% — the exact
+   * band ARCHITECTURE §5 wants planted — so the belt came off and the braces stayed.
    */
   _siteWeight(x, z, y) {
     const surf = this._surfaceAt(x, z);
@@ -1612,8 +1618,6 @@ export class FoliageSystem {
     if (w <= 0) return 0;
     if (y < WORLD.WATER_LEVEL + 0.35) return 0;
     w *= 1 - smoothstep(0.34, 0.78, this._slopeAt(x, z));
-    // The plateau immediately around the honden is swept gravel, not meadow.
-    w *= lerp(1, 0.18, plateauMask(x, z));
     return clamp(w, 0, 1);
   }
 

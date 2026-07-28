@@ -51,6 +51,9 @@ const DEG2RAD = MathUtils.DEG2RAD;
  */
 const ENV_AMBIENT_GAIN = 0.42;
 
+/** Ceiling on cascades, and the fixed length of the `kagCascades` uniform array. */
+const MAX_CASCADES = 4;
+
 /**
  * Hardware point-light slots reserved for *standing* lights (lanterns, braziers,
  * chōchin), indexed by `quality.tier`. Deliberately a separate budget from the spark
@@ -392,7 +395,7 @@ export class LightingSystem {
     // stock directional loop — which would sum all N cascade lights at full intensity.
     // One light is the only safe configuration there.
     this._shadowsEnabled = !!q.shadows;
-    this.cascadeCount = this._shadowsEnabled ? Math.max(1, Math.min(4, q.shadowCascades | 0)) : 1;
+    this.cascadeCount = this._shadowsEnabled ? Math.max(1, Math.min(MAX_CASCADES, q.shadowCascades | 0)) : 1;
     this.shadowMapSize = q.shadowMapSize | 0;
     this.shadowDistance = q.shadowDistance;
     this.softShadows = !!q.softShadows;
@@ -432,8 +435,14 @@ export class LightingSystem {
     this._sphereR = new Float32Array(this.cascadeCount);
     this.csm.splits = this._splits;
 
+    // Always MAX_CASCADES long, never `cascadeCount`. three's `WebGLUniforms.flatten`
+    // walks an array uniform to the size the *compiled program* declares, so if this
+    // array is ever shorter than KAG_CASCADES — one tier step down, before every
+    // material has recompiled, or if an author's `customProgramCacheKey` has dropped
+    // our token and a stale program gets reused — it reads past the end and throws
+    // inside the renderer. Padding costs three Vector2s and removes the whole class.
     const arr = [];
-    for (let i = 0; i < this.cascadeCount; i++) arr.push(new Vector2(0, 1));
+    for (let i = 0; i < MAX_CASCADES; i++) arr.push(new Vector2(0, 1));
     this._u.kagCascades.value = arr;
     this._fitFov = -1;
 
@@ -1086,7 +1095,7 @@ export class LightingSystem {
   }
 
   applyQuality(q) {
-    const wantCascades = q.shadows ? Math.max(1, Math.min(4, q.shadowCascades | 0)) : 1;
+    const wantCascades = q.shadows ? Math.max(1, Math.min(MAX_CASCADES, q.shadowCascades | 0)) : 1;
     const cascadesChanged = wantCascades !== this.cascadeCount;
     const sizeChanged = (q.shadowMapSize | 0) !== this.shadowMapSize;
     const shadowsChanged = !!q.shadows !== this._shadowsEnabled;

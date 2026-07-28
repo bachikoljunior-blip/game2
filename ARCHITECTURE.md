@@ -19,6 +19,21 @@ Every contributor (human or agent) MUST follow this contract so parallel work co
 4. **Zero per-frame allocation** in `update()`. Pre-allocate vectors/quaternions at module
    scope or on the instance. No `new Vector3()` inside a loop that runs every frame.
 5. **ES modules, `import { X } from 'three'`.** Addons come from `three/examples/jsm/...`.
+5a. **No conditionally-stable integrators.** `Engine` clamps `dt` to 0.25 s as a tab-switch
+   guard, so *any* frame can arrive with `dt = 0.25`. An explicit-Euler spring
+   `v += (-k*x - c*v) * dt` needs `c*dt < 2` to converge; at `c = 2*sqrt(26)` and
+   `dt = 0.25` that is 2.55, and it diverges to NaN in about twenty frames. This
+   actually shipped, in the player's landing-absorb spring, and it was unreachable at
+   60 fps — it only appeared on a device slow enough to hit the clamp, which is
+   precisely our target device. **Solve springs analytically** (the critically-damped
+   closed form) or use semi-implicit Euler. Never integrate a stiff term explicitly.
+5b. **Nothing non-finite may cross a system boundary.** A NaN in one system's output
+   becomes an uncaught throw in whichever consumer touches it first — Web Audio and
+   three's uniform upload both throw rather than degrade — and a throw inside
+   `Engine._frame()` aborts the frame *before* `pipeline.render()`, so the game keeps
+   advancing while drawing nothing and `stats.drawCalls` freezes at a stale value.
+   Validate what you export, hold the last good value on failure, and warn once.
+   Note `typeof NaN === 'number'` and `clamp()` passes NaN straight through.
 6. **Own only your files.** Do not edit files listed under another system's ownership.
 7. Comments explain *why*, not *what*. Match the surrounding density.
 
