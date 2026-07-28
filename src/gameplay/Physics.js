@@ -119,7 +119,9 @@ let _idCounter = 1;
 const BONE_ALIASES = {
   hips: ['hips', 'hip', 'pelvis', 'root', 'spine00', 'bip01pelvis'],
   spine: ['spine', 'spine1', 'spine01', 'abdomen', 'waist', 'lowerspine'],
-  chest: ['chest', 'spine2', 'spine02', 'upperchest', 'torso', 'ribcage', 'upperbody'],
+  // `spine3` first: in our own rig that is where the clavicles hang, which is
+  // the joint the arms must branch from.
+  chest: ['chest', 'spine3', 'spine2', 'spine02', 'upperchest', 'torso', 'ribcage', 'upperbody'],
   neck: ['neck', 'neck1', 'neck01'],
   head: ['head', 'skull'],
   upperArmL: ['upperarml', 'leftarm', 'leftupperarm', 'armleft', 'upperarmleft', 'lupperarm', 'larm'],
@@ -134,6 +136,8 @@ const BONE_ALIASES = {
   upperLegR: ['upperlegr', 'rightupleg', 'thighr', 'rightthigh', 'upperlegright', 'uplegr', 'rthigh'],
   lowerLegR: ['lowerlegr', 'rightleg', 'calfr', 'shinr', 'rightcalf', 'lowerlegright', 'rcalf', 'legr'],
   footR: ['footr', 'rightfoot', 'footright', 'rfoot', 'ankler', 'rightankle'],
+  toeL: ['toel', 'lefttoebase', 'toebasel', 'ltoe', 'toe0l', 'balll'],
+  toeR: ['toer', 'righttoebase', 'toebaser', 'rtoe', 'toe0r', 'ballr'],
 };
 
 /**
@@ -163,12 +167,12 @@ const RAG_BONES = [
   { j: 'upperLegL', p: 'hips', r: 0.09, m: 7, cone: 62, bend: 0, twist: 30 },
   { j: 'lowerLegL', p: 'upperLegL', r: 0.08, m: 5, cone: 96, bend: 5, twist: 14 },
   { j: 'footL', p: 'lowerLegL', r: 0.07, m: 2, cone: 42, bend: 0, twist: 20 },
-  { j: 'footTipL', p: 'footL', r: 0.06, m: 0.6, cone: 30, bend: 0, twist: 15, tip: ['lowerLegL', 'footL', 0.7] },
+  { j: 'footTipL', p: 'footL', r: 0.06, m: 0.6, cone: 30, bend: 0, twist: 15, tip: ['lowerLegL', 'footL', 0.7], alt: 'toeL' },
 
   { j: 'upperLegR', p: 'hips', r: 0.09, m: 7, cone: 62, bend: 0, twist: 30 },
   { j: 'lowerLegR', p: 'upperLegR', r: 0.08, m: 5, cone: 96, bend: 5, twist: 14 },
   { j: 'footR', p: 'lowerLegR', r: 0.07, m: 2, cone: 42, bend: 0, twist: 20 },
-  { j: 'footTipR', p: 'footR', r: 0.06, m: 0.6, cone: 30, bend: 0, twist: 15, tip: ['lowerLegR', 'footR', 0.7] },
+  { j: 'footTipR', p: 'footR', r: 0.06, m: 0.6, cone: 30, bend: 0, twist: 15, tip: ['lowerLegR', 'footR', 0.7], alt: 'toeR' },
 ];
 
 const normaliseBoneName = (s) => String(s || '')
@@ -2525,12 +2529,21 @@ export class PhysicsWorld {
       const spec = RAG_BONES[i];
       let px = 0, py = 0, pz = 0;
       if (spec.tip) {
-        const a = index[spec.tip[0]], b = index[spec.tip[1]];
-        if (a === undefined || b === undefined) continue;
-        const pa = particles[a], pb = particles[b];
-        px = pb.x + (pb.x - pa.x) * spec.tip[2];
-        py = pb.y + (pb.y - pa.y) * spec.tip[2];
-        pz = pb.z + (pb.z - pa.z) * spec.tip[2];
+        // Prefer a real bone (a toe) when the rig has one; otherwise extrapolate
+        // the parent segment so the leaf bone still has something to aim at.
+        const altBone = spec.alt ? bones[spec.alt] : null;
+        if (altBone) {
+          altBone.updateWorldMatrix(true, false);
+          altBone.getWorldPosition(_v0);
+          px = _v0.x; py = _v0.y; pz = _v0.z;
+        } else {
+          const a = index[spec.tip[0]], b = index[spec.tip[1]];
+          if (a === undefined || b === undefined) continue;
+          const pa = particles[a], pb = particles[b];
+          px = pb.x + (pb.x - pa.x) * spec.tip[2];
+          py = pb.y + (pb.y - pa.y) * spec.tip[2];
+          pz = pb.z + (pb.z - pa.z) * spec.tip[2];
+        }
       } else {
         const bone = bones[spec.j];
         if (!bone) continue;
