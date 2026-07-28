@@ -43,7 +43,7 @@ const _v3 = new Vector3();
  * `__lanternPaper` is in here because a hung chōchin swings on the same gust that
  * moves the banners beside it.
  */
-export const CLOTH_MATERIALS = new Set(['clothIndigo', 'clothCrimson', 'paper', '__lanternPaper']);
+export const CLOTH_MATERIALS = new Set(['clothIndigo', 'clothCrimson', 'paper', '__lanternPaper', '__blossom']);
 
 /**
  * Emissive radiance, in linear working space, for everything in the shrine that is
@@ -679,6 +679,67 @@ function grainTexture(hex, seed) {
   return tex;
 }
 
+/**
+ * Fallback blossom card — a real cutout, generated only if `FoliageSystem` has not
+ * handed us its verified 512² one.
+ *
+ * The thing this replaces was fifteen opaque quads of banner cloth: with no alpha
+ * at all the quad's own rectangle *was* the silhouette, and the hemp weave in the
+ * cloth albedo showed as a lattice inside every rectangle. So the two properties
+ * that matter here are that the border is fully transparent on all four sides and
+ * that most of the card is empty — a card is only a card if you can see past it.
+ *
+ * Colour stays in the pale blush-to-bone band per ARCHITECTURE §5: the crimson in
+ * this frame belongs to the momiji and to the torii, not to the sacred tree.
+ */
+function blossomTexture(seed = 0x5a1201) {
+  const S = 96;
+  const data = new Uint8Array(S * S * 4);
+  const rnd = makeRandom(seed);
+  const flowers = [];
+  for (let i = 0; i < 8; i++) {
+    flowers.push({
+      x: 0.17 + rnd() * 0.66, y: 0.17 + rnd() * 0.66,
+      r: 0.085 + rnd() * 0.075, a: rnd() * Math.PI * 2, warm: rnd(),
+    });
+  }
+  for (let y = 0; y < S; y++) {
+    for (let x = 0; x < S; x++) {
+      const u = x / (S - 1), v = y / (S - 1);
+      let cov = 0, warm = 0.5;
+      for (let i = 0; i < flowers.length; i++) {
+        const f = flowers[i];
+        const dx = u - f.x, dy = v - f.y;
+        const d = Math.hypot(dx, dy);
+        if (d > f.r * 1.9) continue;
+        // Five-lobed rosette: |cos(2.5θ)| completes five petals over a full turn.
+        const th = Math.atan2(dy, dx) + f.a;
+        const petal = f.r * (0.62 + 0.38 * Math.abs(Math.cos(th * 2.5)));
+        const c = 1 - smoothstep(petal * 0.52, petal, d);
+        if (c > cov) warm = f.warm;
+        cov = Math.max(cov, c);
+      }
+      // Hard zero on all four borders, or the card's own edge becomes its outline.
+      const edge = Math.min(Math.min(u, 1 - u), Math.min(v, 1 - v));
+      cov *= smoothstep(0.0, 0.085, edge);
+      const grain = 0.88 + 0.12 * noise.fbm2(u * 15, v * 15, 2);
+      const i4 = (y * S + x) * 4;
+      data[i4] = clamp(1.00 * grain, 0, 1) * 255;
+      data[i4 + 1] = clamp(lerp(0.93, 0.82, warm) * grain, 0, 1) * 255;
+      data[i4 + 2] = clamp(lerp(0.93, 0.86, warm) * grain, 0, 1) * 255;
+      data[i4 + 3] = clamp(cov, 0, 1) * 255;
+    }
+  }
+  const tex = new DataTexture(data, S, S, RGBAFormat);
+  tex.colorSpace = SRGBColorSpace;
+  tex.wrapS = tex.wrapT = RepeatWrapping;
+  tex.magFilter = LinearFilter;
+  tex.minFilter = LinearMipmapLinearFilter;
+  tex.generateMipmaps = true;
+  tex.needsUpdate = true;
+  return tex;
+}
+
 /** Colour/roughness/metalness for every material name in the library contract. */
 const FALLBACK = {
   cedar: [0x5a4436, 0.86, 0.0],
@@ -865,6 +926,7 @@ export class PropFactory {
       case '__glowPool': return this.glowPoolMaterial;
       case '__water': return this.waterMaterial;
       case '__goldPolished': return this.goldPolishedMaterial;
+      case '__blossom': return this.blossomMaterial;
       case '__wetStone': return this.wetStoneMaterial;
       case '__groundStone': return this.groundMaterial;
       default: return this.material(name);
@@ -996,6 +1058,62 @@ export class PropFactory {
     this._goldPol = m;
     this.disposables.push(m);
     return m;
+  }
+
+  /**
+   * 桜 the sacred tree's blossom: an alpha-tested cutout, never the opaque banner
+   * cloth it used to borrow. `alphaTest` matches the 0.36 that Foliage uses for the
+   * equivalent cards so the two read as the same species of foliage in one frame.
+   *
+   * The map is bound late on purpose — `FoliageSystem` boots *after* Level (see the
+   * step order in main.js), so at build time its texture does not exist yet.
+   * `bindFoliageTextures` swaps the real card in on the first frame that Foliage is
+   * up; until then (and if it never comes up) the local fallback carries it, so the
+   * tree is never opaque rectangles regardless of boot order or failure.
+   */
+  get blossomMaterial() {
+    if (this._blossom) return this._blossom;
+    const m = new MeshStandardMaterial({
+      color: 0xf6e2e4,                 // Foliage's sakura tint: blush, not pink
+      roughness: 0.86, metalness: 0,
+      map: this.blossomFallbackTexture,
+      alphaTest: 0.36,
+      transparent: false,              // cutout, not blend — no sort, no depth mess
+      side: DoubleSide,
+      vertexColors: true,
+    });
+    m.name = 'prop:blossom';
+    this._installWind(m);
+    this.ctx?.sky?.applyFog?.(m);
+    this._blossom = m;
+    this.disposables.push(m);
+    return m;
+  }
+
+  get blossomFallbackTexture() {
+    if (!this._blossomTex) {
+      this._blossomTex = blossomTexture(0x5a1201);
+      this.disposables.push(this._blossomTex);
+    }
+    return this._blossomTex;
+  }
+
+  /**
+   * Adopt `FoliageSystem`'s verified blossom card once it exists. Prefers the
+   * documented public field, falls back to the internal table, and leaves the
+   * local card in place if neither is there. Idempotent and safe to call every
+   * frame until it takes.
+   */
+  bindFoliageTextures(foliage) {
+    if (!foliage || this._blossomBound) return false;
+    const tex = foliage.blossomTexture || foliage.tex?.blossom || null;
+    if (!tex) return false;
+    this._blossomBound = true;
+    if (this._blossom && this._blossom.map !== tex) {
+      this._blossom.map = tex;
+      this._blossom.needsUpdate = true;
+    }
+    return true;
   }
 
   /** Wet stone — the chōzuya basin and the splash apron around it. */
@@ -3581,29 +3699,7 @@ export class PropFactory {
 
       if (level >= depth - 1 || r < 0.035) {
         tips++;
-        if (leafy && level >= 2) {
-          const s = 0.55 + rnd() * 0.5;
-          const cluster = new BufferGeometry();
-          const vs = new Float32Array(12);
-          const a = rnd() * Math.PI * 2;
-          const ca = Math.cos(a) * s, sa = Math.sin(a) * s;
-          vs.set([
-            cx - ca, cy - s * 0.35, cz - sa,
-            cx + ca, cy - s * 0.35, cz + sa,
-            cx + ca, cy + s * 0.45, cz + sa,
-            cx - ca, cy + s * 0.45, cz - sa,
-          ]);
-          cluster.setAttribute('position', new BufferAttribute(vs, 3));
-          cluster.setAttribute('uv', new BufferAttribute(new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]), 2));
-          const k = 0.8 + rnd() * 0.45;
-          const cc = new Float32Array(12);
-          for (let v = 0; v < 4; v++) { cc[v * 3] = k * 1.25; cc[v * 3 + 1] = k * 0.66; cc[v * 3 + 2] = k * 0.34; }
-          cluster.setAttribute('color', new BufferAttribute(cc, 3));
-          cluster.setAttribute('aFlutter', new BufferAttribute(new Float32Array([0.5, 1.4, 0.5, 1.4, 1, 1.4, 1, 1.4]), 2));
-          cluster.setIndex([0, 1, 2, 0, 2, 3]);
-          cluster.computeVertexNormals();
-          leaves.push(cluster);
-        }
+        if (leafy && level >= 2) this._blossomCluster(leaves, cx, cy, cz, rnd);
         return;
       }
 
@@ -3640,7 +3736,7 @@ export class PropFactory {
     weatherBand(merged, 0, 2.2, 0.68, 0.84, 0.62, 0.6);       // moss up the north face
     PropFactory.add(b, merged, 'bark');
     if (leaves.length) {
-      PropFactory.add(b, mergeGeometries(leaves.map((g) => normalizeGeo(g, true)), false), 'clothCrimson');
+      PropFactory.add(b, mergeGeometries(leaves.map((g) => normalizeGeo(g, true)), false), '__blossom');
     }
     PropFactory.addCollider(b, PropFactory.boxCollider(trunkR * 2.6, height * 0.6, trunkR * 2.6, 0, 0), 'wood');
 
@@ -3648,6 +3744,49 @@ export class PropFactory {
     b.bounds = { r: height * 0.42, h: height };
     b.tips = tips;
     return b;
+  }
+
+  /**
+   * One clump of blossom at a branch tip: a **crossed pair** of alpha-tested
+   * cards, fully tumbled in yaw, pitch and roll.
+   *
+   * A single quad per tip reads as a card from every angle no matter how good the
+   * texture is, and a set of them that all share an up vector reads as a set of
+   * cards. Crossing two planes gives the clump depth from any approach, and the
+   * tumble means no two clumps in the crown present the same plane to the camera.
+   */
+  _blossomCluster(out, cx, cy, cz, rnd) {
+    const s = 0.42 + rnd() * 0.34;
+    const rot = new Matrix4()
+      .makeRotationY(rnd() * Math.PI * 2)
+      .multiply(new Matrix4().makeRotationX((rnd() - 0.5) * 1.25))
+      .multiply(new Matrix4().makeRotationZ((rnd() - 0.5) * 1.0));
+    // Blush to bone, with the variation kept inside that band — a clump is never
+    // allowed to wander toward the vermilion the torii owns.
+    const k = 0.90 + rnd() * 0.20;
+    const bone = rnd() * 0.5;
+    const cr = k, cg = k * lerp(0.99, 0.94, bone), cb = k * lerp(0.97, 0.90, bone);
+
+    for (let q = 0; q < 2; q++) {
+      const hw = s * (q === 0 ? 1.0 : 0.86);
+      const hh = s * (q === 0 ? 0.82 : 0.94);
+      const vs = q === 0
+        ? new Float32Array([-hw, -hh, 0, hw, -hh, 0, hw, hh, 0, -hw, hh, 0])
+        : new Float32Array([0, -hh, -hw, 0, -hh, hw, 0, hh, hw, 0, hh, -hw]);
+      const g = new BufferGeometry();
+      g.setAttribute('position', new BufferAttribute(vs, 3));
+      g.setAttribute('uv', new BufferAttribute(new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]), 2));
+      const cc = new Float32Array(12);
+      for (let v = 0; v < 4; v++) { cc[v * 3] = cr; cc[v * 3 + 1] = cg; cc[v * 3 + 2] = cb; }
+      g.setAttribute('color', new BufferAttribute(cc, 3));
+      // Blossom on a thin twig: whippy, and the whole clump moves as one.
+      g.setAttribute('aFlutter', new BufferAttribute(new Float32Array([1, 1.3, 1, 1.3, 1, 1.3, 1, 1.3]), 2));
+      g.setIndex([0, 1, 2, 0, 2, 3]);
+      g.applyMatrix4(rot);
+      g.translate(cx, cy, cz);
+      g.computeVertexNormals();
+      out.push(g);
+    }
   }
 
   /** Wrap a finished build as an instancing prototype. */

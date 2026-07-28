@@ -51,6 +51,22 @@ const DEG2RAD = MathUtils.DEG2RAD;
  */
 const ENV_AMBIENT_GAIN = 0.42;
 
+/**
+ * Hardware point-light slots reserved for *standing* lights (lanterns, braziers,
+ * chōchin), indexed by `quality.tier`. Deliberately a separate budget from the spark
+ * pool: a ten-hit flurry must never blow out the shrine's lanterns, and a corridor of
+ * lanterns must never starve the sparks. `NUM_POINT_LIGHTS` is a compile-time constant
+ * in three, so these are allocated once and rebound — never added or removed.
+ */
+const STANDING_SLOTS = [1, 2, 3, 5];
+/** Registrations are free; past this many, nearest-N binding cannot change a frame. */
+const STANDING_MAX = 256;
+/**
+ * A light already holding a slot is treated as this much nearer than it is, so two
+ * lanterns at almost equal range do not trade the slot back and forth as you walk.
+ */
+const STANDING_HYSTERESIS = 0.8;
+
 // --------------------------------------------------------- module scratch space
 
 const _center = new Vector3();
@@ -65,6 +81,8 @@ const _m = new Matrix4();
 const _mInv = new Matrix4();
 const _col = new Color();
 const _col2 = new Color();
+const _sparkPos = new Vector3();
+const _standPos = new Vector3();
 
 // ------------------------------------------------------------------ glsl
 
@@ -323,6 +341,17 @@ export class LightingSystem {
     this._poolSize = 0;
     this._lightCull = 60;
 
+    // --- standing lights ------------------------------------------------------
+    /** Registrations, unbounded. Slots are not; see STANDING_SLOTS. */
+    this._standing = [];
+    this._standingPool = [];
+    this._standingOrder = new Int32Array(32);
+    this._standingDist = new Float32Array(32);
+    this._standingId = 0;
+    this._time = 0;
+    /** Diagnostics that must not spam a 60 Hz loop; see `_warnOnce`. */
+    this._warned = new Set();
+
     this._materials = new Set();
     this._scanTimer = 0;
     this._patchToken = 'kagcsm1-0';
@@ -443,6 +472,24 @@ export class LightingSystem {
         this._pool.push({ light, active: false, age: 0, ttl: 1, base: 0, radius: 8 });
       }
       this._poolSize = want;
+    }
+
+    // --- standing point slots -------------------------------------------------
+    // Same "allocate once, rebind forever" rule as the spark pool, and for the same
+    // reason: the count is baked into every compiled shader.
+    const wantStanding = STANDING_SLOTS[MathUtils.clamp(q.tier | 0, 0, 3)];
+    if (wantStanding !== this._standingPool.length) {
+      for (const l of this._standingPool) { scene.remove(l); l.dispose?.(); }
+      this._standingPool.length = 0;
+      for (let i = 0; i < wantStanding; i++) {
+        const light = new PointLight(0xffffff, 0, 8, 2);
+        light.name = `standingLight${i}`;
+        light.castShadow = false;
+        light.visible = true;
+        scene.add(light);
+        this._standingPool.push(light);
+      }
+      for (const e of this._standing) e._bound = false;
     }
 
     // --- shader ---------------------------------------------------------------
@@ -643,21 +690,82 @@ export class LightingSystem {
     }
   }
 
-  // -------------------------------------------------------------- dynamic pool
+  // ------------------------------------------------------------- diagnostics
 
   /**
-   * Borrow a point light. Returns the THREE.PointLight so the caller can retarget it
-   * while it lives, or null when the pool is empty (never happens — we steal).
+   * A rejected light and a light nobody asked for look identical on screen, so every
+   * rejection has to say so — exactly once, because these sit inside a 60 Hz loop.
+   */
+  _warnOnce(key, message) {
+    if (this._warned.has(key)) return;
+    this._warned.add(key);
+    console.warn(`[Lighting] ${message}`);
+  }
+
+  /** Duck-typed world position: a Vector3, or anything with finite x/y/z. */
+  static _readPos(o, out) {
+    if (!o) return false;
+    const p = (o.position !== undefined && o.position !== null) ? o.position : o;
+    if (Number.isFinite(p.x) && Number.isFinite(p.y) && Number.isFinite(p.z)) {
+      out.set(p.x, p.y, p.z);
+      return true;
+    }
+    return false;
+  }
+
+  // --------------------------------------------------------------- spark pool
+
+  /**
+   * Borrow a point light for a **transient** flash — a hit spark, a parry, an ember
+   * pop. The slot is on a `(1-u)²` envelope and is gone inside `ttl`; the allocator
+   * steals the oldest when every slot is busy. Returns the THREE.PointLight so the
+   * caller can retarget it while it lives.
    *
-   * @param {Vector3} pos    world position
+   * If you want a light that *stays on* — a lantern, a brazier, a chōchin — this is
+   * the wrong function; use `addLight()`.
+   *
+   * Accepts either positional arguments or a single options object
+   * (`{ position, color, intensity, distance | radius, duration | ttl }`), because
+   * both call styles already exist in the codebase and a mis-shaped call used to
+   * produce a NaN-positioned light rather than an error.
+   *
+   * @param {Vector3|object} pos  world position, or an options object
    * @param {number|Color} color
    * @param {number} intensity
    * @param {number} radius   metres of influence
    * @param {number} ttl      seconds; the envelope decays across it
    */
-  requestLight(pos, color = 0xffffff, intensity = 3, radius = 8, ttl = 0.35) {
+  requestSpark(pos, color = 0xffffff, intensity = 3, radius = 8, ttl = 0.35) {
     const pool = this._pool;
     if (!pool.length) return null;
+
+    // Options-object form. Detected rather than declared so existing callers work.
+    if (pos && pos.isVector3 !== true && typeof pos === 'object' &&
+        (pos.position !== undefined || pos.distance !== undefined || pos.duration !== undefined)) {
+      const o = pos;
+      if (!LightingSystem._readPos(o, _sparkPos)) {
+        this._warnOnce('spark:pos',
+          'requestSpark()/requestLight() got an options object with no usable position. ' +
+          'Expected { position: Vector3, color, intensity, distance, duration }. Spark dropped.');
+        return null;
+      }
+      return this.requestSpark(
+        _sparkPos,
+        o.color !== undefined ? o.color : 0xffffff,
+        Number.isFinite(o.intensity) ? o.intensity : 3,
+        Number.isFinite(o.distance) ? o.distance : (Number.isFinite(o.radius) ? o.radius : 8),
+        Number.isFinite(o.duration) ? o.duration : (Number.isFinite(o.ttl) ? o.ttl : 0.35),
+      );
+    }
+
+    if (!LightingSystem._readPos(pos, _sparkPos)) {
+      this._warnOnce('spark:args',
+        'requestSpark(pos, color, intensity, radius, ttl) needs a Vector3 position. ' +
+        'For a light that has to stay lit, use addLight({ position, color, intensity, radius, flicker }) ' +
+        '— the spark pool decays to nothing within its ttl. Spark dropped.');
+      return null;
+    }
+    pos = _sparkPos;
 
     let slot = -1;
     let worst = -1;
@@ -680,6 +788,191 @@ export class LightingSystem {
     else e.light.color.set(color);
     e.light.intensity = 0;
     return e.light;
+  }
+
+  /** Former name of `requestSpark`. Kept so existing FX/Combat call sites keep working. */
+  requestLight(pos, color, intensity, radius, ttl) {
+    return this.requestSpark(pos, color, intensity, radius, ttl);
+  }
+
+  // ---------------------------------------------------------- standing lights
+
+  /**
+   * Register a light that stays lit until it is removed: a lantern flame, a brazier,
+   * a chōchin. The opposite of `requestSpark` in every way that matters — no envelope,
+   * no stealing, and its own hardware budget (STANDING_SLOTS) so combat and the
+   * shrine's lighting cannot starve each other.
+   *
+   * Registrations are unbounded and cheap; *slots* are not, because NUM_POINT_LIGHTS is
+   * baked into every compiled shader. Each frame the nearest `STANDING_SLOTS[tier]`
+   * enabled registrations are bound to the real PointLights, so the lantern you are
+   * standing next to always wins, and one you can barely see costs nothing but a
+   * distance compare.
+   *
+   * The returned handle is a live record, not a THREE.Light — mutate `position` in
+   * place, or set `color` / `intensity` / `radius` / `flicker` / `enabled` at any time.
+   *
+   * `position` may be a Vector3 or any `{x, y, z}`; the whole options object may also
+   * be flat (`{ x, y, z, ... }`) and `radius` may be spelled `distance`, so a record
+   * built by Level's prop pass can be handed straight in.
+   *
+   * @param {object} options { position | x,y,z, color, intensity, radius|distance, flicker, enabled }
+   * @returns {object|null} handle for `removeLight`, or null if the request was rejected
+   */
+  addLight(options) {
+    if (!options || typeof options !== 'object' || Array.isArray(options)) {
+      this._warnOnce('add:shape',
+        `addLight() takes an options object — { position, color, intensity, radius, flicker } — ` +
+        `and got ${Array.isArray(options) ? 'an array' : typeof options}. Light ignored.`);
+      return null;
+    }
+    if (!LightingSystem._readPos(options, _standPos)) {
+      this._warnOnce('add:position',
+        'addLight() needs a world position: options.position as a Vector3/{x,y,z}, or x/y/z on the ' +
+        'options object itself. Light ignored.');
+      return null;
+    }
+    if (this._standing.length >= STANDING_MAX) {
+      this._warnOnce('add:full',
+        `addLight() registry is full at ${STANDING_MAX}. Only the nearest ` +
+        `${this._standingPool.length} are ever bound, so further registrations could not change a ` +
+        'frame — but this many probably means something is registering in a loop. Light ignored.');
+      return null;
+    }
+    if (options.castShadow) {
+      this._warnOnce('add:castShadow',
+        'addLight({ castShadow: true }) is not honoured. A shadow-casting point light renders the ' +
+        'whole caster set to six cube faces; on this scene that is several hundred draw calls for ' +
+        'one lantern. The light is added without a shadow.');
+    }
+
+    const radius = Number.isFinite(options.radius) ? options.radius
+      : (Number.isFinite(options.distance) ? options.distance : 8);
+    const handle = {
+      id: ++this._standingId,
+      position: new Vector3().copy(_standPos),
+      color: new Color(),
+      intensity: Number.isFinite(options.intensity) ? options.intensity : 2,
+      radius: Math.max(0.05, radius),
+      flicker: Number.isFinite(options.flicker) ? MathUtils.clamp(options.flicker, 0, 1) : 0,
+      enabled: options.enabled !== false,
+      // Decorrelate the flames: without this every lantern in the shrine breathes in
+      // perfect unison, which reads as a global exposure wobble rather than as fire.
+      phase: (this._standingId * 2.39996323) % 6.2831853,
+      _bound: false,
+    };
+    if (options.color !== undefined && options.color !== null) {
+      if (options.color.isColor) handle.color.copy(options.color);
+      else handle.color.set(options.color);
+    } else {
+      handle.color.setHex(0xffb060);
+    }
+
+    this._standing.push(handle);
+    this._growStandingScratch(this._standing.length);
+    return handle;
+  }
+
+  /** Release a handle from `addLight`. Safe to call twice, or with null. */
+  removeLight(handle) {
+    if (!handle) return false;
+    const i = this._standing.indexOf(handle);
+    if (i < 0) return false;
+    // Order is recomputed every frame, so a swap-pop is free here.
+    const last = this._standing.pop();
+    if (i < this._standing.length) this._standing[i] = last;
+    handle._bound = false;
+    return true;
+  }
+
+  /** Drop every standing light. Used by level teardown. */
+  clearLights() {
+    this._standing.length = 0;
+    for (const l of this._standingPool) l.intensity = 0;
+  }
+
+  /** Index scratch grows amortised, never inside the frame loop. */
+  _growStandingScratch(n) {
+    if (this._standingOrder.length >= n) return;
+    let cap = this._standingOrder.length;
+    while (cap < n) cap *= 2;
+    this._standingOrder = new Int32Array(cap);
+    this._standingDist = new Float32Array(cap);
+  }
+
+  /**
+   * Bind the nearest N registrations to the hardware slots. O(registrations) plus
+   * O(registrations x slots) for the partial selection — with slots capped at 5 that is
+   * a handful of compares, and it allocates nothing.
+   */
+  _updateStanding() {
+    const pool = this._standingPool;
+    const k = pool.length;
+    if (k === 0) return;
+
+    const reg = this._standing;
+    const n = reg.length;
+    const camPos = this.ctx.camera.position;
+    const order = this._standingOrder;
+    const dist = this._standingDist;
+
+    let live = 0;
+    for (let i = 0; i < n; i++) {
+      const e = reg[i];
+      if (!e.enabled || e.intensity <= 0) { e._bound = false; continue; }
+      const reach = this._lightCull + e.radius;
+      const d2 = e.position.distanceToSquared(camPos);
+      if (d2 > reach * reach) { e._bound = false; continue; }
+      // Sitting tenants get a discount so a rival has to be clearly closer to evict them.
+      dist[live] = e._bound ? d2 * STANDING_HYSTERESIS : d2;
+      order[live] = i;
+      live++;
+    }
+
+    const take = Math.min(live, k);
+    for (let s = 0; s < take; s++) {
+      let best = s;
+      for (let j = s + 1; j < live; j++) if (dist[j] < dist[best]) best = j;
+      if (best !== s) {
+        const td = dist[s]; dist[s] = dist[best]; dist[best] = td;
+        const to = order[s]; order[s] = order[best]; order[best] = to;
+      }
+    }
+    for (let j = take; j < live; j++) reg[order[j]]._bound = false;
+
+    // ARCHITECTURE §10: Weather owns the gust. A flame leans on it rather than
+    // inventing its own, so the lanterns breathe on the same front that bends the grass.
+    const gust = this.ctx.wind ? this.ctx.wind.gust : 0;
+    const t = this._time;
+
+    for (let s = 0; s < k; s++) {
+      const light = pool[s];
+      if (s >= take) {
+        if (light.intensity !== 0) light.intensity = 0;
+        continue;
+      }
+      const e = reg[order[s]];
+      e._bound = true;
+      light.position.copy(e.position);
+      light.color.copy(e.color);
+      light.distance = e.radius;
+
+      let inten = e.intensity;
+      if (e.flicker > 0) {
+        const p = e.phase;
+        const wobble = Math.sin(t * 11.0 + p) * 0.5 +
+          Math.sin(t * 17.3 + p * 2.1) * 0.3 +
+          Math.sin(t * 29.7 + p * 3.7) * 0.2;
+        inten *= Math.max(0, 1 + e.flicker * wobble * (0.55 + 0.9 * gust));
+      }
+
+      // Fade rather than pop as a lantern leaves the culling range.
+      const reach = this._lightCull + e.radius;
+      const d = e.position.distanceTo(camPos);
+      if (d > reach * 0.78) inten *= Math.max(0, 1 - (d - reach * 0.78) / (reach * 0.22));
+
+      light.intensity = inten;
+    }
   }
 
   _updatePool(dt) {
@@ -712,9 +1005,11 @@ export class LightingSystem {
 
   // ------------------------------------------------------------------- system
 
-  update(dt) {
+  update(dt, elapsed) {
     const sky = this.ctx.sky;
     const camera = this.ctx.camera;
+    // Own clock: flicker must keep breathing through hit-stop, where dt is scaled to 0.
+    this._time = Number.isFinite(elapsed) ? elapsed : this._time + dt;
 
     if (sky && sky.sunDirection) {
       this.sunDirection.copy(sky.sunDirection);
@@ -767,6 +1062,7 @@ export class LightingSystem {
 
     this.frameShadows(camera);
     this._updatePool(dt);
+    this._updateStanding();
 
     // Late-created materials (props, FX, enemies) get folded in without every author
     // having to remember to call setupMaterial.
@@ -819,6 +1115,9 @@ export class LightingSystem {
     this.cascadeLights.length = 0;
     for (const e of this._pool) { scene.remove(e.light); e.light.dispose?.(); }
     this._pool.length = 0;
+    for (const l of this._standingPool) { scene.remove(l); l.dispose?.(); }
+    this._standingPool.length = 0;
+    this._standing.length = 0;
     if (this.hemi) { scene.remove(this.hemi); this.hemi.dispose?.(); this.hemi = null; }
     if (this.rim) { scene.remove(this.rim); scene.remove(this.rim.target); this.rim.dispose?.(); this.rim = null; }
     this._materials.clear();

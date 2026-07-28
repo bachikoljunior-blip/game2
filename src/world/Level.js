@@ -159,6 +159,8 @@ export class Level {
 
     this._enc = { active: null, index: -1, t: 0, waveIndex: 0, done: new Set(), cleared: false };
     this._lodTimer = 0;
+    this._foliageBound = false;
+    this._bindTries = 0;
     this._farActive = false;
     this._clutterDist = 40;
     this._farDist = 120;
@@ -1523,6 +1525,13 @@ export class Level {
         + Math.sin(elapsed * 13.3 + 1.7) * 0.06
         + Math.sin(elapsed * 27.1) * 0.03;
       ember.emissiveIntensity = this._emberBase * f;
+    }
+
+    // FoliageSystem boots after Level, so its verified blossom card cannot be
+    // bound at build time. Adopt it on the first frame it exists, then stop asking.
+    if (!this._foliageBound && this._bindTries < 240) {
+      this._bindTries++;
+      if (this.factory.bindFoliageTextures(this.ctx?.foliage)) this._foliageBound = true;
     }
 
     this._tickEncounter(dt);
