@@ -50,6 +50,7 @@ export class Engine {
     this.renderer.shadowMap.type = this.quality.softShadows ? PCFSoftShadowMap : BasicShadowMap;
     this.renderer.shadowMap.autoUpdate = true;
     this.renderer.info.autoReset = false;
+    this.captureMode = new URLSearchParams(location.search).has('capture');
 
     this.scene = new Scene();
     this.scene.background = new Color(0x0a0d12);
@@ -144,6 +145,11 @@ export class Engine {
   }
 
   _adapt(rawMs) {
+    // The capture rig renders under SwiftShader, where every frame is far over
+    // budget; left alone the scaler would walk the resolution to its floor and the
+    // art-direction review would be judging a soft, half-res image instead of the
+    // frame a real GPU produces. `?capture` pins the scale.
+    if (this.captureMode) return;
     const q = this.quality;
     this._frameTimes[this._ftIndex] = rawMs;
     this._ftIndex = (this._ftIndex + 1) % this._frameTimes.length;

@@ -152,6 +152,8 @@ export class Quality {
   constructor(gl) {
     this.device = detectDevice();
     this.gpu = gl ? probeGPU(gl) : '';
+    /** Set by `_readOverride` when `?q=` pins the tier; blocks every later setTier. */
+    this.locked = false;
     const stored = this._readOverride();
     this.autoTier = pickTier(this.device, this.gpu);
     this.tier = stored ?? this.autoTier;
@@ -166,7 +168,14 @@ export class Quality {
   _readOverride() {
     try {
       const p = new URLSearchParams(location.search).get('q');
-      if (p) { const i = TIER_NAME.indexOf(p.toLowerCase()); if (i >= 0) return i; }
+      if (p) {
+        const i = TIER_NAME.indexOf(p.toLowerCase());
+        // `?q=` is the QA/capture override and outranks everything, including the
+        // player's persisted "auto" preference — otherwise the settings system
+        // silently reapplies the profiled tier a few hundred ms after boot and the
+        // whole visual review ends up judging a tier nobody asked for.
+        if (i >= 0) { this.locked = true; return i; }
+      }
       const s = localStorage.getItem('kagerou.tier');
       if (s !== null) { const i = parseInt(s, 10); if (i >= 0 && i <= 3) return i; }
     } catch { /* private mode */ }
@@ -174,6 +183,7 @@ export class Quality {
   }
 
   setTier(tier, persist = true) {
+    if (this.locked) return;
     this.tier = Math.max(0, Math.min(3, tier | 0));
     Object.assign(this, PRESETS[this.tier]);
     this.auto = false;
