@@ -24,7 +24,7 @@
  */
 
 import {
-  Bone, Skeleton, SkinnedMesh, Mesh, Group, Object3D, InstancedMesh,
+  Bone, Skeleton, SkinnedMesh, Mesh, Group, Object3D,
   BufferGeometry, Float32BufferAttribute, Uint16BufferAttribute,
   Vector3, Quaternion, Matrix4, Euler, Color, Sphere,
   MeshStandardMaterial, DoubleSide, FrontSide, DynamicDrawUsage,
@@ -396,6 +396,49 @@ class Layer {
 /** UV metres→tile scale. One texture repeat covers 0.5 m, which reads right for cloth. */
 const UV_PER_METRE = 2.0;
 
+const WHITE_TINT = Object.freeze([1, 1, 1]);
+const _tintTmp = [1, 1, 1];
+
+/**
+ * sRGB hex → linear RGB triple, reusing one array. Vertex colours multiply the
+ * diffuse term in linear space, so an sRGB hex written straight into the attribute
+ * comes out roughly 2.2× too bright — a mistake that reads as "washed out" and gets
+ * blamed on the tone mapper.
+ */
+function tint(hex, scale) {
+  _col.setHex(hex);
+  const k = scale === undefined ? 1 : scale;
+  _tintTmp[0] = _col.r * k; _tintTmp[1] = _col.g * k; _tintTmp[2] = _col.b * k;
+  return _tintTmp;
+}
+
+/**
+ * Teach a standard material to read per-vertex roughness/metalness from `aRM`.
+ *
+ * This is the trick that makes the one-draw-call character possible: skin at 0.74
+ * roughness, cloth at 0.92, lacquer at 0.22 and lamellar plate at 0.42/0.35 metal
+ * can all live in a single mesh, because the surface parameters travel with the
+ * vertices instead of with the material. Colour travels the same way, in `color`.
+ */
+function patchPerVertexRM(material) {
+  if (!material || material.userData.rmPatched) return material;
+  material.userData.rmPatched = true;
+  material.vertexColors = true;
+  // Multiplied in, not assigned: with the scalars at 1 the vertex value *is* the
+  // result, but a roughness/metalness map added later still modulates on top.
+  material.roughness = 1;
+  material.metalness = 1;
+  material.onBeforeCompile = (shader) => {
+    shader.vertexShader = 'attribute vec2 aRM;\nvarying vec2 vRM;\n' +
+      shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n\tvRM = aRM;');
+    shader.fragmentShader = 'varying vec2 vRM;\n' + shader.fragmentShader
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n\troughnessFactor *= vRM.x;')
+      .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\n\tmetalnessFactor *= vRM.y;');
+  };
+  material.customProgramCacheKey = () => 'kagerou-rm';
+  return material;
+}
+
 /**
  * Accumulates one welded BufferGeometry. Skin weights are resolved analytically from
  * bone-segment distance with a gaussian falloff: on the shaft of a limb one bone wins
@@ -408,6 +451,7 @@ class Mesher {
     this.nor = [];
     this.uv = [];
     this.col = [];
+    this.rm = [];
     this.si = [];
     this.sw = [];
     this.idx = [];
@@ -417,16 +461,55 @@ class Mesher {
     this._cand = null;
     this._ao = 1;
     this._d = new Float32Array(NB);
+    this._tint = [1, 1, 1];
+    this._rough = 0.85;
+    this._metal = 0;
+    this._rigid = -1;
   }
 
-  begin(candidates, aoBias) {
+  /**
+   * Open a part. `opts.tint` (linear RGB), `opts.rough` and `opts.metal` are baked
+   * per-vertex, which is the whole reason the skin, the kimono, the obi and a
+   * lamellar cuirass can end up in ONE SkinnedMesh and therefore one draw call.
+   * `opts.rigid` binds every vertex to a single bone at full weight — geometrically
+   * identical to parenting the part to that bone, but without the extra draw.
+   */
+  begin(candidates, aoBias, opts) {
+    const o = opts || {};
     this._cand = candidates;
     this._ao = aoBias === undefined ? 1 : aoBias;
+    this._tint = o.tint || WHITE_TINT;
+    this._rough = o.rough === undefined ? 0.85 : o.rough;
+    this._metal = o.metal === undefined ? 0 : o.metal;
+    this._rigid = o.rigid === undefined ? -1 : o.rigid;
+  }
+
+  /** Append an existing geometry transformed into bind space. Used by the armour. */
+  append(geo, matrix, quat) {
+    const gp = geo.attributes.position.array, gn = geo.attributes.normal.array;
+    const gu = geo.attributes.uv ? geo.attributes.uv.array : null;
+    const n = geo.attributes.position.count;
+    const base = this.vertexCount;
+    const v = _v[6];
+    for (let i = 0; i < n; i++) {
+      v.set(gp[i * 3], gp[i * 3 + 1], gp[i * 3 + 2]).applyMatrix4(matrix);
+      const px = v.x, py = v.y, pz = v.z;
+      v.set(gn[i * 3], gn[i * 3 + 1], gn[i * 3 + 2]).applyQuaternion(quat);
+      this.vertex(px, py, pz, v.x, v.y, v.z,
+        gu ? gu[i * 2] : 0, gu ? gu[i * 2 + 1] : 0);
+    }
+    const gi = geo.index.array;
+    for (let i = 0; i < gi.length; i++) this.idx.push(gi[i] + base);
   }
 
   get vertexCount() { return this.pos.length / 3; }
 
   _skin(x, y, z) {
+    if (this._rigid >= 0) {
+      this.si.push(this._rigid, this._rigid, 0, 0);
+      this.sw.push(1, 0, 0, 0);
+      return 0;
+    }
     const cand = this._cand, d = this._d;
     let dmin = Infinity;
     for (let i = 0; i < cand.length; i++) {
@@ -464,7 +547,9 @@ class Mesher {
     ao *= 1 - 0.22 * jointness;              // creases at every joint
     ao *= 1 - 0.16 * Math.max(0, -ny);       // downward faces catch less sky
     ao *= aoHotspots(x, y, z);
-    this.col.push(ao, ao, ao);
+    const t = this._tint;
+    this.col.push(ao * t[0], ao * t[1], ao * t[2]);
+    this.rm.push(this._rough, this._metal);
     return this.pos.length / 3 - 1;
   }
 
@@ -478,6 +563,7 @@ class Mesher {
     g.setAttribute('normal', new Float32BufferAttribute(this.nor, 3));
     g.setAttribute('uv', new Float32BufferAttribute(this.uv, 2));
     g.setAttribute('color', new Float32BufferAttribute(this.col, 3));
+    g.setAttribute('aRM', new Float32BufferAttribute(this.rm, 2));
     g.setAttribute('skinIndex', new Uint16BufferAttribute(this.si, 4));
     g.setAttribute('skinWeight', new Float32BufferAttribute(this.sw, 4));
     g.setIndex(this.idx);
@@ -704,9 +790,9 @@ function bindPos(rig, name, out) {
  * short lofts with flattened sections. Candidate bone lists are scoped per part, which
  * is what stops the left thigh from claiming vertices on the right thigh at the crotch.
  */
-function buildBody(rig, dens) {
-  const mesher = new Mesher(rig._segA, rig._segB, 0.055);
+function buildBody(rig, mesher, dens, pal) {
   const S = rig.scale;
+  const SKIN = { tint: tint(pal.skin), rough: 0.74, metal: 0 };
   const a = _v[0], b = _v[1], c = _v[2];
   const L = dens.lon;
   const R = (n) => Math.max(3, Math.round(n * L));
@@ -719,7 +805,7 @@ function buildBody(rig, dens) {
   const head = bindPos(rig, 'head', a).clone();
 
   // ---- torso
-  mesher.begin(rig._candTorso, 1.0);
+  mesher.begin(rig._candTorso, 1.0, SKIN);
   loftTube(mesher, [
     [hips.x, hips.y - 0.105 * S, hips.z + 0.010 * S, 0.108 * S, 0.098 * S],
     [hips.x, hips.y - 0.020 * S, hips.z + 0.004 * S, 0.136 * S, 0.110 * S],
@@ -731,7 +817,7 @@ function buildBody(rig, dens) {
   ], R(11), dens.ringT, { capStart: true, capEnd: false });
 
   // ---- neck + skull
-  mesher.begin(rig._candHead, 0.94);
+  mesher.begin(rig._candHead, 0.94, SKIN);
   loftTube(mesher, [
     [neck.x, neck.y - 0.020 * S, neck.z + 0.004 * S, 0.070 * S, 0.070 * S],
     [neck.x, neck.y + 0.040 * S, neck.z + 0.006 * S, 0.062 * S, 0.062 * S],
@@ -748,7 +834,7 @@ function buildBody(rig, dens) {
     const el = bindPos(rig, 'foreArm' + side, b).clone();
     const wr = bindPos(rig, 'hand' + side, c).clone();
     const sgn = side === 'R' ? 1 : -1;
-    mesher.begin(side === 'R' ? rig._candArmR : rig._candArmL, 0.97);
+    mesher.begin(side === 'R' ? rig._candArmR : rig._candArmL, 0.97, SKIN);
     loftTube(mesher, [
       [sh.x - sgn * 0.030 * S, sh.y + 0.048 * S, sh.z, 0.050 * S, 0.052 * S],
       [sh.x, sh.y - 0.010 * S, sh.z, 0.059 * S, 0.058 * S],
@@ -764,7 +850,7 @@ function buildBody(rig, dens) {
     const dx = (wr.x - el.x), dy = (wr.y - el.y), dz = (wr.z - el.z);
     const dl = Math.hypot(dx, dy, dz) || 1;
     const ux = dx / dl, uy = dy / dl, uz = dz / dl;
-    mesher.begin(side === 'R' ? rig._candHandR : rig._candHandL, 0.93);
+    mesher.begin(side === 'R' ? rig._candHandR : rig._candHandL, 0.93, SKIN);
     loftTube(mesher, [
       [wr.x, wr.y, wr.z, 0.028 * S, 0.024 * S],
       [wr.x + ux * 0.035 * S, wr.y + uy * 0.035 * S, wr.z + uz * 0.035 * S, 0.040 * S, 0.023 * S],
@@ -779,7 +865,7 @@ function buildBody(rig, dens) {
     const hp = bindPos(rig, 'thigh' + side, a).clone();
     const kn = bindPos(rig, 'shin' + side, b).clone();
     const an = bindPos(rig, 'foot' + side, c).clone();
-    mesher.begin(side === 'R' ? rig._candLegR : rig._candLegL, 0.98);
+    mesher.begin(side === 'R' ? rig._candLegR : rig._candLegL, 0.98, SKIN);
     loftTube(mesher, [
       [hp.x, hp.y + 0.050 * S, hp.z, 0.088 * S, 0.092 * S],
       [hp.x, hp.y - 0.030 * S, hp.z, 0.097 * S, 0.098 * S],
@@ -796,7 +882,7 @@ function buildBody(rig, dens) {
     // at the root's origin, and a body that sinks 2 cm reads as floating on stairs.
     const to = bindPos(rig, 'toe' + side, _v[3]).clone();
     const sole = 0.021 * S;
-    mesher.begin(side === 'R' ? rig._candFootR : rig._candFootL, 0.86);
+    mesher.begin(side === 'R' ? rig._candFootR : rig._candFootL, 0.86, SKIN);
     loftTube(mesher, [
       [an.x, an.y + 0.012 * S + sole, an.z + 0.070 * S, 0.032 * S, 0.036 * S],
       [an.x, an.y - 0.020 * S + sole, an.z + 0.045 * S, 0.040 * S, 0.043 * S],
@@ -806,8 +892,6 @@ function buildBody(rig, dens) {
       [to.x, to.y + 0.004 * S + sole, to.z - 0.070 * S, 0.020 * S, 0.014 * S],
     ], R(6), Math.max(6, dens.ringL - 2), { capStart: true, capEnd: true });
   }
-
-  return mesher.toGeometry('kagerou-body');
 }
 
 /**
@@ -815,9 +899,9 @@ function buildBody(rig, dens) {
  * to the same skeleton so it deforms with the body for free. The wide sleeve *hems*
  * are cloth-simulated separately; this is only the part that stays on the arm.
  */
-function buildUpperGarment(rig, dens, opts) {
-  const mesher = new Mesher(rig._segA, rig._segB, 0.065);
+function buildUpperGarment(rig, mesher, dens, opts) {
   const S = rig.scale;
+  const CLOTH = { tint: tint(opts.color), rough: 0.93, metal: 0 };
   const a = _v[0], b = _v[1], c = _v[2];
   const L = dens.lon;
   const R = (n) => Math.max(3, Math.round(n * L));
@@ -829,7 +913,7 @@ function buildUpperGarment(rig, dens, opts) {
   const sp3 = bindPos(rig, 'spine3', a).clone();
   const neck = bindPos(rig, 'neck', a).clone();
 
-  mesher.begin(rig._candTorso, 1.0);
+  mesher.begin(rig._candTorso, 1.0, CLOTH);
   loftTube(mesher, [
     [hips.x, hips.y - 0.150 * S, hips.z, (0.128 + puff) * S, (0.116 + puff) * S],
     [hips.x, hips.y - 0.020 * S, hips.z, (0.140 + puff) * S, (0.114 + puff) * S],
@@ -847,7 +931,7 @@ function buildUpperGarment(rig, dens, opts) {
     const el = bindPos(rig, 'foreArm' + side, b).clone();
     const wr = bindPos(rig, 'hand' + side, c).clone();
     const sgn = side === 'R' ? 1 : -1;
-    mesher.begin(side === 'R' ? rig._candArmR : rig._candArmL, 0.96);
+    mesher.begin(side === 'R' ? rig._candArmR : rig._candArmL, 0.96, CLOTH);
     loftTube(mesher, [
       [sh.x - sgn * 0.020 * S, sh.y + 0.055 * S, sh.z, 0.070 * S, 0.072 * S],
       [sh.x, sh.y - 0.010 * S, sh.z, 0.082 * S, 0.080 * S],
@@ -856,15 +940,14 @@ function buildUpperGarment(rig, dens, opts) {
       [lerp(el.x, wr.x, 0.45), lerp(el.y, wr.y, 0.45), lerp(el.z, wr.z, 0.45), 0.096 * S, 0.098 * S],
     ], R(6), dens.ringL, { capStart: true, capEnd: false });
   }
-  return mesher.toGeometry('kagerou-kimono');
 }
 
 /** 帯 obi — a flat wrapped band. Rigid, parented to spine1; it never needs to flex. */
-function buildObi(rig, dens) {
-  const mesher = new Mesher(rig._segA, rig._segB, 0.08);
+function buildObi(rig, mesher, dens, pal) {
   const S = rig.scale;
+  const OBI = { tint: tint(pal.trim), rough: 0.86, metal: 0 };
   const p = bindPos(rig, 'spine1', _v[0]).clone();
-  mesher.begin(rig._candTorso, 0.88);
+  mesher.begin(rig._candTorso, 0.88, OBI);
   loftTube(mesher, [
     [p.x, p.y - 0.075 * S, p.z, 0.152 * S, 0.126 * S],
     [p.x, p.y - 0.040 * S, p.z, 0.160 * S, 0.132 * S],
@@ -872,37 +955,37 @@ function buildObi(rig, dens) {
     [p.x, p.y + 0.062 * S, p.z, 0.148 * S, 0.122 * S],
   ], Math.max(4, Math.round(5 * dens.lon)), dens.ringT, { capStart: true, capEnd: true });
   // Knot at the back — a small offset lump, but it is what makes the obi read as tied.
-  mesher.begin(rig._candTorso, 0.8);
+  mesher.begin(rig._candTorso, 0.8, OBI);
   loftSphere(mesher, p.x, p.y - 0.005 * S, p.z + 0.140 * S,
     0.062 * S, 0.048 * S, 0.045 * S, Math.max(4, dens.sphere[0] - 3), Math.max(6, dens.sphere[1] - 4));
-  return mesher.toGeometry('kagerou-obi');
 }
 
 /**
- * 胴 dō — the oni's lamellar cuirass, built as instanced plates laced in rows. One
- * InstancedMesh for the plates and one for the lacing keeps the whole torso armour at
- * two draw calls, which is what the ARCHITECTURE §7 budget demands with 8 enemies up.
+ * 胴 dō — the lamellar cuirass, and the sode, menpō and jingasa with it.
+ *
+ * These used to be five separate objects (two InstancedMeshes plus three meshes)
+ * parented to five different bones. They are now emitted straight into the character
+ * mesh with each vertex rigid-bound to the bone that used to be its parent, which is
+ * mathematically the same transform and five fewer draw calls. Instancing was the
+ * right answer when the plates were their own object; folding them into a mesh that
+ * was already being drawn is strictly better.
  */
-function buildLamellar(rig, dens, materials) {
+function buildArmour(rig, mesher, dens, costume, pal) {
   const S = rig.scale;
-  const group = new Group();
-  group.name = 'do';
-  const rows = dens.lon > 1.1 ? 6 : 5;
-  const cols = dens.lon > 1.1 ? 16 : 13;
-  // 65 plates × 2 InstancedMeshes is 2 draw calls; the triangle cost has to come out
-  // of the per-plate grid instead. Single-faced — nobody sees the inside of a cuirass.
+  const I = BONE_INDEX;
+  const m4 = _m[0], qq = _q[0], pv = _v[0], sv = _v[1].set(1, 1, 1);
+
+  const PLATE = { tint: tint(pal.armour), rough: 0.42, metal: 0.35, rigid: I.spine1 };
+  const CORD = { tint: tint(pal.lacing), rough: 0.86, metal: 0, rigid: I.spine1 };
+
+  // ---- 胴: rows of laced plates on a barrel-shaped body.
+  const rows = dens.lon > 1.2 ? 6 : 5;
+  const cols = dens.lon > 1.2 ? 16 : 13;
   const plateGeo = plateGeometry(0.030 * S, 0.040 * S, 0.005 * S, 3, 3, false);
   const cordGeo = plateGeometry(0.006 * S, 0.030 * S, 0.004 * S, 1, 1, false);
-
-  const plates = new InstancedMesh(plateGeo, materials.lamellar, rows * cols);
-  const cords = new InstancedMesh(cordGeo, materials.lacing, rows * cols);
-  plates.name = 'do-plates'; cords.name = 'do-lacing';
-  plates.castShadow = true;
-
-  const m4 = _m[0], qq = _q[0], pv = _v[0], sv = _v[1].set(1, 1, 1);
   const sp1 = bindPos(rig, 'spine1', _v[2]).clone();
   const sp3 = bindPos(rig, 'spine3', _v[3]).clone();
-  let n = 0;
+
   for (let r = 0; r < rows; r++) {
     const t = r / (rows - 1);
     const y = lerp(sp1.y - 0.055 * S, sp3.y + 0.045 * S, t);
@@ -912,48 +995,114 @@ function buildLamellar(rig, dens, materials) {
     for (let cI = 0; cI < cols; cI++) {
       const ang = (cI / cols) * Math.PI * 2 + (r % 2) * (Math.PI / cols) * 0.5;
       const ca = Math.cos(ang), sa = Math.sin(ang);
-      pv.set(ca * rx, y, sa * rz);
-      _v[4].set(ca / rx, 0.16, sa / rz).normalize();
-      qq.setFromUnitVectors(_FWD, _v[4].multiplyScalar(-1));
-      m4.compose(pv, qq, sv);
-      plates.setMatrixAt(n, m4);
-      pv.set(ca * (rx + 0.006 * S), y - 0.018 * S, sa * (rz + 0.006 * S));
-      m4.compose(pv, qq, sv);
-      cords.setMatrixAt(n, m4);
-      n++;
+      _v[4].set(ca / rx, 0.16, sa / rz).normalize().multiplyScalar(-1);
+      qq.setFromUnitVectors(_FWD, _v[4]);
+      mesher.begin(null, 0.92, PLATE);
+      pv.set(sp1.x + ca * rx, y, sp1.z + sa * rz);
+      mesher.append(plateGeo, m4.compose(pv, qq, sv), qq);
+      mesher.begin(null, 0.72, CORD);
+      pv.set(sp1.x + ca * (rx + 0.006 * S), y - 0.018 * S, sp1.z + sa * (rz + 0.006 * S));
+      mesher.append(cordGeo, m4.compose(pv, qq, sv), qq);
     }
   }
-  plates.instanceMatrix.needsUpdate = true;
-  cords.instanceMatrix.needsUpdate = true;
-  plates.frustumCulled = false; cords.frustumCulled = false;
-  // The lacing reads as texture past ~15 m; drop the draw call with the other detail.
-  cords.userData.detail = 1;
-  group.add(plates, cords);
-  return group;
+  plateGeo.dispose();
+  cordGeo.dispose();
+
+  // ---- 袖 sode: four descending plates per shoulder, bound to the clavicle.
+  if (costume.sleeves === 'sode' || costume.armour === 'heavy') {
+    const sodeGeo = plateGeometry(0.085 * S, 0.048 * S, 0.006 * S, 3, 3, false);
+    for (const side of ['R', 'L']) {
+      const sgn = side === 'R' ? 1 : -1;
+      const base = bindPos(rig, 'clavicle' + side, _v[2]).clone();
+      mesher.begin(null, 0.90, {
+        tint: tint(pal.armour), rough: 0.42, metal: 0.35, rigid: I['clavicle' + side],
+      });
+      for (let r = 0; r < 4; r++) {
+        const t = r / 3;
+        pv.set(base.x + sgn * (0.055 + t * 0.030) * S, base.y + (-0.010 - t * 0.088) * S, base.z + 0.004 * S);
+        _e.set(0.12 * t, 0, sgn * (0.34 + t * 0.22));
+        qq.setFromEuler(_e);
+        mesher.append(sodeGeo, m4.compose(pv, qq, sv), qq);
+      }
+    }
+    sodeGeo.dispose();
+  }
+
+  // ---- 面頬 menpō: a shell swept under the cheekbones, bound to the head.
+  if (costume.mask) {
+    const head = bindPos(rig, 'head', _v[2]).clone();
+    mesher.begin(null, 0.86, {
+      tint: tint(pal.armour, 0.85), rough: 0.30, metal: 0.16, rigid: I.head,
+    });
+    const cols2 = dens.ringT >= 16 ? 11 : 8;
+    const rowsDef = MENPO_ROWS;
+    const first = mesher.vertexCount;
+    for (let r = 0; r < rowsDef.length; r++) {
+      const rd = rowsDef[r];
+      for (let cI = 0; cI <= cols2; cI++) {
+        const u = cI / cols2;
+        const ang = (u - 0.5) * Math.PI * 1.08;
+        const sn = Math.sin(ang), cs = Math.cos(ang);
+        const l = Math.hypot(sn, 0.22 * rd[3], -cs);
+        mesher.vertex(
+          head.x + sn * rd[2] * S,
+          head.y + (rd[0] + 0.070) * S,
+          head.z + (rd[1] + (1 - cs) * 0.085 + 0.010) * S,
+          sn / l, (0.22 * rd[3]) / l, -cs / l,
+          u, r / (rowsDef.length - 1));
+      }
+    }
+    for (let r = 0; r < rowsDef.length - 1; r++) {
+      for (let cI = 0; cI < cols2; cI++) {
+        const a = first + r * (cols2 + 1) + cI;
+        mesher.quad(a, a + 1, a + cols2 + 2, a + cols2 + 1);
+      }
+    }
+  }
+
+  // ---- 陣笠 jingasa: a lathed conical hat, bound to the head.
+  if (costume.hat) {
+    const head = bindPos(rig, 'head', _v[2]).clone();
+    mesher.begin(null, 0.88, { tint: tint(0x101014), rough: 0.24, metal: 0.10, rigid: I.head });
+    const seg = Math.max(10, dens.ringT);
+    const prof = JINGASA_PROFILE;
+    const first = mesher.vertexCount;
+    for (let r = 0; r < prof.length; r++) {
+      const dr = prof[Math.min(prof.length - 1, r + 1)][0] - prof[Math.max(0, r - 1)][0];
+      const dy = prof[Math.min(prof.length - 1, r + 1)][1] - prof[Math.max(0, r - 1)][1];
+      const l = Math.hypot(dr, dy) || 1;
+      for (let cI = 0; cI <= seg; cI++) {
+        const u = cI / seg, th = u * Math.PI * 2;
+        const rad = prof[r][0] * S;
+        mesher.vertex(
+          head.x + Math.cos(th) * rad, head.y + (prof[r][1] + 0.145) * S, head.z + Math.sin(th) * rad + 0.012 * S,
+          Math.cos(th) * (-dy / l), dr / l, Math.sin(th) * (-dy / l),
+          u, r / (prof.length - 1));
+      }
+    }
+    for (let r = 0; r < prof.length - 1; r++) {
+      for (let cI = 0; cI < seg; cI++) {
+        const a = first + r * (seg + 1) + cI;
+        mesher.tri(a, a + seg + 2, a + 1);
+        mesher.tri(a, a + seg + 1, a + seg + 2);
+      }
+    }
+  }
 }
 
-/** 袖 sode — the big square shoulder guards. Four descending plates per side. */
-function buildSode(rig, dens, materials, side) {
-  const S = rig.scale;
-  const rows = 4;
-  const geo = plateGeometry(0.085 * S, 0.048 * S, 0.006 * S, 3, 3, false);
-  const im = new InstancedMesh(geo, materials.lamellar, rows);
-  im.name = 'sode' + side;
-  im.castShadow = true;
-  const sgn = side === 'R' ? 1 : -1;
-  const m4 = _m[0], qq = _q[0], pv = _v[0], sv = _v[1].set(1, 1, 1);
-  for (let r = 0; r < rows; r++) {
-    const t = r / (rows - 1);
-    pv.set(sgn * (0.055 + t * 0.030) * S, (-0.010 - t * 0.088) * S, 0.004 * S);
-    _e.set(0.12 * t, 0, sgn * (0.34 + t * 0.22));
-    qq.setFromEuler(_e);
-    m4.compose(pv, qq, sv);
-    im.setMatrixAt(r, m4);
-  }
-  im.instanceMatrix.needsUpdate = true;
-  im.frustumCulled = false;
-  return im;
-}
+/** menpō section rows: [y, zFront, halfWidth, bulge]. */
+const MENPO_ROWS = [
+  [0.070, -0.086, 0.082, 0.30],
+  [0.030, -0.098, 0.080, 0.55],
+  [-0.005, -0.100, 0.072, 0.70],
+  [-0.042, -0.088, 0.058, 0.85],
+  [-0.072, -0.058, 0.040, 0.60],
+];
+
+/** jingasa lathe profile: [radius, y]. */
+const JINGASA_PROFILE = [
+  [0.000, 0.098], [0.070, 0.088], [0.140, 0.060], [0.205, 0.024], [0.255, 0.000], [0.250, -0.012],
+];
 
 /** A slightly domed rounded plate — flat quads read as cardboard under a rim light. */
 function plateGeometry(w, h, d, nx, ny, twoSided) {
@@ -993,102 +1142,52 @@ function plateGeometry(w, h, d, nx, ny, twoSided) {
   return g;
 }
 
-/** 面頬 menpō — the snarling half mask. Built as a shell swept under the cheekbones. */
-function buildMenpo(rig, dens, materials) {
-  const S = rig.scale;
-  const g = new BufferGeometry();
-  const pos = [], nor = [], uv = [], idx = [];
-  const cols = dens.ringT >= 14 ? 11 : 8;
-  const rowsDef = [
-    // [y, zFront, halfWidth, bulge]
-    [0.070, -0.086, 0.082, 0.30],
-    [0.030, -0.098, 0.080, 0.55],
-    [-0.005, -0.100, 0.072, 0.70],
-    [-0.042, -0.088, 0.058, 0.85],
-    [-0.072, -0.058, 0.040, 0.60],
-  ];
-  for (let r = 0; r < rowsDef.length; r++) {
-    const [y, zf, hw, bl] = rowsDef[r];
-    for (let cI = 0; cI <= cols; cI++) {
-      const u = cI / cols;
-      const ang = (u - 0.5) * Math.PI * 1.08;
-      const x = Math.sin(ang) * hw * S;
-      const z = (zf + (1 - Math.cos(ang)) * 0.085) * S;
-      pos.push(x, y * S, z);
-      const l = Math.hypot(Math.sin(ang), 0.22 * bl, -Math.cos(ang));
-      nor.push(Math.sin(ang) / l, (0.22 * bl) / l, -Math.cos(ang) / l);
-      uv.push(u, r / (rowsDef.length - 1));
-    }
+/**
+ * The whole character in one geometry: skin, kimono, obi and — for an oni — the
+ * cuirass, sode, mask and hat. One SkinnedMesh, one material, one draw call.
+ */
+function buildCharacterGeometry(rig, dens, costume) {
+  const pal = Object.assign({
+    cloth: 0x2a2f38, armour: 0x3a3128, lacing: 0x7a1d16,
+    trim: 0xc8321e, metal: 0xc9d3dc, skin: 0xb08a63,
+  }, costume.palette || {});
+  const mesher = new Mesher(rig._segA, rig._segB, 0.055);
+  buildBody(rig, mesher, dens, pal);
+  if (costume.chest !== 'none') {
+    buildUpperGarment(rig, mesher, dens, {
+      puff: rig.variant === 'oni' ? 0.016 : 0.024, color: pal.cloth,
+    });
   }
-  for (let r = 0; r < rowsDef.length - 1; r++) {
-    for (let cI = 0; cI < cols; cI++) {
-      const a = r * (cols + 1) + cI;
-      idx.push(a, a + 1, a + cols + 2, a, a + cols + 2, a + cols + 1);
-    }
+  if (costume.sash !== false) buildObi(rig, mesher, dens, pal);
+  if (rig.variant === 'oni' && costume.armour && costume.armour !== 'none') {
+    buildArmour(rig, mesher, dens, costume, pal);
   }
-  g.setAttribute('position', new Float32BufferAttribute(pos, 3));
-  g.setAttribute('normal', new Float32BufferAttribute(nor, 3));
-  g.setAttribute('uv', new Float32BufferAttribute(uv, 2));
-  g.setIndex(idx);
-  const mesh = new Mesh(g, materials.lacquerRed);
-  mesh.name = 'menpo';
-  mesh.castShadow = true;
-  return mesh;
-}
-
-/** 陣笠 jingasa — the conical field hat. A lathe with a flat brim and a shallow dome. */
-function buildJingasa(rig, dens, materials) {
-  const S = rig.scale;
-  const seg = Math.max(10, dens.ringT);
-  const g = new BufferGeometry();
-  const pos = [], nor = [], uv = [], idx = [];
-  const prof = [
-    [0.000, 0.098], [0.070, 0.088], [0.140, 0.060], [0.205, 0.024], [0.255, 0.000], [0.250, -0.012],
-  ];
-  for (let r = 0; r < prof.length; r++) {
-    for (let cI = 0; cI <= seg; cI++) {
-      const u = cI / seg, th = u * Math.PI * 2;
-      const rad = prof[r][0] * S, y = prof[r][1] * S;
-      pos.push(Math.cos(th) * rad, y, Math.sin(th) * rad);
-      const dr = (prof[Math.min(prof.length - 1, r + 1)][0] - prof[Math.max(0, r - 1)][0]);
-      const dy = (prof[Math.min(prof.length - 1, r + 1)][1] - prof[Math.max(0, r - 1)][1]);
-      const l = Math.hypot(dr, dy) || 1;
-      nor.push(Math.cos(th) * (-dy / l), (dr / l), Math.sin(th) * (-dy / l));
-      uv.push(u, r / (prof.length - 1));
-    }
-  }
-  for (let r = 0; r < prof.length - 1; r++) {
-    for (let cI = 0; cI < seg; cI++) {
-      const a = r * (seg + 1) + cI;
-      idx.push(a, a + seg + 2, a + 1, a, a + seg + 1, a + seg + 2);
-    }
-  }
-  g.setAttribute('position', new Float32BufferAttribute(pos, 3));
-  g.setAttribute('normal', new Float32BufferAttribute(nor, 3));
-  g.setAttribute('uv', new Float32BufferAttribute(uv, 2));
-  g.setIndex(idx);
-  const mesh = new Mesh(g, materials.lacquer);
-  mesh.name = 'jingasa';
-  mesh.castShadow = true;
-  mesh.position.set(0, 0.145 * S, 0.012 * S);
-  return mesh;
+  return mesher.toGeometry('kagerou-character');
 }
 
 // ===========================================================================
 // KATANA + SAYA
 // ===========================================================================
 
+/** Snapshot of `tint()`, because that helper hands back a shared scratch array. */
+function tintOf(hex, scale) { const t = tint(hex, scale); return [t[0], t[1], t[2]]; }
+
 /**
- * Bake a list of rigid meshes that share a material into one geometry. Six brass
+ * Bake a list of rigid meshes into one geometry, keeping each part's colour and
+ * surface response in vertex attributes. Six brass
  * fittings on a sword are six draw calls, and with eight enemies on screen that is
  * most of the ARCHITECTURE §7 budget spent on things smaller than a thumbnail.
  * Transforms are translation+rotation only here, so normals just take the rotation.
  */
-function mergeMeshes(meshes, material, name) {
-  const pos = [], nor = [], uv = [], idx = [];
+function mergeMeshes(entries, material, name) {
+  const pos = [], nor = [], uv = [], col = [], rm = [], idx = [];
   const v = new Vector3(), q = new Quaternion();
   let base = 0;
-  for (const m of meshes) {
+  for (const entry of entries) {
+    const m = entry.mesh;
+    const t = entry.tint || WHITE_TINT;
+    const rough = entry.rough === undefined ? 0.6 : entry.rough;
+    const metal = entry.metal === undefined ? 0 : entry.metal;
     m.updateMatrix();
     q.setFromRotationMatrix(m.matrix);
     const g = m.geometry;
@@ -1101,6 +1200,8 @@ function mergeMeshes(meshes, material, name) {
       v.set(gn[i * 3], gn[i * 3 + 1], gn[i * 3 + 2]).applyQuaternion(q);
       nor.push(v.x, v.y, v.z);
       uv.push(gu ? gu[i * 2] : 0, gu ? gu[i * 2 + 1] : 0);
+      col.push(t[0], t[1], t[2]);
+      rm.push(rough, metal);
     }
     const gi = g.index.array;
     for (let i = 0; i < gi.length; i++) idx.push(gi[i] + base);
@@ -1111,6 +1212,8 @@ function mergeMeshes(meshes, material, name) {
   out.setAttribute('position', new Float32BufferAttribute(pos, 3));
   out.setAttribute('normal', new Float32BufferAttribute(nor, 3));
   out.setAttribute('uv', new Float32BufferAttribute(uv, 2));
+  out.setAttribute('color', new Float32BufferAttribute(col, 3));
+  out.setAttribute('aRM', new Float32BufferAttribute(rm, 2));
   out.setIndex(idx);
   const mesh = new Mesh(out, material);
   mesh.name = name;
@@ -1312,65 +1415,68 @@ function buildItoWrap(scale, turns, ribbons, material) {
  * running along +Y; the attachment node on the hand supplies the rest of the transform
  * so Player.js can tune the grip without touching geometry.
  */
-export function buildKatana(quality, materials, scale) {
+export function buildKatana(quality, materials, scale, pal) {
   const S = scale === undefined ? 1 : scale;
   const dens = meshDensity(quality);
-  const seg = dens.lon > 1.1 ? 22 : dens.lon > 0.8 ? 16 : 11;
-  const latheSeg = dens.lon > 1.1 ? 16 : dens.lon > 0.8 ? 12 : 8;
+  const seg = dens.lon > 1.2 ? 22 : dens.lon > 0.8 ? 16 : 11;
+  const latheSeg = dens.lon > 1.2 ? 16 : dens.lon > 0.8 ? 12 : 8;
   const g = new Group();
   g.name = 'katana';
 
+  // The blade stays its own mesh: it is the one surface in the game that needs a
+  // dedicated anisotropic material (ARCHITECTURE §5.6) and it owns the motion trail.
   const blade = buildBlade(seg, S, materials.steel);
   blade.position.y = KATANA.tsuka * S * 0.42;
   g.add(blade);
 
-  const fittings = [];
+  // Everything else on the sword — habaki, tsuba, tsuka core, ito wrap, fuchi,
+  // kashira — is one merged mesh. Six fittings on a prop the size of a thumb is not
+  // worth six draw calls with eight enemies on screen.
+  const parts = [];
   const habaki = latheRing([
     [0.0125 * S, -0.004 * S, 0.62], [0.0142 * S, 0.000, 0.62],
     [0.0140 * S, 0.026 * S, 0.62], [0.0118 * S, 0.030 * S, 0.62],
-  ], latheSeg, materials.brass, 'habaki');
+  ], latheSeg, null, 'habaki');
   habaki.position.y = blade.position.y - 0.002 * S;
-  fittings.push(habaki);
+  parts.push({ mesh: habaki, tint: tintOf(0xc9a227), rough: 0.34, metal: 0.92 });
 
   const tsuba = latheRing([
     [0.0110 * S, -0.0026 * S, 0.68], [0.0380 * S, -0.0030 * S, 0.86],
     [0.0392 * S, 0.0000, 0.88], [0.0380 * S, 0.0030 * S, 0.86],
     [0.0110 * S, 0.0026 * S, 0.68],
-  ], latheSeg, materials.iron, 'tsuba');
+  ], latheSeg, null, 'tsuba');
   tsuba.position.y = blade.position.y - 0.006 * S;
-  g.add(tsuba);
-  tsuba.userData.detail = 1;
+  parts.push({ mesh: tsuba, tint: tintOf(0x35383c), rough: 0.44, metal: 0.90 });
 
-  // Tsuka core, tapering slightly toward the kashira like a real oval handle.
   const core = latheRing([
     [0.0176 * S, 0.006 * S, 0.73], [0.0182 * S, 0.030 * S, 0.73],
     [0.0170 * S, KATANA.tsuka * S * 0.55, 0.72], [0.0166 * S, KATANA.tsuka * S - 0.020 * S, 0.72],
     [0.0150 * S, KATANA.tsuka * S - 0.004 * S, 0.72],
-  ], latheSeg, materials.samegawa, 'tsuka');
+  ], latheSeg, null, 'tsuka');
   core.position.y = blade.position.y - KATANA.tsuka * S;
-  g.add(core);
+  parts.push({ mesh: core, tint: tintOf(0xd8d2c4), rough: 0.66, metal: 0 });
 
-  const wrap = buildItoWrap(S, dens.lon > 1.1 ? 5 : 4, dens.lon > 0.8 ? 4 : 2, materials.ito);
+  const wrap = buildItoWrap(S, dens.lon > 1.2 ? 5 : 4, dens.lon > 0.8 ? 4 : 2, null);
   wrap.position.y = core.position.y;
-  wrap.userData.detail = 1;
-  g.add(wrap);
+  parts.push({ mesh: wrap, tint: tintOf(pal && pal.lacing !== undefined ? pal.lacing : 0x241f1c, 0.85), rough: 0.78, metal: 0 });
 
   const fuchi = latheRing([
     [0.0184 * S, 0.000, 0.73], [0.0196 * S, 0.004 * S, 0.74],
     [0.0192 * S, 0.016 * S, 0.74], [0.0176 * S, 0.018 * S, 0.73],
-  ], latheSeg, materials.brass, 'fuchi');
+  ], latheSeg, null, 'fuchi');
   fuchi.position.y = core.position.y + KATANA.tsuka * S - 0.020 * S;
-  fittings.push(fuchi);
+  parts.push({ mesh: fuchi, tint: tintOf(0xc9a227), rough: 0.34, metal: 0.92 });
 
   const kashira = latheRing([
     [0.0120 * S, -0.002 * S, 0.72], [0.0168 * S, 0.002 * S, 0.72],
     [0.0164 * S, 0.014 * S, 0.72], [0.0090 * S, 0.019 * S, 0.72],
-  ], latheSeg, materials.brass, 'kashira');
+  ], latheSeg, null, 'kashira');
   kashira.position.y = core.position.y - 0.014 * S;
-  fittings.push(kashira);
-  const brassParts = mergeMeshes(fittings, materials.brass, 'fittings');
-  brassParts.userData.detail = 1;
-  g.add(brassParts);
+  parts.push({ mesh: kashira, tint: tintOf(0xc9a227), rough: 0.34, metal: 0.92 });
+
+  const koshirae = mergeMeshes(parts, materials.fittings, 'koshirae');
+  koshirae.userData.detail = 1;
+  g.add(koshirae);
 
   // Socket at the kissaki: Combat.js reads this for the weapon capsule and Effects.js
   // hangs the blade trail off it, so it must be an object, not a computed offset.
@@ -1433,38 +1539,44 @@ export function buildSaya(quality, materials, scale) {
   geo.setAttribute('normal', new Float32BufferAttribute(nor, 3));
   geo.setAttribute('uv', new Float32BufferAttribute(uv, 2));
   geo.setIndex(idx);
-  const body = new Mesh(geo, materials.lacquer);
+  const body = new Mesh(geo, null);
   body.name = 'saya-body';
-  body.castShadow = true;
-  g.add(body);
 
   const koiguchi = latheRing([
     [0.0150 * S, -0.004 * S, 0.60], [0.0166 * S, 0.000, 0.60],
     [0.0162 * S, 0.020 * S, 0.60], [0.0148 * S, 0.024 * S, 0.60],
-  ], latheSeg, materials.horn, 'koiguchi');
+  ], latheSeg, null, 'koiguchi');
 
   const kojiri = latheRing([
     [0.0090 * S, KATANA.nagasa * S * 0.985, 0.58], [0.0116 * S, KATANA.nagasa * S * 0.995, 0.58],
     [0.0110 * S, KATANA.nagasa * S * 1.020, 0.58], [0.0040 * S, KATANA.nagasa * S * 1.030, 0.58],
-  ], latheSeg, materials.horn, 'kojiri');
+  ], latheSeg, null, 'kojiri');
   kojiri.position.z = KATANA.sori * S * 0.06;
 
   // 栗形 kurigata: the little knob the sageo threads through.
   const kurigata = latheRing([
     [0.0040 * S, 0.000, 1], [0.0072 * S, 0.004 * S, 1],
     [0.0070 * S, 0.016 * S, 1], [0.0038 * S, 0.020 * S, 1],
-  ], 8, materials.horn, 'kurigata');
+  ], 8, null, 'kurigata');
   kurigata.rotation.z = Math.PI * 0.5;
   kurigata.position.set(0.0, 0.100 * S, -0.014 * S);
-  const hornParts = mergeMeshes([koiguchi, kojiri, kurigata], materials.horn, 'saya-fittings');
-  hornParts.userData.detail = 1;
-  g.add(hornParts);
+  // Scabbard body and all three horn fittings in one mesh: the lacquer and the horn
+  // differ only by tint and roughness, and both of those now ride on the vertices.
+  const LACQ = tintOf(0x101014), HORN = tintOf(0x1a1614);
+  const merged = mergeMeshes([
+    { mesh: body, tint: LACQ, rough: 0.22, metal: 0.12 },
+    { mesh: koiguchi, tint: HORN, rough: 0.42, metal: 0.05 },
+    { mesh: kojiri, tint: HORN, rough: 0.42, metal: 0.05 },
+    { mesh: kurigata, tint: HORN, rough: 0.42, metal: 0.05 },
+  ], materials.fittings, 'saya');
+  merged.userData.detail = 2;
+  g.add(merged);
 
   const mouth = new Object3D();
   mouth.name = 'koiguchi-point';
   g.add(mouth);
   g.userData.mouth = mouth;
-  g.userData.cordAnchor = hornParts;
+  g.userData.cordAnchor = merged;
   return g;
 }
 
@@ -1512,9 +1624,13 @@ class ClothPatch {
     this._cIdx = null;
     this._cRest = null;
 
-    this.geometry = null;
-    this.mesh = null;
-    this._nor = null;
+    this.tint = o.tint || WHITE_TINT;
+    this.rough = o.rough === undefined ? 0.93 : o.rough;
+    this.metal = o.metal === undefined ? 0 : o.metal;
+    this.uvScale = o.uvScale || 1;
+    /** Slot inside the shared ClothBatch buffers, in vertices. */
+    this.vOffset = 0;
+    this.batch = null;
     this._swayPhase = o.phase === undefined ? 0 : o.phase;
   }
 
@@ -1576,43 +1692,28 @@ class ClothPatch {
     this.constraints.length = 0;
   }
 
-  buildGeometry(material, uvScale) {
-    const C = this.cols, R = this.rows;
-    const wrap = this.closed ? C : C - 1;
-    const g = new BufferGeometry();
-    g.setAttribute('position', new Float32BufferAttribute(new Float32Array(this.n * 3), 3));
-    g.setAttribute('normal', new Float32BufferAttribute(new Float32Array(this.n * 3), 3));
-    const uv = new Float32Array(this.n * 2);
+  /** Emit this patch's slice of the shared batch geometry. Called once, at build. */
+  writeStatic(uv, col, rm, idx) {
+    const C = this.cols, R = this.rows, o = this.vOffset;
+    const t = this.tint, k = this.uvScale;
     for (let r = 0; r < R; r++) {
       for (let c = 0; c < C; c++) {
-        const i = this.index(c, r) * 2;
-        uv[i] = (c / C) * (uvScale || 1);
-        uv[i + 1] = (r / (R - 1)) * (uvScale || 1);
+        const i = o + this.index(c, r);
+        uv[i * 2] = (c / C) * k;
+        uv[i * 2 + 1] = (r / (R - 1)) * k;
+        col[i * 3] = t[0]; col[i * 3 + 1] = t[1]; col[i * 3 + 2] = t[2];
+        rm[i * 2] = this.rough; rm[i * 2 + 1] = this.metal;
       }
     }
-    g.setAttribute('uv', new Float32BufferAttribute(uv, 2));
-    const idx = [];
+    const wrap = this.closed ? C : C - 1;
     for (let r = 0; r < R - 1; r++) {
       for (let c = 0; c < wrap; c++) {
         const c1 = (c + 1) % C;
-        const a = this.index(c, r), b = this.index(c1, r);
-        const d = this.index(c, r + 1), e = this.index(c1, r + 1);
+        const a = o + this.index(c, r), b = o + this.index(c1, r);
+        const d = o + this.index(c, r + 1), e = o + this.index(c1, r + 1);
         idx.push(a, d, e, a, e, b);
       }
     }
-    g.setIndex(idx);
-    g.attributes.position.setUsage(DynamicDrawUsage);
-    g.attributes.normal.setUsage(DynamicDrawUsage);
-    g.boundingSphere = new Sphere(new Vector3(0, 1, 0), 2.2);
-    this.geometry = g;
-    this._nor = g.attributes.normal.array;
-    const mesh = new Mesh(g, material);
-    mesh.name = 'cloth';
-    mesh.frustumCulled = false;   // bounds change every frame; culling would pop
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    this.mesh = mesh;
-    return mesh;
   }
 
   /** Resolve the pin row from bone matrices. `toLocal` maps world → rig-root space. */
@@ -1734,13 +1835,13 @@ class ClothPatch {
     }
   }
 
-  /** Write positions and recomputed normals into the dynamic geometry. */
+  /** Write positions and recomputed normals into the batch's shared arrays. */
   flush() {
-    const g = this.geometry;
-    if (!g) return;
-    g.attributes.position.array.set(this.pos);
-    g.attributes.position.needsUpdate = true;
-    const nor = this._nor, pos = this.pos, C = this.cols, R = this.rows;
+    const b = this.batch;
+    if (!b) return;
+    const o3 = this.vOffset * 3;
+    b.pos.set(this.pos, o3);
+    const nor = b.nor, pos = this.pos, C = this.cols, R = this.rows;
     for (let r = 0; r < R; r++) {
       for (let c = 0; c < C; c++) {
         const i = this.index(c, r);
@@ -1753,15 +1854,78 @@ class ClothPatch {
         const bx = pos[dn] - pos[u], by = pos[dn + 1] - pos[u + 1], bz = pos[dn + 2] - pos[u + 2];
         let nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx;
         const nl = Math.hypot(nx, ny, nz) || 1;
-        const o = i * 3;
+        const o = o3 + i * 3;
         nor[o] = nx / nl; nor[o + 1] = ny / nl; nor[o + 2] = nz / nl;
       }
     }
-    g.attributes.normal.needsUpdate = true;
+  }
+}
+
+/**
+ * Every soft thing on a character in ONE dynamic draw call: hakama, sash tail,
+ * sageo, both sleeve hems and the topknot. The patches keep their own particles and
+ * constraints — the simulation is unchanged — but they write into a single shared
+ * position/normal buffer, and per-patch colour and roughness ride along in the
+ * vertex attributes so indigo hakama, vermilion sash and black hair still differ.
+ */
+class ClothBatch {
+  constructor() {
+    this.patches = [];
+    this.count = 0;
+    this.pos = null;
+    this.nor = null;
+    this.geometry = null;
+    this.mesh = null;
+  }
+
+  add(patch) {
+    patch.vOffset = this.count;
+    patch.batch = this;
+    this.count += patch.n;
+    this.patches.push(patch);
+    return patch;
+  }
+
+  build(material) {
+    if (this.count === 0) return null;
+    this.pos = new Float32Array(this.count * 3);
+    this.nor = new Float32Array(this.count * 3);
+    const uv = new Float32Array(this.count * 2);
+    const col = new Float32Array(this.count * 3);
+    const rm = new Float32Array(this.count * 2);
+    const idx = [];
+    for (const p of this.patches) p.writeStatic(uv, col, rm, idx);
+
+    const g = new BufferGeometry();
+    g.setAttribute('position', new Float32BufferAttribute(this.pos, 3));
+    g.setAttribute('normal', new Float32BufferAttribute(this.nor, 3));
+    g.setAttribute('uv', new Float32BufferAttribute(uv, 2));
+    g.setAttribute('color', new Float32BufferAttribute(col, 3));
+    g.setAttribute('aRM', new Float32BufferAttribute(rm, 2));
+    g.setIndex(idx);
+    g.attributes.position.setUsage(DynamicDrawUsage);
+    g.attributes.normal.setUsage(DynamicDrawUsage);
+    g.boundingSphere = new Sphere(new Vector3(0, 1, 0), 2.4);
+    this.geometry = g;
+    const mesh = new Mesh(g, material);
+    mesh.name = 'cloth';
+    mesh.frustumCulled = false;   // bounds change every frame; culling would pop
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    this.mesh = mesh;
+    return mesh;
+  }
+
+  /** One attribute upload for every piece of cloth on the character. */
+  upload() {
+    if (!this.geometry) return;
+    this.geometry.attributes.position.needsUpdate = true;
+    this.geometry.attributes.normal.needsUpdate = true;
   }
 
   dispose() {
     if (this.geometry) this.geometry.dispose();
+    this.patches.length = 0;
   }
 }
 
@@ -1784,6 +1948,12 @@ function resolveMaterials(ctx, palette, variant) {
   if (hit) return hit;
 
   const lib = ctx && ctx.materials;
+  /**
+   * Materials.js owns the look if it has one. Our fallback gets the per-vertex
+   * patch; a library material is used exactly as authored, on the contract that a
+   * material named `character*` reads the `color` attribute for albedo tint × baked
+   * AO and the `aRM` attribute for (roughness, metalness).
+   */
   const pick = (name, fallback) => {
     if (lib) {
       try {
@@ -1791,7 +1961,7 @@ function resolveMaterials(ctx, palette, variant) {
         if (m && m.isMaterial) return m;
       } catch { /* library not ready */ }
     }
-    return fallback();
+    return patchPerVertexRM(fallback());
   };
   const std = (color, rough, metal, opts) => new MeshStandardMaterial(Object.assign({
     color: new Color(color), roughness: rough, metalness: metal || 0,
@@ -1805,27 +1975,21 @@ function resolveMaterials(ctx, palette, variant) {
   const metal = p.metal !== undefined ? p.metal : 0xc9d3dc;
   const skin = p.skin !== undefined ? p.skin : 0xb08a63;
 
+  // Three materials per character, not fifteen. Colour lives in the `color`
+  // attribute and roughness/metalness in `aRM`, so skin, indigo cloth, a vermilion
+  // obi and a lacquered plate can share one program and one draw call. A material
+  // supplied by Materials.js wins outright — it is assumed to know what it is doing.
   const set = {
-    // Vertex colours carry the baked crevice AO, so the skin material must read them.
-    skin: pick('skin', () => std(skin, 0.74, 0, { vertexColors: true })),
-    cloth: pick('cloth_kimono', () => std(cloth, 0.92, 0, { vertexColors: true })),
-    clothAlt: pick('cloth_hakama', () => std(_col.set(cloth).multiplyScalar(0.72).getHex(), 0.94, 0)),
-    obi: pick('cloth_obi', () => std(trim, 0.86, 0)),
-    sash: pick('cloth_sash', () => std(trim, 0.80, 0, { side: DoubleSide })),
-    skirt: pick('cloth_hakama', () => std(_col.set(cloth).multiplyScalar(0.78).getHex(), 0.94, 0, { side: DoubleSide })),
-    hair: pick('hair', () => std(0x14100e, 0.62, 0, { side: DoubleSide })),
-    steel: pick('steel_blade', () => std(metal, 0.16, 1.0)),
-    iron: pick('iron_dark', () => std(0x35383c, 0.44, 0.9)),
-    brass: pick('gold_leaf', () => std(0xc9a227, 0.34, 0.92)),
-    lacquer: pick('lacquer_black', () => std(0x101014, 0.22, 0.12)),
-    lacquerRed: pick('lacquer_red', () => std(_col.set(armour).getHex(), 0.30, 0.16)),
-    horn: pick('horn', () => std(0x1a1614, 0.42, 0.05)),
-    samegawa: pick('samegawa', () => std(0xd8d2c4, 0.66, 0)),
-    ito: pick('leather_wrap', () => std(_col.set(lacing).multiplyScalar(0.85).getHex(), 0.78, 0)),
-    lamellar: pick('lamellar', () => std(armour, 0.42, 0.35)),
-    lacing: pick('lacing_cord', () => std(lacing, 0.86, 0)),
-    cord: pick('cord', () => std(lacing, 0.88, 0, { side: DoubleSide })),
+    character: pick('character', () => std(0xffffff, 1, 1)),
+    clothBatch: pick('character_cloth', () => std(0xffffff, 1, 1, { side: DoubleSide })),
+    fittings: pick('character_trim', () => std(0xffffff, 1, 1)),
+    // The blade is the one surface that keeps a dedicated material: it needs the
+    // anisotropic specular from ARCHITECTURE §5.6 and it carries the motion trail.
+    steel: (lib && ((typeof lib.get === 'function' ? lib.get('steel_blade') : lib.steel_blade)))
+      || std(metal, 0.16, 1.0),
   };
+  // Palette entries the geometry builders read directly for their vertex tints.
+  set.palette = { cloth, armour, lacing, trim, metal, skin };
   _matCache.set(key, set);
   return set;
 }
@@ -2134,69 +2298,27 @@ export class Rig {
     this.materials = resolveMaterials(this.ctx, costume.palette, this.variant);
     const M = this.materials;
 
-    // ---- body
-    const bodyGeo = buildBody(this, dens);
-    const body = new SkinnedMesh(bodyGeo, M.skin);
-    body.name = 'body';
+    // ---- The entire character — skin, kimono, obi, cuirass, sode, menpō, jingasa —
+    //      is a single SkinnedMesh. Parts that used to be parented to a bone are now
+    //      rigid-bound to that same bone inside this geometry, which is the identical
+    //      transform for one draw call instead of six.
+    const geo = buildCharacterGeometry(this, dens, costume);
+    const body = new SkinnedMesh(geo, M.character);
+    body.name = 'character';
     body.castShadow = true;
     body.receiveShadow = true;
     this.root.add(body);
     body.bind(this.skeleton, _IDENTITY);
     this.mesh = body;
     this.parts.body = body;
-
-    // ---- upper garment
-    if (costume.chest !== 'none') {
-      const g = buildUpperGarment(this, dens, { puff: this.variant === 'oni' ? 0.016 : 0.024 });
-      const up = new SkinnedMesh(g, M.cloth);
-      up.name = 'kimono';
-      up.castShadow = true;
-      this.root.add(up);
-      up.bind(this.skeleton, _IDENTITY);
-      this.parts.upper = up;
-    }
-
-    // ---- obi
-    if (costume.sash !== false) {
-      const obi = new SkinnedMesh(buildObi(this, dens), M.obi);
-      obi.name = 'obi';
-      obi.castShadow = true;
-      this.root.add(obi);
-      obi.bind(this.skeleton, _IDENTITY);
-      this.parts.obi = obi;
-    }
-
-    // ---- oni armour
-    if (this.variant === 'oni' && costume.armour && costume.armour !== 'none') {
-      const doGrp = buildLamellar(this, dens, M);
-      this.bones.spine1.add(doGrp);
-      this.parts.do = doGrp;
-      if (costume.sleeves === 'sode' || costume.armour === 'heavy') {
-        const sr = buildSode(this, dens, M, 'R');
-        const sl = buildSode(this, dens, M, 'L');
-        this.bones.clavicleR.add(sr);
-        this.bones.clavicleL.add(sl);
-        this.parts.sodeR = sr; this.parts.sodeL = sl;
-      }
-      if (costume.mask) {
-        const mask = buildMenpo(this, dens, M);
-        mask.position.set(0, 0.070 * this.scale, 0.010 * this.scale);
-        this.bones.head.add(mask);
-        this.parts.menpo = mask;
-      }
-      if (costume.hat) {
-        const hat = buildJingasa(this, dens, M);
-        this.bones.head.add(hat);
-        this.parts.hat = hat;
-      }
-    }
+    this.parts.character = body;
 
     this._buildAttachments();
     if (o.weapon !== false && o.weapon !== 'none') this._buildWeapon(o.weapon);
     this._buildCloth(costume);
 
-    // Sword furniture, mask rivets, hat: readable in a finisher close-up, invisible
-    // past ~20 m. Collected once so LOD can drop them with a flag flip, not a search.
+    // Sword furniture and the saya: readable in a finisher close-up, invisible past
+    // ~20 m. Collected once so LOD can drop them with a flag flip, not a search.
     this._detail = [];
     this.root.traverse((n) => { if (n.userData && n.userData.detail) this._detail.push(n); });
 
@@ -2229,7 +2351,7 @@ export class Rig {
   _buildWeapon(kind) {
     const S = this.scale;
     const M = this.materials;
-    const katana = buildKatana(this.ctx.quality, M, S);
+    const katana = buildKatana(this.ctx.quality, M, S, M.palette);
     this.attachments.handR.add(katana);
     this.parts.katana = katana;
     this.weaponTip = katana.userData.tip;
@@ -2259,16 +2381,20 @@ export class Rig {
   _buildCloth(costume) {
     const S = this.scale;
     const M = this.materials;
+    const pal = M.palette;
     const q = this.ctx.quality;
     const tier = q ? q.tier : 1;
     const rich = this.variant !== 'oni' && tier >= 1;
     const cols = tier >= 2 ? 16 : tier >= 1 ? 12 : 10;
+    const batch = new ClothBatch();
+    this.clothBatch = batch;
 
     // ---- 袴 hakama: a closed skirt hanging off the pelvis with vertical pleats.
     const hipY = this._segA[BONE_INDEX.hips * 3 + 1];
     const rows = tier >= 2 ? 6 : 5;
     const hakama = new ClothPatch(cols, rows, true, {
       segLen: 0.135 * S, damping: 0.045, windScale: 0.55, stiffness: 0.9, phase: 0.0,
+      tint: tintOf(pal.cloth, 0.78), rough: 0.94, uvScale: 3,
     });
     for (let c = 0; c < cols; c++) {
       const a = (c / cols) * Math.PI * 2;
@@ -2287,13 +2413,13 @@ export class Rig {
         hipY - 0.055 * S - r * 0.135 * S,
         Math.sin(a) * 0.122 * S * pleat * flare);
     });
-    this.root.add(hakama.buildGeometry(M.skirt, 3));
+    batch.add(hakama);
     this.cloths.push(hakama);
-    this.parts.hakama = hakama.mesh;
 
     // ---- 帯 sash tail: the long strip off the obi knot. Pure show, and worth it.
     const tail = new ClothPatch(2, tier >= 1 ? 9 : 6, false, {
       segLen: 0.085 * S, damping: 0.030, windScale: 1.6, stiffness: 0.95, phase: 1.7,
+      tint: tintOf(pal.trim), rough: 0.80, uvScale: 2,
     });
     const spine1Y = this._segA[BONE_INDEX.spine1 * 3 + 1];
     for (let c = 0; c < 2; c++) {
@@ -2302,25 +2428,24 @@ export class Rig {
     tail.layout((c, r, out) => {
       out.set((c - 0.5) * 0.075 * S, spine1Y - 0.020 * S - r * 0.085 * S, 0.135 * S + r * 0.010 * S);
     });
-    this.root.add(tail.buildGeometry(M.sash, 2));
+    batch.add(tail);
     this.cloths.push(tail);
-    this.parts.sashTail = tail.mesh;
 
     // ---- 下緒 sageo: the cord off the kurigata, tied back to the obi.
     if (this.parts.saya) {
-    const sageo = new ClothPatch(2, 7, false, {
-      segLen: 0.062 * S, damping: 0.045, windScale: 1.1, stiffness: 1.0, phase: 3.1,
-    });
-    for (let c = 0; c < 2; c++) {
-      sageo.anchors[c] = { bone: 'sayaMount', off: [(c - 0.5) * 0.012 * S, -0.010 * S, 0.070 * S] };
-    }
-    const sayaY = this._segA[BONE_INDEX.sayaMount * 3 + 1];
-    sageo.layout((c, r, out) => {
-      out.set(-0.118 * S + (c - 0.5) * 0.012 * S, sayaY - r * 0.062 * S, 0.070 * S);
-    });
-    this.root.add(sageo.buildGeometry(M.cord, 1));
-    this.cloths.push(sageo);
-    this.parts.sageo = sageo.mesh;
+      const sageo = new ClothPatch(2, 7, false, {
+        segLen: 0.062 * S, damping: 0.045, windScale: 1.1, stiffness: 1.0, phase: 3.1,
+        tint: tintOf(pal.lacing), rough: 0.88,
+      });
+      for (let c = 0; c < 2; c++) {
+        sageo.anchors[c] = { bone: 'sayaMount', off: [(c - 0.5) * 0.012 * S, -0.010 * S, 0.070 * S] };
+      }
+      const sayaY = this._segA[BONE_INDEX.sayaMount * 3 + 1];
+      sageo.layout((c, r, out) => {
+        out.set(-0.118 * S + (c - 0.5) * 0.012 * S, sayaY - r * 0.062 * S, 0.070 * S);
+      });
+      batch.add(sageo);
+      this.cloths.push(sageo);
     }
 
     // ---- sleeve hems, player/ronin only: the wide haori cuffs that hang off the arm.
@@ -2330,6 +2455,7 @@ export class Rig {
         const sleeve = new ClothPatch(sc, 3, true, {
           segLen: 0.085 * S, damping: 0.040, windScale: 1.2, stiffness: 0.85,
           phase: side === 'R' ? 0.8 : 2.2,
+          tint: tintOf(pal.cloth), rough: 0.93, uvScale: 2,
         });
         const bone = 'foreArm' + side;
         const bi = BONE_INDEX[bone] * 3;
@@ -2346,9 +2472,8 @@ export class Rig {
             this._segA[bi + 1] + 0.020 * S - r * 0.085 * S,
             this._segA[bi + 2] + Math.sin(a) * 0.098 * S * flare);
         });
-        this.root.add(sleeve.buildGeometry(M.skirt, 2));
+        batch.add(sleeve);
         this.cloths.push(sleeve);
-        this.parts['sleeve' + side] = sleeve.mesh;
       }
     }
 
@@ -2356,6 +2481,7 @@ export class Rig {
     if (costume.topknot !== false && costume.hood !== true) {
       const knot = new ClothPatch(3, 4, true, {
         segLen: 0.048 * S, damping: 0.070, windScale: 0.5, stiffness: 1.0, phase: 4.4,
+        tint: tintOf(0x14100e), rough: 0.62,
       });
       const ki = BONE_INDEX.topknot * 3;
       for (let c = 0; c < 3; c++) {
@@ -2369,12 +2495,18 @@ export class Rig {
           this._segA[ki + 1] - r * 0.048 * S,
           this._segA[ki + 2] + Math.sin(a) * 0.026 * S * taper + r * 0.020 * S);
       });
-      this.root.add(knot.buildGeometry(M.hair, 1));
+      batch.add(knot);
       this.cloths.push(knot);
-      this.parts.topknot = knot.mesh;
     }
 
-    // Body colliders for the cloth: torso, both thighs, both shins. Four capsules is
+    const mesh = batch.build(M.clothBatch);
+    if (mesh) {
+      mesh.userData.detail = 2;
+      this.root.add(mesh);
+      this.parts.cloth = mesh;
+    }
+
+    // Body colliders for the cloth: torso, both thighs, both shins. Five capsules is
     // the whole budget — any more and the skirt starts costing more than the skin.
     this._colliders = [
       new Float32Array(7), new Float32Array(7), new Float32Array(7),
@@ -2629,7 +2761,6 @@ export class Rig {
     this.lod = l;
     this._ik = l === 0;
     this._applyClothVisibility();
-    if (this._detail) { const v = l === 0; for (const n of this._detail) n.visible = v; }
     if (l >= 1) { this._lookActive = false; this._lookTargetWeight = 0; }
     if (l >= 1) { this._hipDrop = 0; }
   }
@@ -2641,11 +2772,15 @@ export class Rig {
 
   setIK(on) { this._ik = !!on; }
 
+  /**
+   * Detail culling. `userData.detail` is the LOD at which a mesh stops being drawn:
+   * 1 for sword furniture (a thumb-sized object past 20 m), 2 for the saya and the
+   * cloth batch. At LOD 2 the cloth also stops simulating, and a skirt frozen
+   * mid-flap looks worse than no skirt at all, so it goes with them.
+   */
   _applyClothVisibility() {
-    // At LOD 2 the cloth meshes stop updating entirely; leaving them visible would
-    // freeze a skirt mid-flap, so they are hidden and the body silhouette carries it.
-    const vis = this.lod < 2;
-    for (const c of this.cloths) if (c.mesh) c.mesh.visible = vis;
+    if (!this._detail) return;
+    for (const n of this._detail) n.visible = this.lod < n.userData.detail;
   }
 
   get clothEnabled() { return this._cloth && this.lod === 0; }
@@ -3250,6 +3385,7 @@ export class Rig {
         c.sway(this.time, w.x, w.y, w.z);
         c.flush();
       }
+      this.clothBatch.upload();
       return;
     }
 
@@ -3267,7 +3403,10 @@ export class Rig {
       this._clothAccum -= h;
       steps++;
     }
-    if (steps > 0) for (let i = 0; i < this.cloths.length; i++) this.cloths[i].flush();
+    if (steps > 0) {
+      for (let i = 0; i < this.cloths.length; i++) this.cloths[i].flush();
+      this.clothBatch.upload();   // one attribute upload for every soft thing on the body
+    }
   }
 
   _updateColliders() {
@@ -3344,7 +3483,10 @@ export class Rig {
     }
     this._writeBones();
     this.root.updateMatrixWorld(true);
-    for (const c of this.cloths) { c.updateAnchors(this.bones, this._rootInv.copy(this.root.matrixWorld).invert()); }
+    this._rootInv.copy(this.root.matrixWorld).invert();
+    for (const c of this.cloths) c.updateAnchors(this.bones, this._rootInv);
+    for (const c of this.cloths) c.flush();
+    if (this.clothBatch) this.clothBatch.upload();
     return this;
   }
 
@@ -3359,7 +3501,7 @@ export class Rig {
     if (this.disposed) return;
     this.disposed = true;
     this._listeners.clear();
-    for (const c of this.cloths) c.dispose();
+    if (this.clothBatch) this.clothBatch.dispose();
     this.cloths.length = 0;
     this.root.traverse((o) => {
       // Materials are shared by palette across every instance of an archetype, so
