@@ -305,7 +305,7 @@ function prepTiling(tex, aniso) {
 /** Droplet budget per tier. The single biggest realism lever we have. */
 const EROSION_DROPLETS = [2000, 6000, 14000, 20000];
 /** Clipmap levels per tier (level 0 is the solid centre block, the rest are rings). */
-const CLIPMAP_LEVELS = [5, 6, 7, 7];
+const CLIPMAP_LEVELS = [6, 6, 6, 6];
 /** Ring resolution (quads per side) per tier. */
 const CLIPMAP_RES = [48, 64, 80, 96];
 
@@ -569,7 +569,9 @@ export class Terrain {
       // Widen downstream, the way a stream does as its catchment grows.
       river.width[i] = lerp(0.62, 1.35, i / (river.n - 1));
     }
-    this.waterLevel = sampleStation(river.surface, this.riverBridgeStation, river.n);
+    // Exactly WORLD.WATER_LEVEL by construction — Level.js sets the bridge deck
+    // against this constant and must not have to cope with float drift.
+    this.waterLevel = WORLD.WATER_LEVEL;
 
     // The ribbon stops where the gorge opens out and the stream falls away into the
     // mist — past that point a flat-ish water strip would float over the valley.
@@ -897,18 +899,23 @@ export class Terrain {
         rock = Math.max(rock, smoothstep(915, 995, h) * 0.92);
         rock = clamp(rock + nb * 0.17 - concave * 0.12, 0, 1);
 
-        // Scree and washed gravel: where water concentrates, and in collectors.
-        let gravel = clamp(smoothstep(0.28, 0.72, flow) * 0.95 + Math.max(0, concave) * 0.45, 0, 1);
-        gravel *= 1 - rock * 0.45;
-        gravel = clamp(gravel + nb * 0.1, 0, 1);
+        // Scree and washed gravel: only where water really concentrates, and in the
+        // collectors it drains into. Erosion flow is a wide signal — threshold it hard
+        // or the whole mountain turns into one continuous scree field.
+        let gravel = clamp(smoothstep(0.52, 0.90, flow) * 0.9 + Math.max(0, concave) * 0.22, 0, 1);
+        gravel *= 1 - rock * 0.5;
+        gravel = clamp(gravel + nb * 0.07, 0, 1);
 
-        let grass = smoothstep(0.58, 0.16, slope) * smoothstep(1000, 890, h);
-        grass *= 0.72 + 0.55 * nb2;
-        grass *= (1 - gravel * 0.65) * (1 - rock) * (1 - wet * 0.4);
+        let grass = smoothstep(0.74, 0.20, slope) * smoothstep(1000, 880, h);
+        grass *= 0.78 + 0.5 * nb2;
+        grass *= (1 - gravel * 0.6) * (1 - rock) * (1 - wet * 0.35);
         grass = clamp(grass, 0, 1);
 
-        let moss = rock * clamp(wet * 0.85 + northness * 0.6 - 0.12, 0, 1);
-        moss *= clamp(0.55 + nb2 * 0.9, 0, 1);
+        // Mossy stone: north faces stay damp all day at magic hour, and so do the
+        // hollows and everything within reach of the stream's spray.
+        const stoneBase = Math.max(rock, gravel * 0.45);
+        let moss = stoneBase * clamp(wet * 0.95 + northness * 0.95 + Math.max(0, concave) * 0.35, 0, 1);
+        moss *= clamp(0.45 + nb2 * 1.1, 0, 1);
         moss = clamp(moss, 0, 1);
 
         // The shrine courtyard is swept: raked gravel and packed earth, not meadow.

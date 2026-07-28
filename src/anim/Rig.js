@@ -924,6 +924,8 @@ function buildLamellar(rig, dens, materials) {
   plates.instanceMatrix.needsUpdate = true;
   cords.instanceMatrix.needsUpdate = true;
   plates.frustumCulled = false; cords.frustumCulled = false;
+  // The lacing reads as texture past ~15 m; drop the draw call with the other detail.
+  cords.userData.detail = 1;
   group.add(plates, cords);
   return group;
 }
@@ -1073,6 +1075,46 @@ function buildJingasa(rig, dens, materials) {
 // ===========================================================================
 // KATANA + SAYA
 // ===========================================================================
+
+/**
+ * Bake a list of rigid meshes that share a material into one geometry. Six brass
+ * fittings on a sword are six draw calls, and with eight enemies on screen that is
+ * most of the ARCHITECTURE §7 budget spent on things smaller than a thumbnail.
+ * Transforms are translation+rotation only here, so normals just take the rotation.
+ */
+function mergeMeshes(meshes, material, name) {
+  const pos = [], nor = [], uv = [], idx = [];
+  const v = new Vector3(), q = new Quaternion();
+  let base = 0;
+  for (const m of meshes) {
+    m.updateMatrix();
+    q.setFromRotationMatrix(m.matrix);
+    const g = m.geometry;
+    const gp = g.attributes.position.array, gn = g.attributes.normal.array;
+    const gu = g.attributes.uv ? g.attributes.uv.array : null;
+    const n = g.attributes.position.count;
+    for (let i = 0; i < n; i++) {
+      v.set(gp[i * 3], gp[i * 3 + 1], gp[i * 3 + 2]).applyMatrix4(m.matrix);
+      pos.push(v.x, v.y, v.z);
+      v.set(gn[i * 3], gn[i * 3 + 1], gn[i * 3 + 2]).applyQuaternion(q);
+      nor.push(v.x, v.y, v.z);
+      uv.push(gu ? gu[i * 2] : 0, gu ? gu[i * 2 + 1] : 0);
+    }
+    const gi = g.index.array;
+    for (let i = 0; i < gi.length; i++) idx.push(gi[i] + base);
+    base += n;
+    g.dispose();
+  }
+  const out = new BufferGeometry();
+  out.setAttribute('position', new Float32BufferAttribute(pos, 3));
+  out.setAttribute('normal', new Float32BufferAttribute(nor, 3));
+  out.setAttribute('uv', new Float32BufferAttribute(uv, 2));
+  out.setIndex(idx);
+  const mesh = new Mesh(out, material);
+  mesh.name = name;
+  mesh.castShadow = true;
+  return mesh;
+}
 
 const KATANA = {
   nagasa: 0.720,     // blade length, machi to kissaki
@@ -1280,12 +1322,13 @@ export function buildKatana(quality, materials, scale) {
   blade.position.y = KATANA.tsuka * S * 0.42;
   g.add(blade);
 
+  const fittings = [];
   const habaki = latheRing([
     [0.0125 * S, -0.004 * S, 0.62], [0.0142 * S, 0.000, 0.62],
     [0.0140 * S, 0.026 * S, 0.62], [0.0118 * S, 0.030 * S, 0.62],
   ], latheSeg, materials.brass, 'habaki');
   habaki.position.y = blade.position.y - 0.002 * S;
-  g.add(habaki);
+  fittings.push(habaki);
 
   const tsuba = latheRing([
     [0.0110 * S, -0.0026 * S, 0.68], [0.0380 * S, -0.0030 * S, 0.86],
@@ -1294,6 +1337,7 @@ export function buildKatana(quality, materials, scale) {
   ], latheSeg, materials.iron, 'tsuba');
   tsuba.position.y = blade.position.y - 0.006 * S;
   g.add(tsuba);
+  tsuba.userData.detail = 1;
 
   // Tsuka core, tapering slightly toward the kashira like a real oval handle.
   const core = latheRing([
@@ -1306,6 +1350,7 @@ export function buildKatana(quality, materials, scale) {
 
   const wrap = buildItoWrap(S, dens.lon > 1.1 ? 5 : 4, dens.lon > 0.8 ? 4 : 2, materials.ito);
   wrap.position.y = core.position.y;
+  wrap.userData.detail = 1;
   g.add(wrap);
 
   const fuchi = latheRing([
@@ -1313,14 +1358,17 @@ export function buildKatana(quality, materials, scale) {
     [0.0192 * S, 0.016 * S, 0.74], [0.0176 * S, 0.018 * S, 0.73],
   ], latheSeg, materials.brass, 'fuchi');
   fuchi.position.y = core.position.y + KATANA.tsuka * S - 0.020 * S;
-  g.add(fuchi);
+  fittings.push(fuchi);
 
   const kashira = latheRing([
     [0.0120 * S, -0.002 * S, 0.72], [0.0168 * S, 0.002 * S, 0.72],
     [0.0164 * S, 0.014 * S, 0.72], [0.0090 * S, 0.019 * S, 0.72],
   ], latheSeg, materials.brass, 'kashira');
   kashira.position.y = core.position.y - 0.014 * S;
-  g.add(kashira);
+  fittings.push(kashira);
+  const brassParts = mergeMeshes(fittings, materials.brass, 'fittings');
+  brassParts.userData.detail = 1;
+  g.add(brassParts);
 
   // Socket at the kissaki: Combat.js reads this for the weapon capsule and Effects.js
   // hangs the blade trail off it, so it must be an object, not a computed offset.
@@ -1392,14 +1440,12 @@ export function buildSaya(quality, materials, scale) {
     [0.0150 * S, -0.004 * S, 0.60], [0.0166 * S, 0.000, 0.60],
     [0.0162 * S, 0.020 * S, 0.60], [0.0148 * S, 0.024 * S, 0.60],
   ], latheSeg, materials.horn, 'koiguchi');
-  g.add(koiguchi);
 
   const kojiri = latheRing([
     [0.0090 * S, KATANA.nagasa * S * 0.985, 0.58], [0.0116 * S, KATANA.nagasa * S * 0.995, 0.58],
     [0.0110 * S, KATANA.nagasa * S * 1.020, 0.58], [0.0040 * S, KATANA.nagasa * S * 1.030, 0.58],
   ], latheSeg, materials.horn, 'kojiri');
   kojiri.position.z = KATANA.sori * S * 0.06;
-  g.add(kojiri);
 
   // 栗形 kurigata: the little knob the sageo threads through.
   const kurigata = latheRing([
@@ -1408,13 +1454,15 @@ export function buildSaya(quality, materials, scale) {
   ], 8, materials.horn, 'kurigata');
   kurigata.rotation.z = Math.PI * 0.5;
   kurigata.position.set(0.0, 0.100 * S, -0.014 * S);
-  g.add(kurigata);
+  const hornParts = mergeMeshes([koiguchi, kojiri, kurigata], materials.horn, 'saya-fittings');
+  hornParts.userData.detail = 1;
+  g.add(hornParts);
 
   const mouth = new Object3D();
   mouth.name = 'koiguchi-point';
   g.add(mouth);
   g.userData.mouth = mouth;
-  g.userData.cordAnchor = kurigata;
+  g.userData.cordAnchor = hornParts;
   return g;
 }
 
@@ -2145,6 +2193,11 @@ export class Rig {
     if (o.weapon !== false && o.weapon !== 'none') this._buildWeapon(o.weapon);
     this._buildCloth(costume);
 
+    // Sword furniture, mask rivets, hat: readable in a finisher close-up, invisible
+    // past ~20 m. Collected once so LOD can drop them with a flag flip, not a search.
+    this._detail = [];
+    this.root.traverse((n) => { if (n.userData && n.userData.detail) this._detail.push(n); });
+
     this.built = true;
     this.setStance(this.stance);
     return this;
@@ -2180,9 +2233,14 @@ export class Rig {
     this.weaponTip = katana.userData.tip;
     this.weaponGuard = katana.userData.guard;
 
-    const saya = buildSaya(this.ctx.quality, M, S);
-    this.attachments.sayaMount.add(saya);
-    this.parts.saya = saya;
+    // Only a swordsman who sheathes needs a saya. The oni fight with drawn steel, and
+    // four extra draw calls × eight enemies is a real slice of the frame budget.
+    if (this.variant !== 'oni') {
+      const saya = buildSaya(this.ctx.quality, M, S);
+      this.attachments.sayaMount.add(saya);
+      this.parts.saya = saya;
+      this.bones.saya_mouth = saya.userData.mouth;
+    }
 
     // Weapon sockets are exposed through `bones` because both call sites look up the
     // blade tip by bone name (`weapon_tip`, `katana_tip`, `odachi_tip`, …).
@@ -2191,7 +2249,6 @@ export class Rig {
       this.bones[n] = tip;
     }
     this.bones.weapon_grip = this.attachments.handR;
-    this.bones.saya_mouth = saya.userData.mouth;
     if (kind && typeof kind === 'string' && kind !== 'katana') katana.userData.kind = kind;
   }
 
@@ -2248,6 +2305,7 @@ export class Rig {
     this.parts.sashTail = tail.mesh;
 
     // ---- 下緒 sageo: the cord off the kurigata, tied back to the obi.
+    if (this.parts.saya) {
     const sageo = new ClothPatch(2, 7, false, {
       segLen: 0.062 * S, damping: 0.045, windScale: 1.1, stiffness: 1.0, phase: 3.1,
     });
@@ -2261,6 +2319,7 @@ export class Rig {
     this.root.add(sageo.buildGeometry(M.cord, 1));
     this.cloths.push(sageo);
     this.parts.sageo = sageo.mesh;
+    }
 
     // ---- sleeve hems, player/ronin only: the wide haori cuffs that hang off the arm.
     if (rich && costume.sleeves !== 'wrapped' && costume.sleeves !== 'none') {
@@ -2570,6 +2629,7 @@ export class Rig {
     this.lod = l;
     this._ik = l === 0;
     this._applyClothVisibility();
+    if (this._detail) { const v = l === 0; for (const n of this._detail) n.visible = v; }
     if (l >= 1) { this._lookActive = false; this._lookTargetWeight = 0; }
     if (l >= 1) { this._hipDrop = 0; }
   }

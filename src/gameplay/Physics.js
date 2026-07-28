@@ -2561,6 +2561,7 @@ export class PhysicsWorld {
     }
 
     // --- links + distance constraints --------------------------------------
+    const claimed = new Set();
     for (let i = 0; i < RAG_BONES.length; i++) {
       const spec = RAG_BONES[i];
       if (spec.p === null) continue;
@@ -2573,7 +2574,12 @@ export class PhysicsWorld {
       const half = spec.m * 0.5;
       a.mass += half; b.mass += half;
 
-      const bone = bones[spec.p] || null;
+      // A joint with several children (hips → spine/left leg/right leg) yields
+      // several links; only the first, which runs along the chain, may drive
+      // the bone's rotation or the legs would overwrite the spine.
+      let bone = bones[spec.p] || null;
+      if (bone && claimed.has(bone)) bone = null;
+      else if (bone) claimed.add(bone);
       const link = {
         a: pi, b: ci, rest: len, radius: spec.r,
         bone, boneName: spec.p,

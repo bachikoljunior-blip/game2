@@ -1554,7 +1554,8 @@ export class FoliageSystem {
     const clump = buildCrossCard(2, 1.0, false, 1.0);
     this._geometries.push(bladeHi, bladeLo, clump);
 
-    const shadows = !!q.foliageShadows;
+    // Depth materials are always built but only compiled once a mesh actually casts, so
+    // applyQuality can flip foliage shadows on at runtime without a rebuild.
     const mk = (name, lod, map, extra) => {
       const opts = Object.assign({
         name, mode: 0, map, bendExp: 2.0, bendGain: 1.0, flutter: 1.0,
@@ -1562,7 +1563,7 @@ export class FoliageSystem {
         sss: 1.25, sssColor: 0xc2d884, tipGlow: 0.22, baseAO: 0.38, grain: 0.18,
       }, extra || {});
       const mat = this._makeMaterial(opts);
-      const depth = shadows ? this._makeDepthMaterial(mat, opts) : null;
+      const depth = this._makeDepthMaterial(mat, opts);
       return { mat, depth, opts };
     };
 
@@ -1854,7 +1855,7 @@ export class FoliageSystem {
       sss: 0.55, sssColor: 0xd9dd8e, tipGlow: 0.10, baseAO: 0.28, grain: 0.20,
     };
     const culmMat = this._makeMaterial(culmOpts);
-    const culmDepth = shadows ? this._makeDepthMaterial(culmMat, culmOpts) : null;
+    const culmDepth = this._makeDepthMaterial(culmMat, culmOpts);
 
     // Leaves hang off the culm and flutter at a much higher frequency.
     const leafOpts = {
@@ -1864,7 +1865,7 @@ export class FoliageSystem {
       sss: 1.45, sssColor: 0xcfe07f, tipGlow: 0.18, baseAO: 0.22, grain: 0.16,
     };
     const leafMat = this._makeMaterial(leafOpts);
-    const leafDepth = shadows ? this._makeDepthMaterial(leafMat, leafOpts) : null;
+    const leafDepth = this._makeDepthMaterial(leafMat, leafOpts);
 
     // Impostor cards for the mid distance: cheap, still bending on the same front.
     const cardOpts = {
@@ -2087,8 +2088,8 @@ export class FoliageSystem {
 
       list.push({
         key: def.key, spec, built, woodMat, leafMat, bakeWood, bakeLeaf,
-        depthWood: shadows ? this._makeDepthMaterial(woodMat, woodOpts) : null,
-        depthLeaf: shadows ? this._makeDepthMaterial(leafMat, leafOpts) : null,
+        depthWood: this._makeDepthMaterial(woodMat, woodOpts),
+        depthLeaf: this._makeDepthMaterial(leafMat, leafOpts),
         frameRel, emitter: def.emitter, tint: new Color(def.tint),
         woodMesh: null, leafMesh: null,
       });
@@ -2309,7 +2310,617 @@ ${WIND_GLSL}
     return mat;
   }
 
-  //@@SECTION_14@@
+  /**
+   * Plant the grove. Cedars mass behind the shrine on the ridge side, sakura line the
+   * approach, momiji cluster where the ground breaks toward the valley — the autumn
+   * crimson wants to be the accent, not the field.
+   */
+  _scatterTrees(q) {
+    const assets = this._treeAssets;
+    if (!assets) return;
+    const rnd = makeRandom(0x7BEE51);
+    const shadows = !!q.foliageShadows;
+    const meshLod = q.tier >= 2;
+
+    const ridge = (WORLD.RIDGE_AZIMUTH * Math.PI) / 180;
+    const valley = (WORLD.VALLEY_AZIMUTH * Math.PI) / 180;
+    const approach = (WORLD.APPROACH_AZIMUTH * Math.PI) / 180;
+
+    const bias = {
+      cedar: { ax: Math.sin(ridge), az: Math.cos(ridge), weight: 0.55, count: 150, near: 40, far: 300, hMin: 9, hMax: 17 },
+      sakura: { ax: Math.sin(approach), az: Math.cos(approach), weight: 0.35, count: 54, near: 14, far: 130, hMin: 4.5, hMax: 8.5 },
+      momiji: { ax: Math.sin(valley), az: Math.cos(valley), weight: 0.40, count: 76, near: 12, far: 160, hMin: 3.2, hMax: 6.4 },
+    };
+
+    this.petalEmitters.length = 0;
+    this.leafEmitters.length = 0;
+
+    for (const item of assets.list) {
+      const cfg = bias[item.key];
+      const target = Math.max(8, Math.round(cfg.count * clamp(0.5 + (q.grassDensity || 0.5) * 0.7, 0.45, 1.35)));
+      const a = new Float32Array(target * 4);
+      const b = new Float32Array(target * 4);
+      const c = new Float32Array(target * 4);
+      let n = 0;
+
+      for (let i = 0; i < target * 12 && n < target; i++) {
+        const ang = rnd() * Math.PI * 2;
+        const r = cfg.near + Math.sqrt(rnd()) * (cfg.far - cfg.near);
+        const x = Math.cos(ang) * r * (1 - cfg.weight) + cfg.ax * r * cfg.weight + (rnd() - 0.5) * r * 0.7;
+        const z = Math.sin(ang) * r * (1 - cfg.weight) + cfg.az * r * cfg.weight + (rnd() - 0.5) * r * 0.7;
+
+        const y = this._heightAt(x, z);
+        if (y < WORLD.WATER_LEVEL + 1.2) continue;
+        if (plateauMask(x, z) > 0.5) continue;             // keep the courtyard clear
+        if (this._slopeAt(x, z) > 0.66) continue;
+        const surf = this._surfaceAt(x, z);
+        if (surf === 'water' || surf === 'path' || surf === 'stone' || surf === 'wood') continue;
+        const clump = clamp(noise.fbm2(x * 0.018 + item.key.length, z * 0.018, 3) * 0.5 + 0.5, 0, 1);
+        if (rnd() > 0.2 + clump * 0.95) continue;
+
+        const h = cfg.hMin + rnd() * (cfg.hMax - cfg.hMin);
+        const o = n * 4;
+        a[o] = x; a[o + 1] = y; a[o + 2] = z; a[o + 3] = rnd() * Math.PI * 2;
+        b[o] = h;
+        b[o + 1] = h * (0.9 + rnd() * 0.22);               // trees scale near-uniformly
+        b[o + 2] = 1.7 + rnd() * 0.9;                      // stiff: trunks barely move
+        b[o + 3] = rnd();
+        const v = 0.86 + rnd() * 0.28;
+        c[o] = v; c[o + 1] = v * (0.96 + rnd() * 0.08); c[o + 2] = v * (0.94 + rnd() * 0.10);
+        c[o + 3] = item.atlasRow !== undefined ? item.atlasRow : 0;
+        n++;
+
+        // Publish crowns for Weather. Petals fall from sakura, leaves from momiji.
+        if (item.emitter && this.petalEmitters.length + this.leafEmitters.length < 96) {
+          const cy = y + item.built.crown.y * h;
+          const cr = item.built.crown.radius * h;
+          const rec = {
+            position: new Vector3(x, cy, z),
+            radius: cr,
+            rate: item.emitter === 'petal' ? 1.0 : 0.55,
+            color: item.tint.clone(),
+            kind: item.key,
+          };
+          if (item.emitter === 'petal') this.petalEmitters.push(rec);
+          else this.leafEmitters.push(rec);
+        }
+      }
+
+      const woodMesh = this._makeBatchMesh(item.built.wood, item.woodMat, item.depthWood, Math.max(1, n), shadows);
+      const leafMesh = this._makeBatchMesh(item.built.leaf, item.leafMat, item.depthLeaf, Math.max(1, n), shadows);
+      woodMesh.name = `${item.key}-wood`;
+      leafMesh.name = `${item.key}-leaf`;
+      this._fill(woodMesh, a, b, c, n, cfg.hMax);
+      this._fill(leafMesh, a, b, c, n, cfg.hMax);
+      item.woodMesh = woodMesh;
+      item.leafMesh = leafMesh;
+      item.instances = { a, b, c, n };
+
+      // Below HIGH we go straight from mesh to impostor and save three draw calls.
+      const meshFar = meshLod ? RANGE.treeMesh[1] : RANGE.treeCardOnly[0] + 8;
+      item.woodMat.userData.kag.uFadeFar.value.set(meshFar * 0.88, meshFar);
+      item.leafMat.userData.kag.uFadeFar.value.set(meshFar * 0.88, meshFar);
+    }
+
+    // One impostor draw call for every species: same atlas, same material, row per species.
+    if (this._impostors) {
+      let total = 0;
+      for (const item of assets.list) total += item.instances.n;
+      const a = new Float32Array(total * 4);
+      const b = new Float32Array(total * 4);
+      const c = new Float32Array(total * 4);
+      let k = 0;
+      for (const item of assets.list) {
+        const src = item.instances;
+        for (let i = 0; i < src.n; i++) {
+          const o = i * 4, d = k * 4;
+          const h = src.b[o];
+          const half = item.frameRel * h;
+          a[d] = src.a[o]; a[d + 1] = src.a[o + 1]; a[d + 2] = src.a[o + 2]; a[d + 3] = src.a[o + 3];
+          b[d] = half * 2;              // card world size
+          b[d + 1] = h * 0.5;           // card centre height above the base
+          b[d + 2] = 2.4; b[d + 3] = src.b[o + 3];
+          c[d] = src.c[o]; c[d + 1] = src.c[o + 1]; c[d + 2] = src.c[o + 2];
+          c[d + 3] = item.atlasRow !== undefined ? item.atlasRow : 0;
+          k++;
+        }
+      }
+      const range = meshLod ? RANGE.treeCard : RANGE.treeCardOnly;
+      const mat = this._makeImpostorMaterial(this._impostors,
+        [range[0], range[0] + 14], [range[1] * 0.9, range[1]]);
+      const quad = buildCrossCard(1, 1.0, true, 0.0);
+      this._geometries.push(quad);
+      const mesh = this._makeBatchMesh(quad, mat, null, Math.max(1, k), false);
+      mesh.name = 'tree-impostors';
+      this._fill(mesh, a, b, c, k, 24);
+      this._impostors.mesh = mesh;
+      this._impostors.material = mat;
+    }
+  }
+
+  // -------------------------------------------------------------- undergrowth
+
+  /**
+   * Ferns, low shrubs and susuki, in two draw calls. Susuki gets its own material because
+   * its plume wants a much higher translucency than a fern ever should.
+   */
+  _buildUndergrowth(q) {
+    const density = q.grassDensity || 0;
+    const radius = Math.max(RANGE.undergrowth[1], (q.grassRadius || 30));
+    const rnd = makeRandom(0xFE211A);
+
+    const fernGeo = buildFrondClumpGeometry(7, 0.55, 0.62, 3);
+    const susukiGeo = buildSusukiGeometry(5);
+    this._geometries.push(fernGeo, susukiGeo);
+
+    const fernOpts = {
+      name: 'fern', mode: 0, map: this.tex.fern, color: 0xffffff,
+      bendExp: 2.1, bendGain: 0.85, flutter: 1.0, alphaTest: 0.40,
+      fadeFar: [radius * 0.85, radius], size: [1, 1],
+      sss: 1.35, sssColor: 0xa8c86a, tipGlow: 0.20, baseAO: 0.42, grain: 0.20,
+    };
+    const susukiOpts = {
+      name: 'susuki', mode: 0, map: this.tex.susuki, color: 0xffffff,
+      bendExp: 2.2, bendGain: 1.15, flutter: 1.25, alphaTest: 0.18,
+      fadeFar: [radius * 1.35, radius * 1.6], size: [1, 1],
+      // The whole point of susuki is that a low sun blows straight through the plume.
+      sss: 2.6, sssColor: 0xf0e2c0, tipGlow: 0.45, baseAO: 0.30, grain: 0.10,
+    };
+    const shadows = !!q.foliageShadows;
+    const fernMat = this._makeMaterial(fernOpts);
+    const susukiMat = this._makeMaterial(susukiOpts);
+
+    const mk = (geo, mat, depth, targetCount, cfg) => {
+      const a = new Float32Array(targetCount * 4);
+      const b = new Float32Array(targetCount * 4);
+      const c = new Float32Array(targetCount * 4);
+      let n = 0;
+      for (let i = 0; i < targetCount * 8 && n < targetCount; i++) {
+        const ang = rnd() * Math.PI * 2;
+        const r = Math.sqrt(rnd()) * cfg.far;
+        const x = Math.cos(ang) * r, z = Math.sin(ang) * r;
+        const y = this._heightAt(x, z);
+        const w = this._siteWeight(x, z, y);
+        if (w <= 0.05 || rnd() > w * cfg.bias) continue;
+        const clump = clamp(noise.fbm2(x * cfg.scale + cfg.seed, z * cfg.scale, 3) * 0.5 + 0.5, 0, 1);
+        if (rnd() > Math.pow(clump, cfg.clumpPow)) continue;
+        const h = cfg.hMin + rnd() * (cfg.hMax - cfg.hMin);
+        const o = n * 4;
+        a[o] = x; a[o + 1] = y; a[o + 2] = z; a[o + 3] = rnd() * Math.PI * 2;
+        b[o] = h; b[o + 1] = h * (cfg.aspect * (0.8 + rnd() * 0.4));
+        b[o + 2] = cfg.stiff * (0.8 + rnd() * 0.4);
+        b[o + 3] = rnd();
+        _colScratch.set(cfg.color).lerp(AUTUMN_B, rnd() * cfg.dry);
+        const v = 0.82 + rnd() * 0.34;
+        c[o] = _colScratch.r * v; c[o + 1] = _colScratch.g * v; c[o + 2] = _colScratch.b * v; c[o + 3] = 0;
+        n++;
+      }
+      const mesh = this._makeBatchMesh(geo, mat, depth, Math.max(1, n), shadows && cfg.shadow);
+      mesh.name = cfg.name;
+      this._fill(mesh, a, b, c, n, cfg.hMax + 1);
+      return mesh;
+    };
+
+    const scale = clamp(density, 0, 1.5);
+    const fernMesh = mk(fernGeo, fernMat, shadows ? this._makeDepthMaterial(fernMat, fernOpts) : null,
+      Math.round(900 * scale) + 40, {
+        name: 'ferns', far: radius, bias: 1.0, scale: 0.075, seed: 3.1, clumpPow: 2.4,
+        hMin: 0.35, hMax: 0.95, aspect: 1.5, stiff: 0.75, color: 0x4e6b3c, dry: 0.35, shadow: false,
+      });
+
+    const susukiMesh = mk(susukiGeo, susukiMat, null,
+      Math.round(420 * scale) + 24, {
+        name: 'susuki', far: radius * 1.5, bias: 0.85, scale: 0.032, seed: 19.7, clumpPow: 3.2,
+        hMin: 1.1, hMax: 2.0, aspect: 1.15, stiff: 0.62, color: 0x9c8548, dry: 0.75, shadow: false,
+      });
+
+    this._undergrowth = { fernMesh, susukiMesh, fernMat, susukiMat };
+  }
+
+  /** Fallen leaves and moss, lying flat. One draw call, no bend, the barest flutter. */
+  _buildGroundCards(q) {
+    const density = q.grassDensity || 0;
+    const radius = RANGE.groundCard[1];
+    const geo = buildGroundCard(3, 11);
+    this._geometries.push(geo);
+
+    const opts = {
+      name: 'ground-cards', mode: 0, map: this.tex.fallen, color: 0xffffff,
+      bendExp: 2.0, bendGain: 0.06, flutter: 0.25, alphaTest: 0.34,
+      fadeFar: [radius * 0.82, radius], size: [1, 1],
+      sss: 0.35, sssColor: 0xd8a068, tipGlow: 0.06, baseAO: 0.10, grain: 0.24,
+    };
+    const mat = this._makeMaterial(opts);
+
+    // These survive at LOW tier: with no grass at all they are the only thing breaking up
+    // the terrain's own texture near the camera.
+    const target = Math.round(1100 * clamp(0.55 + density, 0.55, 1.8));
+    const a = new Float32Array(target * 4);
+    const b = new Float32Array(target * 4);
+    const c = new Float32Array(target * 4);
+    const rnd = makeRandom(0xFA11EE);
+    let n = 0;
+    for (let i = 0; i < target * 6 && n < target; i++) {
+      const ang = rnd() * Math.PI * 2;
+      const r = Math.sqrt(rnd()) * radius * 1.6;
+      const x = Math.cos(ang) * r, z = Math.sin(ang) * r;
+      const y = this._heightAt(x, z);
+      if (y < WORLD.WATER_LEVEL + 0.2) continue;
+      const surf = this._surfaceAt(x, z);
+      if (surf === 'water') continue;
+      if (this._slopeAt(x, z) > 0.55) continue;
+      // Leaves collect where the ground dips and against the courtyard edge.
+      const drift = clamp(noise.fbm2(x * 0.05 + 4.4, z * 0.05 - 2.2, 3) * 0.5 + 0.5, 0, 1);
+      if (rnd() > 0.18 + drift * 0.9) continue;
+
+      const o = n * 4;
+      a[o] = x; a[o + 1] = y + 0.012; a[o + 2] = z; a[o + 3] = rnd() * Math.PI * 2;
+      b[o] = 1.0; b[o + 1] = 0.55 + rnd() * 0.75;
+      b[o + 2] = 3.0; b[o + 3] = rnd();
+      const heat = rnd();
+      _colScratch.copy(AUTUMN_B).lerp(AUTUMN_C, heat);
+      const v = 0.78 + rnd() * 0.4;
+      c[o] = _colScratch.r * v; c[o + 1] = _colScratch.g * v; c[o + 2] = _colScratch.b * v; c[o + 3] = 0;
+      n++;
+    }
+
+    const mesh = this._makeBatchMesh(geo, mat, null, Math.max(1, n), false);
+    mesh.name = 'ground-cards';
+    this._fill(mesh, a, b, c, n, 1);
+    this._groundCards = { mesh, mat };
+  }
+
+  /**
+   * The far canopy: one noise-displaced shell over the valley. It is not a field of props,
+   * it is a *surface* — which is exactly why it can read as an endless bamboo sea for one
+   * draw call while the aerial perspective does the rest of the work.
+   */
+  _buildCanopy(q) {
+    const rings = q.tier >= 2 ? 28 : 20;
+    const segs = q.tier >= 2 ? 128 : 96;
+    const rInner = RANGE.canopy[0];
+    const rOuter = RANGE.canopy[1];
+
+    const g = new GeoBuilder();
+    const idx = [];
+    for (let j = 0; j <= rings; j++) {
+      const tr = j / rings;
+      // Log-ish spacing: dense near the lip where the silhouette matters, sparse far out.
+      const r = rInner + (rOuter - rInner) * Math.pow(tr, 1.9);
+      const row = [];
+      for (let i = 0; i <= segs; i++) {
+        const a = (i / segs) * Math.PI * 2;
+        const x = Math.cos(a) * r, z = Math.sin(a) * r;
+        const ground = this._heightAt(x, z);
+        // The sea only exists below the plateau lip; on the ridge side it dies away.
+        const below = clamp((WORLD.PLATEAU_HEIGHT - 6 - ground) / 26, 0, 1);
+        const canopyH = lerp(0, 13, below) * (0.65 + 0.35 * (noise.fbm2(x * 0.006, z * 0.006, 3) * 0.5 + 0.5));
+        const bump = noise.fbm2(x * 0.045, z * 0.045, 4) * 2.6 + noise.fbm2(x * 0.011, z * 0.011, 3) * 5.0;
+        const y = ground + canopyH + bump * clamp(below, 0.15, 1);
+        const n = nrm3([
+          noise.noise2(x * 0.05 + 3, z * 0.05) * 0.5,
+          1,
+          noise.noise2(x * 0.05, z * 0.05 + 7) * 0.5,
+        ]);
+        row.push(g.vert(x, y, z, n[0], n[1], n[2], i / segs * 12, tr * 12, 0.55, i * 0.11));
+      }
+      idx.push(row);
+    }
+    for (let j = 0; j < rings; j++) {
+      for (let i = 0; i < segs; i++) {
+        g.quad(idx[j][i], idx[j][i + 1], idx[j + 1][i + 1], idx[j + 1][i]);
+      }
+    }
+    const geo = g.toGeometry();
+    this._geometries.push(geo);
+
+    // A plain lit material — no instancing, no bend function, just fog and a slow ripple.
+    const mat = new MeshLambertMaterial({
+      name: 'foliage/canopy',
+      color: 0x59703f,
+      side: FrontSide,
+      fog: true,
+    });
+    const wind = this._windUniforms;
+    const shared = this.uniforms;
+    chainBeforeCompile(mat, (shader) => {
+      shader.uniforms.uWind = wind.uWind;
+      shader.uniforms.uGust = wind.uGust;
+      shader.uniforms.uSunColor = shared.uSunColor;
+      shader.uniforms.uSunDir = shared.uSunDir;
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\n' + WIND_GLSL +
+          '\nvarying vec3 vCanopyW;\nvarying float vCanopyG;')
+        .replace('#include <begin_vertex>', /* glsl */`
+vec3 transformed = vec3( position );
+vec3 wp = ( modelMatrix * vec4( position, 1.0 ) ).xyz;
+float cg = kagerouGust( wp.xz );
+vec3 cw = kagerouWind( wp );
+// The whole surface breathes on the shared front: a gust visibly rolls across the sea.
+transformed.xz += cw.xz * ( 0.55 + cg * 1.6 );
+transformed.y += cg * 0.9 - 0.4;
+vCanopyW = wp;
+vCanopyG = cg;
+`);
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\n' + glslNoise +
+          '\nuniform vec3 uSunColor;\nuniform vec3 uSunDir;\nvarying vec3 vCanopyW;\nvarying float vCanopyG;')
+        .replace('#include <map_fragment>', /* glsl */`
+#include <map_fragment>
+{
+  // Break the shell up so it never reads as a single tinted dome.
+  float n1 = fbm2( vCanopyW.xz * 0.22, 3 ) * 0.5 + 0.5;
+  float n2 = fbm2( vCanopyW.xz * 0.9, 2 ) * 0.5 + 0.5;
+  vec3 deep = vec3( 0.16, 0.23, 0.14 );
+  vec3 lit = vec3( 0.46, 0.53, 0.26 );
+  diffuseColor.rgb *= mix( deep, lit, n1 * 0.75 + n2 * 0.25 ) * ( 0.85 + vCanopyG * 0.35 ) * 2.0;
+}
+`)
+        .replace('#include <envmap_fragment>', /* glsl */`
+{
+  // Cheap canopy translucency so the sea glows where the sun grazes it.
+  vec3 V = normalize( cameraPosition - vCanopyW );
+  float forward = pow( clamp( dot( V, -uSunDir ) * 0.5 + 0.5, 0.0, 1.0 ), 3.0 );
+  outgoingLight += diffuseColor.rgb * uSunColor * forward * 0.55;
+}
+#include <envmap_fragment>
+`);
+    });
+    chainCacheKey(mat, 'kagcanopy1');
+    this.ctx.sky?.applyFog?.(mat);
+    this._materials.push(mat);
+
+    const mesh = new Mesh(geo, mat);
+    mesh.name = 'bamboo-canopy';
+    mesh.matrixAutoUpdate = false;
+    mesh.updateMatrix();
+    mesh.receiveShadow = false;
+    mesh.castShadow = false;
+    mesh.raycast = () => {};
+    mesh.userData.foliage = true;
+    this.group.add(mesh);
+    this._meshes.push(mesh);
+    this._canopy = { mesh, mat };
+  }
+
+  // ------------------------------------------------------------------- runtime
+
+  /** Weather's clock, which is the clock every disturbance timestamp is measured against. */
+  _windTime() {
+    return this._windUniforms.uWind.value.w;
+  }
+
+  /**
+   * Gather up to 8 characters into the uniform array. Nearest first, so on a crowded
+   * field the blades part around whoever the player can actually see.
+   */
+  _updateCharacters() {
+    const arr = this.uniforms.uChars.value;
+    const cam = this.ctx.camera;
+    const cx = cam ? cam.position.x : 0;
+    const cz = cam ? cam.position.z : 0;
+    const maxD = (this.ctx.quality?.grassRadius || 34) + 10;
+
+    let k = 0;
+    const add = (e) => {
+      if (k >= MAX_CHARACTERS || !e) return;
+      if (e.isAlive === false) return;
+      const p = e.position || e.root?.position;
+      if (!p) return;
+      const dx = p.x - cx, dz = p.z - cz;
+      if (dx * dx + dz * dz > maxD * maxD) return;
+      const o = k * 4;
+      arr[o] = p.x; arr[o + 1] = p.y; arr[o + 2] = p.z;
+      // Influence radius is generous: you want to see the parting ahead of the feet.
+      arr[o + 3] = Math.max(e.radius || 0.4, 0.3) * 3.4;
+      k++;
+    };
+
+    add(this.ctx.player);
+    const en = this.ctx.enemies;
+    const list = (en && (en.active || en.enemies || en.list)) || null;
+    if (Array.isArray(list)) {
+      for (let i = 0; i < list.length && k < MAX_CHARACTERS; i++) add(list[i]);
+    }
+    for (let i = 0; i < this._extraCharacters.length && k < MAX_CHARACTERS; i++) {
+      add(this._extraCharacters[i]);
+    }
+    for (; k < MAX_CHARACTERS; k++) arr[k * 4 + 3] = 0;
+  }
+
+  update(dt, elapsed) {
+    this._elapsed = elapsed || (this._elapsed + dt);
+
+    const cam = this.ctx.camera;
+    if (cam) this.uniforms.uCamPos.value.copy(cam.position);
+
+    const sky = this.ctx.sky;
+    if (sky) {
+      if (sky.sunDirection) this.uniforms.uSunDir.value.copy(sky.sunDirection);
+      if (sky.sunColor) {
+        this.uniforms.uSunColor.value.copy(sky.sunColor);
+        const i = typeof sky.sunIntensity === 'number' ? clamp(sky.sunIntensity / 3.0, 0.05, 1.6) : 1;
+        this.uniforms.uSunColor.value.multiplyScalar(i);
+      }
+    }
+
+    this._updateCharacters();
+    this._updateGrass(dt);
+  }
+
+  resize(w, h, bufW, bufH) {
+    this._bufW = bufW || w;
+    this._bufH = bufH || h;
+  }
+
+  // -------------------------------------------------------------- public API
+
+  /**
+   * A brief, violent local displacement — a sword arc through the grass, a body landing.
+   * Four slots, round-robin; a fifth call in the same beat overwrites the oldest, which is
+   * correct because the oldest is the one you have already stopped looking at.
+   */
+  disturb(position, radius = 2.0, strength = 1.0) {
+    if (!position) return;
+    const i = this._disturbCursor % MAX_DISTURB;
+    this._disturbCursor = (this._disturbCursor + 1) % (MAX_DISTURB * 64);
+    const P = this.uniforms.uDisturbP.value;
+    const A = this.uniforms.uDisturbA.value;
+    const o = i * 4;
+    P[o] = position.x; P[o + 1] = position.y; P[o + 2] = position.z;
+    P[o + 3] = Math.max(radius, 0.2);
+    A[o] = clamp(strength, 0, 3);
+    A[o + 1] = this._windTime();
+    A[o + 2] = 0; A[o + 3] = 0;
+  }
+
+  /**
+   * A cut through bamboo: a hard local sway plus a fall of leaves. Kept deliberately cheap
+   * and rate-limited — this fires off the combat hot path.
+   */
+  strike(position, direction) {
+    if (!position) return;
+    this.disturb(position, 3.4, 1.7);
+
+    const now = this._elapsed;
+    if (now - (this._lastStrikeFx || -1) < 0.12) return;
+    this._lastStrikeFx = now;
+
+    const fx = this.ctx.fx;
+    if (!fx) return;
+    if (typeof fx.leafBurst === 'function') fx.leafBurst(position, direction, 12);
+    else if (typeof fx.spawnLeaves === 'function') fx.spawnLeaves(position, direction, 12);
+    else if (typeof fx.burst === 'function') fx.burst('leaves', position, direction);
+  }
+
+  /** Extra entities (a mount, a boss part) that should part the grass. */
+  registerCharacter(entity) {
+    if (entity && this._extraCharacters.indexOf(entity) < 0) this._extraCharacters.push(entity);
+  }
+
+  unregisterCharacter(entity) {
+    const i = this._extraCharacters.indexOf(entity);
+    if (i >= 0) this._extraCharacters.splice(i, 1);
+  }
+
+  /** CPU wind sample. Weather owns the maths; we never re-derive it. */
+  windAt(x, z, y = 0, out = _windScratch) {
+    const w = this.ctx.weather?.windAt?.(x, z, y, out);
+    if (w) return w;
+    out.set(0, 0, 0);
+    return out;
+  }
+
+  /** Rough draw-call accounting, for the debug overlay and for keeping us honest. */
+  getStats() {
+    let draws = 0, instances = 0, meshes = 0;
+    for (const m of this._meshes) {
+      if (!m.visible) continue;
+      meshes++;
+      draws++;
+      instances += m.geometry.instanceCount || 1;
+    }
+    return { draws, instances, meshes, estimate: this._drawEstimate };
+  }
+
+  _recomputeDrawEstimate() {
+    this._drawEstimate = this._meshes.length;
+  }
+
+  // ------------------------------------------------------------------ quality
+
+  /**
+   * Rebuild densities and LOD distances live. The grass ring is torn down and relaid
+   * because its capacities are a function of density; everything else only needs its
+   * fade windows and shadow flags moved.
+   */
+  applyQuality(q) {
+    const shadows = !!q.foliageShadows;
+    const meshLod = q.tier >= 2;
+
+    this._buildGrassBuckets(q);
+
+    // Grass fade windows are set inside _buildGrassBuckets; the rest scale off the radius.
+    const radius = Math.max(q.grassRadius || 0, 18);
+
+    if (this._bambooAssets) {
+      const A = this._bambooAssets;
+      const culmFar = clamp(radius * 1.35, 26, RANGE.bambooCulm[1]);
+      const leafFar = clamp(radius * 1.1, 22, RANGE.bambooLeaf[1]);
+      A.culm.mat.userData.kag.uFadeFar.value.set(culmFar * 0.9, culmFar);
+      A.leaf.mat.userData.kag.uFadeFar.value.set(leafFar * 0.9, leafFar);
+      A.card.mat.userData.kag.uFadeNear.value.set(culmFar * 0.82, culmFar);
+      A.card.mat.userData.kag.uFadeFar.value.set(RANGE.bambooCard[1] * 0.86, RANGE.bambooCard[1]);
+    }
+    if (this._bamboo) {
+      this._bamboo.culmMesh.castShadow = shadows;
+      this._bamboo.leafMesh.castShadow = shadows;
+    }
+
+    if (this._treeAssets) {
+      const meshFar = meshLod ? RANGE.treeMesh[1] : RANGE.treeCardOnly[0] + 8;
+      for (const item of this._treeAssets.list) {
+        item.woodMat.userData.kag.uFadeFar.value.set(meshFar * 0.88, meshFar);
+        item.leafMat.userData.kag.uFadeFar.value.set(meshFar * 0.88, meshFar);
+        if (item.woodMesh) item.woodMesh.castShadow = shadows;
+        if (item.leafMesh) item.leafMesh.castShadow = shadows;
+      }
+      if (this._impostors?.material) {
+        const range = meshLod ? RANGE.treeCard : RANGE.treeCardOnly;
+        const k = this._impostors.material.userData.kag;
+        k.uFadeNear.value.set(range[0], range[0] + 14);
+        k.uFadeFar.value.set(range[1] * 0.9, range[1]);
+      }
+    }
+
+    if (this._undergrowth) {
+      this._undergrowth.fernMat.userData.kag.uFadeFar.value.set(radius * 0.85, radius);
+      this._undergrowth.susukiMat.userData.kag.uFadeFar.value.set(radius * 1.35, radius * 1.6);
+      this._undergrowth.fernMesh.castShadow = shadows;
+    }
+    if (this._groundCards) {
+      const r = RANGE.groundCard[1];
+      this._groundCards.mat.userData.kag.uFadeFar.value.set(r * 0.82, r);
+    }
+    if (this._canopy) this._canopy.mesh.visible = q.tier > 0;
+
+    this._recomputeDrawEstimate();
+  }
+
+  // ------------------------------------------------------------------ dispose
+
+  dispose() {
+    this.ctx.bus?.off?.('slash', this._onSlash);
+    this.ctx.bus?.off?.('hit', this._onHit);
+
+    this._disposeGrass();
+    this.group.parent?.remove(this.group);
+
+    for (const g of this._geometries) g.dispose?.();
+    for (const m of this._materials) m.dispose?.();
+    for (const t of this._textures) t.dispose?.();
+    for (const rt of this._renderTargets) rt.dispose?.();
+
+    this._geometries.length = 0;
+    this._materials.length = 0;
+    this._textures.length = 0;
+    this._renderTargets.length = 0;
+    this._meshes.length = 0;
+    this.petalEmitters.length = 0;
+    this.leafEmitters.length = 0;
+    this._extraCharacters.length = 0;
+
+    this._grass = null;
+    this._bamboo = null;
+    this._trees = null;
+    this._treeAssets = null;
+    this._bambooAssets = null;
+    this._undergrowth = null;
+    this._groundCards = null;
+    this._impostors = null;
+    this._canopy = null;
+    this.groundDetail = null;
+  }
 }
 
 export default FoliageSystem;

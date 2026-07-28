@@ -1172,7 +1172,8 @@ void main() {
   // ---- grain ---------------------------------------------------------------
 #ifdef USE_GRAIN
   {
-    float g = hash12(uv * uResolution + uGrainTime) - 0.5;
+    // vUv, not the refracted uv: grain is emulsion/sensor, fixed to the physical pixel.
+    float g = hash12(vUv * uResolution + uGrainTime) - 0.5;
     float l = dot(color, LUMA709);
     // Real film grain lives in the toe: weight it up in shadows, nearly off in
     // highlights, or the sky turns into television snow.
