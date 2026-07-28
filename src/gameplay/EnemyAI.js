@@ -298,10 +298,11 @@ export class EnemyAI {
       this._think();
     }
 
-    // An attack that was chosen but denied a token must not leave us posing.
-    if (this.behaviour === 'attack') {
+    // An attack that was chosen but denied a token must not leave us posing: give
+    // up on it, blacklist attacking briefly, and go find something busy to do.
+    if (this.behaviour === 'attack' && e.state !== 'attack') {
       this._attackTryTimer += dt;
-      if (e.state !== 'attack' && this._attackTryTimer > 0.22) {
+      if (this._attackTryTimer > 0.22) {
         this._attackBlock = 0.4 + this._rng() * 0.3;
         this._commitTimer = 0;
         this._attackTryTimer = 0;
@@ -1046,6 +1047,19 @@ export class EnemyAI {
           faceZ = Math.cos(this._scanPhase * 0.7 + this.p.jitter * 6);
         }
         break;
+    }
+
+    // ---- never stand inside the target ---------------------------------------
+    // Physics resolves the capsule overlap, but steering should not be shoving
+    // into it in the first place — that is what makes crowds read as a scrum.
+    if (hasTarget && this.behaviour !== 'attack' && this.behaviour !== 'feint') {
+      const standoff = e.radius + (tgt.radius ?? 0.35) + 0.2;
+      if (s.dist < standoff) {
+        const push = (standoff - s.dist) / standoff;
+        dx -= s.toX * push * 2.2;
+        dz -= s.toZ * push * 2.2;
+        if (gain < 0.45) gain = 0.45;
+      }
     }
 
     // ---- boids-ish separation: allies push each other apart --------------------

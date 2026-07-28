@@ -158,13 +158,22 @@ function ampEnv(d, sr, atk, dec, shape, startSec) {
   const s = Math.floor((startSec || 0) * sr);
   const sh = shape === undefined ? 1 : shape;
   const tau = Math.max(1e-4, dec);
+  if (sh === 1) {
+    // Plain exponential: step it multiplicatively instead of calling exp() per sample.
+    const k = Math.exp(-1 / (tau * sr));
+    let e = 1;
+    for (let i = 0; i < n; i++) {
+      if (i < s) { d[i] = 0; continue; }
+      const j = i - s;
+      if (j < a) d[i] *= j / a;
+      else { d[i] *= e; e *= k; }
+    }
+    return;
+  }
   for (let i = 0; i < n; i++) {
     if (i < s) { d[i] = 0; continue; }
     const k = i - s;
-    let e;
-    if (k < a) e = k / a;
-    else e = Math.exp(-Math.pow((k - a) / sr / tau, sh));
-    d[i] *= e;
+    d[i] *= k < a ? k / a : Math.exp(-Math.pow((k - a) / sr / tau, sh));
   }
 }
 
@@ -883,7 +892,7 @@ export class AudioSystem {
     for (let v = 0; v < 5; v++) {
       const st = { seed: nx(), perfect: v >= 3, data: null };
       push('striking sparks', () => this._clashBegin(st));
-      for (let g = 0; g < 3; g++) push('striking sparks', () => this._clashGroup(st, g));
+      for (let g = 0; g < 4; g++) push('striking sparks', () => this._clashGroup(st, g));
       push('striking sparks', () => this._clashFinish(st));
     }
     for (let v = 0; v < 2; v++) push('抜刀', () => this._rDrawBlade(nx()));
@@ -907,14 +916,22 @@ export class AudioSystem {
     // ── world ───────────────────────────────────────────────────────────────
     for (let v = 0; v < 2; v++) push('raising the wind', () => this._rWindGust(nx()));
     const windSeed = nx();
-    for (let c = 0; c < 2; c++) { const ch = c; push('raising the wind', () => this._rWindBed(windSeed, ch)); }
+    for (let c = 0; c < 2; c++) {
+      const st = { seed: windSeed, ch: c, data: null };
+      push('raising the wind', () => this._windBedNoise(st));
+      push('raising the wind', () => this._windBedShape(st));
+    }
     for (let v = 0; v < 3; v++) push('the bamboo sea', () => this._rBamboo(nx()));
     for (let v = 0; v < 3; v++) push('the bamboo sea', () => this._rLeafRustle(nx()));
     const streamSeed = nx();
     for (let c = 0; c < 2; c++) { const ch = c; push('the valley stream', () => this._rWaterStream(streamSeed, ch)); }
     const rainSeed = nx();
     for (let c = 0; c < 2; c++) { const ch = c; push('the coming rain', () => this._rRain(rainSeed, ch)); }
-    for (let v = 0; v < 2; v++) push('distant thunder', () => this._rThunder(nx()));
+    for (let v = 0; v < 2; v++) {
+      const st = { seed: nx(), nz: null };
+      push('distant thunder', () => this._thunderNoise(st));
+      push('distant thunder', () => this._thunderShape(st));
+    }
     for (let v = 0; v < 3; v++) push('crows', () => this._rCrow(nx(), v === 2));
     for (let v = 0; v < 2; v++) push('windchime', () => this._rWindChime(nx()));
 
@@ -923,7 +940,7 @@ export class AudioSystem {
     for (let v = 0; v < 2; v++) {
       const st = { seed: nx(), data: null, sr: 0 };
       push('鋳造 the temple bell', () => this._bellBegin(st));
-      for (let g = 0; g < 10; g++) push('鋳造 the temple bell', () => this._bellGroup(st, g));
+      for (let g = 0; g < 20; g++) push('鋳造 the temple bell', () => this._bellGroup(st, g));
       push('鋳造 the temple bell', () => this._bellFinish(st));
     }
 
@@ -1091,7 +1108,7 @@ export class AudioSystem {
     const ratios = [1, 2.756, 5.404, 8.933, 13.34, 18.64, 24.8];
     const taus = perfect ? [1.7, 1.3, 0.95, 0.7, 0.5, 0.36, 0.26] : [0.8, 0.6, 0.44, 0.31, 0.21, 0.15, 0.11];
     const amps = [0.42, 0.34, 0.26, 0.19, 0.13, 0.09, 0.06];
-    const from = group * 3, to = Math.min(ratios.length, from + 3);
+    const from = group * 2, to = Math.min(ratios.length, from + 2);
     for (let k = from; k < to; k++) {
       const f = st.f0 * ratios[k] * (1 + (rng() - 0.5) * 0.012);
       addPartial(d, sr, f, amps[k], taus[k], rng() * 6.283, 0);
@@ -1136,10 +1153,10 @@ export class AudioSystem {
       const t = i / n;
       bq.set('bp', 1100 + 3600 * Math.pow(t, 1.4), 2.6, 0);
       const to = Math.min(n, i + 32);
+      const shape = Math.sqrt(t) * (1 - t * t * t) * 0.7;
       for (let j = i; j < to; j++) {
         g += ((rng() * 2 - 1) - g) * 0.02;
-        const env = Math.pow(t, 0.5) * (1 - Math.pow(t, 3)) * (0.6 + 0.4 * (g * 0.5 + 0.5));
-        d[j] = bq.tick(nz[j]) * env * 0.7;
+        d[j] = bq.tick(nz[j]) * shape * (0.6 + 0.4 * (g * 0.5 + 0.5));
       }
     }
     const ringAt = Math.floor(n * 0.62);
@@ -1432,27 +1449,35 @@ export class AudioSystem {
     this._store('windGust', buf);
   }
 
-  /** The always-on wind bed: a seamless stereo loop, decorrelated between channels. */
-  _rWindBed(seed, ch) {
+  /**
+   * The always-on wind bed: a seamless stereo loop, decorrelated between channels. It is
+   * the longest render in the game, so it comes in two passes — raw noise, then shaping.
+   */
+  _windBedNoise(st) {
     const sr = this.bedRate;
-    const secs = 7.5, fade = 0.9;
-    this._bedChannel('windBed', secs, fade, ch, sr, () => {
-      const nFull = Math.floor((secs + fade) * sr);
-      const rng = mulberry32(seed + ch * 7919);
-      const tmp = new Float32Array(nFull);
-      fillPink(tmp, rng, 1);
-      const bq = new BQ(sr);
-      let w = 0;
-      for (let i = 0; i < nFull; i += 64) {
-        w += ((rng() * 2 - 1) - w) * 0.05;
-        bq.set('lp', 520 + w * 260, 0.6, 0);
-        const to = Math.min(nFull, i + 64);
-        for (let j = i; j < to; j++) tmp[j] = bq.tick(tmp[j]);
-      }
-      filt(tmp, sr, 'hp', 60, 0.7, 0);
-      normalize(tmp, 0.7);
-      return tmp;
-    });
+    st.sr = sr;
+    st.n = Math.floor((6.0 + 0.9) * sr);
+    st.data = new Float32Array(st.n);
+    st.rng = mulberry32(st.seed + st.ch * 7919);
+    fillPink(st.data, st.rng, 1);
+  }
+
+  _windBedShape(st) {
+    if (!st.data) return;
+    const sr = st.sr, tmp = st.data, rng = st.rng, n = st.n;
+    const bq = new BQ(sr);
+    let w = 0;
+    for (let i = 0; i < n; i += 64) {
+      // The cutoff wanders: wind is never a steady hiss, it swells and dies.
+      w += ((rng() * 2 - 1) - w) * 0.05;
+      bq.set('lp', 520 + w * 260, 0.6, 0);
+      const to = Math.min(n, i + 64);
+      for (let j = i; j < to; j++) tmp[j] = bq.tick(tmp[j]);
+    }
+    filt(tmp, sr, 'hp', 60, 0.7, 0);
+    normalize(tmp, 0.7);
+    this._bedChannel('windBed', 6.0, 0.9, st.ch, sr, () => tmp);
+    st.data = null;
   }
 
   /** ししおどし flavour: a struck bamboo tube — closed-pipe modes plus a hard clack. */
@@ -1538,25 +1563,31 @@ export class AudioSystem {
     });
   }
 
-  _rThunder(seed) {
-    const sr = this.bedRate, rng = mulberry32(seed);
-    const buf = this._allocAt(4.6, 1, sr);
+  _thunderNoise(st) {
+    st.sr = this.bedRate;
+    st.rng = mulberry32(st.seed);
+    st.buf = this._allocAt(4.2, 1, st.sr);
+    st.nz = new Float32Array(st.buf.length);
+    fillPink(st.nz, st.rng, 1);
+  }
+
+  _thunderShape(st) {
+    if (!st.nz) return;
+    const sr = st.sr, rng = st.rng, buf = st.buf, nz = st.nz;
     const d = buf.getChannelData(0);
     const n = d.length;
-    const nz = new Float32Array(n);
-    fillPink(nz, rng, 1);
     const bq = new BQ(sr);
     let w = 0;
     for (let i = 0; i < n; i += 64) {
       w += ((rng() * 2 - 1) - w) * 0.09;
       bq.set('lp', 110 + w * 55, 0.7, 0);
       const to = Math.min(n, i + 64);
-      for (let j = i; j < to; j++) {
-        const t = j / sr;
-        // Rolls: several overlapping swells rather than one clean decay.
-        const roll = 0.5 + 0.5 * Math.sin(t * 1.7 + w * 2) * Math.sin(t * 0.63);
-        d[j] = bq.tick(nz[j]) * Math.exp(-t / 1.6) * (0.55 + 0.45 * roll);
-      }
+      // Rolls: several overlapping swells rather than one clean decay. Evaluated once per
+      // block — at 64 samples the envelope cannot move fast enough for the step to matter.
+      const t = i / sr;
+      const roll = 0.5 + 0.5 * Math.sin(t * 1.7 + w * 2) * Math.sin(t * 0.63);
+      const g = Math.exp(-t / 1.6) * (0.55 + 0.45 * roll);
+      for (let j = i; j < to; j++) d[j] = bq.tick(nz[j]) * g;
     }
     // The far-off crack, already softened by kilometres of air.
     addNoiseBurst(d, sr, 0.02, 0.35, 0.28, 'lp', 900, 0.7, rng, 0.004, 1.2);
@@ -1564,6 +1595,7 @@ export class AudioSystem {
     filt(d, sr, 'hp', 28, 0.7, 0);
     fadeEdges(d, sr, 0.02, 0.6);
     normalize(d, 0.7);
+    st.nz = null;
     this._store('distantThunder', buf);
   }
 
@@ -1646,7 +1678,7 @@ export class AudioSystem {
     ];
     // Two partials (four oscillators, counting twins) per slice: the hum and the prime
     // ring for six seconds each, so they are the expensive ones and get their own slots.
-    const per = 2;
+    const per = 1;
     const from = group * per;
     const to = Math.min(P.length, from + per);
     for (let k = from; k < to; k++) {
@@ -1656,7 +1688,7 @@ export class AudioSystem {
       // The twin: 0.15–0.5 Hz away, which is one slow warble every few seconds.
       addPartial(d, sr, f + 0.15 + rng() * 0.35, p[1] * 0.8, p[2] * 0.95, rng() * 6.28, 0);
     }
-    if (group === 9) {
+    if (group === 19) {
       // Strike noise — the shumoku hitting bronze, gone in 40 ms.
       addNoiseBurst(d, sr, 0, 0.04, 0.3, 'bp', 2600, 0.9, rng, 0.0004, 2.0);
       addNoiseBurst(d, sr, 0, 0.012, 0.18, 'hp', 6000, 0.8, rng, 0.0002, 2.6);
@@ -1873,11 +1905,14 @@ export class AudioSystem {
     fillWhite(lo, rng, 1);
     filt(lo, sr, 'lp', cfg.lp * 0.22, 0.7, 0);
     const pre = Math.floor(cfg.pre * sr);
+    // Two decay rates standing in for air absorption: treble dies first. Stepped
+    // multiplicatively — an exp() per sample over four seconds is not free.
+    const kHi = Math.exp(-1 / (cfg.len * cfg.hiTau * sr));
+    const kLo = Math.exp(-1 / (cfg.len * cfg.loTau * sr));
+    let eHi = 0.75, eLo = 0.55;
     for (let i = pre; i < n; i++) {
-      const t = (i - pre) / sr;
-      // Two decay rates standing in for air absorption: treble dies first.
-      d[i] = hi[i] * Math.exp(-t / (cfg.len * cfg.hiTau)) * 0.75 +
-        lo[i] * Math.exp(-t / (cfg.len * cfg.loTau)) * 0.55;
+      d[i] = hi[i] * eHi + lo[i] * eLo;
+      eHi *= kHi; eLo *= kLo;
     }
     for (let i = 0; i < pre; i++) d[i] = 0;
     if (zone === 'valley') {

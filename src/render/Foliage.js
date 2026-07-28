@@ -509,11 +509,11 @@ const FRAGMENT_SSS = /* glsl */`
 function makeInstanced(base, capacity) {
   const g = new InstancedBufferGeometry();
   g.index = base.index;
-  g.attributes = base.attributes;
-  g.groups = base.groups;
-  g.drawRange = base.drawRange;
-  g.boundingSphere = base.boundingSphere;
-  g.boundingBox = base.boundingBox;
+  // Share the underlying BufferAttributes (one GPU buffer for every batch that uses this
+  // base mesh) but never the attributes *map*, or setAttribute below would leak sideways.
+  g.attributes = Object.assign({}, base.attributes);
+  g.drawRange = { start: base.drawRange.start, count: base.drawRange.count };
+  g.boundingSphere = base.boundingSphere ? base.boundingSphere.clone() : null;
 
   const a = new InstancedBufferAttribute(new Float32Array(capacity * 4), 4);
   const b = new InstancedBufferAttribute(new Float32Array(capacity * 4), 4);
@@ -544,4 +544,695 @@ function resizeInstanced(g, capacity) {
   return g;
 }
 
-//@@SECTION_5@@
+// =============================================================================
+// 5. Procedural geometry
+// =============================================================================
+
+/**
+ * A grass blade: a tapered quad strip with a curved spine. The edge normals are splayed
+ * outward from the face normal so a blade catches the rim light along its silhouette
+ * instead of reading as a black sliver against a bright sky — this single detail is most
+ * of the difference between "grass" and "green noise".
+ */
+function buildBladeGeometry(segments, curve = 0.22) {
+  const g = new GeoBuilder();
+  const rows = segments + 1;
+  let prevL = -1, prevR = -1;
+  for (let r = 0; r < rows; r++) {
+    const t = r / segments;
+    // Width profile: swells just above the ground, then tapers to a point.
+    const w = (0.5 * (1.0 - Math.pow(t, 1.55))) * (0.72 + 0.28 * Math.sin(t * Math.PI * 0.9));
+    // The spine arcs forward; the arc is baked so even an unbent blade is not a plank.
+    const z = curve * t * t;
+    const splay = 0.55 * (1.0 - t * 0.5);
+    const nl = nrm3([-splay, 0.12 * t, 1]);
+    const nr = nrm3([splay, 0.12 * t, 1]);
+    const l = g.vert(-w, t, z, nl[0], nl[1], nl[2], 0, t, t, 0);
+    const rr = g.vert(w, t, z, nr[0], nr[1], nr[2], 1, t, t, 0);
+    if (prevL >= 0) g.quad(prevL, prevR, rr, l);
+    prevL = l; prevR = rr;
+  }
+  return g.toGeometry();
+}
+
+/** Crossed quads. Used for grass clump cards, leaf clusters and shrub fronds. */
+function buildCrossCard(planes = 2, aspect = 1.0, centred = false, flex = 1.0) {
+  const g = new GeoBuilder();
+  const y0 = centred ? -0.5 : 0.0;
+  const y1 = centred ? 0.5 : 1.0;
+  for (let p = 0; p < planes; p++) {
+    const a = (p / planes) * Math.PI;
+    const ca = Math.cos(a), sa = Math.sin(a);
+    const rx = 0.5 * aspect * ca, rz = 0.5 * aspect * sa;
+    const nx = -sa * 0.55, nz = ca * 0.55;
+    const n = nrm3([nx, 0.72, nz]);
+    const a0 = g.vert(-rx, y0, -rz, n[0], n[1], n[2], 0, 0, flex * 0.15, p * 0.37);
+    const b0 = g.vert(rx, y0, rz, n[0], n[1], n[2], 1, 0, flex * 0.15, p * 0.37);
+    const b1 = g.vert(rx, y1, rz, n[0], n[1], n[2], 1, 1, flex, p * 0.37);
+    const a1 = g.vert(-rx, y1, -rz, n[0], n[1], n[2], 0, 1, flex, p * 0.37);
+    g.quad(a0, b0, b1, a1);
+  }
+  return g.toGeometry();
+}
+
+/**
+ * A bamboo culm: tapered, nodded, and never quite straight. The node rings are a small
+ * radial bulge plus a UV band, which is all it takes for the silhouette to read as bamboo
+ * rather than as a green pipe.
+ */
+function buildCulmGeometry(sides = 5, internodes = 9, curve = 0.035) {
+  const g = new GeoBuilder();
+  const rows = internodes * 2 + 1;
+  let prev = -1;
+  const n = [1, 0, 0], b = [0, 0, 1];
+  for (let r = 0; r < rows; r++) {
+    const t = r / (rows - 1);
+    const nodeT = (r % 2) === 0 ? 1 : 0;                 // even rows sit on a node
+    const taper = 0.5 * (1.0 - 0.55 * t * t) * (0.62 + 0.38 * (1.0 - t));
+    const radius = taper * (1.0 + 0.13 * nodeT);
+    // A natural culm leans away from vertical and straightens near the base.
+    const c = [curve * t * t * 1.0, t, curve * t * t * 0.35];
+    const ring = g.ring(c, n, b, radius, sides, t * internodes, t * 0.35, 0);
+    if (prev >= 0) g.linkRings(prev, ring, sides);
+    prev = ring;
+  }
+  return g.toGeometry();
+}
+
+/** Ground-hugging card, used for fallen leaves and moss patches. */
+function buildGroundCard(count = 3, seed = 11) {
+  const g = new GeoBuilder();
+  const rnd = makeRandom(seed);
+  const up = [0, 1, 0];
+  for (let i = 0; i < count; i++) {
+    const a = rnd() * Math.PI * 2;
+    const s = 0.24 + rnd() * 0.26;
+    const cx = (rnd() - 0.5) * 0.5, cz = (rnd() - 0.5) * 0.5;
+    const y = 0.004 + i * 0.004;
+    const r = [Math.cos(a) * s, 0, Math.sin(a) * s];
+    const u = [-Math.sin(a) * s, 0, Math.cos(a) * s];
+    g.card([cx, y, cz], r, u, up, 0, 0, 1, 1, 0.1, rnd());
+  }
+  return g.toGeometry();
+}
+
+/**
+ * Susuki (Japanese pampas grass). Arching blades plus a silvery plume — the plume is a
+ * separate, very translucent card set, which is exactly what a low sun wants to shine
+ * through in the background of a duel.
+ */
+function buildSusukiGeometry(seed = 5) {
+  const g = new GeoBuilder();
+  const rnd = makeRandom(seed);
+  const blades = 9;
+  for (let i = 0; i < blades; i++) {
+    const a = (i / blades) * Math.PI * 2 + rnd() * 0.5;
+    const lean = 0.18 + rnd() * 0.30;
+    const top = 0.42 + rnd() * 0.30;
+    const dx = Math.cos(a), dz = Math.sin(a);
+    const segs = 4;
+    let pl = -1, pr = -1;
+    for (let s = 0; s <= segs; s++) {
+      const t = s / segs;
+      // Arching: rises then falls away, so the clump reads as a fountain.
+      const y = top * Math.sin(t * 1.35);
+      const rad = lean * t * t;
+      const w = 0.028 * (1.0 - t * 0.85);
+      const px = dx * rad, pz = dz * rad;
+      const nx = -dz, nz = dx;
+      const n = nrm3([dx * 0.35, 0.5, dz * 0.35]);
+      const l = g.vert(px - nx * w, y, pz - nz * w, n[0], n[1], n[2], 0, t, t, i * 0.31);
+      const r = g.vert(px + nx * w, y, pz + nz * w, n[0], n[1], n[2], 1, t, t, i * 0.31);
+      if (pl >= 0) g.quad(pl, pr, r, l);
+      pl = l; pr = r;
+    }
+  }
+  // Plumes: three stems, each capped by a crossed card.
+  for (let i = 0; i < 3; i++) {
+    const a = rnd() * Math.PI * 2;
+    const lean = 0.12 + rnd() * 0.14;
+    const h = 0.82 + rnd() * 0.18;
+    const cx = Math.cos(a) * lean, cz = Math.sin(a) * lean;
+    for (let p = 0; p < 2; p++) {
+      const pa = a + p * Math.PI * 0.5;
+      const r = [Math.cos(pa) * 0.11, 0, Math.sin(pa) * 0.11];
+      const u = [0, 0.17, 0];
+      const n = nrm3([Math.sin(pa) * 0.4, 0.9, -Math.cos(pa) * 0.4]);
+      g.card([cx, h, cz], r, u, n, 0, 0, 1, 1, 1.0, rnd());
+    }
+  }
+  return g.toGeometry();
+}
+
+/** Fern / low shrub: a rosette of fronds, each a single card leaning outward. */
+function buildFrondClumpGeometry(fronds = 7, lean = 0.55, rise = 0.62, seed = 3) {
+  const g = new GeoBuilder();
+  const rnd = makeRandom(seed);
+  for (let i = 0; i < fronds; i++) {
+    const a = (i / fronds) * Math.PI * 2 + rnd() * 0.6;
+    const dx = Math.cos(a), dz = Math.sin(a);
+    const l = 0.34 + rnd() * 0.20;
+    const h = rise * (0.55 + rnd() * 0.6);
+    const cx = dx * lean * l, cz = dz * lean * l;
+    const cy = h * 0.5;
+    const r = [dx * l * 0.55, h * 0.22, dz * l * 0.55];
+    const u = [-dx * l * 0.18, h * 0.5, -dz * l * 0.18];
+    const n = nrm3([dx * 0.3, 1.0, dz * 0.3]);
+    g.card([cx, cy, cz], r, u, n, 0, 0, 1, 1, 1.0, rnd());
+  }
+  return g.toGeometry();
+}
+
+// =============================================================================
+// 6. Recursive tree generator
+// =============================================================================
+
+/**
+ * Species parameters. The numbers that matter for believability are `split` (a real tree
+ * branches at 25-50 degrees, not 90), `taper` (the child's radius follows Leonardo's rule,
+ * roughly r_parent = sum of r_children) and `phyllotaxis` (successive children are offset
+ * by the golden angle around the parent, which is why real canopies never look like forks).
+ */
+const TREE_SPECIES = {
+  sakura: {
+    height: 6.4, trunkRadius: 0.185, depth: 4, segs: 5, sides: 6,
+    children: [3, 3, 3, 2], split: 0.62, splitJitter: 0.26, lengthRatio: 0.72,
+    radiusRatio: 0.66, upBias: 0.10, gravity: -0.055, wobble: 0.14, trunkFrac: 0.30,
+    phyllotaxis: 2.39996, leavesPerTip: 5, leafSize: 0.95, leafSpread: 0.60,
+    leafFrom: 2, wood: 0x4a3a33, foliage: 0xf3c9d6,
+  },
+  momiji: {
+    height: 4.6, trunkRadius: 0.145, depth: 4, segs: 4, sides: 5,
+    children: [3, 3, 2, 2], split: 0.80, splitJitter: 0.30, lengthRatio: 0.70,
+    radiusRatio: 0.63, upBias: 0.04, gravity: -0.075, wobble: 0.18, trunkFrac: 0.24,
+    phyllotaxis: 2.39996, leavesPerTip: 6, leafSize: 0.80, leafSpread: 0.52,
+    leafFrom: 2, wood: 0x4d4038, foliage: 0xb02418,
+  },
+  cedar: {
+    height: 13.5, trunkRadius: 0.32, depth: 2, segs: 7, sides: 6,
+    children: [6, 3], split: 1.05, splitJitter: 0.18, lengthRatio: 0.42,
+    radiusRatio: 0.34, upBias: 0.02, gravity: -0.12, wobble: 0.07, trunkFrac: 1.0,
+    phyllotaxis: 1.2566, leavesPerTip: 4, leafSize: 0.62, leafSpread: 0.34,
+    leafFrom: 1, wood: 0x4b3a2c, foliage: 0x2f4a33,
+    whorls: true,
+  },
+};
+
+/**
+ * Build one canonical tree. Returns geometries normalised so y in [0,1] is the full tree
+ * height — the instance shader then scales uniformly, which is what lets one geometry
+ * serve trees from 3 m to 15 m without a second buffer.
+ */
+function buildTree(spec, seed) {
+  const rnd = makeRandom(seed);
+  const wood = new GeoBuilder();
+  const leaf = new GeoBuilder();
+  let maxY = 0.001;
+  let crownY = 0, crownW = 0.001, crownN = 0;
+
+  const nA = [0, 0, 0], bA = [0, 0, 0], tmp = [0, 0, 0];
+
+  function frame(d, outN, outB) {
+    const axis = Math.abs(d[1]) < 0.92 ? [0, 1, 0] : [1, 0, 0];
+    cross3(d, axis, outN); nrm3(outN);
+    cross3(d, outN, outB); nrm3(outB);
+  }
+
+  function placeLeaves(p, dir, radius, depth) {
+    const count = spec.leavesPerTip;
+    const size = spec.leafSize * Math.pow(0.86, depth);
+    for (let i = 0; i < count; i++) {
+      const a = i * spec.phyllotaxis + rnd() * 0.7;
+      const tilt = 0.35 + rnd() * 0.75;
+      frame(dir, nA, bA);
+      const ox = (nA[0] * Math.cos(a) + bA[0] * Math.sin(a)) * spec.leafSpread * size;
+      const oy = (nA[1] * Math.cos(a) + bA[1] * Math.sin(a)) * spec.leafSpread * size;
+      const oz = (nA[2] * Math.cos(a) + bA[2] * Math.sin(a)) * spec.leafSpread * size;
+      const c = [p[0] + ox + dir[0] * size * 0.2, p[1] + oy + dir[1] * size * 0.2, p[2] + oz + dir[2] * size * 0.2];
+      const ca = Math.cos(a), sa = Math.sin(a);
+      const r = [ca * size * 0.5, tilt * size * 0.12, sa * size * 0.5];
+      const u = [-sa * size * 0.30, size * 0.42, ca * size * 0.30];
+      const n = nrm3([ox * 0.5, 0.9, oz * 0.5]);
+      leaf.card(c, r, u, n, 0, 0, 1, 1, 1.0, rnd());
+      crownY += c[1]; crownN++;
+      crownW = Math.max(crownW, Math.hypot(c[0], c[2]));
+      if (c[1] > maxY) maxY = c[1];
+    }
+  }
+
+  function grow(p0, dir, len, radius, depth) {
+    const segs = Math.max(2, spec.segs - depth);
+    const sides = Math.max(3, spec.sides - depth);
+    const cur = [p0[0], p0[1], p0[2]];
+    const cd = [dir[0], dir[1], dir[2]];
+    let prev = -1;
+    const flexBase = depth / (spec.depth + 1);
+
+    for (let s = 0; s <= segs; s++) {
+      const t = s / segs;
+      const r = Math.max(radius * (1 - t * 0.62), 0.006);
+      frame(cd, nA, bA);
+      const ring = wood.ring(cur, nA, bA, r, sides, t * len * 0.7, flexBase * t * 0.6, depth * 0.21);
+      if (prev >= 0) wood.linkRings(prev, ring, sides);
+      prev = ring;
+      if (cur[1] > maxY) maxY = cur[1];
+      if (s < segs) {
+        const step = len / segs;
+        cur[0] += cd[0] * step; cur[1] += cd[1] * step; cur[2] += cd[2] * step;
+        cd[0] += (rnd() - 0.5) * spec.wobble + 0;
+        cd[1] += spec.gravity * (depth > 0 ? 1 : 0.2) + spec.upBias * (1 - t);
+        cd[2] += (rnd() - 0.5) * spec.wobble;
+        nrm3(cd);
+      }
+    }
+
+    if (depth >= spec.leafFrom) placeLeaves(cur, cd, radius, depth);
+
+    if (depth >= spec.depth) return;
+
+    const n = spec.children[Math.min(depth, spec.children.length - 1)];
+    // A conifer puts a whorl of laterals around a continuing leader; a broadleaf forks.
+    const leader = spec.whorls && depth === 0;
+    const childLen = len * spec.lengthRatio;
+    const childRad = radius * spec.radiusRatio;
+
+    if (leader) {
+      // Laterals spaced up the trunk, shorter toward the top: the classic sugi cone.
+      const whorlCount = 7;
+      for (let w = 0; w < whorlCount; w++) {
+        const ft = 0.22 + 0.76 * (w / (whorlCount - 1));
+        const anchor = [
+          p0[0] + (cur[0] - p0[0]) * ft,
+          p0[1] + (cur[1] - p0[1]) * ft,
+          p0[2] + (cur[2] - p0[2]) * ft,
+        ];
+        const branches = 5;
+        for (let i = 0; i < branches; i++) {
+          const a = (i / branches) * Math.PI * 2 + w * spec.phyllotaxis;
+          const outward = Math.sin(spec.split + (rnd() - 0.5) * spec.splitJitter);
+          const rise = Math.cos(spec.split) * 0.5 - ft * 0.25;
+          const d = nrm3([Math.cos(a) * outward, rise, Math.sin(a) * outward]);
+          grow(anchor, d, childLen * (1.25 - ft) * (0.8 + rnd() * 0.4), childRad * (1.2 - ft * 0.7), depth + 1);
+        }
+      }
+      // ...and the leader itself keeps going.
+      grow(cur, cd, childLen * 1.5, childRad * 1.7, depth + 1);
+      return;
+    }
+
+    for (let i = 0; i < n; i++) {
+      const a = i * spec.phyllotaxis + rnd() * 0.4;
+      const split = spec.split + (rnd() - 0.5) * spec.splitJitter;
+      frame(cd, nA, bA);
+      const so = Math.sin(split), co = Math.cos(split);
+      tmp[0] = cd[0] * co + (nA[0] * Math.cos(a) + bA[0] * Math.sin(a)) * so;
+      tmp[1] = cd[1] * co + (nA[1] * Math.cos(a) + bA[1] * Math.sin(a)) * so;
+      tmp[2] = cd[2] * co + (nA[2] * Math.cos(a) + bA[2] * Math.sin(a)) * so;
+      nrm3(tmp);
+      const jitter = 0.78 + rnd() * 0.44;
+      grow(cur, [tmp[0], tmp[1], tmp[2]], childLen * jitter, childRad * jitter, depth + 1);
+    }
+  }
+
+  const trunkLen = spec.height * spec.trunkFrac;
+  grow([0, 0, 0], [0, 1, 0], trunkLen, spec.trunkRadius, 0);
+
+  const inv = 1 / Math.max(maxY, 0.001);
+  wood.scaleAll(inv);
+  leaf.scaleAll(inv);
+
+  return {
+    wood: wood.toGeometry(),
+    leaf: leaf.toGeometry(),
+    /** Crown centre and radius in canonical units — the Weather system needs these. */
+    crown: {
+      y: crownN ? (crownY / crownN) * inv : 0.7,
+      radius: Math.max(crownW * inv, 0.18),
+    },
+    /** Real-world default height for this species, before per-instance variation. */
+    height: spec.height,
+  };
+}
+
+// =============================================================================
+// 7. Procedural textures
+// =============================================================================
+
+function newCanvas(w, h) {
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  return c;
+}
+
+function texFromCanvas(canvas, srgb, aniso) {
+  const t = new CanvasTexture(canvas);
+  t.colorSpace = srgb ? SRGBColorSpace : NoColorSpace;
+  t.wrapS = t.wrapT = ClampToEdgeWrapping;
+  t.minFilter = LinearMipmapLinearFilter;
+  t.magFilter = LinearFilter;
+  t.generateMipmaps = true;
+  t.anisotropy = aniso || 1;
+  t.needsUpdate = true;
+  return t;
+}
+
+/** Speckle a drawn sprite so no leaf is ever a flat fill. */
+function speckle(c2d, w, h, amount, seed) {
+  const img = c2d.getImageData(0, 0, w, h);
+  const d = img.data;
+  const rnd = makeRandom(seed);
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i + 3] < 8) continue;
+    const n = 1 + (rnd() - 0.5) * amount;
+    d[i] = clamp(d[i] * n, 0, 255);
+    d[i + 1] = clamp(d[i + 1] * n, 0, 255);
+    d[i + 2] = clamp(d[i + 2] * n, 0, 255);
+  }
+  c2d.putImageData(img, 0, 0);
+}
+
+/** One lanceolate leaf, drawn from base to tip along +y. */
+function drawLeafShape(g, len, wid, colA, colB, veins) {
+  const grad = g.createLinearGradient(0, 0, 0, -len);
+  grad.addColorStop(0, colA);
+  grad.addColorStop(1, colB);
+  g.fillStyle = grad;
+  g.beginPath();
+  g.moveTo(0, 0);
+  g.bezierCurveTo(wid, -len * 0.22, wid * 0.85, -len * 0.68, 0, -len);
+  g.bezierCurveTo(-wid * 0.85, -len * 0.68, -wid, -len * 0.22, 0, 0);
+  g.fill();
+  if (veins) {
+    g.strokeStyle = 'rgba(0,0,0,0.16)';
+    g.lineWidth = Math.max(1, len * 0.012);
+    g.beginPath(); g.moveTo(0, 0); g.lineTo(0, -len); g.stroke();
+  }
+}
+
+/** Grass clump silhouette for the far LOD card. */
+function paintGrassClump(size, palette) {
+  const c = newCanvas(size, size);
+  const g = c.getContext('2d');
+  g.clearRect(0, 0, size, size);
+  const rnd = makeRandom(9001);
+  const blades = 26;
+  for (let i = 0; i < blades; i++) {
+    const x = size * (0.08 + rnd() * 0.84);
+    const h = size * (0.42 + rnd() * 0.56);
+    const w = size * (0.012 + rnd() * 0.016);
+    const lean = (rnd() - 0.5) * size * 0.30;
+    const col = palette[(rnd() * palette.length) | 0];
+    const grad = g.createLinearGradient(x, size, x + lean, size - h);
+    grad.addColorStop(0, 'rgba(30,44,24,1)');
+    grad.addColorStop(0.35, col);
+    grad.addColorStop(1, col);
+    g.fillStyle = grad;
+    g.beginPath();
+    g.moveTo(x - w, size);
+    g.quadraticCurveTo(x + lean * 0.4 - w * 0.5, size - h * 0.55, x + lean, size - h);
+    g.quadraticCurveTo(x + lean * 0.4 + w * 0.5, size - h * 0.55, x + w, size);
+    g.closePath();
+    g.fill();
+  }
+  speckle(g, size, size, 0.30, 4411);
+  return c;
+}
+
+/** Bamboo leaf cluster — long, narrow, drooping, radiating from one point. */
+function paintBambooLeaves(size) {
+  const c = newCanvas(size, size);
+  const g = c.getContext('2d');
+  g.clearRect(0, 0, size, size);
+  const rnd = makeRandom(2205);
+  g.translate(size * 0.5, size * 0.62);
+  for (let i = 0; i < 15; i++) {
+    const a = -Math.PI * 0.5 + (rnd() - 0.5) * 2.5;
+    const len = size * (0.30 + rnd() * 0.28);
+    const wid = size * (0.020 + rnd() * 0.018);
+    g.save();
+    g.rotate(a);
+    const shade = 0.62 + rnd() * 0.38;
+    const cA = `rgb(${(46 * shade) | 0},${(84 * shade) | 0},${(40 * shade) | 0})`;
+    const cB = `rgb(${(96 * shade) | 0},${(140 * shade) | 0},${(62 * shade) | 0})`;
+    drawLeafShape(g, len, wid, cA, cB, true);
+    g.restore();
+  }
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  speckle(g, size, size, 0.26, 771);
+  return c;
+}
+
+/** Sakura past peak: pale petals, a few gone brown, gaps where the wind already took them. */
+function paintBlossom(size) {
+  const c = newCanvas(size, size);
+  const g = c.getContext('2d');
+  g.clearRect(0, 0, size, size);
+  const rnd = makeRandom(3312);
+  const flowers = 13;
+  for (let f = 0; f < flowers; f++) {
+    const cx = size * (0.15 + rnd() * 0.70);
+    const cy = size * (0.15 + rnd() * 0.70);
+    const r = size * (0.055 + rnd() * 0.055);
+    const spent = rnd() < 0.22;
+    for (let p = 0; p < 5; p++) {
+      const a = (p / 5) * Math.PI * 2 + rnd() * 0.3;
+      const px = cx + Math.cos(a) * r * 0.72;
+      const py = cy + Math.sin(a) * r * 0.72;
+      const grad = g.createRadialGradient(px, py, 0, px, py, r * 0.8);
+      if (spent) {
+        grad.addColorStop(0, 'rgba(214,186,170,0.95)');
+        grad.addColorStop(1, 'rgba(180,146,132,0.0)');
+      } else {
+        grad.addColorStop(0, 'rgba(255,246,248,1)');
+        grad.addColorStop(0.55, 'rgba(247,205,218,1)');
+        grad.addColorStop(1, 'rgba(233,168,190,0.0)');
+      }
+      g.fillStyle = grad;
+      g.beginPath();
+      g.ellipse(px, py, r * 0.62, r * 0.48, a, 0, Math.PI * 2);
+      g.fill();
+    }
+    g.fillStyle = 'rgba(196,140,72,0.85)';
+    g.beginPath(); g.arc(cx, cy, r * 0.16, 0, Math.PI * 2); g.fill();
+  }
+  // A few dark twigs so the cluster is not a floating cloud of pink.
+  g.strokeStyle = 'rgba(58,44,40,0.8)';
+  g.lineWidth = Math.max(1, size * 0.010);
+  for (let i = 0; i < 6; i++) {
+    g.beginPath();
+    g.moveTo(size * rnd(), size * rnd());
+    g.lineTo(size * rnd(), size * rnd());
+    g.stroke();
+  }
+  speckle(g, size, size, 0.16, 5521);
+  return c;
+}
+
+/** Momiji: palmate, five-to-seven lobed, crimson through orange. */
+function paintMomiji(size) {
+  const c = newCanvas(size, size);
+  const g = c.getContext('2d');
+  g.clearRect(0, 0, size, size);
+  const rnd = makeRandom(6612);
+  for (let f = 0; f < 9; f++) {
+    const cx = size * (0.16 + rnd() * 0.68);
+    const cy = size * (0.16 + rnd() * 0.68);
+    const r = size * (0.10 + rnd() * 0.10);
+    const rot = rnd() * Math.PI * 2;
+    const heat = rnd();
+    const col = `rgb(${(150 + heat * 90) | 0},${(24 + heat * 78) | 0},${(16 + heat * 20) | 0})`;
+    g.save();
+    g.translate(cx, cy);
+    g.rotate(rot);
+    g.fillStyle = col;
+    const lobes = 5 + ((rnd() * 3) | 0);
+    for (let l = 0; l < lobes; l++) {
+      const a = -Math.PI * 0.5 + (l - (lobes - 1) * 0.5) * (Math.PI * 0.30);
+      g.save();
+      g.rotate(a);
+      const ll = r * (l === ((lobes - 1) >> 1) ? 1.0 : 0.78 - Math.abs(l - (lobes - 1) * 0.5) * 0.07);
+      g.beginPath();
+      g.moveTo(0, 0);
+      g.lineTo(-r * 0.16, -ll * 0.55);
+      g.lineTo(-r * 0.05, -ll * 0.62);
+      g.lineTo(0, -ll);
+      g.lineTo(r * 0.05, -ll * 0.62);
+      g.lineTo(r * 0.16, -ll * 0.55);
+      g.closePath();
+      g.fill();
+      g.restore();
+    }
+    g.restore();
+  }
+  speckle(g, size, size, 0.30, 8812);
+  return c;
+}
+
+/** Cedar needle spray: dark, dense, vertical. */
+function paintCedarSpray(size) {
+  const c = newCanvas(size, size);
+  const g = c.getContext('2d');
+  g.clearRect(0, 0, size, size);
+  const rnd = makeRandom(4404);
+  g.lineCap = 'round';
+  for (let i = 0; i < 90; i++) {
+    const x = size * (0.08 + rnd() * 0.84);
+    const y = size * (0.06 + rnd() * 0.88);
+    const len = size * (0.06 + rnd() * 0.14);
+    const a = -Math.PI * 0.5 + (rnd() - 0.5) * 1.9;
+    const shade = 0.55 + rnd() * 0.45;
+    g.strokeStyle = `rgb(${(38 * shade) | 0},${(76 * shade) | 0},${(48 * shade) | 0})`;
+    g.lineWidth = Math.max(1, size * (0.007 + rnd() * 0.008));
+    g.beginPath();
+    g.moveTo(x, y);
+    g.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len);
+    g.stroke();
+  }
+  speckle(g, size, size, 0.28, 1177);
+  return c;
+}
+
+/** Fern frond: pinnate, one rachis with paired pinnae. */
+function paintFern(size) {
+  const c = newCanvas(size, size);
+  const g = c.getContext('2d');
+  g.clearRect(0, 0, size, size);
+  const rnd = makeRandom(7723);
+  g.translate(size * 0.5, size);
+  const len = size * 0.94;
+  g.strokeStyle = 'rgb(72,96,52)';
+  g.lineWidth = Math.max(1, size * 0.012);
+  g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(size * 0.06, -len * 0.5, 0, -len); g.stroke();
+  const pairs = 13;
+  for (let i = 1; i <= pairs; i++) {
+    const t = i / (pairs + 1);
+    const y = -len * t;
+    const pl = size * 0.34 * (1 - t * 0.85) * (0.8 + rnd() * 0.4);
+    for (const s of [-1, 1]) {
+      g.save();
+      g.translate(0, y);
+      g.rotate(s * (Math.PI * 0.5 - 0.45 - t * 0.25));
+      const shade = 0.6 + rnd() * 0.4;
+      drawLeafShape(g, pl, pl * 0.20,
+        `rgb(${(44 * shade) | 0},${(76 * shade) | 0},${(38 * shade) | 0})`,
+        `rgb(${(96 * shade) | 0},${(134 * shade) | 0},${(62 * shade) | 0})`, false);
+      g.restore();
+    }
+  }
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  speckle(g, size, size, 0.26, 331);
+  return c;
+}
+
+/** Silvery susuki plume — deliberately low alpha so a low sun blows through it. */
+function paintSusukiPlume(size) {
+  const c = newCanvas(size, size);
+  const g = c.getContext('2d');
+  g.clearRect(0, 0, size, size);
+  const rnd = makeRandom(1919);
+  g.lineCap = 'round';
+  for (let i = 0; i < 150; i++) {
+    const t = rnd();
+    const x = size * (0.5 + (rnd() - 0.5) * (0.24 + t * 0.5));
+    const y = size * (0.92 - t * 0.86);
+    const len = size * (0.06 + rnd() * 0.13);
+    const a = -Math.PI * 0.5 + (rnd() - 0.5) * 1.5;
+    const v = 190 + rnd() * 60;
+    g.strokeStyle = `rgba(${v | 0},${(v * 0.93) | 0},${(v * 0.80) | 0},${0.30 + rnd() * 0.42})`;
+    g.lineWidth = Math.max(1, size * 0.006);
+    g.beginPath();
+    g.moveTo(x, y);
+    g.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len);
+    g.stroke();
+  }
+  return c;
+}
+
+/** Fallen leaves lying on the ground. */
+function paintFallenLeaves(size) {
+  const c = newCanvas(size, size);
+  const g = c.getContext('2d');
+  g.clearRect(0, 0, size, size);
+  const rnd = makeRandom(2468);
+  for (let i = 0; i < 22; i++) {
+    const cx = size * rnd(), cy = size * rnd();
+    const r = size * (0.05 + rnd() * 0.07);
+    const heat = rnd();
+    g.save();
+    g.translate(cx, cy);
+    g.rotate(rnd() * Math.PI * 2);
+    g.fillStyle = `rgba(${(126 + heat * 96) | 0},${(58 + heat * 62) | 0},${(28 + heat * 26) | 0},${0.72 + rnd() * 0.28})`;
+    g.beginPath();
+    g.ellipse(0, 0, r, r * 0.55, 0, 0, Math.PI * 2);
+    g.fill();
+    g.restore();
+  }
+  speckle(g, size, size, 0.34, 9182);
+  return c;
+}
+
+/**
+ * Ground detail. At LOW tier there is no grass at all, so the terrain has to carry the
+ * read on its own — we hand it a tuft-shaped albedo/normal pair rather than letting it
+ * fall back to flat dirt.
+ */
+function paintGroundDetail(size) {
+  const albedo = newCanvas(size, size);
+  const ga = albedo.getContext('2d');
+  ga.fillStyle = '#3f5230';
+  ga.fillRect(0, 0, size, size);
+  const rnd = makeRandom(5150);
+  const height = new Float32Array(size * size);
+
+  for (let i = 0; i < size * 3.2; i++) {
+    const x = rnd() * size, y = rnd() * size;
+    const h = size * (0.02 + rnd() * 0.05);
+    const lean = (rnd() - 0.5) * size * 0.02;
+    const shade = 0.55 + rnd() * 0.6;
+    const autumn = rnd() < 0.28;
+    const r = autumn ? 132 * shade : 78 * shade;
+    const gcol = autumn ? 112 * shade : 107 * shade;
+    const b = autumn ? 62 * shade : 60 * shade;
+    ga.strokeStyle = `rgb(${r | 0},${gcol | 0},${b | 0})`;
+    ga.lineWidth = Math.max(1, size * 0.004);
+    ga.beginPath();
+    ga.moveTo(x, y);
+    ga.lineTo(x + lean, y - h);
+    ga.stroke();
+    // Accumulate a height field for the normal map from the same strokes.
+    const steps = Math.max(2, h | 0);
+    for (let s = 0; s <= steps; s++) {
+      const t = s / steps;
+      const px = (x + lean * t) | 0, py = (y - h * t) | 0;
+      const idx = ((py % size) + size) % size * size + (((px % size) + size) % size);
+      height[idx] = Math.max(height[idx], 1 - t * 0.6);
+    }
+  }
+  speckle(ga, size, size, 0.22, 6161);
+
+  const normal = newCanvas(size, size);
+  const gn = normal.getContext('2d');
+  const img = gn.createImageData(size, size);
+  const d = img.data;
+  const strength = 2.6;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const i = y * size + x;
+      const l = height[y * size + ((x - 1 + size) % size)];
+      const r = height[y * size + ((x + 1) % size)];
+      const u = height[((y - 1 + size) % size) * size + x];
+      const dn = height[((y + 1) % size) * size + x];
+      let nx = (l - r) * strength, ny = (u - dn) * strength, nz = 1;
+      const inv = 1 / Math.hypot(nx, ny, nz);
+      nx *= inv; ny *= inv; nz *= inv;
+      d[i * 4] = (nx * 0.5 + 0.5) * 255;
+      d[i * 4 + 1] = (ny * 0.5 + 0.5) * 255;
+      d[i * 4 + 2] = (nz * 0.5 + 0.5) * 255;
+      d[i * 4 + 3] = 255;
+    }
+  }
+  gn.putImageData(img, 0, 0);
+  return { albedo, normal };
+}
+
+//@@SECTION_8@@

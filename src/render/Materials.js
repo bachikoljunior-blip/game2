@@ -234,12 +234,27 @@ function tileWarp(u, v, s, str = 0.7, oct = 4, ox = 0, oy = 0) {
   return a * (1 - u) * (1 - v) + b * u * (1 - v) + c * (1 - u) * v + d * u * v;
 }
 
-function coarse(n, fn) {
-  const a = new Float32Array(n * n);
-  for (let j = 0; j < n; j++) {
-    for (let i = 0; i < n; i++) a[j * n + i] = fn(i / n, j / n);
+/**
+ * Declare a coarse field. Baking is deferred to `fillCoarse` so it can be time
+ * sliced — a 56x56 warp field is ~13k Simplex-warp evaluations and baking three
+ * of them inline would blow the 12 ms budget before the first pixel is shaded.
+ */
+function coarse(n, fn) { return { n, fn, a: null }; }
+
+/** Bake every deferred field hanging off a recipe's setup context. */
+function* fillCoarse(c, B) {
+  for (const key in c) {
+    const f = c[key];
+    if (!f || typeof f !== 'object' || typeof f.fn !== 'function' || f.a !== null) continue;
+    const n = f.n;
+    const a = new Float32Array(n * n);
+    for (let j = 0; j < n; j++) {
+      const v = j / n;
+      for (let i = 0; i < n; i++) a[j * n + i] = f.fn(i / n, v);
+      if (nowMs() - B.t > CHUNK_MS) { yield; B.t = nowMs(); }
+    }
+    f.a = a;
   }
-  return { a, n };
 }
 
 /** Smooth wrapped bilinear fetch from a coarse field, remapped to 0..1. */
@@ -1722,7 +1737,9 @@ RECIPES.push({
     s.ro = clamp(ro, 0.05, 1);
     s.ao = clamp(1 - mask * 0.18, 0, 1);
     s.me = 0;
-    s.a = clamp(mask * (1 - smoothstep(0.86, 1.0, rad)), 0, 1);
+    // smootherstep on the border: a C2 falloff keeps the decal quad's edge from
+    // showing as a faint ring on wet stone, which smoothstep's C1 kink does.
+    s.a = clamp(mask * (1 - smootherstep(0.86, 1.0, rad)), 0, 1);
   },
   /** Canvas primitives are the right tool for genuinely sparse specks. */
   paint(g, res, c) {
@@ -1763,7 +1780,7 @@ RECIPES.push({
     const grain = t.fbm(u, v, c.hf, 2) * 0.5 + 0.5;
     const grit = noise.fbm2(u * 40, v * 40, 3) * 0.5 + 0.5;
 
-    const body = smoothstep(0.95, 0.10, rad) * smoothstep(0.28, 0.62, puff + (1 - rad) * 0.3);
+    const body = smootherstep(0.95, 0.10, rad) * smoothstep(0.28, 0.62, puff + (1 - rad) * 0.3);
 
     setc(s, PAL.earthDry);
     mixc(s, PAL.earth, clamp(0.6 - puff, 0, 1) * 0.65);
@@ -2030,7 +2047,12 @@ export class MaterialLibrary {
   *_generate(rec) {
     const res = this._resFor(rec);
     const t = new Tiler(rec.seed);
+    // One shared slice timer for the whole generator, so the handover between the
+    // field bake, the shading pass, the Sobel pass and the blit cannot stack up
+    // into a double-length stall.
+    const B = { t: nowMs() };
     const c = rec.setup ? rec.setup(t, res) : {};
+    yield* fillCoarse(c, B);
     const n = res * res;
     const shade = rec.shade;
 
@@ -2038,7 +2060,6 @@ export class MaterialLibrary {
     const orm = rec.normalOnly ? null : new Uint8ClampedArray(n * 4);
     const height = new Float32Array(n);
 
-    let t0 = nowMs();
     for (let y = 0; y < res; y++) {
       const v = (y + 0.5) / res;
       const row = y * res;
@@ -2056,13 +2077,12 @@ export class MaterialLibrary {
           orm[o + 2] = S.me * 255; orm[o + 3] = S.h * 255;   // A = height (parallax)
         }
       }
-      if (nowMs() - t0 > CHUNK_MS) { yield; t0 = nowMs(); }
+      if (nowMs() - B.t > CHUNK_MS) { yield; B.t = nowMs(); }
     }
 
     // --- normal from height, wrapping Sobel central difference ---------------
     const normal = new Uint8ClampedArray(n * 4);
     const k = (res / 8) * (rec.hs !== undefined ? rec.hs : 1);
-    t0 = nowMs();
     for (let y = 0; y < res; y++) {
       const ym = ((y - 1 + res) % res) * res;
       const y0 = y * res;
@@ -2084,7 +2104,7 @@ export class MaterialLibrary {
         normal[o + 2] = (nz * inv * 0.5 + 0.5) * 255;
         normal[o + 3] = 255;
       }
-      if (nowMs() - t0 > CHUNK_MS) { yield; t0 = nowMs(); }
+      if (nowMs() - B.t > CHUNK_MS) { yield; B.t = nowMs(); }
     }
 
     // --- blit ---------------------------------------------------------------
@@ -2112,6 +2132,7 @@ export class MaterialLibrary {
         this.textures.add(maps[name]);
       }
       yield;
+      B.t = nowMs();
     }
 
     this.store.set(rec.key, { res, textures: maps });

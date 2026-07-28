@@ -822,4 +822,606 @@ export class Terrain {
     for (let k = 0; k < H.length; k++) H[k] = clamp(H[k], HEIGHT_MIN + 1, HEIGHT_MAX - 1);
   }
 
-//__CHUNK3__
+  // ==========================================================================
+  //  4 — derived fields and splat weights
+  // ==========================================================================
+
+  /**
+   * Everything the shader needs that is cheaper to solve on the CPU once than per
+   * pixel forever: slope, curvature, a concavity AO term, wetness, and the five
+   * surface weights. Blend rules are driven by slope, altitude, curvature, the
+   * erosion flow map and a noise break-up — never by altitude alone, which is what
+   * makes procedural terrain read as contour lines.
+   */
+  async _buildDerivedMaps(base, total) {
+    const N = this.gridN, H = this.height, FLOW = this.flow, cellM = this.cell;
+    const data = new Uint8Array(N * N * 4);
+    const splat = new Uint8Array(N * N * 4);
+    this.dataBytes = data;
+    this.splatBytes = splat;
+    const river = this.river;
+    const inv2c = 1 / (2 * cellM);
+
+    await this._forRange(N, 'dressing the ground', (j) => {
+      const z = -CORE_HALF + j * cellM;
+      for (let i = 0; i < N; i++) {
+        const x = -CORE_HALF + i * cellM;
+        const k = j * N + i;
+        const h = H[k];
+
+        const il = k - (i > 0 ? 1 : 0);
+        const ir = k + (i < N - 1 ? 1 : 0);
+        const jd = k - (j > 0 ? N : 0);
+        const ju = k + (j < N - 1 ? N : 0);
+        const dhdx = (H[ir] - H[il]) * inv2c;
+        const dhdz = (H[ju] - H[jd]) * inv2c;
+        const gl = Math.sqrt(dhdx * dhdx + dhdz * dhdz);
+        const slope = Math.atan(gl);
+        const nlen = Math.sqrt(gl * gl + 1);
+        const northness = clamp(dhdz / nlen, 0, 1);   // -Z is north; north faces stay damp
+
+        // Positive laplacian = a collector (gully, hollow); negative = a ridge.
+        const lap = (H[il] + H[ir] + H[jd] + H[ju] - 4 * h) / (cellM * cellM);
+        const concave = clamp(lap * 55, -1, 1);
+
+        // Cheap sky occlusion: how much higher the neighbourhood stands.
+        let ring = 0;
+        const R = 4;
+        for (let s = 0; s < 8; s++) {
+          const a = (s / 8) * Math.PI * 2;
+          const si = clamp(i + Math.round(Math.cos(a) * R), 0, N - 1);
+          const sj = clamp(j + Math.round(Math.sin(a) * R), 0, N - 1);
+          ring += H[sj * N + si];
+        }
+        ring *= 0.125;
+        const ao = clamp(1 - (ring - h) * 0.055, 0.25, 1);
+
+        const flow = FLOW[k];
+        const pm = plateauMask(x, z);
+
+        // --- wetness -----------------------------------------------------
+        let wet = 0;
+        const rv = closestOnPolyline(river, x, z);
+        if (rv.d < GORGE_HALF * 1.5) {
+          const surf = sampleStation(river.surface, rv.station, river.n);
+          wet = smoothstep(3.4, -1.2, h - surf);
+        }
+        wet = Math.max(wet, smoothstep(0.42, 0.88, flow) * 0.6);
+        wet = clamp(wet * (1 - pm * 0.9), 0, 1);
+
+        // --- surface weights ---------------------------------------------
+        const nb = noise.fbm2(x * 0.045 + 3.3, z * 0.045 - 8.1, 3);
+        const nb2 = noise.fbm2(x * 0.0115 - 21.4, z * 0.0115 + 6.7, 3);
+
+        let rock = smoothstep(0.60, 1.00, slope);
+        rock = Math.max(rock, smoothstep(915, 995, h) * 0.92);
+        rock = clamp(rock + nb * 0.17 - concave * 0.12, 0, 1);
+
+        // Scree and washed gravel: where water concentrates, and in collectors.
+        let gravel = clamp(smoothstep(0.28, 0.72, flow) * 0.95 + Math.max(0, concave) * 0.45, 0, 1);
+        gravel *= 1 - rock * 0.45;
+        gravel = clamp(gravel + nb * 0.1, 0, 1);
+
+        let grass = smoothstep(0.58, 0.16, slope) * smoothstep(1000, 890, h);
+        grass *= 0.72 + 0.55 * nb2;
+        grass *= (1 - gravel * 0.65) * (1 - rock) * (1 - wet * 0.4);
+        grass = clamp(grass, 0, 1);
+
+        let moss = rock * clamp(wet * 0.85 + northness * 0.6 - 0.12, 0, 1);
+        moss *= clamp(0.55 + nb2 * 0.9, 0, 1);
+        moss = clamp(moss, 0, 1);
+
+        // The shrine courtyard is swept: raked gravel and packed earth, not meadow.
+        if (pm > 0) {
+          grass = lerp(grass, grass * 0.18, pm);
+          gravel = lerp(gravel, 0.58 + nb * 0.18, pm);
+          rock *= 1 - pm * 0.92;
+          moss *= 1 - pm * 0.85;
+        }
+        // The approach is worn stone and packed dirt.
+        const st = closestOnPolyline(this.stair, x, z);
+        if (st.d < STAIR_SHOULDER) {
+          const w = smootherstep(STAIR_SHOULDER, STAIR_HALF * 0.8, st.d);
+          grass = lerp(grass, grass * 0.25, w);
+          gravel = lerp(gravel, 0.72, w);
+          rock = lerp(rock, rock * 0.4, w);
+        }
+
+        // Keep dirt as the remainder so there is always a base layer under the blend.
+        const sum = grass + rock + gravel + moss;
+        if (sum > 1) { const s = 1 / sum; grass *= s; rock *= s; gravel *= s; moss *= s; }
+
+        const o = k * 4;
+        data[o] = (wet * 255) | 0;
+        data[o + 1] = (ao * 255) | 0;
+        data[o + 2] = (flow * 255) | 0;
+        data[o + 3] = ((concave * 0.5 + 0.5) * 255) | 0;
+
+        splat[o] = (grass * 255) | 0;
+        splat[o + 1] = (rock * 255) | 0;
+        splat[o + 2] = (gravel * 255) | 0;
+        splat[o + 3] = (moss * 255) | 0;
+      }
+    }, base, total);
+  }
+
+  // ==========================================================================
+  //  5 — GPU upload
+  // ==========================================================================
+
+  /** Pick the best height-texture encoding this device can filter. */
+  _pickHeightFormat() {
+    const caps = this.ctx.engine?.capabilities || {};
+    if (caps.floatLinear) return 'float';
+    if (caps.halfFloatLinear) return 'half';
+    return 'encoded';
+  }
+
+  _makeHeightTexture(src, n, mode) {
+    let tex;
+    if (mode === 'float') {
+      tex = new DataTexture(Float32Array.from(src), n, n, RedFormat, FloatType);
+    } else if (mode === 'half') {
+      const buf = new Uint16Array(n * n);
+      for (let i = 0; i < buf.length; i++) buf[i] = toHalf(src[i]);
+      tex = new DataTexture(buf, n, n, RedFormat, HalfFloatType);
+    } else {
+      // 16-bit height packed into RG. Filtered by hand in the shader, so NEAREST.
+      const span = HEIGHT_MAX - HEIGHT_MIN;
+      const buf = new Uint8Array(n * n * 4);
+      for (let i = 0; i < n * n; i++) {
+        const v = clamp((src[i] - HEIGHT_MIN) / span, 0, 0.9999847);
+        const s = v * 255;
+        const hi = Math.floor(s);
+        const lo = Math.round((s - hi) * 255);
+        buf[i * 4] = hi;
+        buf[i * 4 + 1] = lo;
+        buf[i * 4 + 2] = 0;
+        buf[i * 4 + 3] = 255;
+      }
+      tex = new DataTexture(buf, n, n, RGBAFormat, UnsignedByteType);
+    }
+    const filter = mode === 'encoded' ? NearestFilter : LinearFilter;
+    tex.minFilter = filter;
+    tex.magFilter = filter;
+    tex.wrapS = ClampToEdgeWrapping;
+    tex.wrapT = ClampToEdgeWrapping;
+    tex.generateMipmaps = false;
+    tex.colorSpace = NoColorSpace;
+    tex.needsUpdate = true;
+    return tex;
+  }
+
+  _makeDataTexture(bytes, n) {
+    const tex = new DataTexture(bytes, n, n, RGBAFormat, UnsignedByteType);
+    tex.minFilter = LinearFilter;
+    tex.magFilter = LinearFilter;
+    tex.wrapS = ClampToEdgeWrapping;
+    tex.wrapT = ClampToEdgeWrapping;
+    tex.generateMipmaps = false;
+    tex.colorSpace = NoColorSpace;
+    tex.needsUpdate = true;
+    return tex;
+  }
+
+  /**
+   * Procedural tiling normal map. Used for terrain surface detail (so we do not need
+   * a normal map from the material library) and, at a different frequency, for water.
+   */
+  _makeNormalTexture(size, height, strength) {
+    const h = new Float32Array(size * size);
+    for (let j = 0; j < size; j++) {
+      for (let i = 0; i < size; i++) h[j * size + i] = height(i / size, j / size);
+    }
+    const buf = new Uint8Array(size * size * 4);
+    for (let j = 0; j < size; j++) {
+      for (let i = 0; i < size; i++) {
+        const l = h[j * size + ((i - 1 + size) % size)];
+        const r = h[j * size + ((i + 1) % size)];
+        const d = h[((j - 1 + size) % size) * size + i];
+        const u = h[((j + 1) % size) * size + i];
+        let nx = (l - r) * strength;
+        let nz = (d - u) * strength;
+        const len = Math.sqrt(nx * nx + nz * nz + 1);
+        const o = (j * size + i) * 4;
+        buf[o] = ((nx / len) * 0.5 + 0.5) * 255;
+        buf[o + 1] = ((nz / len) * 0.5 + 0.5) * 255;
+        buf[o + 2] = ((1 / len) * 0.5 + 0.5) * 255;
+        buf[o + 3] = 255;
+      }
+    }
+    const tex = new DataTexture(buf, size, size, RGBAFormat, UnsignedByteType);
+    tex.wrapS = RepeatWrapping;
+    tex.wrapT = RepeatWrapping;
+    tex.minFilter = LinearMipmapLinearFilter;
+    tex.magFilter = LinearFilter;
+    tex.generateMipmaps = true;
+    tex.colorSpace = NoColorSpace;
+    tex.anisotropy = Math.min(4, this.ctx.engine?.capabilities?.anisotropy || 1);
+    tex.needsUpdate = true;
+    return tex;
+  }
+
+  async _buildTextures() {
+    const mode = this._pickHeightFormat();
+    this.encodedHeight = mode === 'encoded';
+    this.heightTex = this._makeHeightTexture(this.height, this.gridN, mode);
+    this.macroTex = this._makeHeightTexture(this.macroHeight, this.macroN, mode);
+    await nextTick();
+    this.dataTex = this._makeDataTexture(this.dataBytes, this.gridN);
+    this.splatTex = this._makeDataTexture(this.splatBytes, this.gridN);
+
+    // Ground grain. Two octaves of warped fbm plus a pebble term reads as soil.
+    this.detailNormalTex = this._makeNormalTexture(128, (u, v) => {
+      const x = u * 8, y = v * 8;
+      return noise.fbm2(x, y, 4) * 0.6 + noise.billow2(x * 2.7 + 11, y * 2.7 - 5, 3) * 0.4;
+    }, 2.6);
+    await nextTick();
+
+    // Capillary ripples for the stream. Two of these scroll against each other.
+    this.waterNormalTex = this._makeNormalTexture(128, (u, v) => {
+      const x = u * 6, y = v * 6;
+      return Math.sin((x + noise.fbm2(x, y, 2) * 1.4) * 2.1) * 0.35 +
+        noise.fbm2(x * 1.9 + 3, y * 1.9 - 2, 3) * 0.65;
+    }, 1.5);
+  }
+
+  // ==========================================================================
+  //  6 — the terrain material
+  // ==========================================================================
+
+  /** GLSL for reading the two heightfields. Shared by the terrain and water shaders. */
+  _heightGLSL() {
+    return /* glsl */`
+uniform sampler2D tHeight;
+uniform sampler2D tMacro;
+uniform vec4 uCoreRect;    // originX, originZ, 1/extent, unused
+uniform vec4 uMacroRect;
+uniform vec4 uCoreUV;      // uvScale, uvOffset, N, 1/N
+uniform vec4 uMacroUV;
+uniform vec2 uHeightRange; // min, span (encoded path only)
+
+#ifdef TERRAIN_ENCODED
+float kgDecode(vec4 t){ return uHeightRange.x + (t.r + t.g / 255.0) * uHeightRange.y; }
+float kgTexH(sampler2D tex, vec2 uv, float N, float invN){
+  vec2 p = uv * N - 0.5;
+  vec2 f = fract(p);
+  vec2 b = (floor(p) + 0.5) * invN;
+  float h00 = kgDecode(texture2D(tex, b));
+  float h10 = kgDecode(texture2D(tex, b + vec2(invN, 0.0)));
+  float h01 = kgDecode(texture2D(tex, b + vec2(0.0, invN)));
+  float h11 = kgDecode(texture2D(tex, b + vec2(invN, invN)));
+  return mix(mix(h00, h10, f.x), mix(h01, h11, f.x), f.y);
+}
+float kgTexHFast(sampler2D tex, vec2 uv, float N, float invN){ return kgDecode(texture2D(tex, uv)); }
+#else
+float kgTexH(sampler2D tex, vec2 uv, float N, float invN){ return texture2D(tex, uv).r; }
+float kgTexHFast(sampler2D tex, vec2 uv, float N, float invN){ return texture2D(tex, uv).r; }
+#endif
+
+vec2 kgCoreUV(vec2 w){ return (w - uCoreRect.xy) * uCoreRect.z; }
+float kgCoreWeight(vec2 cuv){
+  float e = max(abs(cuv.x - 0.5), abs(cuv.y - 0.5));
+  return 1.0 - smoothstep(0.40, 0.475, e);
+}
+float kgHeight(vec2 w){
+  vec2 cuv = kgCoreUV(w);
+  vec2 muv = (w - uMacroRect.xy) * uMacroRect.z;
+  float macro = kgTexH(tMacro, muv * uMacroUV.x + uMacroUV.y, uMacroUV.z, uMacroUV.w);
+  float wc = kgCoreWeight(cuv);
+  if (wc <= 0.001) return macro;
+  float core = kgTexH(tHeight, cuv * uCoreUV.x + uCoreUV.y, uCoreUV.z, uCoreUV.w);
+  return mix(macro, core, wc);
+}
+float kgHeightFast(vec2 w){
+  vec2 cuv = kgCoreUV(w);
+  vec2 muv = (w - uMacroRect.xy) * uMacroRect.z;
+  float macro = kgTexHFast(tMacro, muv * uMacroUV.x + uMacroUV.y, uMacroUV.z, uMacroUV.w);
+  float wc = kgCoreWeight(cuv);
+  if (wc <= 0.001) return macro;
+  float core = kgTexHFast(tHeight, cuv * uCoreUV.x + uCoreUV.y, uCoreUV.z, uCoreUV.w);
+  return mix(macro, core, wc);
+}
+`;
+  }
+
+  /** Vertex displacement, shared by the lit material and its custom depth twin. */
+  _vertexGLSL() {
+    return {
+      pre: /* glsl */`
+attribute float aSkirt;
+varying vec3 vKgWorld;
+varying vec3 vKgNormal;
+varying float vKgCore;
+${this._heightGLSL()}
+`,
+      normalChunk: /* glsl */`
+  vec4 kgWP = modelMatrix * vec4(position, 1.0);
+  vec2 kgXZ = kgWP.xz;
+  float kgCell = length(modelMatrix[0].xyz);
+  float kgH = kgHeight(kgXZ);
+  float kgE = max(kgCell, 1.0);
+  float kgHL = kgHeightFast(kgXZ - vec2(kgE, 0.0));
+  float kgHR = kgHeightFast(kgXZ + vec2(kgE, 0.0));
+  float kgHD = kgHeightFast(kgXZ - vec2(0.0, kgE));
+  float kgHU = kgHeightFast(kgXZ + vec2(0.0, kgE));
+  vec3 kgWorldN = normalize(vec3(kgHL - kgHR, 2.0 * kgE, kgHD - kgHU));
+  // The rings carry a non-uniform scale (cell, 1, cell); normals need the inverse.
+  vec3 objectNormal = normalize(vec3(kgWorldN.x * kgCell, kgWorldN.y, kgWorldN.z * kgCell));
+  vKgNormal = kgWorldN;
+  vKgCore = kgCoreWeight(kgCoreUV(kgXZ));
+  float kgY = kgH - aSkirt * kgCell * 3.5;
+  vKgWorld = vec3(kgXZ.x, kgY, kgXZ.y);
+`,
+      beginChunk: /* glsl */`
+  vec3 transformed = vec3(position.x, kgY, position.z);
+`,
+    };
+  }
+
+  async _buildMaterial() {
+    const q = this.quality;
+    const lib = this.ctx.materials;
+    const aniso = Math.min(q.anisotropy || 4, this.ctx.engine?.capabilities?.anisotropy || 4);
+
+    const dirt = resolveTextures(lib, 'dirt');
+    const stone = resolveTextures(lib, 'stone');
+    const cobble = resolveTextures(lib, 'cobble');
+    const moss = resolveTextures(lib, 'moss');
+    const tDirt = prepTiling(dirt.map, aniso);
+    const tStone = prepTiling(stone.map, aniso);
+    const tCobble = prepTiling(cobble.map, aniso);
+    const tMoss = prepTiling(moss.map, aniso);
+    const hasTex = !!(tDirt || tStone || tCobble || tMoss);
+    // A library that booted but handed back a partial set still has to render.
+    const fallback = tDirt || tStone || tCobble || tMoss || null;
+    const detailN = prepTiling(stone.normalMap || dirt.normalMap, aniso) || this.detailNormalTex;
+
+    // Triplanar rock costs one extra fetch; it is what stops cliffs from smearing.
+    const triplanar = q.tier >= 2;
+    try { lib?.triplanarPatch?.(); } catch { /* optional helper */ }
+
+    const mat = new MeshStandardMaterial({
+      color: hasTex ? 0xffffff : 0x8b8778,
+      roughness: 0.95,
+      metalness: 0.0,
+      side: FrontSide,
+      dithering: true,
+    });
+    mat.name = 'terrain';
+
+    // Sky owns aerial perspective; let it patch first so we compose rather than clash.
+    try { this.ctx.sky?.applyFog?.(mat); } catch { /* optional */ }
+
+    const V = this._vertexGLSL();
+    const uniforms = {
+      tHeight: { value: this.heightTex },
+      tMacro: { value: this.macroTex },
+      tData: { value: this.dataTex },
+      tSplat: { value: this.splatTex },
+      tDirt: { value: tDirt || fallback },
+      tStone: { value: tStone || fallback },
+      tCobble: { value: tCobble || fallback },
+      tMoss: { value: tMoss || fallback },
+      tDetailN: { value: detailN },
+      uCoreRect: { value: new Vector4(-CORE_HALF, -CORE_HALF, 1 / CORE_EXTENT, 0) },
+      uMacroRect: { value: new Vector4(-MACRO_HALF, -MACRO_HALF, 1 / MACRO_EXTENT, 0) },
+      uCoreUV: {
+        value: new Vector4((this.gridN - 1) / this.gridN, 0.5 / this.gridN, this.gridN, 1 / this.gridN),
+      },
+      uMacroUV: {
+        value: new Vector4((this.macroN - 1) / this.macroN, 0.5 / this.macroN, this.macroN, 1 / this.macroN),
+      },
+      uHeightRange: { value: new Vector2(HEIGHT_MIN, HEIGHT_MAX - HEIGHT_MIN) },
+      uTexScale: { value: new Vector4(0.30, 0.42, 0.105, 0.55) },
+      uWaterLevel: { value: this.waterLevel },
+      uSkyTint: { value: new Color(0x9fb4c8) },
+      uAerial: { value: new Vector2(90, 0.00085) },
+    };
+    this.uniforms = uniforms;
+
+    const defines = [
+      this.encodedHeight ? '#define TERRAIN_ENCODED 1' : '',
+      hasTex ? '#define TERRAIN_TEXTURED 1' : '',
+      triplanar ? '#define TERRAIN_TRIPLANAR 1' : '',
+    ].join('\n');
+
+    chainOnBeforeCompile(mat, (shader) => {
+      Object.assign(shader.uniforms, uniforms);
+      shader.vertexShader = defines + '\n' + V.pre + shader.vertexShader;
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <beginnormal_vertex>', V.normalChunk)
+        .replace('#include <begin_vertex>', V.beginChunk);
+      shader.fragmentShader = defines + '\n' + this._fragmentPreludeGLSL() + shader.fragmentShader;
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <map_fragment>', /* glsl */`
+  kgComputeSurface();
+  diffuseColor.rgb *= kgAlbedo;
+`)
+        .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = kgRough;')
+        .replace('#include <normal_fragment_maps>', /* glsl */`
+  normal = normalize((viewMatrix * vec4(kgShadingNormal, 0.0)).xyz);
+`)
+        .replace('#include <opaque_fragment>', /* glsl */`
+#include <opaque_fragment>
+  {
+    // Aerial perspective. Distant terrain has to desaturate and drift toward the sky
+    // or 1800 m of view distance reads as a flat painted backdrop.
+    float kgDist = length(vKgWorld - cameraPosition);
+    float kgA = 1.0 - exp(-pow(max(kgDist - uAerial.x, 0.0) * uAerial.y, 1.18));
+    float kgLum = dot(gl_FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+    vec3 kgFar = mix(vec3(kgLum), uSkyTint, 0.7);
+    gl_FragColor.rgb = mix(gl_FragColor.rgb, kgFar, kgA * 0.88);
+  }
+`);
+    });
+
+    // The depth pass must displace identically or the terrain self-shadows against a
+    // flat plane sitting at y = 0.
+    const depth = new MeshDepthMaterial({ depthPacking: RGBADepthPacking });
+    chainOnBeforeCompile(depth, (shader) => {
+      Object.assign(shader.uniforms, uniforms);
+      shader.vertexShader = defines + '\n' + V.pre + shader.vertexShader;
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <beginnormal_vertex>', V.normalChunk)
+        .replace('#include <begin_vertex>', V.beginChunk);
+    });
+    depth.customProgramCacheKey = () => 'kagerou-terrain-depth';
+
+    this.material = mat;
+    this.depthMaterial = depth;
+  }
+
+  /**
+   * The splat blend. Six surfaces — dirt, grass, rock, gravel, mossy stone and a wet
+   * riverbed band — combined with height-map-weighted blending rather than a lerp, so
+   * gravel sits *in* the dirt and grass grows *between* the stones instead of fading
+   * across them. Weights come from the baked splat map inside the core field and from
+   * slope/altitude rules outside it.
+   */
+  _fragmentPreludeGLSL() {
+    return /* glsl */`
+uniform sampler2D tData;
+uniform sampler2D tSplat;
+uniform sampler2D tDirt;
+uniform sampler2D tStone;
+uniform sampler2D tCobble;
+uniform sampler2D tMoss;
+uniform sampler2D tDetailN;
+uniform vec4 uTexScale;
+uniform float uWaterLevel;
+uniform vec3 uSkyTint;
+uniform vec2 uAerial;
+varying vec3 vKgWorld;
+varying vec3 vKgNormal;
+varying float vKgCore;
+${this._heightGLSL()}
+${glslNoise}
+
+vec3 kgAlbedo;
+float kgRough;
+vec3 kgShadingNormal;
+
+float kgLum(vec3 c){ return dot(c, vec3(0.299, 0.587, 0.114)); }
+
+vec3 kgSample(sampler2D t, vec2 uv){
+#ifdef TERRAIN_TEXTURED
+  return texture2D(t, uv).rgb;
+#else
+  return vec3(0.5 + 0.5 * fbm2(uv * 3.0, 3));
+#endif
+}
+
+void kgComputeSurface(){
+  vec3 P = vKgWorld;
+  vec3 N = normalize(vKgNormal);
+  float slope = 1.0 - clamp(N.y, 0.0, 1.0);
+
+  vec2 cuv = kgCoreUV(P.xz);
+  vec4 data = texture2D(tData, clamp(cuv, 0.0, 1.0));
+  vec4 sp = texture2D(tSplat, clamp(cuv, 0.0, 1.0));
+  float core = clamp(vKgCore, 0.0, 1.0);
+
+  // Outside the eroded core there is no baked splat, so fall back to the same rules
+  // evaluated live. The crossfade is the one the geometry already uses.
+  float fSlope = smoothstep(0.16, 0.46, slope);
+  float fHigh  = smoothstep(915.0, 995.0, P.y);
+  vec4 wild = vec4(
+    (1.0 - fSlope) * smoothstep(1000.0, 890.0, P.y) * 0.85,
+    max(fSlope, fHigh * 0.9),
+    fSlope * 0.25,
+    0.0);
+  sp = mix(wild, sp, core);
+  float wet = data.r * core;
+  float ao  = mix(1.0, data.g, core);
+  float flow = data.b * core;
+
+  float wGrass = sp.r, wRock = sp.g, wGravel = sp.b, wMoss = sp.a;
+  float wDirt = clamp(1.0 - (wGrass + wRock + wGravel + wMoss), 0.0, 1.0);
+  // The wet band that hugs the stream. Reads as riverbed shingle, not as tinted dirt.
+  float wBed = smoothstep(2.6, -0.6, P.y - uWaterLevel) * core;
+  wBed = max(wBed, wet * smoothstep(0.55, 0.95, flow) * 0.6);
+
+  // Break-up so no transition lands on a contour line.
+  float nA = fbm2(P.xz * 0.09, 3);
+  float nB = fbm2(P.xz * 0.021 + 17.0, 3);
+  wGrass = clamp(wGrass * (0.8 + 0.5 * nB) + nA * 0.06, 0.0, 1.0);
+  wGravel = clamp(wGravel + nA * 0.09, 0.0, 1.0);
+  wRock = clamp(wRock + nB * 0.08, 0.0, 1.0);
+
+  vec3 cDirt   = kgSample(tDirt,   P.xz * uTexScale.x);
+  vec3 cGrass  = kgSample(tMoss,   P.xz * uTexScale.y);
+  vec3 cCobble = kgSample(tCobble, P.xz * uTexScale.w);
+#ifdef TERRAIN_TRIPLANAR
+  vec3 axis = abs(N);
+  vec2 rockUV = (axis.x > axis.z) ? P.zy : P.xy;
+  float triW = clamp(slope * 1.9, 0.0, 1.0);
+  vec3 cRock = mix(kgSample(tStone, P.xz * uTexScale.z),
+                   kgSample(tStone, rockUV * uTexScale.z), triW);
+#else
+  vec3 cRock = kgSample(tStone, P.xz * uTexScale.z);
+#endif
+
+  // Per-layer tints. Autumn on the mountain: ochre grass, cool wet stone.
+  vec3 colDirt   = cDirt   * vec3(0.58, 0.46, 0.35) * 1.55;
+  vec3 colGrass  = cGrass  * vec3(0.44, 0.50, 0.26) * 1.75;
+  vec3 colRock   = cRock   * vec3(0.55, 0.54, 0.50) * 1.60;
+  vec3 colGravel = cCobble * vec3(0.56, 0.54, 0.50) * 1.62;
+  vec3 colMoss   = mix(colRock, cGrass * vec3(0.30, 0.42, 0.24) * 1.85, 0.7);
+  vec3 colBed    = cCobble * vec3(0.40, 0.41, 0.39) * 1.35;
+
+  // Displacement-aware blend. Each layer brings its own micro-height; the winner is
+  // whichever layer's *surface* stands proudest, which is how real ground interlocks.
+  float hDirt   = kgLum(cDirt)   * 0.85 + 0.10;
+  float hGrass  = kgLum(cGrass)  * 0.70;
+  float hRock   = kgLum(cRock)   * 1.30 + 0.12;
+  float hGravel = kgLum(cCobble) * 1.15 + 0.06;
+  float hMoss   = kgLum(cGrass)  * 0.80 + 0.04;
+  float hBed    = kgLum(cCobble) * 1.00;
+
+  const float HI = 0.62;
+  float b0 = hDirt   * HI + wDirt;
+  float b1 = hGrass  * HI + wGrass;
+  float b2 = hRock   * HI + wRock;
+  float b3 = hGravel * HI + wGravel;
+  float b4 = hMoss   * HI + wMoss;
+  float b5 = hBed    * HI + wBed;
+  float ma = max(max(max(b0, b1), max(b2, b3)), max(b4, b5)) - 0.17;
+  b0 = max(b0 - ma, 0.0); b1 = max(b1 - ma, 0.0); b2 = max(b2 - ma, 0.0);
+  b3 = max(b3 - ma, 0.0); b4 = max(b4 - ma, 0.0); b5 = max(b5 - ma, 0.0);
+  float bt = max(b0 + b1 + b2 + b3 + b4 + b5, 1e-4);
+
+  vec3 albedo = (colDirt * b0 + colGrass * b1 + colRock * b2 +
+                 colGravel * b3 + colMoss * b4 + colBed * b5) / bt;
+
+  float rough = (0.94 * b0 + 0.88 * b1 + 0.80 * b2 +
+                 0.86 * b3 + 0.82 * b4 + 0.62 * b5) / bt;
+
+  // Wet ground darkens and tightens; the shoreline is where this earns its keep.
+  float wetAmt = clamp(wet * 0.9 + wBed * 0.7, 0.0, 1.0);
+  albedo *= mix(1.0, 0.58, wetAmt);
+  rough = mix(rough, 0.22, wetAmt * 0.85);
+
+  // Large-scale colour variation: nothing in frame may be a flat tint.
+  albedo *= 0.86 + 0.28 * (nB * 0.5 + 0.5);
+  albedo *= mix(0.72, 1.0, ao);
+
+  kgAlbedo = albedo;
+  kgRough = clamp(rough, 0.06, 1.0);
+
+  // Detail normal in an XZ-planar frame, faded out with distance so the far rings do
+  // not shimmer. Two scales: fine grain plus a slow undulation.
+  vec3 T = (abs(N.x) > 0.99) ? normalize(vec3(0.0, 0.0, 1.0) - N * N.z)
+                             : normalize(vec3(1.0, 0.0, 0.0) - N * N.x);
+  vec3 B = cross(N, T);
+  float dist = length(P - cameraPosition);
+  float dFade = 1.0 - smoothstep(28.0, 150.0, dist);
+  vec3 t1 = texture2D(tDetailN, P.xz * 0.6).xyz * 2.0 - 1.0;
+  vec3 t2 = texture2D(tDetailN, P.xz * 0.11).xyz * 2.0 - 1.0;
+  vec2 tn = (t1.xy * 0.75 * dFade + t2.xy * 0.55) * mix(1.0, 0.35, wetAmt);
+  kgShadingNormal = normalize(N + T * tn.x + B * tn.y);
+}
+`;
+  }
+
+//__CHUNK4__

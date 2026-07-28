@@ -79,7 +79,10 @@ function makeHit() {
   };
 }
 const _hA = makeHit();   // per-collider narrowphase scratch
-const _hB = makeHit();   // best-so-far accumulator
+const _hB = makeHit();   // sweep bisection probe
+// Private to _closestWorld: it accumulates a running minimum, so its per-collider
+// scratch must never be an object a caller could also pass in as `out`.
+const _hW = makeHit();
 const _hC = makeHit();   // nested (triangle inside mesh loop)
 const _hD = makeHit();   // sweep / depenetration
 const _hE = makeHit();   // ground probe
@@ -1233,29 +1236,29 @@ export class PhysicsWorld {
       if (a[0] > maxx || a[3] < minx || a[1] > maxy || a[4] < miny ||
         a[2] > maxz || a[5] < minz) continue;
       if (c.kind === 'triangleMesh') {
-        this._closestToMesh(ax, ay, az, bx, by, bz, c, minx, miny, minz, maxx, maxy, maxz, _hA);
+        this._closestToMesh(ax, ay, az, bx, by, bz, c, minx, miny, minz, maxx, maxy, maxz, _hW);
       } else {
-        this._closestToCollider(ax, ay, az, bx, by, bz, c, _hA);
-        if (this._filterOn && _hA.c &&
-          (_hA.nx * this._fdx + _hA.ny * this._fdy + _hA.nz * this._fdz) >= -1e-4) continue;
+        this._closestToCollider(ax, ay, az, bx, by, bz, c, _hW);
+        if (this._filterOn && _hW.c &&
+          (_hW.nx * this._fdx + _hW.ny * this._fdy + _hW.nz * this._fdz) >= -1e-4) continue;
       }
-      if (_hA.c && _hA.d - r < out.d) {
-        out.d = _hA.d - r;
-        out.nx = _hA.nx; out.ny = _hA.ny; out.nz = _hA.nz;
-        out.px = _hA.px; out.py = _hA.py; out.pz = _hA.pz;
-        out.c = _hA.c;
+      if (_hW.c && _hW.d - r < out.d) {
+        out.d = _hW.d - r;
+        out.nx = _hW.nx; out.ny = _hW.ny; out.nz = _hW.nz;
+        out.px = _hW.px; out.py = _hW.py; out.pz = _hW.pz;
+        out.c = _hW.c;
       }
     }
     const hf = this.heightfield;
     if (hf && hf.enabled !== false && (hf.layer & mask) !== 0) {
-      this._closestToHeightfield(ax, ay, az, bx, by, bz, hf, _hA);
-      if (this._filterOn && _hA.c &&
-        (_hA.nx * this._fdx + _hA.ny * this._fdy + _hA.nz * this._fdz) >= -1e-4) _hA.c = null;
-      if (_hA.c && _hA.d - r < out.d) {
-        out.d = _hA.d - r;
-        out.nx = _hA.nx; out.ny = _hA.ny; out.nz = _hA.nz;
-        out.px = _hA.px; out.py = _hA.py; out.pz = _hA.pz;
-        out.c = _hA.c;
+      this._closestToHeightfield(ax, ay, az, bx, by, bz, hf, _hW);
+      if (this._filterOn && _hW.c &&
+        (_hW.nx * this._fdx + _hW.ny * this._fdy + _hW.nz * this._fdz) >= -1e-4) _hW.c = null;
+      if (_hW.c && _hW.d - r < out.d) {
+        out.d = _hW.d - r;
+        out.nx = _hW.nx; out.ny = _hW.ny; out.nz = _hW.nz;
+        out.px = _hW.px; out.py = _hW.py; out.pz = _hW.pz;
+        out.c = _hW.c;
       }
     }
     return out;
@@ -1317,11 +1320,11 @@ export class PhysicsWorld {
         for (let k = 0; k < 6; k++) {
           const m = (a + b) * 0.5;
           const mx = px + dx * m, my = py + dy * m, mz = pz + dz * m;
-          this._closestWorld(mx, my + lo, mz, mx, my + hi, mz, r, mask, _hA);
-          if (_hA.c && _hA.d <= BLOCK_EPS) {
+          this._closestWorld(mx, my + lo, mz, mx, my + hi, mz, r, mask, _hB);
+          if (_hB.c && _hB.d <= BLOCK_EPS) {
             b = m;
-            _hD.d = _hA.d; _hD.nx = _hA.nx; _hD.ny = _hA.ny; _hD.nz = _hA.nz;
-            _hD.px = _hA.px; _hD.py = _hA.py; _hD.pz = _hA.pz; _hD.c = _hA.c;
+            _hD.d = _hB.d; _hD.nx = _hB.nx; _hD.ny = _hB.ny; _hD.nz = _hB.nz;
+            _hD.px = _hB.px; _hD.py = _hB.py; _hD.pz = _hB.pz; _hD.c = _hB.c;
           } else {
             a = m;
           }
@@ -2150,6 +2153,7 @@ export class PhysicsWorld {
 
     // --- solve --------------------------------------------------------------
     for (let it = 0; it < 4; it++) this._solveContacts(dt);
+    this._projectContacts();
 
     // --- sleeping -----------------------------------------------------------
     for (let i = 0; i < n; i++) {
@@ -2303,6 +2307,33 @@ export class PhysicsWorld {
       c.jt = clampf(oldJt + jt, -maxT, maxT);
       jt = c.jt - oldJt;
       this._applyContactImpulse(c, tx * jt, ty * jt, tz * jt);
+    }
+  }
+
+  /**
+   * Positional pass after the velocity solve. Baumgarte alone leaves a resting
+   * body permanently sunk by however much penetration the bias needs to fight
+   * gravity; correcting position directly means props sit exactly on the stone
+   * and their velocities fall low enough to sleep.
+   */
+  _projectContacts() {
+    const SLOP = 0.002;
+    for (let i = 0; i < this._contactCount; i++) {
+      const c = this._contacts[i];
+      const pen = c.depth - SLOP;
+      if (pen <= 0) continue;
+      const a = c.a, b = c.b;
+      const im = a.invMass + (b ? b.invMass : 0);
+      if (im < 1e-9) continue;
+      const s = (pen * 0.65) / im;
+      a.position.x += c.nx * s * a.invMass;
+      a.position.y += c.ny * s * a.invMass;
+      a.position.z += c.nz * s * a.invMass;
+      if (b) {
+        b.position.x -= c.nx * s * b.invMass;
+        b.position.y -= c.ny * s * b.invMass;
+        b.position.z -= c.nz * s * b.invMass;
+      }
     }
   }
 

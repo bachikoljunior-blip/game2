@@ -119,8 +119,8 @@ const MODE_PETAL = 0, MODE_LEAF = 1, MODE_EMBER = 2, MODE_RAIN = 3, MODE_MOTE = 
 const W_PETAL = 0, W_LEAF = 1, W_EMBER = 2, W_STREAK = 3;
 const W_MOTE = 4, W_RING = 5, W_MIST = 6, W_GLOW = 7;
 
-const _v0 = new Vector3(), _v1 = new Vector3();
-const _c0 = new Color();
+/** Default out-param for `windAt`, so a caller that ignores it allocates nothing. */
+const _v1 = new Vector3();
 
 export class WeatherSystem {
   constructor(ctx) {
@@ -153,6 +153,8 @@ export class WeatherSystem {
     this._wetnessSent = -1;
     this.lensTexture = null;       // raindrop-on-lens overlay for PostFX
     this.lensStrength = 0;
+    this._lensSent = -1;
+    this._lensPayload = { texture: null, strength: 0 };
 
     // --- preset blending -------------------------------------------------------
     this.preset = 'petals';
@@ -365,10 +367,18 @@ export class WeatherSystem {
     this._updateFog(rdt);
     this._updateSplashes(rdt);
 
-    // --- broadcast wetness ----------------------------------------------------
+    // --- broadcast wetness / lens ---------------------------------------------
     if (Math.abs(this.wetness - this._wetnessSent) > 0.01) {
       this._wetnessSent = this.wetness;
       this.ctx.bus?.emit('weather-wetness', this.wetness);
+    }
+    if (Math.abs(this.lensStrength - this._lensSent) > 0.01) {
+      this._lensSent = this.lensStrength;
+      this._lensPayload.texture = this.lensTexture;
+      this._lensPayload.strength = this.lensStrength;
+      this.ctx.bus?.emit('weather-lens', this._lensPayload);
+      // Push straight at PostFX too — it boots after us and may never subscribe.
+      this.ctx.pipeline?.setRainLens?.(this.lensTexture, this.lensStrength);
     }
   }
 

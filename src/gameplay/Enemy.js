@@ -807,6 +807,9 @@ export class Enemy {
     if (position) this.position.set(position.x, position.y, position.z);
     const th = this.ctx.terrain?.heightAt?.(this.position.x, this.position.z);
     if (Number.isFinite(th)) this.position.y = th;
+    // Last-resort floor for a boot where neither terrain nor physics came up:
+    // without it an enemy free-falls out of the LOD ring and freezes.
+    this._groundY = this.position.y;
 
     if (typeof o.yaw === 'number') this.yaw = o.yaw;
     if (o.faceTarget !== false && this.target?.position) {
@@ -1284,10 +1287,13 @@ export class Enemy {
     // returns nothing, so enemies never sink through the world.
     const gh = this.ctx.terrain?.heightAt?.(this.position.x, this.position.z);
     let grounded = gi?.grounded ?? gi?.onGround ?? false;
-    if (Number.isFinite(gh) && this.position.y < gh + 0.005) {
-      this.position.y = gh;
+    let floor = Number.isFinite(gh) ? gh : null;
+    if (floor === null && !gi) floor = this._groundY;   // nothing else knows where down is
+    if (floor !== null && this.position.y < floor + 0.005) {
+      this.position.y = floor;
       grounded = true;
     }
+    if (grounded && floor !== null) this._groundY = floor;
     this.grounded = !!grounded;
     if (grounded && this.velocity.y < 0) this.velocity.y = 0;
     this.surface = gi?.surface || this.ctx.terrain?.surfaceAt?.(this.position.x, this.position.z) || 'grass';
@@ -1605,6 +1611,11 @@ export class Enemy {
     if (level === this.lod) return;
     this.lod = level;
     this._animInterval = level >= 1 ? 1 / 30 : 0;
+    if (level >= 2) {
+      // A frozen enemy must not hold an open damage window or the attack token.
+      this.weapon.active = false;
+      if (this.hasToken) { this.manager?._releaseToken(this); this.hasToken = false; }
+    }
     const rig = this.rig;
     if (!rig) return;
     try {

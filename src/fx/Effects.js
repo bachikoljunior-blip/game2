@@ -691,14 +691,14 @@ export class EffectsSystem {
 
     // Six independent noise channels — a shared seed reads as a single wobble.
     this.shakeOffset.set(
-      noise.noise2(t, 11.3) * 0.11 * s,
-      noise.noise2(t, 43.7) * 0.09 * s,
-      noise.noise2(t, 71.1) * 0.06 * s,
+      noise.noise2(t, 11.3) * 0.17 * s,
+      noise.noise2(t, 43.7) * 0.14 * s,
+      noise.noise2(t, 71.1) * 0.09 * s,
     );
     this._shakeEuler.set(
-      noise.noise2(t * 0.83, 131.5) * 0.035 * s,
-      noise.noise2(t * 0.91, 197.2) * 0.045 * s,
-      noise.noise2(t * 1.07, 233.9) * 0.060 * s,
+      noise.noise2(t * 0.83, 131.5) * 0.050 * s,
+      noise.noise2(t * 0.91, 197.2) * 0.065 * s,
+      noise.noise2(t * 1.07, 233.9) * 0.090 * s,
     );
     const e = this._shakeEuler;
     const cx = Math.cos(e.x * 0.5), sx = Math.sin(e.x * 0.5);

@@ -1401,11 +1401,544 @@ export class PropFactory {
     PropFactory.addCollider(b, PropFactory.boxCollider(0.7 * s, kasaY, 0.7 * s, 0, 0, 0), 'stone', true, false);
     b.lights.push({
       x: 0, y: fbY + fbH * 0.5, z: 0,
-      color: 0xffa martial => 0, intensity: 2.6 * s, distance: 6.5 * s, flicker: 1,
+      color: 0xffa050, intensity: 2.6 * s, distance: 6.5 * s, flicker: 1,
     });
     b.anchors.fire = [0, fbY + fbH * 0.5, 0];
     b.bounds = { r: 0.62 * s, h: kasaY + 0.55 * s };
     return b;
+  }
+
+  // =====================================================================
+  //  ROOFS — the concave sweep is the whole silhouette
+  // =====================================================================
+
+  /**
+   * 入母屋 irimoya: a hipped skirt with a gabled top, deep overhang, concave
+   * sweep and flared corners.
+   *
+   * Ring stack: rings 0..K shrink in both axes (the hip), rings K..N keep the
+   * gable half-width and close in Z only, which leaves a genuine triangular tsuma
+   * opening at each end that `_gableWall` then fills. Every surface is built
+   * twice — top and soffit — because a deep eave is seen from underneath more
+   * often than from above.
+   *
+   * Returns `{ parts, ridgeY, ridgeHalfX, gableHalfX, gableY, mzK }`.
+   */
+  roofIrimoya(opts = {}) {
+    const hx = opts.halfX ?? 5.0;
+    const hz = opts.halfZ ?? 4.0;
+    const rise = opts.rise ?? 2.6;
+    const y0 = opts.baseY ?? 0;
+    const thick = opts.thickness ?? 0.22;
+    const lift = opts.lift ?? Math.min(hx, hz) * 0.11;
+    const curve = opts.curve ?? 1.62;
+    const mat = opts.material ?? 'roofTile';
+    const hip = clamp(opts.hip ?? 0.5, 0.15, 0.9);
+    const segX = opts.segX ?? 8;
+    const segZ = opts.segZ ?? 5;
+    const gableOver = opts.gableOverhang ?? Math.min(0.34, hx * 0.06);
+    const parts = [];
+
+    const K = Math.max(2, Math.round(6 * hip));
+    const N = K + Math.max(2, Math.round(6 * (1 - hip)) + 1);
+    const mzK = hz * 0.40;
+    const mx = Math.max(hx * 0.18, hx - (hz - mzK));
+
+    const rings = [];
+    for (let i = 0; i <= N; i++) {
+      const t = i / N;
+      const y = y0 + rise * Math.pow(t, curve);
+      let rx, rz;
+      if (i <= K) {
+        const u = i / K;
+        rx = lerp(hx, mx, u);
+        rz = lerp(hz, mzK, u);
+      } else {
+        const u = (i - K) / (N - K);
+        rx = mx + gableOver * smoothstep(0, 0.35, u);
+        rz = lerp(mzK, 0.02, u);
+      }
+      const r = rectRing(rx, rz, y, segX, segZ, lift * (1 - t) * (1 - t));
+      r.ao = lerp(0.62, 1.0, Math.pow(t, 0.6));
+      rings.push(r);
+    }
+
+    const top = loftRings(rings, { uvScale: 0.85 });
+    // Bank the tiles slightly so the ridge catches a hard specular line.
+    shadeGeo(top, (x, y, z, nx, ny) => lerp(0.86, 1.06, clamp(ny, 0, 1)));
+    parts.push({ geometry: top, material: mat });
+
+    const soffit = loftRings(rings.map((r, i) => ({
+      pts: r.pts.map((p) => [p[0] * 0.995, p[1] - thick, p[2] * 0.995]),
+      pao: r.pts.map(() => (i === 0 ? 0.40 : 0.30)),
+    })), { flip: true, uvScale: 1.1 });
+    parts.push({ geometry: soffit, material: opts.soffitMaterial ?? 'cedar' });
+
+    // Eave fascia: the visible board thickness at the very edge.
+    const fascia = loftRings([
+      { pts: rings[0].pts.map((p) => [p[0], p[1], p[2]]), ao: 0.95 },
+      { pts: rings[0].pts.map((p) => [p[0] * 0.995, p[1] - thick, p[2] * 0.995]), ao: 0.5 },
+    ], { flip: true, uvScale: 1.4 });
+    parts.push({ geometry: fascia, material: opts.fasciaMaterial ?? 'cedarBeam' });
+
+    // 妻 tsuma — the triangular gable wall closing each end.
+    const gy0 = y0 + rise * Math.pow(K / N, curve);
+    const ridgeY = y0 + rise;
+    for (let side = 0; side < 2; side++) {
+      const sx = side === 0 ? -1 : 1;
+      const wall = this._gableWall(mzK, gy0, ridgeY, 0.16);
+      wall.translate(sx * mx, 0, 0);
+      parts.push({ geometry: wall, material: opts.gableMaterial ?? 'plaster' });
+      // Barge boards following the gable slope.
+      for (let e = 0; e < 2; e++) {
+        const ez = e === 0 ? 1 : -1;
+        const board = sweepProfile([
+          { x: sx * (mx + gableOver * 0.6), y: gy0 - 0.05, z: ez * mzK, sx: 0.13, sy: 0.20, ao: 0.7 },
+          { x: sx * (mx + gableOver * 0.6), y: ridgeY - 0.02, z: 0, sx: 0.13, sy: 0.20, ao: 0.95 },
+        ], rectProfile(0.2), { ref: [1, 0, 0], uvScale: 1.2 });
+        parts.push({ geometry: board, material: 'cedarBeam' });
+      }
+    }
+
+    // 棟 ridge capping, plus onigawara end blocks.
+    {
+      const rl = mx + gableOver + 0.10;
+      const ridge = sweepProfile([
+        { x: -rl, y: ridgeY + 0.10, z: 0, sx: 0.44, sy: 0.26, ao: 0.9 },
+        { x: 0, y: ridgeY + 0.13, z: 0, sx: 0.40, sy: 0.26, ao: 1.0 },
+        { x: rl, y: ridgeY + 0.10, z: 0, sx: 0.44, sy: 0.26, ao: 0.9 },
+      ], rectProfile(0.28), { ref: [0, 0, -1], uvScale: 1.2 });
+      parts.push({ geometry: ridge, material: mat });
+      for (let side = 0; side < 2; side++) {
+        const oni = new BoxGeometry(0.16, 0.42, 0.40);
+        oni.translate((side === 0 ? -1 : 1) * (rl + 0.02), ridgeY + 0.24, 0);
+        normalizeGeo(oni);
+        bakeAO(oni, { ground: 0, cavity: 0.3, down: 0.35, floor: 0.42 });
+        parts.push({ geometry: oni, material: mat });
+      }
+    }
+
+    for (const p of parts) {
+      normalizeGeo(p.geometry);
+      bakeAO(p.geometry, { ground: 0, cavity: 0.16, down: 0.34, floor: 0.30 });
+    }
+    return { parts, ridgeY, ridgeHalfX: mx, gableHalfX: mx, gableY: gy0, mzK, eaveY: y0 };
+  }
+
+  /** A convex polygon in (z, y) extruded a little along x — gable walls, ends. */
+  _gableWall(halfZ, y0, y1, thick) {
+    const poly = [[-halfZ, y0], [halfZ, y0], [0, y1]];
+    const n = poly.length;
+    const verts = [], uvs = [], cols = [], idx = [];
+    for (let side = 0; side < 2; side++) {
+      const x = side === 0 ? thick * 0.5 : -thick * 0.5;
+      const base = verts.length / 3;
+      for (let i = 0; i < n; i++) {
+        verts.push(x, poly[i][1], poly[i][0]);
+        uvs.push(poly[i][0], poly[i][1]);
+        cols.push(0.9, 0.9, 0.9);
+      }
+      for (let i = 1; i < n - 1; i++) {
+        if (side === 0) idx.push(base, base + i, base + i + 1);
+        else idx.push(base, base + i + 1, base + i);
+      }
+    }
+    const base = verts.length / 3;
+    for (let i = 0; i < n; i++) {
+      verts.push(thick * 0.5, poly[i][1], poly[i][0]);
+      verts.push(-thick * 0.5, poly[i][1], poly[i][0]);
+      uvs.push(poly[i][0], 0, poly[i][0], thick);
+      cols.push(0.7, 0.7, 0.7, 0.7, 0.7, 0.7);
+    }
+    for (let i = 0; i < n; i++) {
+      const a = base + i * 2, b = base + i * 2 + 1;
+      const c = base + ((i + 1) % n) * 2 + 1, e = base + ((i + 1) % n) * 2;
+      idx.push(a, b, c, a, c, e);
+    }
+    const geo = new BufferGeometry();
+    geo.setAttribute('position', new BufferAttribute(new Float32Array(verts), 3));
+    geo.setAttribute('uv', new BufferAttribute(new Float32Array(uvs), 2));
+    geo.setAttribute('color', new BufferAttribute(new Float32Array(cols), 3));
+    geo.setIndex(idx);
+    geo.computeVertexNormals();
+    return geo;
+  }
+
+  /**
+   * 斗栱 tokyō — one bracket unit: a bearing block, a stepped arm, and two more
+   * blocks carrying the purlin. Small, repeated, and the single clearest signal
+   * that this is Japanese carpentry rather than a generic pagoda shape.
+   */
+  _bracketUnit(s = 1) {
+    const geos = [];
+    const box = (w, h, d, x, y, z) => {
+      const g = new BoxGeometry(w * s, h * s, d * s);
+      g.translate(x * s, y * s, z * s);
+      normalizeGeo(g);
+      return g;
+    };
+    geos.push(box(0.30, 0.16, 0.30, 0, 0.08, 0));            // 大斗 daito
+    geos.push(box(0.94, 0.13, 0.20, 0, 0.225, 0));           // 肘木 hijiki arm
+    geos.push(box(0.20, 0.14, 0.44, 0, 0.36, 0));            // 巻斗 makito
+    geos.push(box(0.20, 0.14, 0.20, -0.38, 0.36, 0));
+    geos.push(box(0.20, 0.14, 0.20, 0.38, 0.36, 0));
+    geos.push(box(0.16, 0.40, 0.16, 0, -0.20, 0));           // stub into the beam
+    const merged = mergeGeometries(geos, false);
+    bakeAO(merged, { ground: 0, cavity: 0.36, down: 0.42, floor: 0.30 });
+    return merged;
+  }
+
+  // =====================================================================
+  //  本殿 / 拝殿  SHRINE HALLS
+  // =====================================================================
+
+  /**
+   * A raised hall: post foundation, plank floor, veranda with a railing, plaster
+   * and timber walls, shoji bays on the entrance face, the bracket complex under
+   * the eaves, and (for shrine buildings) chigi finials and katsuogi billets.
+   *
+   * The front face looks toward +Z, matching the processional axis.
+   */
+  hall(opts = {}) {
+    const w = opts.width ?? 12;            // X
+    const d = opts.depth ?? 9;             // Z
+    const floorY = opts.floorY ?? 1.05;
+    const wallH = opts.wallH ?? 2.9;
+    const veranda = opts.veranda ?? 0.95;
+    const eaveOut = opts.eaveOut ?? 1.75;
+    const rise = opts.rise ?? Math.max(2.4, w * 0.28);
+    const roofMat = opts.roofMaterial ?? 'roofTile';
+    const wallMat = opts.wallMaterial ?? 'plaster';
+    const open = !!opts.open;               // kagura-den: posts, no walls
+    const shrineRidge = opts.shrineRidge !== false;
+    const rnd = makeRandom(opts.seed ?? 5);
+    const b = PropFactory.build();
+
+    const hw = w * 0.5, hd = d * 0.5;
+    const pw = hw + veranda, pd = hd + veranda;   // platform half extents
+
+    // ---- foundation posts on stone pads -----------------------------------
+    const postR = 0.155;
+    const nx = Math.max(2, Math.round(w / 2.6));
+    const nz = Math.max(2, Math.round(d / 2.6));
+    for (let i = 0; i <= nx; i++) {
+      for (let j = 0; j <= nz; j++) {
+        if (i > 0 && i < nx && j > 0 && j < nz) continue;   // perimeter + edges only
+        const x = lerp(-pw + 0.4, pw - 0.4, i / nx);
+        const z = lerp(-pd + 0.4, pd - 0.4, j / nz);
+        const post = sweepProfile([
+          { x, y: 0.14, z, sx: postR * 2.1, sy: postR * 2.1, ao: 0.45 },
+          { x, y: floorY, z, sx: postR * 1.9, sy: postR * 1.9, ao: 0.8 },
+        ], circleProfile(8), { smooth: true, uvScale: 1.4, capStart: false });
+        bakeAO(post, { ground: 0.5, groundH: 0.5, cavity: 0.1, floor: 0.34 });
+        PropFactory.add(b, post, 'cedar');
+        const pad = sweepProfile([
+          { x, y: -0.05, z, sx: 0.52, sy: 0.52, ao: 0.4 },
+          { x, y: 0.16, z, sx: 0.44, sy: 0.44, ao: 0.72 },
+        ], circleProfile(7), { smooth: true, uvScale: 1.6, capStart: false });
+        roughen(pad, 0.012, 5);
+        PropFactory.add(b, pad, 'stone');
+      }
+    }
+
+    // ---- platform / plank floor -------------------------------------------
+    {
+      const slab = new BoxGeometry(pw * 2, 0.30, pd * 2);
+      slab.translate(0, floorY - 0.15, 0);
+      normalizeGeo(slab);
+      bakeAO(slab, { ground: 0, cavity: 0.1, down: 0.5, floor: 0.32 });
+      PropFactory.add(b, slab, 'cedarBeam');
+
+      // Individual deck planks with a little cupping, so the veranda has grain.
+      const planks = [];
+      const pn = Math.max(6, Math.round(pd * 2 / 0.28));
+      for (let i = 0; i < pn; i++) {
+        const z = lerp(-pd, pd, (i + 0.5) / pn);
+        const g = new BoxGeometry(pw * 2 - 0.02, 0.055, (pd * 2 / pn) - 0.012);
+        g.translate(0, floorY + 0.028 + (rnd() - 0.5) * 0.006, z);
+        normalizeGeo(g);
+        const k = 0.9 + rnd() * 0.18;
+        tintGeo(g, k, k * 0.99, k * 0.96);
+        planks.push(g);
+      }
+      const deck = mergeGeometries(planks, false);
+      bakeAO(deck, { ground: 0, cavity: 0.12, down: 0.4, floor: 0.42 });
+      PropFactory.add(b, deck, 'cedar');
+      PropFactory.addCollider(b, PropFactory.boxCollider(pw * 2, floorY + 0.09, pd * 2, 0, 0), 'wood', true, true);
+    }
+
+    // ---- veranda railing (highest at the front, open at the stair) ---------
+    {
+      const railY = floorY + 0.06;
+      const rails = [];
+      const postAt = (x, z) => {
+        const g = new BoxGeometry(0.09, 0.62, 0.09);
+        g.translate(x, railY + 0.31, z);
+        normalizeGeo(g);
+        rails.push(g);
+      };
+      const runX = (z, from, to) => {
+        for (let i = 0; i <= Math.round(Math.abs(to - from) / 0.55); i++) {
+          postAt(lerp(from, to, i / Math.max(1, Math.round(Math.abs(to - from) / 0.55))), z);
+        }
+        const top = new BoxGeometry(Math.abs(to - from), 0.09, 0.14);
+        top.translate((from + to) * 0.5, railY + 0.66, z);
+        normalizeGeo(top);
+        rails.push(top);
+      };
+      const runZ = (x, from, to) => {
+        const n = Math.max(1, Math.round(Math.abs(to - from) / 0.55));
+        for (let i = 0; i <= n; i++) postAt(x, lerp(from, to, i / n));
+        const top = new BoxGeometry(0.14, 0.09, Math.abs(to - from));
+        top.translate(x, railY + 0.66, (from + to) * 0.5);
+        normalizeGeo(top);
+        rails.push(top);
+      };
+      const gap = Math.min(1.4, w * 0.16);
+      runX(pd - 0.08, -pw + 0.08, -gap);
+      runX(pd - 0.08, gap, pw - 0.08);
+      runX(-pd + 0.08, -pw + 0.08, pw - 0.08);
+      runZ(-pw + 0.08, -pd + 0.08, pd - 0.08);
+      runZ(pw - 0.08, -pd + 0.08, pd - 0.08);
+      const rail = mergeGeometries(rails, false);
+      bakeAO(rail, { ground: 0, cavity: 0.3, down: 0.36, floor: 0.36 });
+      PropFactory.add(b, rail, 'cedar');
+      b.anchors.stair = [0, floorY, pd];
+    }
+
+    // ---- corner columns and walls ------------------------------------------
+    const colR = 0.20;
+    const colTop = floorY + wallH;
+    const cols = [];
+    const colXs = [];
+    const colCount = Math.max(2, Math.round(w / 2.4));
+    for (let i = 0; i <= colCount; i++) colXs.push(lerp(-hw, hw, i / colCount));
+    for (const cx of colXs) {
+      for (const cz of [-hd, hd]) {
+        cols.push(sweepProfile([
+          { x: cx, y: floorY, z: cz, sx: colR * 2.05, sy: colR * 2.05, ao: 0.6 },
+          { x: cx, y: colTop, z: cz, sx: colR * 1.86, sy: colR * 1.86, ao: 1.0 },
+        ], circleProfile(10), { smooth: true, uvScale: 1.0, capStart: false, capEnd: false }));
+      }
+    }
+    const colZs = [];
+    const colZCount = Math.max(2, Math.round(d / 2.4));
+    for (let j = 1; j < colZCount; j++) colZs.push(lerp(-hd, hd, j / colZCount));
+    for (const cz of colZs) {
+      for (const cx of [-hw, hw]) {
+        cols.push(sweepProfile([
+          { x: cx, y: floorY, z: cz, sx: colR * 2.05, sy: colR * 2.05, ao: 0.6 },
+          { x: cx, y: colTop, z: cz, sx: colR * 1.86, sy: colR * 1.86, ao: 1.0 },
+        ], circleProfile(10), { smooth: true, uvScale: 1.0, capStart: false, capEnd: false }));
+      }
+    }
+    {
+      const merged = mergeGeometries(cols, false);
+      bakeAO(merged, { ground: 0, cavity: 0.2, down: 0.3, floor: 0.34 });
+      weatherBand(merged, floorY, floorY + 0.7, 0.78, 0.76, 0.72, 0.25);
+      PropFactory.add(b, merged, 'cedar');
+    }
+
+    if (!open) {
+      const panels = [];
+      const shoji = [];
+      const lattice = [];
+      const wallY0 = floorY + 0.12;
+      const wallY1 = colTop - 0.1;
+      // Back and side walls: plaster between the posts, with a timber sill/head.
+      const wallRun = (x0, z0, x1, z1) => {
+        const len = Math.hypot(x1 - x0, z1 - z0);
+        const ang = Math.atan2(x1 - x0, z1 - z0);
+        const g = new BoxGeometry(0.14, wallY1 - wallY0, len - 0.32);
+        const m = new Matrix4().makeRotationY(ang);
+        m.setPosition((x0 + x1) * 0.5, (wallY0 + wallY1) * 0.5, (z0 + z1) * 0.5);
+        g.applyMatrix4(m);
+        normalizeGeo(g);
+        panels.push(g);
+      };
+      wallRun(-hw, -hd, hw, -hd);
+      wallRun(-hw, -hd, -hw, hd);
+      wallRun(hw, -hd, hw, hd);
+
+      // Front face: shoji bays either side of the central doorway.
+      const bays = colXs.length - 1;
+      for (let i = 0; i < bays; i++) {
+        const x0 = colXs[i] + 0.16, x1 = colXs[i + 1] - 0.16;
+        const centre = Math.abs((x0 + x1) * 0.5) < w * 0.14;
+        if (centre) continue;             // the doorway stays open
+        shoji.push(this._shojiBay(x0, x1, wallY0, wallY1 - 0.35, hd - 0.02, panels));
+      }
+      const wall = mergeGeometries(panels, false);
+      roughen(wall, 0.008, 3.2, [1, 0, 1]);
+      bakeAO(wall, { ground: 0, cavity: 0.22, down: 0.3, floor: 0.34 });
+      PropFactory.add(b, wall, wallMat);
+      if (shoji.length) {
+        const paper = mergeGeometries(shoji, false);
+        normalizeGeo(paper, true);
+        bakeFlutter(paper, 0, () => 0);
+        PropFactory.add(b, paper, 'paper');
+      }
+      PropFactory.addCollider(b, PropFactory.boxCollider(w, wallH, 0.4, 0, floorY, -hd), 'wood');
+      PropFactory.addCollider(b, PropFactory.boxCollider(0.4, wallH, d, -hw, floorY, 0), 'wood');
+      PropFactory.addCollider(b, PropFactory.boxCollider(0.4, wallH, d, hw, floorY, 0), 'wood');
+      PropFactory.addCollider(b, PropFactory.boxCollider(w * 0.36, wallH, 0.4, -w * 0.32, floorY, hd), 'wood');
+      PropFactory.addCollider(b, PropFactory.boxCollider(w * 0.36, wallH, 0.4, w * 0.32, floorY, hd), 'wood');
+    } else {
+      PropFactory.addCollider(b, PropFactory.boxCollider(0.5, wallH, 0.5, -hw, floorY, -hd), 'wood');
+      PropFactory.addCollider(b, PropFactory.boxCollider(0.5, wallH, 0.5, hw, floorY, -hd), 'wood');
+      PropFactory.addCollider(b, PropFactory.boxCollider(0.5, wallH, 0.5, -hw, floorY, hd), 'wood');
+      PropFactory.addCollider(b, PropFactory.boxCollider(0.5, wallH, 0.5, hw, floorY, hd), 'wood');
+    }
+
+    // ---- head beam (nageshi) + bracket complex -----------------------------
+    {
+      const beams = [];
+      const by = colTop + 0.14;
+      const mk = (w2, h2, d2, x, y, z) => {
+        const g = new BoxGeometry(w2, h2, d2);
+        g.translate(x, y, z);
+        normalizeGeo(g);
+        beams.push(g);
+      };
+      mk(w + 0.5, 0.28, 0.26, 0, by, hd);
+      mk(w + 0.5, 0.28, 0.26, 0, by, -hd);
+      mk(0.26, 0.28, d + 0.5, -hw, by, 0);
+      mk(0.26, 0.28, d + 0.5, hw, by, 0);
+      const merged = mergeGeometries(beams, false);
+      bakeAO(merged, { ground: 0, cavity: 0.24, down: 0.4, floor: 0.34 });
+      PropFactory.add(b, merged, 'cedarBeam');
+
+      const unit = this._bracketUnit(Math.min(1.05, w * 0.09));
+      const brackets = [];
+      const step = 1.55;
+      const placeRow = (z, count, along) => {
+        for (let i = 0; i < count; i++) {
+          const t = (i + 0.5) / count;
+          const g = unit.clone();
+          const m = new Matrix4().makeRotationY(along ? 0 : Math.PI / 2);
+          m.setPosition(along ? lerp(-hw, hw, t) : (z > 0 ? hw : -hw), by + 0.3, along ? z : lerp(-hd, hd, t));
+          g.applyMatrix4(m);
+          brackets.push(g);
+        }
+      };
+      placeRow(hd, Math.max(2, Math.round(w / step)), true);
+      placeRow(-hd, Math.max(2, Math.round(w / step)), true);
+      placeRow(1, Math.max(2, Math.round(d / step)), false);
+      placeRow(-1, Math.max(2, Math.round(d / step)), false);
+      const bm = mergeGeometries(brackets, false);
+      PropFactory.add(b, bm, 'cedarBeam');
+      unit.dispose();
+    }
+
+    // ---- roof ---------------------------------------------------------------
+    const roofBase = colTop + 0.72;
+    const roof = this.roofIrimoya({
+      halfX: hw + eaveOut, halfZ: hd + eaveOut,
+      rise, baseY: roofBase, material: roofMat,
+      lift: Math.min(hw, hd) * 0.14,
+      hip: opts.hip ?? 0.52,
+      segX: opts.segX ?? 8, segZ: opts.segZ ?? 5,
+      thickness: 0.24,
+      gableMaterial: opts.gableMaterial ?? 'cedar',
+    });
+    for (const p of roof.parts) PropFactory.add(b, p.geometry, p.material);
+
+    // ---- 千木 chigi and 鰹木 katsuogi ---------------------------------------
+    if (shrineRidge) {
+      const ridgeY = roof.ridgeY + 0.16;
+      const finials = [];
+      for (let side = 0; side < 2; side++) {
+        const sx = side === 0 ? -1 : 1;
+        const x = sx * (roof.ridgeHalfX + 0.06);
+        for (let k = 0; k < 2; k++) {
+          const sz = k === 0 ? 1 : -1;
+          const g = sweepProfile([
+            { x: x - sx * 0.30, y: ridgeY - 0.34, z: sz * 0.42, sx: 0.16, sy: 0.16, ao: 0.7 },
+            { x: x + sx * 0.42, y: ridgeY + 1.18, z: -sz * 0.30, sx: 0.10, sy: 0.10, ao: 1.0 },
+          ], rectProfile(0.2), { uvScale: 1.2 });
+          finials.push(g);
+        }
+      }
+      const nk = Math.max(3, Math.round(roof.ridgeHalfX * 1.1));
+      for (let i = 0; i < nk; i++) {
+        const x = lerp(-roof.ridgeHalfX * 0.72, roof.ridgeHalfX * 0.72, nk === 1 ? 0.5 : i / (nk - 1));
+        const g = sweepProfile([
+          { x, y: ridgeY + 0.16, z: -0.52, sx: 0.30, sy: 0.30, ao: 0.85 },
+          { x, y: ridgeY + 0.22, z: 0, sx: 0.34, sy: 0.34, ao: 1.0 },
+          { x, y: ridgeY + 0.16, z: 0.52, sx: 0.30, sy: 0.30, ao: 0.85 },
+        ], circleProfile(8), { smooth: true, ref: [1, 0, 0], uvScale: 1.4 });
+        finials.push(g);
+      }
+      const merged = mergeGeometries(finials, false);
+      bakeAO(merged, { ground: 0, cavity: 0.2, down: 0.36, floor: 0.4 });
+      tintGeo(merged, 1.0, 0.95, 0.82);
+      PropFactory.add(b, merged, 'cedarBeam');
+    }
+
+    // ---- entrance stair ------------------------------------------------------
+    {
+      const st = this.stairs({
+        width: Math.min(2.6, w * 0.34), steps: Math.max(2, Math.round(floorY / 0.19)),
+        rise: floorY / Math.max(2, Math.round(floorY / 0.19)), run: 0.34,
+        material: 'stone', wear: 0.4, seed: (opts.seed ?? 5) + 3,
+      });
+      const m = new Matrix4().makeTranslation(0, 0, pd + 0.02);
+      for (const p of st.parts) { p.geometry.applyMatrix4(m); PropFactory.add(b, p.geometry, p.material); }
+      for (const c of st.colliders) { c.geometry.applyMatrix4(m); b.colliders.push(c); }
+    }
+
+    b.anchors.front = [0, floorY, pd];
+    b.anchors.ridge = [0, roof.ridgeY, 0];
+    b.anchors.eaveFront = [0, roofBase, hd + eaveOut];
+    b.bounds = { r: Math.hypot(hw + eaveOut, hd + eaveOut), h: roof.ridgeY + 1.6 };
+    b.silhouette = this._hallSilhouette(w, d, floorY, colTop, roofBase, rise, eaveOut, roofMat);
+    return b;
+  }
+
+  /** Cheap far-LOD stand-in: body box + a 3-ring roof. One draw for all halls. */
+  _hallSilhouette(w, d, floorY, colTop, roofBase, rise, eaveOut, roofMat) {
+    const body = new BoxGeometry(w, colTop - floorY * 0.2, d);
+    body.translate(0, (colTop + floorY * 0.2) * 0.5, 0);
+    normalizeGeo(body);
+    shadeGeo(body, (x, y) => lerp(0.55, 0.95, clamp(y / colTop, 0, 1)));
+    const roof = this.roofIrimoya({
+      halfX: w * 0.5 + eaveOut, halfZ: d * 0.5 + eaveOut,
+      rise, baseY: roofBase, material: roofMat, segX: 2, segZ: 1,
+      hip: 0.5, thickness: 0.2,
+    });
+    const geos = [body];
+    for (const p of roof.parts) geos.push(normalizeGeo(p.geometry));
+    return [
+      { geometry: mergeGeometries([body], false), material: 'cedar' },
+      { geometry: mergeGeometries(roof.parts.map((p) => normalizeGeo(p.geometry)), false), material: roofMat },
+    ];
+  }
+
+  /** A bay of shoji: a cedar lattice on the wall bucket, paper returned. */
+  _shojiBay(x0, x1, y0, y1, z, latticeOut) {
+    const w = x1 - x0, h = y1 - y0;
+    const bars = [];
+    const frame = (bw, bh, cx, cy, bd = 0.05) => {
+      const g = new BoxGeometry(bw, bh, bd);
+      g.translate(cx, cy, z + 0.03);
+      normalizeGeo(g);
+      bars.push(g);
+    };
+    frame(w, 0.09, (x0 + x1) * 0.5, y0);
+    frame(w, 0.09, (x0 + x1) * 0.5, y1);
+    frame(0.09, h, x0, (y0 + y1) * 0.5);
+    frame(0.09, h, x1, (y0 + y1) * 0.5);
+    const cols = Math.max(2, Math.round(w / 0.30));
+    for (let i = 1; i < cols; i++) frame(0.035, h - 0.09, lerp(x0, x1, i / cols), (y0 + y1) * 0.5, 0.035);
+    const rows = Math.max(3, Math.round(h / 0.34));
+    for (let j = 1; j < rows; j++) frame(w - 0.09, 0.030, (x0 + x1) * 0.5, lerp(y0, y1, j / rows), 0.035);
+    for (const g of bars) { bakeAO(g, { ground: 0, cavity: 0.2, down: 0.3, floor: 0.45 }); latticeOut.push(g); }
+
+    const paper = new BoxGeometry(w - 0.06, h - 0.06, 0.012);
+    paper.translate((x0 + x1) * 0.5, (y0 + y1) * 0.5, z + 0.005);
+    normalizeGeo(paper);
+    shadeGeo(paper, () => 1.05);
+    return paper;
   }
 
   /** Wrap a finished build as an instancing prototype. */

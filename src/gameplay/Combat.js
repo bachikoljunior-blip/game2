@@ -159,29 +159,44 @@ export const TUNING = {
   SPAM_REPEAT_WINDOW: 1.1,      // s within which a repeated attack counts as spam
 
   // ── difficulty & assists ───────────────────────────────────────────────────
+  // `scale` is the single scalar EnemyAI reads off `ctx.combat.difficulty`; it must
+  // stay inside the 0.4–2.2 band Enemy.js clamps to.
   DEFAULT_DIFFICULTY: 'normal', // generous but not trivial — the touch-play default
   DIFFICULTY: {
     story: {
+      scale: 0.55,
       enemyDamage: 0.55, playerDamage: 1.25, aggression: 0.55, parryScale: 1.60,
       aimAssist: 1.00, melee: 1, ranged: 1, interval: 1.30, postureGain: 0.80,
       enemyParry: 0.45,
     },
     normal: {
+      scale: 1.00,
       enemyDamage: 0.85, playerDamage: 1.00, aggression: 0.80, parryScale: 1.25,
       aimAssist: 0.70, melee: 2, ranged: 1, interval: 0.90, postureGain: 1.00,
       enemyParry: 0.80,
     },
     hard: {
+      scale: 1.40,
       enemyDamage: 1.15, playerDamage: 0.92, aggression: 1.00, parryScale: 1.00,
       aimAssist: 0.38, melee: 2, ranged: 1, interval: 0.78, postureGain: 1.15,
       enemyParry: 1.00,
     },
     kagerou: {
+      scale: 1.90,
       enemyDamage: 1.55, playerDamage: 0.85, aggression: 1.25, parryScale: 0.85,
       aimAssist: 0.12, melee: 3, ranged: 1, interval: 0.62, postureGain: 1.30,
       enemyParry: 1.30,
     },
   },
+
+  // ── projectiles (Enemy.js hands us kunai/shuriken through spawnProjectile) ──
+  PROJECTILE_MAX: 24,           // pooled projectiles in flight; beyond this the oldest recycles
+  PROJECTILE_RADIUS: 0.075,     // m of the projectile body, used for the swept overlap test
+  PROJECTILE_LIFE: 2.4,         // s default lifetime when the caller does not give one
+  PROJECTILE_GRAVITY: -3.2,     // m/s²; a thrown blade drops a little, an arrow barely
+  PROJECTILE_POISE: 7,          // poise of a projectile hit (light — it should not floor you)
+  PROJECTILE_SUBSTEPS: 3,       // sweep sub-steps per frame; a 24 m/s kunai must not tunnel
+  PROJECTILE_PARRY_POSTURE: 8,  // posture a deflected projectile returns to its thrower
 
   // ── aim assist ─────────────────────────────────────────────────────────────
   ASSIST_RANGE: 4.6,            // m within which a swing bends toward a target
@@ -406,8 +421,14 @@ export class CombatDirector {
     this.parryStreak = 0;
     this.enabled = true;
 
-    this.difficulty = TUNING.DEFAULT_DIFFICULTY;
-    this.diff = TUNING.DIFFICULTY[this.difficulty];
+    /**
+     * `difficulty` is the NUMERIC scalar EnemyAI multiplies its damage/aggression by
+     * (Enemy.js clamps it to 0.4–2.2); `difficultyName` is the preset key. Keeping the
+     * number on the short name is deliberate — that is the property the AI reads.
+     */
+    this.difficultyName = TUNING.DEFAULT_DIFFICULTY;
+    this.diff = TUNING.DIFFICULTY[this.difficultyName];
+    this.difficulty = this.diff.scale;
 
     this._rand = mulberry32(TUNING.DEMO_SEED);
     this._uid = 1;
@@ -446,6 +467,18 @@ export class CombatDirector {
 
     // demo staging for the screenshot rig
     this._demo = { active: false, t: 0, pulses: 0, a: null, b: null, point: new Vector3() };
+
+    // projectile pool — pre-allocated, never grown at runtime
+    this._projectiles = new Array(TUNING.PROJECTILE_MAX);
+    for (let i = 0; i < TUNING.PROJECTILE_MAX; i++) {
+      this._projectiles[i] = {
+        alive: false, owner: null, kind: 'kunai', damage: 0, posture: 0, poise: 0,
+        speed: 0, life: 0, age: 0, gravity: 0, radius: TUNING.PROJECTILE_RADIUS,
+        pos: new Vector3(), prev: new Vector3(), vel: new Vector3(), spawn: 0,
+      };
+    }
+    this._projCursor = 0;
+    this._rayOut = null;            // lazily borrowed from PhysicsWorld, then reused
 
     // pooled event payloads
     this._hitP = makeRing(6, () => ({
@@ -501,6 +534,7 @@ export class CombatDirector {
     this._updateDemo(rdt);
     this._clashPass(now);
     this._sweepPass(now);
+    this._updateProjectiles(rdt, now);
     this._integrateImpulses(rdt);
     this._updateTokens(now);
     this._updateTension(rdt);
@@ -597,6 +631,25 @@ export class CombatDirector {
     this._openSwing(rec, entity, opts, this.time);
     return rec.swingId;
   }
+
+  /**
+   * Compatibility alias for the attack-descriptor shape Player.js builds
+   * (`{ entity, move, clip, damage, poise, kind, reach, heavy, finisher, base, tip }`).
+   * Everything routes through beginSwing; `base`/`tip` are adopted as the live blade
+   * segment so we sweep exactly the geometry the trail ribbon draws.
+   */
+  beginAttack(info) {
+    const e = info?.entity;
+    if (!e) return 0;
+    if (info.base?.isVector3 && info.tip?.isVector3 && e.weapon) {
+      e.weapon.base = info.base;
+      e.weapon.tip = info.tip;
+    }
+    return this.beginSwing(e, info);
+  }
+
+  /** Compatibility alias for `endSwing`. */
+  endAttack(entity) { this.endSwing(entity?.entity || entity); }
 
   /** Close a swing early (animation cancel, stagger interrupt, deflect). */
   endSwing(entity) {
@@ -880,8 +933,9 @@ export class CombatDirector {
   /** Switch difficulty: enemy damage/aggression, parry width, aim assist, token count. */
   setDifficulty(name) {
     const key = TUNING.DIFFICULTY[name] ? name : TUNING.DEFAULT_DIFFICULTY;
-    this.difficulty = key;
+    this.difficultyName = key;
     this.diff = TUNING.DIFFICULTY[key];
+    this.difficulty = this.diff.scale;
     // Shrink the pools immediately if the new tier allows fewer simultaneous attackers.
     this._trimPool('melee', this.diff.melee);
     this._trimPool('ranged', this.diff.ranged);

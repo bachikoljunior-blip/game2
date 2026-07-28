@@ -1164,9 +1164,14 @@ export class PostFX {
     // ---- authored grade defaults (autumn magic hour) ------------------------
     this.exposure = 1.0;
     this.autoExposure = false;
-    this.keyValue = 0.20;
-    this.exposureMin = 0.42;
-    this.exposureMax = 2.6;
+    // The world is authored to look correct at exposure 1.0 (ARCHITECTURE.md §4), so
+    // auto-exposure is a *bounded correction around that*, not an absolute key
+    // mapping. A wide clamp lets a dark sky drag the whole frame up 2.5x and blow the
+    // shrine out the moment you turn around — this range only compensates for walking
+    // into a lantern-lit interior or turning into the sun.
+    this.keyValue = 0.18;
+    this.exposureMin = 0.68;
+    this.exposureMax = 1.50;
     this.bloomStrength = 0.055;
     this.bloomThreshold = 0.9;
     this.bloomKnee = 0.55;
