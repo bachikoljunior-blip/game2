@@ -392,7 +392,9 @@ export class Terrain {
     let t0 = now();
     for (let i = 0; i < n; i++) {
       step(i);
-      if ((i & 3) === 0 && now() - t0 > 10) {
+      // Checked every iteration, not every Nth: one row of the ULTRA core field is
+      // already ~3 ms, so a coarser check overshoots the 12 ms budget on its own.
+      if (now() - t0 > 8) {
         this._progress(base + (i / n), total, label);
         await nextTick();
         if (this._disposed) return;

@@ -1845,8 +1845,6 @@ export class FoliageSystem {
     const card = buildCrossCard(2, 1.0, false, 0.55);
     this._geometries.push(culm, leaf, card);
 
-    const shadows = !!q.foliageShadows;
-
     // Culms: stiff, and they whip. A bamboo sea reads as bamboo because the tops lag.
     const culmOpts = {
       name: 'bamboo-culm', mode: 0, map: null, color: 0x9fae5c,
@@ -2045,7 +2043,6 @@ export class FoliageSystem {
   // --------------------------------------------------------------------- trees
 
   _buildTreeAssets(q) {
-    const shadows = !!q.foliageShadows;
     const defs = [
       { key: 'sakura', seed: 0x5A1201, tex: this.tex.blossom, tint: 0xf3c9d6, sss: 1.5, emitter: 'petal' },
       { key: 'momiji', seed: 0x30D311, tex: this.tex.momiji, tint: 0xc2381f, sss: 1.7, emitter: 'leaf' },
@@ -2502,7 +2499,7 @@ ${WIND_GLSL}
     };
 
     const scale = clamp(density, 0, 1.5);
-    const fernMesh = mk(fernGeo, fernMat, shadows ? this._makeDepthMaterial(fernMat, fernOpts) : null,
+    const fernMesh = mk(fernGeo, fernMat, this._makeDepthMaterial(fernMat, fernOpts),
       Math.round(900 * scale) + 40, {
         name: 'ferns', far: radius, bias: 1.0, scale: 0.075, seed: 3.1, clumpPow: 2.4,
         hMin: 0.35, hMax: 0.95, aspect: 1.5, stiff: 0.75, color: 0x4e6b3c, dry: 0.35, shadow: false,

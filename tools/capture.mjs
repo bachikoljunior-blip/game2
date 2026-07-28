@@ -136,12 +136,24 @@ async function main() {
     page.on('pageerror', (e) => logs.push(`pageerror: ${e.message}`));
 
     const url = `${base}?autostart&q=${prof.tier}&capture`;
-    await page.goto(url, { waitUntil: 'load', timeout: 90000 });
+    await page.goto(url, { waitUntil: 'load', timeout: 120000 });
 
+    // SwiftShader is software rendering: procedural texture synthesis, terrain erosion
+    // and the foliage impostor bakes all run one to two orders of magnitude slower here
+    // than on a real GPU, so the boot budget has to be generous. If it does time out we
+    // want to know *which* step it died on, not just that it did.
     let booted = true;
+    const bootStarted = Date.now();
     try {
-      await page.waitForFunction('window.__kagerouReady === true', { timeout: 90000 });
-    } catch { booted = false; }
+      await page.waitForFunction('window.__kagerouReady === true', { timeout: 420000 });
+    } catch {
+      booted = false;
+      const stalledAt = await page
+        .evaluate(() => document.getElementById('boot-status')?.textContent || '(no status)')
+        .catch(() => '(unreachable)');
+      logs.unshift(`boot timed out after ${((Date.now() - bootStarted) / 1000) | 0}s at step: ${stalledAt}`);
+    }
+    console.log(`[${pname}] boot ${booted ? 'ok' : 'FAILED'} in ${((Date.now() - bootStarted) / 1000).toFixed(1)}s`);
 
     const shots = {};
     if (booted) {
