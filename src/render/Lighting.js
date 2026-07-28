@@ -922,7 +922,9 @@ export class LightingSystem {
       if (!e.enabled || e.intensity <= 0) { e._bound = false; continue; }
       const reach = this._lightCull + e.radius;
       const d2 = e.position.distanceToSquared(camPos);
-      if (d2 > reach * reach) { e._bound = false; continue; }
+      // Written as "not in range" so a NaN camera (it happens) drops the light rather
+      // than binding it at a NaN distance and poisoning every intensity downstream.
+      if (!(d2 <= reach * reach)) { e._bound = false; continue; }
       // Sitting tenants get a discount so a rival has to be clearly closer to evict them.
       dist[live] = e._bound ? d2 * STANDING_HYSTERESIS : d2;
       order[live] = i;
@@ -942,7 +944,10 @@ export class LightingSystem {
 
     // ARCHITECTURE §10: Weather owns the gust. A flame leans on it rather than
     // inventing its own, so the lanterns breathe on the same front that bends the grass.
-    const gust = this.ctx.wind ? this.ctx.wind.gust : 0;
+    // Weather writes `gust` during *its* update, which runs after ours, so on the first
+    // frame the field is still whatever main.js seeded. Read defensively.
+    const w = this.ctx.wind;
+    const gust = (w && Number.isFinite(w.gust)) ? w.gust : 0;
     const t = this._time;
 
     for (let s = 0; s < k; s++) {
@@ -971,7 +976,9 @@ export class LightingSystem {
       const d = e.position.distanceTo(camPos);
       if (d > reach * 0.78) inten *= Math.max(0, 1 - (d - reach * 0.78) / (reach * 0.22));
 
-      light.intensity = inten;
+      // A single non-finite intensity uploads NaN into the light uniform block and
+      // blanks every lit material in the frame. Never let one out of here.
+      light.intensity = Number.isFinite(inten) ? Math.max(0, inten) : 0;
     }
   }
 

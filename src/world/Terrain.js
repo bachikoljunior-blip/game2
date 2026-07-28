@@ -40,6 +40,9 @@ import {
 
 import { noise, clamp, lerp, smoothstep, smootherstep, makeRandom, glslNoise } from '../core/Noise.js';
 import { WORLD, plateauMask, inPlayable } from './Constants.js';
+// Footprints only. Level owns the geometry; Terrain only needs to know where the
+// ground is swept, and a copied table here would drift the first time a hall moves.
+import { LAYOUT } from './Level.js';
 
 // ---------------------------------------------------------------- world extent
 //
@@ -95,6 +98,67 @@ const STAIR_CTRL = [
 const STAIR_TERRACES = 14;
 const STAIR_HALF = 6.5;
 const STAIR_SHOULDER = 16.0;
+
+// ------------------------------------------------------------ the swept ground
+//
+// Which ground is *maintained*. This used to be the plateau mask, and the plateau
+// mask reaches 112 m: the classifier called a 220 m disc "gravel", Foliage refuses
+// to plant on swept ground (correctly — a raked courtyard must not sprout stubble),
+// and between them they deleted every blade of grass on the mountain.
+//
+// The ground the priests actually sweep is the forecourt, the sandō corridor and a
+// working apron around each hall. Everything else on the plateau — the rim out to
+// the guard rail, the gaps between the subordinate halls, the slope shoulders — is
+// meadow, and that is where the grass and the visible gust front live.
+
+/** How far swept ground reaches past a building footprint, metres. Deliberately
+ *  modest: at 3.4 the aprons of the haiden and the shamusho meet and close the gap
+ *  between them, and the ground between the halls has to stay meadow. */
+const APRON = 2.8;
+/** Width of the scuffed, noise-broken margin at the gravel/grass boundary, metres. */
+const COURT_FEATHER = 4.0;
+/** Half-width of the 参道 corridor, and of the flagstone run laid down its middle. */
+const SANDO_HALF = 5.0;
+const FLAG_HALF = 3.0;
+/** The forecourt's near lip — where Level's flagstone run starts. */
+const ARENA_FRONT = LAYOUT.arena.z + LAYOUT.arena.hz;
+
+/**
+ * Signed distance to an axis-aligned rectangle in XZ; negative inside. One sqrt and
+ * no allocation — the derived-map bake evaluates it eight times per texel.
+ */
+function boxSDF(x, z, cx, cz, hx, hz) {
+  const dx = Math.abs(x - cx) - hx;
+  const dz = Math.abs(z - cz) - hz;
+  const ox = dx > 0 ? dx : 0;
+  const oz = dz > 0 ? dz : 0;
+  const inner = dx > dz ? dx : dz;
+  return Math.sqrt(ox * ox + oz * oz) + (inner < 0 ? inner : 0);
+}
+
+/**
+ * The swept regions, flattened to `[centreX, centreZ, halfX, halfZ, apron]` so the
+ * bake walks a Float32Array instead of chasing objects. Derived from LAYOUT, so
+ * Terrain and Level can never disagree about where a building stands.
+ */
+const COURTYARD = (() => {
+  const L = LAYOUT, a = L.arena, out = [];
+  // 玉砂利 — the forecourt. Swept to its own edge: this is the fight floor.
+  out.push(a.x, a.z, a.hx, a.hz, 1.5);
+  // 参道 — the corridor from the outermost torii down to the haiden's front step.
+  const zNear = L.haiden.z + L.haiden.d * 0.5;
+  const zFar = L.torii[0].z + 2.0;
+  out.push(0, (zNear + zFar) * 0.5, SANDO_HALF, (zFar - zNear) * 0.5, 1.8);
+  // A working apron around each hall — as far as feet actually go, no further.
+  for (const key of ['honden', 'haiden', 'kagura', 'shamusho']) {
+    const s = L[key];
+    out.push(s.x, s.z, s.w * 0.5, s.d * 0.5, APRON);
+  }
+  // The bell tower and the chōzuya carry no footprint in LAYOUT; both are small.
+  out.push(L.bellTower.x, L.bellTower.z, 2.6, 2.6, APRON * 0.85);
+  out.push(L.chozuya.x, L.chozuya.z, 2.8, 2.4, APRON * 0.85);
+  return Float32Array.from(out);
+})();
 
 // --------------------------------------------------------------------- helpers
 
@@ -1015,20 +1079,60 @@ export class Terrain {
         moss *= clamp(0.45 + nb2 * 1.1, 0, 1);
         moss = clamp(moss, 0, 1);
 
-        // The shrine courtyard is swept: raked gravel and packed earth, not meadow.
-        if (pm > 0) {
-          grass = lerp(grass, grass * 0.18, pm);
-          gravel = lerp(gravel, 0.58 + nb * 0.18, pm);
-          rock *= 1 - pm * 0.92;
-          moss *= 1 - pm * 0.85;
+        // --- the swept ground ---------------------------------------------
+        // Raked gravel over the forecourt, the sandō and the aprons; meadow over the
+        // rest of the plateau. The boundary is jittered rather than cut: `scuff` is
+        // added to the *distance*, not to the weights, so the two surfaces interlock
+        // along one ragged line — tufts surviving at the margin of the gravel, bare
+        // scuffs pushing out into the grass — instead of cross-fading into mush. A
+        // hard classification edge would give Foliage a hard grass edge, and swept
+        // ground would read as masked rather than maintained.
+        let dCourt = Infinity;
+        for (let c = 0; c < COURTYARD.length; c += 5) {
+          const d = boxSDF(x, z, COURTYARD[c], COURTYARD[c + 1],
+            COURTYARD[c + 2], COURTYARD[c + 3]) - COURTYARD[c + 4];
+          if (d < dCourt) dCourt = d;
         }
-        // The approach is worn stone and packed dirt.
+        // Two scales: the broad term decides which side of the shrine the sweeping
+        // has been winning this season, `nb` scallops the individual tufts.
+        const scuff = noise.fbm2(x * 0.028 + 61.3, z * 0.028 - 44.9, 2) * 2.9 + nb * 1.7;
+        const court = smootherstep(COURT_FEATHER, 0, dCourt + scuff);
+        if (court > 0.002) {
+          grass = lerp(grass, grass * 0.05, court);
+          gravel = lerp(gravel, 0.60 + nb * 0.16, court);
+          rock = lerp(rock, rock * 0.10, court);
+          moss = lerp(moss, moss * 0.08, court);
+        }
+
+        // Made ground. The plateau was levelled by hand, so even the unswept parts
+        // carry packed earth and turf rather than the mountain's scree — and the
+        // erosion flow map, which has no idea the basin is artificial, pools right
+        // across it and would otherwise paint the whole rim as washed gravel.
+        if (pm > 0) {
+          rock *= 1 - pm * 0.80;
+          moss *= 1 - pm * 0.55;
+          gravel *= 1 - pm * 0.72 * (1 - court);
+        }
+
+        // --- the approach and the paving ----------------------------------
+        // `paving` is stone underfoot: the treads Props lays on the carved terraces
+        // and the flagstone run Level lays from the stair head to the forecourt lip.
+        // It is *applied* below the wear solve, because wear keys off bare rock and
+        // wear is what dresses and polishes this band in the shader.
+        let paving = 0;
         const st = closestOnPolyline(this.stair, x, z);
         if (st.d < STAIR_SHOULDER) {
-          const w = smootherstep(STAIR_SHOULDER, STAIR_HALF * 0.8, st.d);
-          grass = lerp(grass, grass * 0.25, w);
-          gravel = lerp(gravel, 0.72, w);
-          rock = lerp(rock, rock * 0.4, w);
+          const verge = smootherstep(STAIR_SHOULDER, STAIR_HALF, st.d + scuff * 0.6);
+          grass = lerp(grass, grass * 0.30, verge);
+          gravel = lerp(gravel, 0.58, verge * 0.75);
+          rock = lerp(rock, rock * 0.4, verge);
+          paving = smootherstep(STAIR_HALF * 1.15, STAIR_HALF * 0.55, st.d + scuff * 0.3);
+        }
+        const zRun = smootherstep(ARENA_FRONT - 3.0, ARENA_FRONT + 1.0, z) *
+                     smootherstep(LAYOUT.stairTop + 3.0, LAYOUT.stairTop - 1.0, z);
+        if (zRun > 0.002) {
+          paving = Math.max(paving, zRun *
+            smootherstep(FLAG_HALF + 1.4, FLAG_HALF * 0.6, Math.abs(x) + scuff * 0.3));
         }
 
         // --- traffic wear -------------------------------------------------
@@ -1050,6 +1154,14 @@ export class Terrain {
         grass *= 1 - wear * 0.88;
         moss *= 1 - wear * 0.85;
         gravel = lerp(gravel, Math.max(gravel, 0.76), wear * 0.65);
+
+        // Laid stone last, so the traffic band it lives in cannot bury it in gravel.
+        if (paving > 0.002) {
+          rock = lerp(rock, 0.86, paving);
+          gravel *= 1 - paving * 0.75;
+          grass *= 1 - paving * 0.95;
+          moss = lerp(moss, moss * 0.5 + 0.07, paving);
+        }
 
         // Keep dirt as the remainder so there is always a base layer under the blend.
         const sum = grass + rock + gravel + moss;
