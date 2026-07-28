@@ -1648,10 +1648,11 @@ export class PropFactory {
     PropFactory.add(b, flame, '__ember');
 
     // The spill on the flagstone. Radially faded in vertex colour so it lands as a
-    // pool rather than a disc with an edge.
+    // pool rather than a disc with an edge. Level sinks a lantern 4 cm to bed the
+    // kiso into the ground, so the disc has to clear that or it lands underneath
+    // the terrain it is supposed to be lighting.
     const poolR = 1.15 * s;
-    const pool = this._spillDisc(poolR, 0.012 * s);
-    PropFactory.add(b, pool, '__glowPool');
+    PropFactory.add(b, this._spillDisc(poolR, 0.075 * s), '__glowPool');
 
     PropFactory.addCollider(b, PropFactory.boxCollider(0.7 * s, kasaY, 0.7 * s, 0, 0, 0), 'stone', true, false);
     b.lights.push({
@@ -1663,18 +1664,22 @@ export class PropFactory {
     return b;
   }
 
-  /** A ground-hugging disc that fades to nothing at its rim, for baked light spill. */
-  _spillDisc(radius, y, segments = 14) {
+  /**
+   * A ground-hugging disc with a vertex-colour gradient from centre to rim. Used
+   * for baked light spill (centre 1 → rim 0, so the emissive dies out) and for wet
+   * ground (centre dark → rim 1, so the damp patch dries off at its edge).
+   */
+  _spillDisc(radius, y, segments = 14, centre = 1, rim = 0) {
     const verts = [0, y, 0];
     const uvs = [0.5, 0.5];
-    const cols = [1, 1, 1];
+    const cols = [centre, centre, centre];
     const idx = [];
     for (let i = 0; i <= segments; i++) {
       const a = (i / segments) * Math.PI * 2;
       const wob = 0.86 + 0.14 * noise.noise2(Math.cos(a) * 2.3, Math.sin(a) * 2.3);
       verts.push(Math.cos(a) * radius * wob, y, Math.sin(a) * radius * wob);
       uvs.push(0.5 + Math.cos(a) * 0.5, 0.5 + Math.sin(a) * 0.5);
-      cols.push(0, 0, 0);
+      cols.push(rim, rim, rim);
       if (i > 0) idx.push(0, i, i + 1);
     }
     const geo = new BufferGeometry();
@@ -2449,11 +2454,9 @@ export class PropFactory {
     PropFactory.addCollider(b, PropFactory.boxCollider(1.5, basinY, 1.25, 0, 0), 'stone', true, false);
 
     // The splash apron: the flagstone around a chōzuya is always dark and shining.
-    {
-      const apron = this._spillDisc(1.9, 0.02, 16);
-      shadeGeo(apron, (x, y, z) => 1);
-      PropFactory.add(b, apron, '__wetStone');
-    }
+    // Darkest under the basin, drying off toward the rim — the gradient runs the
+    // other way from a light pool, hence the explicit centre/rim.
+    PropFactory.add(b, this._spillDisc(1.9, 0.025, 16, 0.62, 1.0), '__wetStone');
 
     // still water surface
     {

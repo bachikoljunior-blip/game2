@@ -153,6 +153,8 @@ export class Level {
     this.spawnPoints = null;
     this.interactables = [];
     this.spawnQueue = [];
+    /** Lantern flames, nearest the arena first — see `_realizeLights`. */
+    this.propLights = [];
     this.stats = { drawCalls: 0, triangles: 0, cells: 0, instances: 0 };
 
     this._enc = { active: null, index: -1, t: 0, waveIndex: 0, done: new Set(), cleared: false };
