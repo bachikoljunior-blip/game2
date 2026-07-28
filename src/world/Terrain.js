@@ -1386,10 +1386,16 @@ ${this._heightGLSL()}
       uWaterLevel: { value: this.waterLevel },
       uSkyTint: { value: new Color(0x9fb4c8) },
       uAerial: { value: new Vector2(90, 0.00085) },
-      // Finite-difference step for the per-pixel normal, in metres: wide enough to
-      // straddle a heightfield texel so the bilinear kink never shows as a lattice,
-      // narrow enough to keep the real relief. x = core field, y = macro field.
-      uNormalStep: { value: new Vector2(this.cell * 1.35, this.macroCell * 0.85) },
+      // Finite-difference step for the per-pixel normal, in metres. This *must* be
+      // wider than one texel of the field being differenced. A bilinear texture is
+      // C0, not C1: its gradient is discontinuous across every texel boundary, so a
+      // central difference narrower than a texel returns that cell's constant patch
+      // gradient and paints the data grid onto the mountain as hard-edged facets —
+      // the same artifact as the vertex normal, one lattice finer. Two texels of
+      // span is the finest honest answer the data supports; everything below it is
+      // supplied by the slope-aligned striation instead.
+      // x = core field (1.7 m texels), y = macro field (16 m texels).
+      uNormalStep: { value: new Vector2(this.cell * 1.9, this.macroCell * 2.1) },
       uWindXZ: { value: new Vector2(0.82, 0.57) },
     };
     this.uniforms = uniforms;

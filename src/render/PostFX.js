@@ -540,6 +540,7 @@ uniform sampler2D tScene;
 uniform vec2 uSunUv;
 uniform float uSunRadius;
 uniform float uAspect;
+uniform float uEmitClamp;
 varying vec2 vUv;
 void main() {
   float d = texture2D(tDepth, vUv).x;
@@ -549,14 +550,37 @@ void main() {
   // naive "d >= 0.999995" sky test misses entirely and the god rays silently vanish.
   float lz = viewZ(min(d, 0.9999999)) / uFar;
   float sky = smoothstep(0.70, 0.92, lz);
-  vec3 c = texture2D(tScene, vUv).rgb;
-  float e = luma(c);
+
   vec2 dv = (vUv - uSunUv) * vec2(uAspect, 1.0);
   float r = length(dv);
-  // Weight by proximity to the sun so we build shafts, not a global sky glow.
+  // Bias toward the solar direction so the march builds shafts rather than a uniform
+  // sky bloom. This is a *weight on real radiance* and nothing else: at 0.26 it spanned
+  // a quarter of the frame, which is wide enough that every march integrates from every
+  // direction and the result is a radially symmetric veil with no legible structure.
   float prox = exp(-r * r / max(uSunRadius * uSunRadius, 1e-4));
-  float core = smoothstep(0.05, 0.0, r) * 1.0;
-  gl_FragColor = vec4(vec3(sky * (e * 0.35 + 0.65) * (prox + core)), 1.0);
+
+  // Scatter only light that is actually in the buffer.
+  //
+  // This term used to read (luma(c) * 0.35 + 0.65), and that 0.65 was a constant
+  // floor with no dependence on scene radiance: every visible sky pixel emitted it
+  // whether the sky wrote 0.1 or 150. Multiplied through a 48-tap march it deposited
+  // roughly two linear units of untextured white around the sun, which pinned the
+  // whole quadrant at the grade's white point and erased the solar disc Sky.js draws —
+  // zeroing the disc barely moved the frame, because the disc was never what we were
+  // scattering. A volumetric pass may only redistribute radiance; it may never
+  // manufacture it, because a manufactured term cannot be tuned out downstream. It
+  // does not scale with anything.
+  //
+  // Colour is carried through rather than collapsed to luma, so an amber disc throws
+  // amber shafts without the composite having to tint them back in.
+  //
+  // The clamp is the same guard the bloom prefilter uses: a ~150-linear disc a handful
+  // of pixels wide, sampled by a 48-tap line march, is a firefly generator — one tap
+  // landing on or off the limb swings the shaft by an order of magnitude. Clamping the
+  // source puts the disc and the Mie halo around it on comparable footing and makes the
+  // pass robust to Sky.js retuning the disc's peak.
+  vec3 emit = min(texture2D(tScene, vUv).rgb, vec3(uEmitClamp)) * (sky * prox);
+  gl_FragColor = vec4(emit, 1.0);
 }
 `;
 
@@ -1287,11 +1311,12 @@ export class PostFX {
     this.bloomThreshold = 1.0;
     this.bloomKnee = 0.62;
     this.bloomRadius = 1.35;
-    // God rays were authored at roughly a fifth of the weight they need: the shafts
-    // existed in the buffer but sat under the noise floor of the frame. See
-    // _passGodRays for the matching narrowing of the emission field, which is what
-    // turns a milky sky wash into countable shafts.
-    this.godRayStrength = 1.5;
+    // Tuned against a real solar disc in the occlusion buffer, not against the constant
+    // emission floor that used to be there (see FRAG_GOD_OCCLUSION). Scattering actual
+    // radiance needs *far* less gain than manufacturing it did: the source is now
+    // ~150 linear at the disc rather than a flat 0.65, so a shaft carries its energy
+    // from the sun instead of from an arbitrary constant.
+    this.godRayStrength = 0.35;
     this.aoStrength = 0.85;
     this.aoRadius = 0.65;
     this.saturation = 1.06;
@@ -1865,8 +1890,9 @@ export class PostFX {
       uProjInv: { value: new Matrix4() },
       uNear: { value: 0.1 }, uFar: { value: 900 },
       uSunUv: { value: new Vector2(0.5, 0.5) },
-      uSunRadius: { value: 0.30 },
+      uSunRadius: { value: 0.11 },
       uAspect: { value: 1.78 },
+      uEmitClamp: { value: 8.0 },
     });
     this.mGodBlur = this._mat(FRAG_GOD_BLUR, {
       tSrc: { value: black },
@@ -1971,7 +1997,9 @@ export class PostFX {
       // Amber, not neutral: the halation belongs to a low sun and to lantern paper.
       uBloomTint: { value: new Color(1.0, 0.905, 0.79) },
       uGodStrength: { value: 0 },
-      uGodTint: { value: new Color(1.0, 0.80, 0.55) },
+      // Near-neutral now that the occlusion pass carries real colour: the shafts are
+      // already the sun's own amber, and tinting them again would double the cast.
+      uGodTint: { value: new Color(1.0, 0.97, 0.93) },
       uDofBlend: { value: this.dofBlend },
       uLutMix: { value: 0 },
       uLutStrength: { value: this.lutStrength },
@@ -2846,17 +2874,22 @@ export class PostFX {
     ou.uFar.value = this._far;
     ou.uSunUv.value.copy(this._sunUv);
     ou.uAspect.value = this._w / Math.max(1, this._h);
-    // Concentrate the emission near the disc. At 0.30 the source was a blob a third of
-    // the screen wide, so every march picked up light from every direction and the
-    // result was a radially-symmetric wash with no legible shafts. A tight source is
-    // what makes an occluder edge cut a *countable* wedge out of the fan.
-    ou.uSunRadius.value = 0.26;
+    // The emitter is now the sun and the halo Sky.js actually draws, so it is sized
+    // against them: the disc is ~0.01 of frame height, and 0.11 covers it plus the Mie
+    // glow around it. Anything wider stops being a source and becomes a veil — an
+    // occluder edge can only cut a countable wedge out of a fan that has a small,
+    // well-defined origin.
+    ou.uSunRadius.value = 0.11;
+    ou.uEmitClamp.value = this._hdr ? 8.0 : 1.0;
     this._draw(this.mGodOcclusion, this.rtGodA);
 
     const bu = this.mGodBlur.uniforms;
     bu.tSrc.value = this.rtGodA.texture;
     bu.uSunUv.value.copy(this._sunUv);
-    bu.uDensity.value = 0.72;   // march 72% of the way to the sun: longer shafts
+    // March the whole way to the sun. With the old wide emitter a partial march still
+    // landed inside the source; with a tight one a pixel that stops 28% short never
+    // reaches the light at all and its shaft simply does not exist.
+    bu.uDensity.value = 1.0;
     bu.uDecay.value = 0.970;    // slow enough that the far end of the march still reads
     bu.uWeight.value = 3.0;
     bu.uNoise.value = (this._frame & 31) * 0.137;
