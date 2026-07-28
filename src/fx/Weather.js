@@ -99,18 +99,31 @@ vec3 kagerouBend(vec3 wp, float h, float stiffness){
 //  Presets
 // ============================================================================
 
-/** Every preset is a full target state; `setPreset` cross-fades between two. */
+/**
+ * Every preset is a full target state; `setPreset` cross-fades between two.
+ *
+ * `fog` drives the valley cloud sea (down at the datum, out of the shrine's way).
+ * `wisp` is the separate, much smaller ground-hugging drift on whatever ground the
+ * player is standing on — kept decoupled so the default 'petals' preset can have a
+ * thick sea below the cliff and still leave the courtyard flagstone readable.
+ */
 export const WEATHER_PRESETS = {
-  clear: { petals: 0.25, leaves: 0.15, embers: 0.00, motes: 0.60, rain: 0.00, fog: 0.22, wetness: 0.00, wind: 0.35, gust: 0.35 },
-  mist: { petals: 0.30, leaves: 0.20, embers: 0.00, motes: 0.30, rain: 0.00, fog: 1.00, wetness: 0.18, wind: 0.20, gust: 0.22 },
-  rain: { petals: 0.05, leaves: 0.30, embers: 0.00, motes: 0.00, rain: 1.00, fog: 0.55, wetness: 0.90, wind: 0.60, gust: 0.60 },
-  storm: { petals: 0.00, leaves: 0.60, embers: 0.00, motes: 0.00, rain: 1.60, fog: 0.42, wetness: 1.00, wind: 1.00, gust: 1.00 },
-  petals: { petals: 1.00, leaves: 0.35, embers: 0.15, motes: 0.60, rain: 0.00, fog: 0.58, wetness: 0.00, wind: 0.45, gust: 0.50 },
-  night: { petals: 0.50, leaves: 0.20, embers: 1.00, motes: 0.10, rain: 0.00, fog: 0.80, wetness: 0.05, wind: 0.25, gust: 0.30 },
+  clear: { petals: 0.25, leaves: 0.15, embers: 0.00, motes: 0.60, rain: 0.00, fog: 0.30, wisp: 0.00, wetness: 0.00, wind: 0.35, gust: 0.35 },
+  mist: { petals: 0.30, leaves: 0.20, embers: 0.00, motes: 0.30, rain: 0.00, fog: 1.00, wisp: 0.55, wetness: 0.18, wind: 0.20, gust: 0.22 },
+  rain: { petals: 0.05, leaves: 0.30, embers: 0.00, motes: 0.00, rain: 1.00, fog: 0.60, wisp: 0.14, wetness: 0.90, wind: 0.60, gust: 0.60 },
+  storm: { petals: 0.00, leaves: 0.60, embers: 0.00, motes: 0.00, rain: 1.60, fog: 0.45, wisp: 0.10, wetness: 1.00, wind: 1.00, gust: 1.00 },
+  petals: { petals: 1.00, leaves: 0.35, embers: 0.15, motes: 0.60, rain: 0.00, fog: 0.70, wisp: 0.09, wetness: 0.00, wind: 0.45, gust: 0.50 },
+  night: { petals: 0.50, leaves: 0.20, embers: 1.00, motes: 0.10, rain: 0.00, fog: 0.85, wisp: 0.28, wetness: 0.05, wind: 0.25, gust: 0.30 },
 };
 
-const PRESET_KEYS = ['petals', 'leaves', 'embers', 'motes', 'rain', 'fog', 'wetness', 'wind', 'gust'];
+const PRESET_KEYS = ['petals', 'leaves', 'embers', 'motes', 'rain', 'fog', 'wisp', 'wetness', 'wind', 'gust'];
 const CROSSFADE = 4.0;      // seconds, per the brief
+
+/**
+ * Altitude the valley mist pools at, used only until Terrain has published its
+ * own `waterLevel`. Mirrors `WORLD.WATER_LEVEL`; Terrain owns the real number.
+ */
+const VALLEY_DATUM_FALLBACK = 782;
 
 // Field modes, matched by `#define MODE` in the shader.
 const MODE_PETAL = 0, MODE_LEAF = 1, MODE_EMBER = 2, MODE_RAIN = 3, MODE_MOTE = 4;
@@ -180,6 +193,9 @@ export class WeatherSystem {
 
     this.baseY = 0;
     this.groundY = 0;
+    this._baseYInit = false;
+    /** Absolute world altitude the valley cloud sea pools at (Terrain's waterLevel). */
+    this.valleyDatum = VALLEY_DATUM_FALLBACK;
     this.origin = new Vector3();
     this.sunDir = new Vector3(0.3, 0.55, 0.78).normalize();
     this.sunColor = new Color('#ffd9a8');
@@ -346,7 +362,14 @@ export class WeatherSystem {
     const cam = this.ctx.camera;
     if (cam) this.origin.copy(cam.position);
     this.groundY = this._groundY(this.origin.x, this.origin.z);
-    this.baseY = damp(this.baseY, this.groundY, 2.5, rdt);
+    // Snap on the first frame: damping up from 0 would sweep the ground wisp
+    // through 800 m of world during the first two seconds of play.
+    if (!this._baseYInit) { this.baseY = this.groundY; this._baseYInit = true; }
+    else this.baseY = damp(this.baseY, this.groundY, 2.5, rdt);
+
+    // The cloud sea is pinned to the world, not to us. Terrain owns the datum.
+    const wl = this.ctx.terrain?.waterLevel;
+    if (typeof wl === 'number' && isFinite(wl)) this.valleyDatum = wl;
 
     // --- sun / time of day ----------------------------------------------------
     this._readSun();
@@ -540,27 +563,61 @@ export class WeatherSystem {
   }
 
   // ======================================================================= fog
-
   /**
-   * Layered horizontal noise planes at valley altitude. Horizontal layers are the
-   * only volumetric-looking mist that stays inside a mobile budget; the tell-tale
-   * flatness is hidden by a grazing-angle term, a camera-plane proximity fade and
-   * a soft-particle depth fade against the scene.
+   * Two separate bodies of mist, because they are two different phenomena:
+   *
+   *  1. **The valley cloud sea** (mode 0) — layers pinned to *absolute world
+   *     altitude* around the valley datum (`terrain.waterLevel`, 782 m), NOT to
+   *     the camera. The shrine plateau is flat at 812 m, so every slab sits tens
+   *     of metres below the flagstone and is simply occluded by the plateau
+   *     itself: the player looks *down* onto a sea of cloud, which is what
+   *     ARCHITECTURE §5 asks for. Per-layer density ramps up with depth below
+   *     the datum, so the top surface feathers out and the 723 m basin floor is
+   *     buried. Camera-anchoring this was what flooded the courtyard.
+   *
+   *  2. **The ground wisp** (mode 1) — a couple of centimetres of drift that
+   *     does follow the local ground, for the low sun to rake between the
+   *     lanterns. Deliberately tiny: it is driven by its own `wisp` preset knob
+   *     so 'clear' and 'petals' get a whisper and only 'mist' gets ankle-deep.
+   *
+   * Horizontal layers are the only volumetric-looking mist inside a mobile
+   * budget; the tell-tale flatness is hidden by a grazing-angle term, a
+   * camera-plane proximity fade and a soft-particle depth fade.
    */
   _buildFog(weather) {
-    const layers = weather >= 0.9 ? 7 : weather >= 0.6 ? 5 : 3;
+    const valleyLayers = weather >= 0.9 ? 6 : weather >= 0.6 ? 4 : 3;
+    const wispLayers = weather >= 0.6 ? 2 : 1;
+    const layers = valleyLayers + wispLayers;
     const geo = this._quadGeometry();
 
-    const fPar = new Float32Array(layers * 4);   // height, scale, phase, speed
-    for (let i = 0; i < layers; i++) {
-      const t = i / Math.max(1, layers - 1);
-      fPar[i * 4] = -0.6 + t * 7.5;                        // metres above the valley floor
-      fPar[i * 4 + 1] = 110 + t * 130;                     // plane size
+    const fPar = new Float32Array(layers * 4);   // altitude, scale, phase, speed
+    const fPar2 = new Float32Array(layers * 4);  // mode, alphaScale, grazePow, unused
+
+    for (let i = 0; i < valleyLayers; i++) {
+      const t = i / Math.max(1, valleyLayers - 1);
+      // −30 m to +3 m about the datum: the inversion band that fills the basin
+      // and tops out well under the 812 m plateau.
+      fPar[i * 4] = -30 + t * 33;
+      fPar[i * 4 + 1] = 260 + t * 220;                  // wide — this is read at 300 m
       fPar[i * 4 + 2] = this.rng() * 100;
-      fPar[i * 4 + 3] = 0.35 + this.rng() * 0.5;
+      fPar[i * 4 + 3] = 0.30 + this.rng() * 0.45;
+      fPar2[i * 4] = 0;
+      fPar2[i * 4 + 1] = 1.0;
+      fPar2[i * 4 + 2] = 0.65;
     }
-    const at = new InstancedBufferAttribute(fPar, 4);
-    geo.setAttribute('fPar', at);
+    for (let j = 0; j < wispLayers; j++) {
+      const i = valleyLayers + j;
+      fPar[i * 4] = 0.10 + j * 0.28;                    // centimetres, not metres
+      fPar[i * 4 + 1] = 70 + j * 40;
+      fPar[i * 4 + 2] = this.rng() * 100;
+      fPar[i * 4 + 3] = 0.5 + this.rng() * 0.5;
+      fPar2[i * 4] = 1;
+      fPar2[i * 4 + 1] = 0.34 - j * 0.10;
+      fPar2[i * 4 + 2] = 2.4;                           // only visible near grazing
+    }
+
+    geo.setAttribute('fPar', new InstancedBufferAttribute(fPar, 4));
+    geo.setAttribute('fPar2', new InstancedBufferAttribute(fPar2, 4));
     geo.instanceCount = layers;
 
     const mat = new ShaderMaterial({
@@ -571,7 +628,9 @@ export class WeatherSystem {
         uTime: { value: 0 },
         uOrigin: { value: new Vector3() },
         uBaseY: { value: 0 },
+        uDatum: { value: VALLEY_DATUM_FALLBACK },
         uDensity: { value: 0.6 },
+        uWisp: { value: 0.1 },
         uColor: { value: new Color('#9fb0c4') },
         uSunColor: { value: new Color('#ffd9a8') },
         uSunDir: { value: new Vector3(0, 1, 0) },
@@ -597,21 +656,25 @@ export class WeatherSystem {
     mesh.renderOrder = 8;
     this.ctx.scene?.add(mesh);
 
-    this.fog = { layers, geo, mat, mesh };
+    this.fog = { layers, valleyLayers, wispLayers, geo, mat, mesh };
   }
 
   _updateFog(rdt) {
     const f = this.fog;
     if (!f) return;
     const u = f.mat.uniforms;
-    const density = clamp(this.current.fog, 0, 1.4) * clamp(this.ctx.quality?.weather ?? 0.7, 0.2, 1.2);
-    f.mesh.visible = density > 0.01;
+    const q = clamp(this.ctx.quality?.weather ?? 0.7, 0.2, 1.2);
+    const density = clamp(this.current.fog, 0, 1.4) * q;
+    const wisp = clamp(this.current.wisp, 0, 1) * q;
+    f.mesh.visible = density > 0.01 || wisp > 0.01;
     if (!f.mesh.visible) return;
 
     u.uTime.value = this.time;
     u.uOrigin.value.copy(this.origin);
     u.uBaseY.value = this.baseY;
+    u.uDatum.value = this.valleyDatum;
     u.uDensity.value = density;
+    u.uWisp.value = wisp;
     u.uColor.value.copy(this.fogColor);
     u.uSunColor.value.copy(this.sunColor);
     u.uSunDir.value.copy(this.sunDir);
@@ -946,25 +1009,42 @@ void main(){
 `;
 
 const FOG_VERT = /* glsl */`
-attribute vec4 fPar;    // height, scale, phase, speed
+attribute vec4 fPar;     // altitude, scale, phase, speed
+attribute vec4 fPar2;    // mode (0 = valley slab, 1 = ground wisp), alphaScale, grazePow
 
 uniform float uTime;
 uniform vec3 uOrigin;
-uniform float uBaseY;
+uniform float uBaseY;    // damped terrain height under the camera (wisp anchor)
+uniform float uDatum;    // absolute valley altitude (cloud-sea anchor)
 
 varying vec3 vWorld;
 varying vec2 vQuad;
 varying float vViewZ;
 varying float vPhase;
 varying float vSpeed;
+varying float vMode;
+varying float vAlphaScale;
+varying float vGrazePow;
 
 void main(){
   vQuad = position.xy + 0.5;
   vPhase = fPar.z;
   vSpeed = fPar.w;
-  // The layer is a horizontal plane parked around the camera at valley altitude.
-  vec3 wp = vec3(position.x, 0.0, position.y) * fPar.y
-          + vec3(uOrigin.x, uBaseY + fPar.x, uOrigin.z);
+  vMode = fPar2.x;
+  vGrazePow = fPar2.z;
+
+  // Mode 0 pins to world altitude, so the plateau at 812 m is simply above the
+  // whole stack and occludes it. Mode 1 rides the ground the player is on.
+  float anchor = mix(uDatum, uBaseY, step(0.5, fPar2.x));
+  float wy = anchor + fPar.x;
+
+  // Inversion profile: feathered at the top surface, thick deep in the basin.
+  float depthBelowDatum = uDatum - wy;
+  float altGain = mix(smoothstep(-4.0, 16.0, depthBelowDatum), 1.0, step(0.5, fPar2.x));
+  vAlphaScale = fPar2.y * altGain;
+
+  // Only the XZ extent follows the camera; the layer never rides our height.
+  vec3 wp = vec3(position.x, 0.0, position.y) * fPar.y + vec3(uOrigin.x, wy, uOrigin.z);
   vWorld = wp;
   vec4 mv = viewMatrix * vec4(wp, 1.0);
   vViewZ = mv.z;
@@ -979,6 +1059,7 @@ uniform float uNear;
 uniform float uFar;
 uniform float uSoftness;
 uniform float uDensity;
+uniform float uWisp;
 uniform float uTime;
 uniform vec3 uColor;
 uniform vec3 uSunColor;
@@ -989,6 +1070,9 @@ varying vec2 vQuad;
 varying float vViewZ;
 varying float vPhase;
 varying float vSpeed;
+varying float vMode;
+varying float vAlphaScale;
+varying float vGrazePow;
 
 ${WIND_GLSL}
 
@@ -1010,12 +1094,18 @@ void main(){
   V /= max(dist, 1e-4);
 
   // Mist reads as volume edge-on; looking straight down at a plane exposes it.
-  float grazing = pow(clamp(1.0 - abs(V.y), 0.0, 1.0), 0.65);
+  // The wisp uses a much sharper exponent so it only shows raking across the
+  // flagstone and never as a lid over the courtyard.
+  float grazing = pow(clamp(1.0 - abs(V.y), 0.0, 1.0), vGrazePow);
   // ...and never reveal the sheet while the camera sits inside it.
   float camFade = smoothstep(0.0, 1.8, abs(cameraPosition.y - vWorld.y));
 
-  float alpha = density * radial * grazing * camFade * uDensity * 0.32;
+  float strength = mix(uDensity, uWisp, step(0.5, vMode));
+  float alpha = density * radial * grazing * camFade * strength * vAlphaScale * 0.32;
   alpha *= 0.15 + 0.85 * smoothstep(3.0, 24.0, dist);
+
+  // The wisp is a foreground detail; do not let it haze the far half of the shot.
+  alpha *= mix(1.0, 1.0 - smoothstep(28.0, 70.0, dist), step(0.5, vMode));
 
   #ifdef SOFT_DEPTH
     vec2 suv = gl_FragCoord.xy * uResolution.zw;

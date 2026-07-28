@@ -89,6 +89,45 @@ function chainCacheKey(material, token) {
 // Module-scope scratch. Nothing in update() or the tile generator may allocate.
 const _colScratch = new Color();
 const _windScratch = new Vector3();
+
+/**
+ * ARCHITECTURE §5b — nothing non-finite may cross a system boundary. That rule bites
+ * harder here than anywhere else in the build, so this is the reasoning in full.
+ *
+ * `uChars`, `uDisturbP` and `uDisturbA` are the only Float32Array *array* uniforms in the
+ * project. three's `WebGLUniforms.flatten` decides "is this an array of numbers or of
+ * objects?" by testing element 0 with `if ( firstElem <= 0 || firstElem > 0 ) return array;`
+ * — and **both comparisons are false for NaN**. So a single NaN in element 0 falls through
+ * to the object branch and calls `.toArray()` on a number. The renderer throws mid-frame,
+ * before the composite runs, and the failure surfaces as `i.toArray is not a function` in
+ * whatever system happens to be downstream. One bad character position takes the frame
+ * down and freezes every stat anyone is trying to measure.
+ *
+ * Hence: every gate gating a write into those arrays is written in the *rejecting* form.
+ * `x > limit` is false for NaN and therefore **admits** it; `!(x <= limit)` rejects it.
+ * Two things that look like defences and are not: `clamp()` passes NaN straight through,
+ * and `typeof NaN === 'number'` is true.
+ */
+const finite = Number.isFinite;
+const finiteVec = (p) => !!p && finite(p.x) && finite(p.y) && finite(p.z);
+
+/** Entity contract §3 gives us id and faction; enough to name the culprit in a warning. */
+const entityName = (e) => (e && (e.faction || e.name) ? `${e.faction || e.name}#${e.id}` : 'unknown');
+
+/**
+ * A non-finite value arriving here is an upstream fault worth surfacing, not something to
+ * swallow — but it arrives every frame, so it is reported once per offender and then
+ * silently dropped rather than flooding the console for the rest of the session.
+ */
+const _nanWarned = new Set();
+function warnNonFinite(sink, who, p) {
+  const key = `${sink}|${who}`;
+  if (_nanWarned.has(key)) return;
+  _nanWarned.add(key);
+  const at = p ? `${p.x}, ${p.y}, ${p.z}` : String(p);
+  console.warn(`[foliage] dropped a non-finite position bound for ${sink}, from ${who} (${at}). ` +
+    'Left in, this crashes WebGLUniforms.flatten and kills the frame — fix it at the source.');
+}
 /** Scratch for _plantY's out-parameter. Scatter is a build-time pass, but no allocation is free. */
 const _plant = { sag: 0 };
 
@@ -1532,19 +1571,22 @@ export class FoliageSystem {
    */
   _calibrateTerrain() {
     const h = this.ctx.terrain?.heightAt?.(0, 0);
-    this._yBias = (typeof h === 'number' && Math.abs(h) > 1) ? 0 : WORLD.PLATEAU_HEIGHT;
+    // Already fails safe on NaN (Math.abs(NaN) > 1 is false, so we bias to the plateau),
+    // but state it rather than rely on it — the whole point of §5b is not having to reason
+    // about which side of a comparison NaN happens to land on.
+    this._yBias = (finite(h) && Math.abs(h) > 1) ? 0 : WORLD.PLATEAU_HEIGHT;
 
     // Ring 2 is the clipmap level drawing the ground at the distance where a plant first
     // silhouettes against the sky, so its cell is the span the render chord has to bridge.
     const rings = this.ctx.terrain?.rings;
     const cell = Array.isArray(rings) ? rings[2]?.userData?.cell : undefined;
-    this._chordCell = (typeof cell === 'number' && cell > 0.5) ? cell : SINK_CELL_FALLBACK;
+    this._chordCell = (finite(cell) && cell > 0.5) ? cell : SINK_CELL_FALLBACK;
     this._placement = { planted: 0, sunk: 0, maxSink: 0, floating: 0 };
   }
 
   _heightAt(x, z) {
     const h = this.ctx.terrain?.heightAt?.(x, z);
-    return (typeof h === 'number' && Number.isFinite(h) ? h : 0) + this._yBias;
+    return (finite(h) ? h : 0) + this._yBias;
   }
 
   /**
@@ -1583,9 +1625,11 @@ export class FoliageSystem {
 
   _slopeAt(x, z) {
     const s = this.ctx.terrain?.slopeAt?.(x, z);
-    if (typeof s === 'number' && Number.isFinite(s)) return s;
+    if (finite(s)) return s;
     const n = this.ctx.terrain?.normalAt?.(x, z);
-    if (n && typeof n.y === 'number') return clamp(1 - n.y, 0, 1);
+    // `typeof n.y === 'number'` was true for NaN and clamp() would have passed it through,
+    // so a degenerate normal used to leak a NaN slope into every site-weight downstream.
+    if (n && finite(n.y)) return clamp(1 - n.y, 0, 1);
     return 0;
   }
 
@@ -1616,7 +1660,8 @@ export class FoliageSystem {
       default: w = 0.65;
     }
     if (w <= 0) return 0;
-    if (y < WORLD.WATER_LEVEL + 0.35) return 0;
+    // Rejecting form: `y < level` is false for NaN and would plant into the stream.
+    if (!(y >= WORLD.WATER_LEVEL + 0.35)) return 0;
     w *= 1 - smoothstep(0.34, 0.78, this._slopeAt(x, z));
     return clamp(w, 0, 1);
   }
@@ -3031,12 +3076,19 @@ vCanopyG = cg;
     if (e.isAlive === false) return k;
     const p = e.position || (e.root && e.root.position);
     if (!p) return k;
+    // Checked before it is measured, because the distance test alone cannot tell a NaN
+    // apart from "far away" and this slot is element 0 of uChars for the player.
+    if (!finiteVec(p)) { warnNonFinite('uChars', entityName(e), p); return k; }
     const dx = p.x - cx, dz = p.z - cz;
-    if (dx * dx + dz * dz > maxD2) return k;
+    // Rejecting form, deliberately: `> maxD2` is false for NaN and would admit it. This
+    // also catches a non-finite camera, which would otherwise poison every slot at once.
+    if (!(dx * dx + dz * dz <= maxD2)) return k;
     const o = k * 4;
     arr[o] = p.x; arr[o + 1] = p.y; arr[o + 2] = p.z;
     // Influence radius is generous: you want to see the parting ahead of the feet.
-    arr[o + 3] = Math.max(e.radius || 0.4, 0.3) * 3.4;
+    // `e.radius || 0.4` already survives a NaN radius (NaN is falsy), but say so explicitly
+    // rather than leave the next reader to work out why Math.max cannot see one.
+    arr[o + 3] = Math.max(finite(e.radius) ? e.radius : 0.4, 0.3) * 3.4;
     return k + 1;
   }
 
@@ -3059,21 +3111,34 @@ vCanopyG = cg;
     for (let i = 0; i < this._extraCharacters.length && k < MAX_CHARACTERS; i++) {
       k = this._addCharacter(this._extraCharacters[i], k, arr, cx, cz, maxD2);
     }
-    for (; k < MAX_CHARACTERS; k++) arr[k * 4 + 3] = 0;
+    // Clear the whole slot, not just the influence radius. Zeroing only .w disables the
+    // slot in the shader but leaves its x behind in the buffer — and if that stale x were
+    // ever non-finite it would sit in element 0 poisoning `flatten` for the rest of the
+    // run, long after whatever wrote it had gone away.
+    for (; k < MAX_CHARACTERS; k++) {
+      const o = k * 4;
+      arr[o] = 0; arr[o + 1] = 0; arr[o + 2] = 0; arr[o + 3] = 0;
+    }
   }
 
   update(dt, elapsed) {
     this._elapsed = elapsed || (this._elapsed + dt);
 
+    // Everything below is ingest from another system, so it gets §5b treatment: on a
+    // non-finite reading we hold the last good value rather than propagate it. A NaN
+    // camera position would otherwise reach every material's `dist` at once and collapse
+    // the whole field to nothing — a far more confusing symptom than one frozen frame.
     const cam = this.ctx.camera;
-    if (cam) this.uniforms.uCamPos.value.copy(cam.position);
+    if (cam && finiteVec(cam.position)) this.uniforms.uCamPos.value.copy(cam.position);
 
     const sky = this.ctx.sky;
     if (sky) {
-      if (sky.sunDirection) this.uniforms.uSunDir.value.copy(sky.sunDirection);
-      if (sky.sunColor) {
+      if (finiteVec(sky.sunDirection)) this.uniforms.uSunDir.value.copy(sky.sunDirection);
+      if (sky.sunColor && finite(sky.sunColor.r)) {
         this.uniforms.uSunColor.value.copy(sky.sunColor);
-        const i = typeof sky.sunIntensity === 'number' ? clamp(sky.sunIntensity / 3.0, 0.05, 1.6) : 1;
+        // `typeof NaN === 'number'`, so the old typeof guard let a NaN intensity through
+        // and clamp() would have passed it on to every foliage fragment.
+        const i = finite(sky.sunIntensity) ? clamp(sky.sunIntensity / 3.0, 0.05, 1.6) : 1;
         this.uniforms.uSunColor.value.multiplyScalar(i);
       }
     }
@@ -3095,16 +3160,22 @@ vCanopyG = cg;
    * correct because the oldest is the one you have already stopped looking at.
    */
   disturb(position, radius = 2.0, strength = 1.0) {
-    if (!position) return;
+    // This is a public entry point off the combat hot path, so it is where a bad hit point
+    // would enter the uniform buffers. Reject rather than clamp: clamp() passes NaN.
+    if (!finiteVec(position)) {
+      if (position) warnNonFinite('uDisturbP', 'disturb()', position);
+      return;
+    }
     const i = this._disturbCursor % MAX_DISTURB;
     this._disturbCursor = (this._disturbCursor + 1) % (MAX_DISTURB * 64);
     const P = this.uniforms.uDisturbP.value;
     const A = this.uniforms.uDisturbA.value;
+    const t = this._windTime();
     const o = i * 4;
     P[o] = position.x; P[o + 1] = position.y; P[o + 2] = position.z;
-    P[o + 3] = Math.max(radius, 0.2);
-    A[o] = clamp(strength, 0, 3);
-    A[o + 1] = this._windTime();
+    P[o + 3] = Math.max(finite(radius) ? radius : 2.0, 0.2);
+    A[o] = clamp(finite(strength) ? strength : 1.0, 0, 3);
+    A[o + 1] = finite(t) ? t : 0;
     A[o + 2] = 0; A[o + 3] = 0;
   }
 
@@ -3113,7 +3184,12 @@ vCanopyG = cg;
    * and rate-limited — this fires off the combat hot path.
    */
   strike(position, direction) {
-    if (!position) return;
+    // Checked here as well as in disturb(), because this one also forwards the position on
+    // to EffectsSystem — §5b is about the boundary, not about our own buffers.
+    if (!finiteVec(position)) {
+      if (position) warnNonFinite('uDisturbP', 'strike()', position);
+      return;
+    }
     this.disturb(position, 3.4, 1.7);
 
     const now = this._elapsed;
@@ -3140,7 +3216,9 @@ vCanopyG = cg;
   /** CPU wind sample. Weather owns the maths; we never re-derive it. */
   windAt(x, z, y = 0, out = _windScratch) {
     const w = this.ctx.weather?.windAt?.(x, z, y, out);
-    if (w) return w;
+    // §5b applies on the way out too: this is a re-export of another system's value and
+    // callers integrate it into positions, so a NaN here would surface somewhere else again.
+    if (finiteVec(w)) return w;
     out.set(0, 0, 0);
     return out;
   }
