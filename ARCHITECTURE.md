@@ -227,3 +227,33 @@ src/
     TouchControls.js   on-screen controls rendering          [ui]
     Menus.js           title / pause / settings              [ui]
 ```
+
+---
+
+## 9. World constants (authoritative)
+
+Every system that places something in the world reads these. They are fixed — Terrain,
+Level, Props, Foliage, Enemy spawns and the Cinematic shots all assume them.
+
+```js
+export const WORLD = {
+  ORIGIN: [0, 0, 0],        // the shrine's honden (main hall) doorway sits here, facing +Z
+  EXTENT: 2048,             // terrain spans [-1024, 1024] on X and Z
+  PLAYABLE: 220,            // the fenced playable region, [-110, 110] on X and Z
+  PLATEAU_CENTER: [0, 0],   // XZ centre of the flattened shrine plateau
+  PLATEAU_RADIUS: 78,       // flattening falls off smoothly from here to +34 m
+  PLATEAU_HEIGHT: 812,      // metres above sea level; the plateau is flat at this height
+  WATER_LEVEL: 782,         // the stream surface, 30 m below the plateau
+  APPROACH_AZIMUTH: 0,      // the stair climb arrives from +Z (south)
+  VALLEY_AZIMUTH: 135,      // the bamboo sea falls away to the south-east
+  RIDGE_AZIMUTH: 315,       // rock ridges rise to the north-west
+  SUN_AZIMUTH_DEFAULT: 118, // magic hour, low over the valley — backlights the bamboo
+};
+```
+
+**All world Y coordinates are absolute metres above sea level**, so the plateau floor is
+`812`, not `0`. `Cinematic.js` shot positions are authored relative to the plateau and are
+offset by `PLATEAU_HEIGHT` at install time. If you need a local frame, subtract
+`WORLD.PLATEAU_HEIGHT`.
+
+`WORLD` lives in `src/world/Constants.js` and is imported, never re-declared.

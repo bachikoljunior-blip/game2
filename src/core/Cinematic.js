@@ -11,8 +11,12 @@
  */
 
 import { Vector3 } from 'three';
+import { WORLD } from '../world/Constants.js';
 
 const _look = new Vector3();
+
+/** Shots are authored plateau-local (0 = shrine floor); the world frame is absolute MSL. */
+const Y0 = WORLD.PLATEAU_HEIGHT;
 
 /**
  * Composed shots, in world space. Framing follows the rule of thirds against the
@@ -55,8 +59,8 @@ export function installCinematic(ctx) {
     }
 
     if (ctx.playerCamera) ctx.playerCamera.enabled = false;
-    cam.position.set(shot.pos[0] + ox, shot.pos[1], shot.pos[2] + oz);
-    _look.set(shot.target[0] + ox, shot.target[1], shot.target[2] + oz);
+    cam.position.set(shot.pos[0] + ox, shot.pos[1] + Y0, shot.pos[2] + oz);
+    _look.set(shot.target[0] + ox, shot.target[1] + Y0, shot.target[2] + oz);
     cam.lookAt(_look);
     cam.fov = shot.fov;
     cam.updateProjectionMatrix();
@@ -80,8 +84,8 @@ export function installCinematic(ctx) {
         ox = ctx.player.root.position.x;
         oz = ctx.player.root.position.z;
       }
-      cam.position.set(shot.pos[0] + ox, shot.pos[1], shot.pos[2] + oz);
-      _look.set(shot.target[0] + ox, shot.target[1], shot.target[2] + oz);
+      cam.position.set(shot.pos[0] + ox, shot.pos[1] + Y0, shot.pos[2] + oz);
+      _look.set(shot.target[0] + ox, shot.target[1] + Y0, shot.target[2] + oz);
       cam.lookAt(_look);
     },
   });
