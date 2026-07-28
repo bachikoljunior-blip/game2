@@ -1156,6 +1156,17 @@ ${this._heightGLSL()}
       beginChunk: /* glsl */`
   vec3 transformed = vec3(position.x, kgY, position.z);
 `,
+      // three only includes <beginnormal_vertex> in the depth shader behind
+      // USE_DISPLACEMENTMAP, so the depth twin does the whole job in <begin_vertex>.
+      // It needs no normal, which also makes the shadow pass cheaper.
+      depthChunk: /* glsl */`
+  vec4 kgWP = modelMatrix * vec4(position, 1.0);
+  vec2 kgXZ = kgWP.xz;
+  float kgCell = length(modelMatrix[0].xyz);
+  float kgY = kgHeight(kgXZ) - aSkirt * kgCell * 3.5;
+  vKgWorld = vec3(kgXZ.x, kgY, kgXZ.y);
+  vec3 transformed = vec3(position.x, kgY, position.z);
+`,
     };
   }
 
@@ -1262,9 +1273,7 @@ ${this._heightGLSL()}
     chainOnBeforeCompile(depth, (shader) => {
       Object.assign(shader.uniforms, uniforms);
       shader.vertexShader = defines + '\n' + V.pre + shader.vertexShader;
-      shader.vertexShader = shader.vertexShader
-        .replace('#include <beginnormal_vertex>', V.normalChunk)
-        .replace('#include <begin_vertex>', V.beginChunk);
+      shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', V.depthChunk);
     });
     depth.customProgramCacheKey = () => 'kagerou-terrain-depth';
 

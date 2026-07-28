@@ -1155,6 +1155,19 @@ export class Enemy {
     return null;
   }
 
+  /**
+   * Abort a swing that has not committed yet. This is what lets a skilled Ronin
+   * see the player's tell mid-windup and answer with a deflect instead — the
+   * single biggest thing that stops enemies feeling like they are on rails.
+   */
+  cancelAttack() {
+    const m = this.currentMove;
+    if (!m || this.state !== 'attack') return false;
+    if (this.weapon.active || this.attackTime >= m.commitAt) return false;
+    this._endAttack(true);
+    return true;
+  }
+
   _endAttack(fromFeint) {
     const m = this.currentMove;
     this.weapon.active = false;

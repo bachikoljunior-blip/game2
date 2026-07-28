@@ -1434,7 +1434,176 @@ export class FoliageSystem {
     return clamp(w, 0, 1);
   }
 
-  //@@SECTION_10@@
+  // ------------------------------------------------------------------ textures
+
+  _buildTextures(q) {
+    const px = Math.min(512, Math.max(128, (q.textureSize || 512) >> 1));
+    const aniso = q.anisotropy || 1;
+    const T = (canvas, srgb = true) => {
+      const t = texFromCanvas(canvas, srgb, aniso);
+      this._textures.push(t);
+      return t;
+    };
+
+    const palette = ['#4e6b3c', '#5d7a41', '#77883f', '#9c8548', '#c07a3a'];
+    this.tex = {
+      clump: T(paintGrassClump(px, palette)),
+      bambooLeaf: T(paintBambooLeaves(px)),
+      blossom: T(paintBlossom(px)),
+      momiji: T(paintMomiji(px)),
+      cedar: T(paintCedarSpray(px)),
+      fern: T(paintFern(px)),
+      susuki: T(paintSusukiPlume(px)),
+      fallen: T(paintFallenLeaves(px)),
+    };
+
+    const gd = paintGroundDetail(Math.min(512, px * 2));
+    const gdAlbedo = texFromCanvas(gd.albedo, true, aniso);
+    const gdNormal = texFromCanvas(gd.normal, false, aniso);
+    gdAlbedo.wrapS = gdAlbedo.wrapT = RepeatWrapping;
+    gdNormal.wrapS = gdNormal.wrapT = RepeatWrapping;
+    this._textures.push(gdAlbedo, gdNormal);
+    /** Published for Terrain: at LOW tier this is the only thing selling ground cover. */
+    this.groundDetail = { map: gdAlbedo, normalMap: gdNormal, repeat: 2.5, strength: 0.85 };
+  }
+
+  // ----------------------------------------------------------------- materials
+
+  /**
+   * Every foliage material is a MeshLambertMaterial with our vertex/fragment injection.
+   * Lambert because it is per-fragment, takes shadows and an env map, and costs a third of
+   * Standard on a phone — the look here comes from the translucency term, not from a BRDF.
+   */
+  _makeMaterial(opts) {
+    const {
+      name, mode = 0, map = null, color = 0xffffff, alphaTest = 0.42,
+      bendExp = 2.0, whip = 0, bendGain = 1.0, flutter = 1.0,
+      fadeNear = [-2, -1], fadeFar = [30, 34], size = [1, 1],
+      sss = 1.0, sssColor = 0xb8d07a, tipGlow = 0.16, baseAO = 0.34, grain = 0.16,
+      side = DoubleSide, depthWrite = true,
+    } = opts;
+
+    const mat = new MeshLambertMaterial({
+      name: `foliage/${name}`,
+      color,
+      map,
+      side,
+      alphaTest: map ? alphaTest : 0,
+      transparent: false,
+      depthWrite,
+      // Foliage is cutout, never blended: no sort order to get wrong, and it casts a
+      // correct alpha-tested shadow for free.
+      forceSinglePass: true,
+    });
+
+    const local = {
+      uFadeNear: { value: new Vector2(fadeNear[0], fadeNear[1]) },
+      uFadeFar: { value: new Vector2(fadeFar[0], fadeFar[1]) },
+      uSize: { value: new Vector2(size[0], size[1]) },
+      uBendGain: { value: bendGain },
+      uFlutter: { value: flutter },
+      uSSSColor: { value: new Color(sssColor) },
+      uSSSStrength: { value: sss },
+      uTipGlow: { value: tipGlow },
+      uBaseAO: { value: baseAO },
+      uGrain: { value: grain },
+    };
+    mat.userData.kag = local;
+
+    const shared = this.uniforms;
+    const windGLSL = this.WIND_GLSL;
+    const pars = vertexPars(windGLSL);
+    const defines = `#define KAG_MODE ${mode}\n#define KAG_BEND_EXP ${bendExp.toFixed(2)}\n` +
+      (whip > 0 ? `#define KAG_WHIP ${whip.toFixed(3)}\n` : '');
+
+    chainBeforeCompile(mat, (shader) => {
+      for (const k in shared) shader.uniforms[k] = shared[k];
+      for (const k in local) shader.uniforms[k] = local[k];
+
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\n' + defines + pars)
+        .replace('#include <beginnormal_vertex>', 'kagFoliageVertex();\nvec3 objectNormal = kagNrmG;')
+        .replace('#include <begin_vertex>', 'vec3 transformed = kagPosG;');
+
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\n' + glslNoise + FRAGMENT_PARS)
+        .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\n' + FRAGMENT_DITHER)
+        .replace('#include <map_fragment>', '#include <map_fragment>\n' + FRAGMENT_TINT)
+        .replace('#include <lights_fragment_begin>', '#include <lights_fragment_begin>\n' + FRAGMENT_SHADOW_CAPTURE)
+        .replace('#include <envmap_fragment>', FRAGMENT_SSS + '\n#include <envmap_fragment>');
+    });
+    chainCacheKey(mat, `kagfol|${mode}|${bendExp}|${whip}`);
+
+    this.ctx.sky?.applyFog?.(mat);
+    this._materials.push(mat);
+    return mat;
+  }
+
+  /**
+   * The matching depth material. Without this, a wind-bent blade would cast the shadow of
+   * the blade it *would* have been if it were standing still.
+   */
+  _makeDepthMaterial(mat, opts) {
+    const { mode = 0, bendExp = 2.0, whip = 0, map = null, alphaTest = 0.42 } = opts;
+    const depth = new MeshDepthMaterial({
+      depthPacking: RGBADepthPacking,
+      map,
+      alphaTest: map ? alphaTest : 0,
+      side: mat.side,
+    });
+
+    const shared = this.uniforms;
+    const local = mat.userData.kag;
+    const pars = vertexPars(this.WIND_GLSL);
+    const defines = `#define KAG_MODE ${mode}\n#define KAG_BEND_EXP ${bendExp.toFixed(2)}\n` +
+      (whip > 0 ? `#define KAG_WHIP ${whip.toFixed(3)}\n` : '');
+
+    chainBeforeCompile(depth, (shader) => {
+      for (const k in shared) shader.uniforms[k] = shared[k];
+      for (const k in local) shader.uniforms[k] = local[k];
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\n' + defines + pars +
+          '\nvarying float vKagFadeD;')
+        .replace('#include <begin_vertex>', 'kagFoliageVertex();\nvKagFadeD = vKagFade;\nvec3 transformed = kagPosG;');
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\nvarying float vKagFadeD;\n' +
+          'float kagBayer2( vec2 a ) { a = floor( a ); return fract( a.x * 0.5 + a.y * a.y * 0.75 ); }\n' +
+          '#define kagBayer4( a ) ( kagBayer2( 0.5 * ( a ) ) * 0.25 + kagBayer2( a ) )\n' +
+          '#define kagBayer8( a ) ( kagBayer4( 0.5 * ( a ) ) * 0.25 + kagBayer2( a ) )')
+        .replace('#include <clipping_planes_fragment>',
+          '#include <clipping_planes_fragment>\nif ( vKagFadeD < kagBayer8( gl_FragCoord.xy ) ) discard;');
+    });
+    chainCacheKey(depth, `kagfold|${mode}|${bendExp}|${whip}`);
+    this._materials.push(depth);
+    return depth;
+  }
+
+  /**
+   * One drawable batch. Position/scale live entirely in the instance buffers so the mesh
+   * itself never moves; its bounding sphere is authored from the batch extent because an
+   * InstancedBufferGeometry's own bounds only describe a single blade.
+   */
+  _makeBatchMesh(baseGeo, material, depthMaterial, capacity, castShadow) {
+    const geo = makeInstanced(baseGeo, capacity);
+    const mesh = new Mesh(geo, material);
+    mesh.frustumCulled = true;
+    mesh.matrixAutoUpdate = false;
+    mesh.updateMatrix();
+    mesh.receiveShadow = true;
+    mesh.castShadow = !!castShadow;
+    if (depthMaterial) mesh.customDepthMaterial = depthMaterial;
+    mesh.boundingSphere = new Sphere(new Vector3(), 0.0001);
+    mesh.userData.foliage = true;
+    // Foliage must never answer a gameplay raycast; the capsule controller walks through it.
+    mesh.raycast = () => {};
+    mesh.visible = false;
+    this.group.add(mesh);
+    this._meshes.push(mesh);
+    this._geometries.push(geo);
+    return mesh;
+  }
+
+  //@@SECTION_11@@
 }
 
 export default FoliageSystem;

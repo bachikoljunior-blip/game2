@@ -1151,6 +1151,7 @@ export class PhysicsWorld {
         if (l > 1e-9) { dx /= l; dy /= l; dz /= l; } else { dx = 0; dy = 1; dz = 0; }
         out.d = l - c.r;
         out.nx = dx; out.ny = dy; out.nz = dz;
+        out.fnx = dx; out.fny = dy; out.fnz = dz;
         out.px = c.cx + dx * c.r; out.py = c.cy + dy * c.r; out.pz = c.cz + dz * c.r;
         out.c = c;
         return out;
@@ -1162,6 +1163,7 @@ export class PhysicsWorld {
         if (l > 1e-9) { dx /= l; dy /= l; dz /= l; } else { dx = 0; dy = 1; dz = 0; }
         out.d = l - c.r;
         out.nx = dx; out.ny = dy; out.nz = dz;
+        out.fnx = dx; out.fny = dy; out.fnz = dz;
         out.px = _ss.bx + dx * c.r; out.py = _ss.by + dy * c.r; out.pz = _ss.bz + dz * c.r;
         out.c = c;
         return out;
@@ -1214,10 +1216,17 @@ export class PhysicsWorld {
       if (_hC.d < out.d) {
         out.d = _hC.d; out.nx = _hC.nx; out.ny = _hC.ny; out.nz = _hC.nz;
         out.px = _hC.px; out.py = _hC.py; out.pz = _hC.pz;
+        out.fnx = _hC.fnx; out.fny = _hC.fny; out.fnz = _hC.fnz;
         out.c = c; out.t = ti;
       }
+      // Along a mesh ledge the side triangle can win the distance test by a
+      // hair; keep the most upward face among the near-ties so ground and
+      // step-up classification sees the surface the character is standing on.
+      if (_hC.d < out.d + 0.02 && _hC.fny > out.fny) {
+        out.fnx = _hC.fnx; out.fny = _hC.fny; out.fnz = _hC.fnz;
+      }
     }
-    if (out.c === null) { out.d = Infinity; out.nx = 0; out.ny = 1; out.nz = 0; }
+    if (out.c === null) { out.d = Infinity; out.nx = 0; out.ny = 1; out.nz = 0; out.fny = 1; }
     return out;
   }
 
@@ -1239,11 +1248,12 @@ export class PhysicsWorld {
       if (d < out.d) {
         out.d = d;
         out.nx = _p2.nx; out.ny = _p2.ny; out.nz = _p2.nz;
+        out.fnx = _p2.nx; out.fny = _p2.ny; out.fnz = _p2.nz;
         out.px = x; out.py = h; out.pz = z;
         out.c = c;
       }
     }
-    if (out.c === null) { out.d = Infinity; out.nx = 0; out.ny = 1; out.nz = 0; }
+    if (out.c === null) { out.d = Infinity; out.nx = 0; out.ny = 1; out.nz = 0; out.fny = 1; }
     return out;
   }
 
@@ -1254,6 +1264,7 @@ export class PhysicsWorld {
    */
   _closestWorld(ax, ay, az, bx, by, bz, r, mask, out) {
     out.d = Infinity; out.c = null; out.nx = 0; out.ny = 1; out.nz = 0;
+    out.fnx = 0; out.fny = 1; out.fnz = 0;
     const minx = Math.min(ax, bx) - r, maxx = Math.max(ax, bx) + r;
     const miny = Math.min(ay, by) - r, maxy = Math.max(ay, by) + r;
     const minz = Math.min(az, bz) - r, maxz = Math.max(az, bz) + r;
@@ -1272,6 +1283,7 @@ export class PhysicsWorld {
       if (_hW.c && _hW.d - r < out.d) {
         out.d = _hW.d - r;
         out.nx = _hW.nx; out.ny = _hW.ny; out.nz = _hW.nz;
+        out.fnx = _hW.fnx; out.fny = _hW.fny; out.fnz = _hW.fnz;
         out.px = _hW.px; out.py = _hW.py; out.pz = _hW.pz;
         out.c = _hW.c;
       }
@@ -1284,6 +1296,7 @@ export class PhysicsWorld {
       if (_hW.c && _hW.d - r < out.d) {
         out.d = _hW.d - r;
         out.nx = _hW.nx; out.ny = _hW.ny; out.nz = _hW.nz;
+        out.fnx = _hW.fnx; out.fny = _hW.fny; out.fnz = _hW.fnz;
         out.px = _hW.px; out.py = _hW.py; out.pz = _hW.pz;
         out.c = _hW.c;
       }
@@ -1312,6 +1325,7 @@ export class PhysicsWorld {
   _sweep(px, py, pz, lo, hi, r, dx, dy, dz, mask, out) {
     out.hit = false; out.t = 1; out.collider = null;
     out.nx = 0; out.ny = 1; out.nz = 0;
+    out.fnx = 0; out.fny = 1; out.fnz = 0;
     const len = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
     const margin = r + 0.06;
@@ -1325,6 +1339,7 @@ export class PhysicsWorld {
       if (_hD.c && _hD.d <= BLOCK_EPS) {
         out.hit = true; out.t = 0;
         out.nx = _hD.nx; out.ny = _hD.ny; out.nz = _hD.nz;
+        out.fnx = _hD.fnx; out.fny = _hD.fny; out.fnz = _hD.fnz;
         out.collider = _hD.c; out.px = _hD.px; out.py = _hD.py; out.pz = _hD.pz;
       }
       return out;
@@ -1351,6 +1366,7 @@ export class PhysicsWorld {
           if (_hB.c && _hB.d <= BLOCK_EPS) {
             b = m;
             _hD.d = _hB.d; _hD.nx = _hB.nx; _hD.ny = _hB.ny; _hD.nz = _hB.nz;
+            _hD.fnx = _hB.fnx; _hD.fny = _hB.fny; _hD.fnz = _hB.fnz;
             _hD.px = _hB.px; _hD.py = _hB.py; _hD.pz = _hB.pz; _hD.c = _hB.c;
           } else {
             a = m;
@@ -1358,6 +1374,7 @@ export class PhysicsWorld {
         }
         out.hit = true; out.t = a;
         out.nx = _hD.nx; out.ny = _hD.ny; out.nz = _hD.nz;
+        out.fnx = _hD.fnx; out.fny = _hD.fny; out.fnz = _hD.fnz;
         out.collider = _hD.c; out.px = _hD.px; out.py = _hD.py; out.pz = _hD.pz;
         this._filterOn = false;
         return out;
@@ -1801,12 +1818,12 @@ export class PhysicsWorld {
     let landed = false;
     if (_slideA.hit) {
       if (vy <= 0) {
-        if (_slideA.ny >= ch.cosSlope) { ch.velocity.y = 0; landed = true; }
+        if (_slideA.fny >= ch.cosSlope || _slideA.ny >= ch.cosSlope) { ch.velocity.y = 0; landed = true; }
         else {
           // Too steep to stand on: keep accelerating, but along the surface so
           // the character visibly slides off instead of sticking.
           const d = ch.velocity.y * _slideA.ny;
-          ch.velocity.y -= d * _slideA.ny;
+          ch.velocity.y -= d * _slideA.ny * 0.5;
           const slideSpeed = -GRAVITY * dt * 0.55;
           const hl = Math.hypot(_slideA.nx, _slideA.nz) || 1;
           pos.x += (_slideA.nx / hl) * slideSpeed * dt;
@@ -1822,7 +1839,7 @@ export class PhysicsWorld {
     if (!landed && wasGrounded && ch.velocity.y <= 0.05) {
       const snap = Math.min(0.55, Math.max(0.08, ch.stepHeight));
       this._sweep(pos.x, pos.y, pos.z, lo, hi, r, 0, -snap, 0, mask, _swA);
-      if (_swA.hit && _swA.ny >= ch.cosSlope) {
+      if (_swA.hit && (_swA.fny >= ch.cosSlope || _swA.ny >= ch.cosSlope)) {
         pos.y -= snap * _swA.t;
         ch.velocity.y = 0;
         landed = true;
@@ -1855,6 +1872,7 @@ export class PhysicsWorld {
     out.x = px; out.y = py; out.z = pz;
     out.hit = false; out.steep = false; out.c = null;
     out.nx = 0; out.ny = 1; out.nz = 0;
+    out.fnx = 0; out.fny = 1; out.fnz = 0;
     let rx = dx, ry = dy, rz = dz;
 
     for (let it = 0; it < SLIDE_ITERATIONS; it++) {
@@ -1866,11 +1884,15 @@ export class PhysicsWorld {
 
       out.hit = true;
       out.nx = _hD.nx; out.ny = _hD.ny; out.nz = _hD.nz; out.c = _hD.collider;
+      out.fnx = _hD.fnx; out.fny = _hD.fny; out.fnz = _hD.fnz;
 
       rx *= (1 - t); ry *= (1 - t); rz *= (1 - t);
 
       let nx = _hD.nx, ny = _hD.ny, nz = _hD.nz;
-      if (ny < cosSlope && ny > -0.999) {
+      // Walkability is judged on the surface normal, sliding on the contact
+      // normal: a stair nosing is walkable even though the capsule touches it
+      // on a nearly vertical separating axis.
+      if (_hD.fny < cosSlope && ny < cosSlope && ny > -0.999) {
         // Steeper than the slope limit — behave like a vertical wall so the
         // character neither walks up it nor gets flung along it.
         out.steep = true;
@@ -1906,7 +1928,10 @@ export class PhysicsWorld {
     const drop = upDist + 0.02;
     this._sweep(out.x, out.y, out.z, lo, hi, r, 0, -drop, 0, mask, _swA);
     if (!_swA.hit) return false;
-    if (_swA.ny < ch.cosSlope) return false;
+    // The capsule usually settles on the ledge *lip*, whose separating normal
+    // is near-horizontal; the surface normal underneath is what decides whether
+    // this is a stair or a wall.
+    if (_swA.fny < ch.cosSlope && _swA.ny < ch.cosSlope) return false;
     out.y -= drop * _swA.t;
     if (out.y < sy - 1e-3) return false;      // stepped down, not up — let gravity do it
     return true;
@@ -1921,9 +1946,14 @@ export class PhysicsWorld {
       0, -probe, 0, ch.collisionMask, _hE);
     if (_hE.hit) {
       const dist = probe * _hE.t;
-      const ny = clampf(_hE.ny, -1, 1);
+      // Report the surface normal: foot IK, footstep FX and the slide check all
+      // want the ground the character is on, not the capsule's escape axis.
+      const useFace = _hE.fny >= _hE.ny;
+      const nx = useFace ? _hE.fnx : _hE.nx;
+      const ny = clampf(useFace ? _hE.fny : _hE.ny, -1, 1);
+      const nz = useFace ? _hE.fnz : _hE.nz;
       gi.slopeAngle = Math.acos(ny) * 180 / Math.PI;
-      gi.normal.set(_hE.nx, ny, _hE.nz);
+      gi.normal.set(nx, ny, nz);
       gi.distance = dist;
       gi.collider = _hE.collider;
       gi.surface = this._surfaceOf(_hE.collider, ch.position.x, ch.position.z);
@@ -2252,7 +2282,6 @@ export class PhysicsWorld {
     c.restitution = b.restitution;
     c.friction = b.friction * 0.9;
     c.jn = 0; c.jt = 0;
-    b.sleeping = false;
   }
 
   /**

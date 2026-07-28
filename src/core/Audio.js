@@ -570,6 +570,7 @@ export class AudioSystem {
       priority: 0,
       startTime: 0,
       endTime: 0,
+      stopAt: 0,
       onEnded: null,
     };
     ch.lp.type = 'lowpass';
@@ -590,33 +591,42 @@ export class AudioSystem {
   }
 
   _acquire(priority) {
-    for (let i = 0; i < this._chans.length; i++) {
-      const c = this._chans[i];
-      if (!c.active && !c.retiring) return c;
-    }
-    if (this._chans.length < this.maxVoices) return this._makeChannel();
-    // Steal the least important voice; ties break toward the oldest.
+    const now = this.ac.currentTime;
     let victim = null;
+    let retiring = 0;
     for (let i = 0; i < this._chans.length; i++) {
       const c = this._chans[i];
-      if (!c.active) continue;
+      if (c.retiring) {
+        // A stolen voice whose fade-out is long past: reclaim it rather than allocate.
+        if (now > c.stopAt + 0.05) { this._release(c); return c; }
+        retiring++;
+        continue;
+      }
+      if (!c.active) return c;
       if (!victim || c.priority < victim.priority ||
         (c.priority === victim.priority && c.startTime < victim.startTime)) victim = c;
     }
+    if (this._chans.length < this.maxVoices) return this._makeChannel();
+    // Steal the least important voice; ties break toward the oldest. A sound may never
+    // steal from something more important than itself.
     if (!victim || victim.priority > priority) return null;
+    // Stealing overshoots the cap while the victim fades, so cap the backlog too —
+    // otherwise a burst of impacts can grow the pool without bound.
+    if (retiring >= 8) return null;
     this._retire(victim);
     return this._makeChannel();
   }
 
-  /** Fade the victim out over 12 ms so stealing never clicks. */
+  /** Fade the victim out over ~12 ms so stealing never clicks. */
   _retire(ch) {
     const t = this.ac.currentTime;
     ch.active = false;
     ch.retiring = true;
+    ch.stopAt = t + 0.03;
     try {
       ch.gain.gain.cancelScheduledValues(t);
       ch.gain.gain.setTargetAtTime(0.0001, t, 0.004);
-      if (ch.src) ch.src.stop(t + 0.03);
+      if (ch.src) ch.src.stop(ch.stopAt);
     } catch { this._release(ch); }
   }
 
@@ -660,8 +670,10 @@ export class AudioSystem {
 
     const minGap = o && o.minGap !== undefined ? o.minGap : 0.03;
     if (minGap > 0) {
-      const last = this._lastPlay.get(name) || 0;
-      if (when - last < minGap) return null;
+      // `has` rather than `|| 0`: a context that has only just started can still be
+      // inside the first 30 ms, and the opening UI tap must not be the one we drop.
+      const last = this._lastPlay.get(name);
+      if (last !== undefined && when - last < minGap) return null;
       this._lastPlay.set(name, when);
     }
     const maxSame = o && o.maxSame !== undefined ? o.maxSame : (name.charCodeAt(0) === 102 ? 3 : 5);
@@ -2723,7 +2735,8 @@ export class AudioSystem {
     const now = this.ac.currentTime;
     for (let i = this._chans.length - 1; i >= 0; i--) {
       const c = this._chans[i];
-      if ((c.active || c.retiring) && now > c.endTime) this._release(c);
+      if (c.retiring && now > c.stopAt + 0.05) this._release(c);
+      else if (c.active && now > c.endTime) this._release(c);
     }
   }
 

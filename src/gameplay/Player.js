@@ -383,7 +383,11 @@ export class Player {
     on('cancel-window-open', () => { this.canCancel = true; });
     on('footstep', (e) => { this._rigFootsteps = true; this._footstep(e?.foot ?? e?.side ?? null); });
     on('iframe-start', () => {
-      if (this.state === 'dodge') { this.invulnerable = true; this._iframe = 0.5; }
+      if (this.state !== 'dodge') return;
+      this.invulnerable = true;
+      this._iframe = 0.5;
+      const T = this._dodgeT || DODGE_T.dodge_roll;
+      this.ctx.combat?.grantIFrames?.(this, T.out - T.in);
     });
     on('iframe-end', () => {
       if (this.state === 'dodge') { this.invulnerable = false; this._iframe = 0; }
@@ -615,7 +619,7 @@ export class Player {
         this.locoBlend.guard = 1;
         break;
       case 'parry':
-        this._play('parry', 0.05, 1, false);
+        if (!this._external) this._play('parry', 0.05, 1, false);
         break;
       case 'dodge':
         this._beginDodge(data);
@@ -625,16 +629,17 @@ export class Player {
         this._beginAttack(data);
         break;
       case 'stagger':
-        this._play(data?.clip || 'stagger_back', 0.06, 1, false);
+        // Combat plays its own directional stagger right after pushing the state.
+        if (!this._external) this._play(data?.clip || 'stagger_back', 0.06, 1, false);
         this._postureHold = 1.1;
         break;
       case 'execution':
-        this._play('execution_attacker', 0.08, 1, false);
+        if (!this._external) this._play('execution_attacker', 0.08, 1, false);
         this.invulnerable = true;
         this._iframe = 2.4;
         break;
       case 'dead':
-        this._play(data?.clip || 'death_back', 0.08, 1, false);
+        if (!this._external) this._play(data?.clip || 'death_back', 0.08, 1, false);
         break;
       default:
         break;
@@ -1037,6 +1042,17 @@ export class Player {
     if (!b) return false;
     if (this.stamina < 4) { this._clearBuffer(); return false; }
 
+    // 忍殺 — a broken-posture enemy in front converts the attack into a finisher.
+    // Combat owns the whole sequence once it accepts.
+    const combat = this.ctx.combat;
+    if (combat?.canExecute) {
+      const victim = this.lockTarget?.isAlive ? this.lockTarget : this._findTarget(2.6, 50 * DEG);
+      if (victim && combat.canExecute(victim, this) && combat.execute(victim, this)) {
+        this._clearBuffer();
+        return true;
+      }
+    }
+
     let key = DIR_TO_MOVE[b.dir] || 'h_r';
     let heavy = (b.power ?? 0) > 0.7;
     let finisher = false;
@@ -1114,18 +1130,36 @@ export class Player {
 
     // Aim assist / auto-face (§6): rotate the *whole attack* toward the nearest
     // valid target inside a cone. On touch this is the difference between the
-    // game being playable one-handed and not.
+    // game being playable one-handed and not. Combat owns both the target search
+    // and the turn clamp, so we hand it our facing and use what it gives back.
     this._assistTarget = this._findTarget(a.reach + 3.2, 62 * DEG);
-    if (this._assistTarget && this.aimAssist > 0) {
-      const tp = this._assistTarget.position;
-      const want = Math.atan2(-(tp.x - this.position.x), -(tp.z - this.position.z));
-      this.desiredYaw = this.yaw + angleDelta(this.yaw, want) * clamp(this.aimAssist, 0, 1);
-      this.yaw = this.desiredYaw;
-      this.root.rotation.y = this.yaw;
-      this._applyForward();
+    const combat = this.ctx.combat;
+    if (this.aimAssist > 0) {
+      let want = null;
+      if (combat?.aimAssist) {
+        _v1.copy(this.forward);
+        if (combat.aimAssist(this, _v1, this.aimAssist) && _v1.lengthSq() > 1e-6) {
+          want = Math.atan2(-_v1.x, -_v1.z);
+        }
+      } else if (this._assistTarget?.position) {
+        const tp = this._assistTarget.position;
+        want = Math.atan2(-(tp.x - this.position.x), -(tp.z - this.position.z));
+      }
+      if (want !== null) {
+        this.desiredYaw = this.yaw + angleDelta(this.yaw, want);
+        this.yaw = this.desiredYaw;
+        this.root.rotation.y = this.yaw;
+        this._applyForward();
+      }
     }
 
+    // Combat reads these off `weapon` when it detects the rising edge of
+    // `weapon.active` itself, which can happen a frame before beginSwing lands.
     this.weapon.damage = a.damage;
+    this.weapon.kind = a.kind;
+    this.weapon.heavy = a.heavy;
+    this.weapon.multiHit = false;
+    this.weapon.arc = a.heavy ? 2.6 : 2.0;
     this._play(a.clip, 0.07, a.rate, false);
     this._clearBuffer();
   }
@@ -1261,6 +1295,7 @@ export class Player {
     if (!this.invulnerable && t >= T.in && t < T.out) {
       this.invulnerable = true;
       this._iframe = T.out - t;
+      this.ctx.combat?.grantIFrames?.(this, T.out - t);
     }
     if (t >= T.out && this._iframe <= 0) this.invulnerable = false;
 
@@ -1344,9 +1379,13 @@ export class Player {
 
   /** Nearest valid enemy inside a cone around the facing. */
   _findTarget(maxDist, coneRad) {
+    if (this.lockTarget?.isAlive) return this.lockTarget;
+    // CombatDirector keeps the authoritative entity list (it sees enemies the
+    // manager has not published yet), so prefer its search.
+    const viaCombat = this.ctx.combat?.nearestTarget?.(this, maxDist, coneRad * 2);
+    if (viaCombat) return viaCombat;
     const list = this.ctx.enemies?.list;
     if (!list || !list.length) return null;
-    if (this.lockTarget?.isAlive) return this.lockTarget;
     let best = null, bestScore = Infinity;
     const cosCone = Math.cos(coneRad);
     for (let i = 0; i < list.length; i++) {
@@ -1460,15 +1499,22 @@ export class Player {
   // ------------------------------------------------------------------ damage
 
   /**
-   * Combat resolves hits and calls this. We own the posture/health split, the
-   * i-frame check and which stagger we fall into — nothing else.
+   * CombatDirector resolves the whole pipeline (i-frames → parry → guard → hit)
+   * and calls this with `{attacker, target, point, normal, damage, poise, kind,
+   * crit, blocked, parried}`. It applies posture, knockback, stagger, death and
+   * the `hit`/`damage-taken` events itself, so all we own here is *our health*
+   * and our reaction. Duplicating any of the rest double-counts it.
+   *
+   * When Combat is absent the payload has no blocked/parried fields and we fall
+   * back to resolving defence ourselves, so the player still works standalone.
    */
   onDamage(payload) {
     if (!this.isAlive || !payload) return false;
+    const fromCombat = payload.blocked !== undefined || payload.parried !== undefined;
     const amount = payload.damage ?? payload.amount ?? 0;
     const poise = payload.poise ?? payload.posture ?? amount * 0.7;
 
-    if (this.invulnerable || this._iframe > 0) {
+    if (!fromCombat && (this.invulnerable || this._iframe > 0)) {
       this.ctx.fx?.dodgeFlash?.(this.position);
       return false;
     }
@@ -1482,17 +1528,31 @@ export class Player {
     if (dir.lengthSq() < 1e-6) dir.copy(this.forward).multiplyScalar(-1);
     dir.normalize();
 
-    const frontal = -(dir.x * this.forward.x + dir.z * this.forward.z);   // 1 = hit from the front
+    this._postureHold = 1.1;
+    this._staminaHold = 0.5;
+
+    if (fromCombat) {
+      // Combat already scaled the number for guard chip / late parry.
+      this.health = Math.max(0, this.health - amount);
+      if (payload.blocked) {
+        this._play('guard_impact', 0.04, 1, false);
+      } else if (payload.parried) {
+        this._setState('parry', null, true);
+      }
+      // Health, posture, stagger, death and the events are Combat's from here.
+      return true;
+    }
+
+    const frontal = -(dir.x * this.forward.x + dir.z * this.forward.z);   // 1 = from the front
     let health = amount;
     let posture = poise;
 
-    // A live parry window converts the hit entirely — Combat resolves the beat.
     if (this._parryTimer > 0 && frontal > 0.1 && !payload.unblockable) {
       this._parryTimer = 0;
-      this._setState('parry');
-      this.ctx.combat?.requestParry?.(this);
+      this._setState('parry', null, true);
       this.posture = Math.max(0, this.posture - 6);
-      return false;
+      this.health = Math.max(0, this.health - 0.0001);   // "handled" — see above
+      return true;
     }
 
     if (this.guarding && frontal > 0.34 && !payload.unblockable) {
@@ -1500,8 +1560,8 @@ export class Player {
       health = amount * 0.12;
       posture = poise * 1.55 * (2 - this.stanceDef.guardMul);
       this._play('guard_impact', 0.04, 1, false);
-      this.velocity.x -= dir.x * -1.6;
-      this.velocity.z -= dir.z * -1.6;
+      this.velocity.x += dir.x * 1.6;
+      this.velocity.z += dir.z * 1.6;
       this.ctx.fx?.sparks?.(payload.point ?? this.bladeBase, dir, 0.6);
     } else {
       this._staggerFrom(dir, poise, payload);
@@ -1509,8 +1569,6 @@ export class Player {
 
     this.health = Math.max(0, this.health - health);
     this.posture = Math.min(this.maxPosture, this.posture + posture);
-    this._postureHold = 1.1;
-    this._staminaHold = 0.5;
 
     this._evDamage.entity = this;
     this._evDamage.amount = health;
@@ -1518,13 +1576,96 @@ export class Player {
 
     if (this.health <= 0) { this._die(payload); return true; }
     if (this.posture >= this.maxPosture) {
-      // Posture break: a long stagger. Combat owns the `posture-break` event.
       this.posture = this.maxPosture;
       this._staggerTime = 1.18;                 // matches the posture_break clip
       this._setState('stagger', { clip: 'posture_break' }, true);
     }
     return true;
   }
+
+  // ------------------------------------------------- CombatDirector callbacks
+
+  /**
+   * Combat pushes state changes through `entity.setState(name)` when it exists —
+   * routing them into the FSM keeps entry/exit consistent instead of silently
+   * overwriting the `state` field behind our back.
+   */
+  setState(name) {
+    if (!name || name === this.state) return;
+    this._external = true;
+    try {
+      switch (name) {
+        case 'stagger':
+          this._setState('stagger', null, true);
+          break;
+        case 'dead':
+          if (this.isAlive) this._die(null);
+          else this._setState('dead', null, true);
+          break;
+        case 'parry':
+          this._setState('parry', null, true);
+          break;
+        case 'idle':
+          if (this.isAlive) this._setState(this.guarding ? 'guard' : 'idle', null, true);
+          break;
+        case 'attack':
+          break;                                 // Combat's execution lock; onExecuteStart owns it
+        default:
+          this._setState(name, null, true);
+          break;
+      }
+    } finally {
+      this._external = false;
+    }
+  }
+
+  /** Combat's `_playClip`; `duration` is how long it expects the clip to own us. */
+  playClip(clip, duration) {
+    this._play(clip, 0.08, 1, false);
+    if (typeof duration === 'number' && duration > 0 && this.state === 'stagger') {
+      this._staggerTime = duration;
+    }
+  }
+
+  onStagger(clip, dur) {
+    if (typeof dur === 'number' && dur > 0) this._staggerTime = dur;
+  }
+
+  onPosture(value) {
+    // Combat owns the number; we only use it to hold our own regen off.
+    if (value > 0) this._postureHold = Math.max(this._postureHold, 0.6);
+  }
+
+  onParry() {
+    this._setState('parry', null, true);
+    this.posture = Math.max(0, this.posture - 4);
+  }
+
+  /** Our blade was deflected: recoil, drop the string, no cancel window. */
+  onDeflected() {
+    this._setWeaponActive(false);
+    this.chain = null;
+    this._chainGrace = 0;
+    this.canCancel = false;
+    this._staggerTime = 0.44;
+    this._setState('stagger', { clip: 'clash_recoil' }, true);
+  }
+
+  onDeath(payload) {
+    if (this.state !== 'dead') {
+      this.isAlive = false;
+      this._die(payload);
+    }
+  }
+
+  onExecuteStart(target) {
+    this._execTarget = target || null;
+    this._external = true;                       // Combat already played the clip
+    this._setState('execution', null, true);
+    this._external = false;
+  }
+
+  onKill() { this.posture = Math.max(0, this.posture - 18); }
 
   /** Alias — some systems reach for the verb rather than the handler. */
   takeDamage(payload) { return this.onDamage(payload); }

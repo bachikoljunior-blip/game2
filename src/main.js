@@ -108,6 +108,17 @@ async function boot() {
       await ctx.terrain.init();
       engine.add(ctx.terrain);
     }],
+    // Weather owns the wind field, and Foliage/Props splice its uniforms in by
+    // identity when they build their shaders — so it has to exist first, or every
+    // consumer silently falls back to its own gust maths and the wavefronts diverge.
+    ['fx', 'sharpening the steel', async () => {
+      ctx.fx = new EffectsSystem(ctx);
+      await ctx.fx.init();
+      engine.add(ctx.fx);
+      ctx.weather = new WeatherSystem(ctx);
+      await ctx.weather.init();
+      engine.add(ctx.weather);
+    }],
     ['level', 'building the shrine', async () => {
       ctx.level = new Level(ctx);
       await ctx.level.init();
@@ -117,14 +128,6 @@ async function boot() {
       ctx.foliage = new FoliageSystem(ctx);
       await ctx.foliage.init();
       engine.add(ctx.foliage);
-    }],
-    ['fx', 'sharpening the steel', async () => {
-      ctx.fx = new EffectsSystem(ctx);
-      await ctx.fx.init();
-      engine.add(ctx.fx);
-      ctx.weather = new WeatherSystem(ctx);
-      await ctx.weather.init();
-      engine.add(ctx.weather);
     }],
     ['player', 'drawing breath', async () => {
       ctx.player = new Player(ctx);

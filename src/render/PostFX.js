@@ -1095,7 +1095,9 @@ void main() {
   // ---- display encode, then grade in display space -------------------------
   color = sRGBEncode(color);
 
-  color = color * (1.5 - 0.5 * uLift) + 0.5 * uLift;
+  // ASC-style lift/gamma/gain, neutral at lift=0 / gamma=1 / gain=1. The lift is what
+  // stops blacks from crushing to zero — a printed black is never 0,0,0.
+  color = color * (1.0 - uLift) + uLift;
   color = sat3(color);
   color = pow(color, 1.0 / max(uGamma, vec3(1e-3))) * uGain;
   color = sat3(color);
@@ -1114,8 +1116,12 @@ void main() {
     color = mix(color, vec3(l), uDesat);
   }
   if (uDamage > 0.001) {
-    float edge = smoothstep(0.18, 0.72, length(fromCenter * vec2(uAspect, 1.0)));
-    color = mix(color, mix(color, uDamageTint, 0.82), edge * uDamage);
+    // Normalised so 0 = centre and 1 = corner on any aspect, then held off until the
+    // outer third. A damage tint that reaches the middle of frame reads as a bug,
+    // not as taking a hit — the information belongs in peripheral vision.
+    float rr = length(fromCenter * vec2(uAspect, 1.0)) / length(vec2(uAspect, 1.0) * 0.5);
+    float edge = smoothstep(0.46, 1.02, rr);
+    color = mix(color, mix(color, uDamageTint, 0.72), edge * uDamage);
   }
 
   // ---- grain ---------------------------------------------------------------

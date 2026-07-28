@@ -148,6 +148,15 @@ export class WeatherSystem {
       uGust: { value: new Vector4(this.gustAmplitude, 1 / this.gustWavelength, this.gustSpeed, this.turbulence) },
     };
 
+    /**
+     * Mirrored onto the instance because every consumer reaches the wind through
+     * `ctx.weather`, not through a module import — Foliage and Props both probe
+     * `ctx.weather.WIND_GLSL` to decide whether to use the shared field or their own
+     * fallback, and a missing property there silently forks the gust wavefront.
+     */
+    this.WIND_GLSL = WIND_GLSL;
+    this.WIND_UNIFORMS_GLSL = WIND_UNIFORMS_GLSL;
+
     // --- broadcast state -------------------------------------------------------
     this.wetness = 0;              // 0..1, read by Materials/Terrain
     this._wetnessSent = -1;

@@ -578,8 +578,10 @@ export class EnemyAI {
 
     const e = this.enemy;
     const it = e.intent;
-    if (!e.isAlive || e.state === 'attack' || e.state === 'stagger' ||
-      e.state === 'postureBroken' || e.state === 'dodge') return;
+    if (!e.isAlive || e.state === 'stagger' || e.state === 'postureBroken' ||
+      e.state === 'dodge') return;
+    // Mid-windup we can still change our mind; past the commit point we cannot.
+    if (e.state === 'attack' && !e.cancelAttack()) return;
 
     if (r.type === 'parry') {
       it.parry = true;

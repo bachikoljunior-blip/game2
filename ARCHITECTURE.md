@@ -61,12 +61,13 @@ ctx = {
   // populated during boot, in this order:
   materials,     // MaterialLibrary   — src/render/Materials.js
   sky,           // SkySystem         — src/render/Sky.js
+  lighting,      // LightingSystem    — src/render/Lighting.js
+  physics,       // PhysicsWorld      — src/gameplay/Physics.js
   terrain,       // Terrain           — src/world/Terrain.js
+  fx,            // EffectsSystem     — src/fx/Effects.js
+  weather,       // WeatherSystem     — src/fx/Weather.js   (owns the wind field)
   level,         // Level             — src/world/Level.js
   foliage,       // FoliageSystem     — src/render/Foliage.js
-  physics,       // PhysicsWorld      — src/gameplay/Physics.js
-  fx,            // EffectsSystem     — src/fx/Effects.js
-  weather,       // WeatherSystem     — src/fx/Weather.js
   audio,         // AudioSystem       — src/core/Audio.js
   player,        // Player            — src/gameplay/Player.js
   combat,        // CombatDirector    — src/gameplay/Combat.js
@@ -257,3 +258,44 @@ offset by `PLATEAU_HEIGHT` at install time. If you need a local frame, subtract
 `WORLD.PLATEAU_HEIGHT`.
 
 `WORLD` lives in `src/world/Constants.js` and is imported, never re-declared.
+
+
+---
+
+## 10. The wind field (single source of truth)
+
+`WeatherSystem` owns the wind. **Nothing else may implement its own gust maths.** The whole
+point of ARCHITECTURE §5.5 is that one gust wavefront crosses the valley and bends grass,
+bamboo, banners, cloth and drifting petals *together*; two independent implementations, even
+with identical formulas, drift apart the moment either is retuned.
+
+Weather boots before Level and Foliage precisely so they can consume it.
+
+**GPU side** — import the strings, splice the uniforms in by object identity:
+
+```js
+import { WIND_GLSL, WIND_UNIFORMS_GLSL } from '../fx/Weather.js';
+// ...
+material.uniforms.uWind = ctx.weather.windUniforms.uWind;   // SAME OBJECT, not a copy
+material.uniforms.uGust = ctx.weather.windUniforms.uGust;
+```
+
+`WIND_GLSL` already includes `glslNoise` and the uniform block, and defines:
+
+```glsl
+float kagerouGust(vec2 xz);                                    // 0..1 travelling-front envelope
+vec3  kagerouWind(vec3 worldPos);                              // m/s
+vec3  kagerouBend(vec3 worldPos, float h01, float stiffness);  // >1 stiff (bamboo), <1 limp (grass)
+```
+
+Uniform layout, for anyone writing a shader by hand:
+`uWind = vec4(dirX, dirZ, baseStrength, time)`,
+`uGust = vec4(amplitude, 1/wavelength, frontSpeed, turbulence)`.
+
+**CPU side** — `ctx.weather.windAt(x, z, y, outVec3)` and `ctx.weather.gustAt(x, z)`. These
+are the exact same maths as the GPU twin, so Verlet cloth on a rig flutters on the same gust
+that is bending the grass under it. `ctx.wind` (`{direction:{x,z}, strength, gust, time}`) is
+written in place every frame as a cheap read for anything that only needs a scalar.
+
+The instance also mirrors `ctx.weather.WIND_GLSL` / `.WIND_UNIFORMS_GLSL` so a consumer that
+only has `ctx` does not need a module import.

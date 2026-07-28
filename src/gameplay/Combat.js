@@ -1298,12 +1298,99 @@ export class CombatDirector {
     return false;
   }
 
+  /**
+   * Advance every projectile, sweeping its path so a 24 m/s kunai cannot pass through
+   * a body between frames. World geometry stops it first — an arrow must not fly
+   * through the shrine wall to reach you.
+   */
+  _updateProjectiles(rdt, now) {
+    const list = this._projectiles;
+    const ents = this._entities;
+    for (let i = 0; i < list.length; i++) {
+      const p = list[i];
+      if (!p.alive) continue;
+
+      p.age += rdt;
+      if (p.age >= p.life) { p.alive = false; p.owner = null; continue; }
+
+      p.prev.copy(p.pos);
+      p.vel.y += p.gravity * rdt;
+      p.pos.addScaledVector(p.vel, rdt);
+
+      // world blocking
+      const ph = this.ctx?.physics;
+      if (typeof ph?.raycast === 'function') {
+        _vA.subVectors(p.pos, p.prev);
+        const span = _vA.length();
+        if (span > EPS) {
+          try {
+            const L = ph.LAYER;
+            const mask = L ? (L.WORLD | L.PROP) : 0xffffffff;
+            const hit = ph.raycast(p.prev, _vA, span, mask, null);
+            if (hit && hit.hit !== false) {
+              if (hit.point) p.pos.copy(hit.point);
+              this.ctx.fx?.stoneChip?.(p.pos, hit.normal || _up, 0.5);
+              p.alive = false; p.owner = null;
+              continue;
+            }
+          } catch { /* physics not ready — let it fly */ }
+        }
+      }
+
+      // entity sweep
+      let consumed = false;
+      for (let s = 1; s <= TUNING.PROJECTILE_SUBSTEPS && !consumed; s++) {
+        const u = s / TUNING.PROJECTILE_SUBSTEPS;
+        _p0.lerpVectors(p.prev, p.pos, (s - 1) / TUNING.PROJECTILE_SUBSTEPS);
+        _p1.lerpVectors(p.prev, p.pos, u);
+        for (let j = 0; j < ents.length && !consumed; j++) {
+          const t = ents[j];
+          if (!t || t === p.owner) continue;
+          if (!TUNING.FRIENDLY_FIRE && p.owner && t.faction === p.owner.faction) continue;
+          if (t.isAlive === false || t.state === 'dead') continue;
+          const boxes = Array.isArray(t.hitboxes) && t.hitboxes.length ? t.hitboxes : null;
+          const count = boxes ? boxes.length : 1;
+          let resolved = 0;
+          for (let h = 0; h <= count && !consumed; h++) {
+            if (h === count && resolved > 0) break;
+            const hb = (h < count && boxes) ? boxes[h] : null;
+            const radius = this._hitboxSegment(t, hb, _hbA, _hbB);
+            if (radius <= 0) continue;
+            if (h < count) resolved++;
+            const total = radius + p.radius;
+            if (segmentSegment(_p0, _p1, _hbA, _hbB, _c1, _c2) > total * total) continue;
+
+            _vD.subVectors(_c1, _c2);
+            if (_vD.lengthSq() < EPS) _vD.copy(_up); else _vD.normalize();
+            _vE.copy(_c2).addScaledVector(_vD, radius);
+            _vB.copy(p.vel);
+            _vB.y = 0;
+            if (_vB.lengthSq() < EPS) _vB.copy(_fwdDefault); else _vB.normalize();
+
+            this._resolveContact(
+              p.owner, t, _vE, _vD, p.damage, p.kind === 'arrow' ? 'thrust' : 'thrust',
+              false, false, p.poise, _vB, p.posture,
+            );
+            p.alive = false; p.owner = null;
+            consumed = true;
+          }
+        }
+      }
+      if (consumed) continue;
+
+      // A moving glint so the shot is readable even before Effects grows a
+      // dedicated projectile visual.
+      if ((this._frame & 1) === 0) this.ctx.fx?.sparkGrind?.(p.pos, p.vel, 0.18);
+    }
+  }
+
   /* ══════════════════════════════════════════════════════════════════════════
    *  hit resolution pipeline — the order below is contractual:
    *  i-frames → parry → guard → clash → hit → death
    * ══════════════════════════════════════════════════════════════════════════ */
 
-  _resolveContact(attacker, target, point, normal, rawDamage, kind, heavy, ignoreDefence, poiseOverride) {
+  _resolveContact(attacker, target, point, normal, rawDamage, kind, heavy, ignoreDefence,
+    poiseOverride, dirOverride, postureOverride) {
     if (!target) return false;
     const now = this.time;
     const trec = this._rec(target);
@@ -1317,17 +1404,25 @@ export class CombatDirector {
       return false;
     }
 
-    // Direction attacker → victim, flattened. Every step below uses it.
+    // Direction of travel of the blow, flattened. Every step below uses it.
     const dir = _vF;
-    const ap = attacker?.position || attacker?.root?.position;
-    const tp = target.position || target.root?.position;
-    if (ap && tp) dir.subVectors(tp, ap); else dir.copy(normal);
+    if (dirOverride) dir.copy(dirOverride);
+    else {
+      const ap = attacker?.position || attacker?.root?.position;
+      const tp = target.position || target.root?.position;
+      if (ap && tp) dir.subVectors(tp, ap); else dir.copy(normal);
+    }
     dir.y = 0;
     if (dir.lengthSq() < EPS) dir.copy(_fwdDefault); else dir.normalize();
 
-    // 危 attacks cannot be blocked or deflected — the red flash means *dodge*.
-    const unblockable = !ignoreDefence && arec != null &&
-      arec.telegraphKind === 'unblockable' && now < arec.telegraphUntil;
+    // 危 attacks cannot be blocked or deflected — the red flash means *dodge*. Both the
+    // telegraph and the weapon's own flags count; `guardBreak` beats a guard but is
+    // still deflectable, which is exactly what makes learning the deflect worth it.
+    const aw = attacker?.weapon;
+    const unblockable = !ignoreDefence &&
+      ((arec != null && arec.telegraphKind === 'unblockable' && now < arec.telegraphUntil) ||
+        aw?.unblockable === true);
+    const guardBreak = unblockable || aw?.guardBreak === true;
 
     // How far off the victim's facing the blow arrives.
     const tfwd = target.forward && target.forward.lengthSq() > EPS ? target.forward : _fwdDefault;
@@ -1344,10 +1439,10 @@ export class CombatDirector {
     }
 
     // ── 3. guard (a facing cone — behind or outside it, guard does nothing) ──
-    const guarding = !ignoreDefence && !unblockable &&
+    const guarding = !ignoreDefence && !guardBreak &&
       (trec.guarding || target.state === 'guard');
     if (guarding && incomingAngle <= TUNING.GUARD_ARC * 0.5) {
-      this._doGuard(target, attacker, point, normal, dir, rawDamage, kind, heavy);
+      this._doGuard(target, attacker, point, normal, dir, rawDamage, kind, heavy, poiseOverride);
       return true;
     }
 

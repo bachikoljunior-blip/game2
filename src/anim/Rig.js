@@ -1849,3 +1849,474 @@ const STANCE_IDLE = {
   mid: 'idle_drawn_seigan', jodan: 'idle_drawn_jodan', high: 'idle_drawn_jodan',
   gedan: 'idle_drawn_gedan', low: 'idle_drawn_gedan',
 };
+
+// ===========================================================================
+// RIG
+// ===========================================================================
+
+export class Rig {
+  /**
+   * @param {object} ctx  the game context (quality, wind, physics, materials, bus)
+   * @param {object} opts { variant, build, height, faction, costume, weapon, entity,
+   *                        armour, cloth, parent, owner, archetype, seed, autoBuild }
+   */
+  constructor(ctx, opts) {
+    const o = opts || {};
+    this.ctx = ctx || {};
+    this.opts = o;
+    this.entity = o.entity || o.owner || null;
+    this.faction = o.faction || (o.variant === 'oni' ? 'oni' : 'player');
+    this.variant = o.variant || (this.faction === 'oni' ? 'oni' : 'player');
+    this.build_ = o.build || 'normal';
+    this.archetype = o.archetype || null;
+    this.costume = o.costume || null;
+    this.height = o.height || 1.75;
+    this.scale = this.height / 1.75;
+    this.seed = o.seed === undefined ? 1337 : o.seed;
+
+    /** The canonical scene object. `group` / `object3D` are aliases of the same thing. */
+    this.root = new Group();
+    this.root.name = 'rig:' + this.variant;
+    this.group = this.root;
+    this.object3D = this.root;
+
+    this.bones = Object.create(null);
+    this.boneList = [];
+    this.skeleton = null;
+    this.mesh = null;
+    this.parts = Object.create(null);
+    this.attachments = Object.create(null);
+    this.cloths = [];
+    this.materials = null;
+    this.weaponTip = null;
+    this.built = false;
+    this.disposed = false;
+
+    // ---- animation state
+    this.time = 0;
+    this.lod = 0;
+    this._ik = true;
+    this._cloth = o.cloth !== undefined ? !!o.cloth : true;
+    this._lodSkip = 0;
+    this.timeScale = 1;
+
+    this.layers = [
+      new Layer(LAYER_BASE, 'base', false, 'full'),
+      new Layer(LAYER_UPPER, 'upper', false, 'upper'),
+      new Layer(LAYER_ACTION, 'action', false, 'full'),
+      new Layer(LAYER_ADD, 'additive', true, 'full'),
+    ];
+    this.layers[LAYER_BASE].weight = 1;
+    this.layers[LAYER_BASE].targetWeight = 1;
+
+    this._outQ = new Float32Array(NB * 4);
+    this._outP = new Float32Array(NB * 3);
+    this._tmpQ = new Float32Array(NB * 4);
+    this._tmpP = new Float32Array(NB * 3);
+    this._tmpD = new Float32Array(NB);
+    this._restP = new Float32Array(NB * 3);
+    this._lb = [new Float32Array(NB * 4), new Float32Array(NB * 4), new Float32Array(NB * 4)];
+    this._lbp = [new Float32Array(NB * 3), new Float32Array(NB * 3), new Float32Array(NB * 3)];
+    this._lbd = [new Float32Array(NB), new Float32Array(NB), new Float32Array(NB)];
+
+    // ---- locomotion blend space
+    this._loco = { forward: 0, strafe: 0, speed: 0, norm: 0 };
+    this._locoDriven = false;
+    this._locoMode = true;
+    this.locoPhase = 0;
+    this.stance = this.variant === 'oni' ? 'seigan' : 'sheathed';
+    this._stanceClip = STANCE_IDLE[this.stance];
+    this._clipRates = Object.create(null);
+
+    // ---- procedural layer state
+    this._look = new Vector3();
+    this._lookActive = false;
+    this._lookWeight = 0;
+    this._lookTargetWeight = 0;
+    this._breath = Math.random() * 6.28;
+    this._swayPhase = Math.random() * 6.28;
+    this._yawPrev = 0;
+    this._yawVel = 0;
+    this._lagSpine = 0; this._lagSpineV = 0;
+    this._lagHead = 0; this._lagHeadV = 0;
+    this._flinchX = 0; this._flinchZ = 0;
+    this._flinchVX = 0; this._flinchVZ = 0;
+    this._recoil = 0; this._recoilV = 0;
+
+    // ---- foot IK state
+    this.grounded = true;
+    this.groundNormal = new Vector3(0, 1, 0);
+    this.groundSurface = 'dirt';
+    this._hipDrop = 0;
+    this._footY = [0, 0];
+    this._footN = [new Vector3(0, 1, 0), new Vector3(0, 1, 0)];
+    this._footLock = [new Vector3(), new Vector3()];
+    this._footLocked = [0, 0];
+    this._groundMode = -1;
+
+    // ---- events
+    this._listeners = new Map();
+    this._evt = { name: '', foot: null, t: 0, clip: '', layer: '', rig: this, entity: this.entity };
+
+    // ---- cloth scratch
+    this._rootInv = new Matrix4();
+    this._colliders = [];
+    this._wind = new Vector3();
+    this._clothAccum = 0;
+
+    this._buildSkeleton();
+    if (o.parent && o.parent.isObject3D) o.parent.add(this.root);
+    if (o.autoBuild !== false) this.build(o);
+  }
+
+  // ---------------------------------------------------------------- skeleton
+
+  _buildSkeleton() {
+    const S = this.scale;
+    for (let i = 0; i < BONE_DEFS.length; i++) {
+      const d = BONE_DEFS[i];
+      const b = new Bone();
+      b.name = d[0];
+      b.position.set(d[2] * S, d[3] * S, d[4] * S);
+      this.bones[d[0]] = b;
+      this.boneList.push(b);
+      this._restP[i * 3] = b.position.x;
+      this._restP[i * 3 + 1] = b.position.y;
+      this._restP[i * 3 + 2] = b.position.z;
+    }
+    for (let i = 0; i < BONE_DEFS.length; i++) {
+      const p = BONE_DEFS[i][1];
+      if (p) this.bones[p].add(this.boneList[i]);
+    }
+    this.root.add(this.bones.root);
+    this.root.updateMatrixWorld(true);
+
+    // Bone-segment table in bind (root) space — the analytic skin binder reads this.
+    this._segA = new Float32Array(NB * 3);
+    this._segB = new Float32Array(NB * 3);
+    const v = _v[0], w = _v[1];
+    for (let i = 0; i < NB; i++) {
+      const name = BONE_NAMES[i];
+      v.setFromMatrixPosition(this.boneList[i].matrixWorld);
+      this._segA[i * 3] = v.x; this._segA[i * 3 + 1] = v.y; this._segA[i * 3 + 2] = v.z;
+      let child = null;
+      for (let j = 0; j < NB; j++) {
+        if (BONE_PARENT[j] === i && !NON_SKIN.has(BONE_NAMES[j])) { child = this.boneList[j]; break; }
+      }
+      if (child) w.setFromMatrixPosition(child.matrixWorld);
+      else {
+        const t = BONE_TIP[name] || [0, 0.06, 0];
+        w.set(v.x + t[0] * S, v.y + t[1] * S, v.z + t[2] * S);
+      }
+      this._segB[i * 3] = w.x; this._segB[i * 3 + 1] = w.y; this._segB[i * 3 + 2] = w.z;
+    }
+
+    // Candidate bone sets per body part. Scoping these is what keeps the left thigh
+    // from claiming vertices on the right thigh where they meet at the crotch.
+    const I = BONE_INDEX;
+    this._candTorso = [I.hips, I.spine1, I.spine2, I.spine3, I.neck, I.clavicleL, I.clavicleR];
+    this._candHead = [I.neck, I.head, I.spine3];
+    this._candArmR = [I.clavicleR, I.upperArmR, I.foreArmR, I.handR, I.spine3];
+    this._candArmL = [I.clavicleL, I.upperArmL, I.foreArmL, I.handL, I.spine3];
+    this._candHandR = [I.foreArmR, I.handR];
+    this._candHandL = [I.foreArmL, I.handL];
+    this._candLegR = [I.hips, I.thighR, I.shinR, I.footR];
+    this._candLegL = [I.hips, I.thighL, I.shinL, I.footL];
+    this._candFootR = [I.shinR, I.footR, I.toeR];
+    this._candFootL = [I.shinL, I.footL, I.toeL];
+
+    // AO hotspots, in bind space. Placed by hand because that is the only way to get
+    // an armpit that reads; a generic cavity solver smears the whole torso.
+    const bp = (n, ox, oy, oz) => {
+      const i = I[n] * 3;
+      return [this._segA[i] + ox * S, this._segA[i + 1] + oy * S, this._segA[i + 2] + oz * S];
+    };
+    AO_SPOTS = [];
+    const spot = (p, r, s) => AO_SPOTS.push([p[0], p[1], p[2], r * S, s]);
+    spot(bp('upperArmR', -0.030, -0.055, 0), 0.140, 0.58);
+    spot(bp('upperArmL', 0.030, -0.055, 0), 0.140, 0.58);
+    spot(bp('hips', 0, -0.085, 0), 0.125, 0.52);
+    spot(bp('head', 0, 0.020, -0.030), 0.105, 0.48);
+    spot(bp('neck', 0, 0.010, 0.010), 0.095, 0.36);
+    spot(bp('foreArmR', -0.012, 0.006, -0.014), 0.078, 0.34);
+    spot(bp('foreArmL', 0.012, 0.006, -0.014), 0.078, 0.34);
+    spot(bp('shinR', 0, 0.010, 0.030), 0.088, 0.32);
+    spot(bp('shinL', 0, 0.010, 0.030), 0.088, 0.32);
+    spot(bp('spine1', 0, -0.010, 0), 0.115, 0.22);
+    spot(bp('footR', 0, 0.010, 0.020), 0.062, 0.30);
+    spot(bp('footL', 0, 0.010, 0.020), 0.062, 0.30);
+
+    // Name aliases. Player.js reads `bones.hand_r`, Enemy.js reads `bones.foot_l`;
+    // both must resolve to the same Bone object, not a copy.
+    for (let i = 0; i < NB; i++) {
+      const n = BONE_NAMES[i];
+      const s = snakeName(n);
+      if (s !== n) this.bones[s] = this.boneList[i];
+    }
+    this.bones.hand_r = this.bones.handR;
+    this.bones.hand_l = this.bones.handL;
+    this.bones.foot_r = this.bones.footR;
+    this.bones.foot_l = this.bones.footL;
+
+    this.skeleton = new Skeleton(this.boneList);
+
+    for (let i = 0; i < NB; i++) { this._outQ[i * 4 + 3] = 1; this._tmpQ[i * 4 + 3] = 1; }
+  }
+
+  // ------------------------------------------------------------------- build
+
+  /**
+   * Build the visual: skinned body, costume, weapon. Idempotent — Enemy.js calls it
+   * from a pool warm-up and the constructor calls it too.
+   */
+  build(opts) {
+    if (this.built) return this;
+    const o = Object.assign({}, this.opts, opts || {});
+    const quality = this.ctx.quality;
+    const dens = meshDensity(quality);
+    this._dens = dens;
+    const costume = this.costume || o.costume || {};
+    this.materials = resolveMaterials(this.ctx, costume.palette, this.variant);
+    const M = this.materials;
+
+    // ---- body
+    const bodyGeo = buildBody(this, dens);
+    const body = new SkinnedMesh(bodyGeo, M.skin);
+    body.name = 'body';
+    body.castShadow = true;
+    body.receiveShadow = true;
+    this.root.add(body);
+    body.bind(this.skeleton, _IDENTITY);
+    this.mesh = body;
+    this.parts.body = body;
+
+    // ---- upper garment
+    if (costume.chest !== 'none') {
+      const g = buildUpperGarment(this, dens, { puff: this.variant === 'oni' ? 0.016 : 0.024 });
+      const up = new SkinnedMesh(g, M.cloth);
+      up.name = 'kimono';
+      up.castShadow = true;
+      this.root.add(up);
+      up.bind(this.skeleton, _IDENTITY);
+      this.parts.upper = up;
+    }
+
+    // ---- obi
+    if (costume.sash !== false) {
+      const obi = new SkinnedMesh(buildObi(this, dens), M.obi);
+      obi.name = 'obi';
+      obi.castShadow = true;
+      this.root.add(obi);
+      obi.bind(this.skeleton, _IDENTITY);
+      this.parts.obi = obi;
+    }
+
+    // ---- oni armour
+    if (this.variant === 'oni' && costume.armour && costume.armour !== 'none') {
+      const doGrp = buildLamellar(this, dens, M);
+      this.bones.spine1.add(doGrp);
+      this.parts.do = doGrp;
+      if (costume.sleeves === 'sode' || costume.armour === 'heavy') {
+        const sr = buildSode(this, dens, M, 'R');
+        const sl = buildSode(this, dens, M, 'L');
+        this.bones.clavicleR.add(sr);
+        this.bones.clavicleL.add(sl);
+        this.parts.sodeR = sr; this.parts.sodeL = sl;
+      }
+      if (costume.mask) {
+        const mask = buildMenpo(this, dens, M);
+        mask.position.set(0, 0.070 * this.scale, 0.010 * this.scale);
+        this.bones.head.add(mask);
+        this.parts.menpo = mask;
+      }
+      if (costume.hat) {
+        const hat = buildJingasa(this, dens, M);
+        this.bones.head.add(hat);
+        this.parts.hat = hat;
+      }
+    }
+
+    this._buildAttachments();
+    if (o.weapon !== false && o.weapon !== 'none') this._buildWeapon(o.weapon);
+    this._buildCloth(costume);
+
+    this.built = true;
+    this.setStance(this.stance);
+    return this;
+  }
+
+  _buildAttachments() {
+    const S = this.scale;
+    const mk = (key, boneName, px, py, pz, rx, ry, rz) => {
+      const n = new Object3D();
+      n.name = 'attach:' + key;
+      n.position.set(px * S, py * S, pz * S);
+      n.rotation.set(rx, ry, rz);
+      this.bones[boneName].add(n);
+      this.attachments[key] = n;
+      return n;
+    };
+    // Grip: the tsuka lies across the palm with the blade running forward out of the
+    // fist. Exposed as an Object3D precisely so gameplay can tune it without a rebuild.
+    mk('handR', 'handR', 0.010, -0.052, -0.012, -1.78, 0.16, 0.10);
+    mk('handL', 'handL', -0.010, -0.052, -0.012, -1.78, -0.16, -0.10);
+    mk('sayaMount', 'sayaMount', 0, 0, 0, 1.36, -0.20, 0.14);
+    mk('head', 'head', 0, 0.100, 0, 0, 0, 0);
+    mk('backMount', 'backMount', 0, 0, 0, 0, 0, 0);
+    mk('hipR', 'hips', 0.118 * 1, 0.020, 0.055, 1.36, 0.20, -0.14);
+  }
+
+  _buildWeapon(kind) {
+    const S = this.scale;
+    const M = this.materials;
+    const katana = buildKatana(this.ctx.quality, M, S);
+    this.attachments.handR.add(katana);
+    this.parts.katana = katana;
+    this.weaponTip = katana.userData.tip;
+    this.weaponGuard = katana.userData.guard;
+
+    const saya = buildSaya(this.ctx.quality, M, S);
+    this.attachments.sayaMount.add(saya);
+    this.parts.saya = saya;
+
+    // Weapon sockets are exposed through `bones` because both call sites look up the
+    // blade tip by bone name (`weapon_tip`, `katana_tip`, `odachi_tip`, …).
+    const tip = this.weaponTip;
+    for (const n of ['weapon_tip', 'katana_tip', 'odachi_tip', 'yari_tip', 'kama_tip', 'blade_tip']) {
+      this.bones[n] = tip;
+    }
+    this.bones.weapon_grip = this.attachments.handR;
+    this.bones.saya_mouth = saya.userData.mouth;
+    if (kind && typeof kind === 'string' && kind !== 'katana') katana.userData.kind = kind;
+  }
+
+  // ------------------------------------------------------------------- cloth
+
+  _buildCloth(costume) {
+    const S = this.scale;
+    const M = this.materials;
+    const q = this.ctx.quality;
+    const tier = q ? q.tier : 1;
+    const rich = this.variant !== 'oni' && tier >= 1;
+    const cols = tier >= 2 ? 16 : tier >= 1 ? 12 : 10;
+
+    // ---- 袴 hakama: a closed skirt hanging off the pelvis with vertical pleats.
+    const hipY = this._segA[BONE_INDEX.hips * 3 + 1];
+    const rows = tier >= 2 ? 6 : 5;
+    const hakama = new ClothPatch(cols, rows, true, {
+      segLen: 0.135 * S, damping: 0.045, windScale: 0.55, stiffness: 0.9, phase: 0.0,
+    });
+    for (let c = 0; c < cols; c++) {
+      const a = (c / cols) * Math.PI * 2;
+      // Alternate columns sit slightly proud — that is the pleat, in geometry.
+      const pleat = (c % 2 === 0) ? 1.0 : 0.90;
+      hakama.anchors[c] = {
+        bone: 'hips',
+        off: [Math.cos(a) * 0.150 * S * pleat, -0.055 * S, Math.sin(a) * 0.122 * S * pleat],
+      };
+    }
+    hakama.layout((c, r, out) => {
+      const a = (c / cols) * Math.PI * 2;
+      const pleat = (c % 2 === 0) ? 1.0 : 0.90;
+      const flare = 1 + r * 0.16;
+      out.set(Math.cos(a) * 0.150 * S * pleat * flare,
+        hipY - 0.055 * S - r * 0.135 * S,
+        Math.sin(a) * 0.122 * S * pleat * flare);
+    });
+    this.root.add(hakama.buildGeometry(M.skirt, 3));
+    this.cloths.push(hakama);
+    this.parts.hakama = hakama.mesh;
+
+    // ---- 帯 sash tail: the long strip off the obi knot. Pure show, and worth it.
+    const tail = new ClothPatch(2, tier >= 1 ? 9 : 6, false, {
+      segLen: 0.085 * S, damping: 0.030, windScale: 1.6, stiffness: 0.95, phase: 1.7,
+    });
+    const spine1Y = this._segA[BONE_INDEX.spine1 * 3 + 1];
+    for (let c = 0; c < 2; c++) {
+      tail.anchors[c] = { bone: 'spine1', off: [(c - 0.5) * 0.075 * S, -0.020 * S, 0.135 * S] };
+    }
+    tail.layout((c, r, out) => {
+      out.set((c - 0.5) * 0.075 * S, spine1Y - 0.020 * S - r * 0.085 * S, 0.135 * S + r * 0.010 * S);
+    });
+    this.root.add(tail.buildGeometry(M.sash, 2));
+    this.cloths.push(tail);
+    this.parts.sashTail = tail.mesh;
+
+    // ---- 下緒 sageo: the cord off the kurigata, tied back to the obi.
+    const sageo = new ClothPatch(2, 7, false, {
+      segLen: 0.062 * S, damping: 0.045, windScale: 1.1, stiffness: 1.0, phase: 3.1,
+    });
+    for (let c = 0; c < 2; c++) {
+      sageo.anchors[c] = { bone: 'sayaMount', off: [(c - 0.5) * 0.012 * S, -0.010 * S, 0.070 * S] };
+    }
+    const sayaY = this._segA[BONE_INDEX.sayaMount * 3 + 1];
+    sageo.layout((c, r, out) => {
+      out.set(-0.118 * S + (c - 0.5) * 0.012 * S, sayaY - r * 0.062 * S, 0.070 * S);
+    });
+    this.root.add(sageo.buildGeometry(M.cord, 1));
+    this.cloths.push(sageo);
+    this.parts.sageo = sageo.mesh;
+
+    // ---- sleeve hems, player/ronin only: the wide haori cuffs that hang off the arm.
+    if (rich && costume.sleeves !== 'wrapped' && costume.sleeves !== 'none') {
+      for (const side of ['R', 'L']) {
+        const sc = tier >= 2 ? 10 : 8;
+        const sleeve = new ClothPatch(sc, 3, true, {
+          segLen: 0.085 * S, damping: 0.040, windScale: 1.2, stiffness: 0.85,
+          phase: side === 'R' ? 0.8 : 2.2,
+        });
+        const bone = 'foreArm' + side;
+        const bi = BONE_INDEX[bone] * 3;
+        for (let c = 0; c < sc; c++) {
+          const a = (c / sc) * Math.PI * 2;
+          sleeve.anchors[c] = {
+            bone, off: [Math.cos(a) * 0.098 * S, 0.020 * S, Math.sin(a) * 0.098 * S],
+          };
+        }
+        sleeve.layout((c, r, out) => {
+          const a = (c / sc) * Math.PI * 2;
+          const flare = 1 + r * 0.22;
+          out.set(this._segA[bi] + Math.cos(a) * 0.098 * S * flare,
+            this._segA[bi + 1] + 0.020 * S - r * 0.085 * S,
+            this._segA[bi + 2] + Math.sin(a) * 0.098 * S * flare);
+        });
+        this.root.add(sleeve.buildGeometry(M.skirt, 2));
+        this.cloths.push(sleeve);
+        this.parts['sleeve' + side] = sleeve.mesh;
+      }
+    }
+
+    // ---- 髷 topknot / hair chain
+    if (costume.topknot !== false && costume.hood !== true) {
+      const knot = new ClothPatch(3, 4, true, {
+        segLen: 0.048 * S, damping: 0.070, windScale: 0.5, stiffness: 1.0, phase: 4.4,
+      });
+      const ki = BONE_INDEX.topknot * 3;
+      for (let c = 0; c < 3; c++) {
+        const a = (c / 3) * Math.PI * 2;
+        knot.anchors[c] = { bone: 'topknot', off: [Math.cos(a) * 0.026 * S, 0, Math.sin(a) * 0.026 * S] };
+      }
+      knot.layout((c, r, out) => {
+        const a = (c / 3) * Math.PI * 2;
+        const taper = 1 - r * 0.20;
+        out.set(this._segA[ki] + Math.cos(a) * 0.026 * S * taper,
+          this._segA[ki + 1] - r * 0.048 * S,
+          this._segA[ki + 2] + Math.sin(a) * 0.026 * S * taper + r * 0.020 * S);
+      });
+      this.root.add(knot.buildGeometry(M.hair, 1));
+      this.cloths.push(knot);
+      this.parts.topknot = knot.mesh;
+    }
+
+    // Body colliders for the cloth: torso, both thighs, both shins. Four capsules is
+    // the whole budget — any more and the skirt starts costing more than the skin.
+    this._colliders = [
+      new Float32Array(7), new Float32Array(7), new Float32Array(7),
+      new Float32Array(7), new Float32Array(7),
+    ];
+    this._colliderDefs = [
+      ['hips', 'spine3', 0.190 * S], ['thighR', 'shinR', 0.108 * S], ['thighL', 'shinL', 0.108 * S],
+      ['shinR', 'footR', 0.078 * S], ['shinL', 'footL', 0.078 * S],
+    ];
+  }
+}
