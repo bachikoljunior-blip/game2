@@ -596,23 +596,6 @@ export class Level {
     this._emit(fence, this._ground(0, L.z, 0));
   }
 
-  _buildSideHalls() {
-    const f = this.factory;
-    const K = LAYOUT.kagura;
-    this._emit(f.hall({
-      width: K.w, depth: K.d, floorY: K.floor, wallH: 2.5, open: true,
-      veranda: 0.7, eaveOut: 1.7, rise: 2.7, roofMaterial: 'cedar',
-      hip: 0.6, shrineRidge: false, seed: 31, segX: 6, segZ: 5,
-    }), this._ground(K.x, K.z, Math.PI * 0.5));
-
-    const S = LAYOUT.shamusho;
-    this._emit(f.hall({
-      width: S.w, depth: S.d, floorY: S.floor, wallH: 2.5,
-      veranda: 0.6, eaveOut: 1.35, rise: 2.2, roofMaterial: 'roofTile',
-      hip: 0.28, shrineRidge: false, seed: 37, segX: 6, segZ: 4,
-    }), this._ground(S.x, S.z, -Math.PI * 0.5));
-  }
-
   _buildBellTower() {
     const B = LAYOUT.bellTower;
     const build = this.factory.bellTower({ size: 4.4, floorY: 1.55, postH: 3.4, seed: 47 });
