@@ -25,7 +25,7 @@
  * `update()` allocates nothing.
  */
 
-import { Group, Mesh, Vector3, Matrix4, Sphere, BoxGeometry } from 'three';
+import { Group, Mesh, Vector3, Matrix4, Sphere, BoxGeometry, BufferGeometry } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { PropFactory, InstancedProto, normalizeGeo, CLOTH_MATERIALS, EMISSIVE } from './Props.js';
 import { WORLD, inPlayable } from './Constants.js';
@@ -69,6 +69,13 @@ export const LAYOUT = {
 
 /** Spatial cell size for the merged statics. Tuned so a cell ≈ one landmark. */
 const CELL = 40;
+
+/**
+ * Cell size for the merged shadow proxies. Deliberately coarser than `CELL`: the
+ * colour pass splits by material and wants small cells to cull, the shadow pass
+ * wants as few casters as the cascade frusta will tolerate.
+ */
+const SHADOW_CELL = 96;
 
 // -------------------------------------------------------------- encounters
 
@@ -219,6 +226,7 @@ export class Level {
     for (const key of this._buckets.keys()) {
       mergeTasks.push([`merging ${key.split('|')[3]}`, () => this._realizeBucket(key)]);
     }
+    mergeTasks.push(['shadow proxies', () => this._realizeShadowProxies()]);
     mergeTasks.push(['far silhouette', () => this._realizeSilhouette()]);
     mergeTasks.push(['instances', () => this._realizeInstances()]);
     mergeTasks.push(['collision', () => this._realizePhysics()]);
@@ -1067,20 +1075,105 @@ export class Level {
     geo.computeBoundingSphere();
     geo.computeBoundingBox();
 
-    const mesh = new Mesh(geo, this._materialFor(material));
+    const mat = this._materialFor(material);
+    const mesh = new Mesh(geo, mat);
     mesh.name = `level:${layer}:${cx},${cz}:${material}`;
-    mesh.castShadow = material !== '__water' && material !== '__ember';
-    mesh.receiveShadow = material !== '__ember';
+    // Shadow casting is decided later, in `_realizeShadowProxies` — everything
+    // opaque hands its silhouette to a per-cell proxy instead of casting itself.
+    mesh.castShadow = false;
+    mesh.receiveShadow = material !== '__ember' && material !== '__glowPool';
     mesh.matrixAutoUpdate = false;
     mesh.frustumCulled = true;
     this.root.add(mesh);
 
     const s = geo.boundingSphere || new Sphere();
     this.cells.push({
-      mesh, layer,
+      mesh, layer, material, cx, cz,
       x: s.center.x, y: s.center.y, z: s.center.z, r: s.radius,
     });
     this._buckets.set(key, null);
+  }
+
+  /**
+   * One merged depth proxy per spatial cell, so the shadow pass stops paying for
+   * the colour pass's material split.
+   *
+   * The merge has to be per material for colour, which made chunk `0,0` alone
+   * thirteen shadow casters for one lump of geometry — measured at 54 casters ×
+   * 2 cascades = 102 of a 204-call phone frame. A depth-only pass does not care
+   * about material except where alpha test changes the silhouette, so all the
+   * opaque geometry in a cell collapses into one caster.
+   *
+   * **The proxy cannot be `visible = false`.** Verified against three r180 rather
+   * than assumed: `WebGLShadowMap.renderObject` bails on `object.visible === false`
+   * (line 344) *and* on `material.visible === false` (line 380), and the colour
+   * pass tests the same `camera.layers` the shadow pass does, so layers cannot
+   * separate them either. A shadow-only object does not exist in stock three. The
+   * proxy is therefore submitted to both passes and made free in the colour one:
+   * no colour write, no depth write, no depth test, drawn first. That costs one
+   * trivially-shaded draw per cell and saves two shadow draws per material per
+   * cell.
+   *
+   * Alpha-tested surfaces (paper, blossom) keep casting for themselves — their
+   * cutout is their silhouette and folding them into an opaque proxy would put
+   * the whole quad back into the shadow map.
+   */
+  _realizeShadowProxies() {
+    const NEVER_CASTS = new Set(['__ember', '__glowPool', '__water']);
+    const byCell = new Map();
+
+    for (const c of this.cells) {
+      if (c.layer === 'proxy') continue;
+      if (NEVER_CASTS.has(c.material)) { c.mesh.castShadow = false; continue; }
+      const mat = c.mesh.material;
+      if (mat && mat.alphaTest > 0) { c.mesh.castShadow = true; continue; }
+      c.mesh.castShadow = false;
+      // A coarser grid than the colour cells: proxies exist to be few, and a
+      // cascade frustum is tens of metres across, so splitting them at the
+      // colour cell size just buys back the draw calls this is meant to remove.
+      const px = Math.floor(c.x / SHADOW_CELL), pz = Math.floor(c.z / SHADOW_CELL);
+      const key = `${px}|${pz}`;
+      let list = byCell.get(key);
+      if (!list) { list = []; byCell.set(key, list); }
+      // Position + index only, sharing the live attribute objects: merging reads
+      // them and writes fresh arrays, so this adds one position buffer per cell
+      // and nothing else. The wrappers are never rendered and never disposed —
+      // disposing one would free the GPU buffer its source is still using.
+      const src = c.mesh.geometry;
+      const wrap = new BufferGeometry();
+      wrap.setAttribute('position', src.getAttribute('position'));
+      wrap.setIndex(src.getIndex());
+      list.push(wrap);
+    }
+
+    for (const [key, list] of byCell) {
+      if (!list.length) continue;
+      const [cx, cz] = key.split('|');
+      let geo;
+      // Always merge, even a single entry: that copies the arrays out of the
+      // wrapper. Handing the wrapper straight to a Mesh would leave the proxy
+      // sharing BufferAttributes with a live colour mesh, and disposing one
+      // would free the GPU buffers the other is still drawing from.
+      try { geo = mergeGeometries(list, false); }
+      catch (err) { console.error(`[level] shadow proxy merge failed for ${key}`, err); continue; }
+      if (!geo) continue;
+      geo.computeBoundingSphere();
+
+      const mesh = new Mesh(geo, this.factory.shadowProxyMaterial);
+      mesh.name = `level:proxy:${cx},${cz}`;
+      mesh.castShadow = true;
+      mesh.receiveShadow = false;
+      mesh.matrixAutoUpdate = false;
+      mesh.frustumCulled = true;
+      mesh.renderOrder = 9000;          // after the scene, so early-Z kills it
+      this.root.add(mesh);
+
+      const s = geo.boundingSphere || new Sphere();
+      this.cells.push({
+        mesh, layer: 'proxy', material: '__shadowProxy', cx, cz,
+        x: s.center.x, y: s.center.y, z: s.center.z, r: s.radius,
+      });
+    }
   }
 
   _realizeSilhouette() {

@@ -75,6 +75,10 @@ const GORGE_HALF = 24.0;
 const HEIGHT_MIN = 480;
 const HEIGHT_MAX = 1200;
 
+/** Vertical bounding slack ceiling (metres) and lattice density. See `_reboundRing`. */
+const RING_SLACK_MAX = 200;
+const RING_BOUND_TAPS = 10;
+
 /** Deterministic — a level that reshuffles between runs makes hand-placed geometry float. */
 const TERRAIN_SEED = 0x5a4436;
 
@@ -2006,8 +2010,10 @@ void kgComputeSurface(){
     geo.setAttribute('uv', new BufferAttribute(new Float32Array(total * 2), 2));
     geo.setAttribute('aSkirt', new BufferAttribute(skirt, 1));
     geo.setIndex(new BufferAttribute(idx, 1));
-    // The vertex shader moves everything; a real bounding sphere would be a lie, and
-    // a small one would let three cull the terrain out from under the camera.
+    // The vertex shader moves everything, so a sphere fitted to these y = 0 positions
+    // would sit 812 m under the ground and cull the terrain out from under the camera.
+    // This is the last-resort fallback only: every ring mesh carries its own honest
+    // sphere (see `_reboundRing`), and three consults the mesh's first.
     geo.computeBoundingSphere = function () {
       if (!this.boundingSphere) this.boundingSphere = new Sphere();
       this.boundingSphere.center.set(0, 0, 0);
@@ -2047,7 +2053,11 @@ void kgComputeSurface(){
       const mesh = new Mesh(k === 0 ? this.blockGeo : this.ringGeo, this.material);
       mesh.name = `terrain-l${k}`;
       mesh.scale.set(c, 1, c);
-      mesh.frustumCulled = false;
+      // Six rings share two geometries, so the honest bound cannot live on the
+      // geometry — but three tests `object.boundingSphere` ahead of the geometry's,
+      // which lets each ring bound itself. `_reboundRing` fills it in on every snap.
+      mesh.boundingSphere = new Sphere();
+      mesh.frustumCulled = true;
       mesh.matrixAutoUpdate = false;
       mesh.receiveShadow = true;
       // Only the near levels cast; a 4 km ring in the shadow atlas buys nothing.
@@ -2060,6 +2070,57 @@ void kgComputeSurface(){
       this.group.add(mesh);
     }
     this.group.updateMatrix();
+  }
+
+  /**
+   * Re-fit one ring's bounding sphere to the ground it actually covers.
+   *
+   * The rings used to carry `frustumCulled = false` *and* a 10⁷ m geometry sphere —
+   * belt and braces for the same intent. The intent was sound: the vertex shader
+   * moves every vertex onto the heightfield, so the geometry's own y = 0 sphere is a
+   * lie that sits 812 m below the terrain and would cull the ground out from under
+   * the camera. But `frustumCulled = false` short-circuits the shadow pass as well as
+   * the colour pass, so a cascade could never decline a ring it does not reach.
+   *
+   * The bound below is truthful: exact in XZ (the ring's footprint is known), sampled
+   * in Y against the same heightfield the vertex shader reads, and padded for the
+   * skirt and for what a lattice can miss between taps.
+   */
+  _reboundRing(m) {
+    const c = m.userData.cell;
+    const halfXZ = this._ringRes * 0.5 * c;
+    const px = m.position.x, pz = m.position.z;
+
+    let lo = Infinity, hi = -Infinity;
+    const T = RING_BOUND_TAPS;
+    for (let j = 0; j <= T; j++) {
+      const z = pz + ((2 * j) / T - 1) * halfXZ;
+      for (let i = 0; i <= T; i++) {
+        const h = this.heightAt(px + ((2 * i) / T - 1) * halfXZ, z);
+        if (h < lo) lo = h;
+        if (h > hi) hi = h;
+      }
+    }
+    // The lattice steps over whatever lies between its taps, so pad by the relief it
+    // *did* see: flat plateau reports a couple of metres and gets a couple of metres
+    // of slack, a ring straddling the gorge reports a hundred and gets a hundred.
+    // Then the skirt, which hangs 3.5 cells below the ground and below HEIGHT_MIN
+    // with it — clamp the ground first, subtract the skirt after.
+    const slack = Math.min(RING_SLACK_MAX, 10 + (hi - lo) * 0.7 + halfXZ * 0.06);
+    lo = Math.max(HEIGHT_MIN, lo - slack) - 3.5 * c;
+    hi = Math.min(HEIGHT_MAX, hi + slack);
+
+    const hy = (hi - lo) * 0.5;
+    // Authored in object space: three scales the sphere by the largest axis of
+    // matrixWorld — here `cell` — so the world radius is divided back out. The centre
+    // needs no such treatment; the ring's y scale is 1 and its y offset is 0.
+    // The 4% is not decoration: the radius is exactly the corner distance, so a corner
+    // vertex sits *on* the surface of the sphere and any sampling error at all puts it
+    // outside. A bound that is 4% loose culls the same things; a bound that is 0.2%
+    // tight punches a hole in the ground on one frame in a thousand.
+    m.boundingSphere.center.set(0, (lo + hi) * 0.5, 0);
+    m.boundingSphere.radius =
+      1.04 * Math.sqrt(2 * halfXZ * halfXZ + hy * hy) / Math.max(1, c);
   }
 
   /** Slide the rings onto the camera. Called every frame; must not allocate. */
@@ -2076,6 +2137,10 @@ void kgComputeSurface(){
         m.position.set(px, 0, pz);
         m.updateMatrix();
         m.updateMatrixWorld(true);
+        // Only on a real shift: level 0 re-centres every few metres, level 5 every
+        // ninety, and neither should be paying 121 height taps on a frame it did
+        // not move.
+        this._reboundRing(m);
       }
     }
   }

@@ -57,6 +57,7 @@ const DODGE_T = {
 };
 
 const PARRY_WINDOW = 0.18;     // ~180 ms from the guard press/release
+const LAND_DIP_SMOOTH = 0.17;  // seconds to settle the landing absorb
 const BLADE_LENGTH = 1.02;     // 三尺 katana blade, tsuba to kissaki
 
 // Stances: 中段 seigan (balanced), 上段 jodan (heavy/slow), 下段 gedan (fast/pressure).
@@ -166,6 +167,11 @@ const _v6 = new Vector3();
 const _q1 = new Quaternion();
 
 let _nextId = 1;
+
+/** True only for a fully finite vector — `typeof NaN === 'number'` is not enough. */
+function isFiniteVec(v) {
+  return !!v && Number.isFinite(v.x) && Number.isFinite(v.y) && Number.isFinite(v.z);
+}
 
 /** Shortest signed angle from a to b, in radians. */
 function angleDelta(a, b) {
@@ -303,6 +309,8 @@ export class Player {
     this.spawnYaw = 0;
 
     this._disp = new Vector3();
+    this._lastGoodPos = new Vector3();
+    this._warnedNaN = false;
     this._lungeVel = new Vector3();
     this._dodgeDir = new Vector3();
     this._lookAt = new Vector3();
@@ -323,6 +331,7 @@ export class Player {
     const h = ctx.terrain?.heightAt?.(this.root.position.x, this.root.position.z);
     if (typeof h === 'number') this.root.position.y = h;
     this.spawnPosition.copy(this.root.position);
+    this._lastGoodPos.copy(this.root.position);
 
     // `body` sits between the entity root and the rig so lean/land-dip never fight
     // whatever the rig writes into its own root.
@@ -407,6 +416,10 @@ export class Player {
     // Pump before the pause guard: Input.update() is what zeroes the accumulated
     // look delta, and a stale non-zero delta would spin the camera while paused.
     this._pumpInput();
+    // Clamp at the boundary: a non-finite or absurd step would land in the
+    // springs and the integrator, and neither can be cleaned up afterwards.
+    if (!Number.isFinite(dt)) dt = 0;
+    else if (dt > 0.25) dt = 0.25;
     if (dt <= 0) { this._exportWeapon(); return; }
     const ctx = this.ctx;
     const input = ctx.input;
@@ -424,6 +437,7 @@ export class Player {
     }
 
     this._integrate(dt);
+    this._sanitise();
     this._applyFacing(dt);
     this._updateRig(dt);
     this._exportWeapon(dt);
@@ -848,9 +862,12 @@ export class Player {
       }
       gi = this.controller.move(this._disp, dt) || null;
       const cp = this.controller.position ?? gi?.position;
-      if (cp && typeof cp.x === 'number') this.root.position.set(cp.x, cp.y, cp.z);
-      else this.root.position.add(this._disp);
-    } else {
+      // `typeof NaN === 'number'`, so the type check alone would happily copy a
+      // degenerate solve straight into the world transform — and from there into
+      // the camera, the audio listener and the light rig.
+      if (cp && isFiniteVec(cp)) this.root.position.set(cp.x, cp.y, cp.z);
+      else if (isFiniteVec(this._disp)) this.root.position.add(this._disp);
+    } else if (isFiniteVec(this._disp)) {
       this.root.position.add(this._disp);
     }
 
@@ -895,6 +912,37 @@ export class Player {
     }
 
     this.speed = Math.hypot(this.velocity.x, this.velocity.z);
+  }
+
+  /**
+   * The player's transform is read by the camera, which is read by the audio
+   * listener, the light rig and the post chain — a single non-finite frame here
+   * takes the whole render loop down and never recovers, because every consumer
+   * smooths what it reads. So the value that leaves this system is checked, and a
+   * bad one is rolled back to the last good state rather than published.
+   */
+  _sanitise() {
+    if (isFiniteVec(this.root.position) && isFiniteVec(this.velocity)
+      && Number.isFinite(this.yaw) && Number.isFinite(this.speed)
+      && Number.isFinite(this._landDip) && Math.abs(this._landDip) < 4) {
+      this._lastGoodPos.copy(this.root.position);
+      return;
+    }
+    this.root.position.copy(this._lastGoodPos);
+    this.velocity.set(0, 0, 0);
+    this.speed = 0;
+    this._lungeVel.set(0, 0, 0);
+    this._landDip = 0;
+    this._landDipVel = 0;
+    if (!Number.isFinite(this.yaw)) this.yaw = this.desiredYaw = 0;
+    if (this.controller) {
+      if (this.controller.position?.copy) this.controller.position.copy(this._lastGoodPos);
+      else this.controller.setPosition?.(this._lastGoodPos);
+    }
+    if (!this._warnedNaN) {
+      this._warnedNaN = true;
+      console.warn('[player] non-finite transform recovered; holding the last good position');
+    }
   }
 
   _land(fallSpeed) {
@@ -944,10 +992,18 @@ export class Player {
     if (this.body) {
       this.body.rotation.z = this._lean;
       this.body.rotation.x = this._pitchLean;
-      // Critically-damped absorb on landing.
-      const k = 26, c = 2 * Math.sqrt(k);
-      this._landDipVel += (-k * this._landDip - c * this._landDipVel) * dt;
-      this._landDip += this._landDipVel * dt;
+
+      // Critically-damped absorb on landing, solved analytically. An explicit
+      // Euler spring here is only conditionally stable: at the engine's 0.25 s
+      // dt clamp (a SwiftShader capture, or any long stall) the damping term
+      // overshoots its own sign and the dip diverges to infinity in ~40 frames,
+      // which then poisons every world matrix hanging off `body`.
+      const omega = 2 / LAND_DIP_SMOOTH;
+      const x = omega * dt;
+      const ex = 1 / (1 + x + 0.48 * x * x + 0.235 * x * x * x);
+      const temp = (this._landDipVel + omega * this._landDip) * dt;
+      this._landDipVel = (this._landDipVel - omega * temp) * ex;
+      this._landDip = (this._landDip + temp) * ex;
       if (Math.abs(this._landDip) < 1e-4 && Math.abs(this._landDipVel) < 1e-3) {
         this._landDip = 0; this._landDipVel = 0;
       }

@@ -27,7 +27,7 @@
 
 import {
   BufferGeometry, BufferAttribute, BoxGeometry, Matrix4, Vector3, Color,
-  MeshStandardMaterial, DoubleSide, InstancedMesh, DataTexture, RGBAFormat,
+  MeshStandardMaterial, MeshBasicMaterial, FrontSide, DoubleSide, InstancedMesh, DataTexture, RGBAFormat,
   SRGBColorSpace, RepeatWrapping, LinearMipmapLinearFilter, LinearFilter,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -59,10 +59,21 @@ export const CLOTH_MATERIALS = new Set(['clothIndigo', 'clothCrimson', 'paper', 
  * blooming into a blob.
  */
 export const EMISSIVE = {
-  /** Flame inside a hibukuro / chōchin. Rec709 luma ≈ 4.4 linear. */
-  flame: { color: 0xffd9a8, intensity: 6.0 },
-  /** Lit paper seen from outside. Rec709 luma ≈ 1.93 linear → ~248/255. */
-  paper: { color: 0xffc07a, intensity: 3.2 },
+  /**
+   * Flame inside a hibukuro / chōchin. Near-white on purpose.
+   *
+   * Rec.709 luma weights green at 0.7152 and blue at 0.0722, so a *saturated*
+   * warm source cannot produce a high-luma pixel however hard it is driven: the
+   * red channel clips at 255 while green and blue trail, and the result tops out
+   * around 210–225. Measured: at `#ffd9a8` ×6 (linear 6.00, 4.16, 2.35) the whole
+   * frame peaked at luma 229, and that peak was the blue-white sun disc, not a
+   * lantern. A real flame core photographs white — the warmth in the read comes
+   * from the paper around it and from the bloom skirt, not from the core itself.
+   * Rec709 luma ≈ 6.4 linear, G/R 0.90.
+   */
+  flame: { color: 0xfff4e8, intensity: 7.0 },
+  /** Lit paper seen from outside. Rec709 luma ≈ 2.65 linear, G/R 0.69. */
+  paper: { color: 0xffd9a8, intensity: 3.6 },
   /** Warm spill on flagstone. Rec709 luma ≈ 0.38 — below the bloom threshold. */
   pool: { color: 0xff9a52, intensity: 0.85 },
   /** Sky caught in still water. Reads as a glint without becoming a lamp. */
@@ -803,12 +814,25 @@ export class InstancedProto {
       const t = e[i]; e[i] = e[j]; e[j] = t;
     }
     const n = e.length;
-    for (const part of this.build.parts) {
+    // Only the bulkiest part of a prototype casts. A stone lantern's gold hōju
+    // and its lit paper liner sit inside the silhouette the stonework already
+    // throws, so their shadow draws — two per cascade, per prototype — buy
+    // nothing. Picking the largest part keeps the silhouette and drops the rest.
+    let heaviest = -1, heaviestTris = -1;
+    for (let i = 0; i < this.build.parts.length; i++) {
+      const p = this.build.parts[i];
+      if (NEVER_CASTS.has(p.material)) continue;
+      const tris = p.geometry.index ? p.geometry.index.count : 0;
+      if (tris > heaviestTris) { heaviestTris = tris; heaviest = i; }
+    }
+
+    for (let pi = 0; pi < this.build.parts.length; pi++) {
+      const part = this.build.parts[pi];
       const mat = this.factory.specialMaterial(part.material);
       const mesh = new InstancedMesh(part.geometry, mat, n);
       mesh.name = `${this.name}:${part.material}`;
-      mesh.castShadow = this.castShadow;
-      mesh.receiveShadow = this.receiveShadow;
+      mesh.castShadow = this.castShadow && pi === heaviest;
+      mesh.receiveShadow = this.receiveShadow && !NEVER_CASTS.has(part.material);
       mesh.matrixAutoUpdate = false;
       const hasTint = e.some((x) => x.t);
       for (let i = 0; i < n; i++) {
@@ -843,6 +867,9 @@ export class InstancedProto {
 }
 
 const _tintColor = new Color();
+
+/** Emissive and water surfaces are light, not occluders — they never cast. */
+const NEVER_CASTS = new Set(['__ember', '__glowPool', '__water']);
 
 // ============================================================= PropFactory
 
@@ -1114,6 +1141,31 @@ export class PropFactory {
       this._blossom.needsUpdate = true;
     }
     return true;
+  }
+
+  /**
+   * The material on a per-cell shadow proxy. Three has no shadow-only object
+   * (see `Level._realizeShadowProxies`), so the proxy is submitted to the colour
+   * pass as well and made inert there: nothing written, nothing tested, drawn
+   * before everything else. Only the depth material derived from it does work,
+   * and that ignores every property here except `side` and alpha test.
+   */
+  get shadowProxyMaterial() {
+    if (this._proxyMat) return this._proxyMat;
+    const m = new MeshBasicMaterial({
+      colorWrite: false,
+      depthWrite: false,
+      // Depth *test* stays on, and Level draws the proxy after the scene, so by
+      // the time it rasterizes the depth buffer already rejects nearly every
+      // fragment. Writes are off, so it changes nothing it touches.
+      depthTest: true,
+      fog: false,
+      side: FrontSide,
+    });
+    m.name = 'prop:shadowProxy';
+    this._proxyMat = m;
+    this.disposables.push(m);
+    return m;
   }
 
   /** Wet stone — the chōzuya basin and the splash apron around it. */

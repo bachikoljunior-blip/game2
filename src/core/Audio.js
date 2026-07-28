@@ -22,8 +22,73 @@ import { Vector3 } from 'three';
    Small utilities
    ──────────────────────────────────────────────────────────────────────────── */
 
-const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+/**
+ * NaN-safe clamp: an out-of-range value falls to `a`, and so does a NaN, because
+ * `NaN >= a` is false. Every number that reaches an AudioParam should have passed
+ * through here or through the guarded writers below.
+ */
+const clamp = (v, a, b) => (v >= a ? (v <= b ? v : b) : a);
 const lerp = (a, b, t) => a + (b - a) * t;
+
+/* ── guarded AudioParam access ───────────────────────────────────────────────
+ *
+ * Web Audio rejects non-finite values with a TypeError (and exponentialRamp also
+ * rejects a target of exactly 0). Systems update *before* the renderer draws, so an
+ * uncaught throw in here does not merely break a sound — it aborts the frame before
+ * anything is painted, leaving the game ticking with a frozen draw-call count and a
+ * black screen. A bad number must therefore cost a sound, never a frame.
+ *
+ * Rejected writes hold the parameter's previous value rather than substituting a
+ * default: a listener snapped to the origin would pan the whole mix wrongly, which is
+ * worse than not moving at all.
+ */
+
+const _warned = new Set();
+
+/** Warn once per site. Messages say "guard" so a reader can tell this is masking, not fixing. */
+function warnOnce(key, message) {
+  if (_warned.has(key)) return;
+  _warned.add(key);
+  console.warn('[audio] guard: ' + message);
+}
+
+function pSet(param, v, t, field) {
+  if (Number.isFinite(v) && Number.isFinite(t)) { param.setValueAtTime(v, t); return true; }
+  warnOnce(field + '.set', field + ' setValueAtTime rejected (value=' + v + ', time=' + t + '); holding previous value');
+  return false;
+}
+
+function pTarget(param, v, t, tc, field) {
+  if (Number.isFinite(v) && Number.isFinite(t) && Number.isFinite(tc) && tc > 0) {
+    param.setTargetAtTime(v, t, tc);
+    return true;
+  }
+  warnOnce(field + '.target', field + ' setTargetAtTime rejected (value=' + v + ', time=' + t + ', tc=' + tc + '); holding previous value');
+  return false;
+}
+
+function pRamp(param, v, t, field) {
+  if (Number.isFinite(v) && Number.isFinite(t)) { param.linearRampToValueAtTime(v, t); return true; }
+  warnOnce(field + '.ramp', field + ' linearRamp rejected (value=' + v + ', time=' + t + '); holding previous value');
+  return false;
+}
+
+function pExp(param, v, t, field) {
+  if (Number.isFinite(v) && Number.isFinite(t)) {
+    // An exponential ramp can neither reach nor cross zero; nudge a computed zero off it.
+    param.exponentialRampToValueAtTime(Math.abs(v) < 1e-5 ? (v < 0 ? -1e-5 : 1e-5) : v, t);
+    return true;
+  }
+  warnOnce(field + '.exp', field + ' exponentialRamp rejected (value=' + v + ', time=' + t + '); holding previous value');
+  return false;
+}
+
+/** Guarded immediate write — the `.value` setter is a WebIDL float and throws too. */
+function pValue(param, v, field) {
+  if (Number.isFinite(v)) { param.value = v; return true; }
+  warnOnce(field + '.value', field + ' .value rejected (value=' + v + '); holding previous value');
+  return false;
+}
 
 /** Deterministic PRNG so a given sound variant is byte-identical on every device. */
 function mulberry32(a) {
@@ -375,6 +440,10 @@ export class AudioSystem {
 
     // Combat / mood heuristics
     this._paused = false;
+    // Diagnostics for the frame guard: non-zero here means bad numbers are reaching us
+    // from upstream and are being contained, not that the upstream bug is fixed.
+    this.listenerRejects = 0;
+    this.updateFails = 0;
     this._heat = 0;
     this._engaged = 0;
     this._silentUntil = 0;
@@ -495,7 +564,7 @@ export class AudioSystem {
     this.limiter.connect(ac.destination);
 
     this.master = ac.createGain();
-    this.master.gain.value = this.vol.master;
+    pValue(this.master.gain, this.vol.master, 'graph.master');
     this.master.connect(this.limiter);
 
     // Reverb return: two convolvers so a room change is a cross-fade, not a cut.
@@ -534,7 +603,7 @@ export class AudioSystem {
       filter.frequency.value = 20000;
       filter.Q.value = 0.5;
       duck.gain.value = 1;
-      vol.gain.value = level;
+      pValue(vol.gain, level, 'graph.busLevel');
       sendGain.gain.value = send;
       input.connect(duck);
       duck.connect(filter);
@@ -627,7 +696,7 @@ export class AudioSystem {
     ch.stopAt = t + 0.03;
     try {
       ch.gain.gain.cancelScheduledValues(t);
-      ch.gain.gain.setTargetAtTime(0.0001, t, 0.004);
+      pTarget(ch.gain.gain, 0.0001, t, 0.004, 'voice.retire');
       if (ch.src) ch.src.stop(ch.stopAt);
     } catch { this._release(ch); }
   }
@@ -668,7 +737,22 @@ export class AudioSystem {
     if (!list || list.length === 0) return null;
     const ac = this.ac;
     const now = ac.currentTime;
-    const when = o && o.when ? Math.max(o.when, now) : now;
+    let when = o && o.when ? Math.max(o.when, now) : now;
+    if (!Number.isFinite(when)) {
+      warnOnce('play.when', 'a scheduled start time for "' + name + '" was non-finite; playing it immediately instead');
+      when = now;
+    }
+
+    // World positions arrive from gameplay payloads and can be NaN. Rather than drop the
+    // event, fall back to a centred, non-positional play: the panner would throw, and a
+    // silent hit reads as a broken game just as much as a missing frame does.
+    if (positional && !(Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z))) {
+      warnOnce('play.position',
+        'a world position for "' + name + '" was non-finite (' + x + ',' + y + ',' + z +
+        '); falling back to non-positional playback. The bad coordinate comes from the ' +
+        'emitting gameplay system, not from Audio.js.');
+      positional = false;
+    }
 
     const minGap = o && o.minGap !== undefined ? o.minGap : 0.03;
     if (minGap > 0) {
@@ -701,6 +785,14 @@ export class AudioSystem {
     let rate = (o && o.rate !== undefined ? o.rate : 1) * this._rateScale;
     if (o && o.freq && entry.base > 0) rate = (o.freq / entry.base) * (o.rate !== undefined ? o.rate : 1) * this._rateScale;
     let gain = o && o.gain !== undefined ? o.gain : 1;
+    if (!Number.isFinite(rate)) {
+      warnOnce('play.rate', 'a playback rate for "' + name + '" was non-finite; using 1.0');
+      rate = 1;
+    }
+    if (!Number.isFinite(gain)) {
+      warnOnce('play.gain', 'a gain for "' + name + '" was non-finite; using 1.0');
+      gain = 1;
+    }
     if (!(o && o.noJitter)) {
       rate *= 1 + (Math.random() - 0.5) * 0.055;
       gain *= 0.9 + Math.random() * 0.18;
@@ -724,23 +816,23 @@ export class AudioSystem {
 
     const src = ac.createBufferSource();
     src.buffer = entry.buffer;
-    src.playbackRate.value = rate;
-    if (o && o.detune && src.detune) { try { src.detune.value = o.detune; } catch { /* unsupported */ } }
+    pValue(src.playbackRate, rate, 'voice.rate');
+    if (o && o.detune && src.detune) { try { pValue(src.detune, o.detune, 'voice.detune'); } catch { /* unsupported */ } }
     if (o && o.loop) { src.loop = true; }
     src.connect(ch.gain);
 
     const g = ch.gain.gain;
     g.cancelScheduledValues(when);
-    g.setValueAtTime(clamp(gain, 0, 8), when);
+    pSet(g, clamp(gain, 0, 8), when, 'voice.gain');
     ch.lp.frequency.cancelScheduledValues(when);
-    ch.lp.frequency.setValueAtTime(clamp(lpFreq, 120, 20000), when);
+    pSet(ch.lp.frequency, clamp(lpFreq, 120, 20000), when, 'voice.lowpass');
 
     if (positional) {
       const p = ch.panner;
       if (p.positionX) {
-        p.positionX.setValueAtTime(x, when);
-        p.positionY.setValueAtTime(y, when);
-        p.positionZ.setValueAtTime(z, when);
+        pSet(p.positionX, x, when, 'voice.posX');
+        pSet(p.positionY, y, when, 'voice.posY');
+        pSet(p.positionZ, z, when, 'voice.posZ');
       } else if (p.setPosition) {
         p.setPosition(x, y, z);
       }
@@ -805,17 +897,22 @@ export class AudioSystem {
   }
 
   setVolume(bus, v) {
-    const val = clamp(typeof v === 'number' ? v : 1, 0, 2);
+    if (!Number.isFinite(v)) {
+      warnOnce('setVolume', 'setVolume("' + bus + '", ' + v + ') ignored: a non-finite volume would ' +
+        'either throw or silently mute the bus. Keeping the previous level.');
+      return;
+    }
+    const val = clamp(v, 0, 2);
     if (bus === 'master') {
       this.vol.master = val;
-      if (this.master) this.master.gain.setTargetAtTime(val, this.ac.currentTime, 0.05);
+      if (this.master) pTarget(this.master.gain, val, this.ac.currentTime, 0.05, 'bus.master');
       return;
     }
     const b = this.buses && this.buses[bus];
     if (!b) return;
     this.vol[bus] = val;
     b.level = val;
-    b.vol.gain.setTargetAtTime(val, this.ac.currentTime, 0.05);
+    pTarget(b.vol.gain, val, this.ac.currentTime, 0.05, 'bus.volume');
   }
 
   /** Sidechain: pull music and ambience down under an impact, then let them breathe back. */
@@ -824,7 +921,8 @@ export class AudioSystem {
     const t = this.ac.currentTime;
     const target = clamp(1 - (amount === undefined ? 0.4 : amount), 0.02, 1);
     if (this._paused) return;
-    const hold = Math.max(0.02, (ms === undefined ? 220 : ms) / 1000);
+    const rawHold = (ms === undefined ? 220 : ms) / 1000;
+    const hold = Number.isFinite(rawHold) ? Math.max(0.02, rawHold) : 0.22;
     for (let i = 0; i < this.busList.length; i++) {
       const b = this.busList[i];
       if (b.name !== 'music' && b.name !== 'ambience') continue;
@@ -834,8 +932,8 @@ export class AudioSystem {
       try {
         if (g.cancelAndHoldAtTime) g.cancelAndHoldAtTime(t); else g.cancelScheduledValues(t);
       } catch { g.cancelScheduledValues(t); }
-      g.linearRampToValueAtTime(target, t + 0.018);
-      g.setTargetAtTime(1, t + hold, 0.16);
+      pRamp(g, target, t + 0.018, 'bus.duck');
+      pTarget(g, 1, t + hold, 0.16, 'bus.duckRelease');
     }
   }
 
@@ -2103,15 +2201,15 @@ export class AudioSystem {
       default: break;
     }
     if (d) {
-      d.out.gain.setTargetAtTime(droneG, t, 1.2);
+      pTarget(d.out.gain, droneG, t, 1.2, 'drone.gain');
       const f = m.mood === 'death' ? d.base * 0.47 : d.base;
       for (let i = 0; i < d.oscs.length; i++) {
         const o = d.oscs[i];
         const ratio = [0.5, 0.5, 0.25, 0.75][i] || 0.5;
-        try { o.frequency.setTargetAtTime(f * ratio, t, m.mood === 'death' ? 3.5 : 1.5); } catch { /* ignore */ }
+        pTarget(o.frequency, f * ratio, t, m.mood === 'death' ? 3.5 : 1.5, 'drone.freq');
       }
     }
-    if (this.buses) this.buses.music.vol.gain.setTargetAtTime(musicG, t, 1.0);
+    if (this.buses) pTarget(this.buses.music.vol.gain, musicG, t, 1.0, 'bus.musicMood');
   }
 
   /** One-shot gestures that mark the moment a mood begins. */
@@ -2134,12 +2232,19 @@ export class AudioSystem {
     if (!this.running || !m.enabled) return;
     const ac = this.ac;
     const now = ac.currentTime;
-    if (m.nextTime < now) m.nextTime = now + 0.02;
+    if (!Number.isFinite(m.nextTime) || m.nextTime < now) m.nextTime = now + 0.02;
+    const stepDur = this._stepDur();
+    if (!(stepDur > 0.01)) {
+      warnOnce('music.tempo', 'the music tempo went non-finite (bpm=' + this._bpm() +
+        ', intensity=' + m.intensity + '); the scheduler is idling until it recovers');
+      m.intensity = 0;
+      return;
+    }
     let guard = 0;
     while (m.nextTime < now + 0.12 && guard++ < 48) {
       this._musicStep(m.nextTime, m.step);
       m.step++;
-      m.nextTime += this._stepDur();
+      m.nextTime += stepDur;
     }
     if (m.blendEnd > 0 && now >= m.blendEnd) { m.prev = null; m.blendEnd = 0; this._applyMoodMix(); }
     if (this._victoryUntil && now > this._victoryUntil && m.mood === 'victory') {
@@ -2252,6 +2357,14 @@ export class AudioSystem {
    */
   _shakuhachi(freq, when, dur, vel) {
     if (!this.running || !this._noiseBuf) return;
+    // Validated up front: this voice schedules two dozen automation points, and any one
+    // of them throwing would take the frame down with it.
+    if (!(Number.isFinite(freq) && freq > 0 && Number.isFinite(when) &&
+      Number.isFinite(dur) && dur > 0 && Number.isFinite(vel))) {
+      warnOnce('shakuhachi.args', 'a shakuhachi note was skipped: freq=' + freq +
+        ' when=' + when + ' dur=' + dur + ' vel=' + vel);
+      return;
+    }
     const ac = this.ac;
     const out = ac.createGain();
     out.gain.value = 0.0001;
@@ -2259,7 +2372,7 @@ export class AudioSystem {
 
     const body = ac.createBiquadFilter();
     body.type = 'lowpass';
-    body.frequency.value = clamp(freq * 5.5, 900, 4600);
+    pValue(body.frequency, clamp(freq * 5.5, 900, 4600), 'shakuhachi.body');
     body.Q.value = 0.9;
     const form = ac.createBiquadFilter();
     form.type = 'peaking';
@@ -2286,7 +2399,7 @@ export class AudioSystem {
     nz.loop = true;
     const nzBP = ac.createBiquadFilter();
     nzBP.type = 'bandpass';
-    nzBP.frequency.value = clamp(freq * 2.6, 700, 6000);
+    pValue(nzBP.frequency, clamp(freq * 2.6, 700, 6000), 'shakuhachi.breathBP');
     nzBP.Q.value = 0.8;
     const nzG = ac.createGain();
     nzG.gain.value = 0.0001;
@@ -2304,25 +2417,25 @@ export class AudioSystem {
     const bendFrom = freq * (Math.random() < 0.55 ? 0.945 : 1.0);
     const atk = 0.075 + Math.random() * 0.06;
     const rel = 0.42;
-    osc.frequency.setValueAtTime(bendFrom, when);
-    osc2.frequency.setValueAtTime(bendFrom, when);
-    osc.frequency.exponentialRampToValueAtTime(freq, when + 0.16);
-    osc2.frequency.exponentialRampToValueAtTime(freq, when + 0.16);
+    pSet(osc.frequency, bendFrom, when, 'shakuhachi.f1');
+    pSet(osc2.frequency, bendFrom, when, 'shakuhachi.f2');
+    pExp(osc.frequency, freq, when + 0.16, 'shakuhachi.bend1');
+    pExp(osc2.frequency, freq, when + 0.16, 'shakuhachi.bend2');
     // A gentle fall away at the end of the breath.
-    osc.frequency.setTargetAtTime(freq * 0.985, when + dur * 0.8, 0.2);
-    osc2.frequency.setTargetAtTime(freq * 0.985, when + dur * 0.8, 0.2);
-    lfoG.gain.setValueAtTime(0, when);
-    lfoG.gain.linearRampToValueAtTime(freq * 0.011, when + Math.min(dur * 0.7, atk + 0.35));
+    pTarget(osc.frequency, freq * 0.985, when + dur * 0.8, 0.2, 'shakuhachi.fall1');
+    pTarget(osc2.frequency, freq * 0.985, when + dur * 0.8, 0.2, 'shakuhachi.fall2');
+    pSet(lfoG.gain, 0, when, 'shakuhachi.vib0');
+    pRamp(lfoG.gain, freq * 0.011, when + Math.min(dur * 0.7, atk + 0.35), 'shakuhachi.vib');
 
     const g = clamp(vel, 0, 1) * 0.5;
-    out.gain.setValueAtTime(0.0001, when);
-    out.gain.linearRampToValueAtTime(g, when + atk);
-    out.gain.setValueAtTime(g, when + dur);
-    out.gain.exponentialRampToValueAtTime(0.0001, when + dur + rel);
-    nzG.gain.setValueAtTime(0.0001, when);
-    nzG.gain.linearRampToValueAtTime(g * 0.55, when + atk * 0.5);   // breath leads the tone
-    nzG.gain.linearRampToValueAtTime(g * 0.18, when + atk + 0.2);
-    nzG.gain.setTargetAtTime(0.0001, when + dur, 0.15);
+    pSet(out.gain, 0.0001, when, 'shakuhachi.env0');
+    pRamp(out.gain, g, when + atk, 'shakuhachi.attack');
+    pSet(out.gain, g, when + dur, 'shakuhachi.hold');
+    pExp(out.gain, 0.0001, when + dur + rel, 'shakuhachi.release');
+    pSet(nzG.gain, 0.0001, when, 'shakuhachi.breath0');
+    pRamp(nzG.gain, g * 0.55, when + atk * 0.5, 'shakuhachi.breathIn');   // breath leads the tone
+    pRamp(nzG.gain, g * 0.18, when + atk + 0.2, 'shakuhachi.breathHold');
+    pTarget(nzG.gain, 0.0001, when + dur, 0.15, 'shakuhachi.breathOut');
 
     const stopAt = when + dur + rel + 0.08;
     osc.start(when); osc2.start(when); lfo.start(when); nz.start(when);
@@ -2555,9 +2668,28 @@ export class AudioSystem {
 
   /* ── per-frame ──────────────────────────────────────────────────────────── */
 
+  /**
+   * Nothing in here may throw. Audio runs before the renderer in the system list, so an
+   * exception escaping this method aborts the frame before a single draw call is issued:
+   * the game keeps ticking, `engine.stats.drawCalls` freezes at its last value, and the
+   * screen goes black. Failure has to look like silence, not like a dead renderer.
+   */
   update(dt, elapsed, rawDt) {
     if (!this.ok || !this.ac) return;
-    const rd = rawDt || dt || 0.0166;
+    let rd = rawDt || dt || 0.0166;
+    if (!(rd > 0) || rd > 1) rd = 0.0166;   // NaN, negative or a tab-switch gap
+    try {
+      this._update(rd);
+    } catch (err) {
+      this.updateFails++;
+      warnOnce('update.throw',
+        'update() threw and was contained: ' + ((err && err.message) || err) +
+        '. The frame was allowed to continue and render; audio is degraded. ' +
+        'Check AudioSystem.updateFails for how often this is happening.');
+    }
+  }
+
+  _update(rd) {
     if (!this._runtime) return;
     this._occlBudget = 3;
     this._updateListener();
@@ -2576,29 +2708,54 @@ export class AudioSystem {
     this._musicTick();
   }
 
-  /** Listener follows the camera exactly, straight out of its world matrix. */
+  /**
+   * Listener follows the camera exactly, straight out of its world matrix.
+   *
+   * The matrix is treated as untrusted input. If the camera has gone non-finite we hold
+   * the previous listener pose and keep going: writing NaN here throws, and a throw from
+   * update() aborts the frame before the renderer draws.
+   */
   _updateListener() {
     const cam = this.ctx.camera;
-    if (!cam) return;
+    if (!cam || !cam.matrixWorld || !cam.matrixWorld.elements) return;
     const e = cam.matrixWorld.elements;
     const px = e[12], py = e[13], pz = e[14];
+    const fx = -e[8], fy = -e[9], fz = -e[10];
+    const ux = e[4], uy = e[5], uz = e[6];
+
+    const posOk = Number.isFinite(px) && Number.isFinite(py) && Number.isFinite(pz);
+    const fwdOk = Number.isFinite(fx) && Number.isFinite(fy) && Number.isFinite(fz);
+    const upOk = Number.isFinite(ux) && Number.isFinite(uy) && Number.isFinite(uz);
+    if (!posOk || !fwdOk || !upOk) {
+      this.listenerRejects++;
+      const bad = !posOk ? 'position' : !fwdOk ? 'forward' : 'up';
+      warnOnce('listener.pose',
+        'camera.matrixWorld ' + bad + ' is non-finite (pos=' + px + ',' + py + ',' + pz +
+        ' fwd=' + fx + ',' + fy + ',' + fz + ' up=' + ux + ',' + uy + ',' + uz + '). ' +
+        'Holding the previous listener pose and continuing. This guard only prevents the ' +
+        'frame from being aborted — the NaN itself originates upstream in whatever writes ' +
+        'camera.position, and is NOT fixed by Audio.js. Check AudioSystem.listenerRejects ' +
+        'for how many frames have been affected.');
+      return;
+    }
+
     this._lx = px; this._ly = py; this._lz = pz;
     const L = this.ac.listener;
     const t = this.ac.currentTime;
     if (L.positionX) {
       // A tiny smoothing constant kills zipper noise on a camera that snaps.
-      L.positionX.setTargetAtTime(px, t, 0.012);
-      L.positionY.setTargetAtTime(py, t, 0.012);
-      L.positionZ.setTargetAtTime(pz, t, 0.012);
-      L.forwardX.setTargetAtTime(-e[8], t, 0.012);
-      L.forwardY.setTargetAtTime(-e[9], t, 0.012);
-      L.forwardZ.setTargetAtTime(-e[10], t, 0.012);
-      L.upX.setTargetAtTime(e[4], t, 0.012);
-      L.upY.setTargetAtTime(e[5], t, 0.012);
-      L.upZ.setTargetAtTime(e[6], t, 0.012);
+      pTarget(L.positionX, px, t, 0.012, 'listener.posX');
+      pTarget(L.positionY, py, t, 0.012, 'listener.posY');
+      pTarget(L.positionZ, pz, t, 0.012, 'listener.posZ');
+      pTarget(L.forwardX, fx, t, 0.012, 'listener.fwdX');
+      pTarget(L.forwardY, fy, t, 0.012, 'listener.fwdY');
+      pTarget(L.forwardZ, fz, t, 0.012, 'listener.fwdZ');
+      pTarget(L.upX, ux, t, 0.012, 'listener.upX');
+      pTarget(L.upY, uy, t, 0.012, 'listener.upY');
+      pTarget(L.upZ, uz, t, 0.012, 'listener.upZ');
     } else if (L.setPosition) {
       L.setPosition(px, py, pz);
-      L.setOrientation(-e[8], -e[9], -e[10], e[4], e[5], e[6]);
+      L.setOrientation(fx, fy, fz, ux, uy, uz);
     }
   }
 
@@ -2619,11 +2776,11 @@ export class AudioSystem {
     this._lastSfxCut = sfxCut;
     this._lastMusCut = musCut;
     const t = this.ac.currentTime;
-    this.buses.sfx.filter.frequency.setTargetAtTime(sfxCut, t, 0.06);
-    this.buses.music.filter.frequency.setTargetAtTime(musCut, t, 0.08);
+    pTarget(this.buses.sfx.filter.frequency, sfxCut, t, 0.06, 'bus.sfxCutoff');
+    pTarget(this.buses.music.filter.frequency, musCut, t, 0.08, 'bus.musicCutoff');
     const br = 0.7 + 0.3 * s;
-    if (this.bedWind) this.bedWind.src.playbackRate.setTargetAtTime(br, t, 0.12);
-    if (this.bedRain) this.bedRain.src.playbackRate.setTargetAtTime(br, t, 0.12);
+    if (this.bedWind) pTarget(this.bedWind.src.playbackRate, br, t, 0.12, 'bed.windRate');
+    if (this.bedRain) pTarget(this.bedRain.src.playbackRate, br, t, 0.12, 'bed.rainRate');
   }
 
   _updateZone() {
@@ -2651,8 +2808,8 @@ export class AudioSystem {
     const idle = this._activeConv === 0 ? 1 : 0;
     try { this.convs[idle].buffer = this.irs.get(zone); } catch { return; }
     const t = this.ac.currentTime;
-    this.convGains[idle].gain.setTargetAtTime(1, t, 0.55);
-    this.convGains[this._activeConv].gain.setTargetAtTime(0.0001, t, 0.55);
+    pTarget(this.convGains[idle].gain, 1, t, 0.55, 'reverb.fadeIn');
+    pTarget(this.convGains[this._activeConv].gain, 0.0001, t, 0.55, 'reverb.fadeOut');
     this._activeConv = idle;
     this.zone = zone;
   }
@@ -2664,8 +2821,8 @@ export class AudioSystem {
     const strength = w && typeof w.strength === 'number' ? w.strength : 0.4;
     const gust = w && typeof w.gust === 'number' ? clamp(w.gust, 0, 2) : 0;
     if (this.bedWind) {
-      this.bedWind.g.gain.setTargetAtTime(clamp(0.12 + strength * 0.3 + gust * 0.34, 0, 1.1), t, 0.35);
-      this.bedWind.lp.frequency.setTargetAtTime(clamp(480 + gust * 1900 + strength * 500, 200, 9000), t, 0.4);
+      pTarget(this.bedWind.g.gain, clamp(0.12 + strength * 0.3 + gust * 0.34, 0, 1.1), t, 0.35, 'bed.windGain');
+      pTarget(this.bedWind.lp.frequency, clamp(480 + gust * 1900 + strength * 500, 200, 9000), t, 0.4, 'bed.windCutoff');
     }
     if (this.bedRain) {
       const we = this.ctx.weather;
@@ -2675,11 +2832,11 @@ export class AudioSystem {
         else if (typeof we.rain === 'number') rain = we.rain;
         else if (typeof we.wetness === 'number') rain = we.wetness * 0.5;
       }
-      this.bedRain.g.gain.setTargetAtTime(clamp(rain, 0, 1) * 0.55, t, 0.8);
+      pTarget(this.bedRain.g.gain, clamp(rain, 0, 1) * 0.55, t, 0.8, 'bed.rainGain');
     }
     if (this.bedStream) {
       const near = this.zone === 'valley' ? 0.2 : this.zone === 'forest' ? 0.1 : 0.03;
-      this.bedStream.g.gain.setTargetAtTime(near, t, 1.2);
+      pTarget(this.bedStream.g.gain, near, t, 1.2, 'bed.streamGain');
     }
     // A visible gust should be audible as an event, not just a level change.
     if (gust > 0.55 && this._gustArmed) {
@@ -2765,7 +2922,8 @@ export class AudioSystem {
   }
 
   _updateCombatState() {
-    this._engaged = this._readEngaged();
+    const engaged = this._readEngaged();
+    this._engaged = Number.isFinite(engaged) ? engaged : 0;
     this.music.intensity += (clamp(this._engaged / 4, 0, 1) - this.music.intensity) * 0.35;
     this._heat = Math.max(0, this._heat - 0.25 / 8);       // ~8 s of memory after the last blow
     const m = this.music;
@@ -2820,9 +2978,9 @@ export class AudioSystem {
     this._paused = !!flag;
     const t = this.ac.currentTime;
     const on = this._paused;
-    this.buses.sfx.duck.gain.setTargetAtTime(on ? 0.0001 : 1, t, 0.12);
-    this.buses.ambience.duck.gain.setTargetAtTime(on ? 0.12 : 1, t, 0.25);
-    this.buses.music.duck.gain.setTargetAtTime(on ? 0.45 : 1, t, 0.3);
+    pTarget(this.buses.sfx.duck.gain, on ? 0.0001 : 1, t, 0.12, 'pause.sfx');
+    pTarget(this.buses.ambience.duck.gain, on ? 0.12 : 1, t, 0.25, 'pause.ambience');
+    pTarget(this.buses.music.duck.gain, on ? 0.45 : 1, t, 0.3, 'pause.music');
   }
 
   applyQuality(q) {
@@ -2841,7 +2999,7 @@ export class AudioSystem {
       const scale = tier <= 0 ? 0.6 : 1;
       for (let i = 0; i < this.busList.length; i++) {
         const b = this.busList[i];
-        b.send.gain.setTargetAtTime(b.sendLevel * scale, t, 0.2);
+        pTarget(b.send.gain, b.sendLevel * scale, t, 0.2, 'bus.send');
       }
     }
   }

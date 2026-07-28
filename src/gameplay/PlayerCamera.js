@@ -67,6 +67,11 @@ const _dir = new Vector3();
 const _right = new Vector3();
 const _qTmp = new Quaternion();
 
+/** True only for a fully finite vector — `typeof NaN === 'number'` is not enough. */
+function isFiniteVec(v) {
+  return !!v && Number.isFinite(v.x) && Number.isFinite(v.y) && Number.isFinite(v.z);
+}
+
 /**
  * Critically damped SmoothDamp on a Vector3, in place. Unlike a lerp factor this
  * is stable across frame rates and never overshoots.
@@ -116,6 +121,11 @@ export class PlayerCamera {
     this._camPos = new Vector3();
     this._camVel = new Vector3();
     this._desired = new Vector3();
+    this._lastGoodPos = new Vector3();
+    this._lastGoodQuat = new Quaternion();
+    this._lastGoodPivot = new Vector3();
+    this._hasGoodPose = false;
+    this._warnedNaN = false;
 
     this._boom = BOOM_BASE;               // wanted boom length
     this._boomActual = BOOM_BASE;         // after collision
@@ -252,8 +262,12 @@ export class PlayerCamera {
     if (!player || !this.camera) return;
     if (!this._initialised) this.snap();
 
-    const rdt = Math.min(rawDt ?? dt ?? 0.016, 0.05);
-    const sdt = Math.min(dt ?? 0, 0.05);
+    // A non-finite dt would poison every spring in one frame and they would never
+    // recover, so it is clamped to a sane step before anything reads it.
+    const rraw = rawDt ?? dt ?? 0.016;
+    const rdt = Number.isFinite(rraw) ? Math.min(Math.max(rraw, 0), 0.05) : 0.016;
+    const sraw = dt ?? 0;
+    const sdt = Number.isFinite(sraw) ? Math.min(Math.max(sraw, 0), 0.05) : 0;
 
     this._readLook(rdt);
     this._updateLock(rdt);
@@ -292,6 +306,9 @@ export class PlayerCamera {
   _readLook(dt) {
     const st = this.ctx.input?.state;
     if (!st) return;
+    // Look deltas come from raw pointer/gamepad maths upstream; one non-finite
+    // sample would land in `yaw` permanently and take the whole transform with it.
+    if (!Number.isFinite(st.look.x) || !Number.isFinite(st.look.y)) { st.look.set(0, 0); return; }
     const lx = st.look.x * this.sensitivity;
     const ly = st.look.y * this.sensitivity * (this.invertY ? -1 : 1);
     if (lx !== 0 || ly !== 0) {
@@ -309,7 +326,10 @@ export class PlayerCamera {
   _computePivot(out) {
     const p = this.ctx.player;
     out.set(0, PIVOT_HEIGHT, 0);
-    if (p?.position) out.add(p.position);
+    // The subject is another system's output: validate it at the boundary rather
+    // than smoothing a bad value into state we can never clean up.
+    if (isFiniteVec(p?.position)) out.add(p.position);
+    else out.add(this._lastGoodPivot);
     _right.set(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
     out.addScaledVector(_right, this._shoulder * this.shoulderSide);
   }
@@ -536,11 +556,16 @@ export class PlayerCamera {
   /** Write the transform, then add shake — after every spring, never before. */
   _applyPose(dt) {
     const cam = this.camera;
+    if (!isFiniteVec(this._camPos) || !isFiniteVec(this._lookTarget)
+      || this._camPos.distanceToSquared(this._lookTarget) < 1e-8) {
+      this._recoverPose();
+      return;
+    }
     cam.position.copy(this._camPos);
     cam.lookAt(this._lookTarget);
 
-    if (Math.abs(cam.fov - this._fov) > 0.02) {
-      cam.fov = this._fov;
+    if (Number.isFinite(this._fov) && Math.abs(cam.fov - this._fov) > 0.02) {
+      cam.fov = clamp(this._fov, 20, 100);
       cam.updateProjectionMatrix();
     }
 
@@ -550,6 +575,12 @@ export class PlayerCamera {
       this._shakePos.set(0, 0, 0);
       this._shakeQuat.identity();
       shaken = fx.getShakeOffset(this._shakePos, this._shakeQuat) !== false;
+      // Effects derives shake from impact points, which are derived from bone
+      // transforms — another system's arithmetic, so it is checked like any input.
+      if (!isFiniteVec(this._shakePos) || !Number.isFinite(this._shakeQuat.w)) {
+        this._shakePos.set(0, 0, 0);
+        this._shakeQuat.identity();
+      }
     }
     if (!shaken) this._localShake(dt);
 
@@ -561,6 +592,53 @@ export class PlayerCamera {
       _qTmp.copy(cam.quaternion).multiply(this._shakeQuat);
       if (s >= 0.999) cam.quaternion.copy(_qTmp);
       else cam.quaternion.slerp(_qTmp, s);
+    }
+
+    // Last line of defence. Nothing non-finite leaves this system: Audio, the
+    // light rig and the post chain all read `camera.position`, and a single bad
+    // frame throws inside Engine._frame() *before* the render call, so the
+    // canvas silently stops updating while `engine.frame` keeps counting.
+    if (!isFiniteVec(cam.position) || !Number.isFinite(cam.quaternion.w)) {
+      this._recoverPose();
+      return;
+    }
+    this._lastGoodPos.copy(cam.position);
+    this._lastGoodQuat.copy(cam.quaternion);
+    this._lastGoodPivot.copy(this._pivotSmooth);
+    this._hasGoodPose = true;
+    cam.updateMatrixWorld();
+  }
+
+  /**
+   * Hold the previous frame's transform and scrub the springs. Restoring the
+   * output alone is not enough: the smoothing state is what makes a single NaN
+   * permanent, so `_camVel`/`_pivotVel`/`_lookVel` are reset too and the whole
+   * arm is re-seated from the last good pivot.
+   */
+  _recoverPose() {
+    const cam = this.camera;
+    if (this._hasGoodPose) {
+      cam.position.copy(this._lastGoodPos);
+      cam.quaternion.copy(this._lastGoodQuat);
+      this._camPos.copy(this._lastGoodPos);
+      this._pivotSmooth.copy(this._lastGoodPivot);
+      this._lookTarget.copy(this._lastGoodPivot);
+    }
+    this._camVel.set(0, 0, 0);
+    this._pivotVel.set(0, 0, 0);
+    this._lookVel.set(0, 0, 0);
+    if (!Number.isFinite(this.yaw)) this.yaw = 0;
+    if (!Number.isFinite(this.pitch)) this.pitch = 14 * DEG;
+    if (!Number.isFinite(this._boom)) this._boom = BOOM_BASE;
+    if (!Number.isFinite(this._boomActual)) this._boomActual = BOOM_BASE;
+    if (!Number.isFinite(this._fov)) this._fov = this._baseFov;
+    if (!Number.isFinite(this.trauma)) this.trauma = 0;
+    if (!Number.isFinite(this._apertureNow)) this._apertureNow = this.aperture;
+    this._shakePos.set(0, 0, 0);
+    this._shakeQuat.identity();
+    if (!this._warnedNaN) {
+      this._warnedNaN = true;
+      console.warn('[camera] non-finite transform recovered; holding the last good pose');
     }
     cam.updateMatrixWorld();
   }
