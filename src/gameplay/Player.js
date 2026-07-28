@@ -715,9 +715,9 @@ export class Player {
     if (this.moveDir.lengthSq() > 1e-6) {
       const fdot = this.forward.x * this.moveDir.x + this.forward.z * this.moveDir.z;
       if (!this.turningInPlace && fdot < TURN_IN_PLACE_DOT && this.speed < 1.35) {
+        // No turn clip is authored: we hold the idle pose and rotate the root at
+        // TURN_IN_PLACE_RATE, which is what the blend space expects at speed 0.
         this.turningInPlace = true;
-        const side = (this.forward.x * this.moveDir.z - this.forward.z * this.moveDir.x) > 0 ? 'l' : 'r';
-        this._play('turn_in_place_' + side, 0.14, 1, false);
       }
       this.desiredYaw = Math.atan2(-this.moveDir.x, -this.moveDir.z);
       if (this.turningInPlace) {
@@ -867,9 +867,11 @@ export class Player {
   _land(fallSpeed) {
     const impact = clamp((fallSpeed - 3.0) / 12, 0, 1);
     if (impact <= 0.001) return;
+    // No landing clip is authored — the absorb is the procedural dip below plus
+    // whatever the rig's foot IK does with the new ground plane.
     this._landDip = -0.10 - impact * 0.26;
     this._landDipVel = 0;
-    this._play('land', 0.05, 1, false);
+    this._locoClip = '';
     _v1.copy(this.root.position);
     this.ctx.fx?.dustPuff?.(_v1, 0.4 + impact * 1.2, this.groundSurface);
     if (impact > 0.35) {
@@ -1302,7 +1304,10 @@ export class Player {
     this.stanceDef = STANCES[name];
     this.locoBlend.stance = name;
     this.rig?.setStance?.(name);
-    this._play('stance_' + name, 0.18, 1, false);
+    this._locoClip = '';
+    if (!this.sheathed && (this.state === 'idle' || this.state === 'move')) {
+      this._play('idle_drawn_' + name, 0.22, 1, true);
+    }
     this._evStance.entity = this;
     this._evStance.stance = name;
     this.ctx.bus?.emit?.('stance-change', this._evStance);
@@ -1335,6 +1340,9 @@ export class Player {
   // ---------------------------------------------------------------- weapon
 
   _setWeaponActive(on) {
+    // `draw_iai` also plays as a plain unsheathe, and it carries a hit-active
+    // marker; only an actual attack state may open a hitbox.
+    if (on && this.state !== 'attack' && this.state !== 'drawing' && this.state !== 'execution') return;
     if (this.weapon.active === on) return;
     this.weapon.active = on;
     if (on) {
@@ -1464,7 +1472,7 @@ export class Player {
       // Guarding converts most of the damage into posture pressure (Sekiro-style).
       health = amount * 0.12;
       posture = poise * 1.55 * (2 - this.stanceDef.guardMul);
-      this._play('guard_hit', 0.04, 1, false);
+      this._play('guard_impact', 0.04, 1, false);
       this.velocity.x -= dir.x * -1.6;
       this.velocity.z -= dir.z * -1.6;
       this.ctx.fx?.sparks?.(payload.point ?? this.bladeBase, dir, 0.6);
@@ -1503,10 +1511,9 @@ export class Player {
     }
     const f = -(dir.x * this.forward.x + dir.z * this.forward.z);
     const s = dir.x * -this.forward.z + dir.z * this.forward.x;
-    let clip = 'stagger_f';
-    if (f > 0.5) clip = 'stagger_f';
-    else if (f < -0.5) clip = 'stagger_b';
-    else clip = s > 0 ? 'stagger_r' : 'stagger_l';
+    // Only three stagger clips are authored; sides read best when the blow is
+    // genuinely lateral, everything else knocks us backwards.
+    const clip = Math.abs(f) < 0.5 ? (s > 0 ? 'stagger_r' : 'stagger_l') : 'stagger_back';
     this._staggerTime = heavy ? 0.86 : 0.52;
     const push = heavy ? 3.4 : 1.8;
     this.velocity.x = dir.x * push;
@@ -1520,20 +1527,38 @@ export class Player {
     this.invulnerable = true;
     this.guarding = false;
     this._setWeaponActive(false);
-    this._setState('dead');
+
+    // Pick the fall from where the blow came; a low-posture death kneels.
+    const dir = this._evDamage.direction;
+    const f = -(dir.x * this.forward.x + dir.z * this.forward.z);
+    let clip = 'death_back';
+    if (this.posture > this.maxPosture * 0.85) clip = 'death_kneel';
+    else if (f < -0.3) clip = 'death_forward';
+    this._deathDir = dir;
+    this._deathPoint = payload?.point ?? null;
+
+    this._setState('dead', { clip }, true);
     this.velocity.set(0, this.velocity.y, 0);
-    // Ragdoll is a tier knob; on LOW the death clip carries it alone.
-    if (this.allowRagdoll) {
-      const rag = this.ctx.physics?.createRagdoll?.(this.rig, {
-        impulse: payload?.direction, point: payload?.point,
-      });
-      if (rag) this.ragdoll = rag;
-    }
+    // The rig hands off on its `ragdoll-handoff` marker; this is the fallback for
+    // a marker-less rig so the body never freezes mid-fall.
+    this._ragdollAt = 1.4;
+  }
+
+  /** Ragdoll is a tier knob; on LOW the death clip carries the whole beat. */
+  _handoffRagdoll() {
+    if (this.ragdoll || this.isAlive || !this.allowRagdoll) return;
+    this._ragdollAt = -1;
+    const rag = this.ctx.physics?.createRagdoll?.(this.rig, {
+      impulse: this._deathDir, point: this._deathPoint,
+    });
+    if (rag) this.ragdoll = rag;
   }
 
   _deadUpdate(dt) {
     this.velocity.x = damp(this.velocity.x, 0, 6, dt);
     this.velocity.z = damp(this.velocity.z, 0, 6, dt);
+    this.stateTime += dt;
+    if (this._ragdollAt > 0 && this.stateTime >= this._ragdollAt) this._handoffRagdoll();
     this.ragdoll?.update?.(dt);
   }
 

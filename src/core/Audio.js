@@ -1064,23 +1064,35 @@ export class AudioSystem {
    * ratios rather than the harmonic series, and each one decays at its own rate. Detuned
    * twins on the loud partials give the beating that makes it feel like real steel.
    */
-  _rClash(seed, perfect) {
-    const sr = this.sr, rng = mulberry32(seed);
-    const dur = perfect ? 3.4 : 1.6;
-    const buf = this._alloc(dur, 1);
-    const d = buf.getChannelData(0);
-    const f0 = (perfect ? 660 : 740) * (0.95 + rng() * 0.1);
+  _clashBegin(st) {
+    st.sr = this.sr;
+    st.dur = st.perfect ? 2.8 : 1.5;
+    st.data = new Float32Array(Math.floor(st.dur * st.sr));
+    st.rng = mulberry32(st.seed);
+    st.f0 = (st.perfect ? 660 : 740) * (0.95 + st.rng() * 0.1);
+  }
+
+  _clashGroup(st, group) {
+    if (!st.data) return;
+    const sr = st.sr, d = st.data, rng = st.rng, perfect = st.perfect;
     const ratios = [1, 2.756, 5.404, 8.933, 13.34, 18.64, 24.8];
-    const taus = perfect ? [2.1, 1.6, 1.1, 0.8, 0.55, 0.4, 0.3] : [0.85, 0.62, 0.45, 0.32, 0.22, 0.16, 0.12];
+    const taus = perfect ? [1.7, 1.3, 0.95, 0.7, 0.5, 0.36, 0.26] : [0.8, 0.6, 0.44, 0.31, 0.21, 0.15, 0.11];
     const amps = [0.42, 0.34, 0.26, 0.19, 0.13, 0.09, 0.06];
-    for (let k = 0; k < ratios.length; k++) {
-      const f = f0 * ratios[k] * (1 + (rng() - 0.5) * 0.012);
+    const from = group * 3, to = Math.min(ratios.length, from + 3);
+    for (let k = from; k < to; k++) {
+      const f = st.f0 * ratios[k] * (1 + (rng() - 0.5) * 0.012);
       addPartial(d, sr, f, amps[k], taus[k], rng() * 6.283, 0);
+      // A twin a few cents away: the beating is what makes two blades sound like steel.
       addPartial(d, sr, f * (1 + 0.0016 + rng() * 0.0015), amps[k] * 0.7, taus[k] * 0.92, rng() * 6.283, 0);
     }
-    if (perfect) {
+  }
+
+  _clashFinish(st) {
+    if (!st.data) return;
+    const sr = st.sr, d = st.data, rng = st.rng;
+    if (st.perfect) {
       // The shimmer: a high, slow-decaying halo that keeps ringing after the strike.
-      addMetalCluster(d, sr, 4200, 0.31, 8, 0.05, 2.0, rng, 0.004);
+      addMetalCluster(d, sr, 4200, 0.31, 8, 0.05, 1.7, rng, 0.004);
       // ...and a sub that rises into the moment instead of falling out of it.
       addPitchedSine(d, sr, 42, 88, 0.5, 0.24, 1.1, 0);
     }
@@ -1089,7 +1101,10 @@ export class AudioSystem {
     softClip(d, 1.2);
     fadeEdges(d, sr, 0.0004, 0.06);
     normalize(d, 0.9);
-    this._store(perfect ? 'parryPerfect' : 'clash', buf);
+    const buf = this._alloc(st.dur, 1);
+    buf.copyToChannel(d, 0, 0);
+    st.data = null;
+    this._store(st.perfect ? 'parryPerfect' : 'clash', buf);
   }
 
   /** 抜刀 — the long scrape of the blade leaving the saya, ending in a bright ring. */
@@ -1447,8 +1462,8 @@ export class AudioSystem {
   }
 
   _rLeafRustle(seed) {
-    const sr = this.sr, rng = mulberry32(seed);
-    const buf = this._alloc(1.4, 1);
+    const sr = this.bedRate, rng = mulberry32(seed);
+    const buf = this._allocAt(1.4, 1, sr);
     const d = buf.getChannelData(0);
     const grains = 26 + ((rng() * 16) | 0);
     for (let k = 0; k < grains; k++) {
@@ -1599,7 +1614,8 @@ export class AudioSystem {
    */
   _bellBegin(st) {
     st.sr = this.sr;
-    st.data = new Float32Array(Math.floor(7.5 * st.sr));
+    st.dur = 6.8;
+    st.data = new Float32Array(Math.floor(st.dur * st.sr));
     st.rng = mulberry32(st.seed);
     st.f0 = 63 + st.rng() * 7;
   }
@@ -1615,7 +1631,9 @@ export class AudioSystem {
       [9.041, 0.07, 1.0], [9.930, 0.06, 0.9], [10.84, 0.055, 0.8], [11.92, 0.05, 0.7],
       [13.10, 0.042, 0.6], [14.41, 0.036, 0.52], [15.88, 0.03, 0.44], [17.52, 0.026, 0.38],
     ];
-    const per = 4;
+    // Two partials (four oscillators, counting twins) per slice: the hum and the prime
+    // ring for six seconds each, so they are the expensive ones and get their own slots.
+    const per = 2;
     const from = group * per;
     const to = Math.min(P.length, from + per);
     for (let k = from; k < to; k++) {
@@ -1625,7 +1643,7 @@ export class AudioSystem {
       // The twin: 0.15–0.5 Hz away, which is one slow warble every few seconds.
       addPartial(d, sr, f + 0.15 + rng() * 0.35, p[1] * 0.8, p[2] * 0.95, rng() * 6.28, 0);
     }
-    if (group === 4) {
+    if (group === 9) {
       // Strike noise — the shumoku hitting bronze, gone in 40 ms.
       addNoiseBurst(d, sr, 0, 0.04, 0.3, 'bp', 2600, 0.9, rng, 0.0004, 2.0);
       addNoiseBurst(d, sr, 0, 0.012, 0.18, 'hp', 6000, 0.8, rng, 0.0002, 2.6);

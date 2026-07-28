@@ -184,6 +184,15 @@ export class EnemyAI {
       this._sepN++;
       if (other.hasToken) this._tokenAlly = true;
     };
+
+    /** "Behind me!" — passed to forEachInRadius when we first spot the player. */
+    this._shoutCb = (other) => {
+      if (other === this.enemy || !other.isAlive || other.aware >= 2) return;
+      other.ai?.alertTo?.(this.lastKnown, 0.75);
+    };
+
+    /** Any living ally that is not us — used by `regroup`. */
+    this._allyCb = (other) => other !== this.enemy && other.isAlive;
   }
 
   /** Deterministic per-enemy randomness. Enemy.js borrows this for its own rolls. */
@@ -234,6 +243,8 @@ export class EnemyAI {
     this._playerPhase = 'none';
     this._playerWasActive = false;
     this._recoverTimer = 0;
+    this._lastAttackTime = -99;
+    this._lastHitLandedAt = -99;
     this._avoidRot = 0;
     this._avoidBlocked = false;
     this._circleSign = p.hand;
@@ -252,9 +263,11 @@ export class EnemyAI {
     it.parry = false;
     it.dodge = false;
     it.taunt = false;
+    it.guard = false;
     it.attack = null;
 
     this.difficulty = clamp(this.ctx.combat?.difficulty ?? 1, 0.4, 2.2);
+    if (e.state === 'attack') this._lastAttackTime = this.time;
 
     if (!e.target || !e.target.isAlive) {
       const p = this.ctx.player;
@@ -368,7 +381,7 @@ export class EnemyAI {
       } else if (next === 2 && prev < 2) {
         e._play?.('alert', 0.12, false);
         // One shout brings the neighbours — that is how a shrine turns hostile.
-        this.ctx.enemies?.forEachInRadius?.(e.position, 14, _alertNeighbour);
+        this.ctx.enemies?.forEachInRadius?.(e.position, 14, this._shoutCb);
       }
     }
   }
@@ -628,7 +641,7 @@ export class EnemyAI {
     s.token = e.hasToken;
     s.hp = e.health / Math.max(e.maxHealth, 1);
     s.post = e.posture / Math.max(e.maxPosture, 1);
-    s.sinceAttack = this.time - (this._lastAttackTime ?? -99);
+    s.sinceAttack = this.time - this._lastAttackTime;
     s.los = this._losClear;
     s.playerPhase = this._playerPhase;
     s.playerGuarding = tgt?.state === 'guard';
@@ -747,8 +760,8 @@ export class EnemyAI {
       if (s.playerGuarding && !m.guardBreak) v -= 0.55;
       if (s.playerPhase === 'windup' && m.startup > 0.45) v -= 0.6;
       if (!s.token) v -= 0.15;                          // slight bias to the holder
-      v += clamp(this.time - this.enemy.lastAttackAt / 1, 0, 1) * 0;   // no-op guard
-      v += clamp((this.time - (this._lastAttackTime ?? -99)) / Math.max(t.attackCooldown, 0.2), 0, 1) * 0.5;
+      // Rhythm: the longer since our last swing, the more we want this one.
+      v += clamp(s.sinceAttack / Math.max(t.attackCooldown, 0.2), 0, 1) * 0.5;
       if (this._cautious > 0) v -= 0.35;
       sc[B.attack] = v;
     }
@@ -1102,8 +1115,7 @@ export class EnemyAI {
   _findAlly() {
     const mgr = this.ctx.enemies;
     if (!mgr?.nearest) return null;
-    const e = this.enemy;
-    return mgr.nearest(e.position, 22, _allyFilter === null ? undefined : _allyFilter) || null;
+    return mgr.nearest(this.enemy.position, 22, this._allyCb) || null;
   }
 
   // ------------------------------------------------------------- navigation aid
@@ -1142,7 +1154,7 @@ export class EnemyAI {
         if (e.position.y - h > 1.7) return false;    // a drop we must not walk off
         if (h - e.position.y > 1.45) return false;   // a wall of terrain
         if (terr.normalAt) {
-          const n = terr.normalAt(x, z, _a4);
+          const n = terr.normalAt(x, z, _a6);
           if (n && (n.y ?? 1) < 0.5) return false;
         }
       }
@@ -1167,15 +1179,5 @@ export class EnemyAI {
     this.ctx = null;
   }
 }
-
-// ---------------------------------------------------------------------- helpers
-
-/** Shared, allocation-free callbacks used by the manager fan-out. */
-function _alertNeighbour(other) {
-  if (other.isAlive && other.aware < 2) other.ai?.alertTo?.(other.ai.lastKnown, 0.75);
-}
-
-/** Regroup targets any living ally; the manager's own filter arg stays optional. */
-const _allyFilter = null;
 
 export default EnemyAI;

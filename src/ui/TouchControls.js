@@ -151,6 +151,7 @@ export class TouchControls {
 
     // The buttons always take the half the stick does not own.
     const mirror = this.mirrored;
+    this._laidOutMirror = mirror;
     // Absolute minimums are in CSS px, not scaled units: a small phone must not
     // shrink a 56 px target into something a thumb cannot hit.
     const D = Math.max(56, 62 * s);
@@ -333,6 +334,11 @@ export class TouchControls {
     if (this._demoTimer > 0) {
       this._demoTimer -= dt;
       if (this._demoTimer <= 0) { this.forceVisible = false; this._demoStick = null; this._demoGesture = false; }
+    }
+
+    // Safety net: whoever flips the stick side, the baked layout follows it.
+    if (this._laidOutMirror !== undefined && this._laidOutMirror !== this.mirrored) {
+      hud.relayout?.();
     }
 
     this.visible = this._shouldShow();
