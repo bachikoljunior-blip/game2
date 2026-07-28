@@ -164,6 +164,7 @@ async function main() {
     console.log(`[${pname}] boot ${booted ? 'ok' : 'FAILED'} in ${((Date.now() - bootStarted) / 1000).toFixed(1)}s`);
 
     const shots = {};
+    const histograms = {};
     if (booted) {
       // The opening title card runs a full-screen ink wash over the first few seconds.
       // Left alone it dims every shot by roughly two stops and stamps 陽炎 across the
@@ -188,14 +189,58 @@ async function main() {
         // webfonts, so this wait has nothing to find — it just needs room to resolve.
         // One bad shot must not cost us the rest of the profile's set either.
         try {
-          await page.screenshot({ path: file, type: 'png', timeout: 180000 });
+          await page.screenshot({ path: file, type: 'png', timeout: 420000 });
           shots[sname] = file;
         } catch (e) { logs.push(`screenshot ${sname}: ${e.message}`); }
       }
     } else {
       const file = join(OUT, `${pname}-FAILED${tag}.png`);
-      await page.screenshot({ path: file, type: 'png', timeout: 180000 }).catch(() => {});
+      await page.screenshot({ path: file, type: 'png', timeout: 420000 }).catch(() => {});
       shots.FAILED = file;
+    }
+
+    // Tonal range is the single cheapest objective read on whether the grade is
+    // shipping-quality: a frame with no true black and no true white reads as amateur
+    // long before a viewer can say why. Measured here every run so a regression in the
+    // post chain cannot pass review unnoticed. Fog shots legitimately have no
+    // highlights, so only the shots with real speculars are held to the ceiling.
+    const HIGHLIGHT_SHOTS = new Set(['hero', 'torii', 'wide', 'combat', 'closeup']);
+    for (const sname of Object.keys(shots)) {
+      const h = await page.evaluate(() => {
+        const c = document.getElementById('game-canvas');
+        const s = document.createElement('canvas');
+        s.width = 480; s.height = Math.max(1, Math.round(480 * c.height / c.width));
+        const g = s.getContext('2d', { willReadFrequently: true });
+        g.drawImage(c, 0, 0, s.width, s.height);
+        const d = g.getImageData(0, 0, s.width, s.height).data;
+        const hist = new Uint32Array(256);
+        let n = 0;
+        for (let i = 0; i < d.length; i += 4) {
+          // Rec.709 luma, matching what the critic measures off the PNG.
+          hist[(0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) | 0]++;
+          n++;
+        }
+        const at = (frac) => {
+          let acc = 0, target = n * frac;
+          for (let v = 0; v < 256; v++) { acc += hist[v]; if (acc >= target) return v; }
+          return 255;
+        };
+        let below = 0, above = 0;
+        for (let v = 0; v < 16; v++) below += hist[v];
+        for (let v = 241; v < 256; v++) above += hist[v];
+        return {
+          p01: at(0.001), p1: at(0.01), p50: at(0.5), p99: at(0.99), p999: at(0.999),
+          pctBelow16: +(100 * below / n).toFixed(3), pctAbove240: +(100 * above / n).toFixed(3),
+        };
+      }).catch(() => null);
+      if (!h) continue;
+      h.blackOk = h.p01 < 15;
+      h.whiteOk = !HIGHLIGHT_SHOTS.has(sname) || h.p999 > 235;
+      histograms[sname] = h;
+      if (!h.blackOk || !h.whiteOk) {
+        logs.push(`histogram ${sname}: p0.1=${h.p01} p99.9=${h.p999} ` +
+          `(black ${h.blackOk ? 'ok' : 'FAIL'}, white ${h.whiteOk ? 'ok' : 'FAIL'})`);
+      }
     }
 
     const stats = await page.evaluate(() => {
@@ -236,7 +281,7 @@ async function main() {
       };
     }).catch(() => null);
 
-    report.profiles[pname] = { booted, stats, errors: logs.slice(0, 40), shots };
+    report.profiles[pname] = { booted, stats, histograms, errors: logs.slice(0, 40), shots };
     console.log(`[${pname}] booted=${booted}`, stats ? JSON.stringify(stats) : '(no stats)');
     if (logs.length) console.log(`[${pname}] ${logs.length} console problems; first: ${logs[0]}`);
 
