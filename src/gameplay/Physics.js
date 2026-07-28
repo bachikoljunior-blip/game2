@@ -2055,6 +2055,8 @@ export class PhysicsWorld {
       linearDamping: desc.linearDamping !== undefined ? desc.linearDamping : 0.06,
       angularDamping: desc.angularDamping !== undefined ? desc.angularDamping : 0.14,
 
+      _im: mass > 0 ? 1 / mass : 0,
+      _ii: 0,
       sleeping: false,
       sleepTimer: 0,
       age: 0,
@@ -2078,6 +2080,7 @@ export class PhysicsWorld {
       const i = 0.4 * mass * b.radius * b.radius;
       b.invInertia = i > 0 ? 1 / i : 0;
     }
+    b._im = b.invMass; b._ii = b.invInertia;
     b.prevPosition.copy(b.position);
     b.prevQuaternion.copy(b.quaternion);
 
@@ -2103,6 +2106,7 @@ export class PhysicsWorld {
   applyImpulse(body, ix, iy, iz, px, py, pz) {
     if (!body || !body.enabled) return;
     body.sleeping = false; body.sleepTimer = 0;
+    body._im = body.invMass; body._ii = body.invInertia;
     body.velocity.x += ix * body.invMass;
     body.velocity.y += iy * body.invMass;
     body.velocity.z += iz * body.invMass;
@@ -2157,12 +2161,16 @@ export class PhysicsWorld {
       b.age += dt;
       b.prevPosition.copy(b.position);
       b.prevQuaternion.copy(b.quaternion);
+      // A sleeping body behaves as static in the solver, so a resting stack
+      // does not keep jostling itself awake.
+      b._im = 0; b._ii = 0;
       if (b.sleeping || !b.enabled) continue;
       b.velocity.y += GRAVITY * dt;
       const ld = Math.max(0, 1 - b.linearDamping * dt);
       const ad = Math.max(0, 1 - b.angularDamping * dt);
       b.velocity.multiplyScalar(ld);
       b.angularVelocity.multiplyScalar(ad);
+      b._im = b.invMass; b._ii = b.invInertia;
       b.position.x += b.velocity.x * dt;
       b.position.y += b.velocity.y * dt;
       b.position.z += b.velocity.z * dt;
@@ -2204,7 +2212,9 @@ export class PhysicsWorld {
         c.restitution = Math.min(a.restitution, b.restitution);
         c.friction = Math.sqrt(a.friction * b.friction);
         c.jn = 0; c.jt = 0;
-        a.sleeping = false; b.sleeping = false;
+        // Only a body that is actually moving wakes its neighbour.
+        if (a.sleeping && b.velocity.lengthSq() > 0.05) { a.sleeping = false; a.sleepTimer = 0; a._im = a.invMass; a._ii = a.invInertia; }
+        if (b.sleeping && a.velocity.lengthSq() > 0.05) { b.sleeping = false; b.sleepTimer = 0; b._im = b.invMass; b._ii = b.invInertia; }
       }
     }
 
@@ -2312,13 +2322,13 @@ export class PhysicsWorld {
       const ranx = c.ray * nz - c.raz * ny;
       const rany = c.raz * nx - c.rax * nz;
       const ranz = c.rax * ny - c.ray * nx;
-      let denom = a.invMass + a.invInertia * (ranx * ranx + rany * rany + ranz * ranz);
+      let denom = a._im + a._ii * (ranx * ranx + rany * rany + ranz * ranz);
       let rbnx = 0, rbny = 0, rbnz = 0;
       if (b) {
         rbnx = c.rby * nz - c.rbz * ny;
         rbny = c.rbz * nx - c.rbx * nz;
         rbnz = c.rbx * ny - c.rby * nx;
-        denom += b.invMass + b.invInertia * (rbnx * rbnx + rbny * rbny + rbnz * rbnz);
+        denom += b._im + b._ii * (rbnx * rbnx + rbny * rbny + rbnz * rbnz);
       }
       if (denom < 1e-9) continue;
 
@@ -2349,12 +2359,12 @@ export class PhysicsWorld {
       const ratx = c.ray * tz - c.raz * ty;
       const raty = c.raz * tx - c.rax * tz;
       const ratz = c.rax * ty - c.ray * tx;
-      let tdenom = a.invMass + a.invInertia * (ratx * ratx + raty * raty + ratz * ratz);
+      let tdenom = a._im + a._ii * (ratx * ratx + raty * raty + ratz * ratz);
       if (b) {
         const rbtx = c.rby * tz - c.rbz * ty;
         const rbty = c.rbz * tx - c.rbx * tz;
         const rbtz = c.rbx * ty - c.rby * tx;
-        tdenom += b.invMass + b.invInertia * (rbtx * rbtx + rbty * rbty + rbtz * rbtz);
+        tdenom += b._im + b._ii * (rbtx * rbtx + rbty * rbty + rbtz * rbtz);
       }
       if (tdenom < 1e-9) continue;
       let jt = -tl / tdenom;
@@ -2379,35 +2389,35 @@ export class PhysicsWorld {
       const pen = c.depth - SLOP;
       if (pen <= 0) continue;
       const a = c.a, b = c.b;
-      const im = a.invMass + (b ? b.invMass : 0);
+      const im = a._im + (b ? b._im : 0);
       if (im < 1e-9) continue;
       const s = (pen * 0.65) / im;
-      a.position.x += c.nx * s * a.invMass;
-      a.position.y += c.ny * s * a.invMass;
-      a.position.z += c.nz * s * a.invMass;
+      a.position.x += c.nx * s * a._im;
+      a.position.y += c.ny * s * a._im;
+      a.position.z += c.nz * s * a._im;
       if (b) {
-        b.position.x -= c.nx * s * b.invMass;
-        b.position.y -= c.ny * s * b.invMass;
-        b.position.z -= c.nz * s * b.invMass;
+        b.position.x -= c.nx * s * b._im;
+        b.position.y -= c.ny * s * b._im;
+        b.position.z -= c.nz * s * b._im;
       }
     }
   }
 
   _applyContactImpulse(c, ix, iy, iz) {
     const a = c.a, b = c.b;
-    a.velocity.x += ix * a.invMass;
-    a.velocity.y += iy * a.invMass;
-    a.velocity.z += iz * a.invMass;
-    a.angularVelocity.x += (c.ray * iz - c.raz * iy) * a.invInertia;
-    a.angularVelocity.y += (c.raz * ix - c.rax * iz) * a.invInertia;
-    a.angularVelocity.z += (c.rax * iy - c.ray * ix) * a.invInertia;
+    a.velocity.x += ix * a._im;
+    a.velocity.y += iy * a._im;
+    a.velocity.z += iz * a._im;
+    a.angularVelocity.x += (c.ray * iz - c.raz * iy) * a._ii;
+    a.angularVelocity.y += (c.raz * ix - c.rax * iz) * a._ii;
+    a.angularVelocity.z += (c.rax * iy - c.ray * ix) * a._ii;
     if (b) {
-      b.velocity.x -= ix * b.invMass;
-      b.velocity.y -= iy * b.invMass;
-      b.velocity.z -= iz * b.invMass;
-      b.angularVelocity.x -= (c.rby * iz - c.rbz * iy) * b.invInertia;
-      b.angularVelocity.y -= (c.rbz * ix - c.rbx * iz) * b.invInertia;
-      b.angularVelocity.z -= (c.rbx * iy - c.rby * ix) * b.invInertia;
+      b.velocity.x -= ix * b._im;
+      b.velocity.y -= iy * b._im;
+      b.velocity.z -= iz * b._im;
+      b.angularVelocity.x -= (c.rby * iz - c.rbz * iy) * b._ii;
+      b.angularVelocity.y -= (c.rbz * ix - c.rbx * iz) * b._ii;
+      b.angularVelocity.z -= (c.rbx * iy - c.rby * ix) * b._ii;
     }
   }
 

@@ -481,9 +481,14 @@ export class CombatDirector {
     this._rayOut = null;            // lazily borrowed from PhysicsWorld, then reused
 
     // pooled event payloads
+    // `direction`, `posture`, `heavy`, `unblockable`, `blocked`, `parried` and
+    // `guarded` are additive fields Player/Enemy/Effects read; the seven fields the
+    // contract names are always present and always mean exactly what §2 says.
     this._hitP = makeRing(6, () => ({
       attacker: null, target: null, point: new Vector3(), normal: new Vector3(),
-      damage: 0, poise: 0, kind: 'slash', crit: false, blocked: false, parried: false,
+      damage: 0, poise: 0, kind: 'slash', crit: false,
+      direction: new Vector3(), posture: 0, heavy: false, unblockable: false,
+      blocked: false, parried: false, guarded: undefined,
     }));
     this._parryP = makeRing(4, () => ({
       defender: null, attacker: null, point: new Vector3(), perfect: false,
@@ -1474,68 +1479,113 @@ export class CombatDirector {
     if (crit) damage *= TUNING.CRIT_MULT;
     damage = Math.max(0, damage);
 
-    const poise = poiseOverride != null ? poiseOverride : this._poiseOf(target);
-    const before = target.health != null ? target.health : 0;
+    const attackPoise = poiseOverride != null ? poiseOverride : this._attackPoise(attacker);
     const heavyHit = !!heavy || damage >= TUNING.HEAVY_DAMAGE_THRESHOLD;
+    const posture = (postureOverride != null ? postureOverride : aw?.posture) ??
+      damage * TUNING.POSTURE_PER_DAMAGE;
 
     const hp = this._hitP();
     hp.attacker = attacker; hp.target = target;
-    hp.point.copy(point); hp.normal.copy(normal);
-    hp.damage = damage; hp.poise = poise; hp.kind = kind || 'slash'; hp.crit = crit;
-    hp.blocked = false; hp.parried = false;
+    hp.point.copy(point); hp.normal.copy(normal); hp.direction.copy(dir);
+    hp.damage = damage;
+    hp.poise = this._poiseFor(target, attackPoise);
+    hp.posture = posture * this.diff.postureGain;
+    hp.kind = kind || 'slash'; hp.crit = crit;
+    hp.heavy = heavyHit; hp.unblockable = unblockable;
+    hp.blocked = false; hp.parried = false; hp.guarded = undefined;
 
-    // The entity gets first refusal on its own damage; if it did not touch health, we do.
-    target.onDamage?.(hp);
-    if (target.health === before) target.health = Math.max(0, before - damage);
+    // The entity resolves its own damage first — Player and Enemy both own their
+    // health, posture, reaction clip and FSM. We only fill in what they left alone.
+    const h0 = target.health, p0 = target.posture, s0 = target.state;
+    const verdict = target.onDamage?.(hp);
+
+    // `false` means the entity converted the blow (Player's own parry timer). If it
+    // opened a deflect window doing so, resolve the full parry beat instead of a hit.
+    if (verdict === false) {
+      if (now < trec.parryEnd) {
+        const perfect = (now - trec.parryStart) <=
+          TUNING.PARRY_PERFECT * this._parryScaleFor(target);
+        this._doParry(target, attacker, point, dir, perfect, rawDamage);
+        return true;
+      }
+      return false;
+    }
+
+    const tookHealth = target.health !== h0;
+    const tookPosture = target.posture !== p0;
+    const tookState = target.state !== s0;
+    if (!tookHealth) this._safeSet(target, 'health', Math.max(0, (h0 ?? 0) - damage));
     this.ctx?.bus?.emit?.('hit', hp);
 
-    const dp = this._dmgP();
-    dp.entity = target; dp.amount = damage; dp.direction.copy(dir);
-    this.ctx?.bus?.emit?.('damage-taken', dp);
+    // Player emits its own `damage-taken` (it returns true to say so); everyone else
+    // relies on us for it.
+    if (verdict !== true) {
+      const dp = this._dmgP();
+      dp.entity = target; dp.amount = damage; dp.direction.copy(dir);
+      this.ctx?.bus?.emit?.('damage-taken', dp);
+    }
 
-    this._addPosture(target, damage * TUNING.POSTURE_PER_DAMAGE * this.diff.postureGain, dir);
+    if (!tookPosture) this._addPosture(target, hp.posture, dir);
+    else this._noteExternalPosture(target, trec, dir);
     trec.punishUntil = 0;
 
-    // impact feel
+    // impact feel — Effects/Audio already react to the events above, so we only add
+    // what they cannot know: the weight of *this* blow and the knockback.
     this._hitStop(heavyHit ? TUNING.HITSTOP_HEAVY : TUNING.HITSTOP_LIGHT, TUNING.HITSTOP_SCALE);
     this._shake(heavyHit ? TUNING.SHAKE_HEAVY : TUNING.SHAKE_LIGHT, TUNING.SHAKE_DURATION, dir);
     this._knockback(target, dir, heavyHit ? TUNING.KNOCKBACK_HEAVY : TUNING.KNOCKBACK_LIGHT);
-    this.ctx?.fx?.impact?.(point, normal, kind || 'slash', heavyHit ? 1 : 0.6);
-    this.ctx?.fx?.bloodMist?.(point, normal, heavyHit ? 1 : 0.6);
 
-    // directional stagger, chosen from where the blow came from
-    if (damage >= poise * TUNING.POISE_STAGGER_RATIO) {
+    // Directional stagger — only when the entity did not already react for itself.
+    if (!tookState && attackPoise >= this._poiseOf(target) * TUNING.POISE_STAGGER_RATIO) {
       this._stagger(target, incomingAngle, tfwd, _vG, heavyHit);
     }
 
     // ── 6. death ────────────────────────────────────────────────────────────
-    if (target.health <= 0) this._kill(target, attacker, point, dir);
+    if ((target.health ?? 0) <= 0 && target.isAlive !== false) {
+      this._kill(target, attacker, point, dir);
+    }
     return true;
   }
 
-  _doGuard(defender, attacker, point, normal, dir, rawDamage, kind, heavy) {
+  /**
+   * A block is steel on steel, not flesh: it emits `clash` (sparks, ring, flash)
+   * rather than `hit`, so no blood sprays off a clean parry-less guard.
+   */
+  _doGuard(defender, attacker, point, normal, dir, rawDamage, kind, heavy, poiseOverride) {
     const damage = rawDamage *
       ((defender === this.ctx?.player) ? this.diff.enemyDamage : this.diff.playerDamage);
     const chip = damage * TUNING.CHIP_RESIDUE;
-    const before = defender.health != null ? defender.health : 0;
+    const attackPoise = poiseOverride != null ? poiseOverride : this._attackPoise(attacker);
 
     const hp = this._hitP();
     hp.attacker = attacker; hp.target = defender;
-    hp.point.copy(point); hp.normal.copy(normal);
-    hp.damage = chip; hp.poise = this._poiseOf(defender);
+    hp.point.copy(point); hp.normal.copy(normal); hp.direction.copy(dir);
+    hp.damage = chip;
+    hp.poise = this._poiseFor(defender, attackPoise * 0.4);
+    hp.posture = damage * TUNING.GUARD_POSTURE_MULT * this.diff.postureGain;
     hp.kind = kind || 'slash'; hp.crit = false;
+    hp.heavy = !!heavy; hp.unblockable = false;
     hp.blocked = true; hp.parried = false;
-    defender.onDamage?.(hp);
-    if (defender.health === before) defender.health = Math.max(0, before - chip);
-    defender.onGuardHit?.(attacker, hp);
-    this.ctx?.bus?.emit?.('hit', hp);
+    hp.guarded = true;          // tells Enemy.onDamage we already resolved the guard
 
-    const dp = this._dmgP();
-    dp.entity = defender; dp.amount = chip; dp.direction.copy(dir);
-    this.ctx?.bus?.emit?.('damage-taken', dp);
+    const h0 = defender.health, p0 = defender.posture;
+    const verdict = defender.onDamage?.(hp);
+    if (defender.health === h0) this._safeSet(defender, 'health', Math.max(0, (h0 ?? 0) - chip));
+    defender.onGuardHit?.(attacker, hp);
+
+    if (verdict !== true) {
+      const dp = this._dmgP();
+      dp.entity = defender; dp.amount = chip; dp.direction.copy(dir);
+      this.ctx?.bus?.emit?.('damage-taken', dp);
+    }
+
+    const cp = this._clashP();
+    cp.a = attacker; cp.b = defender; cp.point.copy(point);
+    this.ctx?.bus?.emit?.('clash', cp);
 
     // Blocking converts the blow into posture on both sides — hold guard forever and break.
-    this._addPosture(defender, damage * TUNING.GUARD_POSTURE_MULT * this.diff.postureGain, dir);
+    if (defender.posture === p0) this._addPosture(defender, hp.posture, dir);
+    else this._noteExternalPosture(defender, this._rec(defender), dir);
     if (attacker) {
       _vB.copy(dir).multiplyScalar(-1);
       this._addPosture(attacker, damage * TUNING.GUARD_ATTACKER_POSTURE, _vB);
@@ -1544,10 +1594,9 @@ export class CombatDirector {
     this._hitStop(TUNING.HITSTOP_LIGHT, TUNING.HITSTOP_SCALE);
     this._shake(TUNING.SHAKE_LIGHT * (heavy ? 1.4 : 1), TUNING.SHAKE_DURATION, dir);
     this._knockback(defender, dir, TUNING.KNOCKBACK_LIGHT * 0.6);
-    this.ctx?.fx?.sparks?.(point, normal, heavy ? 14 : 8);
-    this.ctx?.fx?.guardFlash?.(point, 0.5);
-    this.ctx?.audio?.cue?.('guard');
-    if (defender.health <= 0) this._kill(defender, attacker, point, dir);
+    if ((defender.health ?? 0) <= 0 && defender.isAlive !== false) {
+      this._kill(defender, attacker, point, dir);
+    }
   }
 
   /** The heart of the game. */

@@ -562,6 +562,9 @@ export class Player {
       this.stamina = Math.max(0, this.stamina - 9 * dt);
       if (this.stamina <= 0) this.sprinting = false;
     }
+    // CombatDirector runs its own posture regen (TUNING.POSTURE_REGEN); running
+    // ours on top would drain the bar at double rate.
+    if (this.ctx.combat?.addPosture) return;
     // Guarding correctly bleeds posture off faster — holding the line is rewarded.
     if (this._postureHold <= 0 && this.posture > 0) {
       const rate = this.postureRegen * (this.guarding ? 1.65 : 1) * (this.state === 'attack' ? 0.4 : 1);
@@ -831,6 +834,17 @@ export class Player {
     let gi = null;
 
     if (this.controller?.move) {
+      // Combat's lunge, knockback and execution lock write straight into
+      // `root.position`; re-seat the capsule before we move or we undo them.
+      const cpos = this.controller.position;
+      if (cpos && typeof cpos.x === 'number') {
+        if (Math.abs(cpos.x - this.root.position.x) > 1e-4
+          || Math.abs(cpos.y - this.root.position.y) > 1e-4
+          || Math.abs(cpos.z - this.root.position.z) > 1e-4) {
+          if (cpos.copy) cpos.copy(this.root.position);
+          else this.controller.setPosition?.(this.root.position);
+        }
+      }
       gi = this.controller.move(this._disp, dt) || null;
       const cp = this.controller.position ?? gi?.position;
       if (cp && typeof cp.x === 'number') this.root.position.set(cp.x, cp.y, cp.z);

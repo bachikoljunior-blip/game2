@@ -103,6 +103,10 @@ export class PlayerCamera {
     this._lockBlend = 0;
     this._lockOcclusion = 0;
     this._punch = 0;
+    this._punchDecay = 3.2;
+    this._cine = false;
+    this._cineSubject = null;
+    this._cineLockWas = null;
     this._hitstop = 0;
     this._snapBoost = 0;
     this._speedNorm = 0;
@@ -155,6 +159,32 @@ export class PlayerCamera {
   setInvertY(v) { this.invertY = !!v; }
   setShakeScale(v) { this.shakeScale = clamp(v, 0, 2); }
   mirrorShoulder(right = true) { this.shoulderSide = right ? 1 : -1; }
+
+  /**
+   * CombatDirector calls this to take the camera for an execution: frame the pair
+   * tight, drop the shoulder offset and hold until it releases. It is not the
+   * same thing as `enabled = false` — we keep smoothing, we just re-compose.
+   */
+  cinematic(on, subject) {
+    this._cine = !!on;
+    this._cineSubject = on ? (subject || null) : null;
+    if (on && subject) {
+      this._cineLockWas = this.lockTarget;
+      this.lockTarget = subject;
+      this._lockOcclusion = 0;
+    } else if (!on) {
+      const prev = this._cineLockWas;
+      this._cineLockWas = null;
+      if (prev && prev.isAlive) this.lockTarget = prev;
+      else if (this.lockTarget && !this.lockTarget.isAlive) this._releaseLock();
+    }
+  }
+
+  /** A timed punch-in (Combat uses it on executions). `amount` is 0..1. */
+  push(amount, duration = 0.3) {
+    this._punch = Math.max(this._punch, clamp(amount ?? 0.5, 0, 1.5));
+    this._punchDecay = 1 / Math.max(0.05, duration);
+  }
 
   /** Fallback shake when Effects does not own it. Trauma is squared on use. */
   addShake(trauma, duration = 0.35, freq = 24) {
@@ -324,9 +354,11 @@ export class PlayerCamera {
     }
 
     if (this._punch > 0) {
-      this._punch = Math.max(0, this._punch - dt * 3.2);
+      this._punch = Math.max(0, this._punch - dt * (this._punchDecay || 3.2));
       boom -= this._punch * 0.42;
     }
+    // The execution two-shot sits closer and lower than the fighting camera.
+    if (this._cine) boom = Math.min(boom, 2.55);
     this._boomWanted = Math.max(BOOM_MIN, boom);
     this._boom = damp(this._boom, this._boomWanted, 4.0, dt);
 

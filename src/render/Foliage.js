@@ -1603,7 +1603,296 @@ export class FoliageSystem {
     return mesh;
   }
 
-  //@@SECTION_11@@
+  // --------------------------------------------------------------------- grass
+
+  _buildGrassAssets(q) {
+    const segs = q.tier >= 2 ? 6 : 4;
+    const bladeHi = buildBladeGeometry(segs, 0.24);
+    const bladeLo = buildBladeGeometry(2, 0.16);
+    const clump = buildCrossCard(2, 1.0, false, 1.0);
+    this._geometries.push(bladeHi, bladeLo, clump);
+
+    const shadows = !!q.foliageShadows;
+    const mk = (name, lod, map, extra) => {
+      const opts = Object.assign({
+        name, mode: 0, map, bendExp: 2.0, bendGain: 1.0, flutter: 1.0,
+        size: GRASS_LOD_SIZE[lod],
+        sss: 1.25, sssColor: 0xc2d884, tipGlow: 0.22, baseAO: 0.38, grain: 0.18,
+      }, extra || {});
+      const mat = this._makeMaterial(opts);
+      const depth = shadows ? this._makeDepthMaterial(mat, opts) : null;
+      return { mat, depth, opts };
+    };
+
+    this._grassMat = [
+      mk('grass-lod0', 0, null, {}),
+      mk('grass-lod1', 1, null, { bendGain: 0.92 }),
+      mk('grass-lod2', 2, this.tex.clump, { bendGain: 0.55, flutter: 0.5, alphaTest: 0.34, sss: 1.0 }),
+    ];
+    this._grassBase = [bladeHi, bladeLo, clump];
+  }
+
+  /**
+   * Lay out the camera-following ring: a square grid of tiles, each assigned a LOD from its
+   * ring distance and a batch from its quadrant. Batches are the frustum-cull unit — one
+   * draw call each, with a bounding sphere we author from the tiles they contain.
+   */
+  _buildGrassBuckets(q) {
+    this._disposeGrass();
+
+    const radius = q.grassRadius || 0;
+    const density = q.grassDensity || 0;
+    if (radius <= 0 || density <= 0) {
+      this._grass = { enabled: false, buckets: [], cache: new Map(), queue: [] };
+      return;
+    }
+
+    const tileSize = clamp(Math.round(radius / 4), 8, 18);
+    const gridRadius = Math.max(1, Math.floor(radius / tileSize));
+    const batches = GRASS_BATCHES[q.tier] || GRASS_BATCHES[1];
+    const shadows = !!q.foliageShadows;
+
+    const perTile = GRASS_LOD_DENSITY.map((d) =>
+      Math.max(8, Math.ceil(tileSize * tileSize * d * density)) + 4);
+
+    const buckets = [];
+    const bucketIndex = [[], [], []];
+    for (let lod = 0; lod < 3; lod++) {
+      for (let b = 0; b < batches[lod]; b++) {
+        const bucket = {
+          lod, batch: b, slots: [], mesh: null, geo: null,
+          a: null, bArr: null, c: null, cap: 0, dirty: true,
+        };
+        bucketIndex[lod][b] = buckets.length;
+        buckets.push(bucket);
+      }
+    }
+
+    const slots = [];
+    for (let dj = -gridRadius; dj <= gridRadius; dj++) {
+      for (let di = -gridRadius; di <= gridRadius; di++) {
+        const ring = Math.max(Math.abs(di), Math.abs(dj));
+        const ringDist = ring * tileSize;
+        if (ringDist - tileSize * 0.5 > radius) continue;
+        let lod = 2;
+        if (ringDist <= GRASS_LOD_BAND[0] * radius) lod = 0;
+        else if (ringDist <= GRASS_LOD_BAND[1] * radius) lod = 1;
+        const n = batches[lod];
+        if (!n) continue;
+        let batch = 0;
+        if (n === 2) batch = dj >= 0 ? 0 : 1;
+        else if (n >= 4) batch = (di >= 0 ? 0 : 1) + (dj >= 0 ? 0 : 2);
+        const slot = { di, dj, lod, batch, tx: 0, tz: 0, key: '', ready: false };
+        slots.push(slot);
+        buckets[bucketIndex[lod][batch]].slots.push(slot);
+      }
+    }
+
+    for (const bucket of buckets) {
+      const cap = Math.max(1, bucket.slots.length * perTile[bucket.lod]);
+      const m = this._grassMat[bucket.lod];
+      const mesh = this._makeBatchMesh(this._grassBase[bucket.lod], m.mat, m.depth, cap, shadows);
+      mesh.name = `grass-l${bucket.lod}-b${bucket.batch}`;
+      bucket.mesh = mesh;
+      bucket.geo = mesh.geometry;
+      bucket.cap = cap;
+      bucket.a = mesh.geometry.getAttribute('aFoliageA').array;
+      bucket.bArr = mesh.geometry.getAttribute('aFoliageB').array;
+      bucket.c = mesh.geometry.getAttribute('aFoliageC').array;
+    }
+
+    // Fade windows: LODs partition space by tile, so the only real fade is the outer edge.
+    const maxH = 1.15;
+    this._grassMat[0].mat.userData.kag.uFadeFar.value.set(radius * 1.6, radius * 1.8);
+    this._grassMat[1].mat.userData.kag.uFadeFar.value.set(radius * 1.6, radius * 1.8);
+    this._grassMat[2].mat.userData.kag.uFadeFar.value.set(radius * 0.86, radius * 1.02);
+
+    this._grass = {
+      enabled: true,
+      tileSize, gridRadius, radius, perTile, batches, maxH,
+      buckets, slots,
+      cache: new Map(),
+      queue: [],
+      centerX: Number.NaN,
+      centerZ: Number.NaN,
+      emitDirty: false,
+      sinceShift: 0,
+    };
+  }
+
+  /** Deterministic per-tile scatter. Runs on a shift, never per frame. */
+  _generateGrassTile(tx, tz, lod) {
+    const g = this._grass;
+    const q = this.ctx.quality;
+    const size = g.tileSize;
+    const x0 = tx * size, z0 = tz * size;
+    const attempts = g.perTile[lod] - 4;
+    const rnd = makeRandom(hashTileSeed(tx, tz, lod));
+
+    const a = new Float32Array(attempts * 4);
+    const b = new Float32Array(attempts * 4);
+    const c = new Float32Array(attempts * 4);
+    let n = 0;
+
+    const col = _colScratch;
+    for (let i = 0; i < attempts; i++) {
+      const x = x0 + rnd() * size;
+      const z = z0 + rnd() * size;
+
+      // Clumping first: it is a pure noise lookup and rejects most candidates before we
+      // ever pay for a terrain height/slope/surface query.
+      const clump = noise.fbm2(x * 0.09, z * 0.09, 3) * 0.5 + 0.5;
+      const accept = 0.18 + 0.95 * Math.pow(clamp(clump, 0, 1), 1.6);
+      if (rnd() > accept) continue;
+
+      const y = this._heightAt(x, z);
+      const w = this._siteWeight(x, z, y);
+      if (w <= 0.02 || rnd() > w) continue;
+
+      // Autumn drift: broad patches turn from moss green through straw to rust.
+      const dry = clamp(noise.fbm2(x * 0.021 + 41.3, z * 0.021 - 17.7, 3) * 0.5 + 0.5, 0, 1);
+      const burn = clamp(noise.fbm2(x * 0.055 - 7.1, z * 0.055 + 3.9, 2) * 0.5 + 0.5, 0, 1);
+      col.copy(AUTUMN_A).lerp(AUTUMN_B, Math.pow(dry, 1.35));
+      col.lerp(AUTUMN_C, Math.pow(burn, 2.6) * dry * 0.85);
+      const shade = 0.80 + rnd() * 0.40;
+
+      const lush = 0.7 + 0.6 * clump;
+      const o = n * 4;
+      a[o] = x; a[o + 1] = y; a[o + 2] = z; a[o + 3] = rnd() * Math.PI * 2;
+      b[o] = (0.28 + rnd() * 0.46) * lush;            // height, metres
+      b[o + 1] = 0.021 + rnd() * 0.017;               // width, metres
+      b[o + 2] = 0.72 + rnd() * 0.66;                 // stiffness
+      b[o + 3] = rnd();                               // phase
+      c[o] = col.r * shade; c[o + 1] = col.g * shade; c[o + 2] = col.b * shade;
+      c[o + 3] = 0;
+      n++;
+    }
+
+    return { a, b, c, n, stamp: this._elapsed };
+  }
+
+  /** Re-pack every bucket from the tile cache. One pass, only after the grid shifts. */
+  _emitGrass() {
+    const g = this._grass;
+    if (!g || !g.enabled) return;
+    const cam = this.ctx.camera;
+
+    for (const bucket of g.buckets) {
+      let off = 0;
+      let minX = Infinity, minZ = Infinity, maxX = -Infinity, maxZ = -Infinity;
+      let minY = Infinity, maxY = -Infinity;
+
+      for (const slot of bucket.slots) {
+        const e = g.cache.get(slot.key);
+        if (!e || e.n === 0) continue;
+        const n = Math.min(e.n, bucket.cap - off);
+        if (n <= 0) break;
+        bucket.a.set(e.a.subarray(0, n * 4), off * 4);
+        bucket.bArr.set(e.b.subarray(0, n * 4), off * 4);
+        bucket.c.set(e.c.subarray(0, n * 4), off * 4);
+        for (let i = 0; i < n; i++) {
+          const o = (off + i) * 4;
+          const x = bucket.a[o], y = bucket.a[o + 1], z = bucket.a[o + 2];
+          if (x < minX) minX = x; if (x > maxX) maxX = x;
+          if (z < minZ) minZ = z; if (z > maxZ) maxZ = z;
+          if (y < minY) minY = y; if (y > maxY) maxY = y;
+        }
+        off += n;
+      }
+
+      const geo = bucket.geo;
+      geo.instanceCount = off;
+      bucket.mesh.visible = off > 0;
+      if (off > 0) {
+        const attrA = geo.getAttribute('aFoliageA');
+        const attrB = geo.getAttribute('aFoliageB');
+        const attrC = geo.getAttribute('aFoliageC');
+        attrA.clearUpdateRanges(); attrB.clearUpdateRanges(); attrC.clearUpdateRanges();
+        attrA.addUpdateRange(0, off * 4); attrB.addUpdateRange(0, off * 4); attrC.addUpdateRange(0, off * 4);
+        attrA.needsUpdate = true; attrB.needsUpdate = true; attrC.needsUpdate = true;
+
+        const cx = (minX + maxX) * 0.5, cz = (minZ + maxZ) * 0.5, cy = (minY + maxY) * 0.5;
+        const r = Math.hypot(maxX - cx, maxZ - cz, (maxY - cy) + g.maxH * 2) + g.maxH;
+        bucket.mesh.boundingSphere.center.set(cx, cy + g.maxH, cz);
+        bucket.mesh.boundingSphere.radius = r;
+      }
+    }
+    g.emitDirty = false;
+    if (cam) { /* nothing else to do; the ring is authored in world space */ }
+  }
+
+  /** Grid recentring + a budgeted generation queue. Called once per frame from update(). */
+  _updateGrass(dt) {
+    const g = this._grass;
+    if (!g || !g.enabled) return;
+    const cam = this.ctx.camera;
+    if (!cam) return;
+
+    const ts = g.tileSize;
+    const cx = Math.floor(cam.position.x / ts);
+    const cz = Math.floor(cam.position.z / ts);
+
+    if (cx !== g.centerX || cz !== g.centerZ) {
+      g.centerX = cx; g.centerZ = cz;
+      g.sinceShift = 0;
+      g.queue.length = 0;
+      for (const slot of g.slots) {
+        slot.tx = cx + slot.di;
+        slot.tz = cz + slot.dj;
+        slot.key = `${slot.tx},${slot.tz},${slot.lod}`;
+        const hit = g.cache.get(slot.key);
+        if (hit) { hit.stamp = this._elapsed; slot.ready = true; }
+        else { slot.ready = false; g.queue.push(slot); }
+      }
+      // Nearest tiles first so the ground under the player is never briefly bald.
+      g.queue.sort((p, r) => (Math.abs(p.di) + Math.abs(p.dj)) - (Math.abs(r.di) + Math.abs(r.dj)));
+      g.emitDirty = true;
+    }
+
+    g.sinceShift += dt;
+
+    if (g.queue.length) {
+      // Two tiles a frame keeps the spike under ~1 ms; if we are falling behind (fast
+      // sprint across the meadow) the budget opens up rather than letting the ring lag.
+      const budget = g.sinceShift > 0.5 ? 6 : 2;
+      for (let i = 0; i < budget && g.queue.length; i++) {
+        const slot = g.queue.shift();
+        const entry = this._generateGrassTile(slot.tx, slot.tz, slot.lod);
+        g.cache.set(slot.key, entry);
+        slot.ready = true;
+      }
+      if (g.cache.size > 512) this._trimGrassCache(384);
+    }
+
+    // Emit once the queue drains, or force it if we have been waiting too long.
+    if (g.emitDirty && (g.queue.length === 0 || g.sinceShift > 0.45)) this._emitGrass();
+  }
+
+  _trimGrassCache(target) {
+    const g = this._grass;
+    const entries = Array.from(g.cache.entries());
+    entries.sort((a, b) => a[1].stamp - b[1].stamp);
+    const drop = entries.length - target;
+    for (let i = 0; i < drop; i++) g.cache.delete(entries[i][0]);
+  }
+
+  _disposeGrass() {
+    const g = this._grass;
+    if (!g || !g.buckets) return;
+    for (const bucket of g.buckets) {
+      if (!bucket.mesh) continue;
+      this.group.remove(bucket.mesh);
+      const i = this._meshes.indexOf(bucket.mesh);
+      if (i >= 0) this._meshes.splice(i, 1);
+      const j = this._geometries.indexOf(bucket.geo);
+      if (j >= 0) this._geometries.splice(j, 1);
+      bucket.geo.dispose();
+    }
+    g.buckets.length = 0;
+    g.cache?.clear?.();
+  }
+
+  //@@SECTION_12@@
 }
 
 export default FoliageSystem;

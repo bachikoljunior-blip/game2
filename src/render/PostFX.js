@@ -527,7 +527,7 @@ void main() {
   float r = length(dv);
   // Weight by proximity to the sun so we build shafts, not a global sky glow.
   float prox = exp(-r * r / max(uSunRadius * uSunRadius, 1e-4));
-  float core = smoothstep(0.055, 0.0, r) * 1.8;
+  float core = smoothstep(0.05, 0.0, r) * 1.0;
   gl_FragColor = vec4(vec3(sky * (e * 0.35 + 0.65) * (prox + core)), 1.0);
 }
 `;
@@ -1182,7 +1182,7 @@ export class PostFX {
     this.bloomThreshold = 0.9;
     this.bloomKnee = 0.55;
     this.bloomRadius = 1.0;
-    this.godRayStrength = 0.55;
+    this.godRayStrength = 0.34;
     this.aoStrength = 0.85;
     this.aoRadius = 0.65;
     this.saturation = 1.06;
@@ -1716,15 +1716,15 @@ export class PostFX {
       tDepth: { value: black },
       tScene: { value: black },
       uSunUv: { value: new Vector2(0.5, 0.5) },
-      uSunRadius: { value: 0.55 },
+      uSunRadius: { value: 0.30 },
       uAspect: { value: 1.78 },
     });
     this.mGodBlur = this._mat(FRAG_GOD_BLUR, {
       tSrc: { value: black },
       uSunUv: { value: new Vector2(0.5, 0.5) },
-      uDensity: { value: 0.82 },
-      uDecay: { value: 0.965 },
-      uWeight: { value: 5.2 },
+      uDensity: { value: 0.55 },
+      uDecay: { value: 0.962 },
+      uWeight: { value: 3.0 },
       uNoise: { value: 0 },
     }, { GOD_SAMPLES: this._godSamples });
 
@@ -2548,15 +2548,15 @@ export class PostFX {
     ou.tScene.value = colorTex;
     ou.uSunUv.value.copy(this._sunUv);
     ou.uAspect.value = this._w / Math.max(1, this._h);
-    ou.uSunRadius.value = 0.62;
+    ou.uSunRadius.value = 0.30;
     this._draw(this.mGodOcclusion, this.rtGodA);
 
     const bu = this.mGodBlur.uniforms;
     bu.tSrc.value = this.rtGodA.texture;
     bu.uSunUv.value.copy(this._sunUv);
-    bu.uDensity.value = 0.86;
-    bu.uDecay.value = 0.968;
-    bu.uWeight.value = 5.6;
+    bu.uDensity.value = 0.55;   // march 55% of the way to the sun: longer shafts
+    bu.uDecay.value = 0.962;    // just smear the whole sky into a milky wash
+    bu.uWeight.value = 3.0;
     bu.uNoise.value = (this._frame & 31) * 0.137;
     this._draw(this.mGodBlur, this.rtGodB);
   }

@@ -761,7 +761,11 @@ export class EnemyAI {
       if (this._recoverTimer > 0) v += 0.7;             // punish the recovery frames
       if (this._riposteUrge > 0 && m.punish) v += 1.6;  // the parry payoff
       if (s.playerGuarding && !m.guardBreak) v -= 0.55;
-      if (s.playerPhase === 'windup' && m.startup > 0.45) v -= 0.6;
+      // A defensive fighter respects the tell: swinging into a windup is what
+      // separates the Ashigaru from the Ronin.
+      if (s.playerPhase === 'windup' && s.dist < 3.4) {
+        v -= 0.35 + 0.75 * t.parrySkill + (m.startup > 0.45 ? 0.4 : 0);
+      }
       if (!s.token) v -= 0.15;                          // slight bias to the holder
       // Rhythm: the longer since our last swing, the more we want this one.
       v += clamp(s.sinceAttack / Math.max(t.attackCooldown, 0.2), 0, 1) * 0.5;

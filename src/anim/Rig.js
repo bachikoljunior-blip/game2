@@ -2319,4 +2319,305 @@ export class Rig {
       ['shinR', 'footR', 0.078 * S], ['shinL', 'footL', 0.078 * S],
     ];
   }
-}
+
+  // ==================================================================== events
+
+  /** Subscribe to a clip event marker. `'*'` receives every marker. */
+  on(name, fn) {
+    if (typeof fn !== 'function') return () => {};
+    let l = this._listeners.get(name);
+    if (!l) { l = []; this._listeners.set(name, l); }
+    l.push(fn);
+    return () => this.off(name, fn);
+  }
+
+  off(name, fn) {
+    const l = this._listeners.get(name);
+    if (!l) return;
+    const i = l.indexOf(fn);
+    if (i >= 0) l.splice(i, 1);
+  }
+
+  _fire(name, foot, t, clipName, layerName) {
+    const e = this._evt;
+    e.name = name; e.foot = foot || null; e.t = t;
+    e.clip = clipName; e.layer = layerName; e.entity = this.entity;
+    const l = this._listeners.get(name);
+    if (l) for (let i = 0; i < l.length; i++) { try { l[i](e); } catch (err) { console.error('[rig]', err); } }
+    const any = this._listeners.get('*');
+    if (any) for (let i = 0; i < any.length; i++) { try { any[i](e); } catch (err) { console.error('[rig]', err); } }
+  }
+
+  // ================================================================= playback
+
+  /** Resolve a caller's clip name through the alias table. Returns null, never throws. */
+  _resolve(name) {
+    if (!name) return null;
+    let c = CLIPS[name];
+    if (c) return compileClip(c);
+    const alias = CLIP_ALIAS[name];
+    if (alias && CLIPS[alias]) return compileClip(CLIPS[alias]);
+    const def = getClip(name);
+    return def ? compileClip(def) : null;
+  }
+
+  /**
+   * `play(clipName, { fade, speed, layer, loop, mask, weight, offset, duration, onEnd })`.
+   *
+   * Playing a locomotion clip on the base layer does NOT take the base layer out of
+   * blend-space mode — it feeds the blend space instead. That is deliberate: both
+   * gameplay call sites drive locomotion by clip name, and switching the base layer to
+   * a single clip is exactly how you get feet that skate.
+   */
+  play(name, opts) {
+    const o = opts || {};
+    const c = this._resolve(name);
+    if (!c) return null;
+
+    if (o.stance) this.setStance(o.stance);
+
+    // Locomotion routing.
+    const loco = LOCO_CLIP_SPEED[c.name];
+    const wantsBase = o.layer === 'base' || o.layer === LAYER_BASE
+      || (o.layer === undefined && c.layer === 'base');
+    if (loco && wantsBase && this._locoMode) {
+      if (c.name.startsWith('idle_')) {
+        this.stance = c.name === 'idle_sheathed' ? 'sheathed'
+          : c.name === 'idle_drawn_jodan' ? 'jodan'
+            : c.name === 'idle_drawn_gedan' ? 'gedan' : 'seigan';
+        this._stanceClip = c.name;
+      }
+      // Enemy.js never calls setLocomotion, so the clip itself has to supply the
+      // blend-space input. Player.js does call it, and then this is ignored.
+      if (!this._locoDriven) {
+        const rate = o.speed || 1;
+        this._loco.forward = loco[0] * rate;
+        this._loco.strafe = loco[1] * rate;
+        this._loco.speed = Math.hypot(this._loco.forward, this._loco.strafe);
+        this._loco.norm = clamp(this._loco.speed / 7.2, 0, 1);
+      }
+      if (o.speed) this._clipRates[c.name] = o.speed;
+      return this.layers[LAYER_BASE];
+    }
+
+    let li;
+    if (o.additive) li = LAYER_ADD;
+    else if (typeof o.layer === 'number') li = clamp(o.layer | 0, 0, 3);
+    else if (typeof o.layer === 'string') {
+      const k = LAYER_NAMES.indexOf(o.layer);
+      li = k >= 0 ? k : (c.layer === 'upper' ? LAYER_UPPER : LAYER_ACTION);
+    } else li = c.layer === 'base' ? LAYER_BASE : c.layer === 'upper' ? LAYER_UPPER
+      : c.layer === 'additive' ? LAYER_ADD : LAYER_ACTION;
+
+    const layer = this.layers[li];
+    if (li === LAYER_BASE) this._locoMode = false;
+
+    const fade = o.fade !== undefined ? o.fade : (c.fade !== undefined ? c.fade : 0.14);
+    if (layer.clip && fade > 0.001) {
+      layer.prev = layer.clip;
+      layer.prevTime = layer.time;
+      layer.prevSpeed = layer.speed;
+      layer.blend = 0;
+      layer.blendRate = 1 / fade;
+    } else {
+      layer.prev = null;
+      layer.blend = 1;
+      layer.blendRate = 0;
+    }
+
+    layer.clip = c;
+    layer.time = o.offset || 0;
+    // `duration` retimes the clip to fit a gameplay window (Enemy.js drives startup
+    // and recovery lengths from its archetype table, not from the clip).
+    layer.speed = o.duration > 0 ? (c.duration / o.duration) : (o.speed || 1);
+    layer.loop = o.loop !== undefined ? !!o.loop : !!c.loop;
+    layer.finished = false;
+    layer.onEnd = o.onEnd || null;
+    layer.mask = buildMask(o.mask || c.mask || (li === LAYER_UPPER ? 'upper' : 'full'));
+    layer.targetWeight = o.weight !== undefined ? o.weight : 1;
+    layer.fadeRate = fade > 0.001 ? 1 / fade : 40;
+    if (li !== LAYER_BASE && layer.weight === 0) layer.weight = 0;
+    layer._eventCursor = 0;
+    return layer;
+  }
+
+  /** Fade a layer out. `stop()` with no argument stops every non-base layer. */
+  stop(layerName, fade) {
+    const f = fade === undefined ? 0.16 : fade;
+    const doStop = (l) => {
+      l.targetWeight = 0;
+      l.fadeRate = f > 0.001 ? 1 / f : 40;
+      l.loop = false;
+    };
+    if (layerName === undefined) {
+      for (let i = 1; i < this.layers.length; i++) doStop(this.layers[i]);
+      return;
+    }
+    const li = typeof layerName === 'number' ? layerName : LAYER_NAMES.indexOf(layerName);
+    if (li >= 0) doStop(this.layers[li]);
+  }
+
+  isPlaying(name) {
+    for (const l of this.layers) {
+      if (l.weight > 0.001 && l.clip && (l.clip.name === name || CLIP_ALIAS[name] === l.clip.name)) return true;
+    }
+    return false;
+  }
+
+  /** `setSpeed(rate)` or `setSpeed(clipName, rate)` — both call sites use one each. */
+  setSpeed(a, b) {
+    if (typeof a === 'string') {
+      this._clipRates[a] = b;
+      for (const l of this.layers) if (l.clip && l.clip.name === a) l.speed = b;
+      return;
+    }
+    this.timeScale = a;
+  }
+
+  // ============================================================== locomotion
+
+  /** Player.js: metres per second along facing and to the right, plus 0..1 normalised. */
+  setLocomotion(forward, strafe, normalized) {
+    this._locoDriven = true;
+    this._locoMode = true;
+    this._loco.forward = forward || 0;
+    this._loco.strafe = strafe || 0;
+    this._loco.speed = Math.hypot(this._loco.forward, this._loco.strafe);
+    this._loco.norm = normalized !== undefined ? normalized : clamp(this._loco.speed / 7.2, 0, 1);
+    if (this.layers[LAYER_BASE].clip) this.layers[LAYER_BASE].clip = null;
+  }
+
+  /** Generic blend-space setter. `setBlend('locomotion', strafe, forward)`. */
+  setBlend(name, x, y) {
+    if (name === 'locomotion' || name === 'loco' || name === undefined) {
+      this.setLocomotion(y || 0, x || 0);
+    }
+  }
+
+  /** Generic scalar parameter, so a caller that only has `setParam` still works. */
+  setParam(name, value) {
+    switch (name) {
+      case 'speed': this._locoDriven = true; this._locoMode = true; this._loco.speed = value; break;
+      case 'forward': this._locoDriven = true; this._loco.forward = value; break;
+      case 'strafe': this._locoDriven = true; this._loco.strafe = value; break;
+      case 'stance': this.setStance(value); break;
+      case 'timeScale': this.timeScale = value; break;
+      default: break;
+    }
+    if (name === 'speed' || name === 'forward' || name === 'strafe') {
+      const s = Math.hypot(this._loco.forward, this._loco.strafe);
+      if (s > 0.001) this._loco.speed = s;
+      this._loco.norm = clamp(this._loco.speed / 7.2, 0, 1);
+    }
+  }
+
+  setStance(name) {
+    const key = String(name || '').toLowerCase();
+    const clipName = STANCE_IDLE[key];
+    if (!clipName) return;
+    this.stance = key;
+    this._stanceClip = clipName;
+  }
+
+  setSheathed(v) { this.setStance(v ? 'sheathed' : 'seigan'); }
+
+  // ================================================================== look-at
+
+  /** `setLookTarget(v3)` aims head→spine at a world point; `null` releases it. */
+  setLookTarget(target, weight) {
+    if (!target) { this._lookActive = false; this._lookTargetWeight = 0; return; }
+    this._look.copy(target);
+    this._lookActive = true;
+    this._lookTargetWeight = weight === undefined ? 1 : clamp(weight, 0, 1);
+  }
+
+  /** Player.js hands us what it already knows about the ground under the capsule. */
+  setGround(normal, grounded, surface) {
+    if (normal) this.groundNormal.copy(normal);
+    if (grounded !== undefined) this.grounded = !!grounded;
+    if (surface) this.groundSurface = surface;
+  }
+
+  // ====================================================== impulses / reactions
+
+  /** Hit reaction from a world-space impact direction. Feeds a critically damped spring. */
+  addFlinch(dirWorld, strength) {
+    const s = strength === undefined ? 1 : strength;
+    if (!dirWorld) { this._flinchVX += 9 * s; return; }
+    // Into the rig's own frame so a hit from behind bends the spine forward.
+    _v[10].copy(dirWorld).normalize();
+    this.root.updateWorldMatrix(true, false);
+    _q[6].setFromRotationMatrix(this.root.matrixWorld).invert();
+    _v[10].applyQuaternion(_q[6]);
+    this._flinchVX += -_v[10].z * 11 * s;
+    this._flinchVZ += _v[10].x * 9 * s;
+  }
+
+  /** Clash / parry kickback on the arms and chest. */
+  addRecoil(strength) { this._recoilV += (strength === undefined ? 1 : strength) * 12; }
+
+  // ========================================================= LOD and toggles
+
+  /** 0 = full fidelity, 1 = no cloth sim / no IK / no look-at, 2 = pose only. */
+  setLOD(level) {
+    const l = clamp(level | 0, 0, 2);
+    if (l === this.lod) return;
+    this.lod = l;
+    this._ik = l === 0;
+    this._applyClothVisibility();
+    if (l >= 1) { this._lookActive = false; this._lookTargetWeight = 0; }
+    if (l >= 1) { this._hipDrop = 0; }
+  }
+
+  setCloth(on) {
+    this._cloth = !!on;
+    this._applyClothVisibility();
+  }
+
+  setIK(on) { this._ik = !!on; }
+
+  _applyClothVisibility() {
+    // At LOD 2 the cloth meshes stop updating entirely; leaving them visible would
+    // freeze a skirt mid-flap, so they are hidden and the body silhouette carries it.
+    const vis = this.lod < 2;
+    for (const c of this.cloths) if (c.mesh) c.mesh.visible = vis;
+  }
+
+  get clothEnabled() { return this._cloth && this.lod === 0; }
+  set clothEnabled(v) { this.setCloth(v); }
+  get ikEnabled() { return this._ik && this.lod === 0; }
+  set ikEnabled(v) { this.setIK(v); }
+
+  // ============================================================= attachments
+
+  /**
+   * `attach('hand_r', object3D)` — parents an object to a socket and returns the
+   * socket node. Called with no object it just returns the node, so gameplay can
+   * read or tune the grip transform.
+   */
+  attach(point, object3D) {
+    const key = ATTACH_ALIAS[String(point).toLowerCase()] || point;
+    const node = this.attachments[key] || (this.bones[key] ? this.bones[key] : null);
+    if (!node) return null;
+    if (object3D && object3D.isObject3D && object3D.parent !== node) node.add(object3D);
+    return node;
+  }
+
+  detach(point, object3D) {
+    const key = ATTACH_ALIAS[String(point).toLowerCase()] || point;
+    const node = this.attachments[key];
+    if (node && object3D) node.remove(object3D);
+    return node || null;
+  }
+
+  getBone(name) { return this.bones[name] || null; }
+
+  /** World position of a bone plus an optional local offset. Allocation-free. */
+  getWorldPoint(boneName, offset, out) {
+    const b = this.bones[boneName];
+    const target = out || _v[11];
+    if (!b) return target.set(0, 0, 0);
+    if (offset) target.copy(offset).applyMatrix4(b.matrixWorld);
+    else target.setFromMatrixPosition(b.matrixWorld);
+    return target;
+  }
