@@ -3259,6 +3259,10 @@ vCanopyG = cg;
     this._impostors = null;
     this._canopy = null;
     this.groundDetail = null;
+    // Drop the published cards last: everything in `_textures` has just been disposed, so
+    // a consumer still polling must see null rather than bind a dead GPU texture.
+    this.blossomTexture = null;
+    this.momijiTexture = null;
   }
 }
 
