@@ -1954,6 +1954,20 @@ export class FoliageSystem {
       slot.ready = true;
     }
     this._emitGrass();
+
+    // A silent empty meadow is indistinguishable from a broken one, and the usual cause is
+    // outside this file: every sampled tile came back as stone/gravel/path from
+    // ctx.terrain.surfaceAt, which we correctly refuse to plant. Say so rather than
+    // shipping a bald field and letting someone hunt for it in the shader.
+    let total = 0;
+    for (const bucket of g.buckets) total += bucket.geo.instanceCount || 0;
+    if (total === 0) {
+      console.warn('[foliage] grass ring primed to 0 instances — every candidate was ' +
+        'rejected. Check ctx.terrain.surfaceAt (stone/gravel/rock/path/wood and water all ' +
+        'refuse grass) and ctx.terrain.slopeAt.');
+    } else if (this.ctx.debug) {
+      console.info(`[foliage] grass primed: ${total} instances across ${g.buckets.length} batches`);
+    }
   }
 
   _trimGrassCache(target) {
