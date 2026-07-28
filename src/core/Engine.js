@@ -35,10 +35,19 @@ export class Engine {
     });
     const gl = this.renderer.getContext();
     this.quality = new Quality(gl);
+    // WebGL2 folded half-float filtering into core, so `OES_texture_half_float_linear`
+    // does not exist there and probing for it reports false on hardware that supports
+    // it perfectly well — a consumer that trusts the flag falls back to an 8-bit
+    // encoded path for no reason. Full-float filtering genuinely stayed an extension.
+    const isWebGL2 = this.renderer.capabilities.isWebGL2 !== false &&
+      typeof WebGL2RenderingContext !== 'undefined' && gl instanceof WebGL2RenderingContext;
     this.capabilities = {
+      isWebGL2,
       floatLinear: !!gl.getExtension('OES_texture_float_linear'),
-      halfFloatLinear: !!gl.getExtension('OES_texture_half_float_linear'),
-      colorBufferFloat: !!gl.getExtension('EXT_color_buffer_float'),
+      halfFloatLinear: isWebGL2 || !!gl.getExtension('OES_texture_half_float_linear'),
+      colorBufferFloat: isWebGL2
+        ? !!gl.getExtension('EXT_color_buffer_float')
+        : !!gl.getExtension('WEBGL_color_buffer_float'),
       anisotropy: this.renderer.capabilities.getMaxAnisotropy(),
       maxTextureSize: this.renderer.capabilities.maxTextureSize,
     };
