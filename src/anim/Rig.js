@@ -253,6 +253,7 @@ function compileClip(clipDef) {
     layer: clipDef.layer,
     mask: clipDef.mask,
     fade: clipDef.fade,
+    hold: clipDef.hold,
     speed: clipDef.speed,
     stride: clipDef.stride,
     travel: clipDef.travel,
@@ -385,8 +386,6 @@ class Layer {
     this.pb = new Float32Array(NB * 3);
     this.defb = new Float32Array(NB);
 
-    this._eventCursor = 0;
-    this._prevEventCursor = 0;
   }
 }
 
@@ -792,16 +791,19 @@ function buildBody(rig, dens) {
       [an.x, an.y, an.z, 0.037 * S, 0.040 * S],
     ], R(10), dens.ringL, { capStart: true, capEnd: false });
 
-    // Foot: heel behind the ankle, ball forward, tapering toe box.
+    // Foot: heel behind the ankle, ball forward, tapering toe box. Stations are
+    // lifted so the sole lands exactly on y = 0 — the entity contract puts the feet
+    // at the root's origin, and a body that sinks 2 cm reads as floating on stairs.
     const to = bindPos(rig, 'toe' + side, _v[3]).clone();
+    const sole = 0.021 * S;
     mesher.begin(side === 'R' ? rig._candFootR : rig._candFootL, 0.86);
     loftTube(mesher, [
-      [an.x, an.y + 0.012 * S, an.z + 0.070 * S, 0.032 * S, 0.036 * S],
-      [an.x, an.y - 0.020 * S, an.z + 0.045 * S, 0.040 * S, 0.043 * S],
-      [an.x, an.y - 0.048 * S, an.z - 0.010 * S, 0.043 * S, 0.038 * S],
-      [to.x, to.y - 0.005 * S, to.z + 0.010 * S, 0.045 * S, 0.030 * S],
-      [to.x, to.y - 0.002 * S, to.z - 0.048 * S, 0.038 * S, 0.024 * S],
-      [to.x, to.y + 0.004 * S, to.z - 0.070 * S, 0.020 * S, 0.014 * S],
+      [an.x, an.y + 0.012 * S + sole, an.z + 0.070 * S, 0.032 * S, 0.036 * S],
+      [an.x, an.y - 0.020 * S + sole, an.z + 0.045 * S, 0.040 * S, 0.043 * S],
+      [an.x, an.y - 0.048 * S + sole, an.z - 0.010 * S, 0.043 * S, 0.038 * S],
+      [to.x, to.y - 0.005 * S + sole, to.z + 0.010 * S, 0.045 * S, 0.030 * S],
+      [to.x, to.y - 0.002 * S + sole, to.z - 0.048 * S, 0.038 * S, 0.024 * S],
+      [to.x, to.y + 0.004 * S + sole, to.z - 0.070 * S, 0.020 * S, 0.014 * S],
     ], R(6), Math.max(6, dens.ringL - 2), { capStart: true, capEnd: true });
   }
 
@@ -2500,8 +2502,6 @@ export class Rig {
     layer.mask = buildMask(o.mask || c.mask || (li === LAYER_UPPER ? 'upper' : 'full'));
     layer.targetWeight = o.weight !== undefined ? o.weight : 1;
     layer.fadeRate = fade > 0.001 ? 1 / fade : 40;
-    if (li !== LAYER_BASE && layer.weight === 0) layer.weight = 0;
-    layer._eventCursor = 0;
     return layer;
   }
 
@@ -2815,12 +2815,14 @@ export class Rig {
       l.time += dt * l.speed;
       if (l.prev) l.prevTime += dt * l.prevSpeed;
 
+      // Once the incoming clip has fully faded in, stop sampling the outgoing one.
+      if (l.prev && l.blend >= 1) l.prev = null;
+
       const dur = l.clip.duration;
       if (l.loop) {
         if (l.time >= dur) {
           this._fireRange(l, prevT, dur);
           l.time -= dur * Math.floor(l.time / dur);
-          l._eventCursor = 0;
           this._fireRange(l, -1e-6, l.time);
         } else this._fireRange(l, prevT, l.time);
       } else if (l.time >= dur) {
@@ -2830,9 +2832,9 @@ export class Rig {
           l.finished = true;
           this._fire('clip-end', null, dur, l.clip.name, l.name);
           if (l.onEnd) { const f = l.onEnd; l.onEnd = null; try { f(l.clip.name); } catch { /* ignore */ } }
-          // Action and upper layers release themselves; the base layer holds its pose
-          // (a death must not fade back to idle).
-          if (i !== LAYER_BASE) { l.targetWeight = 0; l.fadeRate = 1 / 0.18; }
+          // Layers release themselves at the end of a clip — unless the clip is
+          // marked `hold`, which is how a guard stays up and a corpse stays down.
+          if (i !== LAYER_BASE && !l.clip.hold) { l.targetWeight = 0; l.fadeRate = 1 / 0.18; }
         }
       } else this._fireRange(l, prevT, l.time);
     }
@@ -3321,7 +3323,7 @@ export class Rig {
       l.clip = null; l.prev = null; l.time = 0; l.blend = 1;
       l.weight = l.index === LAYER_BASE ? 1 : 0;
       l.targetWeight = l.weight;
-      l.finished = false; l.onEnd = null; l._eventCursor = 0;
+      l.finished = false; l.onEnd = null;
     }
     this._locoMode = true;
     this._locoDriven = false;

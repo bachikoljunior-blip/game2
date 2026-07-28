@@ -68,7 +68,7 @@ import {
   WebGLRenderTarget, DepthTexture, DataTexture, Scene, OrthographicCamera, Mesh,
   BufferGeometry, BufferAttribute, ShaderMaterial, Vector2, Vector3, Vector4,
   Matrix4, Color, NoToneMapping, HalfFloatType, UnsignedByteType, UnsignedIntType,
-  DepthFormat, RGBAFormat, LinearFilter, NearestFilter, ClampToEdgeWrapping,
+  DepthFormat, RGBAFormat, FloatType, LinearFilter, NearestFilter, ClampToEdgeWrapping,
   RepeatWrapping, NoBlending, AdditiveBlending, NoColorSpace, LinearSRGBColorSpace,
 } from 'three';
 
@@ -198,6 +198,16 @@ void main() {
   vec2 cur = vCurrClip.xy / max(vCurrClip.w, 1e-6) * 0.5 + 0.5;
   vec2 prv = vPrevClip.xy / max(vPrevClip.w, 1e-6) * 0.5 + 0.5;
   gl_FragColor = vec4(cur - prv, 0.0, 1.0);
+}
+`;
+
+const FRAG_DEPTH_COPY = /* glsl */`
+uniform sampler2D tDepth;
+varying vec2 vUv;
+void main() {
+  // Raw window depth in .x — the same convention a DepthTexture presents, so external
+  // consumers can run their usual perspectiveDepthToViewZ on it unchanged.
+  gl_FragColor = vec4(texture2D(tDepth, vUv).x);
 }
 `;
 
@@ -1269,6 +1279,9 @@ export class PostFX {
     this._damageColor = new Color(0.62, 0.035, 0.045);
     this._rainLensTex = null;
     this._rainLensStrength = 0;
+    this._depthExported = false;
+    this._rtDepthMirror = null;
+    this._depthMirrorType = undefined;
 
     // ---- scratch (zero allocation in render) -------------------------------
     this._sunDir = new Vector3(0.42, 0.30, -0.86);
@@ -1396,6 +1409,8 @@ export class PostFX {
     this._quadGeo?.dispose();
     this._depthTexture?.dispose();
     this._depthTexture = null;
+    this._rtDepthMirror?.dispose();
+    this._rtDepthMirror = null;
     this._noiseTex?.dispose();
     this._blackTex?.dispose();
     this._lutDay?.dispose();
@@ -1707,6 +1722,10 @@ export class PostFX {
       uNear: { value: 0.1 }, uFar: { value: 900 },
     });
 
+    this.mDepthCopy = this._mat(FRAG_DEPTH_COPY, {
+      tDepth: { value: black },
+    });
+
     this.mAO = this._mat(FRAG_AO, {
       tDepth: { value: black },
       tNoise: { value: this._noiseTex },
@@ -1955,12 +1974,65 @@ export class PostFX {
   }
 
   /**
-   * The live scene depth buffer, for systems that need to depth-fade against the
-   * opaque frame (Weather's valley mist and soft particles). A getter, not a field,
-   * so it always reports the current target set.
+   * Scene depth for systems that depth-fade against the opaque frame — Weather's
+   * valley mist and soft particles.
+   *
+   * This deliberately does NOT return the live attachment. Weather adds its fog mesh
+   * to `ctx.scene` (renderOrder 8, transparent), so it is drawn *inside* our scene
+   * pass, into rtScene — the very framebuffer rtScene's DepthTexture is attached to.
+   * Sampling a texture attached to the bound framebuffer is a feedback loop: WebGL
+   * rejects the draw outright (GL_INVALID_OPERATION), so the mist would silently lose
+   * its soft edge, which is the exact artifact this seam exists to prevent.
+   *
+   * Instead we hand out a mirror: a copy of last frame's depth, written after the
+   * scene render and never attached while the scene is drawing. One frame of latency
+   * is imperceptible on a depth fade whose softness is metres wide.
+   *
+   * The copy pass is lazy — it only starts running once something actually reads this
+   * property, so a dry, fog-free scene pays nothing. The returned texture object is
+   * stable across resizes (the target is resized in place, not rebuilt) because
+   * consumers latch it into a material uniform exactly once.
    */
   get depthTexture() {
+    if (!this._depthExported) {
+      this._depthExported = true;
+      if (this._w > 1) this._ensureDepthMirror(this._w, this._h);
+    }
+    if (this._rtDepthMirror) return this._rtDepthMirror.texture;
     return this.rtScene ? this.rtScene.depthTexture : (this._depthTexture || null);
+  }
+
+  /**
+   * Full-res mirror target. 32-bit float when the device can render it, because window
+   * depth bunches hard against 1.0 and 16-bit there costs ~0.4 m of accuracy at 10 m —
+   * tolerable against a 4.5 m fog softness, but only just, so we prefer float.
+   */
+  _ensureDepthMirror(w, h) {
+    if (!this._depthExported) return null;
+    const gl = this.renderer.getContext();
+    if (this._depthMirrorType === undefined) {
+      const canFloat = !!gl.getExtension('EXT_color_buffer_float');
+      this._depthMirrorType = canFloat ? FloatType : (this._hdr ? HalfFloatType : null);
+      if (this._depthMirrorType === null) {
+        console.warn('[PostFX] no renderable float target: depth mirror unavailable, ' +
+          'external depth consumers will see the live attachment and may feedback-loop.');
+      }
+    }
+    if (this._depthMirrorType === null) return null;
+    if (!this._rtDepthMirror) {
+      this._rtDepthMirror = new WebGLRenderTarget(Math.max(1, w | 0), Math.max(1, h | 0), {
+        minFilter: NearestFilter, magFilter: NearestFilter,
+        format: RGBAFormat, type: this._depthMirrorType,
+        depthBuffer: false, stencilBuffer: false, generateMipmaps: false,
+      });
+      this._rtDepthMirror.texture.colorSpace = NoColorSpace;
+      this._rtDepthMirror.texture.generateMipmaps = false;
+      // Intentionally NOT in this._targets: _disposeTargets would replace the texture
+      // object on every resize and break consumers that latched it.
+    } else if (this._rtDepthMirror.width !== w || this._rtDepthMirror.height !== h) {
+      this._rtDepthMirror.setSize(Math.max(1, w | 0), Math.max(1, h | 0));
+    }
+    return this._rtDepthMirror;
   }
 
   _buildTargets(w, h) {
@@ -1972,6 +2044,8 @@ export class PostFX {
     // 0 — scene HDR + depth
     this.rtScene = this._rt(w, h, true, true);
     this.rtScene.depthTexture = this._ensureDepthTexture(w, h);
+    // exported sampler-safe depth mirror (resized in place, never rebuilt)
+    this._ensureDepthMirror(w, h);
 
     // 4 — resolve / history
     this.rtHist = null;
@@ -2449,6 +2523,18 @@ export class PostFX {
     const prevAutoClear = r.autoClear;
     const prevTone = r.toneMapping;
     r.toneMapping = NoToneMapping;
+    r.autoClear = false;
+
+    // --------------------------------------------------- 0a exported depth mirror
+    // Copied *before* the scene render, so it still holds the previous frame's depth
+    // and rtScene is not the bound framebuffer. That is the whole point: soft-particle
+    // consumers (Weather's mist) draw inside the scene pass and could not legally
+    // sample the live attachment. See the `depthTexture` getter.
+    if (this._depthExported && this._rtDepthMirror && this.rtScene.depthTexture) {
+      this.mDepthCopy.uniforms.tDepth.value = this.rtScene.depthTexture;
+      this._draw(this.mDepthCopy, this._rtDepthMirror);
+    }
+
     r.autoClear = true;
 
     // ---------------------------------------------------------------- 0 scene

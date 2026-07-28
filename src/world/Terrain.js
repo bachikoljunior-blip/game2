@@ -98,12 +98,32 @@ const STAIR_SHOULDER = 16.0;
 
 // --------------------------------------------------------------------- helpers
 
-/** Yield to the compositor. Boot is a long synthesis job; the watchdog is real. */
-const nextTick = () =>
-  new Promise((r) => {
-    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => setTimeout(r, 0));
-    else setTimeout(r, 0);
-  });
+/**
+ * Yield to the browser. Boot is a long synthesis job and the watchdog is real, but a
+ * requestAnimationFrame yield costs a whole 16 ms frame of wall clock — doing that a
+ * hundred and fifty times turns a one-second job into a five-second one. So most
+ * yields are zero-delay macrotasks (setTimeout(0) is clamped, MessageChannel is not)
+ * and every eighth is a real frame, which is often enough for the loading bar to paint.
+ */
+let _chan = null;
+let _chanResolve = null;
+let _yields = 0;
+function nextTick() {
+  _yields++;
+  const hasRAF = typeof requestAnimationFrame === 'function';
+  if (!hasRAF) return new Promise((r) => setTimeout(r, 0));
+  if (_yields % 8 === 0) return new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
+  if (typeof MessageChannel === 'function') {
+    if (!_chan) {
+      _chan = new MessageChannel();
+      _chan.port1.onmessage = () => { const r = _chanResolve; _chanResolve = null; if (r) r(); };
+    }
+    // Yields are strictly sequential, so a single channel and one pending resolve is
+    // all the bookkeeping this needs.
+    return new Promise((r) => { _chanResolve = r; _chan.port2.postMessage(0); });
+  }
+  return new Promise((r) => setTimeout(r, 0));
+}
 
 const now = () =>
   (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
@@ -394,14 +414,17 @@ export class Terrain {
       step(i);
       // Checked every iteration, not every Nth: one row of the ULTRA core field is
       // already ~3 ms, so a coarser check overshoots the 12 ms budget on its own.
-      if (now() - t0 > 8) {
+      if (now() - t0 > 6) {
         this._progress(base + (i / n), total, label);
         await nextTick();
         if (this._disposed) return;
         t0 = now();
       }
     }
+    // Always hand the frame back at a phase boundary, so two phases can never
+    // concatenate into one long block.
     this._progress(base + 1, total, label);
+    await nextTick();
   }
 
   // ==========================================================================
@@ -437,10 +460,13 @@ export class Terrain {
     await this._buildDerivedMaps(s++, TOTAL);
     await this._buildTextures();
     await this._buildMaterial();
+    await nextTick();
+    await this._buildClipGeometries(CLIPMAP_RES[clamp(q.tier | 0, 0, 3)]);
     this._buildClipmap();
-    this._progress(s++, TOTAL, 'carving the mountain');
+    this._progress(s++, TOTAL, 'raising the far ridges');
     await nextTick();
     this._buildWater();
+    await nextTick();
     this._buildDistantBand();
     this._progress(s++, TOTAL, 'flooding the stream');
 
@@ -496,26 +522,33 @@ export class Terrain {
     return h;
   }
 
-  async _buildMacroField(base, total) {
-    const N = this.macroN, cellM = this.macroCell, H = this.macroHeight;
-    await this._forRange(N, 'raising the ridges', (j) => {
-      const z = -MACRO_HALF + j * cellM;
-      const row = j * N;
-      for (let i = 0; i < N; i++) {
-        H[row + i] = this._macro(-MACRO_HALF + i * cellM, z);
+  /**
+   * Fill a square field from `_macro`. Iterated in small cell blocks rather than whole
+   * rows: the very first block runs before the JIT has seen the noise functions, and a
+   * full 300-cell row in the interpreter tier is a 25 ms stall on its own.
+   */
+  async _fillField(H, N, cellM, half, label, base, total) {
+    const cells = N * N;
+    const BLOCK = 192;
+    await this._forRange(Math.ceil(cells / BLOCK), label, (b) => {
+      const s = b * BLOCK;
+      const e = Math.min(cells, s + BLOCK);
+      for (let k = s; k < e; k++) {
+        const j = (k / N) | 0;
+        const i = k - j * N;
+        H[k] = this._macro(-half + i * cellM, -half + j * cellM);
       }
     }, base, total);
   }
 
+  async _buildMacroField(base, total) {
+    await this._fillField(this.macroHeight, this.macroN, this.macroCell, MACRO_HALF,
+      'raising the ridges', base, total);
+  }
+
   async _buildCoreField(base, total) {
-    const N = this.gridN, cellM = this.cell, H = this.height;
-    await this._forRange(N, 'carving the mountain', (j) => {
-      const z = -CORE_HALF + j * cellM;
-      const row = j * N;
-      for (let i = 0; i < N; i++) {
-        H[row + i] = this._macro(-CORE_HALF + i * cellM, z);
-      }
-    }, base, total);
+    await this._fillField(this.height, this.gridN, this.cell, CORE_HALF,
+      'carving the mountain', base, total);
   }
 
   // ==========================================================================
@@ -698,7 +731,7 @@ export class Terrain {
     const MAX_EDIT = 0.42;
     const invCell = 1 / cellM;
 
-    const BATCH = 256;
+    const BATCH = 64;
     const batches = Math.ceil(dropletCount / BATCH);
 
     await this._forRange(batches, 'water finds its way', () => {
@@ -1059,6 +1092,7 @@ export class Terrain {
     await nextTick();
     this.dataTex = this._makeDataTexture(this.dataBytes, this.gridN);
     this.splatTex = this._makeDataTexture(this.splatBytes, this.gridN);
+    await nextTick();
 
     // Ground grain. Two octaves of warped fbm plus a pebble term reads as soil.
     this.detailNormalTex = this._makeNormalTexture(128, (u, v) => {
@@ -1560,6 +1594,15 @@ void kgComputeSurface(){
     return geo;
   }
 
+  /** Build the two shared geometries, yielding between them. */
+  async _buildClipGeometries(res) {
+    this.blockGeo = this._makeClipGeometry(res, false);
+    await nextTick();
+    this.ringGeo = this._makeClipGeometry(res, true);
+    await nextTick();
+    this._ringRes = res;
+  }
+
   _buildClipmap() {
     const tier = clamp(this.quality.tier | 0, 0, 3);
     const res = CLIPMAP_RES[tier];
@@ -1567,8 +1610,13 @@ void kgComputeSurface(){
     // Cell size chosen so the outermost level always reaches past VIEW_DISTANCE.
     const c0 = [3.0, 2.0, 1.6, 1.4][tier];
 
-    this.blockGeo = this._makeClipGeometry(res, false);
-    this.ringGeo = this._makeClipGeometry(res, true);
+    if (!this.blockGeo || this._ringRes !== res) {
+      this.blockGeo?.dispose();
+      this.ringGeo?.dispose();
+      this.blockGeo = this._makeClipGeometry(res, false);
+      this.ringGeo = this._makeClipGeometry(res, true);
+      this._ringRes = res;
+    }
     this.rings.length = 0;
 
     for (let k = 0; k < levels; k++) {
@@ -1977,13 +2025,10 @@ void main(){
     const wantLevels = CLIPMAP_LEVELS[tier];
     if (this.rings.length !== wantLevels || this._ringRes !== wantRes) {
       for (const m of this.rings) this.group.remove(m);
-      this.blockGeo?.dispose();
-      this.ringGeo?.dispose();
       this.rings.length = 0;
       this._buildClipmap();
       this._snapRings(true);
     }
-    this._ringRes = wantRes;
     for (let k = 0; k < this.rings.length; k++) {
       this.rings[k].castShadow = k <= 1 && !!q.shadows;
     }

@@ -1,8 +1,1492 @@
-/** PLACEHOLDER — replaced by the Level implementation pass. Keeps the tree buildable. */
-export class Level {
-  constructor(ctx) { this.ctx = ctx; }
-  async init() {}
-  update() {}
-  dispose() {}
+/**
+ * Level.js — the mountain shrine: layout, merging, collision, spawns, encounters.
+ *
+ * ## The place
+ *
+ * A processional axis runs north along −Z. You arrive from +Z up a worn stone
+ * stair, pass three torii of increasing size, cross a gravel forecourt, and face
+ * the haiden; the honden sits behind it with its doorway on `WORLD.ORIGIN`. The
+ * forecourt is deliberately a **26 × 20 m combat arena**: flat gravel, cover only
+ * at the edges (cairns, lanterns, the bell tower, the chōzuya), and clear
+ * sightlines back down the axis so you always read where the next oni came from.
+ * A cliff-edge overlook to the south-east frames the bamboo valley.
+ *
+ * ## How it is built
+ *
+ * `PropFactory` returns geometry in a local frame; Level transforms it into world
+ * space and drops it into a bucket keyed by `(layer, spatial cell, material)`.
+ * Every bucket is merged once at the end, so the entire shrine renders in a few
+ * dozen draw calls and the frustum cull actually has cell-sized work to do.
+ * Anything that repeats — lanterns, ema, banners, leaves — becomes an
+ * `InstancedMesh` instead. Build work is chunked against a 9 ms budget and yields
+ * to the compositor, because on a phone this is a couple of hundred milliseconds
+ * of geometry synthesis and the loading bar has to keep painting.
+ *
+ * `update()` allocates nothing.
+ */
 
+import {
+  Group, Mesh, Vector3, Matrix4, Box3, Sphere, Color, MeshBasicMaterial,
+  BoxGeometry, DoubleSide,
+} from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { PropFactory, InstancedProto, normalizeGeo, CLOTH_MATERIALS } from './Props.js';
+import { WORLD, toWorldY, inPlayable } from './Constants.js';
+import { makeRandom, clamp, lerp, smoothstep, noise } from '../core/Noise.js';
+
+// ------------------------------------------------------------------ layout
+
+/**
+ * The whole shrine in one table, in plateau-local metres (+Z is the approach,
+ * y = 0 is the plateau floor). Everything downstream — spawns, reverb zones,
+ * encounters, the cinematic shots — is derived from these numbers.
+ */
+export const LAYOUT = {
+  axis: 0,
+  honden: { x: 0, z: -4.5, w: 9.0, d: 9.0, floor: 1.95 },
+  haiden: { x: 0, z: 8.5, w: 15.0, d: 11.0, floor: 1.15 },
+  kagura: { x: -17.0, z: 12.0, w: 8.0, d: 8.0, floor: 0.95 },
+  shamusho: { x: 18.0, z: 6.0, w: 9.0, d: 6.5, floor: 0.55 },
+  bellTower: { x: 16.5, z: 27.0 },
+  chozuya: { x: -14.5, z: 30.0 },
+  /** The fight happens here. 26 × 20, flat, gravel. */
+  arena: { x: 0, z: 26.0, hx: 13.0, hz: 10.0 },
+  torii: [
+    { z: 68.0, height: 3.35, span: 2.9 },
+    { z: 54.0, height: 4.20, span: 3.6 },
+    { z: 38.5, height: 5.60, span: 4.8 },
+  ],
+  stairTop: 72.0,
+  stairBottom: 97.0,
+  emaRack: { x: 10.5, z: 43.0 },
+  omikujiRack: { x: -10.5, z: 43.0 },
+  sacredTree: { x: -12.0, z: 19.5, height: 11.0 },
+  deadTree: { x: 21.0, z: -3.0, height: 8.0 },
+  caskWall: { x: -19.5, z: 30.0 },
+  overlook: { x: 36.0, z: 36.0 },
+  bridge: { x: 24.0, z: 34.0 },
+  /** Beyond this radius the plateau falls away; also where the guard rail goes. */
+  rimRadius: 74.0,
+  approachGapDeg: 15,
+};
+
+/** Spatial cell size for the merged statics. Tuned so a cell ≈ one landmark. */
+const CELL = 40;
+
+// -------------------------------------------------------------- encounters
+
+/**
+ * The opening beat, kept as data so it can be retuned without touching logic.
+ *
+ *  - `trigger`: `{type:'start'}` | `{type:'zone', x, z, r}` | `{type:'event', name}`
+ *  - `waves[].at`: seconds after the encounter starts.
+ *  - `waves[].spawn`: `[archetype, spawnPointId, count]`.
+ */
+export const ENCOUNTERS = [
+  {
+    id: 'arrival',
+    trigger: { type: 'start' },
+    objective: { text: '山の社へ', sub: 'Climb to the mountain shrine' },
+    waves: [],
+    next: 'gate',
+  },
+  {
+    id: 'gate',
+    trigger: { type: 'zone', x: 0, z: 47, r: 10 },
+    objective: { text: '鳥居をくぐれ', sub: 'Pass beneath the great torii' },
+    waves: [],
+    next: 'forecourt',
+  },
+  {
+    id: 'forecourt',
+    trigger: { type: 'zone', x: 0, z: 31, r: 12 },
+    objective: { text: '境内を清めよ', sub: 'Clear the forecourt' },
+    clearObjective: { text: '鐘を鳴らせ', sub: 'Ring the bell' },
+    waves: [
+      { at: 0.8, spawn: [['ashigaru', 'torii_c', 1], ['ashigaru', 'torii_l', 1]] },
+      { at: 11.0, spawn: [['ashigaru', 'torii_r', 1], ['ronin', 'east', 1]] },
+      { at: 24.0, spawn: [['ronin', 'west', 1], ['ashigaru', 'torii_c', 2]] },
+    ],
+    next: 'bell',
+  },
+  {
+    id: 'bell',
+    trigger: { type: 'event', name: 'bell' },
+    objective: { text: '奥の敵を討て', sub: 'The bell has called them' },
+    waves: [
+      { at: 0.5, spawn: [['ronin', 'haiden_l', 1], ['ronin', 'haiden_r', 1]] },
+      { at: 13.0, spawn: [['oni', 'torii_c', 1], ['ashigaru', 'stair', 2]] },
+    ],
+    next: null,
+  },
+];
+
+// ------------------------------------------------------------ frame scratch
+
+const _v = new Vector3();
+const _v2 = new Vector3();
+const _m = new Matrix4();
+const _box = new Box3();
+const _sphere = new Sphere();
+const _color = new Color();
+
+// ============================================================== Level
+
+export class Level {
+  constructor(ctx) {
+    this.ctx = ctx;
+    this.root = new Group();
+    this.root.name = 'level';
+    this.root.matrixAutoUpdate = false;
+
+    /** Chunked-build progress hook, matching the other boot systems. */
+    this.onProgress = null;
+
+    this.factory = new PropFactory(ctx);
+    this.rnd = makeRandom(0x4a9e2017);
+
+    // build-time accumulators
+    this._buckets = new Map();          // "layer|cx|cz|material" -> geometry[]
+    this._colliders = new Map();        // "surface|walkable" -> geometry[]
+    this._protos = new Map();           // key -> InstancedProto
+    this._silhouettes = [];             // far-LOD parts
+    this._lightRequests = [];
+
+    // runtime
+    this.cells = [];                    // { mesh, cx, cy, cz, r, layer }
+    this.instances = [];                // { proto, meshes, cull, full }
+    this.farMesh = null;
+    this.spawnPoints = null;
+    this.interactables = [];
+    this.spawnQueue = [];
+    this.stats = { drawCalls: 0, triangles: 0, cells: 0, instances: 0 };
+
+    this._enc = { active: null, index: -1, t: 0, waveIndex: 0, done: new Set(), cleared: false };
+    this._lodTimer = 0;
+    this._farActive = false;
+    this._clutterDist = 40;
+    this._farDist = 120;
+    this._shrineCenter = new Vector3();
+    this._emberBase = 2.4;
+    this._built = false;
+  }
+
+  // =====================================================================
+  //  BUILD
+  // =====================================================================
+
+  async init() {
+    const q = this.ctx?.quality;
+    this._applyQualityKnobs(q);
+
+    await this.factory.init();
+
+    const tasks = [];
+    const T = (label, fn) => tasks.push([label, fn]);
+
+    T('terrain probe', () => this._probeGround());
+    T('approach stair', () => this._buildApproach());
+    T('torii', () => this._buildTorii());
+    T('haiden', () => this._buildHaiden());
+    T('honden', () => this._buildHonden());
+    T('side halls', () => this._buildSideHalls());
+    T('bell tower', () => this._buildBellTower());
+    T('chōzuya', () => this._buildChozuya());
+    T('fences', () => this._buildFences());
+    T('overlook', () => this._buildOverlook());
+    T('bridge', () => this._buildBridge());
+    T('sacred trees', () => this._buildTrees());
+    T('lanterns', () => this._buildLanterns());
+    T('banners', () => this._buildBanners());
+    T('ema and omikuji', () => this._buildVotives());
+    T('clutter', () => this._buildClutter());
+    T('jizō and cairns', () => this._buildRoadside());
+    T('fallen leaves', () => this._buildLeaves());
+    T('boundary', () => this._buildBoundary());
+
+    await this._run(tasks, 0, 0.62);
+
+    const mergeTasks = [];
+    for (const key of this._buckets.keys()) {
+      mergeTasks.push([`merging ${key.split('|')[3]}`, () => this._realizeBucket(key)]);
+    }
+    mergeTasks.push(['far silhouette', () => this._realizeSilhouette()]);
+    mergeTasks.push(['instances', () => this._realizeInstances()]);
+    mergeTasks.push(['collision', () => this._realizePhysics()]);
+    mergeTasks.push(['lights', () => this._realizeLights()]);
+    await this._run(mergeTasks, 0.62, 1.0);
+
+    this._buildSpawnPoints();
+    this._buildInteractables();
+
+    this.ctx?.scene?.add(this.root);
+    this.root.updateMatrixWorld(true);
+
+    this._shrineCenter.set(0, this._plateauY + 4, 12);
+    this._built = true;
+    this._countStats();
+
+    this._enc.index = -1;
+    this._advanceEncounter(0);
+    return this;
+  }
+
+  /** Run build tasks against a 9 ms budget, yielding to the compositor. */
+  async _run(tasks, p0, p1) {
+    let t0 = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    for (let i = 0; i < tasks.length; i++) {
+      const [label, fn] = tasks[i];
+      try { fn(); }
+      catch (err) { console.error(`[level] task "${label}" failed`, err); }
+      this.onProgress?.(i + 1, tasks.length, label);
+      if (now() - t0 > 9) {
+        await new Promise((r) => (typeof requestAnimationFrame === 'function'
+          ? requestAnimationFrame(() => setTimeout(r, 0))
+          : setTimeout(r, 0)));
+        t0 = now();
+      }
+    }
+  }
+
+  _applyQualityKnobs(q) {
+    const tier = q?.tier ?? 1;
+    this._clutterDist = [26, 40, 58, 72][tier] ?? 40;
+    this._farDist = [80, 120, 170, 210][tier] ?? 120;
+    this._density = [0.42, 0.68, 1.0, 1.25][tier] ?? 0.68;
+    this._maxPropLights = [0, 3, 8, 14][tier] ?? 3;
+    this._treeDepth = [3, 4, 4, 5][tier] ?? 4;
+  }
+
+  // ---------------------------------------------------------------- ground
+
+  _probeGround() {
+    this._plateauY = WORLD.PLATEAU_HEIGHT;
+    // Sanity-check the terrain: a placeholder returns 0 and everything would sink.
+    const probe = this._rawHeight(0, 0);
+    this._terrainLive = probe !== null;
+  }
+
+  _rawHeight(x, z) {
+    const h = this.ctx?.terrain?.heightAt?.(x, z);
+    return (typeof h === 'number' && isFinite(h) && h > 100) ? h : null;
+  }
+
+  /** Absolute world Y of the ground. Falls back to the plateau if Terrain is not up. */
+  groundY(x, z) {
+    const h = this._rawHeight(x, z);
+    return h === null ? WORLD.PLATEAU_HEIGHT : h;
+  }
+
+  /** Surface normal, or straight up. Writes into `out` and returns it. */
+  groundNormal(x, z, out) {
+    const n = this.ctx?.terrain?.normalAt?.(x, z, out);
+    if (n && typeof n.x === 'number') { out.set(n.x, n.y, n.z); return out.normalize(); }
+    return out.set(0, 1, 0);
+  }
+
+  // ---------------------------------------------------------------- buckets
+
+  _cellKey(layer, x, z, material) {
+    const cx = Math.floor(x / CELL), cz = Math.floor(z / CELL);
+    return `${layer}|${cx}|${cz}|${material}`;
+  }
+
+  /**
+   * Transform a build into world space and file every part into its bucket.
+   * `matrix` maps the prop's local frame to world. Geometry is consumed unless
+   * `clone` is set, so a prototype can be stamped more than once.
+   */
+  _emit(build, matrix, opts = {}) {
+    if (!build) return;
+    const layer = opts.layer ?? 'static';
+    const clone = !!opts.clone;
+    const tint = opts.tint;
+    _v.setFromMatrixPosition(matrix);
+
+    for (const part of build.parts) {
+      let g = clone ? part.geometry.clone() : part.geometry;
+      g.applyMatrix4(matrix);
+      normalizeGeo(g, CLOTH_MATERIALS.has(part.material));
+      if (tint) {
+        const col = g.getAttribute('color');
+        for (let i = 0; i < col.count; i++) {
+          col.setXYZ(i, col.getX(i) * tint[0], col.getY(i) * tint[1], col.getZ(i) * tint[2]);
+        }
+      }
+      const key = this._cellKey(layer, _v.x, _v.z, part.material);
+      let list = this._buckets.get(key);
+      if (!list) { list = []; this._buckets.set(key, list); }
+      list.push(g);
+    }
+
+    for (const c of build.colliders) {
+      const g = clone ? c.geometry.clone() : c.geometry;
+      g.applyMatrix4(matrix);
+      const key = `${c.surface}|${c.walkable ? 1 : 0}`;
+      let list = this._colliders.get(key);
+      if (!list) { list = []; this._colliders.set(key, list); }
+      list.push(g);
+    }
+
+    for (const l of build.lights) {
+      _v2.set(l.x, l.y, l.z).applyMatrix4(matrix);
+      this._lightRequests.push({
+        x: _v2.x, y: _v2.y, z: _v2.z,
+        color: l.color, intensity: l.intensity, distance: l.distance, flicker: l.flicker,
+      });
+    }
+
+    if (build.silhouette && opts.silhouette !== false) {
+      for (const p of build.silhouette) {
+        const g = p.geometry.clone();
+        g.applyMatrix4(matrix);
+        normalizeGeo(g);
+        this._silhouettes.push({ geometry: g, material: p.material });
+      }
+    }
+  }
+
+  /** Register a raw collision box directly (invisible walls, arena floor). */
+  _collide(geometry, surface, walkable = false) {
+    const key = `${surface}|${walkable ? 1 : 0}`;
+    let list = this._colliders.get(key);
+    if (!list) { list = []; this._colliders.set(key, list); }
+    list.push(geometry);
+  }
+
+  /** Get-or-create an instancing prototype. */
+  _proto(key, builder, opts) {
+    let p = this._protos.get(key);
+    if (!p) {
+      p = new InstancedProto(this.factory, builder(), Object.assign({ name: key }, opts));
+      this._protos.set(key, p);
+    }
+    return p;
+  }
+
+  /** World matrix for a prop dropped on the ground at (x,z). */
+  _ground(x, z, ry = 0, s = 1, lift = 0) {
+    _m.makeRotationY(ry);
+    _m.scale(_v.set(s, s, s));
+    _m.setPosition(x, this.groundY(x, z) + lift, z);
+    return _m.clone();
+  }
+
+  /** As `_ground`, but tilted onto the terrain normal — for stones and clutter. */
+  _grounded(x, z, ry, s, lift, align = 0.7) {
+    const m = this._ground(x, z, ry, s, lift);
+    if (align > 0) {
+      this.groundNormal(x, z, _v2);
+      if (_v2.y < 0.999) {
+        _v.set(0, 1, 0);
+        const t = new Matrix4();
+        const axis = new Vector3().crossVectors(_v, _v2);
+        const len = axis.length();
+        if (len > 1e-4) {
+          axis.divideScalar(len);
+          t.makeRotationAxis(axis, Math.asin(clamp(len, -1, 1)) * align);
+          const pos = new Vector3().setFromMatrixPosition(m);
+          m.premultiply(t);
+          m.setPosition(pos);
+        }
+      }
+    }
+    return m;
+  }
+
+  // =====================================================================
+  //  COMPOSITION
+  // =====================================================================
+
+  _buildApproach() {
+    const f = this.factory;
+    const topZ = LAYOUT.stairTop;
+    const botZ = LAYOUT.stairBottom;
+    const yTop = this.groundY(0, topZ);
+    const yBot = this.groundY(0, botZ);
+    const drop = Math.max(1.4, yTop - yBot);
+
+    // Two flights with a landing, so the climb has a beat in it.
+    const flights = [
+      { z: topZ, drop: drop * 0.52, width: 5.0 },
+      { z: topZ + (botZ - topZ) * 0.58, drop: drop * 0.48, width: 5.6 },
+    ];
+    let y = yTop;
+    for (let i = 0; i < flights.length; i++) {
+      const fl = flights[i];
+      const steps = Math.max(3, Math.round(fl.drop / 0.185));
+      const rise = fl.drop / steps;
+      const st = f.stairs({
+        width: fl.width, steps, rise, run: 0.38, wear: 1.2,
+        material: 'stone', cheeks: true, seed: 300 + i * 7,
+      });
+      _m.identity();
+      _m.setPosition(0, y - fl.drop, fl.z);
+      this._emit(st, _m.clone());
+      y -= fl.drop;
+      // Landing slab between flights.
+      if (i < flights.length - 1) {
+        const zA = fl.z + steps * 0.38;
+        const g = new BoxGeometry(fl.width + 1.2, 0.34, 2.2);
+        g.translate(0, y - 0.17, zA + 1.1);
+        normalizeGeo(g);
+        this._pushRaw(g, 'cobble', 'static');
+        this._collide(this._box(fl.width + 1.2, 0.34, 2.2, 0, y - 0.34, zA + 1.1), 'stone', true);
+      }
+    }
+
+    // 参道 the gravel approach path from the stair head to the forecourt.
+    const path = [];
+    const segs = 9;
+    for (let i = 0; i < segs; i++) {
+      const z0 = lerp(LAYOUT.arena.z + LAYOUT.arena.hz, topZ, i / segs);
+      const z1 = lerp(LAYOUT.arena.z + LAYOUT.arena.hz, topZ, (i + 1) / segs);
+      const zc = (z0 + z1) * 0.5;
+      const g = new BoxGeometry(5.6, 0.16, Math.abs(z1 - z0) + 0.05);
+      g.translate(0, this.groundY(0, zc) + 0.05, zc);
+      normalizeGeo(g);
+      const k = 0.92 + this.rnd() * 0.14;
+      this._tint(g, k, k * 0.99, k * 0.96);
+      path.push({ g, zc });
+    }
+    for (const p of path) this._pushRaw(p.g, 'cobble', 'static');
+
+    // 玉砂利 the forecourt itself — flat, level, and the fight happens on it.
+    {
+      const a = LAYOUT.arena;
+      const g = new BoxGeometry(a.hx * 2 + 2.4, 0.18, a.hz * 2 + 2.4);
+      g.translate(a.x, this.groundY(a.x, a.z) + 0.05, a.z);
+      normalizeGeo(g);
+      this._shade(g, (x, yy, z) => 0.92 + noise.fbm2(x * 0.35, z * 0.35, 3) * 0.12);
+      this._pushRaw(g, 'cobble', 'static');
+      this._collide(this._box(a.hx * 2 + 2.4, 0.2, a.hz * 2 + 2.4, a.x, this.groundY(a.x, a.z) - 0.05, a.z), 'gravel', true);
+    }
+  }
+
+  _buildTorii() {
+    const f = this.factory;
+    const q = this.ctx?.quality;
+    for (let i = 0; i < LAYOUT.torii.length; i++) {
+      const t = LAYOUT.torii[i];
+      const build = f.torii({ height: t.height, span: t.span, seed: 700 + i * 13 });
+      const y = this.groundY(0, t.z);
+      _m.makeRotationY(0);
+      _m.setPosition(0, y, t.z);
+      const mat = _m.clone();
+      this._emit(build, mat);
+
+      // 注連縄 strung under the nuki of the two larger gates.
+      if (i >= 1) {
+        const a = build.anchors;
+        const span = Math.abs(a.ropeRight[0] - a.ropeLeft[0]);
+        const rope = f.shimenawa({
+          span: span * 0.98, sag: 0.10 * t.height, radius: 0.045 * t.height,
+          shide: 5, seed: 900 + i,
+        });
+        _m.makeRotationY(0);
+        _m.setPosition(0, y + a.ropeLeft[1], t.z + 0.02);
+        this._emit(rope, _m.clone());
+      }
+    }
+  }
+
+  _buildHaiden() {
+    const L = LAYOUT.haiden;
+    const build = this.factory.hall({
+      width: L.w, depth: L.d, floorY: L.floor, wallH: 3.3,
+      veranda: 1.15, eaveOut: 2.05, rise: 3.5,
+      roofMaterial: 'roofTile', wallMaterial: 'plaster',
+      hip: 0.5, seed: 11, segX: 9, segZ: 6,
+    });
+    this._emit(build, this._ground(L.x, L.z, 0));
+
+    // A row of chōchin under the front eave — the lit line that reads at dusk.
+    const proto = this._proto('chochin', () => this.factory.hangingLantern({}), { castShadow: false });
+    const y = this.groundY(L.x, L.z) + build.anchors.eaveFront[1] - 0.15;
+    const n = 7;
+    for (let i = 0; i < n; i++) {
+      const x = lerp(-L.w * 0.42, L.w * 0.42, i / (n - 1));
+      _m.makeRotationY((this.rnd() - 0.5) * 0.6);
+      _m.setPosition(L.x + x, y, L.z + L.d * 0.5 + 1.55);
+      proto.place(_m, [1, 0.96 + this.rnd() * 0.08, 0.9 + this.rnd() * 0.12]);
+    }
+    this._lightRequests.push({
+      x: L.x, y: y - 0.7, z: L.z + L.d * 0.5 + 1.55,
+      color: 0xffb060, intensity: 2.0, distance: 9, flicker: 0.5,
+    });
+  }
+
+  _buildHonden() {
+    const L = LAYOUT.honden;
+    const build = this.factory.hall({
+      width: L.w, depth: L.d, floorY: L.floor, wallH: 2.8,
+      veranda: 0.85, eaveOut: 1.85, rise: 3.2,
+      roofMaterial: 'cedar', soffitMaterial: 'cedar', wallMaterial: 'plaster',
+      hip: 0.42, seed: 23, segX: 7, segZ: 5,
+    });
+    this._emit(build, this._ground(L.x, L.z, 0));
+
+    // 玉垣 the inner fence that keeps you out of the sanctuary, with a gateway.
+    const fx = L.w * 0.5 + 2.6, fz0 = L.z - L.d * 0.5 - 2.4, fz1 = L.z + L.d * 0.5 + 2.6;
+    const fence = this.factory.tamagaki({
+      points: [
+        [1.5, fz1], [fx, fz1], [fx, fz0], [-fx, fz0], [-fx, fz1], [-1.5, fz1],
+      ],
+      height: 1.42, slatSpacing: 0.19, seed: 55,
+    });
+    this._emit(fence, this._ground(0, L.z, 0));
+  }
+
+  _buildSideHalls() {
+    const f = this.factory;
+    const K = LAYOUT.kagura;
+    this._emit(f.hall({
+      width: K.w, depth: K.d, floorY: K.floor, wallH: 2.5, open: true,
+      veranda: 0.7, eaveOut: 1.7, rise: 2.7, roofMaterial: 'cedar',
+      hip: 0.6, shrineRidge: false, seed: 31, segX: 6, segZ: 5,
+    }), this._ground(K.x, K.z, Math.PI * 0.5));
+
+    const S = LAYOUT.shamusho;
+    this._emit(f.hall({
+      width: S.w, depth: S.d, floorY: S.floor, wallH: 2.5,
+      veranda: 0.6, eaveOut: 1.35, rise: 2.2, roofMaterial: 'roofTile',
+      hip: 0.28, shrineRidge: false, seed: 37, segX: 6, segZ: 4,
+    }), this._ground(S.x, S.z, -Math.PI * 0.5));
+  }
+
+  _buildBellTower() {
+    const B = LAYOUT.bellTower;
+    const build = this.factory.bellTower({ size: 4.4, floorY: 1.55, postH: 3.4, seed: 47 });
+    const m = this._ground(B.x, B.z, -Math.PI * 0.25);
+    this._emit(build, m);
+    _v.set(build.anchors.bell[0], build.anchors.bell[1], build.anchors.bell[2]).applyMatrix4(m);
+    this._bellPos = _v.clone();
+  }
+
+  _buildChozuya() {
+    const C = LAYOUT.chozuya;
+    const build = this.factory.chozuya({ width: 3.6, depth: 3.0, postH: 2.4, seed: 53 });
+    const m = this._ground(C.x, C.z, Math.PI * 0.5);
+    this._emit(build, m);
+    _v.set(0, build.anchors.basin[1], 0).applyMatrix4(m);
+    this._chozuyaPos = _v.clone();
+  }
+
+  _buildFences() {
+    const f = this.factory;
+    const a = LAYOUT.arena;
+    // Low tamagaki along the west edge of the forecourt: cover and a sightline.
+    this._emit(f.tamagaki({
+      points: [[-a.hx - 1.6, a.z - a.hz + 1.5], [-a.hx - 1.6, a.z + a.hz - 2.0]],
+      height: 1.15, seed: 61,
+    }), this._ground(a.x, a.z, 0));
+
+    // Bamboo fence flanking the approach between the outer torii.
+    for (const sx of [-1, 1]) {
+      this._emit(f.bambooFence({
+        points: [[sx * 4.6, 66.0], [sx * 4.6, 40.0]],
+        height: 1.45, seed: 67 + (sx > 0 ? 1 : 0),
+      }), this._ground(0, 53, 0));
+    }
+    // And the east side of the forecourt, screening the shamusho yard.
+    this._emit(f.tamagaki({
+      points: [[a.hx + 1.6, a.z + a.hz - 1.0], [a.hx + 1.6, a.z - a.hz + 3.0]],
+      height: 1.15, seed: 71,
+    }), this._ground(a.x, a.z, 0));
+  }
+
+  _buildOverlook() {
+    const O = LAYOUT.overlook;
+    const y = this.groundY(O.x, O.z);
+    // A stone terrace stepping out toward the valley, railed at the lip.
+    const terrace = new BoxGeometry(9.0, 0.5, 7.0);
+    terrace.translate(O.x, y + 0.08, O.z);
+    normalizeGeo(terrace);
+    this._shade(terrace, (x, yy, z) => 0.9 + noise.fbm2(x * 0.6, z * 0.6, 3) * 0.14);
+    this._pushRaw(terrace, 'stone', 'static');
+    this._collide(this._box(9.0, 0.5, 7.0, O.x, y - 0.17, O.z), 'stone', true);
+
+    const rail = this.factory.tamagaki({
+      points: [[-4.2, 3.2], [4.2, 3.2], [4.2, -3.2]],
+      height: 1.05, slatSpacing: 0.26, seed: 79,
+    });
+    this._emit(rail, this._ground(O.x, O.z, Math.PI * 0.25, 1, 0.33));
+
+    // A bench and a pair of lanterns framing the valley view.
+    const bench = new BoxGeometry(2.2, 0.14, 0.44);
+    bench.translate(O.x - 1.4, y + 0.83, O.z - 1.6);
+    normalizeGeo(bench);
+    this._pushRaw(bench, 'cedar', 'clutter');
+    for (const sx of [-1, 1]) {
+      const leg = new BoxGeometry(0.16, 0.42, 0.38);
+      leg.translate(O.x - 1.4 + sx * 0.85, y + 0.55, O.z - 1.6);
+      normalizeGeo(leg);
+      this._pushRaw(leg, 'cedar', 'clutter');
+    }
+    this._collide(this._box(2.2, 0.5, 0.5, O.x - 1.4, y + 0.4, O.z - 1.6), 'wood');
+  }
+
+  _buildBridge() {
+    const B = LAYOUT.bridge;
+    const dir = Math.atan2(LAYOUT.overlook.x - LAYOUT.arena.hx, LAYOUT.overlook.z - LAYOUT.arena.z);
+    const y = this.groundY(B.x, B.z);
+    const build = this.factory.bridge({
+      span: 7.5, width: 2.3, camber: 0.8, dropL: 1.9, dropR: 1.9, seed: 83,
+    });
+    _m.makeRotationY(dir);
+    _m.setPosition(B.x, y + 0.55, B.z);
+    this._emit(build, _m.clone());
+  }
+
+  _buildTrees() {
+    const f = this.factory;
+    const S = LAYOUT.sacredTree;
+    const tree = f.sacredTree({ height: S.height, depth: this._treeDepth, seed: 1861, leafy: true });
+    const m = this._ground(S.x, S.z, 0.4);
+    this._emit(tree, m);
+    // The rope is tied round the trunk at chest height, not draped over a branch.
+    const girth = tree.anchors.girth[0];
+    const rope = f.shimenawa({ span: girth * 2.9, sag: 0.16, radius: 0.13, shide: 4, seed: 1862 });
+    _m.makeRotationY(0.4);
+    _m.setPosition(S.x, this.groundY(S.x, S.z) + tree.anchors.girth[1], S.z + girth * 0.9);
+    this._emit(rope, _m.clone());
+
+    const D = LAYOUT.deadTree;
+    this._emit(f.sacredTree({
+      height: D.height, depth: Math.max(3, this._treeDepth - 1), seed: 1877, leafy: false,
+    }), this._ground(D.x, D.z, -1.1));
+  }
+
+  _buildLanterns() {
+    const proto = this._proto('lantern', () => this.factory.stoneLantern({ height: 2.05, seed: 91 }));
+    const place = (x, z, s) => {
+      const y = this.groundY(x, z);
+      _m.makeRotationY(this.rnd() * Math.PI * 2);
+      _m.scale(_v.set(s, s, s));
+      _m.setPosition(x, y - 0.04, z);
+      const k = 0.88 + this.rnd() * 0.24;
+      proto.place(_m, [k, k * (0.98 + this.rnd() * 0.05), k * (0.94 + this.rnd() * 0.08)]);
+    };
+    // Paired down the approach, then scattered round the forecourt.
+    for (let z = 40; z <= 70; z += 6.2) {
+      for (const sx of [-1, 1]) place(sx * 5.4, z + (this.rnd() - 0.5) * 0.8, 0.92 + this.rnd() * 0.16);
+    }
+    const a = LAYOUT.arena;
+    for (const [x, z] of [
+      [-a.hx + 0.9, a.z - a.hz + 1.2], [a.hx - 0.9, a.z - a.hz + 1.2],
+      [-a.hx + 0.9, a.z + a.hz - 1.2], [a.hx - 0.9, a.z + a.hz - 1.2],
+      [-6.5, 15.0], [6.5, 15.0],
+    ]) place(x, z, 1.0 + this.rnd() * 0.18);
+    // Flanking the honden gate.
+    for (const sx of [-1, 1]) place(sx * 3.4, 2.2, 1.12);
+  }
+
+  _buildBanners() {
+    const crimson = this._proto('nobori-c', () => this.factory.nobori({ material: 'clothCrimson', seed: 121 }), { castShadow: false });
+    const indigo = this._proto('nobori-i', () => this.factory.nobori({ material: 'clothIndigo', seed: 122 }), { castShadow: false });
+    const place = (x, z, ry, alt) => {
+      _m.makeRotationY(ry);
+      _m.setPosition(x, this.groundY(x, z), z);
+      const p = alt ? indigo : crimson;
+      const k = 0.9 + this.rnd() * 0.2;
+      p.place(_m, [k, k, k]);
+    };
+    let alt = false;
+    for (const t of LAYOUT.torii) {
+      for (const sx of [-1, 1]) {
+        place(sx * (t.span * 0.5 + 1.9), t.z - 0.4, sx > 0 ? -Math.PI / 2 : Math.PI / 2, alt);
+      }
+      alt = !alt;
+    }
+    const a = LAYOUT.arena;
+    for (const sx of [-1, 1]) {
+      place(sx * (a.hx - 1.2), a.z + a.hz - 0.6, sx > 0 ? -Math.PI / 2 : Math.PI / 2, true);
+      place(sx * (a.hx - 1.2), a.z - a.hz + 1.4, sx > 0 ? -Math.PI / 2 : Math.PI / 2, false);
+    }
+  }
+
+  _buildVotives() {
+    const f = this.factory;
+    const E = LAYOUT.emaRack;
+    const rack = f.emaRack({ width: 3.2, height: 1.9 });
+    this._emit(rack, this._ground(E.x, E.z, -Math.PI * 0.5));
+
+    const ema = this._proto('ema', () => f.emaPlaque({ seed: 131 }), { castShadow: false });
+    const yBase = this.groundY(E.x, E.z);
+    const count = Math.round(34 * this._density);
+    for (let i = 0; i < count; i++) {
+      const row = i % 2;
+      const t = ((i / 2) | 0) / Math.max(1, (count / 2 - 1));
+      const off = lerp(-1.45, 1.45, t) + (this.rnd() - 0.5) * 0.06;
+      const y = yBase + (row === 0 ? 1.76 : 1.03) - this.rnd() * 0.02;
+      _m.makeRotationY(-Math.PI * 0.5 + (this.rnd() - 0.5) * 0.5);
+      _m.setPosition(E.x, y, E.z + off);
+      const k = 0.9 + this.rnd() * 0.2;
+      ema.place(_m, [k, k * (0.96 + this.rnd() * 0.08), k * (0.9 + this.rnd() * 0.12)]);
+    }
+    _v.set(E.x, yBase + 1.4, E.z);
+    this._emaPos = _v.clone();
+
+    const O = LAYOUT.omikujiRack;
+    this._emit(f.omikujiRack({
+      width: 2.8, height: 1.7, rows: 3, density: clamp(this._density, 0.35, 1), seed: 88,
+    }), this._ground(O.x, O.z, Math.PI * 0.5));
+  }
+
+  _buildClutter() {
+    const f = this.factory;
+    const S = LAYOUT.shamusho;
+
+    // 菰樽 the stacked sake-cask wall — the one hit of saturated colour up here.
+    const cask = this._proto('cask', () => f.sakeCask({ seed: 141 }));
+    const C = LAYOUT.caskWall;
+    const rows = 3, per = 7;
+    for (let r = 0; r < rows; r++) {
+      const n = per - r;
+      for (let i = 0; i < n; i++) {
+        const z = lerp(-(n - 1) * 0.27, (n - 1) * 0.27, n === 1 ? 0.5 : i / (n - 1));
+        const y = this.groundY(C.x, C.z + z) + r * 0.60;
+        _m.makeRotationY(Math.PI * 0.5 + (this.rnd() - 0.5) * 0.12);
+        _m.setPosition(C.x + (this.rnd() - 0.5) * 0.03, y, C.z + z);
+        const k = 0.9 + this.rnd() * 0.2;
+        cask.place(_m, [k, k, k]);
+      }
+    }
+    this._collide(this._box(0.7, rows * 0.6, per * 0.56, C.x, this.groundY(C.x, C.z), C.z), 'wood');
+
+    const barrel = this._proto('barrel', () => f.barrel({ seed: 143 }));
+    const crate = this._proto('crate', () => f.crate({ seed: 147 }));
+    const bale = this._proto('bale', () => f.strawBale({ seed: 149 }));
+    const bucket = this._proto('bucket', () => f.bucket({}), { castShadow: false });
+    const coil = this._proto('coil', () => f.ropeCoil({}), { castShadow: false });
+
+    const drop = (proto, x, z, ry, s = 1) => {
+      _m.makeRotationY(ry);
+      _m.scale(_v.set(s, s, s));
+      _m.setPosition(x, this.groundY(x, z), z);
+      const k = 0.88 + this.rnd() * 0.26;
+      proto.place(_m, [k, k * (0.97 + this.rnd() * 0.06), k * (0.93 + this.rnd() * 0.1)]);
+    };
+
+    // The service yard behind the shamusho.
+    drop(barrel, S.x - 3.0, S.z - 3.6, 0.4);
+    drop(barrel, S.x - 3.6, S.z - 2.9, 1.7, 0.92);
+    drop(crate, S.x - 2.0, S.z - 4.2, 0.9);
+    drop(crate, S.x - 2.4, S.z - 4.0, 2.2, 0.86);
+    drop(bale, S.x + 2.4, S.z - 3.4, 0.3);
+    drop(bale, S.x + 2.7, S.z - 2.6, 1.9, 0.94);
+    drop(bucket, S.x - 4.2, S.z + 1.2, 0.7);
+    drop(coil, S.x - 3.8, S.z + 1.9, 0.0);
+
+    this._emit(f.woodpile({ width: 2.4, rows: 4, seed: 151 }),
+      this._ground(S.x + 3.2, S.z + 4.6, -Math.PI * 0.5), { layer: 'clutter' });
+
+    // Around the chōzuya: buckets, a coil, a broom leaning on a post.
+    const Cz = LAYOUT.chozuya;
+    drop(bucket, Cz.x + 2.6, Cz.z + 1.5, 1.2);
+    drop(bucket, Cz.x + 2.9, Cz.z + 1.0, 2.4, 0.9);
+    drop(coil, Cz.x - 2.4, Cz.z - 1.6, 0.5);
+    {
+      const broom = f.broom({ height: 1.45, seed: 153 });
+      _m.makeRotationY(0.6);
+      const bm = new Matrix4().makeRotationX(0.22).premultiply(_m);
+      bm.setPosition(Cz.x + 2.2, this.groundY(Cz.x + 2.2, Cz.z - 1.5), Cz.z - 1.5);
+      this._emit(broom, bm, { layer: 'clutter' });
+    }
+
+    // A few barrels and crates at the forecourt edge, doubling as arena cover.
+    const a = LAYOUT.arena;
+    drop(barrel, a.hx - 2.4, a.z + a.hz - 3.0, 0.8);
+    drop(crate, a.hx - 3.1, a.z + a.hz - 3.4, 2.1);
+    drop(bale, -a.hx + 2.6, a.z - a.hz + 2.4, 1.1);
+  }
+
+  _buildRoadside() {
+    const f = this.factory;
+    const jizo = this._proto('jizo', () => f.jizo({ height: 0.78, seed: 99 }));
+    for (let i = 0; i < 5; i++) {
+      const z = 47 + i * 3.4;
+      const x = -8.6 - noise.noise2(i * 3.1, 0.5) * 0.5;
+      _m.makeRotationY(Math.PI + (this.rnd() - 0.5) * 0.5);
+      _m.scale(_v.set(1, 1, 1).multiplyScalar(0.9 + this.rnd() * 0.24));
+      _m.setPosition(x, this.groundY(x, z) - 0.02, z);
+      const k = 0.86 + this.rnd() * 0.26;
+      jizo.place(_m, [k, k * (0.99 + this.rnd() * 0.04), k * (0.95 + this.rnd() * 0.07)]);
+    }
+
+    const cairn = this._proto('cairn', () => f.prayerStones({ count: 6, radius: 0.34, seed: 66 }));
+    const a = LAYOUT.arena;
+    const spots = [
+      [-a.hx + 3.2, a.z + 3.4], [a.hx - 3.6, a.z - 4.2],
+      [-a.hx + 2.0, a.z - 6.0], [a.hx - 2.2, a.z + 6.4],
+      [-16.0, 42.0], [15.0, 48.0], [-19.0, 56.0], [11.5, 60.0],
+    ];
+    for (const [x, z] of spots) {
+      _m.makeRotationY(this.rnd() * Math.PI * 2);
+      _m.scale(_v.set(1, 1, 1).multiplyScalar(0.82 + this.rnd() * 0.5));
+      _m.setPosition(x, this.groundY(x, z) - 0.03, z);
+      const k = 0.85 + this.rnd() * 0.3;
+      cairn.place(_m, [k, k, k * 0.98]);
+    }
+  }
+
+  _buildLeaves() {
+    const proto = this._proto('leaves', () => this.factory.fallenLeaves({ count: 5, seed: 71 }),
+      { castShadow: false, receiveShadow: true, cullDistance: 1 });
+    const n = Math.round(340 * this._density);
+    for (let i = 0; i < n; i++) {
+      // Drifts pile against the edges of paved ground, not in the middle of it.
+      const a = this.rnd() * Math.PI * 2;
+      const r = 8 + Math.pow(this.rnd(), 0.6) * 52;
+      const x = Math.cos(a) * r;
+      const z = Math.sin(a) * r + 22;
+      if (!inPlayable(x, z, -6)) continue;
+      if (Math.hypot(x, z - 12) > 66) continue;
+      _m.makeRotationY(this.rnd() * Math.PI * 2);
+      const s = 0.7 + this.rnd() * 0.8;
+      _m.scale(_v.set(s, 1, s));
+      _m.setPosition(x, this.groundY(x, z) + 0.012, z);
+      const k = 0.75 + this.rnd() * 0.5;
+      proto.place(_m, [k, k * (0.92 + this.rnd() * 0.18), k * 0.85]);
+    }
+  }
+
+  /**
+   * Guard rails: the fenced playable square, plus a ring at the plateau lip with
+   * a gap where the approach stair comes up. Invisible, but they are the only
+   * thing between the player and a 30 m fall on a mistimed dodge.
+   */
+  _buildBoundary() {
+    const half = WORLD.PLAYABLE * 0.5;
+    const y = WORLD.PLATEAU_HEIGHT;
+    for (const [x, z, w, d] of [
+      [0, half, WORLD.PLAYABLE, 1], [0, -half, WORLD.PLAYABLE, 1],
+      [half, 0, 1, WORLD.PLAYABLE], [-half, 0, 1, WORLD.PLAYABLE],
+    ]) {
+      this._collide(this._box(w, 40, d, x, y - 12, z), 'stone');
+    }
+
+    const R = LAYOUT.rimRadius;
+    const segs = 56;
+    const gap = (LAYOUT.approachGapDeg * Math.PI) / 180;
+    for (let i = 0; i < segs; i++) {
+      const a0 = (i / segs) * Math.PI * 2;
+      // Azimuth 0 is +Z, the approach; leave that arc open for the stair.
+      const rel = Math.atan2(Math.sin(a0), Math.cos(a0));
+      if (Math.abs(rel) < gap) continue;
+      const x = Math.sin(a0) * R;
+      const z = Math.cos(a0) * R;
+      const g = new BoxGeometry(0.8, 6, (2 * Math.PI * R) / segs + 0.6);
+      const m = new Matrix4().makeRotationY(a0);
+      m.setPosition(x, this.groundY(x, z) + 1.4, z);
+      g.applyMatrix4(m);
+      g.deleteAttribute('uv'); g.deleteAttribute('normal');
+      this._collide(g, 'stone');
+    }
+  }
+
+  // ------------------------------------------------------------- raw helpers
+
+  _box(w, h, d, x, y, z) {
+    const g = new BoxGeometry(w, h, d);
+    g.translate(x, y + h * 0.5, z);
+    g.deleteAttribute('uv'); g.deleteAttribute('normal');
+    return g;
+  }
+
+  _pushRaw(geometry, material, layer = 'static') {
+    normalizeGeo(geometry, CLOTH_MATERIALS.has(material));
+    geometry.computeBoundingSphere();
+    const c = geometry.boundingSphere;
+    const key = this._cellKey(layer, c ? c.center.x : 0, c ? c.center.z : 0, material);
+    let list = this._buckets.get(key);
+    if (!list) { list = []; this._buckets.set(key, list); }
+    list.push(geometry);
+  }
+
+  _tint(geo, r, g, b) {
+    normalizeGeo(geo);
+    const col = geo.getAttribute('color');
+    for (let i = 0; i < col.count; i++) col.setXYZ(i, col.getX(i) * r, col.getY(i) * g, col.getZ(i) * b);
+    return geo;
+  }
+
+  _shade(geo, fn) {
+    normalizeGeo(geo);
+    const pos = geo.getAttribute('position');
+    const col = geo.getAttribute('color');
+    for (let i = 0; i < col.count; i++) {
+      const k = fn(pos.getX(i), pos.getY(i), pos.getZ(i));
+      col.setXYZ(i, col.getX(i) * k, col.getY(i) * k, col.getZ(i) * k);
+    }
+    return geo;
+  }
+
+  // =====================================================================
+  //  REALIZE
+  // =====================================================================
+
+  _materialFor(name) {
+    if (name === '__ember') return this.factory.emberMaterial;
+    if (name === '__water') return this.factory.waterMaterial;
+    return this.factory.material(name);
+  }
+
+  _realizeBucket(key) {
+    const list = this._buckets.get(key);
+    if (!list || !list.length) return;
+    const [layer, cx, cz, material] = key.split('|');
+    let geo;
+    try {
+      geo = list.length === 1 ? list[0] : mergeGeometries(list, false);
+    } catch (err) {
+      console.error(`[level] merge failed for ${key}`, err);
+      return;
+    }
+    if (!geo) return;
+    geo.computeBoundingSphere();
+    geo.computeBoundingBox();
+
+    const mesh = new Mesh(geo, this._materialFor(material));
+    mesh.name = `level:${layer}:${cx},${cz}:${material}`;
+    mesh.castShadow = material !== '__water' && material !== '__ember';
+    mesh.receiveShadow = material !== '__ember';
+    mesh.matrixAutoUpdate = false;
+    mesh.frustumCulled = true;
+    this.root.add(mesh);
+
+    const s = geo.boundingSphere || new Sphere();
+    this.cells.push({
+      mesh, layer,
+      x: s.center.x, y: s.center.y, z: s.center.z, r: s.radius,
+    });
+    this._buckets.set(key, null);
+  }
+
+  _realizeSilhouette() {
+    if (!this._silhouettes.length) return;
+    const byMat = new Map();
+    for (const s of this._silhouettes) {
+      let l = byMat.get(s.material);
+      if (!l) { l = []; byMat.set(s.material, l); }
+      l.push(s.geometry);
+    }
+    const geos = [];
+    // One material for the far LOD: it is a silhouette, nothing more.
+    for (const [, l] of byMat) for (const g of l) geos.push(g);
+    const merged = mergeGeometries(geos, false);
+    if (!merged) return;
+    merged.computeBoundingSphere();
+    const mesh = new Mesh(merged, this._materialFor('cedar'));
+    mesh.name = 'level:far-silhouette';
+    mesh.castShadow = true;
+    mesh.receiveShadow = false;
+    mesh.matrixAutoUpdate = false;
+    mesh.visible = false;
+    this.root.add(mesh);
+    this.farMesh = mesh;
+    this._silhouettes.length = 0;
+  }
+
+  _realizeInstances() {
+    for (const [key, proto] of this._protos) {
+      const meshes = proto.realize(this.rnd);
+      for (const m of meshes) this.root.add(m);
+      if (!meshes.length) continue;
+      const s = meshes[0].boundingSphere || new Sphere();
+      this.instances.push({
+        key, proto, meshes, full: proto.count,
+        cull: proto.cullDistance > 0,
+        x: s.center.x, y: s.center.y, z: s.center.z, r: s.radius,
+      });
+    }
+  }
+
+  _realizePhysics() {
+    const phys = this.ctx?.physics;
+    if (!phys?.addStatic) return;
+    const layerId = phys.LAYER?.STATIC ?? phys.LAYER?.WORLD ?? undefined;
+    for (const [key, list] of this._colliders) {
+      if (!list || !list.length) continue;
+      const [surface, walkable] = key.split('|');
+      let geo;
+      try {
+        geo = list.length === 1 ? list[0] : mergeGeometries(list, false);
+      } catch (err) {
+        console.error(`[level] collider merge failed for ${key}`, err);
+        continue;
+      }
+      if (!geo) continue;
+      geo.computeBoundingSphere();
+      try {
+        phys.addStatic({
+          type: 'triangleMesh',
+          geometry: geo,
+          matrix: new Matrix4(),
+          surface,
+          walkable: walkable === '1',
+          layer: layerId,
+        });
+      } catch (err) {
+        console.error('[level] physics.addStatic rejected a collider', err);
+      }
+    }
+    this._colliders.clear();
+  }
+
+  /**
+   * Hand the lantern flames to the lighting system, nearest-to-the-arena first
+   * and capped by tier — a hundred point lights would be a hundred extra passes.
+   */
+  _realizeLights() {
+    const lighting = this.ctx?.lighting;
+    if (!lighting?.requestLight || this._maxPropLights <= 0) { this._lightRequests.length = 0; return; }
+    const a = LAYOUT.arena;
+    const ay = WORLD.PLATEAU_HEIGHT;
+    this._lightRequests.sort((p, q) =>
+      (Math.hypot(p.x - a.x, p.z - a.z) - Math.hypot(q.x - a.x, q.z - a.z)));
+    const n = Math.min(this._lightRequests.length, this._maxPropLights);
+    for (let i = 0; i < n; i++) {
+      const l = this._lightRequests[i];
+      try {
+        lighting.requestLight({
+          position: new Vector3(l.x, l.y, l.z),
+          color: l.color, intensity: l.intensity, distance: l.distance,
+          decay: 2, flicker: l.flicker, castShadow: false, priority: 1 - i / n,
+        });
+      } catch { /* lighting may not take prop lights on this tier */ }
+    }
+    this._lightRequests.length = 0;
+  }
+
+  _countStats() {
+    let calls = 0, tris = 0;
+    for (const c of this.cells) {
+      calls++;
+      const idx = c.mesh.geometry.index;
+      tris += idx ? idx.count / 3 : 0;
+    }
+    for (const inst of this.instances) {
+      calls += inst.meshes.length;
+      for (const m of inst.meshes) {
+        const idx = m.geometry.index;
+        tris += (idx ? idx.count / 3 : 0) * m.count;
+      }
+    }
+    this.stats.drawCalls = calls;
+    this.stats.triangles = Math.round(tris);
+    this.stats.cells = this.cells.length;
+    this.stats.instances = this.instances.length;
+    if (this.ctx?.debug) console.info('[level] built', this.stats);
+  }
+
+  // =====================================================================
+  //  SPAWNS / ZONES / INTERACTABLES
+  // =====================================================================
+
+  /** Yaw such that a −Z-forward entity at (x,z) looks at (tx,tz). */
+  _faceYaw(x, z, tx, tz) {
+    return Math.atan2(-(tx - x), -(tz - z));
+  }
+
+  _spawnPoint(id, x, z, tag, lookX = LAYOUT.arena.x, lookZ = LAYOUT.arena.z) {
+    return {
+      id, tag,
+      position: new Vector3(x, this.groundY(x, z), z),
+      yaw: this._faceYaw(x, z, lookX, lookZ),
+    };
+  }
+
+  _buildSpawnPoints() {
+    const a = LAYOUT.arena;
+    const t3 = LAYOUT.torii[2];
+    const enemy = [
+      this._spawnPoint('torii_c', 0, t3.z + 1.5, 'torii'),
+      this._spawnPoint('torii_l', -3.2, t3.z + 2.4, 'torii'),
+      this._spawnPoint('torii_r', 3.2, t3.z + 2.4, 'torii'),
+      this._spawnPoint('east', a.hx + 1.0, a.z + 2.0, 'flank'),
+      this._spawnPoint('west', -a.hx - 1.0, a.z - 1.0, 'flank'),
+      this._spawnPoint('haiden_l', -6.0, a.z - a.hz - 1.6, 'inner'),
+      this._spawnPoint('haiden_r', 6.0, a.z - a.hz - 1.6, 'inner'),
+      this._spawnPoint('bell', LAYOUT.bellTower.x - 1.5, LAYOUT.bellTower.z, 'flank'),
+      this._spawnPoint('chozuya', LAYOUT.chozuya.x + 2.0, LAYOUT.chozuya.z, 'flank'),
+      this._spawnPoint('stair', 0, LAYOUT.torii[0].z + 2.0, 'stair'),
+    ];
+
+    const pt = (x, z) => new Vector3(x, this.groundY(x, z), z);
+
+    this.spawnPoints = {
+      /** Where the player materialises: below the outer torii, facing the climb. */
+      player: {
+        position: pt(0, LAYOUT.torii[0].z + 5.0),
+        yaw: 0,                                   // −Z forward: straight up the axis
+      },
+      arena: {
+        center: pt(a.x, a.z),
+        halfX: a.hx, halfZ: a.hz,
+        radius: Math.hypot(a.hx, a.hz),
+      },
+      enemy,
+      byId: new Map(enemy.map((e) => [e.id, e])),
+      patrols: [
+        {
+          id: 'forecourt-loop', loop: true, speed: 1.4,
+          points: [
+            pt(-a.hx + 2.5, a.z + a.hz - 2.5), pt(a.hx - 2.5, a.z + a.hz - 2.5),
+            pt(a.hx - 2.5, a.z - a.hz + 2.5), pt(-a.hx + 2.5, a.z - a.hz + 2.5),
+          ],
+        },
+        {
+          id: 'approach-walk', loop: false, speed: 1.1,
+          points: [pt(0, LAYOUT.torii[0].z), pt(0, LAYOUT.torii[1].z), pt(0, LAYOUT.torii[2].z), pt(0, a.z + 2)],
+        },
+        {
+          id: 'overlook-watch', loop: true, speed: 1.0,
+          points: [
+            pt(LAYOUT.overlook.x - 3, LAYOUT.overlook.z), pt(LAYOUT.overlook.x + 3, LAYOUT.overlook.z + 1),
+            pt(LAYOUT.bridge.x, LAYOUT.bridge.z),
+          ],
+        },
+      ],
+      rest: [
+        { id: 'chozuya', position: this._chozuyaPos ? this._chozuyaPos.clone() : pt(LAYOUT.chozuya.x, LAYOUT.chozuya.z + 2) },
+        { id: 'overlook', position: pt(LAYOUT.overlook.x - 1.4, LAYOUT.overlook.z - 1.6) },
+      ],
+    };
+  }
+
+  _buildInteractables() {
+    const bell = this._bellPos || new Vector3(LAYOUT.bellTower.x, WORLD.PLATEAU_HEIGHT + 2, LAYOUT.bellTower.z);
+    const ema = this._emaPos || new Vector3(LAYOUT.emaRack.x, WORLD.PLATEAU_HEIGHT + 1.4, LAYOUT.emaRack.z);
+    const rest = this.spawnPoints?.rest?.[0]?.position
+      || new Vector3(LAYOUT.chozuya.x, WORLD.PLATEAU_HEIGHT, LAYOUT.chozuya.z);
+
+    this.interactables = [
+      {
+        id: 'bell', kind: 'bell', position: bell.clone(), radius: 2.8,
+        prompt: '鐘を撞く — Ring the bell', used: false,
+      },
+      {
+        id: 'ema', kind: 'read', position: ema.clone(), radius: 2.0,
+        prompt: '絵馬を読む — Read the ema', used: false,
+        lines: [
+          '「息子が無事に帰りますように」',
+          '"Let my son come home."',
+          '「刀が折れませんように」',
+          '"May the blade not break."',
+        ],
+        cursor: 0,
+      },
+      {
+        id: 'rest', kind: 'rest', position: rest.clone(), radius: 2.4,
+        prompt: '手を清める — Purify your hands', used: false,
+      },
+    ];
+  }
+
+  /**
+   * Nearest interactable within its own radius, or null. Zero allocation — this
+   * runs from the HUD every frame.
+   */
+  nearestInteractable(position) {
+    if (!position) return null;
+    let best = null, bestD = Infinity;
+    for (let i = 0; i < this.interactables.length; i++) {
+      const it = this.interactables[i];
+      const dx = it.position.x - position.x;
+      const dy = it.position.y - position.y;
+      const dz = it.position.z - position.z;
+      const d = dx * dx + dz * dz + dy * dy * 0.25;
+      if (d < it.radius * it.radius && d < bestD) { bestD = d; best = it; }
+    }
+    return best;
+  }
+
+  /** Fire an interactable by id. Returns true if something happened. */
+  interact(id) {
+    const it = this.interactables.find((x) => x.id === id);
+    if (!it) return false;
+    if (it.kind === 'bell') return this.ringBell();
+    if (it.kind === 'read') {
+      const line = it.lines[it.cursor % it.lines.length];
+      it.cursor++;
+      this.ctx?.bus?.emit('objective', { text: line, sub: '絵馬 — a votive plaque' });
+      this.ctx?.audio?.play?.('uiSoft');
+      return true;
+    }
+    if (it.kind === 'rest') {
+      this.ctx?.audio?.play?.('water');
+      this.ctx?.bus?.emit('objective', { text: '身を清めた', sub: 'Purified' });
+      const p = this.ctx?.player;
+      if (p && typeof p.health === 'number') p.health = Math.min(p.maxHealth ?? p.health, p.health + 30);
+      return true;
+    }
+    return false;
+  }
+
+  /** Ringing it is both an audio cue and the trigger for the second wave set. */
+  ringBell() {
+    const it = this.interactables.find((x) => x.id === 'bell');
+    if (it) it.used = true;
+    this.ctx?.audio?.play?.('templeBell');
+    this.ctx?.bus?.emit('camera-shake', { amount: 0.12, duration: 0.9, freq: 6 });
+    const em = this.ctx?.enemies;
+    if (em?.alertAll) { try { em.alertAll(this._bellPos); } catch { /* optional */ } }
+    this._fireTrigger('bell');
+    return true;
+  }
+
+  /**
+   * Which acoustic space a point is in.
+   * `'forest' | 'stoneCourtyard' | 'interiorWood' | 'valley'`
+   */
+  reverbZoneAt(position) {
+    if (!position) return 'forest';
+    const x = position.x, y = position.y, z = position.z;
+    const plateau = WORLD.PLATEAU_HEIGHT;
+
+    // Under a roof and above its floor: interior.
+    for (const L of [LAYOUT.haiden, LAYOUT.honden, LAYOUT.kagura, LAYOUT.shamusho]) {
+      const hw = L.w * 0.5 + 1.0, hd = L.d * 0.5 + 1.0;
+      if (x > L.x - hw && x < L.x + hw && z > L.z - hd && z < L.z + hd
+        && y > plateau + L.floor - 0.6 && y < plateau + L.floor + 6.5) return 'interiorWood';
+    }
+    if (Math.hypot(x - LAYOUT.bellTower.x, z - LAYOUT.bellTower.z) < 4.0 && y < plateau + 6) return 'interiorWood';
+
+    const d = Math.hypot(x, z);
+    if (y < plateau - 4.5 || d > LAYOUT.rimRadius + 4) return 'valley';
+
+    const a = LAYOUT.arena;
+    if (x > a.x - a.hx - 2 && x < a.x + a.hx + 2 && z > a.z - a.hz - 12 && z < a.z + a.hz + 2) return 'stoneCourtyard';
+    if (Math.abs(x) < 7 && z > a.z && z < LAYOUT.stairTop + 4) return 'stoneCourtyard';
+
+    return 'forest';
+  }
+
+  // =====================================================================
+  //  ENCOUNTERS
+  // =====================================================================
+
+  _advanceEncounter(index) {
+    const e = ENCOUNTERS[index];
+    if (!e) { this._enc.active = null; return; }
+    this._enc.index = index;
+    this._enc.active = e;
+    this._enc.t = 0;
+    this._enc.waveIndex = 0;
+    this._enc.armed = e.trigger?.type === 'start';
+    this._enc.cleared = false;
+    if (this._enc.armed && e.objective) this.ctx?.bus?.emit('objective', e.objective);
+  }
+
+  /** Public: jump straight to a named encounter (debug and cinematics use this). */
+  startEncounter(id) {
+    const i = ENCOUNTERS.findIndex((e) => e.id === id);
+    if (i < 0) return false;
+    this._advanceEncounter(i);
+    this._enc.armed = true;
+    const e = ENCOUNTERS[i];
+    if (e.objective) this.ctx?.bus?.emit('objective', e.objective);
+    return true;
+  }
+
+  _fireTrigger(name) {
+    const e = this._enc.active;
+    if (e && !this._enc.armed && e.trigger?.type === 'event' && e.trigger.name === name) {
+      this._enc.armed = true;
+      this._enc.t = 0;
+      if (e.objective) this.ctx?.bus?.emit('objective', e.objective);
+    }
+  }
+
+  _tickEncounter(dt) {
+    const st = this._enc;
+    const e = st.active;
+    if (!e) return;
+
+    if (!st.armed) {
+      const tr = e.trigger;
+      if (tr?.type === 'zone') {
+        const p = this.ctx?.player?.position || this.ctx?.player?.root?.position;
+        if (p) {
+          const dx = p.x - tr.x, dz = p.z - tr.z;
+          if (dx * dx + dz * dz < tr.r * tr.r) {
+            st.armed = true;
+            st.t = 0;
+            if (e.objective) this.ctx?.bus?.emit('objective', e.objective);
+          }
+        }
+      }
+      return;
+    }
+
+    st.t += dt;
+    while (st.waveIndex < e.waves.length && st.t >= e.waves[st.waveIndex].at) {
+      const wave = e.waves[st.waveIndex++];
+      for (const [archetype, pointId, count] of wave.spawn) {
+        for (let i = 0; i < count; i++) this._spawnEnemy(archetype, pointId, i);
+      }
+      if (wave.objective) this.ctx?.bus?.emit('objective', wave.objective);
+    }
+
+    if (st.waveIndex >= e.waves.length && !st.cleared) {
+      const alive = this._aliveEnemies();
+      if (alive === 0 && st.t > (e.waves.length ? 1.5 : 0.2)) {
+        st.cleared = true;
+        if (e.clearObjective) this.ctx?.bus?.emit('objective', e.clearObjective);
+        const next = e.next ? ENCOUNTERS.findIndex((x) => x.id === e.next) : -1;
+        if (next >= 0) this._advanceEncounter(next);
+        else st.active = null;
+      }
+    }
+  }
+
+  _aliveEnemies() {
+    const em = this.ctx?.enemies;
+    if (!em) return 0;
+    if (typeof em.aliveCount === 'number') return em.aliveCount;
+    if (typeof em.aliveCount === 'function') return em.aliveCount();
+    const list = em.entities || em.enemies || em.active;
+    if (Array.isArray(list)) {
+      let n = 0;
+      for (let i = 0; i < list.length; i++) if (list[i]?.isAlive) n++;
+      return n;
+    }
+    return 0;
+  }
+
+  _spawnEnemy(archetype, pointId, offset = 0) {
+    const p = this.spawnPoints?.byId?.get(pointId);
+    if (!p) return;
+    const jitter = offset === 0 ? 0 : (offset % 2 === 0 ? 1 : -1) * (0.9 + offset * 0.35);
+    _v.copy(p.position);
+    _v.x += Math.cos(p.yaw) * jitter;
+    _v.z -= Math.sin(p.yaw) * jitter;
+    _v.y = this.groundY(_v.x, _v.z);
+
+    const em = this.ctx?.enemies;
+    const fn = em?.spawn || em?.spawnEnemy || em?.spawnAt;
+    if (typeof fn === 'function') {
+      try {
+        fn.call(em, { archetype, type: archetype, position: _v.clone(), yaw: p.yaw, spawnPoint: pointId });
+        return;
+      } catch (err) { console.error('[level] enemy spawn failed', err); }
+    }
+    // EnemyManager not up yet — hold it and drain later.
+    this.spawnQueue.push({ archetype, position: _v.clone(), yaw: p.yaw, spawnPoint: pointId });
+  }
+
+  _drainSpawnQueue() {
+    if (!this.spawnQueue.length) return;
+    const em = this.ctx?.enemies;
+    const fn = em?.spawn || em?.spawnEnemy || em?.spawnAt;
+    if (typeof fn !== 'function') return;
+    for (let i = 0; i < this.spawnQueue.length; i++) {
+      const s = this.spawnQueue[i];
+      try { fn.call(em, { archetype: s.archetype, type: s.archetype, position: s.position, yaw: s.yaw, spawnPoint: s.spawnPoint }); }
+      catch (err) { console.error('[level] queued spawn failed', err); }
+    }
+    this.spawnQueue.length = 0;
+  }
+
+  // =====================================================================
+  //  FRAME
+  // =====================================================================
+
+  update(dt, elapsed, rawDt) {
+    if (!this._built) return;
+
+    // Lantern flame breathing — one uniform write, shared by every firebox.
+    const ember = this.factory._ember;
+    if (ember) {
+      const f = 0.82
+        + Math.sin(elapsed * 5.7) * 0.10
+        + Math.sin(elapsed * 13.3 + 1.7) * 0.06
+        + Math.sin(elapsed * 27.1) * 0.03;
+      ember.emissiveIntensity = this._emberBase * f;
+    }
+
+    this._tickEncounter(dt);
+    if (this.spawnQueue.length) this._drainSpawnQueue();
+
+    this._lodTimer += rawDt || dt;
+    if (this._lodTimer >= 0.13) {
+      this._lodTimer = 0;
+      this._updateLOD();
+    }
+  }
+
+  /**
+   * Distance LOD. Fine clutter drops out past `_clutterDist`; past `_farDist` the
+   * entire shrine collapses to one silhouette mesh, which is what the player sees
+   * from the valley floor in the establishing shot.
+   */
+  _updateLOD() {
+    const cam = this.ctx?.camera;
+    if (!cam) return;
+    const cx = cam.position.x, cy = cam.position.y, cz = cam.position.z;
+
+    const far = Math.hypot(cx - this._shrineCenter.x, cz - this._shrineCenter.z) > this._farDist;
+    if (far !== this._farActive) {
+      this._farActive = far;
+      if (this.farMesh) this.farMesh.visible = far;
+    }
+
+    const clutterSq = this._clutterDist * this._clutterDist;
+    for (let i = 0; i < this.cells.length; i++) {
+      const c = this.cells[i];
+      if (this._farActive) { c.mesh.visible = false; continue; }
+      if (c.layer !== 'clutter') { c.mesh.visible = true; continue; }
+      const dx = cx - c.x, dy = cy - c.y, dz = cz - c.z;
+      const d = Math.max(0, Math.sqrt(dx * dx + dy * dy + dz * dz) - c.r);
+      c.mesh.visible = d * d < clutterSq;
+    }
+
+    for (let i = 0; i < this.instances.length; i++) {
+      const inst = this.instances[i];
+      if (this._farActive) {
+        for (let k = 0; k < inst.meshes.length; k++) inst.meshes[k].visible = false;
+        continue;
+      }
+      let vis = true;
+      if (inst.cull) {
+        const dx = cx - inst.x, dy = cy - inst.y, dz = cz - inst.z;
+        const d = Math.max(0, Math.sqrt(dx * dx + dy * dy + dz * dz) - inst.r);
+        vis = d < this._clutterDist * 2.2;
+      }
+      for (let k = 0; k < inst.meshes.length; k++) inst.meshes[k].visible = vis;
+    }
+  }
+
+  applyQuality(quality) {
+    this._applyQualityKnobs(quality);
+    // Thin the scatter rather than rebuilding it: entries were shuffled at
+    // realize time, so trimming the tail stays spatially even.
+    for (const inst of this.instances) {
+      const n = Math.round(inst.full * clamp(this._density / 1.0, 0.15, 1));
+      inst.proto.setCount(inst.key === 'leaves' ? n : inst.full);
+    }
+    this._lodTimer = 1;
+  }
+
+  dispose() {
+    for (const c of this.cells) {
+      c.mesh.geometry?.dispose?.();
+      this.root.remove(c.mesh);
+    }
+    this.cells.length = 0;
+    for (const inst of this.instances) inst.proto.dispose();
+    this.instances.length = 0;
+    if (this.farMesh) { this.farMesh.geometry?.dispose?.(); this.root.remove(this.farMesh); }
+    this.farMesh = null;
+    this._protos.clear();
+    this._buckets.clear();
+    this._colliders.clear();
+    this.factory.dispose();
+    this.ctx?.scene?.remove(this.root);
+    this._built = false;
+  }
 }
+
+export default Level;

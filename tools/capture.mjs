@@ -145,7 +145,14 @@ async function main() {
     let booted = true;
     const bootStarted = Date.now();
     try {
-      await page.waitForFunction('window.__kagerouReady === true', { timeout: 420000 });
+      // `polling: 'raf'` is Playwright's default, and rAF does not tick while the main
+      // thread is inside `renderer.compile()` — under SwiftShader that is long enough to
+      // look like a hang even though the page is healthy. Poll on a timer instead.
+      await page.waitForFunction(
+        'window.__kagerouReady === true',
+        undefined,
+        { timeout: 420000, polling: 500 },
+      );
     } catch {
       booted = false;
       const stalledAt = await page

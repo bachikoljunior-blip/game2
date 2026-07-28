@@ -256,6 +256,18 @@ void kagFoliageVertex() {
   float dist = distance( base, uCamPos );
   vKagFade = smoothstep( uFadeNear.x, uFadeNear.y, dist ) * ( 1.0 - smoothstep( uFadeFar.x, uFadeFar.y, dist ) );
 
+  // Collapse an out-of-range instance to a single point. The dither in the fragment shader
+  // would discard it anyway, but a degenerate triangle is never rasterised at all — this is
+  // what lets one buffer hold every tree in the valley and still cost only the near ones.
+  if ( vKagFade <= 0.0 ) {
+    kagPosG = base;
+    kagNrmG = vec3( 0.0, 1.0, 0.0 );
+    vKagT = 0.0;
+    vKagTint = aFoliageC.rgb;
+    vKagWorld = base;
+    return;
+  }
+
   // ---- wind ----------------------------------------------------------------
   // The gust field is Weather's, sampled at the plant's root. kagerouBend with h = 1
   // gives the tip deflection for this stiffness; the falloff along the stem is ours
@@ -465,21 +477,6 @@ function makeInstanced(base, capacity) {
   return g;
 }
 
-/** Grow an instanced geometry's buffers in place (quality changes, denser tiers). */
-function resizeInstanced(g, capacity) {
-  if (g.userData.capacity >= capacity) return g;
-  for (const key of ['aFoliageA', 'aFoliageB', 'aFoliageC']) {
-    const attr = g.getAttribute(key);
-    const next = new Float32Array(capacity * 4);
-    next.set(attr.array.subarray(0, Math.min(attr.array.length, next.length)));
-    attr.array = next;
-    attr.count = capacity;
-    attr.needsUpdate = true;
-  }
-  g.userData.capacity = capacity;
-  return g;
-}
-
 // =============================================================================
 // 4. Procedural geometry
 // =============================================================================
@@ -651,7 +648,7 @@ function buildFrondClumpGeometry(fronds = 7, lean = 0.55, rise = 0.62, seed = 3)
  */
 const TREE_SPECIES = {
   sakura: {
-    height: 6.4, trunkRadius: 0.185, depth: 4, segs: 5, sides: 6,
+    height: 6.4, trunkRadius: 0.185, depth: 4, segs: 5, sides: 5,
     children: [3, 3, 3, 2], split: 0.62, splitJitter: 0.26, lengthRatio: 0.72,
     radiusRatio: 0.66, upBias: 0.10, gravity: -0.055, wobble: 0.14, trunkFrac: 0.30,
     phyllotaxis: 2.39996, leavesPerTip: 5, leafSize: 0.95, leafSpread: 0.60,
@@ -666,7 +663,7 @@ const TREE_SPECIES = {
   },
   cedar: {
     height: 13.5, trunkRadius: 0.32, depth: 2, segs: 7, sides: 6,
-    children: [6, 3], split: 1.05, splitJitter: 0.18, lengthRatio: 0.42,
+    children: [3, 2], split: 1.05, splitJitter: 0.18, lengthRatio: 0.42,
     radiusRatio: 0.34, upBias: 0.02, gravity: -0.12, wobble: 0.07, trunkFrac: 1.0,
     phyllotaxis: 1.2566, leavesPerTip: 4, leafSize: 0.62, leafSpread: 0.34,
     leafFrom: 1, wood: 0x4b3a2c, foliage: 0x2f4a33,
@@ -754,7 +751,7 @@ function buildTree(spec, seed) {
 
     if (leader) {
       // Laterals spaced up the trunk, shorter toward the top: the classic sugi cone.
-      const whorlCount = 7;
+      const whorlCount = 4;
       for (let w = 0; w < whorlCount; w++) {
         const ft = 0.22 + 0.76 * (w / (whorlCount - 1));
         const anchor = [
@@ -762,7 +759,7 @@ function buildTree(spec, seed) {
           p0[1] + (cur[1] - p0[1]) * ft,
           p0[2] + (cur[2] - p0[2]) * ft,
         ];
-        const branches = 5;
+        const branches = 3;
         for (let i = 0; i < branches; i++) {
           const a = (i / branches) * Math.PI * 2 + w * spec.phyllotaxis;
           const outward = Math.sin(spec.split + (rnd() - 0.5) * spec.splitJitter);
@@ -1645,7 +1642,7 @@ export class FoliageSystem {
     }
 
     // Fade windows: LODs partition space by tile, so the only real fade is the outer edge.
-    const maxH = 1.15;
+    const maxH = 2.2;
     this._grassMat[0].mat.userData.kag.uFadeFar.value.set(radius * 1.6, radius * 1.8);
     this._grassMat[1].mat.userData.kag.uFadeFar.value.set(radius * 1.6, radius * 1.8);
     this._grassMat[2].mat.userData.kag.uFadeFar.value.set(radius * 0.86, radius * 1.02);
@@ -1719,7 +1716,6 @@ export class FoliageSystem {
   _emitGrass() {
     const g = this._grass;
     if (!g || !g.enabled) return;
-    const cam = this.ctx.camera;
 
     for (const bucket of g.buckets) {
       let off = 0;
@@ -1762,7 +1758,6 @@ export class FoliageSystem {
       }
     }
     g.emitDirty = false;
-    if (cam) { /* nothing else to do; the ring is authored in world space */ }
   }
 
   /** Grid recentring + a budgeted generation queue. Called once per frame from update(). */
@@ -2261,6 +2256,11 @@ ${WIND_GLSL}
 
   vKagFade = smoothstep( uFadeNear.x, uFadeNear.y, len ) * ( 1.0 - smoothstep( uFadeFar.x, uFadeFar.y, len ) );
   vKagTint = aFoliageC.rgb;
+  vMapUv = vec2( 0.0 );
+
+  if ( vKagFade <= 0.0 ) {
+    kagPosG = base;      // degenerate: never rasterised
+  } else {
 
   // Even a distant grove has to breathe on the same front as the near culms.
   vec3 w = kagerouBend( base, 1.0, 2.4 );
@@ -2275,6 +2275,7 @@ ${WIND_GLSL}
   float cellIdx = floor( mod( az / KAG_TAU * uAtlas.x + 0.5, uAtlas.x ) );
   vec2 q = position.xy + 0.5;
   vMapUv = vec2( ( q.x + cellIdx ) / uAtlas.x, ( q.y + aFoliageC.w ) / uAtlas.y );
+  }
 }
 `;
 
@@ -2324,9 +2325,9 @@ ${WIND_GLSL}
     const approach = (WORLD.APPROACH_AZIMUTH * Math.PI) / 180;
 
     const bias = {
-      cedar: { ax: Math.sin(ridge), az: Math.cos(ridge), weight: 0.55, count: 150, near: 40, far: 300, hMin: 9, hMax: 17 },
-      sakura: { ax: Math.sin(approach), az: Math.cos(approach), weight: 0.35, count: 54, near: 14, far: 130, hMin: 4.5, hMax: 8.5 },
-      momiji: { ax: Math.sin(valley), az: Math.cos(valley), weight: 0.40, count: 76, near: 12, far: 160, hMin: 3.2, hMax: 6.4 },
+      cedar: { ax: Math.sin(ridge), az: Math.cos(ridge), weight: 0.55, count: 110, near: 34, far: 300, hMin: 9, hMax: 17 },
+      sakura: { ax: Math.sin(approach), az: Math.cos(approach), weight: 0.35, count: 48, near: 14, far: 130, hMin: 4.5, hMax: 8.5 },
+      momiji: { ax: Math.sin(valley), az: Math.cos(valley), weight: 0.40, count: 64, near: 12, far: 160, hMin: 3.2, hMax: 6.4 },
     };
 
     this.petalEmitters.length = 0;
@@ -2691,36 +2692,38 @@ vCanopyG = cg;
    * Gather up to 8 characters into the uniform array. Nearest first, so on a crowded
    * field the blades part around whoever the player can actually see.
    */
+  _addCharacter(e, k, arr, cx, cz, maxD2) {
+    if (k >= MAX_CHARACTERS || !e) return k;
+    if (e.isAlive === false) return k;
+    const p = e.position || (e.root && e.root.position);
+    if (!p) return k;
+    const dx = p.x - cx, dz = p.z - cz;
+    if (dx * dx + dz * dz > maxD2) return k;
+    const o = k * 4;
+    arr[o] = p.x; arr[o + 1] = p.y; arr[o + 2] = p.z;
+    // Influence radius is generous: you want to see the parting ahead of the feet.
+    arr[o + 3] = Math.max(e.radius || 0.4, 0.3) * 3.4;
+    return k + 1;
+  }
+
   _updateCharacters() {
     const arr = this.uniforms.uChars.value;
     const cam = this.ctx.camera;
     const cx = cam ? cam.position.x : 0;
     const cz = cam ? cam.position.z : 0;
     const maxD = (this.ctx.quality?.grassRadius || 34) + 10;
+    const maxD2 = maxD * maxD;
 
-    let k = 0;
-    const add = (e) => {
-      if (k >= MAX_CHARACTERS || !e) return;
-      if (e.isAlive === false) return;
-      const p = e.position || e.root?.position;
-      if (!p) return;
-      const dx = p.x - cx, dz = p.z - cz;
-      if (dx * dx + dz * dz > maxD * maxD) return;
-      const o = k * 4;
-      arr[o] = p.x; arr[o + 1] = p.y; arr[o + 2] = p.z;
-      // Influence radius is generous: you want to see the parting ahead of the feet.
-      arr[o + 3] = Math.max(e.radius || 0.4, 0.3) * 3.4;
-      k++;
-    };
-
-    add(this.ctx.player);
+    let k = this._addCharacter(this.ctx.player, 0, arr, cx, cz, maxD2);
     const en = this.ctx.enemies;
     const list = (en && (en.active || en.enemies || en.list)) || null;
     if (Array.isArray(list)) {
-      for (let i = 0; i < list.length && k < MAX_CHARACTERS; i++) add(list[i]);
+      for (let i = 0; i < list.length && k < MAX_CHARACTERS; i++) {
+        k = this._addCharacter(list[i], k, arr, cx, cz, maxD2);
+      }
     }
     for (let i = 0; i < this._extraCharacters.length && k < MAX_CHARACTERS; i++) {
-      add(this._extraCharacters[i]);
+      k = this._addCharacter(this._extraCharacters[i], k, arr, cx, cz, maxD2);
     }
     for (; k < MAX_CHARACTERS; k++) arr[k * 4 + 3] = 0;
   }

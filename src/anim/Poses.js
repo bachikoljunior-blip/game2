@@ -2148,6 +2148,12 @@ function clip(name, duration, keys, opts) {
     travel: o.travel ? Object.freeze(o.travel) : null,
     /** Default fade-in when this clip is played without an explicit one. */
     fade: o.fade !== undefined ? o.fade : 0.14,
+    /**
+     * Hold the final pose at full weight instead of releasing the layer when the
+     * clip ends. A guard that fades back to idle is not a guard, and a corpse that
+     * stands up is not a corpse.
+     */
+    hold: !!o.hold,
     keys: Object.freeze(keys.map((k) => Object.freeze({
       t: k.t, pose: k.pose, ease: k.ease || 'smoother',
     }))),
@@ -2526,7 +2532,7 @@ def(clip('guard', 0.30, [
   { t: 0.000, pose: idle_seigan, ease: 'out' },
   { t: 0.130, pose: guard_high, ease: 'back' },
   { t: 0.300, pose: guard_high, ease: 'smoother' },
-], { layer: L_UPPER, mask: 'upper', fade: 0.09, events: [{ t: 0.10, name: 'guard-up' }] }));
+], { layer: L_UPPER, mask: 'upper', fade: 0.09, hold: true, events: [{ t: 0.10, name: 'guard-up' }] }));
 
 def(clip('guard_impact', 0.30, [
   { t: 0.000, pose: guard_high, ease: 'in' },
@@ -2699,7 +2705,7 @@ def(clip('death_forward', 1.70, [
   { t: 1.150, pose: death_f_end, ease: 'in' },
   { t: 1.700, pose: death_f_end, ease: 'hold' },
 ], {
-  layer: L_ACTION, fade: 0.05,
+  layer: L_ACTION, fade: 0.05, hold: true,
   events: [
     { t: 0.040, name: 'death-start' },
     { t: 0.740, name: 'body-impact' },
@@ -2716,7 +2722,7 @@ def(clip('death_back', 1.80, [
   { t: 1.220, pose: death_b_end, ease: 'in' },
   { t: 1.800, pose: death_b_end, ease: 'hold' },
 ], {
-  layer: L_ACTION, fade: 0.05,
+  layer: L_ACTION, fade: 0.05, hold: true,
   events: [
     { t: 0.040, name: 'death-start' },
     { t: 0.820, name: 'body-impact' },
@@ -2733,7 +2739,7 @@ def(clip('death_kneel', 2.10, [
   { t: 1.560, pose: death_k_end, ease: 'in' },
   { t: 2.100, pose: death_k_end, ease: 'hold' },
 ], {
-  layer: L_ACTION, fade: 0.06,
+  layer: L_ACTION, fade: 0.06, hold: true,
   events: [
     { t: 0.040, name: 'death-start' },
     { t: 0.650, name: 'body-impact' },
@@ -2775,7 +2781,7 @@ def(clip('execution_victim', 2.30, [
   { t: 1.900, pose: exec_v_fall, ease: 'in' },
   { t: 2.300, pose: exec_v_fall, ease: 'hold' },
 ], {
-  layer: L_ACTION, fade: 0.14,
+  layer: L_ACTION, fade: 0.14, hold: true,
   events: [
     { t: 0.020, name: 'execution-start' },
     { t: 0.440, name: 'body-impact' },
