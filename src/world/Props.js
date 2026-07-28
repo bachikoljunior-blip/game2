@@ -1600,11 +1600,18 @@ export class PropFactory {
     const hw = w * 0.5, hd = d * 0.5;
     const pw = hw + veranda, pd = hd + veranda;   // platform half extents
 
+    const colR = 0.20;
+    const colTop = floorY + wallH;
+    const roofBase = colTop + 0.72;
+    const colXs = [];
+    const colCount = Math.max(2, Math.round(w / 2.4));
+    for (let i = 0; i <= colCount; i++) colXs.push(lerp(-hw, hw, i / colCount));
+
     // ---- foundation posts on stone pads -----------------------------------
     const postR = 0.155;
     const nx = Math.max(2, Math.round(w / 2.6));
     const nz = Math.max(2, Math.round(d / 2.6));
-    for (let i = 0; i <= nx; i++) {
+    if (want('frame')) for (let i = 0; i <= nx; i++) {
       for (let j = 0; j <= nz; j++) {
         if (i > 0 && i < nx && j > 0 && j < nz) continue;   // perimeter + edges only
         const x = lerp(-pw + 0.4, pw - 0.4, i / nx);
@@ -1625,7 +1632,7 @@ export class PropFactory {
     }
 
     // ---- platform / plank floor -------------------------------------------
-    {
+    if (want('frame')) {
       const slab = new BoxGeometry(pw * 2, 0.30, pd * 2);
       slab.translate(0, floorY - 0.15, 0);
       normalizeGeo(slab);
@@ -1651,7 +1658,7 @@ export class PropFactory {
     }
 
     // ---- veranda railing (highest at the front, open at the stair) ---------
-    {
+    if (want('frame')) {
       const railY = floorY + 0.06;
       const rails = [];
       const postAt = (x, z) => {

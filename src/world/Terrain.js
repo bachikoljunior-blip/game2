@@ -806,7 +806,11 @@ export class Terrain {
     let maxFlow = 1;
     for (let k = 0; k < FLOW.length; k++) if (FLOW[k] > maxFlow) maxFlow = FLOW[k];
     const inv = 1 / Math.log(1 + maxFlow);
-    for (let k = 0; k < FLOW.length; k++) FLOW[k] = Math.log(1 + FLOW[k]) * inv;
+    const CH = 4096;
+    await this._forRange(Math.ceil(FLOW.length / CH), 'reading the channels', (b) => {
+      const s0 = b * CH, e0 = Math.min(FLOW.length, s0 + CH);
+      for (let k = s0; k < e0; k++) FLOW[k] = Math.log(1 + FLOW[k]) * inv;
+    }, base, total);
   }
 
   /**
@@ -1496,7 +1500,8 @@ void kgComputeSurface(){
     const holeHalf = hollow ? Math.max(1, res / 4 - 2) : 0;
     const V = res + 1;
     const idMap = new Int32Array(V * V).fill(-1);
-    const cellI = [], cellJ = [];
+    const cells = new Int32Array(res * res);
+    let cellCount = 0;
 
     for (let j = 0; j < res; j++) {
       for (let i = 0; i < res; i++) {
@@ -1504,7 +1509,7 @@ void kgComputeSurface(){
           const x0 = i - half, z0 = j - half;
           if (x0 >= -holeHalf && x0 + 1 <= holeHalf && z0 >= -holeHalf && z0 + 1 <= holeHalf) continue;
         }
-        cellI.push(i); cellJ.push(j);
+        cells[cellCount++] = j * res + i;
         idMap[j * V + i] = 0;
         idMap[j * V + i + 1] = 0;
         idMap[(j + 1) * V + i] = 0;
@@ -1547,14 +1552,19 @@ void kgComputeSurface(){
       }
     }
 
-    const idx = [];
-    for (let c = 0; c < cellI.length; c++) {
-      const i = cellI[c], j = cellJ[c];
+    // Preallocated: a push()-built index array for a 96² block is a 15 ms stall.
+    const idx = new Uint32Array(cellCount * 6 + skirtVerts * 12);
+    let w = 0;
+    for (let c = 0; c < cellCount; c++) {
+      const k = cells[c];
+      const j = (k / res) | 0;
+      const i = k - j * res;
       const a = idMap[j * V + i];
       const b = idMap[j * V + i + 1];
       const cc = idMap[(j + 1) * V + i];
       const d = idMap[(j + 1) * V + i + 1];
-      idx.push(a, cc, b, b, cc, d);
+      idx[w++] = a; idx[w++] = cc; idx[w++] = b;
+      idx[w++] = b; idx[w++] = cc; idx[w++] = d;
     }
 
     // Outer skirt. Emitted with both windings so it is correct from either face
@@ -1573,8 +1583,10 @@ void kgComputeSurface(){
       const su = idMap[outerLoop[p * 2 + 1] * V + outerLoop[p * 2]];
       const sv = idMap[outerLoop[q * 2 + 1] * V + outerLoop[q * 2]];
       const du = base + p, dv = base + q;
-      idx.push(su, du, sv, sv, du, dv);
-      idx.push(su, sv, du, sv, dv, du);
+      idx[w++] = su; idx[w++] = du; idx[w++] = sv;
+      idx[w++] = sv; idx[w++] = du; idx[w++] = dv;
+      idx[w++] = su; idx[w++] = sv; idx[w++] = du;
+      idx[w++] = sv; idx[w++] = dv; idx[w++] = du;
     }
 
     const geo = new BufferGeometry();
@@ -1582,7 +1594,7 @@ void kgComputeSurface(){
     geo.setAttribute('normal', new BufferAttribute(new Float32Array(total * 3), 3));
     geo.setAttribute('uv', new BufferAttribute(new Float32Array(total * 2), 2));
     geo.setAttribute('aSkirt', new BufferAttribute(skirt, 1));
-    geo.setIndex(idx);
+    geo.setIndex(new BufferAttribute(idx, 1));
     // The vertex shader moves everything; a real bounding sphere would be a lie, and
     // a small one would let three cull the terrain out from under the camera.
     geo.boundingSphere = null;
