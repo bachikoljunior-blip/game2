@@ -1315,8 +1315,10 @@ export class PostFX {
     // emission floor that used to be there (see FRAG_GOD_OCCLUSION). Scattering actual
     // radiance needs *far* less gain than manufacturing it did: the source is now
     // ~150 linear at the disc rather than a flat 0.65, so a shaft carries its energy
-    // from the sun instead of from an arbitrary constant.
-    this.godRayStrength = 0.35;
+    // from the sun instead of from an arbitrary constant. Integrated emission scales
+    // with uSunRadius squared, so this tracks it: measured against the sun row of the
+    // valley beat, the pass now adds roughly a tenth of what the floor did.
+    this.godRayStrength = 0.14;
     this.aoStrength = 0.85;
     this.aoRadius = 0.65;
     this.saturation = 1.06;
@@ -1326,7 +1328,12 @@ export class PostFX {
     // small trims that put true black at 0 and let a specular clip clean.
     this.filmicBlack = 0.004;
     this.filmicWhite = 0.995;
-    this.filmicToe = 1.50;
+    // 1.50 was tuned against frames rendered with the key light contributing nothing,
+    // where the whole image sat in a narrow band and the toe had a lot of slack. With a
+    // real 3.4-intensity key and cascaded shadows the frame has genuine shadow mass, and
+    // at 1.50 that mass fell off the bottom — 17.7% of the torii frame under code 16,
+    // p1 at 0. This keeps a real toe (blacks still reach 0) without eating the eaves.
+    this.filmicToe = 1.25;
     this.filmicShoulder = 1.14;
     this.filmicPivot = 0.44;
     this.vignette = 0.42;
@@ -2874,12 +2881,15 @@ export class PostFX {
     ou.uFar.value = this._far;
     ou.uSunUv.value.copy(this._sunUv);
     ou.uAspect.value = this._w / Math.max(1, this._h);
-    // The emitter is now the sun and the halo Sky.js actually draws, so it is sized
-    // against them: the disc is ~0.01 of frame height, and 0.11 covers it plus the Mie
-    // glow around it. Anything wider stops being a source and becomes a veil — an
-    // occluder edge can only cut a countable wedge out of a fan that has a small,
-    // well-defined origin.
-    ou.uSunRadius.value = 0.11;
+    // Sized so the emitter actually reaches the things that are supposed to cut it.
+    // A shaft is not a glow: it is the *shadow* an occluder casts inside the emission
+    // field, so an occluder outside that field cannot produce one. On the valley beat
+    // the susuki ridge sits 0.204 UV below the sun; at 0.11 it receives prox = 0.03 and
+    // cuts nothing, which is why that render came back as a clean but featureless
+    // halo. At 0.18 it receives 0.28 and the fan gets its wedges back. This is only
+    // safe now that the emission is real radiance — with the old constant floor, widening
+    // this was what smeared an untextured veil across the quadrant.
+    ou.uSunRadius.value = 0.18;
     ou.uEmitClamp.value = this._hdr ? 8.0 : 1.0;
     this._draw(this.mGodOcclusion, this.rtGodA);
 

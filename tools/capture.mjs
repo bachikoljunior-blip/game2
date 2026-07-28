@@ -13,6 +13,7 @@
  */
 
 import { chromium, devices } from 'playwright';
+import { measureLuma, HUD_MASKS } from './luma.mjs';
 import { mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -199,50 +200,6 @@ async function main() {
       shots.FAILED = file;
     }
 
-    // Tonal range is the single cheapest objective read on whether the grade is
-    // shipping-quality: a frame with no true black and no true white reads as amateur
-    // long before a viewer can say why. Measured here every run so a regression in the
-    // post chain cannot pass review unnoticed. Fog shots legitimately have no
-    // highlights, so only the shots with real speculars are held to the ceiling.
-    const HIGHLIGHT_SHOTS = new Set(['hero', 'torii', 'wide', 'combat', 'closeup']);
-    for (const sname of Object.keys(shots)) {
-      const h = await page.evaluate(() => {
-        const c = document.getElementById('game-canvas');
-        const s = document.createElement('canvas');
-        s.width = 480; s.height = Math.max(1, Math.round(480 * c.height / c.width));
-        const g = s.getContext('2d', { willReadFrequently: true });
-        g.drawImage(c, 0, 0, s.width, s.height);
-        const d = g.getImageData(0, 0, s.width, s.height).data;
-        const hist = new Uint32Array(256);
-        let n = 0;
-        for (let i = 0; i < d.length; i += 4) {
-          // Rec.709 luma, matching what the critic measures off the PNG.
-          hist[(0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) | 0]++;
-          n++;
-        }
-        const at = (frac) => {
-          let acc = 0, target = n * frac;
-          for (let v = 0; v < 256; v++) { acc += hist[v]; if (acc >= target) return v; }
-          return 255;
-        };
-        let below = 0, above = 0;
-        for (let v = 0; v < 16; v++) below += hist[v];
-        for (let v = 241; v < 256; v++) above += hist[v];
-        return {
-          p01: at(0.001), p1: at(0.01), p50: at(0.5), p99: at(0.99), p999: at(0.999),
-          pctBelow16: +(100 * below / n).toFixed(3), pctAbove240: +(100 * above / n).toFixed(3),
-        };
-      }).catch(() => null);
-      if (!h) continue;
-      h.blackOk = h.p01 < 15;
-      h.whiteOk = !HIGHLIGHT_SHOTS.has(sname) || h.p999 > 235;
-      histograms[sname] = h;
-      if (!h.blackOk || !h.whiteOk) {
-        logs.push(`histogram ${sname}: p0.1=${h.p01} p99.9=${h.p999} ` +
-          `(black ${h.blackOk ? 'ok' : 'FAIL'}, white ${h.whiteOk ? 'ok' : 'FAIL'})`);
-      }
-    }
-
     const stats = await page.evaluate(() => {
       const k = window.__kagerou;
       if (!k?.engine) return null;
@@ -280,6 +237,26 @@ async function main() {
         geometries: k.renderer.info.memory.geometries,
       };
     }).catch(() => null);
+
+    // Tonal range is the cheapest objective read on whether the grade ships: a frame
+    // with no true black and no true white looks amateur long before a viewer can say
+    // why. Measured off the saved PNG rather than the canvas — the WebGL context has
+    // no preserved drawing buffer, so an in-page readback returns cleared black.
+    // Fog shots legitimately hold no highlights, so only shots with real speculars
+    // are held to the ceiling.
+    const HIGHLIGHT_SHOTS = new Set(['hero', 'torii', 'wide', 'combat', 'closeup']);
+    for (const [sname, file] of Object.entries(shots)) {
+      try {
+        const h = measureLuma(file, HUD_MASKS);
+        h.blackOk = h.p01 < 15;
+        h.whiteOk = !HIGHLIGHT_SHOTS.has(sname) || h.p999 > 235;
+        histograms[sname] = h;
+        if (!h.blackOk || !h.whiteOk) {
+          logs.push(`histogram ${sname}: p0.1=${h.p01} p99.9=${h.p999} ` +
+            `(black ${h.blackOk ? 'ok' : 'FAIL'}, white ${h.whiteOk ? 'ok' : 'FAIL'})`);
+        }
+      } catch (e) { logs.push(`histogram ${sname}: ${e.message}`); }
+    }
 
     report.profiles[pname] = { booted, stats, histograms, errors: logs.slice(0, 40), shots };
     console.log(`[${pname}] booted=${booted}`, stats ? JSON.stringify(stats) : '(no stats)');
