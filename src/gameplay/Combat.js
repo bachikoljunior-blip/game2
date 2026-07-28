@@ -458,6 +458,7 @@ export class CombatDirector {
     this._slowUntil = -999;
     this._slowScale = 1;
     this._timeScaleApplied = 1;
+    this._slowGrade = 0;
 
     // attack tokens
     this._tokens = { melee: [], ranged: [] };
@@ -749,7 +750,7 @@ export class CombatDirector {
     if (p.vel.lengthSq() < EPS) p.vel.copy(_fwdDefault);
     p.vel.normalize().multiplyScalar(p.speed);
 
-    this.ctx.fx?.spawnProjectile?.(p.pos, opts.direction, p.speed, p.kind);
+    this.ctx?.fx?.spawnProjectile?.(p.pos, opts.direction, p.speed, p.kind);
     return true;
   }
 
@@ -842,10 +843,8 @@ export class CombatDirector {
     if (ex.dir.lengthSq() < EPS) ex.dir.copy(_fwdDefault); else ex.dir.normalize();
 
     // Both fighters are locked out of their own controllers for the duration.
-    atk.invulnerable = true;
-    target.invulnerable = true;
-    this._setState(atk, 'attack');
-    this._setState(target, 'stagger');
+    this._safeSet(atk, 'invulnerable', true);
+    this._safeSet(target, 'invulnerable', true);
     const total = TUNING.EXEC_WINDUP + TUNING.EXEC_RECOVER;
     this._playClip(atk, 'execution_attacker', total);
     this._playClip(target, 'execution_victim', total);
@@ -856,7 +855,6 @@ export class CombatDirector {
     this._slowMo(TUNING.SLOWMO_EXEC, TUNING.EXEC_WINDUP);
     this.ctx?.playerCamera?.cinematic?.(true, target);
     this.ctx?.playerCamera?.push?.(0.55, TUNING.EXEC_WINDUP);
-    this.ctx?.audio?.cue?.('execution');
 
     const p = this._execP();
     p.attacker = atk; p.victim = target; p.phase = 'start';
@@ -948,7 +946,6 @@ export class CombatDirector {
     p.entity = entity; p.kind = k; p.duration = dur; p.color = TUNING.TELEGRAPH_COLOR[k];
     this.ctx?.bus?.emit?.('telegraph', p);
     this.ctx?.fx?.telegraph?.(entity, k, dur);
-    this.ctx?.audio?.cue?.(k === 'unblockable' ? 'telegraph_danger' : 'telegraph');
     return dur;
   }
 
@@ -1316,7 +1313,8 @@ export class CombatDirector {
         const dmg = this._weaponDamage(attacker) * (ra.swingHeavy ? TUNING.HEAVY_MULT : 1);
         this._markHit(ra, target, now);
         this._resolveContact(
-          attacker, target, _vE, _vD, dmg, ra.swingKind, ra.swingHeavy, false, null,
+          attacker, target, _vE, _vD, dmg, ra.swingKind, ra.swingHeavy, false,
+          null, null, ra.swingPosture,
         );
         return true;
       }
@@ -1355,7 +1353,7 @@ export class CombatDirector {
             const hit = ph.raycast(p.prev, _vA, span, mask, null);
             if (hit && hit.hit !== false) {
               if (hit.point) p.pos.copy(hit.point);
-              this.ctx.fx?.stoneChip?.(p.pos, hit.normal || _up, 0.5);
+              this.ctx?.fx?.stoneChip?.(p.pos, hit.normal || _up, 0.5);
               p.alive = false; p.owner = null;
               continue;
             }
@@ -1406,7 +1404,7 @@ export class CombatDirector {
 
       // A moving glint so the shot is readable even before Effects grows a
       // dedicated projectile visual.
-      if ((this._frame & 1) === 0) this.ctx.fx?.sparkGrind?.(p.pos, p.vel, 0.18);
+      if ((this._frame & 1) === 0) this.ctx?.fx?.sparkGrind?.(p.pos, p.vel, 0.18);
     }
   }
 
@@ -1562,8 +1560,10 @@ export class CombatDirector {
     }
 
     // ── 6. death ────────────────────────────────────────────────────────────
-    if ((target.health ?? 0) <= 0 && target.isAlive !== false) {
-      this._kill(target, attacker, point, dir);
+    // The entity may have killed itself inside onDamage; we are still the only
+    // emitter of `death`, so run the kill path either way.
+    if ((target.health ?? 0) <= 0) {
+      this._kill(target, attacker, point, dir, target.isAlive === false);
     }
     return true;
   }
@@ -1615,8 +1615,8 @@ export class CombatDirector {
     this._hitStop(TUNING.HITSTOP_LIGHT, TUNING.HITSTOP_SCALE);
     this._shake(TUNING.SHAKE_LIGHT * (heavy ? 1.4 : 1), TUNING.SHAKE_DURATION, dir);
     this._knockback(defender, dir, TUNING.KNOCKBACK_LIGHT * 0.6);
-    if ((defender.health ?? 0) <= 0 && defender.isAlive !== false) {
-      this._kill(defender, attacker, point, dir);
+    if ((defender.health ?? 0) <= 0) {
+      this._kill(defender, attacker, point, dir, defender.isAlive === false);
     }
   }
 
@@ -1706,8 +1706,8 @@ export class CombatDirector {
       this._shake(TUNING.SHAKE_LIGHT * 1.3, TUNING.SHAKE_DURATION, dir);
       this._parryFX(point, dir, false, drec.streak);
       attacker?.onDeflected?.(defender, false);
-      if ((defender.health ?? 0) <= 0 && defender.isAlive !== false) {
-        this._kill(defender, attacker, point, dir);
+      if ((defender.health ?? 0) <= 0) {
+        this._kill(defender, attacker, point, dir, defender.isAlive === false);
       }
     }
   }
@@ -1744,9 +1744,6 @@ export class CombatDirector {
 
     this._hitStop(TUNING.HITSTOP_HEAVY * 0.8, TUNING.HITSTOP_SCALE);
     this._shake(TUNING.SHAKE_HEAVY, TUNING.SHAKE_DURATION, _vD);
-    this.ctx?.fx?.sparks?.(point, _up, 26);
-    this.ctx?.fx?.clashFlash?.(point, 0.7);
-    this.ctx?.audio?.cue?.('clash');
 
     // Neither swing survives the collision — both fighters recoil and recover.
     this.endSwing(a); this.endSwing(b);
@@ -1754,12 +1751,17 @@ export class CombatDirector {
     if (b.weapon) b.weapon.active = false;
   }
 
+  /**
+   * Effects already renders the deflect from the `parry` event (flash, sparks, PostFX
+   * pulse). What it cannot know is the streak, so the escalation — the thing that makes
+   * a player feel themselves getting better — is layered on here and only here.
+   */
   _parryFX(point, dir, perfect, streak) {
+    if (!perfect || streak < 2) return;
     const s = clamp01(streak / TUNING.PARRY_STREAK_MAX);
-    this.ctx?.fx?.pulseParry?.(point, perfect ? 0.8 + s * 0.6 : 0.4, perfect);
-    this.ctx?.fx?.clashFlash?.(point, perfect ? 1.0 + s * 0.5 : 0.45);
-    this.ctx?.fx?.sparks?.(point, dir, perfect ? 34 + Math.round(s * 26) : 14);
-    this.ctx?.pipeline?.flash?.(perfect ? 0.28 + s * 0.2 : 0.10, perfect ? 0.16 : 0.09);
+    this.ctx?.fx?.clashFlash?.(point, 0.5 + s * 0.9);
+    this.ctx?.fx?.sparkBurst?.(point, dir, 0.6 + s * 1.4);
+    this.ctx?.pipeline?.flashFrame?.(0xfff2dc, 0.10 + s * 0.22, 0.14);
   }
 
   /* ══════════════════════════════════════════════════════════════════════════
@@ -1821,6 +1823,7 @@ export class CombatDirector {
 
   _checkBreak(entity, rec, dir) {
     if (this.time < rec.brokenUntil) return;
+    if (entity.isAlive === false || (entity.health != null && entity.health <= 0)) return;
     const stateBroken = entity.state === 'postureBroken' || entity.state === 'posture_break';
     if (stateBroken || this._pressureOf(entity, rec) >= 0.999) {
       this._breakPosture(entity, rec, dir, stateBroken);
@@ -1905,8 +1908,9 @@ export class CombatDirector {
    * Combat is the only emitter of `death` (EnemyManager explicitly defers to us).
    * The entity's own death path runs first when it has one — ragdoll, loot, pooling.
    */
-  _kill(entity, attacker, point, dir) {
-    if (!entity || entity.isAlive === false) return;
+  _kill(entity, attacker, point, dir, alreadyDead) {
+    if (!entity) return;
+    if (!alreadyDead && entity.isAlive === false) return;
     this._safeSet(entity, 'health', 0);
     this.endSwing(entity);
     if (entity.weapon) entity.weapon.active = false;
@@ -1917,9 +1921,9 @@ export class CombatDirector {
     const dp = this._deathP();
     dp.entity = entity; dp.point.copy(point); dp.direction.copy(dir);
 
-    let handled = false;
+    let handled = !!alreadyDead;
     try {
-      if (typeof entity.die === 'function') { entity.die(dp); handled = true; }
+      if (!handled && typeof entity.die === 'function') { entity.die(dp); handled = true; }
     } catch { handled = false; }
     if (!handled) {
       entity.onDeath?.(dp);
@@ -1938,6 +1942,7 @@ export class CombatDirector {
   _stagger(entity, incomingAngle, forward, toAttacker, heavy) {
     const rec = this._rec(entity);
     if (!rec) return;
+    if (entity.isAlive === false || (entity.health != null && entity.health <= 0)) return;
     const now = this.time;
     if (now < rec.brokenUntil) return;
     let clip = 'stagger_back';
@@ -2017,15 +2022,23 @@ export class CombatDirector {
 
   _updateTimeScale(now) {
     let target = 1;
-    if (now < this._slowUntil) target = this._slowScale;
+    let slow = 0;
+    if (now < this._slowUntil) { target = this._slowScale; slow = 1 - clamp01(this._slowScale); }
     else if (this._slowUntil > -900) { this._slowUntil = -999; this._slowScale = 1; }
     if (now < this._stopUntil) target = Math.min(target, this._stopScale);
     else if (this._stopUntil > -900) { this._stopUntil = -999; this._stopScale = 1; }
 
-    if (target !== this._timeScaleApplied) {
-      this._timeScaleApplied = target;
-      // A stop must bite on the frame it happens; Engine eases the ramp back out.
-      this.ctx?.engine?.setTimeScale?.(target, target < 1);
+    // Effects also drives setTimeScale off our own `hitstop` event and restores it to 1
+    // when its window closes — which would cut a longer slow-mo dip short. Combat runs
+    // after Effects in the system order, so re-asserting every frame keeps us
+    // authoritative without either side needing to know about the other.
+    if (target !== 1) this.ctx?.engine?.setTimeScale?.(target, true);
+    else if (this._timeScaleApplied !== 1) this.ctx?.engine?.setTimeScale?.(1, false);
+    this._timeScaleApplied = target;
+
+    if (slow !== this._slowGrade) {
+      this._slowGrade = slow;
+      this.ctx?.pipeline?.setSlowMo?.(slow);
     }
   }
 
@@ -2118,34 +2131,36 @@ export class CombatDirector {
       const victim = ex.victim, attacker = ex.attacker;
       this._hitStop(TUNING.HITSTOP_FINISHER, TUNING.HITSTOP_SCALE * 0.6);
       this._shake(TUNING.SHAKE_BREAK, TUNING.SHAKE_DURATION * 1.8, ex.dir);
-      this.ctx?.fx?.bloodMist?.(ex.point, ex.dir, 2.0);
-      this.ctx?.audio?.cue?.('execution_impact');
+      this.ctx?.fx?.bloodImpact?.(ex.point, ex.dir, 2.2, true);
 
       const p = this._execP();
       p.attacker = attacker; p.victim = victim; p.phase = 'impact';
       this.ctx?.bus?.emit?.('execution', p);
 
       if (victim) {
-        victim.invulnerable = false;
+        this._safeSet(victim, 'invulnerable', false);
         const hp = this._hitP();
         hp.attacker = attacker; hp.target = victim;
-        hp.point.copy(ex.point); hp.normal.copy(ex.dir);
+        hp.point.copy(ex.point); hp.normal.copy(ex.dir); hp.direction.copy(ex.dir);
         hp.damage = (victim.maxHealth || 100) * TUNING.EXEC_DAMAGE_MULT;
-        hp.poise = 999; hp.kind = 'thrust'; hp.crit = true;
-        hp.blocked = false; hp.parried = false;
-        victim.onDamage?.(hp);
-        victim.health = 0;
+        hp.posture = victim.maxPosture || 100;
+        hp.poise = this._poiseFor(victim, 999);
+        hp.kind = 'thrust'; hp.crit = true; hp.heavy = true; hp.unblockable = true;
+        hp.blocked = false; hp.parried = false; hp.guarded = undefined;
         this.ctx?.bus?.emit?.('hit', hp);
-        this._kill(victim, attacker, ex.point, ex.dir);
+        // Enemy exposes `execute(payload)` to consume a break with a killing blow —
+        // it plays the paired victim clip and runs its own death path.
+        let consumed = false;
+        try { consumed = victim.execute?.(hp) === true; } catch { consumed = false; }
+        if (!consumed) victim.onDamage?.(hp);
+        this._safeSet(victim, 'health', 0);
+        this._kill(victim, attacker, ex.point, ex.dir, consumed);
       }
     } else if (ex.phase === 1 && ex.t >= TUNING.EXEC_WINDUP + TUNING.EXEC_RECOVER) {
       const attacker = ex.attacker, victim = ex.victim;
       ex.active = false;
       ex.phase = 2;
-      if (attacker) {
-        attacker.invulnerable = false;
-        if (attacker.state === 'attack') this._setState(attacker, 'idle');
-      }
+      if (attacker) this._safeSet(attacker, 'invulnerable', false);
       this.ctx?.pipeline?.setLetterbox?.(0, 0.3);
       this.ctx?.playerCamera?.cinematic?.(false, null);
       this._slowUntil = -999;

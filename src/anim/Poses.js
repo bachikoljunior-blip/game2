@@ -138,6 +138,18 @@ function blend(a, b, t) {
   return Object.freeze(out);
 }
 
+/**
+ * Copy a pose and overwrite only the joints named in `overrides`. Distinct from
+ * `blend(a, b, 1)`, which resolves a bone missing from `b` to rest — correct when
+ * interpolating between two full poses, wrong when authoring a variation of one.
+ */
+function derive(base, overrides) {
+  const out = {};
+  for (const k in base) out[k] = base[k];
+  for (const k in overrides) out[k] = overrides[k];
+  return Object.freeze(out);
+}
+
 const ZERO3 = Object.freeze([0, 0, 0]);
 
 /** Easing curve names understood by Rig's sampler. */
@@ -276,11 +288,11 @@ const idle_jodan = P({
   head:      [0.060, -0.060, 0],
   clavicleR: [-0.140, -0.060, -0.150],
   upperArmR: [2.450, 0.100, -0.330],
-  foreArmR:  [0.980, 0.320, 0],
+  foreArmR:  [1.520, 0.320, 0],
   handR:     [-0.260, 0.140, 0.080],
   clavicleL: [-0.130, 0.060, 0.140],
   upperArmL: [2.300, -0.100, 0.250],
-  foreArmL:  [0.860, -0.320, 0],
+  foreArmL:  [1.400, -0.320, 0],
   handL:     [-0.210, -0.140, -0.080],
   thighR:    [0.250, -0.150, 0.055],
   shinR:     [-0.110, 0, 0],
@@ -291,21 +303,21 @@ const idle_jodan = P({
   toeL:      [0.150, 0, 0],
 });
 
-const idle_jodan_b = blend(idle_jodan, P({
+const idle_jodan_b = derive(idle_jodan, P({
   hips:      [-0.010, 0.260, -0.010, 0, -0.042, -0.008],
   spine1:    [-0.050, -0.040, 0.012],
   spine2:    [-0.034, -0.045, 0.016],
   clavicleR: [-0.120, -0.060, -0.125],
   upperArmR: [2.400, 0.100, -0.310],
-  foreArmR:  [1.030, 0.320, 0],
+  foreArmR:  [1.570, 0.320, 0],
   clavicleL: [-0.110, 0.060, 0.118],
   upperArmL: [2.255, -0.100, 0.232],
-  foreArmL:  [0.910, -0.320, 0],
+  foreArmL:  [1.450, -0.320, 0],
   thighR:    [0.285, -0.150, 0.068],
   shinR:     [-0.150, 0, 0],
   thighL:    [-0.230, 0.130, -0.078],
   shinL:     [-0.370, 0, 0],
-}), 1.0);
+}));
 
 /**
  * 下段 gedan-no-kamae. Tip below the knee, hands at the hips, chest open. An
@@ -335,7 +347,7 @@ const idle_gedan = P({
   toeL:      [0.200, 0, 0],
 });
 
-const idle_gedan_b = blend(idle_gedan, P({
+const idle_gedan_b = derive(idle_gedan, P({
   hips:      [0.010, 0.290, -0.010, 0, -0.070, -0.010],
   spine1:    [0.004, -0.045, 0.012],
   spine2:    [0.010, -0.050, 0.015],
@@ -347,7 +359,7 @@ const idle_gedan_b = blend(idle_gedan, P({
   shinR:     [-0.270, 0, 0],
   thighL:    [-0.300, 0.160, -0.092],
   shinL:     [-0.540, 0, 0],
-}), 1.0);
+}));
 
 // ===========================================================================
 // 2. LOCOMOTION
@@ -1266,7 +1278,7 @@ const guard_high = P({
 });
 
 /** Guard under load — the whole frame compresses back a few centimetres. */
-const guard_press = blend(guard_high, P({
+const guard_press = derive(guard_high, P({
   hips:      [-0.100, 0.300, 0.006, 0, -0.105, -0.008],
   spine1:    [-0.150, -0.060, 0],
   spine2:    [-0.140, -0.065, 0],
@@ -1281,7 +1293,7 @@ const guard_press = blend(guard_high, P({
   shinR:     [-0.640, 0, 0],
   thighL:    [-0.260, 0.140, -0.085],
   shinL:     [-0.800, 0, 0],
-}), 1.0);
+}));
 
 /** The parry itself: a wrist snap, not an arm swing. Elbows barely move. */
 const parry_snap = P({
@@ -2020,7 +2032,7 @@ const chiburi_flick = P({
 });
 
 /** Hold. Two full beats of nothing. This is what sells it. */
-const chiburi_hold = blend(chiburi_flick, P({
+const chiburi_hold = derive(chiburi_flick, P({
   hips:      [0.010, 0.230, 0, 0, -0.066, -0.010],
   spine1:    [-0.020, -0.060, -0.020],
   spine2:    [-0.014, -0.065, -0.024],
@@ -2032,16 +2044,16 @@ const chiburi_hold = blend(chiburi_flick, P({
   shinR:     [-0.420, 0, 0],
   thighL:    [-0.260, 0.120, -0.082],
   shinL:     [-0.540, 0, 0],
-}), 1.0);
+}));
 
 /** Formal closing bow of the head as the tsuba clicks home. */
-const noto_bow = blend(idle_sheathed, P({
+const noto_bow = derive(idle_sheathed, P({
   spine1:    [-0.140, -0.010, 0],
   spine2:    [-0.130, 0.020, -0.006],
   spine3:    [-0.100, 0.030, -0.006],
   neck:      [0.060, -0.020, 0.004],
   head:      [-0.260, -0.055, 0.006],
-}), 1.0);
+}));
 
 /**
  * Mirror only the ARM chain of a pose, keeping the legs and hips as authored.

@@ -2431,7 +2431,7 @@ export class PropFactory {
           { x, y: 0, z, sx: 0.085, sy: 0.055, ao: 0.42 },
           { x, y: hh - 0.06, z, sx: 0.082, sy: 0.052, ao: 0.95 },
           { x, y: hh, z, sx: 0.055, sy: 0.036, ao: 1.0 },
-        ], rectProfile(0.18), { uvScale: 1.4, ref: [Math.cos(ang), 0, -Math.sin(ang)] });
+        ], rectProfile(0), { uvScale: 1.4, ref: [Math.cos(ang), 0, -Math.sin(ang)] });
         geos.push(g);
       }
       // posts, top rail and bottom rail
@@ -2502,7 +2502,7 @@ export class PropFactory {
           { x, y: 0, z, sx: r * 2.1, sy: r * 2.1, ao: 0.4 },
           { x: x + lean * 0.4, y: hh * 0.55, z: z + lean * 0.2, sx: r * 2, sy: r * 2, ao: 0.85 },
           { x: x + lean, y: hh, z: z + lean * 0.5, sx: r * 1.7, sy: r * 1.7, ao: 1.0 },
-        ], circleProfile(6), { smooth: true, uvScale: 1.6, capStart: false });
+        ], circleProfile(5), { smooth: true, uvScale: 1.6, capStart: false });
         const k2 = 0.82 + rnd() * 0.34;
         tintGeo(g, k2, k2 * (0.95 + rnd() * 0.12), k2 * 0.85);
         culms.push(g);
@@ -2545,6 +2545,748 @@ export class PropFactory {
       PropFactory.add(b, merged, 'rope');
     }
     b.bounds = { r: 1, h: h + 0.2 };
+    return b;
+  }
+
+  // =====================================================================
+  //  幟 NOBORI / 絵馬 EMA / おみくじ OMIKUJI / 提灯 CHŌCHIN
+  // =====================================================================
+
+  /** A banner on a pole with a crossarm. Cloth is limp; the pole is rigid. */
+  nobori(opts = {}) {
+    const poleH = opts.height ?? 3.6;
+    const bw = opts.bannerWidth ?? 0.62;
+    const bh = opts.bannerHeight ?? 2.5;
+    const mat = opts.material ?? 'clothCrimson';
+    const rnd = makeRandom(opts.seed ?? 12);
+    const b = PropFactory.build();
+
+    const pole = sweepProfile([
+      { x: 0, y: -0.1, z: 0, sx: 0.085, sy: 0.085, ao: 0.4 },
+      { x: 0, y: poleH * 0.5, z: 0, sx: 0.075, sy: 0.075, ao: 0.85 },
+      { x: 0, y: poleH, z: 0, sx: 0.055, sy: 0.055, ao: 1.0 },
+    ], circleProfile(7), { smooth: true, uvScale: 1.4, capStart: false });
+    bakeAO(pole, { ground: 0.5, groundH: 0.5, cavity: 0.1, floor: 0.34 });
+    PropFactory.add(b, pole, 'bambooCulm');
+
+    const arm = sweepProfile([
+      { x: -0.06, y: poleH - 0.06, z: 0, sx: 0.05, sy: 0.05, ao: 0.8 },
+      { x: bw + 0.10, y: poleH - 0.02, z: 0, sx: 0.045, sy: 0.045, ao: 1.0 },
+    ], circleProfile(6), { smooth: true, ref: [0, 0, -1], uvScale: 2 });
+    PropFactory.add(b, arm, 'bambooCulm');
+    PropFactory.addCollider(b, PropFactory.boxCollider(0.22, poleH, 0.22, 0, 0), 'wood');
+
+    // Banner: hung from the arm and tied along the pole, so the free corner is
+    // the far bottom one.
+    const NX = 5, NY = 8;
+    const verts = [], uvs = [], cols = [], idx = [], fl = [];
+    const y0 = poleH - 0.10, y1 = y0 - bh;
+    for (let j = 0; j <= NY; j++) {
+      for (let i = 0; i <= NX; i++) {
+        const u = i / NX, v = j / NY;
+        const x = lerp(0.07, bw + 0.07, u);
+        const y = lerp(y0, y1, v);
+        verts.push(x, y, Math.sin(u * 3.1) * 0.012);
+        uvs.push(u, v);
+        const k = lerp(0.82, 1.0, 1 - v * 0.4);
+        cols.push(k, k, k);
+        // Anchored along the pole edge and the top rail.
+        fl.push(clamp(Math.max(u, v * 0.25) * (0.35 + v * 0.65), 0, 1), 0.9);
+      }
+    }
+    for (let j = 0; j < NY; j++) {
+      for (let i = 0; i < NX; i++) {
+        const a = j * (NX + 1) + i, c = (j + 1) * (NX + 1) + i;
+        idx.push(a, c, c + 1, a, c + 1, a + 1);
+      }
+    }
+    const banner = new BufferGeometry();
+    banner.setAttribute('position', new BufferAttribute(new Float32Array(verts), 3));
+    banner.setAttribute('uv', new BufferAttribute(new Float32Array(uvs), 2));
+    banner.setAttribute('color', new BufferAttribute(new Float32Array(cols), 3));
+    banner.setAttribute('aFlutter', new BufferAttribute(new Float32Array(fl), 2));
+    banner.setIndex(idx);
+    banner.computeVertexNormals();
+    tintGeo(banner, 0.92 + rnd() * 0.16, 0.92 + rnd() * 0.12, 0.92 + rnd() * 0.12);
+    PropFactory.add(b, banner, mat);
+
+    b.bounds = { r: bw + 0.4, h: poleH + 0.2 };
+    return b;
+  }
+
+  /** 絵馬 a single votive plaque: pentagonal board on a loop of string. */
+  emaPlaque(opts = {}) {
+    const w = opts.width ?? 0.16;
+    const h = opts.height ?? 0.12;
+    const rnd = makeRandom(opts.seed ?? 3);
+    const b = PropFactory.build();
+    // House-shaped outline, extruded.
+    const poly = [[-w, -h * 0.55], [w, -h * 0.55], [w, h * 0.3], [0, h * 0.85], [-w, h * 0.3]];
+    const verts = [], uvs = [], cols = [], idx = [];
+    const t = 0.012;
+    for (let side = 0; side < 2; side++) {
+      const z = side === 0 ? t : -t;
+      const base = verts.length / 3;
+      for (const p of poly) { verts.push(p[0], p[1], z); uvs.push(p[0] * 4 + 0.5, p[1] * 4 + 0.5); cols.push(1, 1, 1); }
+      for (let i = 1; i < poly.length - 1; i++) {
+        if (side === 0) idx.push(base, base + i, base + i + 1);
+        else idx.push(base, base + i + 1, base + i);
+      }
+    }
+    const base = verts.length / 3;
+    for (const p of poly) {
+      verts.push(p[0], p[1], t, p[0], p[1], -t);
+      uvs.push(p[0], 0, p[0], 1);
+      cols.push(0.7, 0.7, 0.7, 0.7, 0.7, 0.7);
+    }
+    for (let i = 0; i < poly.length; i++) {
+      const a = base + i * 2, c = base + i * 2 + 1;
+      const d = base + ((i + 1) % poly.length) * 2 + 1, e = base + ((i + 1) % poly.length) * 2;
+      idx.push(a, c, d, a, d, e);
+    }
+    const geo = new BufferGeometry();
+    geo.setAttribute('position', new BufferAttribute(new Float32Array(verts), 3));
+    geo.setAttribute('uv', new BufferAttribute(new Float32Array(uvs), 2));
+    geo.setAttribute('color', new BufferAttribute(new Float32Array(cols), 3));
+    geo.setIndex(idx);
+    geo.computeVertexNormals();
+    geo.translate(0, -h * 0.85 - 0.10, 0);
+    bakeAO(geo, { ground: 0, cavity: 0.2, down: 0.25, floor: 0.5 });
+    tintGeo(geo, 0.95 + rnd() * 0.12, 0.9 + rnd() * 0.14, 0.82 + rnd() * 0.14);
+    PropFactory.add(b, geo, 'cedar');
+
+    const cord = sweepProfile([
+      { x: -w * 0.5, y: -0.02, z: 0, sx: 0.012, sy: 0.012, ao: 0.9 },
+      { x: 0, y: -0.09, z: 0, sx: 0.012, sy: 0.012, ao: 1.0 },
+      { x: w * 0.5, y: -0.02, z: 0, sx: 0.012, sy: 0.012, ao: 0.9 },
+    ], circleProfile(4), { smooth: true, ref: [0, 0, -1], uvScale: 4 });
+    PropFactory.add(b, cord, 'clothCrimson');
+    b.bounds = { r: w * 1.2, h: h * 2 };
+    return b;
+  }
+
+  /** The rack the ema hang from — posts, rails, and a little pent roof. */
+  emaRack(opts = {}) {
+    const w = opts.width ?? 3.0;
+    const h = opts.height ?? 1.85;
+    const b = PropFactory.build();
+    const timber = [];
+    for (const sx of [-1, 1]) {
+      timber.push(sweepProfile([
+        { x: sx * w * 0.5, y: -0.05, z: 0, sx: 0.16, sy: 0.16, ao: 0.42 },
+        { x: sx * w * 0.5, y: h, z: 0, sx: 0.14, sy: 0.14, ao: 0.95 },
+        { x: sx * w * 0.5, y: h + 0.09, z: 0, sx: 0.09, sy: 0.09, ao: 1.0 },
+      ], rectProfile(0.16), { uvScale: 1.2 }));
+      PropFactory.addCollider(b, PropFactory.boxCollider(0.24, h, 0.24, sx * w * 0.5, 0, 0), 'wood');
+    }
+    for (const [ry, rd] of [[h - 0.14, 0.13], [h * 0.55, 0.10]]) {
+      const g = new BoxGeometry(w + 0.28, rd, 0.11);
+      g.translate(0, ry, 0);
+      normalizeGeo(g);
+      timber.push(g);
+    }
+    // pent roof over the rack
+    for (const sz of [-1, 1]) {
+      const g = new BoxGeometry(w + 0.7, 0.06, 0.52);
+      const m = new Matrix4().makeRotationX(sz * 0.42);
+      m.setPosition(0, h + 0.20, sz * 0.22);
+      g.applyMatrix4(m);
+      normalizeGeo(g);
+      timber.push(g);
+    }
+    const merged = mergeGeometries(timber.map((g) => normalizeGeo(g)), false);
+    bakeAO(merged, { ground: 0.48, groundH: 0.45, cavity: 0.26, down: 0.34, floor: 0.32 });
+    weatherBand(merged, 0, 0.6, 0.72, 0.76, 0.66, 0.32);
+    PropFactory.add(b, merged, 'cedar');
+    b.anchors.rail = [0, h - 0.14, 0];
+    b.anchors.rail2 = [0, h * 0.55, 0];
+    b.bounds = { r: w * 0.6, h: h + 0.4 };
+    return b;
+  }
+
+  /** おみくじ paper fortunes knotted in rows onto a rack of taut cords. */
+  omikujiRack(opts = {}) {
+    const w = opts.width ?? 2.6;
+    const h = opts.height ?? 1.6;
+    const rows = opts.rows ?? 3;
+    const density = clamp(opts.density ?? 1, 0, 1);
+    const rnd = makeRandom(opts.seed ?? 88);
+    const b = PropFactory.build();
+
+    const frame = [];
+    for (const sx of [-1, 1]) {
+      frame.push(sweepProfile([
+        { x: sx * w * 0.5, y: -0.05, z: 0, sx: 0.10, sy: 0.10, ao: 0.4 },
+        { x: sx * w * 0.5, y: h, z: 0, sx: 0.085, sy: 0.085, ao: 1.0 },
+      ], circleProfile(7), { smooth: true, uvScale: 1.5 }));
+      PropFactory.addCollider(b, PropFactory.boxCollider(0.18, h, 0.18, sx * w * 0.5, 0, 0), 'wood');
+    }
+    const strips = [];
+    for (let r = 0; r < rows; r++) {
+      const y = h - 0.14 - r * (h * 0.30);
+      frame.push(sweepProfile([
+        { x: -w * 0.5, y, z: 0, sx: 0.028, sy: 0.028, ao: 0.85 },
+        { x: 0, y: y - 0.03, z: 0, sx: 0.028, sy: 0.028, ao: 1.0 },
+        { x: w * 0.5, y, z: 0, sx: 0.028, sy: 0.028, ao: 0.85 },
+      ], circleProfile(5), { smooth: true, ref: [0, 0, -1], uvScale: 3 }));
+
+      const n = Math.max(4, Math.round(w / 0.075 * density));
+      for (let i = 0; i < n; i++) {
+        const t = (i + 0.5) / n;
+        const x = lerp(-w * 0.48, w * 0.48, t) + (rnd() - 0.5) * 0.01;
+        const sy = y - 0.03 * Math.sin(t * Math.PI);
+        const len = 0.16 + rnd() * 0.08;
+        const sw = 0.018;
+        const g = new BufferGeometry();
+        const vs = new Float32Array([
+          -sw, sy, 0, sw, sy, 0,
+          sw + (rnd() - 0.5) * 0.01, sy - len, (rnd() - 0.5) * 0.02,
+          -sw + (rnd() - 0.5) * 0.01, sy - len, (rnd() - 0.5) * 0.02,
+        ]);
+        for (let k = 0; k < 4; k++) vs[k * 3] += x;
+        g.setAttribute('position', new BufferAttribute(vs, 3));
+        g.setAttribute('uv', new BufferAttribute(new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]), 2));
+        g.setAttribute('color', new BufferAttribute(new Float32Array([1, 1, 1, 1, 1, 1, 0.86, 0.86, 0.86, 0.86, 0.86, 0.86]), 3));
+        g.setAttribute('aFlutter', new BufferAttribute(new Float32Array([0.1, 0.7, 0.1, 0.7, 1.0, 0.7, 1.0, 0.7]), 2));
+        g.setIndex([0, 3, 2, 0, 2, 1]);
+        g.computeVertexNormals();
+        strips.push(g);
+      }
+    }
+    const fm = mergeGeometries(frame.map((g) => normalizeGeo(g)), false);
+    bakeAO(fm, { ground: 0.45, groundH: 0.4, cavity: 0.2, floor: 0.34 });
+    PropFactory.add(b, fm, 'cedar');
+    if (strips.length) {
+      const sm = mergeGeometries(strips.map((g) => normalizeGeo(g, true)), false);
+      PropFactory.add(b, sm, 'paper');
+    }
+    b.bounds = { r: w * 0.6, h: h + 0.2 };
+    return b;
+  }
+
+  /** 提灯 a ribbed paper lantern, lit, swinging gently from its cord. */
+  hangingLantern(opts = {}) {
+    const h = opts.height ?? 0.52;
+    const r = opts.radius ?? 0.17;
+    const cord = opts.cord ?? 0.35;
+    const b = PropFactory.build();
+
+    const samples = [];
+    const RN = 9;
+    for (let i = 0; i <= RN; i++) {
+      const t = i / RN;
+      const bulge = Math.sin(t * Math.PI);
+      const rr = lerp(r * 0.42, r, bulge) + Math.sin(t * Math.PI * RN) * 0.006;
+      samples.push({ x: 0, y: -cord - t * h, z: 0, sx: rr * 2, sy: rr * 2, ao: lerp(1.05, 0.8, t) });
+    }
+    const body = sweepProfile(samples, circleProfile(12), { smooth: true, uvScale: 1.4, capStart: false, capEnd: false });
+    bakeFlutter(body, 3.0, (x, y) => clamp((-y) / (cord + h), 0, 1));
+    PropFactory.add(b, body, 'paper');
+
+    // ribs, cord and the cap/base rings
+    const bits = [];
+    for (const [y, rr] of [[-cord, r * 0.46], [-cord - h, r * 0.46]]) {
+      bits.push(sweepProfile([
+        { x: 0, y: y - 0.015, z: 0, sx: rr * 2.2, sy: rr * 2.2, ao: 0.7 },
+        { x: 0, y: y + 0.015, z: 0, sx: rr * 2.2, sy: rr * 2.2, ao: 0.9 },
+      ], circleProfile(10), { smooth: true, uvScale: 2 }));
+    }
+    bits.push(sweepProfile([
+      { x: 0, y: 0, z: 0, sx: 0.018, sy: 0.018, ao: 0.7 },
+      { x: 0, y: -cord, z: 0, sx: 0.018, sy: 0.018, ao: 0.9 },
+    ], circleProfile(4), { smooth: true, uvScale: 4 }));
+    PropFactory.add(b, mergeGeometries(bits.map((g) => normalizeGeo(g)), false), 'cedarBeam');
+
+    const flame = new BoxGeometry(r * 0.7, h * 0.35, r * 0.7);
+    flame.translate(0, -cord - h * 0.55, 0);
+    normalizeGeo(flame);
+    PropFactory.add(b, flame, '__ember');
+    b.lights.push({ x: 0, y: -cord - h * 0.5, z: 0, color: 0xffb060, intensity: 1.4, distance: 4.2, flicker: 0.7 });
+    b.bounds = { r: r * 1.2, h: cord + h };
+    return b;
+  }
+
+  // =====================================================================
+  //  CLUTTER — the stuff that says someone lives here
+  // =====================================================================
+
+  /** A staved barrel with iron hoops. `cask` swaps to a straw-wrapped komodaru. */
+  barrel(opts = {}) {
+    const h = opts.height ?? 0.82;
+    const r = opts.radius ?? 0.28;
+    const staves = opts.staves ?? 12;
+    const rnd = makeRandom(opts.seed ?? 19);
+    const b = PropFactory.build();
+
+    const samples = [];
+    for (let i = 0; i <= 6; i++) {
+      const t = i / 6;
+      const rr = r * (0.86 + 0.14 * Math.sin(t * Math.PI));
+      samples.push({ x: 0, y: t * h, z: 0, sx: rr * 2, sy: rr * 2, ao: lerp(0.5, 1.0, t) });
+    }
+    const body = sweepProfile(samples, circleProfile(staves), { uvScale: 1.6, capStart: false });
+    bakeAO(body, { ground: 0.45, groundH: 0.3, cavity: 0.2, down: 0.3, floor: 0.32 });
+    const k = 0.9 + rnd() * 0.2;
+    tintGeo(body, k, k * 0.97, k * 0.92);
+    PropFactory.add(b, body, opts.material ?? 'cedar');
+
+    const hoops = [];
+    for (const t of [0.14, 0.5, 0.86]) {
+      const rr = r * (0.87 + 0.14 * Math.sin(t * Math.PI)) * 1.035;
+      hoops.push(sweepProfile([
+        { x: 0, y: t * h - 0.028, z: 0, sx: rr * 2, sy: rr * 2, ao: 0.65 },
+        { x: 0, y: t * h + 0.028, z: 0, sx: rr * 2, sy: rr * 2, ao: 1.0 },
+      ], circleProfile(staves), { smooth: true, uvScale: 3, capStart: false, capEnd: false }));
+    }
+    PropFactory.add(b, mergeGeometries(hoops, false), 'steelDark');
+    PropFactory.addCollider(b, PropFactory.boxCollider(r * 2, h, r * 2, 0, 0), 'wood');
+    b.bounds = { r: r * 1.1, h };
+    return b;
+  }
+
+  /** 菰樽 a straw-wrapped sake cask: the bright painted band is the whole point. */
+  sakeCask(opts = {}) {
+    const h = opts.height ?? 0.60;
+    const r = opts.radius ?? 0.25;
+    const rnd = makeRandom(opts.seed ?? 21);
+    const b = PropFactory.build();
+
+    const samples = [];
+    for (let i = 0; i <= 5; i++) {
+      const t = i / 5;
+      const rr = r * (0.94 + 0.06 * Math.sin(t * Math.PI));
+      samples.push({ x: 0, y: t * h, z: 0, sx: rr * 2, sy: rr * 2, ao: lerp(0.55, 1.0, t) });
+    }
+    const straw = sweepProfile(samples, circleProfile(14), { smooth: true, uvScale: 2.4, capStart: false, capEnd: false });
+    roughen(straw, 0.008, 9);
+    bakeAO(straw, { ground: 0.4, groundH: 0.25, cavity: 0.2, down: 0.3, floor: 0.35 });
+    PropFactory.add(b, straw, 'rope');
+
+    // painted band + the head, in one of the classic cask colours
+    const palette = [[1.0, 0.42, 0.28], [0.95, 0.90, 0.86], [0.32, 0.42, 0.66], [0.90, 0.76, 0.30], [0.36, 0.52, 0.36]];
+    const c = palette[(rnd() * palette.length) | 0];
+    const band = sweepProfile([
+      { x: 0, y: h * 0.26, z: 0, sx: r * 2.03, sy: r * 2.03, ao: 0.85 },
+      { x: 0, y: h * 0.74, z: 0, sx: r * 2.03, sy: r * 2.03, ao: 1.0 },
+    ], circleProfile(14), { smooth: true, uvScale: 1.8, capStart: false, capEnd: false });
+    tintGeo(band, c[0], c[1], c[2]);
+    const head = sweepProfile([
+      { x: 0, y: h - 0.02, z: 0, sx: r * 1.9, sy: r * 1.9, ao: 0.9 },
+      { x: 0, y: h + 0.015, z: 0, sx: r * 1.9, sy: r * 1.9, ao: 1.0 },
+    ], circleProfile(12), { smooth: true, uvScale: 2 });
+    tintGeo(head, c[0] * 0.9, c[1] * 0.9, c[2] * 0.9);
+    PropFactory.add(b, mergeGeometries([normalizeGeo(band), normalizeGeo(head)], false), 'clothCrimson');
+    PropFactory.addCollider(b, PropFactory.boxCollider(r * 2, h, r * 2, 0, 0), 'wood');
+    b.bounds = { r: r * 1.1, h };
+    return b;
+  }
+
+  /** Slatted wooden crate. */
+  crate(opts = {}) {
+    const s = opts.size ?? 0.55;
+    const rnd = makeRandom(opts.seed ?? 29);
+    const b = PropFactory.build();
+    const parts = [];
+    const t = 0.045;
+    for (const [ax, sgn] of [['z', 1], ['z', -1], ['x', 1], ['x', -1]]) {
+      const rows = 3;
+      for (let i = 0; i < rows; i++) {
+        const y = lerp(t, s - t, i / (rows - 1));
+        const g = new BoxGeometry(ax === 'z' ? s : t, s / rows - 0.02, ax === 'z' ? t : s);
+        g.translate(ax === 'x' ? sgn * s * 0.5 : 0, y, ax === 'z' ? sgn * s * 0.5 : 0);
+        normalizeGeo(g);
+        parts.push(g);
+      }
+      const post = new BoxGeometry(ax === 'z' ? s : t * 1.4, s, ax === 'z' ? t * 1.4 : s);
+      post.translate(ax === 'x' ? sgn * s * 0.5 : 0, s * 0.5, ax === 'z' ? sgn * s * 0.5 : 0);
+      normalizeGeo(post);
+      if (Math.abs(sgn) === 1 && ax === 'x') parts.push(post);
+    }
+    const top = new BoxGeometry(s, t, s);
+    top.translate(0, s - t * 0.5, 0);
+    normalizeGeo(top);
+    parts.push(top);
+    const merged = mergeGeometries(parts, false);
+    bakeAO(merged, { ground: 0.45, groundH: 0.3, cavity: 0.3, down: 0.32, floor: 0.32 });
+    const k = 0.88 + rnd() * 0.24;
+    tintGeo(merged, k, k * 0.97, k * 0.9);
+    PropFactory.add(b, merged, 'cedar');
+    PropFactory.addCollider(b, PropFactory.boxCollider(s, s, s, 0, 0), 'wood');
+    b.bounds = { r: s * 0.75, h: s };
+    return b;
+  }
+
+  /** Straw bale, bound at three points. */
+  strawBale(opts = {}) {
+    const l = opts.length ?? 0.9;
+    const r = opts.radius ?? 0.24;
+    const b = PropFactory.build();
+    const samples = [];
+    for (let i = 0; i <= 6; i++) {
+      const t = i / 6;
+      const rr = r * (0.72 + 0.28 * Math.sin(t * Math.PI) + 0.1);
+      samples.push({ x: lerp(-l * 0.5, l * 0.5, t), y: r * 0.95, z: 0, sx: rr * 2, sy: rr * 2, ao: lerp(0.7, 1.0, Math.sin(t * Math.PI)) });
+    }
+    const body = sweepProfile(samples, circleProfile(10), { smooth: true, ref: [0, 0, -1], uvScale: 2.6 });
+    roughen(body, 0.012, 8);
+    bakeAO(body, { ground: 0.42, groundH: 0.3, cavity: 0.24, down: 0.32, floor: 0.32 });
+    PropFactory.add(b, body, 'rope');
+    const ties = [];
+    for (const t of [0.2, 0.5, 0.8]) {
+      const x = lerp(-l * 0.5, l * 0.5, t);
+      const rr = r * (0.72 + 0.28 * Math.sin(t * Math.PI) + 0.1) * 1.05;
+      ties.push(sweepProfile([
+        { x: x - 0.02, y: r * 0.95, z: 0, sx: rr * 2, sy: rr * 2, ao: 0.75 },
+        { x: x + 0.02, y: r * 0.95, z: 0, sx: rr * 2, sy: rr * 2, ao: 1.0 },
+      ], circleProfile(10), { smooth: true, ref: [0, 0, -1], uvScale: 3, capStart: false, capEnd: false }));
+    }
+    const tm = mergeGeometries(ties, false);
+    tintGeo(tm, 0.72, 0.66, 0.55);
+    PropFactory.add(b, tm, 'rope');
+    PropFactory.addCollider(b, PropFactory.boxCollider(l, r * 2, r * 2, 0, 0), 'wood');
+    b.bounds = { r: l * 0.6, h: r * 2 };
+    return b;
+  }
+
+  /** Split logs stacked with real per-log rotation and a couple fallen off. */
+  woodpile(opts = {}) {
+    const w = opts.width ?? 2.2;
+    const rows = opts.rows ?? 4;
+    const rnd = makeRandom(opts.seed ?? 37);
+    const b = PropFactory.build();
+    const logs = [];
+    const lr = 0.075;
+    for (let row = 0; row < rows; row++) {
+      const n = Math.max(2, Math.round(w / (lr * 2.15)) - row);
+      for (let i = 0; i < n; i++) {
+        const x = lerp(-w * 0.5 + lr, w * 0.5 - lr, n === 1 ? 0.5 : i / (n - 1)) + (rnd() - 0.5) * 0.02;
+        const y = lr + row * lr * 1.78 + (rnd() - 0.5) * 0.01;
+        const r2 = lr * (0.78 + rnd() * 0.42);
+        const len = 0.52 + rnd() * 0.14;
+        const g = sweepProfile([
+          { x, y, z: -len * 0.5, sx: r2 * 2, sy: r2 * 2 * (0.85 + rnd() * 0.3), roll: rnd() * 3, ao: 0.72 },
+          { x: x + (rnd() - 0.5) * 0.02, y, z: len * 0.5, sx: r2 * 1.94, sy: r2 * 1.9, roll: rnd() * 3, ao: 1.0 },
+        ], circleProfile(7), { ref: [1, 0, 0], uvScale: 2.2 });
+        const k = 0.8 + rnd() * 0.4;
+        tintGeo(g, k, k * (0.94 + rnd() * 0.12), k * 0.86);
+        logs.push(g);
+      }
+    }
+    for (let i = 0; i < 3; i++) {
+      const g = sweepProfile([
+        { x: w * 0.5 + 0.2 + rnd() * 0.4, y: lr, z: -0.3 + rnd() * 0.6, sx: lr * 2, sy: lr * 2, ao: 0.6 },
+        { x: w * 0.5 + 0.5 + rnd() * 0.5, y: lr * (0.9 + rnd() * 0.4), z: -0.1 + rnd() * 0.6, sx: lr * 1.8, sy: lr * 1.8, ao: 0.95 },
+      ], circleProfile(6), { uvScale: 2.4 });
+      logs.push(g);
+    }
+    const merged = mergeGeometries(logs.map((g) => normalizeGeo(g)), false);
+    bakeAO(merged, { ground: 0.4, groundH: 0.4, cavity: 0.34, down: 0.3, floor: 0.3 });
+    PropFactory.add(b, merged, 'bark');
+    PropFactory.addCollider(b, PropFactory.boxCollider(w, rows * lr * 1.78, 0.62, 0, 0), 'wood');
+    b.bounds = { r: w * 0.7, h: rows * lr * 1.78 };
+    return b;
+  }
+
+  /** A coil of rope lying on the ground: a flat spiral sweep. */
+  ropeCoil(opts = {}) {
+    const r0 = opts.radius ?? 0.30;
+    const turns = opts.turns ?? 3.2;
+    const b = PropFactory.build();
+    const samples = [];
+    const N = 46;
+    for (let i = 0; i <= N; i++) {
+      const t = i / N;
+      const a = t * Math.PI * 2 * turns;
+      const rr = lerp(r0, r0 * 0.34, t);
+      samples.push({
+        x: Math.cos(a) * rr, y: 0.036 + t * 0.045, z: Math.sin(a) * rr,
+        sx: 0.055, sy: 0.05, roll: a * 1.2, ao: lerp(0.7, 1.0, t),
+      });
+    }
+    const coil = sweepProfile(samples, ropeProfile(8, 3, 0.18), { smooth: true, uvScale: 3 });
+    bakeAO(coil, { ground: 0.4, groundH: 0.09, cavity: 0.28, down: 0.3, floor: 0.34 });
+    PropFactory.add(b, coil, 'rope');
+    b.bounds = { r: r0 * 1.2, h: 0.12 };
+    return b;
+  }
+
+  /** Wooden bucket, wider at the rim, with a rope bail. */
+  bucket(opts = {}) {
+    const h = opts.height ?? 0.30;
+    const r = opts.radius ?? 0.17;
+    const b = PropFactory.build();
+    const body = sweepProfile([
+      { x: 0, y: 0, z: 0, sx: r * 1.62, sy: r * 1.62, ao: 0.45 },
+      { x: 0, y: h * 0.9, z: 0, sx: r * 2.0, sy: r * 2.0, ao: 0.92 },
+      { x: 0, y: h, z: 0, sx: r * 2.04, sy: r * 2.04, ao: 1.0 },
+      { x: 0, y: h - 0.03, z: 0, sx: r * 1.86, sy: r * 1.86, ao: 0.45 },
+      { x: 0, y: h * 0.25, z: 0, sx: r * 1.55, sy: r * 1.55, ao: 0.28 },
+    ], circleProfile(11), { uvScale: 2, capStart: false, capEnd: false });
+    bakeAO(body, { ground: 0.45, groundH: 0.2, cavity: 0.22, down: 0.3, floor: 0.3 });
+    PropFactory.add(b, body, 'cedar');
+    const bail = sweepProfile([
+      { x: -r, y: h * 0.95, z: 0, sx: 0.016, sy: 0.016, ao: 0.8 },
+      { x: 0, y: h * 1.35, z: 0, sx: 0.016, sy: 0.016, ao: 1.0 },
+      { x: r, y: h * 0.95, z: 0, sx: 0.016, sy: 0.016, ao: 0.8 },
+    ], circleProfile(5), { smooth: true, ref: [0, 0, -1], uvScale: 4 });
+    PropFactory.add(b, bail, 'rope');
+    b.bounds = { r: r * 1.2, h: h * 1.4 };
+    return b;
+  }
+
+  /** A bamboo broom leaning against something. */
+  broom(opts = {}) {
+    const h = opts.height ?? 1.45;
+    const rnd = makeRandom(opts.seed ?? 44);
+    const b = PropFactory.build();
+    const handle = sweepProfile([
+      { x: 0, y: 0.02, z: 0, sx: 0.05, sy: 0.05, ao: 0.5 },
+      { x: 0, y: h, z: 0, sx: 0.042, sy: 0.042, ao: 1.0 },
+    ], circleProfile(6), { smooth: true, uvScale: 2 });
+    PropFactory.add(b, handle, 'bambooCulm');
+    const twigs = [];
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2;
+      const spread = 0.12 + rnd() * 0.09;
+      twigs.push(sweepProfile([
+        { x: 0, y: 0.42, z: 0, sx: 0.018, sy: 0.018, ao: 0.9 },
+        { x: Math.cos(a) * spread, y: 0.02, z: Math.sin(a) * spread, sx: 0.012, sy: 0.012, ao: 0.45 },
+      ], circleProfile(4), { smooth: true, uvScale: 4 }));
+    }
+    const tm = mergeGeometries(twigs, false);
+    bakeAO(tm, { ground: 0.4, groundH: 0.2, floor: 0.34 });
+    PropFactory.add(b, tm, 'rope');
+    b.bounds = { r: 0.24, h };
+    return b;
+  }
+
+  /** A cairn of prayer stones — good arena cover at knee height. */
+  prayerStones(opts = {}) {
+    const n = opts.count ?? 6;
+    const rnd = makeRandom(opts.seed ?? 66);
+    const b = PropFactory.build();
+    const geos = [];
+    let y = 0;
+    let rr = opts.radius ?? 0.34;
+    for (let i = 0; i < n; i++) {
+      const hh = 0.09 + rnd() * 0.10;
+      const g = sweepProfile([
+        { x: (rnd() - 0.5) * 0.03, y, z: (rnd() - 0.5) * 0.03, sx: rr * 2, sy: rr * 1.72, ao: 0.55 },
+        { x: (rnd() - 0.5) * 0.03, y: y + hh, z: (rnd() - 0.5) * 0.03, sx: rr * 1.86, sy: rr * 1.6, ao: 1.0 },
+      ], circleProfile(7, rnd() * 3), { uvScale: 1.8 });
+      roughen(g, 0.018, 6);
+      const k = 0.86 + rnd() * 0.28;
+      tintGeo(g, k, k * (0.98 + rnd() * 0.05), k * (0.94 + rnd() * 0.07));
+      geos.push(g);
+      y += hh * 0.92;
+      rr *= 0.86;
+    }
+    const merged = mergeGeometries(geos.map((g) => normalizeGeo(g)), false);
+    bakeAO(merged, { ground: 0.5, groundH: 0.3, cavity: 0.3, down: 0.3, floor: 0.28 });
+    weatherBand(merged, 0, y * 0.5, 0.7, 0.84, 0.66, 0.4);
+    PropFactory.add(b, merged, 'stone');
+    PropFactory.addCollider(b, PropFactory.boxCollider((opts.radius ?? 0.34) * 2, y, (opts.radius ?? 0.34) * 1.8, 0, 0), 'stone');
+    b.bounds = { r: (opts.radius ?? 0.34) * 1.2, h: y };
+    return b;
+  }
+
+  /** 地蔵 a moss-covered jizō in a red bib. */
+  jizo(opts = {}) {
+    const h = opts.height ?? 0.78;
+    const rnd = makeRandom(opts.seed ?? 99);
+    const b = PropFactory.build();
+    const s = h / 0.78;
+
+    const base = sweepProfile([
+      { x: 0, y: -0.04, z: 0, sx: 0.42 * s, sy: 0.42 * s, ao: 0.4 },
+      { x: 0, y: 0.13 * s, z: 0, sx: 0.38 * s, sy: 0.38 * s, ao: 0.65 },
+    ], circleProfile(8), { capStart: false, uvScale: 1.4 });
+    const body = sweepProfile([
+      { x: 0, y: 0.12 * s, z: 0, sx: 0.30 * s, sy: 0.28 * s, ao: 0.62 },
+      { x: 0, y: 0.40 * s, z: 0, sx: 0.30 * s, sy: 0.28 * s, ao: 0.85 },
+      { x: 0, y: 0.56 * s, z: 0, sx: 0.24 * s, sy: 0.23 * s, ao: 0.95 },
+    ], circleProfile(10), { smooth: true, capStart: false, capEnd: false, uvScale: 1.6 });
+    const head = sweepProfile([
+      { x: 0, y: 0.54 * s, z: 0, sx: 0.19 * s, sy: 0.19 * s, ao: 0.8 },
+      { x: 0, y: 0.64 * s, z: 0, sx: 0.24 * s, sy: 0.23 * s, ao: 1.0 },
+      { x: 0, y: 0.74 * s, z: 0, sx: 0.20 * s, sy: 0.20 * s, ao: 1.0 },
+      { x: 0, y: 0.78 * s, z: 0, sx: 0.09 * s, sy: 0.09 * s, ao: 1.0 },
+    ], circleProfile(10), { smooth: true, capStart: false, uvScale: 1.8 });
+    const merged = mergeGeometries([base, body, head].map((g) => normalizeGeo(g)), false);
+    roughen(merged, 0.006 * s, 7);
+    bakeAO(merged, { ground: 0.5, groundH: 0.3 * s, cavity: 0.32, down: 0.3, floor: 0.28 });
+    // Moss on the shaded side and creeping up from the base.
+    shadeGeo(merged, (x, y, z, nx, ny, nz) => 1);
+    weatherBand(merged, 0, 0.42 * s, 0.62, 0.86, 0.58, 0.42);
+    PropFactory.add(b, merged, 'stone');
+
+    // the bib
+    const bib = new BufferGeometry();
+    const bw = 0.24 * s, by = 0.52 * s, bl = 0.26 * s;
+    const vs = new Float32Array([
+      -bw, by, 0.20 * s, bw, by, 0.20 * s,
+      bw * 0.72, by - bl, 0.23 * s, -bw * 0.72, by - bl, 0.23 * s,
+    ]);
+    bib.setAttribute('position', new BufferAttribute(vs, 3));
+    bib.setAttribute('uv', new BufferAttribute(new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]), 2));
+    bib.setAttribute('color', new BufferAttribute(new Float32Array([1, 1, 1, 1, 1, 1, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8]), 3));
+    bib.setAttribute('aFlutter', new BufferAttribute(new Float32Array([0, 0.8, 0, 0.8, 0.5, 0.8, 0.5, 0.8]), 2));
+    bib.setIndex([0, 3, 2, 0, 2, 1]);
+    bib.computeVertexNormals();
+    PropFactory.add(b, bib, 'clothCrimson');
+
+    PropFactory.addCollider(b, PropFactory.boxCollider(0.5 * s, h, 0.5 * s, 0, 0), 'stone');
+    b.bounds = { r: 0.42 * s, h };
+    return b;
+  }
+
+  /** A drift of fallen leaves — a few crumpled cards, instanced by the thousand. */
+  fallenLeaves(opts = {}) {
+    const n = opts.count ?? 5;
+    const rnd = makeRandom(opts.seed ?? 71);
+    const b = PropFactory.build();
+    const geos = [];
+    for (let i = 0; i < n; i++) {
+      const s = 0.045 + rnd() * 0.05;
+      const a = rnd() * Math.PI * 2;
+      const g = new BufferGeometry();
+      const cx = (rnd() - 0.5) * 0.5, cz = (rnd() - 0.5) * 0.5;
+      const ca = Math.cos(a) * s, sa = Math.sin(a) * s;
+      const lift = 0.004 + rnd() * 0.01;
+      const vs = new Float32Array([
+        cx - ca, 0.002, cz - sa,
+        cx + sa, lift, cz - ca,
+        cx + ca, 0.002, cz + sa,
+        cx - sa, lift * 0.6, cz + ca,
+      ]);
+      g.setAttribute('position', new BufferAttribute(vs, 3));
+      g.setAttribute('uv', new BufferAttribute(new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]), 2));
+      const k = 0.7 + rnd() * 0.5;
+      const c = new Float32Array(12);
+      for (let v = 0; v < 4; v++) { c[v * 3] = k * 1.15; c[v * 3 + 1] = k * 0.72; c[v * 3 + 2] = k * 0.42; }
+      g.setAttribute('color', new BufferAttribute(c, 3));
+      g.setIndex([0, 2, 1, 0, 3, 2]);
+      g.computeVertexNormals();
+      geos.push(g);
+    }
+    const merged = mergeGeometries(geos.map((g) => normalizeGeo(g)), false);
+    PropFactory.add(b, merged, 'dirt');
+    b.bounds = { r: 0.5, h: 0.02 };
+    return b;
+  }
+
+  // =====================================================================
+  //  御神木  SACRED TREE
+  // =====================================================================
+
+  /**
+   * A recursive branch generator. Children inherit a tapered radius, split at a
+   * believable 26–48°, and are pulled toward the horizontal by their own weight,
+   * which is what stops a procedural tree from looking like a firework.
+   */
+  sacredTree(opts = {}) {
+    const height = opts.height ?? 9.5;
+    const depth = clamp(opts.depth ?? 4, 2, 5);
+    const rnd = makeRandom(opts.seed ?? 1861);
+    const leafy = opts.leafy !== false;
+    const b = PropFactory.build();
+    const wood = [];
+    const leaves = [];
+    let tips = 0;
+
+    const grow = (x, y, z, dx, dy, dz, len, r, level) => {
+      const segs = level === 0 ? 7 : Math.max(2, 5 - level);
+      const samples = [];
+      let cx = x, cy = y, cz = z;
+      let vx = dx, vy = dy, vz = dz;
+      // A little gnarl per segment; heavier limbs sag harder.
+      for (let i = 0; i <= segs; i++) {
+        const t = i / segs;
+        const rr = r * (1 - t * (0.42 + level * 0.06)) + (level === 0 ? Math.pow(1 - t, 6) * r * 0.9 : 0);
+        samples.push({ x: cx, y: cy, z: cz, sx: rr * 2, sy: rr * 2, roll: t * 0.4, ao: lerp(level === 0 ? 0.45 : 0.7, 1.0, t) });
+        if (i === segs) break;
+        const step = len / segs;
+        const wob = 0.20 / (1 + level);
+        vx += (noise.noise2(cx * 1.7 + level * 4, cz * 1.7) * wob);
+        vz += (noise.noise2(cz * 1.7 - level * 3, cx * 1.7) * wob);
+        vy -= 0.055 * (1 + level * 0.55);            // gravity
+        const l = Math.hypot(vx, vy, vz) || 1;
+        vx /= l; vy /= l; vz /= l;
+        cx += vx * step; cy += vy * step; cz += vz * step;
+      }
+      const g = sweepProfile(samples, circleProfile(level === 0 ? 10 : level === 1 ? 7 : 5), {
+        smooth: true, uvScale: 1.2, capStart: false, capEnd: level >= depth - 1,
+      });
+      wood.push(g);
+
+      if (level >= depth - 1 || r < 0.035) {
+        tips++;
+        if (leafy && level >= 2) {
+          const s = 0.55 + rnd() * 0.5;
+          const cluster = new BufferGeometry();
+          const vs = new Float32Array(12);
+          const a = rnd() * Math.PI * 2;
+          const ca = Math.cos(a) * s, sa = Math.sin(a) * s;
+          vs.set([
+            cx - ca, cy - s * 0.35, cz - sa,
+            cx + ca, cy - s * 0.35, cz + sa,
+            cx + ca, cy + s * 0.45, cz + sa,
+            cx - ca, cy + s * 0.45, cz - sa,
+          ]);
+          cluster.setAttribute('position', new BufferAttribute(vs, 3));
+          cluster.setAttribute('uv', new BufferAttribute(new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]), 2));
+          const k = 0.8 + rnd() * 0.45;
+          const cc = new Float32Array(12);
+          for (let v = 0; v < 4; v++) { cc[v * 3] = k * 1.25; cc[v * 3 + 1] = k * 0.66; cc[v * 3 + 2] = k * 0.34; }
+          cluster.setAttribute('color', new BufferAttribute(cc, 3));
+          cluster.setAttribute('aFlutter', new BufferAttribute(new Float32Array([0.5, 1.4, 0.5, 1.4, 1, 1.4, 1, 1.4]), 2));
+          cluster.setIndex([0, 1, 2, 0, 2, 3]);
+          cluster.computeVertexNormals();
+          leaves.push(cluster);
+        }
+        return;
+      }
+
+      const kids = level === 0 ? 3 : (rnd() < 0.32 ? 3 : 2);
+      const baseA = rnd() * Math.PI * 2;
+      for (let k = 0; k < kids; k++) {
+        const spreadA = baseA + (k / kids) * Math.PI * 2 + (rnd() - 0.5) * 0.7;
+        const tilt = lerp(0.45, 0.85, rnd());          // 26°–48° from the parent
+        const nx2 = vx + Math.cos(spreadA) * tilt;
+        const ny2 = vy + 0.30 - level * 0.05;
+        const nz2 = vz + Math.sin(spreadA) * tilt;
+        const l = Math.hypot(nx2, ny2, nz2) || 1;
+        grow(cx, cy, cz, nx2 / l, ny2 / l, nz2 / l,
+          len * (0.60 + rnd() * 0.16), r * (0.56 + rnd() * 0.14), level + 1);
+      }
+    };
+
+    const trunkR = height * 0.052;
+    grow(0, 0, 0, (rnd() - 0.5) * 0.14, 1, (rnd() - 0.5) * 0.14, height * 0.42, trunkR, 0);
+
+    // Root flare so the trunk grips the ground instead of stabbing it.
+    for (let i = 0; i < 7; i++) {
+      const a = (i / 7) * Math.PI * 2 + rnd() * 0.3;
+      const rr = trunkR * (0.30 + rnd() * 0.2);
+      wood.push(sweepProfile([
+        { x: Math.cos(a) * trunkR * 2.2, y: -0.06, z: Math.sin(a) * trunkR * 2.2, sx: rr * 2, sy: rr * 1.3, ao: 0.34 },
+        { x: Math.cos(a) * trunkR * 1.0, y: trunkR * 1.6, z: Math.sin(a) * trunkR * 1.0, sx: rr * 2.4, sy: rr * 2, ao: 0.55 },
+        { x: Math.cos(a) * trunkR * 0.4, y: trunkR * 3.4, z: Math.sin(a) * trunkR * 0.4, sx: rr * 1.6, sy: rr * 1.6, ao: 0.8 },
+      ], circleProfile(6), { smooth: true, uvScale: 1.4, capStart: false, capEnd: false }));
+    }
+
+    const merged = mergeGeometries(wood.map((g) => normalizeGeo(g)), false);
+    bakeAO(merged, { ground: 0.45, groundH: 1.1, cavity: 0.26, down: 0.24, floor: 0.28 });
+    weatherBand(merged, 0, 2.2, 0.68, 0.84, 0.62, 0.6);       // moss up the north face
+    PropFactory.add(b, merged, 'bark');
+    if (leaves.length) {
+      PropFactory.add(b, mergeGeometries(leaves.map((g) => normalizeGeo(g, true)), false), 'clothCrimson');
+    }
+    PropFactory.addCollider(b, PropFactory.boxCollider(trunkR * 2.6, height * 0.6, trunkR * 2.6, 0, 0), 'wood');
+
+    b.anchors.girth = [trunkR * 1.15, height * 0.22, 0];
+    b.bounds = { r: height * 0.42, h: height };
+    b.tips = tips;
     return b;
   }
 

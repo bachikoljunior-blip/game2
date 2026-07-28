@@ -520,6 +520,7 @@ void main() {
 
 const FRAG_GOD_OCCLUSION = /* glsl */`
 ${GLSL_COMMON}
+${GLSL_DEPTH}
 uniform sampler2D tDepth;
 uniform sampler2D tScene;
 uniform vec2 uSunUv;
@@ -528,9 +529,12 @@ uniform float uAspect;
 varying vec2 vUv;
 void main() {
   float d = texture2D(tDepth, vUv).x;
-  // Only unoccluded sky emits. Everything the depth buffer holds is a shaft blocker,
-  // which is exactly what puts the beams between the torii posts and the bamboo.
-  float sky = step(0.999995, d);
+  // Only distant sky emits; everything nearer is a shaft blocker, which is what puts
+  // the beams between the torii posts and the bamboo. This has to be a *linear* test:
+  // a sky dome drawn as real geometry at 800 m sits at window depth 0.99998, which a
+  // naive "d >= 0.999995" sky test misses entirely and the god rays silently vanish.
+  float lz = viewZ(min(d, 0.9999999)) / uFar;
+  float sky = smoothstep(0.70, 0.92, lz);
   vec3 c = texture2D(tScene, vUv).rgb;
   float e = luma(c);
   vec2 dv = (vUv - uSunUv) * vec2(uAspect, 1.0);
@@ -725,8 +729,9 @@ void main() {
   float dC = texture2D(tDepth, vUv).x;
   float zC = viewZ(dC);
   // The sky has enormous reprojection velocity under a fast camera turn; letting it
-  // blur at full strength reads as a smeared background plate, so we damp it.
-  float skyW = mix(1.0, uSkyDamp, smoothstep(0.9995, 1.0, dC));
+  // blur at full strength reads as a smeared background plate, so we damp it. Linear
+  // test again, so a sky dome drawn as geometry is still recognised as sky.
+  float skyW = mix(1.0, uSkyDamp, smoothstep(0.70, 0.95, zC / uFar));
 
   vec2 dir = nv * skyW;
   float dirPx = min(length(dir * uResolution), uMaxBlurPx);
@@ -879,6 +884,9 @@ uniform vec3 uDamageTint;
 uniform float uRadial;
 uniform vec2 uRadialCenter;
 uniform float uTime;
+uniform sampler2D tRainLens;
+uniform float uRainLens;
+uniform float uRainRefract;
 
 #ifdef USE_BLOOM
 uniform sampler2D tBloom;
@@ -1031,7 +1039,23 @@ vec3 resolveAA(vec2 uv) {
 
 void main() {
   vec2 uv = vUv;
-  vec2 fromCenter = uv - 0.5;
+  // Sensor-space, so it must stay on the *undisplaced* pixel: vignette, chromatic
+  // aberration and the damage rim are properties of the lens barrel and the sensor,
+  // not of whatever the raindrop in front of them happens to be bending.
+  vec2 fromCenter = vUv - 0.5;
+
+  // ---- rain on the lens, part 1: refraction --------------------------------
+  // Weather.js supplies RG = signed refraction offset (0.5-centred), B = streak mask,
+  // A = coverage. The *displacement* has to happen at sample time — but displacing a
+  // UV commutes with every per-pixel operation downstream, so doing it here is exactly
+  // equivalent to doing it last, and costs one fetch instead of a second full grade.
+  // The visible part of the drop (part 2) is applied after tone mapping, below.
+  // Guarded by a uniform, so the dry-weather path branches past it with zero fetches.
+  vec4 lens = vec4(0.0);
+  if (uRainLens > 0.001) {
+    lens = texture2D(tRainLens, vUv);
+    uv += (lens.rg - 0.5) * 2.0 * (uRainLens * lens.a * uRainRefract);
+  }
 
   vec3 color = resolveAA(uv);
 
@@ -1120,6 +1144,16 @@ void main() {
     color = mix(color, graded, uLutStrength);
   }
 #endif
+
+  // ---- rain on the lens, part 2: the drop itself ---------------------------
+  // After the grade, with the vignette and grain: water sitting on the front element
+  // never reached the sensor as scene light, so it must not be tone mapped or LUT'd
+  // as if it had. Streaks catch the key light; the body of a drop lifts contrast
+  // slightly the way a smeared lens does.
+  if (uRainLens > 0.001) {
+    color += lens.b * uRainLens * 0.14;
+    color = mix(color, color * 1.05 + 0.018, lens.a * uRainLens * 0.55);
+  }
 
   // ---- combat feedback -----------------------------------------------------
   if (uDesat > 0.001) {
@@ -1232,6 +1266,8 @@ export class PostFX {
     this._radialCenter = new Vector2(0.5, 0.5);
     this._flashColor = new Color(1, 1, 1);
     this._damageColor = new Color(0.62, 0.035, 0.045);
+    this._rainLensTex = null;
+    this._rainLensStrength = 0;
 
     // ---- scratch (zero allocation in render) -------------------------------
     this._sunDir = new Vector3(0.42, 0.30, -0.86);
@@ -1357,6 +1393,8 @@ export class PostFX {
     this._velEntries.length = 0;
     this._velByObject.clear();
     this._quadGeo?.dispose();
+    this._depthTexture?.dispose();
+    this._depthTexture = null;
     this._noiseTex?.dispose();
     this._blackTex?.dispose();
     this._lutDay?.dispose();
@@ -1726,6 +1764,8 @@ export class PostFX {
     this.mGodOcclusion = this._mat(FRAG_GOD_OCCLUSION, {
       tDepth: { value: black },
       tScene: { value: black },
+      uProjInv: { value: new Matrix4() },
+      uNear: { value: 0.1 }, uFar: { value: 900 },
       uSunUv: { value: new Vector2(0.5, 0.5) },
       uSunRadius: { value: 0.30 },
       uAspect: { value: 1.78 },
@@ -1842,6 +1882,9 @@ export class PostFX {
       uRadial: { value: 0 },
       uRadialCenter: { value: this._radialCenter },
       uTime: { value: 0 },
+      tRainLens: { value: this._rainLensTex || this._blackTex },
+      uRainLens: { value: 0 },
+      uRainRefract: { value: 0.026 },
     }, this._compositeDefines());
   }
 
@@ -1883,6 +1926,42 @@ export class PostFX {
     return t;
   }
 
+  /**
+   * The scene DepthTexture is created once and *resized in place* — its GL storage is
+   * freed and reallocated, but the JS object identity survives.
+   *
+   * This matters because consumers latch it. Weather.js wires `ctx.pipeline.depthTexture`
+   * into its soft-particle fog material exactly once (`_depthWired`) and recompiles that
+   * shader; if we handed out a fresh DepthTexture on every resize, the mist would be
+   * sampling a disposed texture the moment the player rotates their phone.
+   */
+  _ensureDepthTexture(w, h) {
+    let d = this._depthTexture;
+    if (!d) {
+      d = new DepthTexture(w, h, UnsignedIntType);
+      d.format = DepthFormat;
+      d.minFilter = NearestFilter;
+      d.magFilter = NearestFilter;
+      d.generateMipmaps = false;
+      this._depthTexture = d;
+    } else if (d.image.width !== w || d.image.height !== h) {
+      d.image.width = w;
+      d.image.height = h;
+      d.dispose();            // frees the GL texture; three reallocates at the new size
+      d.needsUpdate = true;
+    }
+    return d;
+  }
+
+  /**
+   * The live scene depth buffer, for systems that need to depth-fade against the
+   * opaque frame (Weather's valley mist and soft particles). A getter, not a field,
+   * so it always reports the current target set.
+   */
+  get depthTexture() {
+    return this.rtScene ? this.rtScene.depthTexture : (this._depthTexture || null);
+  }
+
   _buildTargets(w, h) {
     this._disposeTargets();
     this._needsTargets = false;
@@ -1891,12 +1970,7 @@ export class PostFX {
 
     // 0 — scene HDR + depth
     this.rtScene = this._rt(w, h, true, true);
-    const depth = new DepthTexture(w, h, UnsignedIntType);
-    depth.format = DepthFormat;
-    depth.minFilter = NearestFilter;
-    depth.magFilter = NearestFilter;
-    depth.generateMipmaps = false;
-    this.rtScene.depthTexture = depth;
+    this.rtScene.depthTexture = this._ensureDepthTexture(w, h);
 
     // 4 — resolve / history
     this.rtHist = null;
@@ -1984,7 +2058,9 @@ export class PostFX {
 
   _disposeTargets() {
     for (const t of this._targets) {
-      if (t.depthTexture) { t.depthTexture.dispose(); t.depthTexture = null; }
+      // Detach but never destroy the shared depth texture — _ensureDepthTexture owns
+      // its lifetime so latched consumers keep a valid reference across resizes.
+      if (t.depthTexture) t.depthTexture = null;
       t.dispose();
     }
     this._targets.length = 0;
@@ -2129,6 +2205,31 @@ export class PostFX {
     }
   }
 
+  /**
+   * Raindrops on the front element, pushed by Weather.js when the rain preset changes.
+   *
+   * `texture` channels (Weather.js authors this as a CanvasTexture):
+   *   RG = refraction offset, signed and 0.5-centred (128,128 = no bend)
+   *   B  = streak mask (a run of water catching the key light)
+   *   A  = coverage (0 where the lens is dry)
+   * `strength` is 0..1; pass 0 (or a null texture) to go dry, which branches the whole
+   * effect out of the composite with no texture fetches at all.
+   */
+  setRainLens(texture, strength) {
+    const s = clamp(typeof strength === 'number' && isFinite(strength) ? strength : 0, 0, 1);
+    if (texture && texture.isTexture) {
+      // These are data channels, not colour. An sRGB decode would bend the refraction
+      // offsets and shift the neutral point off 0.5.
+      texture.colorSpace = NoColorSpace;
+      this._rainLensTex = texture;
+    } else if (!texture) {
+      this._rainLensTex = null;
+    }
+    this._rainLensStrength = this._rainLensTex ? s : 0;
+    const u = this.mComposite && this.mComposite.uniforms;
+    if (u) u.tRainLens.value = this._rainLensTex || this._blackTex;
+  }
+
   setFocalLength(mm) { this.focalLength = clamp((mm || 50) * 0.001, 0.008, 0.3); }
   setDofBlend(v) { this.dofBlend = clamp(v, 0, 1); }
   setShutterAngle(deg) { this.shutterAngle = clamp(deg, 0, 360); }
@@ -2165,13 +2266,18 @@ export class PostFX {
     this._damageTarget = 0;
   }
 
-  /** A white flash frame and a short radial blur burst. */
-  pulseParry() {
-    this._parry = 1;
+  /**
+   * A white flash frame and a short radial blur burst.
+   * `intensity` 0..1 — Effects.js passes 1 for a perfect parry, 0.6 for a normal one,
+   * so a perfect deflect has to hit visibly harder than a blocked one.
+   */
+  pulseParry(intensity = 1) {
+    const i = clamp(typeof intensity === 'number' && isFinite(intensity) ? intensity : 1, 0, 1);
+    this._parry = Math.max(this._parry, 0.35 + i * 0.65);
     this._flashColor.setRGB(1, 0.97, 0.90);
-    this._flashAlpha = Math.max(this._flashAlpha, 0.55);
+    this._flashAlpha = Math.max(this._flashAlpha, 0.22 + i * 0.36);
     this._flashRate = 9;
-    this._radial = Math.max(this._radial, 0.16);
+    this._radial = Math.max(this._radial, 0.05 + i * 0.13);
     this._radialCenter.set(0.5, 0.5);
     this._radialTarget = 0;
   }
@@ -2557,6 +2663,8 @@ export class PostFX {
     const ou = this.mGodOcclusion.uniforms;
     ou.tDepth.value = depthTex;
     ou.tScene.value = colorTex;
+    ou.uNear.value = this._near;
+    ou.uFar.value = this._far;
     ou.uSunUv.value.copy(this._sunUv);
     ou.uAspect.value = this._w / Math.max(1, this._h);
     ou.uSunRadius.value = 0.30;
@@ -2721,6 +2829,11 @@ export class PostFX {
       // dropped frame, not a stylistic hold.
       u.uGrainTime.value = (this._time * 61.7) % 4096;
     }
+
+    // Rebinding every frame keeps us correct across a material rebuild (tier change)
+    // without Weather having to push the lens again.
+    u.tRainLens.value = this._rainLensTex || this._blackTex;
+    u.uRainLens.value = this._rainLensTex ? this._rainLensStrength : 0;
 
     u.uLutMix.value = this._nightFactor();
     u.uLutStrength.value = this.lutStrength;

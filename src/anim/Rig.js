@@ -29,7 +29,7 @@ import {
   Vector3, Quaternion, Matrix4, Euler, Color, Sphere,
   MeshStandardMaterial, DoubleSide, FrontSide, DynamicDrawUsage,
 } from 'three';
-import { noise, clamp, lerp, smootherstep, damp } from '../core/Noise.js';
+import { noise, clamp, lerp, damp } from '../core/Noise.js';
 import { getClip, CLIPS, LOCOMOTION_FORWARD } from './Poses.js';
 
 // ===========================================================================
@@ -684,17 +684,19 @@ function loftSphere(mesher, cx, cy, cz, rx, ry, rz, nLat, nLon, shape) {
 /** Ring and station density per tier. Bone count is fixed; only the skin scales. */
 function meshDensity(quality) {
   const tier = quality ? quality.tier : 1;
-  if (tier <= 0) return { ringL: 6, ringT: 8, lon: 0.72, sphere: [6, 8] };
-  if (tier === 1) return { ringL: 10, ringT: 14, lon: 1.0, sphere: [8, 12] };
-  return { ringL: 14, ringT: 18, lon: 1.35, sphere: [11, 16] };
+  if (tier <= 0) return { ringL: 6, ringT: 8, lon: 0.70, sphere: [6, 8] };
+  if (tier === 1) return { ringL: 12, ringT: 16, lon: 1.15, sphere: [9, 13] };
+  return { ringL: 16, ringT: 22, lon: 1.55, sphere: [12, 18] };
 }
 
-const _P3 = new Vector3();
-/** Bind-pose world position of a bone, root space. */
-function bindPos(bones, name, out) {
-  const b = bones[name];
-  out.setFromMatrixPosition(b.matrixWorld);
-  return out;
+/**
+ * Bind-pose position of a bone in root space. Reads the cached segment table rather
+ * than `bone.matrixWorld`, so geometry generation is immune to the rig having already
+ * been parented under a transformed node.
+ */
+function bindPos(rig, name, out) {
+  const i = BONE_INDEX[name] * 3;
+  return out.set(rig._segA[i], rig._segA[i + 1], rig._segA[i + 2]);
 }
 
 /**
@@ -704,19 +706,18 @@ function bindPos(bones, name, out) {
  * is what stops the left thigh from claiming vertices on the right thigh at the crotch.
  */
 function buildBody(rig, dens) {
-  const bones = rig.bones;
   const mesher = new Mesher(rig._segA, rig._segB, 0.055);
   const S = rig.scale;
   const a = _v[0], b = _v[1], c = _v[2];
   const L = dens.lon;
   const R = (n) => Math.max(3, Math.round(n * L));
 
-  const hips = bindPos(bones, 'hips', a).clone();
-  const sp1 = bindPos(bones, 'spine1', a).clone();
-  const sp2 = bindPos(bones, 'spine2', a).clone();
-  const sp3 = bindPos(bones, 'spine3', a).clone();
-  const neck = bindPos(bones, 'neck', a).clone();
-  const head = bindPos(bones, 'head', a).clone();
+  const hips = bindPos(rig, 'hips', a).clone();
+  const sp1 = bindPos(rig, 'spine1', a).clone();
+  const sp2 = bindPos(rig, 'spine2', a).clone();
+  const sp3 = bindPos(rig, 'spine3', a).clone();
+  const neck = bindPos(rig, 'neck', a).clone();
+  const head = bindPos(rig, 'head', a).clone();
 
   // ---- torso
   mesher.begin(rig._candTorso, 1.0);
@@ -744,9 +745,9 @@ function buildBody(rig, dens) {
 
   // ---- arms
   for (const side of ['R', 'L']) {
-    const sh = bindPos(bones, 'upperArm' + side, a).clone();
-    const el = bindPos(bones, 'foreArm' + side, b).clone();
-    const wr = bindPos(bones, 'hand' + side, c).clone();
+    const sh = bindPos(rig, 'upperArm' + side, a).clone();
+    const el = bindPos(rig, 'foreArm' + side, b).clone();
+    const wr = bindPos(rig, 'hand' + side, c).clone();
     const sgn = side === 'R' ? 1 : -1;
     mesher.begin(side === 'R' ? rig._candArmR : rig._candArmL, 0.97);
     loftTube(mesher, [
@@ -776,9 +777,9 @@ function buildBody(rig, dens) {
 
   // ---- legs
   for (const side of ['R', 'L']) {
-    const hp = bindPos(bones, 'thigh' + side, a).clone();
-    const kn = bindPos(bones, 'shin' + side, b).clone();
-    const an = bindPos(bones, 'foot' + side, c).clone();
+    const hp = bindPos(rig, 'thigh' + side, a).clone();
+    const kn = bindPos(rig, 'shin' + side, b).clone();
+    const an = bindPos(rig, 'foot' + side, c).clone();
     mesher.begin(side === 'R' ? rig._candLegR : rig._candLegL, 0.98);
     loftTube(mesher, [
       [hp.x, hp.y + 0.050 * S, hp.z, 0.088 * S, 0.092 * S],
@@ -792,7 +793,7 @@ function buildBody(rig, dens) {
     ], R(10), dens.ringL, { capStart: true, capEnd: false });
 
     // Foot: heel behind the ankle, ball forward, tapering toe box.
-    const to = bindPos(bones, 'toe' + side, _v[3]).clone();
+    const to = bindPos(rig, 'toe' + side, _v[3]).clone();
     mesher.begin(side === 'R' ? rig._candFootR : rig._candFootL, 0.86);
     loftTube(mesher, [
       [an.x, an.y + 0.012 * S, an.z + 0.070 * S, 0.032 * S, 0.036 * S],
@@ -813,7 +814,6 @@ function buildBody(rig, dens) {
  * are cloth-simulated separately; this is only the part that stays on the arm.
  */
 function buildUpperGarment(rig, dens, opts) {
-  const bones = rig.bones;
   const mesher = new Mesher(rig._segA, rig._segB, 0.065);
   const S = rig.scale;
   const a = _v[0], b = _v[1], c = _v[2];
@@ -821,11 +821,11 @@ function buildUpperGarment(rig, dens, opts) {
   const R = (n) => Math.max(3, Math.round(n * L));
   const puff = opts.puff === undefined ? 0.022 : opts.puff;
 
-  const hips = bindPos(bones, 'hips', a).clone();
-  const sp1 = bindPos(bones, 'spine1', a).clone();
-  const sp2 = bindPos(bones, 'spine2', a).clone();
-  const sp3 = bindPos(bones, 'spine3', a).clone();
-  const neck = bindPos(bones, 'neck', a).clone();
+  const hips = bindPos(rig, 'hips', a).clone();
+  const sp1 = bindPos(rig, 'spine1', a).clone();
+  const sp2 = bindPos(rig, 'spine2', a).clone();
+  const sp3 = bindPos(rig, 'spine3', a).clone();
+  const neck = bindPos(rig, 'neck', a).clone();
 
   mesher.begin(rig._candTorso, 1.0);
   loftTube(mesher, [
@@ -841,9 +841,9 @@ function buildUpperGarment(rig, dens, opts) {
 
   // Sleeves: they start tight at the shoulder and flare hard past the elbow.
   for (const side of ['R', 'L']) {
-    const sh = bindPos(bones, 'upperArm' + side, a).clone();
-    const el = bindPos(bones, 'foreArm' + side, b).clone();
-    const wr = bindPos(bones, 'hand' + side, c).clone();
+    const sh = bindPos(rig, 'upperArm' + side, a).clone();
+    const el = bindPos(rig, 'foreArm' + side, b).clone();
+    const wr = bindPos(rig, 'hand' + side, c).clone();
     const sgn = side === 'R' ? 1 : -1;
     mesher.begin(side === 'R' ? rig._candArmR : rig._candArmL, 0.96);
     loftTube(mesher, [
@@ -861,7 +861,7 @@ function buildUpperGarment(rig, dens, opts) {
 function buildObi(rig, dens) {
   const mesher = new Mesher(rig._segA, rig._segB, 0.08);
   const S = rig.scale;
-  const p = bindPos(rig.bones, 'spine1', _v[0]).clone();
+  const p = bindPos(rig, 'spine1', _v[0]).clone();
   mesher.begin(rig._candTorso, 0.88);
   loftTube(mesher, [
     [p.x, p.y - 0.075 * S, p.z, 0.152 * S, 0.126 * S],
@@ -887,8 +887,10 @@ function buildLamellar(rig, dens, materials) {
   group.name = 'do';
   const rows = dens.lon > 1.1 ? 6 : 5;
   const cols = dens.lon > 1.1 ? 16 : 13;
-  const plateGeo = plateGeometry(0.030 * S, 0.040 * S, 0.005 * S);
-  const cordGeo = plateGeometry(0.006 * S, 0.030 * S, 0.004 * S);
+  // 65 plates × 2 InstancedMeshes is 2 draw calls; the triangle cost has to come out
+  // of the per-plate grid instead. Single-faced — nobody sees the inside of a cuirass.
+  const plateGeo = plateGeometry(0.030 * S, 0.040 * S, 0.005 * S, 3, 3, false);
+  const cordGeo = plateGeometry(0.006 * S, 0.030 * S, 0.004 * S, 1, 1, false);
 
   const plates = new InstancedMesh(plateGeo, materials.lamellar, rows * cols);
   const cords = new InstancedMesh(cordGeo, materials.lacing, rows * cols);
@@ -896,8 +898,8 @@ function buildLamellar(rig, dens, materials) {
   plates.castShadow = true;
 
   const m4 = _m[0], qq = _q[0], pv = _v[0], sv = _v[1].set(1, 1, 1);
-  const sp1 = bindPos(rig.bones, 'spine1', _v[2]).clone();
-  const sp3 = bindPos(rig.bones, 'spine3', _v[3]).clone();
+  const sp1 = bindPos(rig, 'spine1', _v[2]).clone();
+  const sp3 = bindPos(rig, 'spine3', _v[3]).clone();
   let n = 0;
   for (let r = 0; r < rows; r++) {
     const t = r / (rows - 1);
@@ -930,7 +932,7 @@ function buildLamellar(rig, dens, materials) {
 function buildSode(rig, dens, materials, side) {
   const S = rig.scale;
   const rows = 4;
-  const geo = plateGeometry(0.085 * S, 0.048 * S, 0.006 * S);
+  const geo = plateGeometry(0.085 * S, 0.048 * S, 0.006 * S, 3, 3, false);
   const im = new InstancedMesh(geo, materials.lamellar, rows);
   im.name = 'sode' + side;
   im.castShadow = true;
@@ -950,11 +952,12 @@ function buildSode(rig, dens, materials, side) {
 }
 
 /** A slightly domed rounded plate — flat quads read as cardboard under a rim light. */
-function plateGeometry(w, h, d) {
+function plateGeometry(w, h, d, nx, ny, twoSided) {
   const g = new BufferGeometry();
   const pos = [], nor = [], uv = [], idx = [];
-  const nx = 4, ny = 4;
-  for (let s = 0; s < 2; s++) {
+  nx = nx || 3; ny = ny || 3;
+  const sides = twoSided ? 2 : 1;
+  for (let s = 0; s < sides; s++) {
     const sign = s === 0 ? 1 : -1;
     const base = pos.length / 3;
     for (let j = 0; j <= ny; j++) {
@@ -1965,8 +1968,10 @@ export class Rig {
     this._clothAccum = 0;
 
     this._buildSkeleton();
-    if (o.parent && o.parent.isObject3D) o.parent.add(this.root);
     if (o.autoBuild !== false) this.build(o);
+    // Parented last: the skeleton's bind inverses and the mesh generator both read
+    // root-space transforms, and a transformed parent would poison both.
+    if (o.parent && o.parent.isObject3D) o.parent.add(this.root);
   }
 
   // ---------------------------------------------------------------- skeleton
@@ -2158,9 +2163,9 @@ export class Rig {
     };
     // Grip: the tsuka lies across the palm with the blade running forward out of the
     // fist. Exposed as an Object3D precisely so gameplay can tune it without a rebuild.
-    mk('handR', 'handR', 0.010, -0.052, -0.012, -1.78, 0.16, 0.10);
-    mk('handL', 'handL', -0.010, -0.052, -0.012, -1.78, -0.16, -0.10);
-    mk('sayaMount', 'sayaMount', 0, 0, 0, 1.36, -0.20, 0.14);
+    mk('handR', 'handR', 0.010, -0.052, -0.012, -3.13, 0.16, 0.10);
+    mk('handL', 'handL', -0.010, -0.052, -0.012, -3.13, -0.16, -0.10);
+    mk('sayaMount', 'sayaMount', 0, 0, 0, 1.30, -0.20, 0.34);
     mk('head', 'head', 0, 0.100, 0, 0, 0, 0);
     mk('backMount', 'backMount', 0, 0, 0, 0, 0, 0);
     mk('hipR', 'hips', 0.118 * 1, 0.020, 0.055, 1.36, 0.20, -0.14);
@@ -3305,3 +3310,114 @@ export class Rig {
     this.built = false;
   }
 }
+
+// ===========================================================================
+// SHARED HELPERS USED BY THE RIG
+// ===========================================================================
+
+/**
+ * Aim chain. Weights sum to more than 1 on purpose: each bone consumes part of the
+ * remaining angle, so the head finishes the job the spine started, and the per-bone
+ * limits stop the neck from snapping when the target is behind the character.
+ */
+const LOOK_CHAIN = [
+  { bone: 'spine2', weight: 0.10, limit: 0.16 },
+  { bone: 'spine3', weight: 0.16, limit: 0.22 },
+  { bone: 'neck', weight: 0.34, limit: 0.44 },
+  { bone: 'head', weight: 0.62, limit: 0.70 },
+];
+
+/** Frame-rate independent approach toward a target at a fixed rate. */
+function approach(cur, target, rate, dt) {
+  if (cur === target) return target;
+  const step = rate * dt;
+  if (step >= 1) return target;
+  return cur + (target - cur) * step;
+}
+
+/**
+ * Blend two sampled pose buffers, respecting each side's "defined" mask.
+ *
+ * A bone that only one side defines does not slerp toward identity — it keeps its
+ * rotation and gives up *authority* instead, by scaling its `def` weight. The layer
+ * compose then slerps it in from whatever is underneath. That distinction is what
+ * lets an upper-body attack cross-fade over a run without the arms briefly snapping
+ * through the rest pose on the way.
+ */
+function blendBuffers(qa, pa, da, qb, pb, db, t, oq, op, od) {
+  const it = 1 - t;
+  for (let b = 0; b < NB; b++) {
+    const wa = da[b], wb = db[b];
+    const o4 = b * 4, o3 = b * 3;
+    if (wa === 0 && wb === 0) {
+      od[b] = 0;
+      oq[o4] = 0; oq[o4 + 1] = 0; oq[o4 + 2] = 0; oq[o4 + 3] = 1;
+      op[o3] = 0; op[o3 + 1] = 0; op[o3 + 2] = 0;
+      continue;
+    }
+    if (wa === 0) {
+      oq[o4] = qb[o4]; oq[o4 + 1] = qb[o4 + 1]; oq[o4 + 2] = qb[o4 + 2]; oq[o4 + 3] = qb[o4 + 3];
+      op[o3] = pb[o3]; op[o3 + 1] = pb[o3 + 1]; op[o3 + 2] = pb[o3 + 2];
+      od[b] = wb * t;
+    } else if (wb === 0) {
+      if (oq !== qa) {
+        oq[o4] = qa[o4]; oq[o4 + 1] = qa[o4 + 1]; oq[o4 + 2] = qa[o4 + 2]; oq[o4 + 3] = qa[o4 + 3];
+        op[o3] = pa[o3]; op[o3 + 1] = pa[o3 + 1]; op[o3 + 2] = pa[o3 + 2];
+      }
+      od[b] = wa * it;
+    } else {
+      qSlerp(qa, o4, qb, o4, t, oq, o4);
+      op[o3] = pa[o3] + (pb[o3] - pa[o3]) * t;
+      op[o3 + 1] = pa[o3 + 1] + (pb[o3 + 1] - pa[o3 + 1]) * t;
+      op[o3 + 2] = pa[o3 + 2] + (pb[o3 + 2] - pa[o3 + 2]) * t;
+      od[b] = wa * it + wb * t;
+    }
+  }
+}
+
+/** Did a looping phase cross `mark` between `prev` and `cur`? */
+function crossedPhase(prev, cur, mark) {
+  if (cur >= prev) return prev < mark && cur >= mark;
+  return prev < mark || cur >= mark;   // wrapped through 1.0
+}
+
+// ===========================================================================
+// FACTORY
+// ===========================================================================
+
+/**
+ * `buildCharacter(opts)` — the one-call path. Returns a fully built Rig with its
+ * skeleton, skinned body, costume, katana and cloth ready, parented to `opts.parent`
+ * if one is given. Accepts `(ctx, opts)` too, because both spellings appear in the
+ * wild and neither is worth an integration bug.
+ */
+export function buildCharacter(optsOrCtx, maybeOpts) {
+  let ctx, opts;
+  if (optsOrCtx && (optsOrCtx.renderer || optsOrCtx.quality || optsOrCtx.bus) && maybeOpts !== undefined) {
+    ctx = optsOrCtx; opts = maybeOpts || {};
+  } else if (optsOrCtx && optsOrCtx.ctx) {
+    ctx = optsOrCtx.ctx; opts = optsOrCtx;
+  } else {
+    ctx = optsOrCtx || {}; opts = maybeOpts || {};
+  }
+  const rig = new Rig(ctx, opts);
+  if (!rig.built) rig.build(opts);
+  return rig;
+}
+
+/** Default costume descriptions, so a caller can spawn a character with one string. */
+export const COSTUMES = Object.freeze({
+  player: {
+    silhouette: 'ronin', chest: 'kimono', sleeves: 'haori', sash: true,
+    armour: 'none', hat: false, mask: false, topknot: true,
+    palette: { cloth: 0x2a2f38, armour: 0x3a3128, lacing: 0x5a4436, trim: 0x7a1d16, metal: 0xc9d3dc, skin: 0xb08a63 },
+  },
+  oni: {
+    silhouette: 'oyoroi', chest: 'o_yoroi', sleeves: 'sode', sash: true,
+    armour: 'heavy', hat: false, mask: 'menpo', topknot: false,
+    palette: { cloth: 0x241d1a, armour: 0x50221c, lacing: 0xc9a227, trim: 0xc8321e, metal: 0x6d6a63, skin: 0x8c6b4a },
+  },
+});
+
+export { CLIP_ALIAS, BONE_INDEX, KATANA };
+export default Rig;

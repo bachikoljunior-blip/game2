@@ -186,7 +186,7 @@ class GeoBuilder {
 }
 
 // =============================================================================
-// 3. The foliage shader
+// 2. The foliage shader
 // =============================================================================
 
 const MAX_CHARACTERS = 8;
@@ -228,7 +228,7 @@ varying vec3  vKagWorld;
 vec3 kagPosG;
 vec3 kagNrmG;
 
-// The shared field. Brings in glslNoise, `uWind`/`uGust`, kagerouGust/Wind/Bend.
+// The shared field: brings in glslNoise, the uWind/uGust block, kagerouGust/Wind/Bend.
 ${WIND_GLSL}
 
 vec3 kagRodrigues( vec3 v, vec3 axis, float ang ) {
@@ -257,7 +257,7 @@ void kagFoliageVertex() {
   vKagFade = smoothstep( uFadeNear.x, uFadeNear.y, dist ) * ( 1.0 - smoothstep( uFadeFar.x, uFadeFar.y, dist ) );
 
   // ---- wind ----------------------------------------------------------------
-  // The gust field is Weather's, sampled at the plant's root. `kagerouBend` with h = 1
+  // The gust field is Weather's, sampled at the plant's root. kagerouBend with h = 1
   // gives the tip deflection for this stiffness; the falloff along the stem is ours
   // (see KAG_BEND_EXP below), because rotating about the base is what makes it bend
   // rather than shear.
@@ -308,7 +308,8 @@ void kagFoliageVertex() {
   float mag   = length( total );
   vec2  dirn  = mag > 1e-4 ? total / mag : wdir;
   vec3  axis  = vec3( dirn.y, 0.0, -dirn.x );   // = normalize( cross( up, flow ) )
-  float a     = mag * uBendGain / stiff;
+  // kagerouBend already divided by stiffness, so do not do it twice here.
+  float a     = mag * uBendGain;
   float theta = 1.5 * a / ( 1.0 + a );          // saturating: a blade never folds past ~86 deg
 
   // Trampled blades also lose height, which is what actually reads as "flattened".
@@ -433,7 +434,7 @@ const FRAGMENT_SSS = /* glsl */`
 `;
 
 // =============================================================================
-// 4. Material + instanced-geometry factories
+// 3. Material + instanced-geometry factories
 // =============================================================================
 
 /**
@@ -480,7 +481,7 @@ function resizeInstanced(g, capacity) {
 }
 
 // =============================================================================
-// 5. Procedural geometry
+// 4. Procedural geometry
 // =============================================================================
 
 /**
@@ -639,7 +640,7 @@ function buildFrondClumpGeometry(fronds = 7, lean = 0.55, rise = 0.62, seed = 3)
 }
 
 // =============================================================================
-// 6. Recursive tree generator
+// 5. Recursive tree generator
 // =============================================================================
 
 /**
@@ -810,7 +811,7 @@ function buildTree(spec, seed) {
 }
 
 // =============================================================================
-// 7. Procedural textures
+// 6. Procedural textures
 // =============================================================================
 
 function newCanvas(w, h) {
@@ -1171,7 +1172,7 @@ function paintGroundDetail(size) {
 }
 
 // =============================================================================
-// 8. LOD and density tables
+// 7. LOD and density tables
 // =============================================================================
 
 /**
@@ -1211,7 +1212,7 @@ const AUTUMN_B = new Color(0x9c8548);
 const AUTUMN_C = new Color(0xc07a3a);
 
 // =============================================================================
-// 9. FoliageSystem
+// 8. FoliageSystem
 // =============================================================================
 
 export class FoliageSystem {
@@ -1702,7 +1703,8 @@ export class FoliageSystem {
       a[o] = x; a[o + 1] = y; a[o + 2] = z; a[o + 3] = rnd() * Math.PI * 2;
       b[o] = (0.28 + rnd() * 0.46) * lush;            // height, metres
       b[o + 1] = 0.021 + rnd() * 0.017;               // width, metres
-      b[o + 2] = 0.72 + rnd() * 0.66;                 // stiffness
+      // Weather's convention: < 1 is limp (a grass blade), > 1 is stiff (a bamboo culm).
+      b[o + 2] = 0.42 + rnd() * 0.48;                 // stiffness
       b[o + 3] = rnd();                               // phase
       c[o] = col.r * shade; c[o + 1] = col.g * shade; c[o + 2] = col.b * shade;
       c[o + 3] = 0;
@@ -1833,7 +1835,481 @@ export class FoliageSystem {
     g.cache?.clear?.();
   }
 
-  //@@SECTION_12@@
+  // -------------------------------------------------------------------- bamboo
+
+  _buildBambooAssets(q) {
+    const sides = q.tier >= 2 ? 6 : 5;
+    const culm = buildCulmGeometry(sides, q.tier >= 2 ? 10 : 8, 0.045);
+    const leaf = buildCrossCard(2, 1.0, true, 1.0);
+    const card = buildCrossCard(2, 1.0, false, 0.55);
+    this._geometries.push(culm, leaf, card);
+
+    const shadows = !!q.foliageShadows;
+
+    // Culms: stiff, and they whip. A bamboo sea reads as bamboo because the tops lag.
+    const culmOpts = {
+      name: 'bamboo-culm', mode: 0, map: null, color: 0x9fae5c,
+      bendExp: 1.6, whip: 0.28, bendGain: 1.35, flutter: 0.35,
+      fadeFar: RANGE.bambooCulm, size: [1, 1], side: FrontSide,
+      sss: 0.55, sssColor: 0xd9dd8e, tipGlow: 0.10, baseAO: 0.28, grain: 0.20,
+    };
+    const culmMat = this._makeMaterial(culmOpts);
+    const culmDepth = shadows ? this._makeDepthMaterial(culmMat, culmOpts) : null;
+
+    // Leaves hang off the culm and flutter at a much higher frequency.
+    const leafOpts = {
+      name: 'bamboo-leaf', mode: 1, map: this.tex.bambooLeaf, color: 0xffffff,
+      bendExp: 1.6, whip: 0.28, bendGain: 1.35, flutter: 1.6, alphaTest: 0.38,
+      fadeFar: RANGE.bambooLeaf, size: [1, 1],
+      sss: 1.45, sssColor: 0xcfe07f, tipGlow: 0.18, baseAO: 0.22, grain: 0.16,
+    };
+    const leafMat = this._makeMaterial(leafOpts);
+    const leafDepth = shadows ? this._makeDepthMaterial(leafMat, leafOpts) : null;
+
+    // Impostor cards for the mid distance: cheap, still bending on the same front.
+    const cardOpts = {
+      name: 'bamboo-card', mode: 0, map: this.tex.bambooLeaf, color: 0xbcc978,
+      bendExp: 1.8, bendGain: 0.9, flutter: 0.6, alphaTest: 0.30,
+      fadeNear: [RANGE.bambooCard[0], RANGE.bambooCard[0] + 9],
+      fadeFar: [RANGE.bambooCard[1] * 0.86, RANGE.bambooCard[1]],
+      size: [1, 1], sss: 1.1, sssColor: 0xc8d884, tipGlow: 0.14, baseAO: 0.30, grain: 0.14,
+    };
+    const cardMat = this._makeMaterial(cardOpts);
+
+    this._bambooAssets = {
+      culm: { geo: culm, mat: culmMat, depth: culmDepth },
+      leaf: { geo: leaf, mat: leafMat, depth: leafDepth },
+      card: { geo: card, mat: cardMat, depth: null },
+    };
+  }
+
+  /**
+   * The bamboo sea. Near culms are real geometry; everything past ~30 m is a card, and
+   * past ~110 m the canopy shell takes over. All of it is scattered once at boot — the
+   * playable region is only 220 m across, so recycling would buy nothing but bugs.
+   */
+  _scatterBamboo(q) {
+    const A = this._bambooAssets;
+    const density = clamp(0.35 + (q.grassDensity || 0.4) * 0.8, 0.3, 1.6);
+    const rnd = makeRandom(0xBA9B00);
+
+    const valley = (WORLD.VALLEY_AZIMUTH * Math.PI) / 180;
+    const vx = Math.sin(valley), vz = Math.cos(valley);
+
+    const nearTarget = Math.round(340 * density);
+    const cardTarget = Math.round(1500 * density);
+
+    const nearA = new Float32Array(nearTarget * 4);
+    const nearB = new Float32Array(nearTarget * 4);
+    const nearC = new Float32Array(nearTarget * 4);
+    const leavesPer = q.tier >= 2 ? 7 : 5;
+    const leafA = new Float32Array(nearTarget * leavesPer * 4);
+    const leafB = new Float32Array(nearTarget * leavesPer * 4);
+    const leafC = new Float32Array(nearTarget * leavesPer * 4);
+    const cardA = new Float32Array(cardTarget * 4);
+    const cardB = new Float32Array(cardTarget * 4);
+    const cardC = new Float32Array(cardTarget * 4);
+
+    let n = 0, ln = 0, cn = 0;
+    const col = _colScratch;
+
+    // Bamboo wants the sheltered, damp, valley-facing ground below the plateau lip.
+    const sample = (maxR) => {
+      const a = rnd() * Math.PI * 2;
+      const r = Math.sqrt(rnd()) * maxR;
+      // Bias toward the valley azimuth without ever becoming a visible wedge.
+      const bias = 0.55;
+      const x = Math.cos(a) * r * (1 - bias) + vx * r * bias + (rnd() - 0.5) * r * 0.6;
+      const z = Math.sin(a) * r * (1 - bias) + vz * r * bias + (rnd() - 0.5) * r * 0.6;
+      return [x, z];
+    };
+
+    const clumpNoise = (x, z) => clamp(noise.fbm2(x * 0.035, z * 0.035, 3) * 0.5 + 0.5, 0, 1);
+
+    for (let i = 0; i < nearTarget * 4 && n < nearTarget; i++) {
+      const [x, z] = sample(96);
+      const y = this._heightAt(x, z);
+      if (y < WORLD.WATER_LEVEL + 0.4) continue;
+      // Never inside the swept courtyard, and never on the stone stair.
+      if (plateauMask(x, z) > 0.35) continue;
+      const surf = this._surfaceAt(x, z);
+      if (surf === 'stone' || surf === 'gravel' || surf === 'rock' || surf === 'path' || surf === 'water') continue;
+      if (this._slopeAt(x, z) > 0.62) continue;
+      const c = clumpNoise(x, z);
+      if (rnd() > 0.22 + c * 0.95) continue;
+
+      const h = 4 + rnd() * 10;                   // 4-14 m
+      const lean = 0.55 + rnd() * 0.9;
+      const yaw = rnd() * Math.PI * 2;
+      const green = 0.55 + rnd() * 0.45;
+      col.setRGB(0.52 * green + 0.16, 0.66 * green + 0.10, 0.26 * green + 0.08);
+      // Older culms yellow off; a monoculture of one green reads as plastic.
+      if (rnd() < 0.24) col.lerp(AUTUMN_B, 0.35 + rnd() * 0.4);
+
+      const o = n * 4;
+      nearA[o] = x; nearA[o + 1] = y; nearA[o + 2] = z; nearA[o + 3] = yaw;
+      nearB[o] = h;
+      nearB[o + 1] = (0.055 + rnd() * 0.055) * (0.75 + h / 20);
+      nearB[o + 2] = 2.0 + rnd() * 1.5 + h * 0.04;   // stiff: >1 per Weather's convention
+      nearB[o + 3] = rnd();
+      nearC[o] = col.r; nearC[o + 1] = col.g; nearC[o + 2] = col.b; nearC[o + 3] = lean;
+      n++;
+
+      // Leaf clusters live on the top third, where a real culm actually leafs out.
+      for (let l = 0; l < leavesPer; l++) {
+        const t = 0.58 + (l / leavesPer) * 0.40 + rnd() * 0.04;
+        const lo = ln * 4;
+        leafA[lo] = x; leafA[lo + 1] = y; leafA[lo + 2] = z;
+        leafA[lo + 3] = yaw + l * 2.39996 + rnd() * 0.4;
+        leafB[lo] = h;
+        leafB[lo + 1] = 0.85 + rnd() * 0.75;          // card size, metres
+        leafB[lo + 2] = nearB[o + 2];
+        leafB[lo + 3] = nearB[o + 3] + l * 0.13;
+        leafC[lo] = col.r * 1.12; leafC[lo + 1] = col.g * 1.18; leafC[lo + 2] = col.b * 0.9;
+        leafC[lo + 3] = clamp(t, 0, 1);
+        ln++;
+      }
+    }
+
+    for (let i = 0; i < cardTarget * 3 && cn < cardTarget; i++) {
+      const [x, z] = sample(420);
+      const d = Math.hypot(x, z);
+      if (d < RANGE.bambooCard[0] * 0.5) continue;
+      const y = this._heightAt(x, z);
+      if (y < WORLD.WATER_LEVEL + 0.2) continue;
+      if (this._slopeAt(x, z) > 0.75) continue;
+      const c = clumpNoise(x, z);
+      if (rnd() > 0.15 + c) continue;
+
+      const h = 5 + rnd() * 9;
+      const green = 0.5 + rnd() * 0.5;
+      col.setRGB(0.44 * green + 0.14, 0.60 * green + 0.10, 0.24 * green + 0.07);
+      const o = cn * 4;
+      cardA[o] = x; cardA[o + 1] = y; cardA[o + 2] = z; cardA[o + 3] = rnd() * Math.PI * 2;
+      cardB[o] = h;
+      cardB[o + 1] = 1.6 + rnd() * 1.9;
+      cardB[o + 2] = 2.2 + rnd() * 1.2;
+      cardB[o + 3] = rnd();
+      cardC[o] = col.r; cardC[o + 1] = col.g; cardC[o + 2] = col.b; cardC[o + 3] = 0;
+      cn++;
+    }
+
+    const shadows = !!q.foliageShadows;
+    const culmMesh = this._makeBatchMesh(A.culm.geo, A.culm.mat, A.culm.depth, Math.max(1, n), shadows);
+    const leafMesh = this._makeBatchMesh(A.leaf.geo, A.leaf.mat, A.leaf.depth, Math.max(1, ln), shadows);
+    const cardMesh = this._makeBatchMesh(A.card.geo, A.card.mat, null, Math.max(1, cn), false);
+    culmMesh.name = 'bamboo-culms';
+    leafMesh.name = 'bamboo-leaves';
+    cardMesh.name = 'bamboo-cards';
+
+    this._fill(culmMesh, nearA, nearB, nearC, n, 16);
+    this._fill(leafMesh, leafA, leafB, leafC, ln, 16);
+    this._fill(cardMesh, cardA, cardB, cardC, cn, 20);
+
+    this._bamboo = { culmMesh, leafMesh, cardMesh, near: n, cards: cn };
+  }
+
+  /**
+   * Upload a finished instance set and author the bounding sphere from its own extent.
+   * An InstancedBufferGeometry's bounds describe one blade, so without this every batch
+   * would be frustum-culled the moment the camera looked away from the world origin.
+   */
+  _fill(mesh, a, b, c, count, padY) {
+    const geo = mesh.geometry;
+    const attrA = geo.getAttribute('aFoliageA');
+    const attrB = geo.getAttribute('aFoliageB');
+    const attrC = geo.getAttribute('aFoliageC');
+    attrA.array.set(a.subarray(0, count * 4));
+    attrB.array.set(b.subarray(0, count * 4));
+    attrC.array.set(c.subarray(0, count * 4));
+    attrA.needsUpdate = attrB.needsUpdate = attrC.needsUpdate = true;
+    geo.instanceCount = count;
+    mesh.visible = count > 0;
+
+    let minX = Infinity, minY = Infinity, minZ = Infinity;
+    let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+    for (let i = 0; i < count; i++) {
+      const o = i * 4;
+      const x = a[o], y = a[o + 1], z = a[o + 2];
+      if (x < minX) minX = x; if (x > maxX) maxX = x;
+      if (y < minY) minY = y; if (y > maxY) maxY = y;
+      if (z < minZ) minZ = z; if (z > maxZ) maxZ = z;
+    }
+    if (!count) { minX = minY = minZ = maxX = maxY = maxZ = 0; }
+    const cx = (minX + maxX) * 0.5, cy = (minY + maxY) * 0.5, cz = (minZ + maxZ) * 0.5;
+    mesh.boundingSphere.center.set(cx, cy + padY * 0.5, cz);
+    mesh.boundingSphere.radius = Math.hypot(maxX - cx, maxZ - cz, maxY - cy) + padY;
+  }
+
+  // --------------------------------------------------------------------- trees
+
+  _buildTreeAssets(q) {
+    const shadows = !!q.foliageShadows;
+    const defs = [
+      { key: 'sakura', seed: 0x5A1201, tex: this.tex.blossom, tint: 0xf3c9d6, sss: 1.5, emitter: 'petal' },
+      { key: 'momiji', seed: 0x30D311, tex: this.tex.momiji, tint: 0xc2381f, sss: 1.7, emitter: 'leaf' },
+      { key: 'cedar', seed: 0x0CED11, tex: this.tex.cedar, tint: 0x8fae86, sss: 0.55, emitter: null },
+    ];
+
+    const list = [];
+    for (const def of defs) {
+      const spec = TREE_SPECIES[def.key];
+      const built = buildTree(spec, def.seed);
+      this._geometries.push(built.wood, built.leaf);
+
+      const woodOpts = {
+        name: `${def.key}-wood`, mode: 0, map: null, color: spec.wood,
+        bendExp: 2.4, bendGain: 0.55, flutter: 0.20, side: FrontSide,
+        fadeFar: RANGE.treeMesh, size: [1, 1],
+        sss: 0.10, sssColor: 0x8a6a4a, tipGlow: 0.10, baseAO: 0.30, grain: 0.22,
+      };
+      const leafOpts = {
+        name: `${def.key}-leaf`, mode: 0, map: def.tex, color: 0xffffff,
+        bendExp: 2.4, bendGain: 0.60, flutter: 1.35, alphaTest: 0.36,
+        fadeFar: RANGE.treeMesh, size: [1, 1],
+        sss: def.sss, sssColor: def.tint, tipGlow: 0.20, baseAO: 0.18, grain: 0.15,
+      };
+      const woodMat = this._makeMaterial(woodOpts);
+      const leafMat = this._makeMaterial(leafOpts);
+
+      // Plain, non-instanced twins used only for the impostor bake.
+      const bakeWood = new MeshLambertMaterial({ color: spec.wood, side: FrontSide });
+      const bakeLeaf = new MeshLambertMaterial({ map: def.tex, alphaTest: 0.36, side: DoubleSide, color: def.tint });
+      this._materials.push(bakeWood, bakeLeaf);
+
+      built.wood.computeBoundingBox();
+      built.leaf.computeBoundingBox();
+      const bb = built.leaf.boundingBox;
+      const radius = Math.max(
+        Math.abs(bb.min.x), Math.abs(bb.max.x), Math.abs(bb.min.z), Math.abs(bb.max.z), 0.2);
+      // Square impostor frame around the whole canopy, in canonical (height = 1) units.
+      const frameRel = Math.max(radius, 0.5) * 1.06;
+
+      list.push({
+        key: def.key, spec, built, woodMat, leafMat, bakeWood, bakeLeaf,
+        depthWood: shadows ? this._makeDepthMaterial(woodMat, woodOpts) : null,
+        depthLeaf: shadows ? this._makeDepthMaterial(leafMat, leafOpts) : null,
+        frameRel, emitter: def.emitter, tint: new Color(def.tint),
+        woodMesh: null, leafMesh: null,
+      });
+    }
+    this._treeAssets = { list };
+  }
+
+  /**
+   * Render each species from 8 azimuths into one atlas. Hand-drawing an impostor is how
+   * you get a card that does not match the mesh it replaces; this is the mesh, so the LOD
+   * swap is invisible even mid-crossfade.
+   */
+  _bakeImpostors(q) {
+    const renderer = this.ctx.renderer;
+    const assets = this._treeAssets;
+    if (!renderer || !assets || !assets.list.length) { this._impostors = null; return; }
+
+    const cols = 8;
+    const rows = assets.list.length;
+    const cell = q.tier >= 2 ? 256 : 128;
+
+    const rt = new WebGLRenderTarget(cell * cols, cell * rows, {
+      minFilter: LinearMipmapLinearFilter,
+      magFilter: LinearFilter,
+      generateMipmaps: true,
+      depthBuffer: true,
+      stencilBuffer: false,
+    });
+    rt.texture.colorSpace = SRGBColorSpace;
+    rt.texture.wrapS = rt.texture.wrapT = ClampToEdgeWrapping;
+    rt.texture.anisotropy = q.anisotropy || 1;
+    this._renderTargets.push(rt);
+
+    const scene = new Scene();
+    const pivot = new Group();
+    scene.add(pivot);
+
+    const sun = new DirectionalLight(0xffffff, 2.35);
+    const sunDir = this.ctx.sky?.sunDirection;
+    sun.position.set(sunDir ? sunDir.x : 0.45, sunDir ? Math.max(sunDir.y, 0.35) : 0.7, sunDir ? sunDir.z : -0.6)
+      .normalize().multiplyScalar(50);
+    scene.add(sun);
+    scene.add(new HemisphereLight(0xbcd4ff, 0x6b6046, 1.05));
+
+    const camera = new OrthographicCamera(-1, 1, 1, -1, 0.01, 400);
+
+    // Save every piece of renderer state we are about to stomp.
+    const prevTarget = renderer.getRenderTarget();
+    const prevAutoClear = renderer.autoClear;
+    const prevToneMapping = renderer.toneMapping;
+    const prevScissorTest = renderer.getScissorTest();
+    const prevAlpha = renderer.getClearAlpha();
+    const prevColor = new Color();
+    renderer.getClearColor(prevColor);
+    const prevViewport = new Vector4();
+    renderer.getViewport(prevViewport);
+
+    renderer.setRenderTarget(rt);
+    renderer.autoClear = false;
+    // Tone mapping is applied again at final composite; baking it would double it.
+    renderer.toneMapping = 0;
+    renderer.setClearColor(0x000000, 0);
+    renderer.clear(true, true, false);
+    renderer.setScissorTest(true);
+
+    for (let r = 0; r < rows; r++) {
+      const item = assets.list[r];
+      const h = item.spec.height;
+      const half = item.frameRel * h;
+
+      const wood = new Mesh(item.built.wood, item.bakeWood);
+      const leaf = new Mesh(item.built.leaf, item.bakeLeaf);
+      wood.scale.setScalar(h);
+      leaf.scale.setScalar(h);
+      pivot.add(wood, leaf);
+
+      camera.left = -half; camera.right = half;
+      camera.top = half; camera.bottom = -half;
+      camera.updateProjectionMatrix();
+
+      for (let c = 0; c < cols; c++) {
+        const az = (c / cols) * Math.PI * 2;
+        pivot.rotation.set(0, -az, 0);
+        // A slight downward look matches how the player actually sees a distant tree.
+        const el = 0.14;
+        camera.position.set(0, h * 0.5 + Math.sin(el) * 120, Math.cos(el) * 120);
+        camera.lookAt(0, h * 0.5, 0);
+        camera.updateMatrixWorld();
+
+        const x = c * cell;
+        const y = (rows - 1 - r) * cell;
+        renderer.setViewport(x, y, cell, cell);
+        renderer.setScissor(x, y, cell, cell);
+        renderer.render(scene, camera);
+      }
+
+      pivot.remove(wood, leaf);
+      item.atlasRow = rows - 1 - r;
+    }
+
+    renderer.setScissorTest(prevScissorTest);
+    renderer.setRenderTarget(prevTarget);
+    renderer.autoClear = prevAutoClear;
+    renderer.toneMapping = prevToneMapping;
+    renderer.setClearColor(prevColor, prevAlpha);
+    renderer.setViewport(prevViewport.x, prevViewport.y, prevViewport.z, prevViewport.w);
+
+    this._impostors = { rt, cols, rows, cell };
+  }
+
+  /** Billboard material for the baked atlas. Y-locked, cell chosen from the view azimuth. */
+  _makeImpostorMaterial(atlas, fadeNear, fadeFar) {
+    const mat = new MeshBasicMaterial({
+      name: 'foliage/impostor',
+      map: atlas.rt.texture,
+      alphaTest: 0.42,
+      transparent: false,
+      side: FrontSide,
+      toneMapped: true,
+    });
+
+    const local = {
+      uFadeNear: { value: new Vector2(fadeNear[0], fadeNear[1]) },
+      uFadeFar: { value: new Vector2(fadeFar[0], fadeFar[1]) },
+      uAtlas: { value: new Vector2(atlas.cols, atlas.rows) },
+      uSize: { value: new Vector2(1, 1) },
+      uBendGain: { value: 1 },
+      uFlutter: { value: 1 },
+      uSSSColor: { value: new Color(0xffffff) },
+      uSSSStrength: { value: 0 },
+      uTipGlow: { value: 0.10 },
+      uBaseAO: { value: 0.16 },
+      uGrain: { value: 0.10 },
+    };
+    mat.userData.kag = local;
+
+    const shared = this.uniforms;
+    const wind = this._windUniforms;
+
+    const pars = /* glsl */`
+#define KAG_TAU 6.28318530718
+attribute vec4 aFoliageA;
+attribute vec4 aFoliageB;
+attribute vec4 aFoliageC;
+attribute vec2 aFlex;
+
+uniform vec3 uCamPos;
+uniform vec2 uFadeNear;
+uniform vec2 uFadeFar;
+uniform vec2 uAtlas;
+
+varying float vKagFade;
+varying vec3  vKagTint;
+
+vec3 kagPosG;
+
+${WIND_GLSL}
+`;
+
+    const body = /* glsl */`
+{
+  vec3  base = aFoliageA.xyz;
+  float yaw  = aFoliageA.w;
+  float size = aFoliageB.x;
+  float yOff = aFoliageB.y;
+
+  vec3 toCam = uCamPos - base;
+  toCam.y = 0.0;
+  float len = length( toCam );
+  toCam = len > 1e-4 ? toCam / len : vec3( 0.0, 0.0, 1.0 );
+  vec3 right = vec3( toCam.z, 0.0, -toCam.x );
+
+  vKagFade = smoothstep( uFadeNear.x, uFadeNear.y, len ) * ( 1.0 - smoothstep( uFadeFar.x, uFadeFar.y, len ) );
+  vKagTint = aFoliageC.rgb;
+
+  // Even a distant grove has to breathe on the same front as the near culms.
+  vec3 w = kagerouBend( base, 1.0, 2.4 );
+  float sway = ( position.y + 0.5 );
+
+  kagPosG = base
+    + right * ( position.x * size )
+    + vec3( 0.0, yOff + position.y * size, 0.0 )
+    + vec3( w.x, 0.0, w.z ) * sway * 0.45;
+
+  float az = atan( toCam.x, toCam.z ) - yaw;
+  float cellIdx = floor( mod( az / KAG_TAU * uAtlas.x + 0.5, uAtlas.x ) );
+  vec2 q = position.xy + 0.5;
+  vMapUv = vec2( ( q.x + cellIdx ) / uAtlas.x, ( q.y + aFoliageC.w ) / uAtlas.y );
+}
+`;
+
+    chainBeforeCompile(mat, (shader) => {
+      shader.uniforms.uWind = wind.uWind;
+      shader.uniforms.uGust = wind.uGust;
+      for (const k in shared) shader.uniforms[k] = shared[k];
+      for (const k in local) shader.uniforms[k] = local[k];
+
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\n' + pars)
+        .replace('#include <uv_vertex>', '#include <uv_vertex>\n' + body)
+        .replace('#include <begin_vertex>', 'vec3 transformed = kagPosG;');
+
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\n' +
+          'uniform vec3 uSunColor;\nvarying float vKagFade;\nvarying vec3 vKagTint;\n' +
+          'float kagBayer2( vec2 a ) { a = floor( a ); return fract( a.x * 0.5 + a.y * a.y * 0.75 ); }\n' +
+          '#define kagBayer4( a ) ( kagBayer2( 0.5 * ( a ) ) * 0.25 + kagBayer2( a ) )\n' +
+          '#define kagBayer8( a ) ( kagBayer4( 0.5 * ( a ) ) * 0.25 + kagBayer2( a ) )')
+        .replace('#include <clipping_planes_fragment>',
+          '#include <clipping_planes_fragment>\nif ( vKagFade < kagBayer8( gl_FragCoord.xy ) ) discard;')
+        .replace('#include <map_fragment>',
+          '#include <map_fragment>\ndiffuseColor.rgb *= vKagTint * mix( vec3( 1.0 ), uSunColor, 0.55 );');
+    });
+    chainCacheKey(mat, 'kagimpostor1');
+
+    this.ctx.sky?.applyFog?.(mat);
+    this._materials.push(mat);
+    return mat;
+  }
+
+  //@@SECTION_14@@
 }
 
 export default FoliageSystem;

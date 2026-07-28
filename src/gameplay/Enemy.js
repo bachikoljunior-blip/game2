@@ -458,16 +458,20 @@ function normalizeArchetypes() {
 }
 normalizeArchetypes();
 
-/** Hitbox layout, scaled per archetype by `body.hitScale`. */
+/**
+ * Hitbox layout, scaled per archetype by `body.hitScale`.
+ * Bone names are the snake_case aliases Rig.js publishes on `rig.bones`.
+ */
 const HITBOX_TEMPLATE = [
   { bone: 'head', ox: 0, oy: 0.06, oz: 0.01, radius: 0.145 },
-  { bone: 'spine_2', ox: 0, oy: 0.06, oz: 0, radius: 0.235 },
-  { bone: 'spine_1', ox: 0, oy: 0.02, oz: 0, radius: 0.225 },
+  { bone: 'spine3', ox: 0, oy: 0.04, oz: 0, radius: 0.225 },
+  { bone: 'spine2', ox: 0, oy: 0.06, oz: 0, radius: 0.235 },
+  { bone: 'spine1', ox: 0, oy: 0.02, oz: 0, radius: 0.225 },
   { bone: 'hips', ox: 0, oy: 0, oz: 0, radius: 0.215 },
-  { bone: 'upperarm_l', ox: 0, oy: 0, oz: 0, radius: 0.105 },
-  { bone: 'upperarm_r', ox: 0, oy: 0, oz: 0, radius: 0.105 },
-  { bone: 'forearm_l', ox: 0, oy: 0, oz: 0, radius: 0.090 },
-  { bone: 'forearm_r', ox: 0, oy: 0, oz: 0, radius: 0.090 },
+  { bone: 'upper_arm_l', ox: 0, oy: 0, oz: 0, radius: 0.105 },
+  { bone: 'upper_arm_r', ox: 0, oy: 0, oz: 0, radius: 0.105 },
+  { bone: 'fore_arm_l', ox: 0, oy: 0, oz: 0, radius: 0.090 },
+  { bone: 'fore_arm_r', ox: 0, oy: 0, oz: 0, radius: 0.090 },
   { bone: 'thigh_l', ox: 0, oy: 0, oz: 0, radius: 0.130 },
   { bone: 'thigh_r', ox: 0, oy: 0, oz: 0, radius: 0.130 },
   { bone: 'shin_l', ox: 0, oy: 0, oz: 0, radius: 0.100 },
@@ -1302,7 +1306,9 @@ export class Enemy {
     const gh = this.ctx.terrain?.heightAt?.(this.position.x, this.position.z);
     let grounded = gi?.grounded ?? gi?.onGround ?? false;
     let floor = Number.isFinite(gh) ? gh : null;
-    if (floor === null && !gi) floor = this._groundY;   // nothing else knows where down is
+    // If neither Terrain nor Physics came up, nothing in the world knows where down
+    // is and the enemy would free-fall out of the LOD ring. Hold the spawn plane.
+    if (floor === null && (!this.ctx.terrain?.heightAt || !gi)) floor = this._groundY;
     if (floor !== null && this.position.y < floor + 0.005) {
       this.position.y = floor;
       grounded = true;

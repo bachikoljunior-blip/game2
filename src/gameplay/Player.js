@@ -264,7 +264,6 @@ export class Player {
     // ---- timers -------------------------------------------------------------
     this.stateTime = 0;
     this._parryTimer = 0;
-    this._guardTime = 0;
     this._staminaHold = 0;
     this._postureHold = 0;
     this._iframe = 0;
@@ -285,6 +284,7 @@ export class Player {
     this._prevYaw = 0;
     this._yawRate = 0;
     this._locoClip = '';
+    this._rigBroken = false;
     this._fadeMats = null;
     this._opacity = 1;
 
@@ -368,12 +368,14 @@ export class Player {
     const rigRoot = this.rig.root;
     if (rigRoot && rigRoot.parent !== this.body) this.body.add(rigRoot);
 
-    // Weapon mount: an empty parented to the hand so the blade transform is exact
-    // even when the rig re-authors the hand pose mid-frame.
-    this.weaponMount = new Object3D();
-    this.weaponMount.name = 'weapon-mount';
-    try { this.rig.attach?.('hand_r', this.weaponMount); } catch { /* rig may not expose it */ }
-    if (!this.weaponMount.parent) this.body.add(this.weaponMount);
+    // Fallback weapon mount, used only when the rig ships no kissaki socket: an
+    // empty parented to the hand so the blade transform still tracks the pose.
+    if (!this.rig.weaponTip && !this.rig.bones?.weapon_tip) {
+      this.weaponMount = new Object3D();
+      this.weaponMount.name = 'weapon-mount';
+      try { this.rig.attach?.('handR', this.weaponMount); } catch { /* rig may not expose it */ }
+      if (!this.weaponMount.parent) this.body.add(this.weaponMount);
+    }
 
     // Clip markers are the authority for the hit-active, cancel and i-frame
     // windows (names come from EVENT_NAMES in Poses.js). The timers in the FSM are
@@ -468,14 +470,12 @@ export class Player {
     if (wantGuard !== this.guarding) {
       this.guarding = wantGuard;
       this._parryTimer = PARRY_WINDOW;
-      if (wantGuard) this._guardTime = 0;
       // Combat's guard cone reads `rec.guarding` (or state === 'guard'); tell it
       // on the edge rather than every frame.
       this.ctx.combat?.setGuard?.(this, wantGuard);
       // The edge is also the deflect attempt — Combat owns the window timing.
       if (this.ctx.combat?.requestParry) this.ctx.combat.requestParry(this);
     }
-    if (this.guarding) this._guardTime += dt;
 
     // Slash gestures → buffered attacks. `power` promotes to the heavy variant.
     const slashes = st.slashes;
@@ -961,7 +961,22 @@ export class Player {
 
   // -------------------------------------------------------------------- rig
 
+  /**
+   * The rig is a sibling module: it can construct cleanly and still throw inside
+   * `update()`. One boundary here means a broken rig costs us the character, not
+   * the whole frame loop — the player keeps moving, fighting and colliding.
+   */
   _updateRig(dt) {
+    if (!this.rig || this._rigBroken) return;
+    try {
+      this._updateRigInner(dt);
+    } catch (err) {
+      this._rigBroken = true;
+      console.warn('[player] rig update failed; continuing without animation', err);
+    }
+  }
+
+  _updateRigInner(dt) {
     const rig = this.rig;
     if (!rig) return;
 
@@ -993,7 +1008,9 @@ export class Player {
       if (rig.setParam) { rig.setParam('speed', b.speed); rig.setParam('strafe', b.strafe); }
       if (!handled) this._driveLocoClip(b);
     }
-    rig.setStance?.(this.stance);
+    // Rig.setStance also selects the idle pose of the blend space, so the sheathed
+    // stance has to go through the same call.
+    rig.setStance?.(this.sheathed ? 'sheathed' : this.stance);
 
     // Head/eye aim: the lock target, else a point down the facing.
     if (this.lockTarget?.position) {
@@ -1044,7 +1061,7 @@ export class Player {
   }
 
   _play(clip, fade = 0.15, speed = 1, loop = false) {
-    if (!this.rig?.play) return;
+    if (this._rigBroken || !this.rig?.play) return;
     try {
       this.rig.play(clip, { fade, speed, loop, blend: this.locoBlend, stance: this.stance });
     } catch { /* an unknown clip must never break the frame */ }
@@ -1446,12 +1463,29 @@ export class Player {
     this.prevBladeBase.copy(this.bladeBase);
     this.prevBladeTip.copy(this.bladeTip);
 
+    const rig = this._rigBroken ? null : this.rig;
+    const bones = rig?.bones || null;
+    // Rig.js builds the katana with real sockets at the kissaki and the tsuba —
+    // far better than projecting a guessed axis out of the hand bone.
+    const tipNode = rig ? (rig.weaponTip || bones?.[this.weapon.tipBone] || bones?.weapon_tip || null) : null;
+    const baseNode = rig ? (rig.weaponGuard || bones?.weapon_grip || bones?.handR || bones?.hand_r || null) : null;
     const mount = this.weaponMount;
-    const bone = this.rig?.bones?.[this.weapon.tipBone] || this.rig?.bones?.weapon_tip
-      || this.rig?.bones?.hand_r || null;
-    const src = (mount && mount.parent) ? mount : bone;
+    const src = (!rig || !tipNode) ? ((mount && mount.parent && rig) ? mount : (bones?.handR || bones?.hand_r || null)) : null;
 
-    if (src) {
+    if (tipNode) {
+      tipNode.updateWorldMatrix?.(true, false);
+      this.bladeTip.setFromMatrixPosition(tipNode.matrixWorld);
+      if (baseNode) {
+        baseNode.updateWorldMatrix?.(true, false);
+        this.bladeBase.setFromMatrixPosition(baseNode.matrixWorld);
+        const len = this.bladeBase.distanceTo(this.bladeTip);
+        // The rig owns the real nagasa; trust it over our default.
+        if (len > 0.25 && len < 2.4) this.weapon.length = len;
+      } else {
+        this.bladeBase.copy(this.bladeTip).addScaledVector(this.forward, -this.weapon.length);
+      }
+    } else if (src) {
+      // Hand bone only: project the blade along the grip axis.
       src.updateWorldMatrix?.(true, false);
       _v1.copy(this.bladeOriginLocal).applyMatrix4(src.matrixWorld);
       _q1.setFromRotationMatrix(src.matrixWorld);
@@ -1499,7 +1533,7 @@ export class Player {
   _emitFootstep(scale) {
     const ev = this._evFootstep;
     const boneName = this._footSide ? 'foot_r' : 'foot_l';
-    const bone = this.rig?.bones?.[boneName];
+    const bone = this._rigBroken ? null : this.rig?.bones?.[boneName];
     if (bone) bone.getWorldPosition?.(ev.point);
     else ev.point.copy(this.position);
     ev.point.y = this.position.y + 0.02;
@@ -1758,6 +1792,8 @@ export class Player {
     if (position && typeof position.x === 'number') this.spawnPosition.copy(position);
     this.ragdoll?.dispose?.();
     this.ragdoll = null;
+    this._deathHandled = false;
+    this._ragdollAt = -1;
     this.health = this.maxHealth;
     this.posture = 0;
     this.stamina = this.maxStamina;

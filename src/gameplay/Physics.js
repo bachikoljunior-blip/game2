@@ -66,7 +66,6 @@ const SURFACES = ['stone', 'wood', 'grass', 'water', 'gravel'];
 // two functions never fight over the same slot.
 
 const _v0 = new Vector3(), _v1 = new Vector3(), _v2 = new Vector3();
-const _v3 = new Vector3(), _v4 = new Vector3(), _v5 = new Vector3();
 const _q0 = new Quaternion(), _q1 = new Quaternion(), _q2 = new Quaternion();
 const _q3 = new Quaternion(), _q4 = new Quaternion();
 const _m0 = new Matrix4();
@@ -98,11 +97,9 @@ const _hF = makeHit();   // rigid body contact probe
 
 /** Point-on-segment / point-on-shape scratch. */
 const _p0 = { x: 0, y: 0, z: 0, t: 0 };
-const _p1 = { x: 0, y: 0, z: 0, t: 0 };
 const _p2 = { x: 0, y: 0, z: 0, t: 0, inside: false, nx: 0, ny: 0, nz: 0, depth: 0, fnx: 0, fny: 1, fnz: 0 };
 const _p3 = { x: 0, y: 0, z: 0, t: 0, inside: false, nx: 0, ny: 0, nz: 0, depth: 0, fnx: 0, fny: 1, fnz: 0 };
 const _ss = { s: 0, t: 0, ax: 0, ay: 0, az: 0, bx: 0, by: 0, bz: 0 };
-const _clip = { x: 0, y: 0, z: 0 };
 
 /** Sweep / slide / depenetration results (scalar, never aliased). */
 const _slideA = makeHit();    // primary collide-and-slide
@@ -856,6 +853,10 @@ export class PhysicsWorld {
     // "already touching the world" and every horizontal sweep stops at t=0.
     this._filterOn = false;
     this._fdx = 0; this._fdy = 0; this._fdz = 0;
+    // Query counters accumulate across the whole frame — character moves happen
+    // outside update(), so they are snapshotted rather than reset in place.
+    this._bpAccum = 0;
+    this._npAccum = 0;
     this._tri = new Int32Array(4096);
     this._contacts = [];        // contact record pool
     this._contactCount = 0;
@@ -1098,6 +1099,12 @@ export class PhysicsWorld {
       case 'ragdoll': arr = this.ragdolls; break;
       default: return false;
     }
+    if (handle === this.heightfield) {
+      this.heightfield = null;
+      handle.enabled = false;
+      this.levelVersion++;
+      return true;
+    }
     const i = arr.indexOf(handle);
     if (i < 0) return false;
     arr.splice(i, 1);
@@ -1130,7 +1137,7 @@ export class PhysicsWorld {
   _gather(minx, miny, minz, maxx, maxy, maxz, mask) {
     if (this._hashDirty) this._rebuildHash();
     this._candCount = this.hash.query(minx, miny, minz, maxx, maxy, maxz, mask, this._cand);
-    this.stats.broadphaseChecks += this._candCount;
+    this._bpAccum += this._candCount;
     return this._candCount;
   }
 
@@ -1142,7 +1149,7 @@ export class PhysicsWorld {
    * segment core is inside the collider.
    */
   _closestToCollider(ax, ay, az, bx, by, bz, c, out) {
-    this.stats.narrowphaseChecks++;
+    this._npAccum++;
     switch (c.kind) {
       case 'sphere': {
         closestPtSegment(c.cx, c.cy, c.cz, ax, ay, az, bx, by, bz, _p0);
@@ -1200,7 +1207,7 @@ export class PhysicsWorld {
     const filter = this._filterOn;
     for (let i = 0; i < n; i++) {
       const ti = this._tri[i], b = ti * 9;
-      this.stats.narrowphaseChecks++;
+      this._npAccum++;
       if (filter) {
         // Cheap pre-reject on the face normal before the closest-point work.
         const fn = bvh.normals[ti * 3] * this._fdx + bvh.normals[ti * 3 + 1] * this._fdy +
@@ -1242,7 +1249,7 @@ export class PhysicsWorld {
       const x = ax + (bx - ax) * t, y = ay + (by - ay) * t, z = az + (bz - az) * t;
       const h = this._terrainHeight(x, z);
       if (h === null) continue;
-      this.stats.narrowphaseChecks++;
+      this._npAccum++;
       this._terrainNormal(x, z, _p2);
       const d = (y - h) * _p2.ny;   // signed distance to the tangent plane
       if (d < out.d) {
@@ -1437,7 +1444,7 @@ export class PhysicsWorld {
       const c = this._cand[i];
       const a = c.aabb;
       if (rayAABB(ox, oy, oz, idx, idy, idz, a[0], a[1], a[2], a[3], a[4], a[5], best) < 0) continue;
-      this.stats.narrowphaseChecks++;
+      this._npAccum++;
       let t = -1;
       switch (c.kind) {
         case 'sphere':
@@ -1522,8 +1529,7 @@ export class PhysicsWorld {
     }
     const step = Math.max(0.2, maxDist / 96);
     let prevT = 0;
-    let prevDiff = oy - this._terrainHeight(ox, oz);
-    if (prevDiff <= 0) return 0;
+    if (oy - this._terrainHeight(ox, oz) <= 0) return 0;
     for (let t = step; t <= maxDist; t += step) {
       const h = this._terrainHeight(ox + dx * t, oz + dz * t);
       if (h === null) return -1;
@@ -1537,7 +1543,7 @@ export class PhysicsWorld {
         }
         return a;
       }
-      prevT = t; prevDiff = diff;
+      prevT = t;
     }
     return -1;
   }
@@ -1557,7 +1563,7 @@ export class PhysicsWorld {
       const c = this._cand[i];
       const a = c.aabb;
       if (a[0] > x || a[3] < x || a[2] > z || a[5] < z || a[1] > y || a[4] < y - best) continue;
-      this.stats.narrowphaseChecks++;
+      this._npAccum++;
       let t = -1;
       switch (c.kind) {
         case 'sphere': t = raySphere(x, y, z, 0, -1, 0, c.cx, c.cy, c.cz, c.r, best); break;
@@ -1883,7 +1889,8 @@ export class PhysicsWorld {
       if (!_hD.hit) break;
 
       out.hit = true;
-      out.nx = _hD.nx; out.ny = _hD.ny; out.nz = _hD.nz; out.c = _hD.collider;
+      out.nx = _hD.nx; out.ny = _hD.ny; out.nz = _hD.nz;
+      out.c = _hD.collider; out.collider = _hD.collider;
       out.fnx = _hD.fnx; out.fny = _hD.fny; out.fnz = _hD.fnz;
 
       rx *= (1 - t); ry *= (1 - t); rz *= (1 - t);
@@ -2057,6 +2064,7 @@ export class PhysicsWorld {
 
       _im: mass > 0 ? 1 / mass : 0,
       _ii: 0,
+      _nc: 0,
       sleeping: false,
       sleepTimer: 0,
       age: 0,
@@ -2164,6 +2172,7 @@ export class PhysicsWorld {
       // A sleeping body behaves as static in the solver, so a resting stack
       // does not keep jostling itself awake.
       b._im = 0; b._ii = 0;
+      b._nc = 0;
       if (b.sleeping || !b.enabled) continue;
       b.velocity.y += GRAVITY * dt;
       const ld = Math.max(0, 1 - b.linearDamping * dt);
@@ -2216,6 +2225,7 @@ export class PhysicsWorld {
         // Only a body that is actually moving wakes its neighbour.
         if (a.sleeping && b.velocity.lengthSq() > 0.05) { a.sleeping = false; a.sleepTimer = 0; a._im = a.invMass; a._ii = a.invInertia; }
         if (b.sleeping && a.velocity.lengthSq() > 0.05) { b.sleeping = false; b.sleepTimer = 0; b._im = b.invMass; b._ii = b.invInertia; }
+        a._nc++; b._nc++;
       }
     }
 
@@ -2227,6 +2237,13 @@ export class PhysicsWorld {
     for (let i = 0; i < n; i++) {
       const b = bodies[i];
       if (!b.enabled || b.sleeping) continue;
+      // Resting friction: a prop in sustained contact bleeds off the residual
+      // spin the solver leaves behind, which is what lets a stack settle.
+      if (b._nc > 0) {
+        const rd = b.velocity.lengthSq() < 0.6 ? 0.86 : 0.97;
+        b.angularVelocity.multiplyScalar(rd);
+        if (b.velocity.lengthSq() < 0.25) b.velocity.multiplyScalar(0.9);
+      }
       const e = b.velocity.lengthSq() + b.angularVelocity.lengthSq() * 0.05;
       if (e < 0.05) {
         b.sleepTimer += dt;
@@ -2293,6 +2310,7 @@ export class PhysicsWorld {
     c.restitution = b.restitution;
     c.friction = b.friction * 0.9;
     c.jn = 0; c.jt = 0;
+    b._nc++;
   }
 
   /**
@@ -2392,14 +2410,19 @@ export class PhysicsWorld {
       const a = c.a, b = c.b;
       const im = a._im + (b ? b._im : 0);
       if (im < 1e-9) continue;
-      const s = (pen * 0.7) / im;
-      a.position.x += c.nx * s * a._im;
-      a.position.y += c.ny * s * a._im;
-      a.position.z += c.nz * s * a._im;
+      // A box resting on its four bottom corners produces four identical
+      // contacts; without dividing by the count it gets shoved out four times
+      // over and bounces.
+      const k = (pen * 0.7) / im;
+      const sa = k * a._im / (a._nc > 1 ? a._nc : 1);
+      a.position.x += c.nx * sa;
+      a.position.y += c.ny * sa;
+      a.position.z += c.nz * sa;
       if (b) {
-        b.position.x -= c.nx * s * b._im;
-        b.position.y -= c.ny * s * b._im;
-        b.position.z -= c.nz * s * b._im;
+        const sb = k * b._im / (b._nc > 1 ? b._nc : 1);
+        b.position.x -= c.nx * sb;
+        b.position.y -= c.ny * sb;
+        b.position.z -= c.nz * sb;
       }
     }
   }
@@ -2637,7 +2660,11 @@ export class PhysicsWorld {
       this._launchRagdoll(rd, opts.impulse.direction, opts.impulse.strength || 4);
     }
 
-    while (this.ragdolls.length >= this.maxRagdolls) this._freezeOldestRagdoll(true);
+    // Budget: freeze the oldest still-simulating ragdoll first; only evict once
+    // everything on screen is already frozen.
+    while (this.ragdolls.length >= this.maxRagdolls) {
+      if (!this._freezeOldestRagdoll(false)) this._freezeOldestRagdoll(true);
+    }
     this.ragdolls.push(rd);
     this.stats.ragdolls = this.ragdolls.length;
     return rd;
@@ -2658,16 +2685,27 @@ export class PhysicsWorld {
     rd.lowMotion = 0;
   }
 
+  /**
+   * Freeze (or, with `drop`, evict) the oldest ragdoll. Returns false when
+   * there was nothing left to freeze, which is the caller's cue to evict.
+   */
   _freezeOldestRagdoll(drop = false) {
-    if (!this.ragdolls.length) return;
-    let oldest = 0;
-    for (let i = 1; i < this.ragdolls.length; i++) {
-      if (this.ragdolls[i].spawnOrder < this.ragdolls[oldest].spawnOrder) oldest = i;
+    if (!this.ragdolls.length) return false;
+    let oldest = -1;
+    for (let i = 0; i < this.ragdolls.length; i++) {
+      if (!drop && this.ragdolls[i].frozen) continue;
+      if (oldest < 0 || this.ragdolls[i].spawnOrder < this.ragdolls[oldest].spawnOrder) oldest = i;
     }
+    if (oldest < 0) return false;
     const rd = this.ragdolls[oldest];
     rd.frozen = true;
+    for (let i = 0; i < rd.particles.length; i++) {
+      const p = rd.particles[i];
+      p.vx = 0; p.vy = 0; p.vz = 0;
+    }
     if (drop) { rd.done = true; rd.fade = 0; this.ragdolls.splice(oldest, 1); }
     this.stats.ragdolls = this.ragdolls.length;
+    return true;
   }
 
   _stepRagdolls(dt) {
@@ -2826,8 +2864,10 @@ export class PhysicsWorld {
 
   update(dt) {
     const t0 = (typeof performance !== 'undefined') ? performance.now() : 0;
-    this.stats.broadphaseChecks = 0;
-    this.stats.narrowphaseChecks = 0;
+    this.stats.broadphaseChecks = this._bpAccum;
+    this.stats.narrowphaseChecks = this._npAccum;
+    this._bpAccum = 0;
+    this._npAccum = 0;
     if (this._hashDirty) this._rebuildHash();
 
     const step = Math.min(dt, 0.25);

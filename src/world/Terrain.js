@@ -66,7 +66,7 @@ export const BRIDGE_POINT = { x: 132, z: 14 };
 
 /** Half-width of the wetted channel and of the whole gorge corridor, in metres. */
 const CHANNEL_HALF = 5.0;
-const GORGE_HALF = 34.0;
+const GORGE_HALF = 24.0;
 
 /** Encode range for the 8-bit height fallback. Generation is clamped into this. */
 const HEIGHT_MIN = 480;
@@ -480,7 +480,7 @@ export class Terrain {
     h -= 90 * smootherstep(500, 1600, -ax);
 
     // North-west: rock ridges, then distant peaks behind them.
-    const nwT = smootherstep(60, 600, ax);
+    const nwT = smootherstep(40, 460, ax);
     h += 120 * nwT;
     h += noise.ridged2(x * 0.0016, z * 0.0016, 5) * 210 * Math.pow(nwT, 1.1);
     h += smootherstep(400, 1500, ax) *
@@ -617,7 +617,7 @@ export class Terrain {
     // --- terraced approach from +Z ------------------------------------------
     const st = closestOnPolyline(this.stair, x, z);
     if (st.d < STAIR_SHOULDER) {
-      const t = 1 - st.station / (this.stair.n - 1);   // node 0 is the bottom
+      const t = st.station / (this.stair.n - 1);   // node 0 is the bottom of the climb
       const target = this._stairHeight(t);
       const w = smootherstep(STAIR_SHOULDER, STAIR_HALF, st.d) * strength * 0.92;
       h = lerp(h, target, w);
@@ -631,7 +631,7 @@ export class Terrain {
       const bed = sampleStation(this.river.bed, rv.station, this.river.n);
       const inner = clamp(rv.d / halfW, 0, 1);
       const outer = clamp((rv.d - halfW) / (GORGE_HALF - halfW), 0, 1);
-      const target = bed + inner * inner * 1.1 + Math.pow(outer, 1.55) * 34;
+      const target = bed + inner * inner * 1.1 + Math.pow(outer, 1.5) * 26;
       const w = smootherstep(rim, halfW, rv.d) * strength;
       h = lerp(h, target, w);
     }
@@ -1746,7 +1746,8 @@ void main(){
   nrm += vec3(n2.x, 0.0, n2.y) * 0.75;
   // Faster, choppier water where it is shallow and running over stones.
   vec2 uv3 = vWPos.xz * 0.95 + flowDir * t * 1.15;
-  nrm += (texture2D(tWaterN, uv3).xzy * 2.0 - 1.0).xzy * 0.4 * smoothstep(1.2, 0.15, depth);
+  vec3 n3 = texture2D(tWaterN, uv3).xyz * 2.0 - 1.0;
+  nrm += vec3(n3.x, 0.0, n3.y) * 0.45 * smoothstep(1.2, 0.15, depth);
 #endif
   float chop = mix(0.28, 0.85, smoothstep(0.0, 1.0, flowT));
   vec3 N = normalize(vec3(nrm.x * chop, 1.0, nrm.z * chop));
@@ -1837,13 +1838,17 @@ void main(){
       fog: false,
       vertexShader: /* glsl */`
 varying vec3 vLocal;
+varying float vWorldY;
 void main(){
   vLocal = position;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  vec4 wp = modelMatrix * vec4(position, 1.0);
+  vWorldY = wp.y;
+  gl_Position = projectionMatrix * viewMatrix * wp;
 }
 `,
       fragmentShader: glslNoise + '\n' + /* glsl */`
 varying vec3 vLocal;
+varying float vWorldY;
 uniform vec3 uSkyTint;
 uniform vec3 uCam;
 uniform float uBase;
@@ -1860,7 +1865,7 @@ float ridgeLine(float a, float seed, float freq, float par){
 
 void main(){
   float a = atan(vLocal.x, vLocal.z);
-  float h = vLocal.y;
+  float h = vWorldY;
   vec3 col = uSkyTint;
   float alpha = 0.0;
 
@@ -1899,4 +1904,326 @@ void main(){
     this.group.add(mesh);
   }
 
-//__CHUNK5__
+  // ==========================================================================
+  //  10 — physics, frame loop, quality
+  // ==========================================================================
+
+  _registerPhysics() {
+    const p = this.ctx.physics;
+    if (!p || typeof p.addStatic !== 'function') return;
+    try {
+      this.physicsHandle = p.addStatic({ type: 'heightfield', terrain: this, surface: 'ground' });
+    } catch (err) {
+      console.warn('[terrain] physics registration failed', err);
+    }
+  }
+
+  /** Pull the sun and the sky tint from whoever owns them. Allocation-free. */
+  _syncEnvironment() {
+    const sky = this.ctx.sky, lighting = this.ctx.lighting;
+    const sd = (sky && sky.sunDirection) || (lighting && lighting.sunDirection);
+    if (sd && sd.isVector3) {
+      this._sunDir.copy(sd).normalize();
+    } else {
+      const l = (lighting && lighting.sun) || (sky && sky.sun);
+      if (l && l.isLight && l.position) {
+        this._sunDir.copy(l.position);
+        if (l.target && l.target.position) this._sunDir.sub(l.target.position);
+        if (this._sunDir.lengthSq() > 1e-6) this._sunDir.normalize();
+      }
+    }
+
+    const tint = (sky && sky.horizonColor && sky.horizonColor.isColor) ? sky.horizonColor
+      : (this.ctx.scene.fog && this.ctx.scene.fog.color) ? this.ctx.scene.fog.color : null;
+    if (tint) this.uniforms.uSkyTint.value.copy(tint);
+  }
+
+  update(dt, elapsed) {
+    if (!this.material) return;
+    this._elapsed = elapsed;
+    this._snapRings(false);
+    this._syncEnvironment();
+
+    if (this.waterUniforms) this.waterUniforms.uTime.value = elapsed;
+
+    // The ridge band rides with the camera so it never crosses the far plane; the
+    // inter-layer parallax comes from uCam instead.
+    if (this.band) {
+      const cam = this.ctx.camera;
+      this.bandUniforms.uCam.value.copy(cam.position);
+      this.band.position.set(cam.position.x, WORLD.PLATEAU_HEIGHT + 40, cam.position.z);
+      this.band.updateMatrix();
+      this.band.updateMatrixWorld(true);
+    }
+  }
+
+  applyQuality(q) {
+    this.quality = q;
+    const tier = clamp(q.tier | 0, 0, 3);
+
+    // The heightfield itself is deliberately not regenerated: droplet erosion is a
+    // multi-second job and a tier flip mid-fight must not stall the frame loop. The
+    // rendering side — ring count, resolution, shadows, water — all re-tiers cleanly.
+    const wantRes = CLIPMAP_RES[tier];
+    const wantLevels = CLIPMAP_LEVELS[tier];
+    if (this.rings.length !== wantLevels || this._ringRes !== wantRes) {
+      for (const m of this.rings) this.group.remove(m);
+      this.blockGeo?.dispose();
+      this.ringGeo?.dispose();
+      this.rings.length = 0;
+      this._buildClipmap();
+      this._snapRings(true);
+    }
+    this._ringRes = wantRes;
+    for (let k = 0; k < this.rings.length; k++) {
+      this.rings[k].castShadow = k <= 1 && !!q.shadows;
+    }
+
+    const aniso = Math.min(q.anisotropy || 4, this.ctx.engine?.capabilities?.anisotropy || 4);
+    for (const key of ['tDirt', 'tStone', 'tCobble', 'tMoss', 'tDetailN']) {
+      const t = this.uniforms?.[key]?.value;
+      if (t && t.isTexture && t.anisotropy !== aniso) { t.anisotropy = aniso; t.needsUpdate = true; }
+    }
+
+    if (this.water && this._waterQ !== (q.waterQuality | 0)) {
+      this.group.remove(this.water);
+      this.water.geometry.dispose();
+      this.waterMaterial.dispose();
+      this.water = null;
+      this._buildWater();
+    }
+    this._waterQ = q.waterQuality | 0;
+  }
+
+  dispose() {
+    this._disposed = true;
+    this.ctx.scene.remove(this.group);
+    for (const m of this.rings) this.group.remove(m);
+    this.rings.length = 0;
+    this.blockGeo?.dispose();
+    this.ringGeo?.dispose();
+    this.water?.geometry.dispose();
+    this.band?.geometry.dispose();
+    this.material?.dispose();
+    this.depthMaterial?.dispose();
+    this.waterMaterial?.dispose();
+    this.bandMaterial?.dispose();
+    this.heightTex?.dispose();
+    this.macroTex?.dispose();
+    this.dataTex?.dispose();
+    this.splatTex?.dispose();
+    this.detailNormalTex?.dispose();
+    this.waterNormalTex?.dispose();
+    try { this.ctx.physics?.removeStatic?.(this.physicsHandle); } catch { /* optional */ }
+  }
+
+  // ==========================================================================
+  //  11 — queries  (contractual; all allocation-free)
+  // ==========================================================================
+
+  /** Bilinear sample of a square Float32Array field, in grid coordinates. */
+  _bilinear(field, n, fx, fz) {
+    let x = fx, z = fz;
+    if (x < 0) x = 0; else if (x > n - 1.0001) x = n - 1.0001;
+    if (z < 0) z = 0; else if (z > n - 1.0001) z = n - 1.0001;
+    const i = x | 0, j = z | 0;
+    const tx = x - i, tz = z - j;
+    const k = j * n + i;
+    const h00 = field[k], h10 = field[k + 1];
+    const h01 = field[k + n], h11 = field[k + n + 1];
+    return (h00 * (1 - tx) + h10 * tx) * (1 - tz) + (h01 * (1 - tx) + h11 * tx) * tz;
+  }
+
+  /**
+   * Ground height in absolute metres ASL. Bilinear on the eroded core field inside
+   * ±256 m, on the coarse macro field outside, crossfaded exactly the way the vertex
+   * shader does it so collision and rendering never disagree.
+   */
+  heightAt(x, z) {
+    if (!this.height) return WORLD.PLATEAU_HEIGHT;
+    const macro = this._bilinear(
+      this.macroHeight, this.macroN,
+      (x + MACRO_HALF) / this.macroCell, (z + MACRO_HALF) / this.macroCell);
+    const e = Math.max(Math.abs(x), Math.abs(z)) / CORE_EXTENT;
+    const wc = 1 - smoothstep(0.40, 0.475, e);
+    if (wc <= 0.001) return macro;
+    const core = this._bilinear(
+      this.height, this.gridN,
+      (x + CORE_HALF) / this.cell, (z + CORE_HALF) / this.cell);
+    return macro + (core - macro) * wc;
+  }
+
+  /**
+   * Surface normal by central difference. Writes into `out` and returns it; with no
+   * out-parameter it returns a shared vector — copy it before the next call.
+   */
+  normalAt(x, z, out) {
+    const o = out || this._v1;
+    const e = this.cell * 0.75;
+    const hl = this.heightAt(x - e, z), hr = this.heightAt(x + e, z);
+    const hd = this.heightAt(x, z - e), hu = this.heightAt(x, z + e);
+    o.set(hl - hr, 2 * e, hd - hu);
+    const len = Math.sqrt(o.x * o.x + o.y * o.y + o.z * o.z) || 1;
+    o.x /= len; o.y /= len; o.z /= len;
+    return o;
+  }
+
+  /** Steepness in radians, 0 = level. */
+  slopeAt(x, z) {
+    const e = this.cell * 0.75;
+    const dhdx = (this.heightAt(x + e, z) - this.heightAt(x - e, z)) / (2 * e);
+    const dhdz = (this.heightAt(x, z + e) - this.heightAt(x, z - e)) / (2 * e);
+    return Math.atan(Math.sqrt(dhdx * dhdx + dhdz * dhdz));
+  }
+
+  /** Water surface elevation over the stream corridor; WATER_LEVEL far from it. */
+  waterSurfaceAt(x, z) {
+    if (!this.river) return this.waterLevel;
+    const rv = closestOnPolyline(this.river, x, z);
+    if (rv.d === Infinity) return this.waterLevel;
+    return sampleStation(this.river.surface, Math.min(rv.station, this.river.tail), this.river.n);
+  }
+
+  /** True where the stream actually is — the corridor test matters, the valley floor
+   *  also sits below WATER_LEVEL and is emphatically not water. */
+  isWater(x, z) {
+    if (!this.river) return false;
+    const rv = closestOnPolyline(this.river, x, z);
+    if (rv.d === Infinity || rv.station > this.river.tail) return false;
+    const wHalf = CHANNEL_HALF * sampleStation(this.river.width, rv.station, this.river.n) * 1.9;
+    if (rv.d > wHalf) return false;
+    const surf = sampleStation(this.river.surface, rv.station, this.river.n);
+    return this.heightAt(x, z) < surf - 0.02;
+  }
+
+  /** Water depth in metres, 0 outside the stream. Useful for wading/VFX. */
+  waterDepthAt(x, z) {
+    if (!this.isWater(x, z)) return 0;
+    return Math.max(0, this.waterSurfaceAt(x, z) - this.heightAt(x, z));
+  }
+
+  /**
+   * Footstep/FX surface. 'wood' is reserved for props (bridge decks, verandas) —
+   * Level.js overrides it where it has laid timber; the terrain never returns it.
+   */
+  surfaceAt(x, z) {
+    if (this.isWater(x, z)) return 'water';
+
+    const N = this.gridN;
+    const fx = (x + CORE_HALF) / this.cell;
+    const fz = (z + CORE_HALF) / this.cell;
+    if (this.splatBytes && fx >= 0 && fz >= 0 && fx <= N - 1 && fz <= N - 1) {
+      const k = ((Math.round(fz) * N) + Math.round(fx)) * 4;
+      const grass = this.splatBytes[k];
+      const rock = this.splatBytes[k + 1];
+      const gravel = this.splatBytes[k + 2];
+      const moss = this.splatBytes[k + 3];
+      const dirt = Math.max(0, 255 - (grass + rock + gravel + moss));
+      let best = dirt, name = 'dirt';
+      if (grass > best) { best = grass; name = 'grass'; }
+      if (rock > best) { best = rock; name = 'stone'; }
+      if (gravel > best) { best = gravel; name = 'gravel'; }
+      if (moss > best) { best = moss; name = 'stone'; }
+      return name;
+    }
+
+    // Outside the core field, mirror the shader's live rules.
+    const slope = this.slopeAt(x, z);
+    const h = this.heightAt(x, z);
+    if (slope > 0.62 || h > 940) return 'stone';
+    if (h < 890 && slope < 0.4) return 'grass';
+    return 'dirt';
+  }
+
+  /** Snap a vector onto the ground, optionally offset along the surface. Mutates. */
+  clampToGround(vec, offset = 0) {
+    vec.y = this.heightAt(vec.x, vec.z) + offset;
+    return vec;
+  }
+
+  /**
+   * Averaged ground statistics over a disc — how Level.js decides whether a building
+   * footprint or a spawn point is viable. Returns a shared object; read it, do not
+   * keep it.
+   */
+  sampleRegion(x, z, radius = 4) {
+    const out = this._region;
+    let sum = 0, slopeSum = 0, water = 0;
+    let min = Infinity, max = -Infinity;
+    const RINGS = 2, SPOKES = 8;
+    let count = 0;
+
+    const consider = (px, pz) => {
+      const h = this.heightAt(px, pz);
+      sum += h; count++;
+      if (h < min) min = h;
+      if (h > max) max = h;
+      slopeSum += this.slopeAt(px, pz);
+      if (this.isWater(px, pz)) water++;
+    };
+
+    consider(x, z);
+    for (let r = 1; r <= RINGS; r++) {
+      const rad = (radius * r) / RINGS;
+      for (let s = 0; s < SPOKES; s++) {
+        const a = (s / SPOKES) * Math.PI * 2 + r * 0.4;
+        consider(x + Math.cos(a) * rad, z + Math.sin(a) * rad);
+      }
+    }
+
+    out.height = sum / count;
+    out.slope = slopeSum / count;
+    out.minHeight = min;
+    out.maxHeight = max;
+    out.water = water / count;
+    out.relief = max - min;
+    out.flat = out.relief < 0.35 && out.slope < 0.12;
+    return out;
+  }
+
+  /**
+   * Analytic downward ray against the heightfield — no mesh raycast, no BVH. Foot IK
+   * calls this several times per character per frame, so it allocates nothing: the
+   * result object is shared unless you pass your own.
+   *
+   * A start point up to 2 m below the surface still reports a hit at distance 0, which
+   * is what a capsule controller wants when it has sunk into a slope.
+   */
+  raycastDown(x, y, z, maxDist = 250, out = this._hit) {
+    const h = this.heightAt(x, z);
+    const d = y - h;
+    if (d > maxDist || d < -2) return null;
+    out.point.set(x, h, z);
+    this.normalAt(x, z, out.normal);
+    out.distance = d > 0 ? d : 0;
+    return out;
+  }
+
+  // ---------------------------------------------------------------- authoring aids
+
+  /** The stream's polyline, for Props.js bridge placement and Foliage.js exclusion. */
+  getRiverPath() { return this.river; }
+
+  /** The approach spline, so Props.js can lay stone treads on the carved terraces. */
+  getStairPath() { return this.stair; }
+
+  /** Distance from the stream centreline, metres. Infinity when far outside it. */
+  distanceToRiver(x, z) {
+    if (!this.river) return Infinity;
+    return closestOnPolyline(this.river, x, z).d;
+  }
+
+  /** Distance from the approach centreline, metres. Infinity when far outside it. */
+  distanceToPath(x, z) {
+    if (!this.stair) return Infinity;
+    return closestOnPolyline(this.stair, x, z).d;
+  }
+
+  /** True inside the flattened shrine plateau (mask > 0). Mirrors Constants.js. */
+  onPlateau(x, z) { return plateauMask(x, z) > 0; }
+
+  /** True inside WORLD.PLAYABLE, with an optional margin. Re-exported for symmetry. */
+  inPlayable(x, z, margin = 0) { return inPlayable(x, z, margin); }
+}
+
+export default Terrain;
