@@ -1256,7 +1256,6 @@ const RANGE = {
   bambooCard: [30, 190],
   canopy: [110, 900],
   treeMesh: [0, 55],
-  treeReduced: [42, 96],
   treeCard: [88, 340],
   treeCardOnly: [38, 260],     // MEDIUM and below: mesh LOD straight to impostor
   undergrowth: [0, 30],

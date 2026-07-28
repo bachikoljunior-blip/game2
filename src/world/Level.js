@@ -178,7 +178,7 @@ export class Level {
 
     // Material resolution can synthesise fallback textures, so it gets its own
     // budgeted slot rather than being lumped into the first geometry task.
-    T('shrine materials', () => { this._matWarm = this.factory.init(); });
+    T('shrine materials', () => { this.factory.init().catch((e) => console.error('[level] materials', e)); });
     T('terrain probe', () => this._probeGround());
     for (let i = 0; i < 4; i++) {
       T('the approach stair', () => this._buildStairFlight(i, 0));
@@ -1559,13 +1559,21 @@ export class Level {
     }
   }
 
+  /**
+   * A tier change thins the decorative scatter rather than rebuilding it —
+   * entries were shuffled at realize time, so trimming the tail stays spatially
+   * even. Landmarks (lanterns, banners, jizō) are never thinned: they are how you
+   * navigate, and having them appear and disappear with a settings change would
+   * be worse than the frames it saves.
+   */
   applyQuality(quality) {
     this._applyQualityKnobs(quality);
-    // Thin the scatter rather than rebuilding it: entries were shuffled at
-    // realize time, so trimming the tail stays spatially even.
+    const THINNABLE = new Set(['leaves', 'ema']);
     for (const inst of this.instances) {
-      const n = Math.round(inst.full * clamp(this._density / 1.0, 0.15, 1));
-      inst.proto.setCount(inst.key === 'leaves' ? n : inst.full);
+      const n = THINNABLE.has(inst.key)
+        ? Math.round(inst.full * clamp(this._density, 0.15, 1))
+        : inst.full;
+      inst.proto.setCount(n);
     }
     this._lodTimer = 1;
   }
@@ -1576,7 +1584,10 @@ export class Level {
       this.root.remove(c.mesh);
     }
     this.cells.length = 0;
-    for (const inst of this.instances) inst.proto.dispose();
+    for (const inst of this.instances) {
+      for (const m of inst.meshes) this.root.remove(m);
+      inst.proto.dispose();
+    }
     this.instances.length = 0;
     if (this.farMesh) { this.farMesh.geometry?.dispose?.(); this.root.remove(this.farMesh); }
     this.farMesh = null;

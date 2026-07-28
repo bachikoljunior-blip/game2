@@ -164,7 +164,16 @@ async function main() {
 
     const shots = {};
     if (booted) {
-      await page.waitForTimeout(1800);
+      // The opening title card runs a full-screen ink wash over the first few seconds.
+      // Left alone it dims every shot by roughly two stops and stamps 陽炎 across the
+      // middle of frame, so dismiss it and let the world settle before composing.
+      await page.evaluate(() => {
+        const k = window.__kagerou;
+        k?.menus?.skipIntro?.();
+        k?.menus?.resume?.();
+        k?.weather?.setPreset?.('petals', true);
+      }).catch(() => {});
+      await page.waitForTimeout(6000);
       for (const sname of wantShots) {
         const shot = SHOTS[sname];
         if (!shot) continue;

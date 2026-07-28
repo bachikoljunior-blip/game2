@@ -113,52 +113,52 @@ const LADDER = [
     tint: new Color(0.62, 0.74, 1.00), sunTint: new Color(0.72, 0.80, 1.00),
     sky: new Color(0x1b2740), ground: new Color(0x0d1017),
     fogColor: new Color(0x1a2537), fogSun: new Color(0x2b3a55), fogTop: new Color(0x121a2a),
-    fogDensity: 0.0085, stars: 1.0, cloudCoverage: 0.56,
+    fogDensity: 0.0035, stars: 1.0, cloudCoverage: 0.56,
     cloudLit: new Color(0x39456a), cloudDark: new Color(0x10151f), moon: 1.0,
   }),
-  K(0.29, {   // 06:58 — sun 11 degrees down: nautical twilight, the deepest blue
+  K(0.314, {  // 07:32 — sun 11 degrees down: nautical twilight, the deepest blue
     turbidity: 2.6, rayleigh: 1.9, mie: 0.0045, mieG: 0.78,
     exposure: 0.50, sunIntensity: 0.22, ambient: 0.24,
     tint: new Color(0.66, 0.78, 1.05), sunTint: new Color(0.80, 0.82, 1.00),
     sky: new Color(0x24365c), ground: new Color(0x151a24),
     fogColor: new Color(0x27374f), fogSun: new Color(0x4b5170), fogTop: new Color(0x1a2438),
-    fogDensity: 0.0125, stars: 0.55, cloudCoverage: 0.53,
+    fogDensity: 0.0051, stars: 0.55, cloudCoverage: 0.53,
     cloudLit: new Color(0x5a5f84), cloudDark: new Color(0x1b2130), moon: 0.7,
   }),
-  K(0.335, {  // 08:02 — sunrise, the coldest warm light of the day
+  K(0.360, {  // 08:38 — sunrise, the coldest warm light of the day
     turbidity: 4.2, rayleigh: 2.6, mie: 0.011, mieG: 0.80,
     exposure: 0.78, sunIntensity: 1.5, ambient: 0.30,
     tint: new Color(1.02, 0.95, 0.94), sunTint: new Color(1.00, 0.68, 0.44),
     sky: new Color(0x5c7ba6), ground: new Color(0x35322e),
     fogColor: new Color(0x8f93a0), fogSun: new Color(0xffb27a), fogTop: new Color(0x6d84a6),
-    fogDensity: 0.020, stars: 0.0, cloudCoverage: 0.48,
+    fogDensity: 0.0082, stars: 0.0, cloudCoverage: 0.48,
     cloudLit: new Color(0xffc79a), cloudDark: new Color(0x4a4a5c), moon: 0.0,
   }),
-  K(0.41, {   // 09:50 — morning, air still cold, contrast climbing
+  K(0.435, {  // 10:26 — morning, air still cold, contrast climbing
     turbidity: 3.4, rayleigh: 2.1, mie: 0.006, mieG: 0.78,
     exposure: 0.98, sunIntensity: 2.6, ambient: 0.34,
     tint: new Color(1.00, 1.00, 1.02), sunTint: new Color(1.00, 0.90, 0.76),
     sky: new Color(0x7ba0cc), ground: new Color(0x4a4740),
     fogColor: new Color(0xa8b4c4), fogSun: new Color(0xffd9a8), fogTop: new Color(0x8aa6c8),
-    fogDensity: 0.013, stars: 0.0, cloudCoverage: 0.50,
+    fogDensity: 0.0053, stars: 0.0, cloudCoverage: 0.50,
     cloudLit: new Color(0xfff0dc), cloudDark: new Color(0x63697c), moon: 0.0,
   }),
-  K(0.564, {  // 13:32 solar noon — flattest light of the day; graded down deliberately
+  K(0.589, {  // 14:08 solar noon — flattest light of the day; graded down deliberately
     turbidity: 2.9, rayleigh: 1.7, mie: 0.0042, mieG: 0.76,
     exposure: 1.05, sunIntensity: 3.2, ambient: 0.36,
     tint: new Color(0.99, 1.00, 1.03), sunTint: new Color(1.00, 0.97, 0.92),
     sky: new Color(0x8fb2d9), ground: new Color(0x585349),
     fogColor: new Color(0xb6c2d0), fogSun: new Color(0xf2e3c8), fogTop: new Color(0x93b0d4),
-    fogDensity: 0.0105, stars: 0.0, cloudCoverage: 0.52,
+    fogDensity: 0.0043, stars: 0.0, cloudCoverage: 0.52,
     cloudLit: new Color(0xffffff), cloudDark: new Color(0x6f7688), moon: 0.0,
   }),
-  K(0.70, {   // 16:48 — the light starts to lengthen and warm
+  K(0.725, {  // 17:24 — the light starts to lengthen and warm
     turbidity: 3.6, rayleigh: 2.0, mie: 0.0062, mieG: 0.79,
     exposure: 1.02, sunIntensity: 3.0, ambient: 0.35,
     tint: new Color(1.03, 0.99, 0.97), sunTint: new Color(1.00, 0.90, 0.74),
     sky: new Color(0x86a8d2), ground: new Color(0x5a5142),
     fogColor: new Color(0xb9bfc6), fogSun: new Color(0xffdda6), fogTop: new Color(0x8ba9cf),
-    fogDensity: 0.0125, stars: 0.0, cloudCoverage: 0.51,
+    fogDensity: 0.0051, stars: 0.0, cloudCoverage: 0.51,
     cloudLit: new Color(0xfff3e0), cloudDark: new Color(0x6a7085), moon: 0.0,
   }),
   K(0.78, {   // 18:43 — THE SHOT. Low amber sun, cool blue shadow, mist in the valley.
@@ -167,25 +167,25 @@ const LADDER = [
     tint: new Color(1.06, 0.97, 0.92), sunTint: new Color(1.00, 0.66, 0.34),
     sky: new Color(0x6f8db8), ground: new Color(0x4c3f31),
     fogColor: new Color(0xa9a8ad), fogSun: new Color(0xff9b52), fogTop: new Color(0x7d97bd),
-    fogDensity: 0.0215, stars: 0.0, cloudCoverage: 0.455,
+    fogDensity: 0.0088, stars: 0.0, cloudCoverage: 0.455,
     cloudLit: new Color(0xffb06a), cloudDark: new Color(0x4e4f68), moon: 0.0,
   }),
-  K(0.815, {  // 19:34 — dusk, the sun is under the ridge, only the top of the sky is lit
+  K(0.840, {  // 20:10 — dusk, the sun is under the ridge, only the top of the sky is lit
     turbidity: 4.4, rayleigh: 3.3, mie: 0.013, mieG: 0.80,
     exposure: 0.68, sunIntensity: 0.75, ambient: 0.28,
     tint: new Color(0.94, 0.90, 1.02), sunTint: new Color(1.00, 0.47, 0.30),
     sky: new Color(0x4a5f8c), ground: new Color(0x2c2a2c),
     fogColor: new Color(0x6d7085), fogSun: new Color(0xd4623a), fogTop: new Color(0x4c608c),
-    fogDensity: 0.0185, stars: 0.18, cloudCoverage: 0.49,
+    fogDensity: 0.0076, stars: 0.18, cloudCoverage: 0.49,
     cloudLit: new Color(0xc4664a), cloudDark: new Color(0x2e3348), moon: 0.25,
   }),
-  K(0.87, {   // 20:53 — civil twilight gone, stars in
+  K(0.894, {  // 21:27 — civil twilight gone, stars in
     turbidity: 3.0, rayleigh: 1.8, mie: 0.0055, mieG: 0.77,
     exposure: 0.48, sunIntensity: 0.18, ambient: 0.22,
     tint: new Color(0.70, 0.80, 1.05), sunTint: new Color(0.78, 0.80, 1.00),
     sky: new Color(0x243352), ground: new Color(0x14161d),
     fogColor: new Color(0x263349), fogSun: new Color(0x3a4664), fogTop: new Color(0x18213a),
-    fogDensity: 0.0115, stars: 0.85, cloudCoverage: 0.54,
+    fogDensity: 0.0047, stars: 0.85, cloudCoverage: 0.54,
     cloudLit: new Color(0x424e73), cloudDark: new Color(0x131824), moon: 0.85,
   }),
 ];
@@ -545,7 +545,7 @@ export class SkySystem {
       color: new Color(0xa9a8ad),
       topColor: new Color(0x7d97bd),
       sunColor: new Color(0xff9b52),
-      density: 0.0215,
+      density: 0.0088,
       heightFalloff: 26,
       // ARCHITECTURE §9: world Y is absolute metres above sea level. The mist deck sits
       // on the stream at 782 and thins with height, so the valley pools and the shrine
@@ -563,7 +563,7 @@ export class SkySystem {
       uFogTopColor: { value: new Color(0x7d97bd) },
       uFogSunColor: { value: new Color(0xff9b52) },
       uFogSunDir: { value: new Vector3(0, 0.2, -1) },
-      uFogDensity: { value: 0.0215 },
+      uFogDensity: { value: 0.0088 },
       uFogHeightFalloff: { value: 26 },
       uFogBaseHeight: { value: WORLD.WATER_LEVEL },
       uFogStart: { value: 6 },
@@ -884,11 +884,13 @@ export class SkySystem {
     fu.uFogSunPower.value = fp.sunPower;
     fu.uFogSunStrength.value = fp.sunStrength;
 
-    // Keep the engine's built-in FogExp2 roughly in step for anything unpatched.
+    // Keep the engine's built-in FogExp2 roughly in step for anything that escapes the
+    // patch. FogExp2 squares the distance term, so the curves can only be matched at one
+    // range — 300 m, the mid-ground where a mismatch would be most obvious.
     const fog = this.ctx.scene.fog;
     if (fog) {
       fog.color.copy(fp.color);
-      if ('density' in fog) fog.density = fp.density * 0.55;
+      if ('density' in fog) fog.density = fp.density * 0.32;
     }
   }
 
