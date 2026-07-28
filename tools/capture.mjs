@@ -88,6 +88,7 @@ const SHOTS = {
   hero: { wait: 2600, script: `k.debugCam?.('hero')` },
   wide: { wait: 2200, script: `k.debugCam?.('wide')` },
   torii: { wait: 2200, script: `k.debugCam?.('torii')` },
+  valley: { wait: 2600, script: `k.debugCam?.('valley')` },
   combat: { wait: 3200, script: `k.debugCam?.('combat'); k.enemies?.spawnWave?.(3)` },
   parry: { wait: 3400, script: `k.debugCam?.('combat'); k.combat?.__demoParry?.()` },
   closeup: { wait: 2200, script: `k.debugCam?.('closeup')` },
@@ -207,6 +208,28 @@ async function main() {
         triangles: k.engine.stats.triangles,
         renderScale: +k.quality.effectiveScale.toFixed(2),
         tier: k.quality.tier,
+        // Hard numbers for the lighting review — "it looks grey" is not actionable,
+        // "the key is 0.83,0.40,0.23 and the sun is 13 degrees up" is.
+        sun: k.sky ? {
+          time: +(k.sky.time ?? 0).toFixed(3),
+          dir: [k.sky.sunDirection?.x, k.sky.sunDirection?.y, k.sky.sunDirection?.z]
+            .map((v) => +(v ?? 0).toFixed(3)),
+          elevationDeg: +(Math.asin(k.sky.sunDirection?.y ?? 0) * 180 / Math.PI).toFixed(1),
+          color: k.sky.sunColor ? [k.sky.sunColor.r, k.sky.sunColor.g, k.sky.sunColor.b]
+            .map((v) => +v.toFixed(3)) : null,
+          intensity: +(k.sky.sunIntensity ?? 0).toFixed(2),
+          fogDensity: +(k.sky.fogParams?.density ?? 0).toFixed(5),
+        } : null,
+        light: k.lighting ? {
+          sunIntensity: +(k.lighting.sun?.intensity ?? 0).toFixed(2),
+          sunColor: k.lighting.sun ? [k.lighting.sun.color.r, k.lighting.sun.color.g,
+            k.lighting.sun.color.b].map((v) => +v.toFixed(3)) : null,
+          castShadow: !!k.lighting.sun?.castShadow,
+          cascades: k.lighting.cascadeCount ?? 0,
+          shadowsActive: !!k.lighting.shadowsActive,
+          hemiIntensity: +(k.lighting.hemi?.intensity ?? 0).toFixed(3),
+        } : null,
+        exposure: +(k.renderer.toneMappingExposure ?? 1).toFixed(3),
         programs: k.renderer.info.programs?.length ?? 0,
         textures: k.renderer.info.memory.textures,
         geometries: k.renderer.info.memory.geometries,

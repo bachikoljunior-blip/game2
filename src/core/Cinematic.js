@@ -23,16 +23,32 @@ const Y0 = WORLD.PLATEAU_HEIGHT;
  * shrine plateau established in Level.js; `fov` is the vertical FOV in degrees.
  */
 export const SHOTS = {
-  /** The postcard: torii in the near third, bamboo valley falling away behind. */
-  hero: { pos: [14.5, 3.4, 22.0], target: [-2.0, 2.6, -6.0], fov: 46 },
-  /** Establishing wide from the approach stair, whole shrine in silhouette. */
-  wide: { pos: [2.0, 8.5, 46.0], target: [0.0, 4.0, -14.0], fov: 52 },
-  /** Straight through the torii into the sun — the god-ray shot. */
-  torii: { pos: [0.0, 1.75, 16.0], target: [0.0, 3.2, -30.0], fov: 60 },
-  /** Over-the-shoulder gameplay framing with enemies in the mid-ground. */
-  combat: { pos: [3.2, 2.7, 7.4], target: [-1.2, 1.5, -3.0], fov: 55, follow: true },
-  /** Materials and character detail: blade, armour lacing, cloth. */
-  closeup: { pos: [1.1, 1.62, 2.3], target: [0.0, 1.5, 0.0], fov: 34 },
+  /**
+   * The postcard. Looking north-west up the processional axis: the third torii
+   * (z = 38.5) cuts the near-left third, the haiden sits on the far third, the
+   * ridge closes the top. The sun is ESE at azimuth 118°, so it rakes in from
+   * camera-right and throws the torii's shadow across the flagstones toward us.
+   */
+  hero: { pos: [-11.0, 2.6, 47.0], target: [3.0, 4.2, 16.0], fov: 46 },
+
+  /** Establishing, from the head of the stair — all three torii receding on axis. */
+  wide: { pos: [6.0, 9.5, 88.0], target: [0.0, 4.5, 16.0], fov: 52 },
+
+  /** Under the great torii, low and close, so the gate reads at its real scale. */
+  torii: { pos: [1.6, 1.45, 45.0], target: [-0.4, 5.2, 33.0], fov: 62 },
+
+  /**
+   * Into the sun from the cliff overlook, out over the bamboo sea. This is the
+   * god-ray and aerial-perspective test: backlit mist, the valley falling away
+   * south-east, and the sun disc just above the far ridge.
+   */
+  valley: { pos: [33.0, 3.2, 33.0], target: [72.0, 6.0, 58.0], fov: 54 },
+
+  /** Over-the-shoulder gameplay framing, anchored on the gravel arena at z = 26. */
+  combat: { pos: [4.4, 2.9, 8.0], target: [-1.4, 1.55, -3.2], fov: 55, follow: true },
+
+  /** Character and material detail: blade, armour lacing, cloth weave. */
+  closeup: { pos: [1.05, 1.58, 2.2], target: [0.0, 1.48, 0.0], fov: 34, follow: true },
 };
 
 export function installCinematic(ctx) {
