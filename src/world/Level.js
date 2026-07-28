@@ -27,7 +27,7 @@
 
 import { Group, Mesh, Vector3, Matrix4, Sphere, BoxGeometry } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { PropFactory, InstancedProto, normalizeGeo, CLOTH_MATERIALS } from './Props.js';
+import { PropFactory, InstancedProto, normalizeGeo, CLOTH_MATERIALS, EMISSIVE } from './Props.js';
 import { WORLD, inPlayable } from './Constants.js';
 import { makeRandom, clamp, lerp, noise } from '../core/Noise.js';
 
@@ -161,7 +161,7 @@ export class Level {
     this._clutterDist = 40;
     this._farDist = 120;
     this._shrineCenter = new Vector3();
-    this._emberBase = 2.4;
+    this._emberBase = EMISSIVE.flame.intensity;
     this._built = false;
   }
 
@@ -447,7 +447,7 @@ export class Level {
       const g = new BoxGeometry(fl.width + 1.2, 0.34, 2.5);
       g.translate(0, y - 0.17, zA + 1.2);
       normalizeGeo(g);
-      this._pushRaw(g, 'cobble', 'static');
+      this._pushRaw(g, '__groundStone', 'static');
       this._collide(this._box(fl.width + 1.2, 0.34, 2.5, 0, y - 0.34, zA + 1.2), 'stone', true);
     }
   }
@@ -468,7 +468,7 @@ export class Level {
       this._tint(g, k, k * 0.99, k * 0.96);
       path.push({ g, zc });
     }
-    for (const p of path) this._pushRaw(p.g, 'cobble', 'static');
+    for (const p of path) this._pushRaw(p.g, '__groundStone', 'static');
   }
 
   /** 玉砂利 the forecourt itself — flat, level, and the fight happens on it. */
@@ -478,7 +478,7 @@ export class Level {
     g.translate(a.x, this.groundY(a.x, a.z) + 0.05, a.z);
     normalizeGeo(g);
     this._shade(g, (x, yy, z) => 0.92 + noise.fbm2(x * 0.35, z * 0.35, 3) * 0.12);
-    this._pushRaw(g, 'cobble', 'static');
+    this._pushRaw(g, '__groundStone', 'static');
     this._collide(this._box(a.hx * 2 + 2.4, 0.2, a.hz * 2 + 2.4, a.x, this.groundY(a.x, a.z) - 0.05, a.z), 'gravel', true);
   }
 
@@ -502,6 +502,19 @@ export class Level {
       _m.makeRotationY(0);
       _m.setPosition(0, y + a.ropeLeft[1], t.z + 0.02);
       this._emit(rope, _m.clone());
+    }
+
+    // 提灯 a pair hung inside the great gate. They sit close to the camera in the
+    // god-ray shot and are the highlight the frame was missing there.
+    if (i === LAYOUT.torii.length - 1) {
+      const proto = this._proto('chochin', () => f.hangingLantern({}), { castShadow: false });
+      const hangY = y + build.anchors.ropeLeft[1] - 0.34;
+      for (const sx of [-1, 1]) {
+        _m.makeRotationY((this.rnd() - 0.5) * 0.5);
+        _m.scale(_v.set(1.35, 1.35, 1.35));
+        _m.setPosition(sx * t.span * 0.30, hangY, t.z + 0.10);
+        proto.place(_m, [1, 0.97 + this.rnd() * 0.06, 0.92 + this.rnd() * 0.1]);
+      }
     }
   }
 
@@ -738,6 +751,12 @@ export class Level {
         });
       }
     };
+    // A pair flanking every gate. This is how a real sandō is lit, and it is also
+    // where the camera is: each of the axis shots looks through a torii, so a lit
+    // aperture close to the lens is the frame's brightest thing by a wide margin.
+    for (const t of LAYOUT.torii) {
+      for (const sx of [-1, 1]) place(sx * (t.span * 0.5 + 1.25), t.z + 1.1, 1.12 + this.rnd() * 0.1);
+    }
     // Paired down the approach, then scattered round the forecourt.
     for (let z = 40; z <= 70; z += 6.2) {
       for (const sx of [-1, 1]) place(sx * 5.4, z + (this.rnd() - 0.5) * 0.8, 0.92 + this.rnd() * 0.16);
@@ -1027,11 +1046,7 @@ export class Level {
     }
   }
 
-  _materialFor(name) {
-    if (name === '__ember') return this.factory.emberMaterial;
-    if (name === '__water') return this.factory.waterMaterial;
-    return this.factory.material(name);
-  }
+  _materialFor(name) { return this.factory.specialMaterial(name); }
 
   _realizeBucket(key) {
     const list = this._buckets.get(key);
@@ -1136,27 +1151,28 @@ export class Level {
   }
 
   /**
-   * Hand the lantern flames to the lighting system, nearest-to-the-arena first
-   * and capped by tier — a hundred point lights would be a hundred extra passes.
+   * Lantern illumination is emissive, not lit.
+   *
+   * `Lighting.requestLight(pos, color, intensity, radius, ttl)` is a **transient
+   * spark pool**: a handful of slots shared with combat impacts, a `(1-u)²`
+   * envelope across a 0.35 s default ttl, and a steal-the-oldest allocator. It is
+   * the right API for a parry flash and the wrong one for a lantern that has to
+   * stand still and burn for the whole level — a granted light would fade out
+   * inside half a second, and holding a dozen of them alive would starve the pool
+   * that hit sparks depend on.
+   *
+   * So the lanterns carry their own radiance instead: an HDR emissive core behind
+   * a lit-paper liner (`EMISSIVE.flame` / `EMISSIVE.paper`), plus a baked spill
+   * disc on the flagstone (`EMISSIVE.pool`, deliberately under the bloom
+   * threshold). The requests are still collected during the build so that a future
+   * persistent-light API has something to consume; on tiers that can afford it we
+   * simply keep the list.
    */
   _realizeLights() {
-    const lighting = this.ctx?.lighting;
-    if (!lighting?.requestLight || this._maxPropLights <= 0) { this._lightRequests.length = 0; return; }
     const a = LAYOUT.arena;
-    const ay = WORLD.PLATEAU_HEIGHT;
     this._lightRequests.sort((p, q) =>
       (Math.hypot(p.x - a.x, p.z - a.z) - Math.hypot(q.x - a.x, q.z - a.z)));
-    const n = Math.min(this._lightRequests.length, this._maxPropLights);
-    for (let i = 0; i < n; i++) {
-      const l = this._lightRequests[i];
-      try {
-        lighting.requestLight({
-          position: new Vector3(l.x, l.y, l.z),
-          color: l.color, intensity: l.intensity, distance: l.distance,
-          decay: 2, flicker: l.flicker, castShadow: false, priority: 1 - i / n,
-        });
-      } catch { /* lighting may not take prop lights on this tier */ }
-    }
+    this.propLights = this._lightRequests.slice(0, Math.max(0, this._maxPropLights));
     this._lightRequests.length = 0;
   }
 

@@ -1146,11 +1146,7 @@ function plateGeometry(w, h, d, nx, ny, twoSided) {
  * The whole character in one geometry: skin, kimono, obi and — for an oni — the
  * cuirass, sode, mask and hat. One SkinnedMesh, one material, one draw call.
  */
-function buildCharacterGeometry(rig, dens, costume) {
-  const pal = Object.assign({
-    cloth: 0x2a2f38, armour: 0x3a3128, lacing: 0x7a1d16,
-    trim: 0xc8321e, metal: 0xc9d3dc, skin: 0xb08a63,
-  }, costume.palette || {});
+function buildCharacterGeometry(rig, dens, costume, pal) {
   const mesher = new Mesher(rig._segA, rig._segB, 0.055);
   buildBody(rig, mesher, dens, pal);
   if (costume.chest !== 'none') {
@@ -1475,6 +1471,9 @@ export function buildKatana(quality, materials, scale, pal) {
   parts.push({ mesh: kashira, tint: tintOf(0xc9a227), rough: 0.34, metal: 0.92 });
 
   const koshirae = mergeMeshes(parts, materials.fittings, 'koshirae');
+  // Tsuba and wrap are 3 cm of geometry: their shadow is unresolvable at any
+  // cascade resolution we ship, and it costs a draw in each one.
+  koshirae.castShadow = false;
   koshirae.userData.detail = 1;
   g.add(koshirae);
 
@@ -1909,7 +1908,12 @@ class ClothBatch {
     this.geometry = g;
     const mesh = new Mesh(g, material);
     mesh.name = 'cloth';
-    mesh.frustumCulled = false;   // bounds change every frame; culling would pop
+    // Particles move every frame, so per-frame bounds would be wrong — but the patch
+    // is anchored to the body and cannot leave a 2.4 m sphere around the root. A
+    // fixed conservative bound lets the mesh be culled normally, which matters
+    // because an unculled mesh costs a draw in the colour pass *and* in every
+    // shadow cascade, for a character that is behind the camera.
+    mesh.frustumCulled = true;
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     this.mesh = mesh;
@@ -2302,7 +2306,7 @@ export class Rig {
     //      is a single SkinnedMesh. Parts that used to be parented to a bone are now
     //      rigid-bound to that same bone inside this geometry, which is the identical
     //      transform for one draw call instead of six.
-    const geo = buildCharacterGeometry(this, dens, costume);
+    const geo = buildCharacterGeometry(this, dens, costume, M.palette);
     const body = new SkinnedMesh(geo, M.character);
     body.name = 'character';
     body.castShadow = true;
@@ -2854,7 +2858,7 @@ export class Rig {
     if (this.lod >= 2) return;
     if (this._lookActive || this._lookWeight > 0.001) this._applyLookAt(d);
     if (this._ik && this.lod === 0) this._applyFootIK(d);
-    if (this.lod === 0 || this._cloth) this._updateCloth(d);
+    if (this.lod < 2) this._updateCloth(d);   // drawn ⇒ moving, simulated or swayed
   }
 
   /** Nothing here needs the render to have happened; kept for interface symmetry. */

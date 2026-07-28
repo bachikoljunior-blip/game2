@@ -31,15 +31,43 @@ import {
   SRGBColorSpace, RepeatWrapping, LinearMipmapLinearFilter, LinearFilter,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { noise, makeRandom, clamp, lerp, smoothstep, worley2 } from '../core/Noise.js';
+import { noise, makeRandom, clamp, lerp, smoothstep, worley2, glslNoise } from '../core/Noise.js';
 import { WIND_GLSL } from '../fx/Weather.js';
 
 // ---------------------------------------------------------------- scratch
 
 const _v3 = new Vector3();
 
-/** Materials whose geometry carries the wind attribute. Kept in its own bucket. */
-export const CLOTH_MATERIALS = new Set(['clothIndigo', 'clothCrimson', 'paper']);
+/**
+ * Materials whose geometry carries the wind attribute. Kept in its own bucket.
+ * `__lanternPaper` is in here because a hung chōchin swings on the same gust that
+ * moves the banners beside it.
+ */
+export const CLOTH_MATERIALS = new Set(['clothIndigo', 'clothCrimson', 'paper', '__lanternPaper']);
+
+/**
+ * Emissive radiance, in linear working space, for everything in the shrine that is
+ * its own light source.
+ *
+ * The frame is rendered with `NoToneMapping` into an HDR target and graded by
+ * PostFX, whose bloom threshold sits at linear 1.0 and whose transfer function
+ * reaches 250/255 at linear 2.2. So these are not decorative tints — they are the
+ * only things in a magic-hour frame that exceed the sky, and the numbers are chosen
+ * against that curve: a flame core well past white so it clips and throws a skirt,
+ * lit paper just past the 2.2 mark so the lantern body itself reads as a source,
+ * and a spill pool deliberately *under* 1.0 so it warms the flagstone without
+ * blooming into a blob.
+ */
+export const EMISSIVE = {
+  /** Flame inside a hibukuro / chōchin. Rec709 luma ≈ 4.4 linear. */
+  flame: { color: 0xffd9a8, intensity: 6.0 },
+  /** Lit paper seen from outside. Rec709 luma ≈ 1.93 linear → ~248/255. */
+  paper: { color: 0xffc07a, intensity: 3.2 },
+  /** Warm spill on flagstone. Rec709 luma ≈ 0.38 — below the bloom threshold. */
+  pool: { color: 0xff9a52, intensity: 0.85 },
+  /** Sky caught in still water. Reads as a glint without becoming a lamp. */
+  water: { color: 0xbfe0ea, intensity: 0.55 },
+};
 
 // ------------------------------------------------------------ geometry utils
 
@@ -715,9 +743,7 @@ export class InstancedProto {
     }
     const n = e.length;
     for (const part of this.build.parts) {
-      const mat = part.material === '__ember' ? this.factory.emberMaterial
-        : part.material === '__water' ? this.factory.waterMaterial
-          : this.factory.material(part.material);
+      const mat = this.factory.specialMaterial(part.material);
       const mesh = new InstancedMesh(part.geometry, mat, n);
       mesh.name = `${this.name}:${part.material}`;
       mesh.castShadow = this.castShadow;
@@ -798,36 +824,59 @@ export class PropFactory {
    * One clone per name, with `vertexColors` on so the baked AO lands, and the
    * aerial-perspective fog re-injected (Material.copy drops onBeforeCompile).
    */
-  material(name, repeat = 1) {
-    const key = `${name}@${repeat}`;
-    const cached = this._mats.get(key);
-    if (cached) return cached;
-
+  /**
+   * A fresh clone of a library material, or null when the name is missing.
+   * `Material.copy` drops `onBeforeCompile` and deep-copies `userData`, so the
+   * compile hooks are re-attached and the fog marker cleared for re-injection.
+   */
+  _libMaterial(name, repeat = 1) {
     const lib = this.ctx?.materials;
     let src = null;
     try {
       src = lib?.getTextured?.(name, repeat) ?? lib?.get?.(name) ?? null;
     } catch { src = null; }
+    if (!src || !src.isMaterial) return null;
+    const mat = src.clone();
+    if (Object.prototype.hasOwnProperty.call(src, 'onBeforeCompile')) mat.onBeforeCompile = src.onBeforeCompile;
+    if (Object.prototype.hasOwnProperty.call(src, 'customProgramCacheKey')) mat.customProgramCacheKey = src.customProgramCacheKey;
+    mat.userData = Object.assign({}, mat.userData);
+    delete mat.userData.kagFog;
+    return mat;
+  }
 
-    let mat;
-    if (src && src.isMaterial) {
-      mat = src.clone();
-      if (Object.prototype.hasOwnProperty.call(src, 'onBeforeCompile')) mat.onBeforeCompile = src.onBeforeCompile;
-      if (Object.prototype.hasOwnProperty.call(src, 'customProgramCacheKey')) mat.customProgramCacheKey = src.customProgramCacheKey;
-      mat.userData = Object.assign({}, mat.userData);
-      delete mat.userData.kagFog;
-    } else {
-      const [hex, rough, metal] = FALLBACK[name] || [0x9a8f80, 0.85, 0.0];
-      let map = this._fallbackTex.get(name);
-      if (!map) {
-        map = grainTexture(hex, name.length * 37 + 11);
-        this._fallbackTex.set(name, map);
-        this.disposables.push(map);
-      }
-      map.repeat.set(repeat, repeat);
-      mat = new MeshStandardMaterial({ color: 0xffffff, map, roughness: rough, metalness: metal });
+  /** Fallback grain material for a name the library did not provide. */
+  _fallbackMaterial(name, repeat) {
+    const [hex, rough, metal] = FALLBACK[name] || [0x9a8f80, 0.85, 0.0];
+    let map = this._fallbackTex.get(name);
+    if (!map) {
+      map = grainTexture(hex, name.length * 37 + 11);
+      this._fallbackTex.set(name, map);
+      this.disposables.push(map);
     }
+    map.repeat.set(repeat, repeat);
+    return new MeshStandardMaterial({ color: 0xffffff, map, roughness: rough, metalness: metal });
+  }
 
+  /** Resolve a material name, including the `__`-prefixed lit-source specials. */
+  specialMaterial(name) {
+    switch (name) {
+      case '__ember': return this.emberMaterial;
+      case '__lanternPaper': return this.lanternPaperMaterial;
+      case '__glowPool': return this.glowPoolMaterial;
+      case '__water': return this.waterMaterial;
+      case '__goldPolished': return this.goldPolishedMaterial;
+      case '__wetStone': return this.wetStoneMaterial;
+      case '__groundStone': return this.groundMaterial;
+      default: return this.material(name);
+    }
+  }
+
+  material(name, repeat = 1) {
+    const key = `${name}@${repeat}`;
+    const cached = this._mats.get(key);
+    if (cached) return cached;
+
+    const mat = this._libMaterial(name, repeat) || this._fallbackMaterial(name, repeat);
     mat.vertexColors = true;
     mat.name = `prop:${name}`;
     if (CLOTH_MATERIALS.has(name)) {
@@ -841,26 +890,144 @@ export class PropFactory {
     return mat;
   }
 
-  /** Emissive material for lantern fireboxes / chōchin; one instance, animated. */
+  /**
+   * The flame itself. No albedo — a fire is not a lit surface — and an emissive
+   * well past the transfer function's white point so the aperture clips and the
+   * bloom prefilter has something real to find. `Level.update` breathes the
+   * intensity around this base.
+   */
   get emberMaterial() {
     if (this._ember) return this._ember;
     const m = new MeshStandardMaterial({
-      color: 0x2a1a10, emissive: new Color(0xff9040), emissiveIntensity: 2.4,
-      roughness: 0.9, metalness: 0, vertexColors: true,
+      color: 0x000000,
+      emissive: new Color(EMISSIVE.flame.color),
+      emissiveIntensity: EMISSIVE.flame.intensity,
+      roughness: 1, metalness: 0, vertexColors: true,
+      fog: false,
     });
     m.name = 'prop:ember';
-    this.ctx?.sky?.applyFog?.(m);
+    // Deliberately NOT fogged: aerial perspective on a light source washes the one
+    // thing in frame that is supposed to be brighter than the air in front of it.
     this._ember = m;
     this.disposables.push(m);
     return m;
   }
 
-  /** Thin running water for the chōzuya spout. */
+  /**
+   * Lit paper — the hibukuro glow shell and the chōchin body. Carries the real
+   * paper albedo so it still has grain, plus an emissive that puts it just past
+   * the 2.2-linear mark where the grade reaches 250.
+   */
+  get lanternPaperMaterial() {
+    if (this._litPaper) return this._litPaper;
+    const src = this._libMaterial('paper', 1);
+    let m;
+    if (src) {
+      m = src;
+      // Transmission routes the surface through the transmissive pass, where an
+      // emissive lantern reads as a dim frosted pane rather than a lamp.
+      m.transmission = 0;
+      m.transparent = false;
+      m.opacity = 1;
+      m.roughness = 0.85;
+    } else {
+      m = new MeshStandardMaterial({ color: 0xefe6d2, roughness: 0.85, metalness: 0 });
+    }
+    m.emissive = new Color(EMISSIVE.paper.color);
+    m.emissiveIntensity = EMISSIVE.paper.intensity;
+    m.vertexColors = true;
+    m.side = DoubleSide;
+    m.name = 'prop:lanternPaper';
+    this._installWind(m);
+    this._litPaper = m;
+    this.disposables.push(m);
+    return m;
+  }
+
+  /**
+   * The warm pool a lantern throws on the flagstone. `Lighting.requestLight` is a
+   * transient spark pool — 0.35 s envelope, a handful of slots shared with combat
+   * impacts — so it cannot hold a standing lantern light, and a real point light
+   * per lantern is not in the draw budget. This is the spill, baked: a soft disc
+   * under each lantern, kept below the bloom threshold so it warms without glowing.
+   */
+  get glowPoolMaterial() {
+    if (this._pool) return this._pool;
+    const m = new MeshStandardMaterial({
+      color: 0x000000,
+      emissive: new Color(EMISSIVE.pool.color),
+      emissiveIntensity: EMISSIVE.pool.intensity,
+      roughness: 1, metalness: 0, vertexColors: true,
+      transparent: true, opacity: 0.85, depthWrite: false,
+      polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+    });
+    m.name = 'prop:glowPool';
+    // Vertex colour multiplies diffuse, and this material has none — so route it
+    // onto the emissive instead, which is what makes the disc fade out at its rim
+    // instead of ending on a hard circle.
+    m.onBeforeCompile = (shader) => {
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <emissivemap_fragment>',
+        '#include <emissivemap_fragment>\n#ifdef USE_COLOR\n  totalEmissiveRadiance *= vColor;\n#endif',
+      );
+    };
+    m.customProgramCacheKey = () => 'kagPool1';
+    this.ctx?.sky?.applyFog?.(m);
+    this._pool = m;
+    this.disposables.push(m);
+    return m;
+  }
+
+  /**
+   * Polished gold leaf. Metal produces nothing at all as flat diffuse; what makes
+   * a gaku plaque or a ridge cap read at magic hour is a tight specular lobe over
+   * a bright environment, so the roughness comes down and the env contribution
+   * goes up relative to the library's aged-leaf default.
+   */
+  get goldPolishedMaterial() {
+    if (this._goldPol) return this._goldPol;
+    const m = this._libMaterial('gold', 1) || new MeshStandardMaterial({ color: 0xc9a227 });
+    m.metalness = 1.0;
+    m.roughness = 0.16;
+    m.envMapIntensity = 2.4;
+    m.vertexColors = true;
+    m.name = 'prop:goldPolished';
+    this.ctx?.sky?.applyFog?.(m);
+    this._goldPol = m;
+    this.disposables.push(m);
+    return m;
+  }
+
+  /** Wet stone — the chōzuya basin and the splash apron around it. */
+  get wetStoneMaterial() {
+    if (this._wetStone) return this._wetStone;
+    const m = this._libMaterial('stone', 1.6) || new MeshStandardMaterial({ color: 0x8b8778 });
+    m.roughness = 0.17;
+    m.metalness = 0.03;
+    m.envMapIntensity = 1.9;
+    m.vertexColors = true;
+    m.name = 'prop:wetStone';
+    // Wet stone is darker than dry stone; the brightness comes from the specular.
+    if (m.color) m.color.multiplyScalar(0.62);
+    this.ctx?.sky?.applyFog?.(m);
+    this._wetStone = m;
+    this.disposables.push(m);
+    return m;
+  }
+
+  /**
+   * Running and standing water. Near-mirror roughness over a bright env map is
+   * where the glint comes from; the small emissive keeps the basin reading as a
+   * lit surface even at angles where the sun lobe misses the camera.
+   */
   get waterMaterial() {
     if (this._water) return this._water;
     const m = new MeshStandardMaterial({
-      color: 0xbfd8dd, roughness: 0.08, metalness: 0.0,
-      transparent: true, opacity: 0.55, vertexColors: true, depthWrite: false,
+      color: 0x6f8f99, roughness: 0.035, metalness: 0.05,
+      emissive: new Color(EMISSIVE.water.color),
+      emissiveIntensity: EMISSIVE.water.intensity,
+      envMapIntensity: 2.6,
+      transparent: true, opacity: 0.72, vertexColors: true, depthWrite: false,
     });
     m.name = 'prop:water';
     // Time comes from the wind field's `uWind.w` so nothing in the level runs on
@@ -882,6 +1049,80 @@ export class PropFactory {
     m.customProgramCacheKey = () => 'kagWater2';
     this.ctx?.sky?.applyFog?.(m);
     this._water = m;
+    this.disposables.push(m);
+    return m;
+  }
+
+  /**
+   * 玉砂利 the courtyard flagstone, with the tile grid broken the way Terrain
+   * breaks it (see `kgTiled` in Terrain.js). A plain planar lookup lays the
+   * texture's own wrap seams across the plaza as two families of dead-straight
+   * lines at exactly the tile pitch, and now that the surrounding ground no longer
+   * has them the courtyard is the only thing in frame showing a grid.
+   *
+   * The same three techniques, in the same order:
+   *   1. the lookup is domain-warped — a long wavelength to decorrelate distant
+   *      parts of the plaza, a short one to bend the seam itself;
+   *   2. the whole frame is rotated by an irrational angle, so the courtyard grid
+   *      can never agree with a terrain layer on a direction;
+   *   3. a second lookup at 0.617x scale is blended under a low-frequency mask,
+   *      which destroys the period outright — a repeat is only legible if the
+   *      *same* stones come back.
+   * Plus Terrain's large-scale weathering mask, scrubbed clean along the
+   * processional axis where feet have polished the stone.
+   */
+  get groundMaterial() {
+    if (this._ground) return this._ground;
+    const m = this._libMaterial('cobble', 1) || this._fallbackMaterial('cobble', 1);
+    m.vertexColors = true;
+    m.name = 'prop:groundStone';
+
+    const prev = Object.prototype.hasOwnProperty.call(m, 'onBeforeCompile') ? m.onBeforeCompile : null;
+    m.onBeforeCompile = (shader, renderer) => {
+      if (prev) prev.call(m, shader, renderer);
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying vec3 vKagGroundW;')
+        .replace('#include <begin_vertex>',
+          '#include <begin_vertex>\nvKagGroundW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\nvarying vec3 vKagGroundW;\n' + glslNoise + /* glsl */`
+          vec2 kagRot(vec2 p, vec2 sc){ return vec2(p.x * sc.y - p.y * sc.x, p.x * sc.x + p.y * sc.y); }
+        `)
+        .replace('#include <map_fragment>', /* glsl */`
+        #ifdef USE_MAP
+          {
+            vec2 P = vKagGroundW.xz;
+            // (1) domain warp: long wavelength decorrelates, short bends the seam
+            vec2 wLo = vec2(fbm2(P * 0.0730 + 12.7, 2), fbm2(P * 0.0730 - 5.1, 2));
+            vec2 wHi = vec2(fbm2(P * 0.3300 + 41.3, 1), fbm2(P * 0.3300 - 9.6, 1));
+            vec2 q = P + wLo * 1.25 + wHi * 0.28;
+            // (2) irrational rotation — 0.3746/0.9272 is Terrain's gravel angle
+            vec2 uvA = kagRot(q, vec2(0.3746, 0.9272)) * 0.62;
+            // (3) second lookup at 0.617x under a low-frequency mask
+            vec2 uvB = kagRot(q + vec2(37.13, -18.77), vec2(0.7071, 0.7071)) * (0.62 * 0.617);
+            float gn = fbm2(P * 0.058 + 27.5, 2);
+            vec4 texA = texture2D(map, uvA);
+            vec4 texB = texture2D(map, uvB);
+            vec4 sampledDiffuseColor = mix(texA, texB, smoothstep(-0.24, 0.24, gn));
+            #ifdef DECODE_VIDEO_TEXTURE
+              sampledDiffuseColor = sRGBTransferEOTF(sampledDiffuseColor);
+            #endif
+            diffuseColor *= sampledDiffuseColor;
+
+            // Terrain's weathering mask: grime in the hollows, scrubbed out of the
+            // traffic band down the middle of the sandō.
+            float wear = 1.0 - smoothstep(1.6, 4.4, abs(P.x));
+            float weather = clamp((gn * 0.5 + 0.5) * 0.8 - wear * 0.75, 0.0, 1.0);
+            diffuseColor.rgb *= mix(1.0, 0.76, weather * 0.65);
+            diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.16, 1.12, 1.06), wear * 0.75);
+          }
+        #endif
+        `);
+    };
+    m.customProgramCacheKey = () => 'kagGround1';
+    this.ctx?.sky?.applyFog?.(m);
+    this._ground = m;
     this.disposables.push(m);
     return m;
   }
@@ -1070,13 +1311,24 @@ export class PropFactory {
       bakeAO(strut, { ground: 0, cavity: 0.3, down: 0.3, floor: 0.38 });
       PropFactory.add(b, strut, 'vermilion');
 
+      // 額 the plaque. Dead centre of the god-ray shot, so the leaf is a chamfered
+      // raised frame rather than a flat face: the bevels present several different
+      // normals to a 13° sun, and one of them always catches it.
       const plaqueH = (y1 - y0) * 0.62;
-      const plaque = new BoxGeometry(0.46 * s, plaqueH, 0.07 * s);
-      plaque.translate(0, (y0 + y1) * 0.5, 0.15 * s);
-      normalizeGeo(plaque);
-      bakeAO(plaque, { ground: 0, cavity: 0.25, down: 0.3, floor: 0.42 });
-      tintGeo(plaque, 0.92, 0.86, 0.72);
-      PropFactory.add(b, plaque, 'gold');
+      const plaqueW = 0.46 * s;
+      const board = new BoxGeometry(plaqueW * 0.86, plaqueH * 0.84, 0.05 * s);
+      board.translate(0, (y0 + y1) * 0.5, 0.16 * s);
+      normalizeGeo(board);
+      bakeAO(board, { ground: 0, cavity: 0.25, down: 0.3, floor: 0.42 });
+      tintGeo(board, 0.44, 0.36, 0.28);
+      PropFactory.add(b, board, 'cedar');
+
+      const frame = sweepProfile([
+        { x: 0, y: (y0 + y1) * 0.5, z: 0.115 * s, sx: plaqueW, sy: plaqueH, ao: 0.8 },
+        { x: 0, y: (y0 + y1) * 0.5, z: 0.175 * s, sx: plaqueW * 1.06, sy: plaqueH * 1.05, ao: 1.0 },
+        { x: 0, y: (y0 + y1) * 0.5, z: 0.215 * s, sx: plaqueW * 0.90, sy: plaqueH * 0.88, ao: 1.0 },
+      ], rectProfile(0.14), { ref: [1, 0, 0], uvScale: 2.2, capStart: false, capEnd: false });
+      PropFactory.add(b, frame, '__goldPolished');
     }
 
     // 島木 shimaki and 笠木 kasagi — the curved pair that crowns the gate.
@@ -1283,6 +1535,9 @@ export class PropFactory {
     ], hex, { uvScale: 1.1, capStart: false, capEnd: false }));
 
     // 火袋 hibukuro — six panels: moon, crescent, two windows, two solid.
+    // The apertures are cut generously: at magic hour this is the brightest thing
+    // in the frame and a coin-sized hole at 8 m is a sub-pixel highlight, which is
+    // to say no highlight at all.
     const fbY = saoTop + 0.26 * s;
     const fbH = 0.44 * s;
     const fbR = 0.235 * s;
@@ -1291,19 +1546,19 @@ export class PropFactory {
       const a = (i / 6) * Math.PI * 2 + Math.PI / 6;
       let panel;
       if (i === 0) {
-        panel = panelWithHole(panelW, fbH * 0.86, 0.035 * s, circleProfile(12).map((p) => [p[0] * fbH * 0.46, p[1] * fbH * 0.46]));
+        panel = panelWithHole(panelW, fbH * 0.86, 0.035 * s, circleProfile(12).map((p) => [p[0] * fbH * 0.62, p[1] * fbH * 0.62]));
       } else if (i === 3) {
         // Crescent: a circle with a shallow bite, kept star-shaped so the
         // outward projection in panelWithHole stays well defined.
         const pts = [];
         for (let k = 0; k < 14; k++) {
           const th = (k / 14) * Math.PI * 2;
-          const r = fbH * (0.24 - 0.11 * Math.max(0, Math.cos(th)));
+          const r = fbH * (0.33 - 0.13 * Math.max(0, Math.cos(th)));
           pts.push([Math.cos(th) * r, Math.sin(th) * r]);
         }
         panel = panelWithHole(panelW, fbH * 0.86, 0.035 * s, pts);
       } else if (i === 1 || i === 4) {
-        const w2 = panelW * 0.30, h2 = fbH * 0.28;
+        const w2 = panelW * 0.38, h2 = fbH * 0.34;
         panel = panelWithHole(panelW, fbH * 0.86, 0.035 * s,
           [[-w2, -h2], [w2, -h2], [w2, h2], [-w2, h2]]);
       } else {
@@ -1359,26 +1614,44 @@ export class PropFactory {
     })), { flip: true, uvScale: 1.2 });
     push(under);
 
-    // 宝珠 hōju — the jewel finial.
-    const jewel = sweepProfile([
-      { x: 0, y: kasaY + 0.30 * s, z: 0, sx: 0.13 * s, sy: 0.13 * s, ao: 0.7 },
-      { x: 0, y: kasaY + 0.36 * s, z: 0, sx: 0.17 * s, sy: 0.17 * s, ao: 0.9 },
-      { x: 0, y: kasaY + 0.46 * s, z: 0, sx: 0.13 * s, sy: 0.13 * s, ao: 1.0 },
-      { x: 0, y: kasaY + 0.53 * s, z: 0, sx: 0.045 * s, sy: 0.045 * s, ao: 1.0 },
-    ], circleProfile(8), { smooth: true, uvScale: 1.6, capStart: false });
-    push(jewel);
-
     let merged = stone.length === 1 ? stone[0] : mergeGeometries(stone.map((g) => normalizeGeo(g)), false);
     roughen(merged, 0.006 * s, 6.5);
     bakeAO(merged, { ground: 0.5, groundH: 0.4 * s, cavity: 0.3, down: 0.34, floor: 0.3 });
     weatherBand(merged, 0, 0.5 * s, 0.72, 0.82, 0.66, 0.3);   // moss creeping up the base
     PropFactory.add(b, merged, 'stone');
 
-    // The flame itself: a small emissive core that reads through the cutouts.
-    const flame = new BoxGeometry(fbR * 0.9, fbH * 0.5, fbR * 0.9);
-    flame.translate(0, fbY + fbH * 0.44, 0);
-    normalizeGeo(flame);
+    // 宝珠 hōju — the jewel finial, in polished leaf so the low sun finds it.
+    const jewel = sweepProfile([
+      { x: 0, y: kasaY + 0.30 * s, z: 0, sx: 0.13 * s, sy: 0.13 * s, ao: 0.7 },
+      { x: 0, y: kasaY + 0.36 * s, z: 0, sx: 0.17 * s, sy: 0.17 * s, ao: 0.9 },
+      { x: 0, y: kasaY + 0.46 * s, z: 0, sx: 0.13 * s, sy: 0.13 * s, ao: 1.0 },
+      { x: 0, y: kasaY + 0.53 * s, z: 0, sx: 0.045 * s, sy: 0.045 * s, ao: 1.0 },
+    ], circleProfile(10), { smooth: true, uvScale: 1.6, capStart: false });
+    PropFactory.add(b, jewel, '__goldPolished');
+
+    // The lit paper liner. This is what you actually see through the moon and the
+    // crescent — a hot *surface* filling each aperture edge to edge, rather than a
+    // small box floating in the middle of the box that reads as a grey lump.
+    const liner = sweepProfile([
+      { x: 0, y: fbY + 0.012 * s, z: 0, sx: fbR * 1.86, sy: fbR * 1.86, ao: 1 },
+      { x: 0, y: fbY + fbH - 0.012 * s, z: 0, sx: fbR * 1.86, sy: fbR * 1.86, ao: 1 },
+    ], hex, { uvScale: 1.4, capStart: false, capEnd: false });
+    bakeFlutter(liner, 4, () => 0);              // rigid: it is glued to the stone
+    PropFactory.add(b, liner, '__lanternPaper');
+
+    // The flame core, sitting behind the liner so the apertures read hottest.
+    const flame = sweepProfile([
+      { x: 0, y: fbY + fbH * 0.18, z: 0, sx: fbR * 1.15, sy: fbR * 1.15, ao: 1 },
+      { x: 0, y: fbY + fbH * 0.72, z: 0, sx: fbR * 1.30, sy: fbR * 1.30, ao: 1 },
+      { x: 0, y: fbY + fbH * 0.92, z: 0, sx: fbR * 0.55, sy: fbR * 0.55, ao: 1 },
+    ], circleProfile(8), { smooth: true, uvScale: 1, capStart: false });
     PropFactory.add(b, flame, '__ember');
+
+    // The spill on the flagstone. Radially faded in vertex colour so it lands as a
+    // pool rather than a disc with an edge.
+    const poolR = 1.15 * s;
+    const pool = this._spillDisc(poolR, 0.012 * s);
+    PropFactory.add(b, pool, '__glowPool');
 
     PropFactory.addCollider(b, PropFactory.boxCollider(0.7 * s, kasaY, 0.7 * s, 0, 0, 0), 'stone', true, false);
     b.lights.push({
@@ -1386,8 +1659,31 @@ export class PropFactory {
       color: 0xffa050, intensity: 2.6 * s, distance: 6.5 * s, flicker: 1,
     });
     b.anchors.fire = [0, fbY + fbH * 0.5, 0];
-    b.bounds = { r: 0.62 * s, h: kasaY + 0.55 * s };
+    b.bounds = { r: Math.max(0.62 * s, poolR), h: kasaY + 0.55 * s };
     return b;
+  }
+
+  /** A ground-hugging disc that fades to nothing at its rim, for baked light spill. */
+  _spillDisc(radius, y, segments = 14) {
+    const verts = [0, y, 0];
+    const uvs = [0.5, 0.5];
+    const cols = [1, 1, 1];
+    const idx = [];
+    for (let i = 0; i <= segments; i++) {
+      const a = (i / segments) * Math.PI * 2;
+      const wob = 0.86 + 0.14 * noise.noise2(Math.cos(a) * 2.3, Math.sin(a) * 2.3);
+      verts.push(Math.cos(a) * radius * wob, y, Math.sin(a) * radius * wob);
+      uvs.push(0.5 + Math.cos(a) * 0.5, 0.5 + Math.sin(a) * 0.5);
+      cols.push(0, 0, 0);
+      if (i > 0) idx.push(0, i, i + 1);
+    }
+    const geo = new BufferGeometry();
+    geo.setAttribute('position', new BufferAttribute(new Float32Array(verts), 3));
+    geo.setAttribute('uv', new BufferAttribute(new Float32Array(uvs), 2));
+    geo.setAttribute('color', new BufferAttribute(new Float32Array(cols), 3));
+    geo.setIndex(idx);
+    geo.computeVertexNormals();
+    return geo;
   }
 
   // =====================================================================
@@ -1865,6 +2161,32 @@ export class PropFactory {
       bakeAO(merged, { ground: 0, cavity: 0.2, down: 0.36, floor: 0.4 });
       tintGeo(merged, 1.0, 0.95, 0.82);
       PropFactory.add(b, merged, 'cedarBeam');
+
+      // 金具 the leaf caps on the chigi tips and along the ridge. Small angled
+      // facets high on the silhouette, right against the brightest part of the
+      // sky — the most reliable place in the whole shrine to catch a low sun.
+      const caps = [];
+      for (let side = 0; side < 2; side++) {
+        const sx = side === 0 ? -1 : 1;
+        const x = sx * (roof.ridgeHalfX + 0.06);
+        for (let k = 0; k < 2; k++) {
+          const sz = k === 0 ? 1 : -1;
+          caps.push(sweepProfile([
+            { x: x + sx * 0.30, y: ridgeY + 0.86, z: -sz * 0.19, sx: 0.19, sy: 0.19, ao: 0.9 },
+            { x: x + sx * 0.44, y: ridgeY + 1.22, z: -sz * 0.31, sx: 0.13, sy: 0.13, ao: 1.0 },
+          ], rectProfile(0.26), { uvScale: 1.6 }));
+        }
+      }
+      for (let i = 0; i < nk; i++) {
+        const x = lerp(-roof.ridgeHalfX * 0.72, roof.ridgeHalfX * 0.72, nk === 1 ? 0.5 : i / (nk - 1));
+        for (const sz of [-0.52, 0.52]) {
+          caps.push(sweepProfile([
+            { x, y: ridgeY + 0.16, z: sz * 1.02, sx: 0.32, sy: 0.32, ao: 1.0 },
+            { x, y: ridgeY + 0.16, z: sz * 1.14, sx: 0.20, sy: 0.20, ao: 1.0 },
+          ], circleProfile(8), { smooth: true, ref: [1, 0, 0], uvScale: 2 }));
+        }
+      }
+      PropFactory.add(b, mergeGeometries(caps.map((g) => normalizeGeo(g)), false), '__goldPolished');
     }
 
     // ---- entrance stair ------------------------------------------------------
@@ -2117,12 +2439,21 @@ export class PropFactory {
       ], hexProfile(), { uvScale: 1.4, capStart: false });
       rim.push(wall);
     }
+    // Wet stone: two centuries of ladled water have never let this dry, and a
+    // near-mirror roughness under a low sun is free brightness that is also true.
     const basinGeo = mergeGeometries(basin.concat(rim).map((g) => normalizeGeo(g)), false);
     roughen(basinGeo, 0.009, 5.5);
     bakeAO(basinGeo, { ground: 0.45, groundH: 0.4, cavity: 0.34, down: 0.3, floor: 0.28 });
     weatherBand(basinGeo, 0, 0.45, 0.66, 0.80, 0.62, 0.35);
-    PropFactory.add(b, basinGeo, 'stone');
+    PropFactory.add(b, basinGeo, '__wetStone');
     PropFactory.addCollider(b, PropFactory.boxCollider(1.5, basinY, 1.25, 0, 0), 'stone', true, false);
+
+    // The splash apron: the flagstone around a chōzuya is always dark and shining.
+    {
+      const apron = this._spillDisc(1.9, 0.02, 16);
+      shadeGeo(apron, (x, y, z) => 1);
+      PropFactory.add(b, apron, '__wetStone');
+    }
 
     // still water surface
     {
@@ -2797,27 +3128,34 @@ export class PropFactory {
       const rr = lerp(r * 0.42, r, bulge) + Math.sin(t * Math.PI * RN) * 0.006;
       samples.push({ x: 0, y: -cord - t * h, z: 0, sx: rr * 2, sy: rr * 2, ao: lerp(1.05, 0.8, t) });
     }
+    // Lit paper, not paper. A row of these under a dark eave is the single most
+    // characteristic highlight in this setting and the whole surface has to carry
+    // it — the AO stays in the vertex colour so the ribs still read.
     const body = sweepProfile(samples, circleProfile(12), { smooth: true, uvScale: 1.4, capStart: false, capEnd: false });
     bakeFlutter(body, 3.0, (x, y) => clamp((-y) / (cord + h), 0, 1));
-    PropFactory.add(b, body, 'paper');
+    PropFactory.add(b, body, '__lanternPaper');
 
-    // ribs, cord and the cap/base rings
+    // cord and the cap/base rings — the rings in leaf, for a glint off the metal
     const bits = [];
+    const rings = [];
     for (const [y, rr] of [[-cord, r * 0.46], [-cord - h, r * 0.46]]) {
-      bits.push(sweepProfile([
+      rings.push(sweepProfile([
         { x: 0, y: y - 0.015, z: 0, sx: rr * 2.2, sy: rr * 2.2, ao: 0.7 },
         { x: 0, y: y + 0.015, z: 0, sx: rr * 2.2, sy: rr * 2.2, ao: 0.9 },
       ], circleProfile(10), { smooth: true, uvScale: 2 }));
     }
-    bits.push(sweepProfile([
+    // The hanging cord rides in the leaf bucket with the rings: it is a brass
+    // fitting either way, and it keeps the prototype to four instanced meshes.
+    rings.push(sweepProfile([
       { x: 0, y: 0, z: 0, sx: 0.018, sy: 0.018, ao: 0.7 },
       { x: 0, y: -cord, z: 0, sx: 0.018, sy: 0.018, ao: 0.9 },
     ], circleProfile(4), { smooth: true, uvScale: 4 }));
-    PropFactory.add(b, mergeGeometries(bits.map((g) => normalizeGeo(g)), false), 'cedarBeam');
+    PropFactory.add(b, mergeGeometries(rings.map((g) => normalizeGeo(g)), false), '__goldPolished');
 
-    const flame = new BoxGeometry(r * 0.7, h * 0.35, r * 0.7);
-    flame.translate(0, -cord - h * 0.55, 0);
-    normalizeGeo(flame);
+    const flame = sweepProfile([
+      { x: 0, y: -cord - h * 0.22, z: 0, sx: r * 1.05, sy: r * 1.05, ao: 1 },
+      { x: 0, y: -cord - h * 0.72, z: 0, sx: r * 1.15, sy: r * 1.15, ao: 1 },
+    ], circleProfile(8), { smooth: true, uvScale: 1 });
     PropFactory.add(b, flame, '__ember');
     b.lights.push({ x: 0, y: -cord - h * 0.5, z: 0, color: 0xffb060, intensity: 1.4, distance: 4.2, flicker: 0.7 });
     b.bounds = { r: r * 1.2, h: cord + h };
@@ -3040,14 +3378,15 @@ export class PropFactory {
       { x: 0, y: h - 0.03, z: 0, sx: r * 1.86, sy: r * 1.86, ao: 0.45 },
       { x: 0, y: h * 0.25, z: 0, sx: r * 1.55, sy: r * 1.55, ao: 0.28 },
     ], circleProfile(11), { uvScale: 2, capStart: false, capEnd: false });
-    bakeAO(body, { ground: 0.45, groundH: 0.2, cavity: 0.22, down: 0.3, floor: 0.3 });
-    PropFactory.add(b, body, 'cedar');
     const bail = sweepProfile([
       { x: -r, y: h * 0.95, z: 0, sx: 0.016, sy: 0.016, ao: 0.8 },
       { x: 0, y: h * 1.35, z: 0, sx: 0.016, sy: 0.016, ao: 1.0 },
       { x: r, y: h * 0.95, z: 0, sx: 0.016, sy: 0.016, ao: 0.8 },
     ], circleProfile(5), { smooth: true, ref: [0, 0, -1], uvScale: 4 });
-    PropFactory.add(b, bail, 'rope');
+    tintGeo(bail, 0.74, 0.68, 0.58);       // a withy bail, not a rope one
+    const merged = mergeGeometries([normalizeGeo(body), normalizeGeo(bail)], false);
+    bakeAO(merged, { ground: 0.45, groundH: 0.2, cavity: 0.22, down: 0.3, floor: 0.3 });
+    PropFactory.add(b, merged, 'cedar');
     b.bounds = { r: r * 1.2, h: h * 1.4 };
     return b;
   }
