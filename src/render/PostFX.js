@@ -1391,6 +1391,7 @@ export class PostFX {
 
     // ---- scratch (zero allocation in render) -------------------------------
     this._sunDir = new Vector3(0.42, 0.30, -0.86);
+    this._sunElevSin = 0.30;      // signed sin(solar elevation); see _updateSun
     this._sunWorld = new Vector3();
     this._sunUv = new Vector2(0.5, 0.5);
     this._v3 = new Vector3();
@@ -1689,9 +1690,18 @@ export class PostFX {
       highTint: [0.800, 0.900, 1.000], highAmt: 0.16,
       sat: 0.66, satShadow: 0.48,
       crossRG: -0.020, crossGB: 0.030, crossBR: -0.010,
-      gain: [0.900, 0.950, 1.060],
+      // `gain` is the last multiplicative term in `_gradeSample`, which makes it the
+      // look's white point, and a spread this wide *is* a per-channel ceiling: at
+      // [0.900, 0.950, 1.060] display white came out (198, 217, 255), so a night
+      // frame could never put a clean white on a specular or a lantern core. A grade
+      // is allowed to tint; it is not allowed to cap. The moonlight cast is carried
+      // by `wb` and the three tints — all untouched — where it belongs, and the
+      // raised `hiNeutral` lets near-neutral brights collapse to white the way a
+      // print does. White now lands at (253, 255, 255); shadows and midtones keep
+      // their blue (mid grey 130/134/153, shadow 53/55/61).
+      gain: [1.060, 1.050, 1.060],
       gamma: [1.030, 1.010, 0.980],
-      hiNeutral: 0.28,
+      hiNeutral: 0.70,
       vermilion: -0.04,
     };
   }
@@ -2579,6 +2589,10 @@ export class PostFX {
     }
     if (!has || this._sunDir.lengthSq() < 1e-8) this._sunDir.set(0.42, 0.30, -0.86);
     this._sunDir.normalize();
+    // Signed solar elevation, captured BEFORE the flip below. This is the only place
+    // the true sign of the sun's height survives, and `_nightFactor()` needs it: after
+    // the flip a midnight sun and a noon sun are indistinguishable.
+    this._sunElevSin = this._sunDir.y;
     // Sky systems disagree about whether `sunDirection` points at the sun or the way
     // the light travels. A magic-hour sun is above the horizon; flip if we got the
     // travel direction so god rays never anchor to a point under the ground.
@@ -2603,20 +2617,42 @@ export class PostFX {
     this._sunScreenStrength = strength;
   }
 
-  /** Day/night LUT cross-fade. `ctx.sky.time` wins; sun elevation is the fallback. */
+  /**
+   * Day/night LUT cross-fade, driven by where the sun actually is.
+   *
+   * This used to key off `ctx.sky.time` through a hard-coded day window,
+   * `smoothstep(0.20, 0.30, t) * (1 - smoothstep(0.70, 0.80, t))`, and that window
+   * did not describe this sky. Sky.js runs a real solar path (lat 35.7, dec -6.5),
+   * and at `MAGIC_HOUR = 0.78` — the time every hero shot is captured at — the sun
+   * is at **+13.0 degrees**, full daylight, while the window returned 0.896. So the
+   * frame was graded 89.6% through LOOK_NIGHT.
+   *
+   * That is what put a cyan ceiling on the build: LOOK_NIGHT maps display white to
+   * (198, 217, 255), so at mix 0.896 no pixel in any scene could exceed
+   * R=219 / G=233 / B=255 — measured maxima, identical in all four review frames,
+   * because a fixed transform was capping every one of them. p99.9 could not reach
+   * 235 no matter how much emissive the level added; the headroom did not exist.
+   *
+   * Solar elevation is the physical quantity and it cannot drift out of sync with
+   * the sky the way a duplicated time window did. Thresholds are the real thing:
+   * full day above +2 degrees, full night past the end of civil twilight at -6.
+   *
+   * Note `_sunElevSin`, not `_sunDir.y` — `_updateSun` flips the vector upward for
+   * the god-ray anchor, which erases the sign this needs.
+   */
   _nightFactor() {
     const sky = this.ctx.sky;
-    if (sky) {
-      if (typeof sky.nightFactor === 'number') return clamp(sky.nightFactor, 0, 1);
-      if (typeof sky.time === 'number' && isFinite(sky.time)) {
-        let t = sky.time;
-        if (t > 1.001) t = t / 24;            // hours convention
-        t = t - Math.floor(t);
-        const day = smoothstep(0.20, 0.30, t) * (1 - smoothstep(0.70, 0.80, t));
-        return 1 - day;
-      }
+    // An explicit authored value still wins — Weather.js publishes one.
+    if (sky && typeof sky.nightFactor === 'number' && isFinite(sky.nightFactor)) {
+      return clamp(sky.nightFactor, 0, 1);
     }
-    return 1 - smoothstep(-0.08, 0.06, this._sunDir.y);
+    // ARCHITECTURE.md 5b: `smoothstep` passes NaN straight through, and a NaN here
+    // becomes a NaN uniform upload, which three throws on rather than degrades —
+    // taking `pipeline.render()` with it. A sun we cannot locate is daylight, not
+    // midnight: hold the authored magic-hour look rather than swap the whole grade.
+    const y = this._sunElevSin;
+    if (!isFinite(y)) return 0;
+    return 1 - smoothstep(-0.105, 0.035, y);
   }
 
   render(dt) {

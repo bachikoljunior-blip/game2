@@ -734,10 +734,21 @@ RECIPES.push({
     const stain = cs(c.stain, u, v);
     const lich = smoothstep(0.58, 0.80, cs(c.lich, u, v));
 
+    // Depth, honestly. The Sobel below resolves the height field as
+    // tan(slope) = (dh/du)/8 regardless of resolution, so `h` swinging by 1.0
+    // across the tile means relief of one eighth of the tile. The slab joint is
+    // 0.03 of the tile wide, so at the old 0.30 it was recessed 0.0375 of the tile
+    // — deeper than it is wide, walls past 65 degrees. Granite laid by hand is not
+    // that. It matters far past this material: Terrain adopts *this* normal map as
+    // its ground detail normal (Terrain.js `detailN`, applied at 0.75 on a 1.67 m
+    // tile), so every one of these walls is stamped across the whole courtyard,
+    // where a low sun turns each into a black line with a lit rim — which is what
+    // made the paving read as cracked mud rather than as stone. Widths unchanged;
+    // only the depths come back to something a mason would recognise.
     let h = 0.72 + (slab - 0.5) * 0.05;
-    h -= (1 - joint) * 0.30;
-    h -= crack * 0.14;
-    h -= chip * 0.10;
+    h -= (1 - joint) * 0.11;
+    h -= crack * 0.050;
+    h -= chip * 0.070;
     h += (grain - 0.5) * 0.045 + quartz * 0.020 - mica * 0.010;
     h -= smoothstep(0.55, 0.0, Math.abs(bg - 0.5) * 2) * 0.0;   // tread stays flat
 
@@ -768,12 +779,38 @@ RECIPES.push({
     s.ao = clamp(ao, 0.16, 1);
     s.me = 0;
   },
-  mat(maps) { return pbr(maps, { ns: 1.5, ao: 1.15 }); },
+  // ns up from 1.5 to compensate the steps for the shallower height field above.
+  // Deliberately applied *here* and not in the field: normalScale is a material
+  // property, so props keep their relief while Terrain — which samples this map
+  // raw as its detail normal — gets the full flattening.
+  mat(maps) { return pbr(maps, { ns: 1.9, ao: 1.15 }); },
 });
 
 // ----------------------------------------------------------------- 石畳 cobble
-// Irregular flagstone with moss grout. Cells come from jittered worley so no two
-// stones share a silhouette; each stone gets its own dome, tilt and polish.
+// Irregular flagstone paving. Cells come from jittered worley so no two stones
+// share a silhouette; each stone then gets its own quarry tone, its own grain
+// phase and its own set in the bed.
+//
+// SCALE IS THE WHOLE JOB HERE — read this before touching a number. Both consumers
+// lay this tile at 0.55–0.62 world units per UV, so a tile is 1.6–1.8 m and the
+// eight worley cells across it are 20–23 cm stones. Two consequences follow:
+//
+//  1. `edge` (worley f2 - f1) is twice the perpendicular distance to the cell
+//     bisector, so a ramp that ends at 0.115 *cells* is a joint 0.115 x 22 cm
+//     ~= 2.6 cm wide. That is a laid joint. Anything past ~0.22 is a fissure.
+//  2. The Sobel that derives the normal map resolves to tan(slope) = (dh/du) / 8,
+//     independent of resolution — i.e. a full 0..1 swing of `h` across the tile
+//     means relief of one *eighth* of the tile, about 20 cm. The previous recipe
+//     swung 0.74 from crown to grout, which is 15 cm of relief between two paving
+//     stones 22 cm apart. Under a low sun that is not paving, it is a crevasse
+//     field: every joint went to black, the stone faces kept only the ~4% albedo
+//     mottle they were given, and the ground read as cracked dried mud. Joint
+//     depth here is a measurement, not a taste knob — 0.11 of `h` is 2.2 cm.
+//
+// The joint is *filled*, not open. Rammed grit and sand sit flush in it and moss
+// takes over only where the damp field says water stands. A joint darker than
+// about half its stone face stops reading as a filled joint and starts reading as
+// a crack, which is the single thing that made this surface read as mud.
 RECIPES.push({
   key: 'cobble', label: '石畳 flagstone path', seed: 2111, k: 2,
   setup(t, res) {
@@ -788,46 +825,91 @@ RECIPES.push({
     const wx = t.fbmA(u, v, 6, 6, 3) * 0.045;
     const wy = t.fbmA(u + 0.5, v + 0.25, 6, 6, 3) * 0.045;
     const w = t.worleyA(u + wx, v + wy, 8, 8, 1.0);
-    const grout = 1 - smoothstep(0.015, 0.085, w.f2 - w.f1);
-    const dome = smoothstep(0.62, 0.02, w.f1);
-    const id = w.id;
+    // worleyA hands back shared scratch — drain it before the next cellular call.
+    const edge = w.f2 - w.f1, f1 = w.f1, id = w.id;
 
-    const grain = t.fbmA(u, v, c.hf, c.hf, 2) * 0.5 + 0.5;
+    const joint = 1 - smoothstep(0.022, 0.115, edge);   // ~2.6 cm of filled joint
+    const seam = 1 - smoothstep(0.0, 0.042, edge);      // ~1.0 cm contact line
+    const crown = smoothstep(0.58, 0.10, f1);           // centuries of feet
+    // A second independent draw per stone. hash2 truncates to int, and `id` is
+    // already hashed off the *wrapped* cell index, so this stays tile-periodic.
+    const id2 = hash2((id * 4093) | 0, 7919);
+
+    // Face grain, phase-shifted per stone so the mottle stops dead at every joint
+    // the way a quarried face does — a mottle that runs across the joints is what
+    // makes a cell network read as one cracked substrate instead of many stones.
+    // Octaves start at c.hf>>1 — 32 periods is 8 px of a 256 px tile, so the whole
+    // stack lands above Nyquist instead of dumping half its energy into mip fizz.
+    const gu = u + id * 0.41, gv = v + id2 * 0.67;
+    const grain = t.fbmA(gu, gv, c.hf >> 1, c.hf >> 1, 3) * 0.5 + 0.5;
+    // Bedding planes: anisotropic, and the long axis flips per stone, so no two
+    // neighbours were sawn out of the block the same way up.
+    const bed = id2 > 0.5
+      ? t.fbmA(gu + 0.13, gv + 0.29, c.hf >> 2, c.hf >> 1, 2) * 0.5 + 0.5
+      : t.fbmA(gu + 0.13, gv + 0.29, c.hf >> 1, c.hf >> 2, 2) * 0.5 + 0.5;
+
     const pit = t.worleyA(u + 0.7, v + 0.1, c.hf, c.hf, 1.0);
-    const pitting = smoothstep(0.30, 0.05, pit.f1) * smoothstep(0.70, 0.95, pit.id);
+    const pitting = smoothstep(0.26, 0.05, pit.f1) * smoothstep(0.72, 0.96, pit.id);
 
     const mossF = clamp(cs(c.moss, u, v) * 1.25 - 0.10, 0, 1);
-    const moss = smoothstep(0.30, 0.70, mossF * (0.35 + grout * 1.5));
+    // Moss is a joint filling that creeps a little onto the stone, not the grout
+    // colour: it only appears where the damp field is genuinely high.
+    const moss = smoothstep(0.42, 0.86, mossF) * (0.22 + joint * 0.78);
     const wet = cs(c.wet, u, v);
 
-    let h = 0.34 + dome * 0.44 + (id - 0.5) * 0.07;
-    h -= grout * 0.30;
-    h += (grain - 0.5) * 0.035 - pitting * 0.05;
+    // See the scale note: 1.0 of `h` is ~20 cm of relief at the laid tile size.
+    let h = 0.66 + (id - 0.5) * 0.045 + crown * 0.030;   // 0.9 cm of set, 0.6 cm crown
+    h -= joint * 0.075 + seam * 0.035;                   // 2.2 cm of joint at the core
+    h += (grain - 0.5) * 0.022 + (bed - 0.5) * 0.014 - pitting * 0.020;
 
+    // --- quarry identity ----------------------------------------------------
+    // A courtyard where every flag carries the same value is a texture; ±15% of
+    // tone per stone is a pavement. Value first, hue second — value is what the
+    // eye reads at 20 m, hue is what it reads at 2.
     setc(s, PAL.stone);
-    mixc(s, PAL.stoneDark, clamp(0.65 - id, 0, 1) * 0.60);
-    mixc(s, PAL.stoneWarm, clamp(id - 0.55, 0, 1) * 1.2 * 0.55);
-    tint(s, 0.020, 0.008, -0.016, (grain - 0.5) * 1.4 + (id - 0.5) * 0.6);
-    mixc(s, PAL.earthWet, grout * 0.55);
-    mixc(s, PAL.mossDeep, moss * 0.80);
-    mixc(s, PAL.moss, moss * moss * 0.55);
-    mixc(s, PAL.grime, pitting * 0.35);
+    mixc(s, PAL.stoneDark, clamp(0.48 - id, 0, 1) * 1.6 * 0.62);
+    mixc(s, PAL.stoneWarm, clamp(id - 0.52, 0, 1) * 1.6 * 0.80);
+    mixc(s, PAL.quartz, clamp(id2 - 0.80, 0, 1) * 3.2 * 0.34);
+    scalec(s, 1 + (id2 - 0.5) * 0.50);
 
-    const pool = clamp((0.60 - h) * 2.4, 0, 1) * wet;
-    let ro = 0.78 + (grain - 0.5) * 0.14 + pitting * 0.12;
-    ro = lerp(ro, 0.52, dome * dome * 0.55 * (1 - moss));   // crowns polished by feet
-    ro = lerp(ro, 0.95, moss * 0.85);
-    ro = lerp(ro, 0.18, pool * 0.8 * (1 - moss * 0.7));
-    scalec(s, 1 - pool * 0.35);
+    // --- face grain ---------------------------------------------------------
+    // This is the layer the review found missing. At 2 m a stone face has to have
+    // something on it, so the mottle carries real value swing, not a hue nudge.
+    tint(s, 0.050, 0.026, -0.028, (grain - 0.5) * 1.35);
+    scalec(s, 1 + (grain - 0.5) * 0.56 + (bed - 0.5) * 0.28);
+    mixc(s, PAL.quartz, clamp(grain - 0.72, 0, 1) * 2.6 * 0.42);
+    mixc(s, PAL.biotite, clamp(0.26 - grain, 0, 1) * 2.6 * 0.30);
+    mixc(s, PAL.grime, pitting * 0.30);
 
-    const ao = 1 - grout * 0.72 - moss * 0.22 - pitting * 0.18;
+    // --- the joint ----------------------------------------------------------
+    mixc(s, PAL.earthDry, joint * 0.42);                                 // rammed sand
+    mixc(s, PAL.stoneDark, joint * 0.30);                                // grit shadow
+    mixc(s, PAL.quartz, joint * clamp(grain - 0.55, 0, 1) * 2.2 * 0.35); // sand sparkle
+    mixc(s, PAL.moss, moss * 0.62);
+    mixc(s, PAL.mossDry, moss * (1 - moss) * 0.45);
+    mixc(s, PAL.mossDeep, moss * moss * 0.25);
+    scalec(s, 1 - seam * 0.22);          // the contact line, and nothing deeper
+
+    // Standing water is a roughness story, not an albedo one — the old recipe
+    // spent a third of the paving's value on it and bought nothing but darkness.
+    const pool = clamp(joint * 0.55 + (1 - crown) * 0.22, 0, 1) * wet;
+    let ro = 0.80 + (grain - 0.5) * 0.16 + pitting * 0.10;
+    ro = lerp(ro, 0.50, crown * crown * 0.55 * (1 - moss));  // crowns polished by feet
+    ro = lerp(ro, 0.94, moss * 0.85);
+    ro = lerp(ro, 0.26, pool * 0.75 * (1 - moss * 0.7));
+    scalec(s, 1 - pool * 0.14);
+
+    const ao = 1 - joint * 0.24 - seam * 0.14 - moss * 0.08 - pitting * 0.10;
 
     s.h = clamp(h, 0, 1);
     s.ro = clamp(ro, 0.06, 1);
-    s.ao = clamp(ao, 0.14, 1);
+    s.ao = clamp(ao, 0.52, 1);
     s.me = 0;
   },
-  mat(maps) { return pbr(maps, { ns: 1.7, ao: 1.15 }); },
+  // ns/ao down from 1.7/1.15: the height field they were amplifying is now an
+  // honest 2 cm joint instead of a 15 cm one, and a 2 cm joint does not occlude
+  // three quarters of the sky.
+  mat(maps) { return pbr(maps, { ns: 1.05, ao: 0.85 }); },
 });
 
 // ------------------------------------------------------------------ 土 dirt

@@ -1460,7 +1460,19 @@ ${this._heightGLSL()}
     const hasTex = !!(tDirt || tStone || tCobble || tMoss);
     // A library that booted but handed back a partial set still has to render.
     const fallback = tDirt || tStone || tCobble || tMoss || null;
-    const detailN = prepTiling(stone.normalMap || dirt.normalMap, aniso) || this.detailNormalTex;
+    // The ground's grain is 土 packed earth, not 石 shrine steps. This used to take
+    // `stone.normalMap` first, and stone's height field is 2x3 slab joints cut to
+    // 30% of its range over a 7x7 worley crack net with a 17x17 one under it. Laid
+    // across the whole ground at 1.7 m per tile, rotated and domain-warped, that is
+    // a meandering cellular crack network on every near surface in frame — exactly
+    // the "dried cracked mud on a dune" the review measured on the valley floor. It
+    // is also what the slope striation was reading: `groove` comes off this map's z,
+    // and a crack net pins it to its ceiling, which is where the hard-edged plates
+    // on the massif came from. `dirt` is the right surface anyway — clods, half-
+    // buried pebbles and grit, no joints and no cracks — and the library bakes it
+    // wrapped, which our own soil grain (kept last) is not.
+    const detailN = prepTiling(dirt.normalMap || moss.normalMap || stone.normalMap, aniso) ||
+      this.detailNormalTex;
 
     // Triplanar rock costs one extra fetch; it is what stops cliffs from smearing.
     const triplanar = q.tier >= 2;
@@ -1827,9 +1839,20 @@ void kgComputeSurface(){
     float across = dot(P.xz, ac2);
     vec3 g1 = texture2D(tDetailN, vec2(along * 0.0138, across * 0.0470)).xyz * 2.0 - 1.0;
     vec3 g2 = texture2D(tDetailN, vec2(along * 0.0053, across * 0.0181) + 0.31).xyz * 2.0 - 1.0;
-    float amp = smoothstep(0.14, 0.52, fall) * mix(0.30, 1.0, wild2);
-    gp = vec3(g1.xy * 0.60 + g2.xy * 0.95, 0.0) * amp;
-    groove = clamp((1.0 - g1.z) * 1.5 + (1.0 - g2.z) * 1.1, 0.0, 1.0) * amp;
+    // The slope gate is deliberately wide, and nothing downstream of it saturates.
+    // It used to be smoothstep(0.14, 0.52) feeding a clamp(), and that pair is a
+    // *threshold*, not a gate: on a massif seen from 1.5 km one 16 m macro cell is
+    // a single pixel, so the gate flipped inside one texel while the clamp pinned
+    // everything past it to exactly 1. The striation came out as hard-edged plates
+    // with dead-flat interiors — the "flat-fill polygons with step edges" the review
+    // measured, which were never snow at all.
+    float amp = smoothstep(0.05, 0.90, fall) * mix(0.34, 1.0, wild2);
+    gp = vec3(g1.xy * 0.42 + g2.xy * 0.60, 0.0) * amp;
+    // Soft knee rather than a clamp. Relief still rises with the local gradient but
+    // it approaches its ceiling asymptotically, so it has no level set anywhere for
+    // an edge to form along.
+    float gs = length(g1.xy) * 0.70 + length(g2.xy) * 0.55;
+    groove = (gs / (gs + 0.85)) * amp;
   }
   if (wild2 > 0.002) {
     // Cedar mantle low, bare rock and scree above it, and the line between them
@@ -1849,26 +1872,82 @@ void kgComputeSurface(){
   }
 
   // --- 雪 ------------------------------------------------------------------
-  // Per pixel, never per vertex: an interpolated mask gives snow the silhouette of
-  // the mesh. Altitude sets the band, slope sheds it off anything steeper than
-  // about forty degrees, and it drifts onto the faces the wind runs off.
-  // The NW massif tops out at 1313 m, so the line sits at 1120 and the ramp is a
-  // full 55 m of altitude: on any real face that is metres of drift, not an edge.
-  // The wander is deliberately small (±25 m) — a threshold noisier than its own
-  // ramp stops being a snow line and becomes scattered plates.
-  float snowLine = 1120.0 + nC * 34.0 + nB * 16.0;
-  float lee = clamp(0.5 - dot(fall > 1e-4 ? N.xz / fall : vec2(0.0), uWindXZ) * 0.5, 0.0, 1.0);
-  float snow = smoothstep(0.02, 0.62, (hPix - snowLine) * 0.011 + nB * 0.16 + nC * 0.10);
-  snow *= smoothstep(0.78, 0.24, fall) * mix(0.25, 1.0, lee);
-  // Blown out of the gullies, which also breaks the edge at the striation scale.
-  snow = clamp(snow - groove * 0.65, 0.0, 1.0);
-  if (snow > 0.002) {
-    // Never neutral white, and never a flat plate.
-    vec3 snowCol = mix(vec3(0.470, 0.510, 0.580), vec3(0.780, 0.770, 0.745),
-                       clamp(N.y, 0.0, 1.0));
-    snowCol *= 0.90 + 0.16 * (nB * 0.5 + 0.5);
-    albedo = mix(albedo, snowCol, snow * 0.72);
-    rough = mix(rough, 0.62, snow * 0.7);
+  // Snow is an accumulation model. Not a scatter, not a decal, and above all not a
+  // threshold — every term below is smooth in *world* space and none of them
+  // saturates, which is what makes the boundary a fringe tens of metres deep on a
+  // real face instead of a cut.
+  //
+  //   altitude    a 230 m ramp, wandered by at most ±80 m of landscape noise. The
+  //               wander stays well inside its own ramp; a line noisier than its
+  //               ramp stops being a snow line and becomes scattered plates.
+  //   slope       what the mountain can hold: nothing past ~40°, everything under
+  //               ~24°. This is *landform* slope, differenced over four macro texels
+  //               (~134 m), never the shading slope. The macro field is a 16 m grid
+  //               and at 1.5 km one of its cells covers about a pixel, so a
+  //               threshold on the shading slope is a threshold on the lattice.
+  //   collection  bowls, cirques and gully heads fill first; ribs and spurs blow
+  //               bare, and the lee of the prevailing wind drifts deepest.
+  //
+  // Coverage then stays *partial* over most of the field: at the drift scale the
+  // sheet runs from bare rock to buried inside one patch, so rock stands through it
+  // and no sample of it can come back as a flat fill (§5.9).
+  float snowAlt = smoothstep(1042.0, 1272.0, hPix + nC * 58.0 + nB * 22.0);
+  float kgSnowCover = 0.0;
+  vec2 kgSnowRipple = vec2(0.0);
+  if (snowAlt > 0.002) {
+    vec3 LN = N;
+    float bowl = 0.0;
+#ifdef TERRAIN_PPNORMAL
+    float ls = uNormalStep.y * 4.0;
+    float aL = kgHeightFast(P.xz - vec2(ls, 0.0));
+    float aR = kgHeightFast(P.xz + vec2(ls, 0.0));
+    float aD = kgHeightFast(P.xz - vec2(0.0, ls));
+    float aU = kgHeightFast(P.xz + vec2(0.0, ls));
+    LN = normalize(vec3(aL - aR, 2.0 * ls, aD - aU));
+    bowl = clamp(((aL + aR + aD + aU) * 0.25 - hPix) * (3.0 / ls), -1.0, 1.0);
+#endif
+    float lFall = length(LN.xz);
+    // The scallop on the shed line is a tenth of the ramp: it breaks the contour
+    // without ever being able to cut it.
+    float hold = smoothstep(0.70, 0.40, lFall + nB * 0.045);
+    vec2 lDir = lFall > 1e-4 ? LN.xz / lFall : vec2(0.0);
+    float lee = clamp(0.5 - dot(lDir, uWindXZ) * 0.5, 0.0, 1.0);
+
+    // Drift, at the three scales the eye can resolve on this massif from the shrine:
+    // 150 m banks, 45 m drifts, 16 m wind ripple. The finest is still eleven pixels
+    // at this range, so none of it can turn into fizz — and the coverage mask leans
+    // on the two coarse ones, so the *edge* it draws is always tens of metres wide
+    // even where the ripple is what you read inside the field.
+    float s1 = fbm2(P.xz * 0.0067 + 91.3, 3);
+    float s2 = fbm2(P.xz * 0.0224 - 57.1, 3);
+    float s3 = fbm2(P.xz * 0.0630 + 13.9, 2);
+    float driftCov = s1 * 0.55 + s2 * 0.32 + s3 * 0.10;
+
+    float depth = snowAlt * (0.34 + 0.36 * lee)
+                + snowAlt * max(bowl, 0.0) * 0.62
+                - max(-bowl, 0.0) * 0.34
+                + driftCov * 0.46 * snowAlt;
+    float cover = clamp(depth, 0.0, 1.0) * hold;
+    float blanket = smoothstep(0.05, 0.62, cover);
+    if (blanket > 0.003) {
+      // Cooler and brighter than the rock it lies on — the warm key does the rest.
+      // Shadowed snow is the sky bounce of §5 (#4a6b8f), never a neutral grey.
+      vec3 snowCol = mix(vec3(0.286, 0.360, 0.505), vec3(0.780, 0.815, 0.880),
+                         clamp(LN.y * 0.45 + N.y * 0.55, 0.0, 1.0));
+      // Drift shading. Wind-packed crests catch the light, the troughs between them
+      // stay blue; this and the partial coverage are the interior variance.
+      snowCol *= 0.78 + 0.30 * (s2 * 0.5 + 0.5) + 0.16 * (s3 * 0.5 + 0.5);
+      albedo = mix(albedo, snowCol, blanket * 0.95);
+      rough = mix(rough, mix(0.74, 0.38, blanket), blanket * 0.85);
+      kgSnowCover = blanket;
+      // Sastrugi: two more taps of the ripple field give it a gradient, and a 13°
+      // sun turns that gradient into the banding a real snowfield has. Bounded, so
+      // it can bend the sheet but never re-point it.
+      float se = 7.0;
+      kgSnowRipple = clamp(vec2(fbm2((P.xz + vec2(se, 0.0)) * 0.0630 + 13.9, 2) - s3,
+                                fbm2((P.xz + vec2(0.0, se)) * 0.0630 + 13.9, 2) - s3) * 2.2,
+                           -0.22, 0.22) * blanket;
+    }
   }
 
   // Large-scale colour variation: nothing in frame may be a flat tint.
@@ -1887,11 +1966,19 @@ void kgComputeSurface(){
   vec3 B = cross(N, T);
   float dFade = 1.0 - smoothstep(28.0, 150.0, dist);
   vec3 t1 = texture2D(tDetailN, kgRot(P.xz + kgWarp, vec2(0.3746, 0.9272)) * 0.6).xyz * 2.0 - 1.0;
-  vec2 tn = t1.xy * 0.75 * dFade * mix(1.0, 0.35, wetAmt);
+  // Snow buries the soil grain and the striation both; a snowfield that still carries
+  // the rock's own relief reads as a paint layer over it rather than as a depth of
+  // material lying on it.
+  vec2 tn = t1.xy * 0.75 * dFade * mix(1.0, 0.35, wetAmt) * (1.0 - kgSnowCover * 0.78);
   vec3 dn3 = fall > 1e-4 ? normalize(vec3(N.x, 0.0, N.z) / fall - N * fall) : T;
   vec3 ac3 = cross(N, dn3);
-  kgShadingNormal = normalize(N + T * tn.x + B * tn.y +
-                              dn3 * gp.x * 0.40 + ac3 * gp.y * 0.62);
+  // The striation perturbation is bounded. Unbounded it reached ~0.9 against a unit
+  // normal — a 45° swing, enough to tip a whole shaded face up into the sky term and
+  // light it pale, which is half of why those plates read as snow in the first place.
+  vec2 gpv = vec2(gp.x * 0.34, gp.y * 0.48) * (1.0 - kgSnowCover * 0.65);
+  gpv /= 1.0 + length(gpv) * 1.7;
+  kgShadingNormal = normalize(N + T * tn.x + B * tn.y + dn3 * gpv.x + ac3 * gpv.y +
+                              vec3(kgSnowRipple.x, 0.0, kgSnowRipple.y));
 }
 `;
   }
