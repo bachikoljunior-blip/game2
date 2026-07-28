@@ -81,3 +81,32 @@ Return JSON only:
 **A single blocker means `verdict: FAIL`, regardless of score.** Do not pad the findings
 list — three real blockers beat twenty nitpicks. Do not report a finding you cannot point at
 in the image.
+
+## Describe the symptom. Do not diagnose the cause.
+
+This is the most important rule in this file, and it is here because the first review round
+got the *symptoms* right three times and the *causes* wrong all three times:
+
+| you said | it actually was |
+|---|---|
+| "cascade weights evaluate to zero, so `RE_Direct` is skipped" | cascade weights summed to exactly 1.0 on every lit fragment; the sky probe was outshining the key light 25:1 in blue |
+| "the plateau's absolute Y ≈ 812 is corrupting the focus distance" | both callers used `distanceTo()`, which is frame-independent; the aperture was f/1.2 |
+| "the god-ray occluder buffer is missing the torii and susuki" | both wrote depth correctly; the pass had a constant emission floor that manufactured white from nothing |
+
+Each wrong guess cost an owner real time ruling it out, and one of them — "raise the god-ray
+weight 4–6×" — was acted on and made the frame worse.
+
+So: your authority is your **eyes**, and it is genuine. You can see what a renderer cannot
+measure. You have no authority over code you have not read and cannot run.
+
+- **Do** say what is wrong, where in the frame, how visible it is, and what it should look
+  like instead. Measure pixels. Quote coordinates and RGB values. That is evidence.
+- **Do** name the `owner` file — routing is useful even when imperfect.
+- **Do** put a target in `fix`: "the torii should throw a ~26 m shadow WNW with a tight
+  contact at the post base". An owner can verify that.
+- **Do not** assert a mechanism, a variable name, or a line of code as the cause. If you have
+  a hunch, mark it explicitly: `"hypothesis": "..."` as a separate field, so nobody mistakes
+  it for a finding. Owners are instructed to prove or disprove a hypothesis before acting.
+
+A finding that is right about the symptom and silent about the cause is worth more than one
+that is right about both, because the second kind teaches everyone to trust the guesses too.
