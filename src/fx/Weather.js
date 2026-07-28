@@ -595,10 +595,15 @@ export class WeatherSystem {
 
     for (let i = 0; i < valleyLayers; i++) {
       const t = i / Math.max(1, valleyLayers - 1);
-      // −30 m to +3 m about the datum: the inversion band that fills the basin
-      // and tops out well under the 812 m plateau.
-      fPar[i * 4] = -30 + t * 33;
-      fPar[i * 4 + 1] = 260 + t * 220;                  // wide — this is read at 300 m
+      // −34 m to +13 m about the datum. The top of the sea lands near 795 m: high
+      // enough to be a real cloud surface from the overlook, still 17 m under the
+      // 812 m flagstone and 10 m under the 805 m near rim, so neither can flood.
+      fPar[i * 4] = -34 + t * 47;
+      // The basin is read from 200 m (750 m ASL) out to 600 m (591 m ASL), and the
+      // radial edge fade eats the outer 40% of every plane — so the plane has to be
+      // several times the distance it must cover. Sized so the fully-opaque disc
+      // reaches ~270-510 m and the feathered rim lands past the far ridge.
+      fPar[i * 4 + 1] = 900 + t * 820;
       fPar[i * 4 + 2] = this.rng() * 100;
       fPar[i * 4 + 3] = 0.30 + this.rng() * 0.45;
       fPar2[i * 4] = 0;
@@ -1040,7 +1045,7 @@ void main(){
 
   // Inversion profile: feathered at the top surface, thick deep in the basin.
   float depthBelowDatum = uDatum - wy;
-  float altGain = mix(smoothstep(-4.0, 16.0, depthBelowDatum), 1.0, step(0.5, fPar2.x));
+  float altGain = mix(smoothstep(-16.0, 10.0, depthBelowDatum), 1.0, step(0.5, fPar2.x));
   vAlphaScale = fPar2.y * altGain;
 
   // Only the XZ extent follows the camera; the layer never rides our height.
@@ -1087,7 +1092,7 @@ void main(){
   float n2 = fbm2(q * 2.7 + vec2(vPhase, -vPhase), 3);
   float density = smoothstep(-0.28, 0.52, n + n2 * 0.35);
 
-  float radial = 1.0 - smoothstep(0.30, 0.50, length(vQuad - 0.5));
+  float radial = 1.0 - smoothstep(0.34, 0.50, length(vQuad - 0.5));
 
   vec3 V = vWorld - cameraPosition;
   float dist = length(V);

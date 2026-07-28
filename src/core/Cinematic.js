@@ -38,11 +38,18 @@ export const SHOTS = {
   torii: { pos: [1.6, 1.45, 45.0], target: [-0.4, 5.2, 33.0], fov: 62 },
 
   /**
-   * Into the sun from the cliff overlook, out over the bamboo sea. This is the
-   * god-ray and aerial-perspective test: backlit mist, the valley falling away
-   * south-east, and the sun disc just above the far ridge.
+   * Down over the bamboo sea from the cliff overlook — the god-ray, aerial-perspective
+   * and cloud-sea test.
+   *
+   * The framing has to *look down*, and the first version did not: it sat at +3.46°
+   * pitch, so the basin fell 94% down the frame behind the balustrade and the cloud sea
+   * was never in shot. Terrain along this ray runs 812.9 m at 50 m out, 798 at 100,
+   * 791 at 150, 750 at 200, 723 at 250, 634 at 400, while the valley cloud deck tops
+   * out at 795 m — so the ground only drops under the sea beyond ~130 m. Aiming 200 m
+   * out and 57 m down puts the horizon in the upper third, the cloud sea across the
+   * middle, and the near rim in the foreground.
    */
-  valley: { pos: [33.0, 3.2, 33.0], target: [72.0, 6.0, 58.0], fov: 54 },
+  valley: { pos: [33.0, 5.5, 33.0], target: [175.0, -52.0, 175.0], fov: 54 },
 
   /** Over-the-shoulder gameplay framing, anchored on the gravel arena at z = 26. */
   combat: { pos: [4.4, 2.9, 8.0], target: [-1.4, 1.55, -3.2], fov: 55, follow: true },
