@@ -1260,7 +1260,6 @@ export class FoliageSystem {
 
     this._grass = null;
     this._bamboo = null;
-    this._trees = null;
     this._undergrowth = null;
     this._impostors = null;
     this.groundDetail = null;
@@ -2835,6 +2834,7 @@ vCanopyG = cg;
    * fade windows and shadow flags moved.
    */
   applyQuality(q) {
+    if (!q || !this._grassMat) return;      // a tier flip before init() finishes
     const shadows = !!q.foliageShadows;
     const meshLod = q.tier >= 2;
 
@@ -2912,7 +2912,6 @@ vCanopyG = cg;
 
     this._grass = null;
     this._bamboo = null;
-    this._trees = null;
     this._treeAssets = null;
     this._bambooAssets = null;
     this._undergrowth = null;

@@ -1592,6 +1592,10 @@ export class PropFactory {
     const shrineRidge = opts.shrineRidge !== false;
     const rnd = makeRandom(opts.seed ?? 5);
     const b = PropFactory.build();
+    // A whole hall is 80–110 ms of geometry synthesis, which blows the frame
+    // budget on a phone, so Level asks for it one stage at a time.
+    const stages = opts.stages || null;
+    const want = stages ? (s) => stages.indexOf(s) >= 0 : () => true;
 
     const hw = w * 0.5, hd = d * 0.5;
     const pw = hw + veranda, pd = hd + veranda;   // platform half extents

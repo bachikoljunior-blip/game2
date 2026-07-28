@@ -1050,11 +1050,13 @@ export class Terrain {
    * Procedural tiling normal map. Used for terrain surface detail (so we do not need
    * a normal map from the material library) and, at a different frequency, for water.
    */
-  _makeNormalTexture(size, height, strength) {
+  async _makeNormalTexture(size, height, strength, label) {
+    // The height pass is a few hundred thousand noise evaluations; chunk it like
+    // everything else rather than eating a 20 ms frame at the end of boot.
     const h = new Float32Array(size * size);
-    for (let j = 0; j < size; j++) {
+    await this._forRange(size, label, (j) => {
       for (let i = 0; i < size; i++) h[j * size + i] = height(i / size, j / size);
-    }
+    });
     const buf = new Uint8Array(size * size * 4);
     for (let j = 0; j < size; j++) {
       for (let i = 0; i < size; i++) {
@@ -1095,18 +1097,17 @@ export class Terrain {
     await nextTick();
 
     // Ground grain. Two octaves of warped fbm plus a pebble term reads as soil.
-    this.detailNormalTex = this._makeNormalTexture(128, (u, v) => {
+    this.detailNormalTex = await this._makeNormalTexture(128, (u, v) => {
       const x = u * 8, y = v * 8;
       return noise.fbm2(x, y, 4) * 0.6 + noise.billow2(x * 2.7 + 11, y * 2.7 - 5, 3) * 0.4;
-    }, 2.6);
-    await nextTick();
+    }, 2.6, 'grinding the soil');
 
     // Capillary ripples for the stream. Two of these scroll against each other.
-    this.waterNormalTex = this._makeNormalTexture(128, (u, v) => {
+    this.waterNormalTex = await this._makeNormalTexture(128, (u, v) => {
       const x = u * 6, y = v * 6;
       return Math.sin((x + noise.fbm2(x, y, 2) * 1.4) * 2.1) * 0.35 +
         noise.fbm2(x * 1.9 + 3, y * 1.9 - 2, 3) * 0.65;
-    }, 1.5);
+    }, 1.5, 'stirring the stream');
   }
 
   // ==========================================================================
