@@ -1654,7 +1654,7 @@ export class AudioSystem {
   _bellFinish(st) {
     if (!st.data) return;
     const sr = st.sr;
-    const buf = this._alloc(7.5, 1);
+    const buf = this._alloc(st.dur, 1);
     const d = st.data;
     softClip(d, 0.85);
     fadeEdges(d, sr, 0.0005, 0.5);

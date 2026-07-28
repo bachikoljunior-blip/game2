@@ -1679,6 +1679,7 @@ export class EnemyManager {
     this._slotTimer = 0;
     this._engaged = [];
     this._noisePoint = new Vector3();
+    this._spawnCenter = new Vector3();
 
     this._proxyGeo = null;
     this._proxyMats = null;
@@ -1692,6 +1693,8 @@ export class EnemyManager {
     this._onBusHit = (p) => {
       if (!p?.point) return;
       this._noise(p.point, 22, p.attacker);
+      // Landing a blow is how an AI knows it did not whiff.
+      if (p.attacker?.faction === 'oni') p.attacker.ai?.onHitLanded?.();
     };
     this._onBusFootstep = (p) => {
       if (!p?.point || !p.entity || p.entity.faction === 'oni') return;
@@ -1903,7 +1906,10 @@ export class EnemyManager {
   spawnWave(count = 3, opts) {
     const o = opts || {};
     const player = o.target || this.ctx.player;
-    const center = o.center || player?.position || _v1.set(0, 0, 0);
+    // Copied, because `spawn()` reaches into the module scratch vectors.
+    const center = this._spawnCenter;
+    const src = o.center || player?.position;
+    if (src) center.set(src.x, src.y, src.z); else center.set(0, 0, 0);
     const budget = Math.max(0, Math.min(count | 0, this.maxEnemies - this.list.length));
     _spawnResult.length = 0;
     if (budget <= 0) return _spawnResult;

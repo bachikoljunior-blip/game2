@@ -602,7 +602,7 @@ export class Player {
         this.locoBlend.guard = 1;
         break;
       case 'parry':
-        this._play('parry', 0.05, 1.15, false);
+        this._play('parry', 0.05, 1, false);
         break;
       case 'dodge':
         this._beginDodge(data);
