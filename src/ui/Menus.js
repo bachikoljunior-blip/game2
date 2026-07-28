@@ -440,6 +440,7 @@ export class Menus {
 
   showVictory() {
     if (this.mode === 'victory') return;
+    this.skipIntro();
     this.mode = 'victory';
     this._card = 0;
     this._drag = null;
@@ -613,7 +614,8 @@ export class Menus {
     g.globalCompositeOperation = 'source-over';
     g.globalAlpha = 1;
 
-    if (this._title >= 0) this._drawTitle(rd, g);
+    if (this._title >= 0) this._advanceIntro(rd);
+    if (this._introWash > 0.004 || this._titleA > 0.004) this._drawIntro(g);
     if (this._pauseZoneVisible) this._drawPauseSeal(g);
     if (this._open > 0.004) this._drawPanel(rd, g);
     if (this.mode === 'death' || this.mode === 'victory') this._drawCard(g);
@@ -684,28 +686,32 @@ export class Menus {
 
   // -------------------------------------------------------------- title card
 
-  _drawTitle(dt, g) {
-    const s = this.s;
+  /** Pure state: the two intro alphas are the only thing draw code reads. */
+  _advanceIntro(dt) {
     this._title += dt;
     const t = this._title;
-    const hud = this.ctx.hud;
-
-    const fadeOut = clamp01((t - 3.6) / 1.0);
-    const a = 1 - fadeOut;
-    if (t > 4.7) {
-      this._title = -1;
-      hud?.setAlpha?.(1);
-      return;
-    }
+    if (t > 4.7) { this._endIntro(); return; }
+    const a = 1 - clamp01((t - 3.6) / 1.0);
+    this._titleA = a;
+    this._introWash = a * clamp01(1.2 - t / 3.4);
     // Hand the HUD back as the card leaves.
-    hud?.setAlpha?.(clamp01((t - 3.0) / 1.1));
-    if (a <= 0.003) return;
+    this.ctx.hud?.setAlpha?.(clamp01((t - 3.0) / 1.1));
+  }
+
+  _drawIntro(g) {
+    const s = this.s;
+    const t = Math.max(0, this._title);
+    const a = this._titleA;
+
+    if (this._introWash > 0.004) {
+      g.save();
+      g.globalAlpha = this._introWash;
+      g.drawImage(this._wash().c, 0, 0, this.w, this.h);
+      g.restore();
+    }
+    if (a <= 0.004) return;
 
     g.save();
-    g.globalAlpha = a;
-    const wash = this._wash();
-    g.globalAlpha = a * clamp01(1.2 - t / 3.4);
-    g.drawImage(wash.c, 0, 0, this.w, this.h);
     g.globalAlpha = a;
 
     const cx = this.w * 0.5;
