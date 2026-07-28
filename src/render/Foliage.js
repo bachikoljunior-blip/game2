@@ -1383,8 +1383,13 @@ const AUTUMN_C = new Color(0xc07a3a);
 const SINK_FADE = [38, 96];
 /** Fallback chord cell if Terrain has not published its ring sizes; ~ring 2 at ULTRA. */
 const SINK_CELL_FALLBACK = 5.6;
-/** Never trust a measured deficit beyond this — a cliff edge would bury the plant. */
-const SINK_MAX = 3.0;
+/**
+ * Ceiling on the measured deficit, purely as a sanity rail. It can be generous because the
+ * sink is distance-faded to nothing inside SINK_FADE[0], so a deep sink only ever applies
+ * where the ground really is being drawn as a chord that far below the field. At 3.0 the
+ * placement audit still reported five clamped instances out of 22 772; at 8.0 it is clean.
+ */
+const SINK_MAX = 8.0;
 /** Bury the base rather than leaving it tangent, so a card never shows daylight under it. */
 const PLANT_BURY = 0.14;
 

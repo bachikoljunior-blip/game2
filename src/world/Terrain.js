@@ -1076,11 +1076,37 @@ export class Terrain {
   //  5 — GPU upload
   // ==========================================================================
 
-  /** Pick the best height-texture encoding this device can filter. */
+  /** True for a WebGL2 context, probed without trusting any extension list. */
+  _isWebGL2() {
+    try {
+      const gl = this.ctx.engine?.renderer?.getContext?.();
+      if (!gl) return false;
+      if (typeof WebGL2RenderingContext !== 'undefined' && gl instanceof WebGL2RenderingContext) {
+        return true;
+      }
+      // texStorage2D exists only on WebGL2, so this survives a wrapped context.
+      return typeof gl.texStorage2D === 'function';
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Pick the best height-texture encoding this device can filter.
+   *
+   * The extension probes below are WebGL1 questions. `OES_texture_half_float_linear`
+   * does not *exist* in WebGL2 — filtering R16F is core there — so `getExtension`
+   * correctly returns null and the capability flag reads false on hardware that
+   * filters half-floats perfectly well. Trusting it dropped every WebGL2 device onto
+   * the 8-bit path, which samples NEAREST; that in turn disables the per-pixel normal
+   * (four hand-filtered taps is too many) and leaves every slope-driven mask reading
+   * a faceted per-vertex normal. That is the whole hard-edged-polygon artifact.
+   */
   _pickHeightFormat() {
     const caps = this.ctx.engine?.capabilities || {};
     if (caps.floatLinear) return 'float';
     if (caps.halfFloatLinear) return 'half';
+    if (this._isWebGL2()) return 'half';
     return 'encoded';
   }
 
@@ -1533,6 +1559,16 @@ void kgComputeSurface(){
   float slope = 1.0 - clamp(N.y, 0.0, 1.0);
   float fall = length(N.xz);
 
+  // Altitude, sampled per pixel rather than taken from vKgWorld.y. The varying is
+  // linear across each triangle, so anything thresholded against it — a tree line,
+  // a snow line — gets isolines that are straight inside a triangle and kink at its
+  // edges. On a 44 m outer-ring quad that is exactly the "hard-edged flat polygon"
+  // artifact: the mask is per-pixel, but the quantity it tests is not.
+  float hPix = P.y;
+#ifdef TERRAIN_PPNORMAL
+  hPix = kgHeightFast(P.xz);
+#endif
+
   vec2 cuv = kgCoreUV(P.xz);
   vec4 data = texture2D(tData, clamp(cuv, 0.0, 1.0));
   vec4 sp = texture2D(tSplat, clamp(cuv, 0.0, 1.0));
@@ -1549,9 +1585,9 @@ void kgComputeSurface(){
   // Widened and noise-broken: this threshold used to bite on a per-vertex normal
   // and cut the mountain into hard-edged pale facets that read as snow.
   float fSlope = smoothstep(0.14, 0.52, slope + nB * 0.10 + nA * 0.05);
-  float fHigh  = smoothstep(915.0, 995.0, P.y + nC * 40.0);
+  float fHigh  = smoothstep(915.0, 995.0, hPix + nC * 40.0);
   vec4 wild = vec4(
-    (1.0 - fSlope) * smoothstep(1000.0, 890.0, P.y) * 0.85,
+    (1.0 - fSlope) * smoothstep(1000.0, 890.0, hPix) * 0.85,
     max(fSlope, fHigh * 0.9),
     fSlope * 0.25,
     0.0);
@@ -1677,7 +1713,7 @@ void kgComputeSurface(){
     // Cedar mantle low, bare rock and scree above it, and the line between them
     // wanders on a 160 m noise so it is never a contour.
     float treeLine = 1006.0 + nC * 92.0 + nB * 28.0;
-    float veg = smoothstep(treeLine + 34.0, treeLine - 48.0, P.y) *
+    float veg = smoothstep(treeLine + 34.0, treeLine - 48.0, hPix) *
                 (1.0 - smoothstep(0.40, 0.76, fall));
     float scree = clamp(smoothstep(0.58, 0.24, fall) * smoothstep(0.18, 0.44, fall) * 3.0, 0.0, 1.0) *
                   (1.0 - veg) * (0.45 + 0.55 * (nB * 0.5 + 0.5));
@@ -1694,17 +1730,23 @@ void kgComputeSurface(){
   // Per pixel, never per vertex: an interpolated mask gives snow the silhouette of
   // the mesh. Altitude sets the band, slope sheds it off anything steeper than
   // about forty degrees, and it drifts onto the faces the wind runs off.
-  float snowLine = 1162.0 + nC * 96.0 + nB * 30.0;
+  // The NW massif tops out at 1313 m, so the line sits at 1120 and the ramp is a
+  // full 55 m of altitude: on any real face that is metres of drift, not an edge.
+  // The wander is deliberately small (±25 m) — a threshold noisier than its own
+  // ramp stops being a snow line and becomes scattered plates.
+  float snowLine = 1120.0 + nC * 34.0 + nB * 16.0;
   float lee = clamp(0.5 - dot(fall > 1e-4 ? N.xz / fall : vec2(0.0), uWindXZ) * 0.5, 0.0, 1.0);
-  float snow = smoothstep(0.06, 0.58, (P.y - snowLine) * 0.020 + nB * 0.40 + nA * 0.10);
-  snow *= smoothstep(0.66, 0.30, fall) * mix(0.30, 1.0, lee);
-  snow = clamp(snow - groove * 0.5, 0.0, 1.0);
+  float snow = smoothstep(0.02, 0.62, (hPix - snowLine) * 0.011 + nB * 0.16 + nC * 0.10);
+  snow *= smoothstep(0.78, 0.24, fall) * mix(0.25, 1.0, lee);
+  // Blown out of the gullies, which also breaks the edge at the striation scale.
+  snow = clamp(snow - groove * 0.65, 0.0, 1.0);
   if (snow > 0.002) {
-    // Never neutral white: lit snow takes the key, shaded snow the cool sky bounce.
-    vec3 snowCol = mix(vec3(0.470, 0.510, 0.580), vec3(0.840, 0.820, 0.780),
+    // Never neutral white, and never a flat plate.
+    vec3 snowCol = mix(vec3(0.470, 0.510, 0.580), vec3(0.780, 0.770, 0.745),
                        clamp(N.y, 0.0, 1.0));
-    albedo = mix(albedo, snowCol, snow * 0.90);
-    rough = mix(rough, 0.58, snow * 0.8);
+    snowCol *= 0.90 + 0.16 * (nB * 0.5 + 0.5);
+    albedo = mix(albedo, snowCol, snow * 0.72);
+    rough = mix(rough, 0.62, snow * 0.7);
   }
 
   // Large-scale colour variation: nothing in frame may be a flat tint.

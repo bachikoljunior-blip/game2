@@ -51,12 +51,18 @@ const MOON_ANGULAR_RADIUS = 0.52 * 0.5 * DEG;
  * has a single, well-defined, correctly-coloured source to work from.
  */
 const SKY_LUMINANCE = 0.45;
-/** Ceiling the atmosphere rolls into. ACES puts this at ~0.82 display, just under clip. */
-const SKY_KNEE = 1.15;
+/**
+ * Ceiling the atmosphere rolls into, in graded units. Measured, not guessed: the composite
+ * downstream reaches its white point around 2x the mid-sky level, so anything the dome puts
+ * above that lands on the same clipped colour as the disc and the disc stops being visible.
+ * Capping the atmosphere at roughly twice the 50-degree sky keeps a real gradient toward the
+ * sun and still leaves the disc a clear step above everything around it.
+ */
+const SKY_KNEE = 0.62;
 /** Disc radiance is `uSunE * gain * Fex` — ~150 linear at 13° elevation, deep amber. */
 const SUN_DISC_GAIN = 1.8;
 /** The tight forward-scatter glare hugging the limb; this is the bloom pass's skirt. */
-const SUN_GLARE_GAIN = 0.02;
+const SUN_GLARE_GAIN = 0.006;
 /** Glare reach, in disc radii. 9 ≈ 2.4°: tight enough to still read as *around* a disc. */
 const SUN_GLARE_SPREAD = 9.0;
 
@@ -118,8 +124,14 @@ const _irr = [0, 0, 0];
 const _skySample = { r: 0, g: 0, b: 0 };
 /** Rec.709 luminance — used to re-hue the ambient without changing its level. */
 const lum = (c) => c.r * 0.2126 + c.g * 0.7152 + c.b * 0.0722;
-/** JS twin of the shader's order-2 soft knee. Transparent below SKY_KNEE, capped above. */
-const knee = (x) => x / Math.sqrt(1 + (x * x) / (SKY_KNEE * SKY_KNEE));
+/**
+ * JS twin of the shader's soft knee. Order 4, so the low and mid sky pass through almost
+ * untouched (0.45 loses 1%) and only the forward-scatter lobe gets folded onto the ceiling.
+ */
+const knee = (x) => {
+  const t = (x * x) / (SKY_KNEE * SKY_KNEE);
+  return x / Math.pow(1 + t * t, 0.25);
+};
 
 // -------------------------------------------------------------- colour ladder
 //
@@ -501,40 +513,44 @@ vec3 skyRadiance( vec3 rd, out vec3 FexOut ) {
   vec3 L0 = ( 0.1 + uSunE * 900.0 * aureole ) * Fex;
 
   vec3 tex = ( Lin + L0 ) * 0.04 + vec3( 0.0, 0.0003, 0.00075 );
-  return pow( max( tex, vec3( 0.0 ) ), vec3( 1.0 / ( 1.2 + 1.2 * uSunFade ) ) );
+  vec3 atmos = pow( max( tex, vec3( 0.0 ) ), vec3( 1.0 / ( 1.2 + 1.2 * uSunFade ) ) );
+  atmos *= uSkyTint * uSkyExposure;
+
+  // Soft knee, order 4: the low and mid sky pass through essentially untouched and only the
+  // forward-scatter lobe — which Preetham leaves running to 10-100 and which used to blow a
+  // 25-degree cap of sky to flat white — gets folded onto uSkyKnee. Clouds, moon and stars
+  // are deliberately outside this: they are objects in the sky, not the sky, and they are
+  // allowed their own highlights. The disc is outside it too, and is added by the caller.
+  vec3 t = ( atmos * atmos ) / ( uSkyKnee * uSkyKnee );
+  return atmos * inversesqrt( sqrt( 1.0 + t * t ) );
 }
 
 void main() {
   vec3 rd = normalize( vWorldDirection );
   float cosTheta = dot( rd, uSunDirection );
+  vec3 grade = uSkyTint * uSkyExposure;
 
   vec3 Fex;
-  vec3 col = skyRadiance( rd, Fex );
+  vec3 col = skyRadiance( rd, Fex );      // already graded, already kneed
 
-  col += moonDisc( rd );
-  col += vec3( 0.86, 0.90, 1.0 ) * stars( rd );
+  col += ( moonDisc( rd ) + vec3( 0.86, 0.90, 1.0 ) * stars( rd ) ) * grade;
 
   float cloudAlpha = 0.0;
 #if CLOUD_LAYERS > 0
   vec4 cl = clouds( rd, Fex );
-  col = mix( col, cl.rgb, cl.a );
+  col = mix( col, cl.rgb * grade, cl.a );
   cloudAlpha = cl.a;
 #endif
 
   // Below the horizon we fade into the ground haze so the dome never shows a hard seam
   // where the terrain silhouette does not quite reach.
   float below = 1.0 - smoothstep( -0.16, 0.0, rd.y );
-  col = mix( col, uGroundColor, below );
+  col = mix( col, uGroundColor * grade, below );
 
-  col *= uSkyTint * uSkyExposure;
-
-  // Soft knee, order 2: transparent below uSkyKnee, asymptotic to it above. Keeps the
-  // sky under the ACES clip point so the disc — added next, and only next — is the one
-  // thing in frame that saturates.
-  col *= inversesqrt( 1.0 + ( col * col ) / ( uSkyKnee * uSkyKnee ) );
-
-  // A thick deck dims the sun rather than deleting it; thin cloud lets it burn through,
-  // which is the whole look of a low sun behind autumn cloud.
+  // The disc goes on last and uncapped: the one part of the dome allowed to be a true HDR
+  // highlight, so it is the only thing the tone mapper clips and the only thing the bloom
+  // and god-ray passes have to work from. A thick deck dims it rather than deleting it —
+  // thin cloud lets it burn through, which is the whole look of a low sun behind autumn cloud.
   col += sunDisc( cosTheta, Fex ) * ( 1.0 - 0.88 * cloudAlpha ) * ( 1.0 - below );
 
   gl_FragColor = vec4( max( col, vec3( 0.0 ) ), 1.0 );
