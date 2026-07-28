@@ -1766,12 +1766,13 @@ export class PropFactory {
         const x0 = colXs[i] + 0.16, x1 = colXs[i + 1] - 0.16;
         const centre = Math.abs((x0 + x1) * 0.5) < w * 0.14;
         if (centre) continue;             // the doorway stays open
-        shoji.push(this._shojiBay(x0, x1, wallY0, wallY1 - 0.35, hd - 0.02, panels));
+        shoji.push(this._shojiBay(x0, x1, wallY0, wallY1 - 0.35, hd - 0.02, lattice));
       }
       const wall = mergeGeometries(panels, false);
       roughen(wall, 0.008, 3.2, [1, 0, 1]);
       bakeAO(wall, { ground: 0, cavity: 0.22, down: 0.3, floor: 0.34 });
       PropFactory.add(b, wall, wallMat);
+      if (lattice.length) PropFactory.add(b, mergeGeometries(lattice, false), 'cedar');
       if (shoji.length) {
         const paper = mergeGeometries(shoji, false);
         normalizeGeo(paper, true);
@@ -1906,10 +1907,8 @@ export class PropFactory {
       rise, baseY: roofBase, material: roofMat, segX: 2, segZ: 1,
       hip: 0.5, thickness: 0.2,
     });
-    const geos = [body];
-    for (const p of roof.parts) geos.push(normalizeGeo(p.geometry));
     return [
-      { geometry: mergeGeometries([body], false), material: 'cedar' },
+      { geometry: body, material: 'cedar' },
       { geometry: mergeGeometries(roof.parts.map((p) => normalizeGeo(p.geometry)), false), material: roofMat },
     ];
   }

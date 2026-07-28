@@ -2180,7 +2180,11 @@ export class PostFX {
     this._flashRate = duration > 0.001 ? (3.2 / duration) : 60;
   }
 
-  /** Radial blur from a screen point (UV space). Decays on its own. */
+  /**
+   * Sustained radial blur from a screen point (UV space). This is a setter, not a
+   * pulse — it eases to `strength` and holds; call with 0 to release. Use pulseParry
+   * for the one-shot burst.
+   */
   setRadialBlur(strength, centerX = 0.5, centerY = 0.5) {
     this._radialTarget = clamp(strength, 0, 1);
     this._radial = Math.max(this._radial, this._radialTarget);

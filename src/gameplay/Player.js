@@ -1160,27 +1160,38 @@ export class Player {
     }
   }
 
-  /** Close the gap during the active window so cuts actually connect (§5). */
+  /**
+   * Open the swing with Combat and close the gap so cuts connect (§5).
+   * CombatDirector runs its own lunge off `beginSwing` (TUNING.LUNGE_*), so we
+   * only drive our own when it is absent — otherwise the player double-lunges.
+   */
   _startLunge(a) {
+    const combat = this.ctx.combat;
+    if (combat?.beginSwing) {
+      combat.beginSwing(this, this._fillSwingOpts(a));
+      this._lungeVel.set(0, 0, 0);
+      return;
+    }
     const tgt = this._assistTarget;
     let dist = a.lunge;
     if (tgt?.position) {
       const dx = tgt.position.x - this.position.x;
       const dz = tgt.position.z - this.position.z;
       const d = Math.hypot(dx, dz);
-      const want = Math.max(0, d - a.reach * 0.78);
-      dist = clamp(want, 0, a.lunge * 1.6);
+      dist = clamp(Math.max(0, d - a.reach * 0.78), 0, a.lunge * 1.6);
     }
     const speed = dist / Math.max(0.06, a.active + 0.06);
     this._lungeVel.set(this.forward.x * speed, 0, this.forward.z * speed);
-    this.ctx.combat?.beginAttack?.(this._fillAttackInfo(a));
   }
 
-  _fillAttackInfo(a) {
+  /** The `opts` shape CombatDirector.beginSwing consumes (`_applySwingOpts`). */
+  _fillSwingOpts(a) {
     const i = this.attackInfo;
-    i.entity = this; i.move = a.key; i.clip = a.clip; i.damage = a.damage;
-    i.poise = a.poise; i.kind = a.kind; i.reach = a.reach; i.heavy = a.heavy;
-    i.finisher = a.finisher; i.stance = this.stance; i.combo = this.comboCount;
+    i.entity = this; i.move = a.key; i.clip = a.clip;
+    i.damage = a.damage; i.poise = a.poise; i.kind = a.kind; i.heavy = a.heavy;
+    i.multiHit = false;
+    i.reach = a.reach; i.finisher = a.finisher; i.stance = this.stance;
+    i.combo = this.comboCount;
     i.base = this.bladeBase; i.tip = this.bladeTip;
     return i;
   }

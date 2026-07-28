@@ -72,9 +72,17 @@ const _q3 = new Quaternion(), _q4 = new Quaternion();
 const _m0 = new Matrix4();
 
 /** Closest-query result records (scalar, so they can never alias a Vector3). */
+/**
+ * Contact record. `n*` is the separating (MTD) direction used for push-out and
+ * sliding; `fn*` is the *surface* normal of the geometry at the contact point.
+ * They differ on convex edges — a capsule resting on a stair nosing has a
+ * near-horizontal separating normal but a perfectly walkable face normal — and
+ * conflating the two is what makes capsule controllers refuse to climb ledges.
+ */
 function makeHit() {
   return {
-    d: 0, nx: 0, ny: 1, nz: 0, px: 0, py: 0, pz: 0, c: null, t: 0, inside: false,
+    d: 0, nx: 0, ny: 1, nz: 0, fnx: 0, fny: 1, fnz: 0,
+    px: 0, py: 0, pz: 0, c: null, t: 0, inside: false,
     x: 0, y: 0, z: 0, hit: false, steep: false, collider: null,
   };
 }
@@ -314,6 +322,22 @@ function closestPtOBB(px, py, pz, b, out) {
   out.y = b.cy + u[1] * c0 + v[1] * c1 + w[1] * c2;
   out.z = b.cz + u[2] * c0 + v[2] * c1 + w[2] * c2;
   out.inside = (c0 === a0 && c1 === a1 && c2 === a2);
+
+  // Face normal: of every face the closest point touches, take the most
+  // upward-facing one. On a top edge that is the top face, which is what makes
+  // the step-up and ground checks treat a ledge lip as walkable.
+  let bestScore = -2;
+  out.fnx = 0; out.fny = 0; out.fnz = 0;
+  for (let i = 0; i < 3; i++) {
+    const ci = i === 0 ? c0 : i === 1 ? c1 : c2;
+    const ei = i === 0 ? b.ex : i === 1 ? b.ey : b.ez;
+    if (Math.abs(ci) < ei - 1e-6) continue;
+    const A = i === 0 ? u : i === 1 ? v : w;
+    const s = ci < 0 ? -1 : 1;
+    if (A[1] * s > bestScore) { bestScore = A[1] * s; out.fnx = A[0] * s; out.fny = A[1] * s; out.fnz = A[2] * s; }
+  }
+  if (bestScore === -2) { out.fnx = 0; out.fny = 1; out.fnz = 0; }
+
   if (out.inside) {
     const p0 = b.ex - Math.abs(a0), p1 = b.ey - Math.abs(a1), p2 = b.ez - Math.abs(a2);
     if (p0 <= p1 && p0 <= p2) {
@@ -350,6 +374,7 @@ function segToOBB(ax, ay, az, bx, by, bz, box, out) {
   sx = ax + (bx - ax) * t; sy = ay + (by - ay) * t; sz = az + (bz - az) * t;
   closestPtOBB(sx, sy, sz, box, _p2);
   out.px = _p2.x; out.py = _p2.y; out.pz = _p2.z; out.t = t;
+  out.fnx = _p2.fnx; out.fny = _p2.fny; out.fnz = _p2.fnz;
   if (_p2.inside) {
     out.d = -_p2.depth;
     out.nx = _p2.nx; out.ny = _p2.ny; out.nz = _p2.nz;

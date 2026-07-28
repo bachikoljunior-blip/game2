@@ -689,6 +689,62 @@ export class CombatDirector {
     );
   }
 
+  /**
+   * Launch a projectile (Enemy.js hands us kunai/shuriken from the Shinobi's ranged
+   * move). Accepts the descriptor Enemy already builds:
+   *   { owner, kind, origin:Vector3, direction:Vector3, speed, damage, posture, life }
+   * Vectors are copied — the caller may reuse its scratch immediately.
+   *
+   * A projectile is swept exactly like a blade and resolved through the same pipeline,
+   * so it can be dodged (i-frames), deflected (a perfect parry returns posture to the
+   * thrower and destroys it) or guarded (chip + posture). Returns true when we took
+   * ownership, which tells the caller not to spawn its own visual-only fallback.
+   */
+  spawnProjectile(opts) {
+    if (!opts?.origin || !opts?.direction) return false;
+    const list = this._projectiles;
+    let p = null;
+    for (let i = 0; i < list.length; i++) {
+      const c = list[(this._projCursor + i) % list.length];
+      if (!c.alive) { p = c; break; }
+    }
+    if (!p) {
+      // Pool exhausted: recycle the oldest rather than allocate or drop the shot.
+      let oldest = list[0];
+      for (let i = 1; i < list.length; i++) if (list[i].spawn < oldest.spawn) oldest = list[i];
+      p = oldest;
+    }
+    this._projCursor = (this._projCursor + 1) % list.length;
+
+    p.alive = true;
+    p.owner = opts.owner || null;
+    p.kind = opts.kind || 'kunai';
+    p.damage = opts.damage ?? TUNING.BASE_DAMAGE * 0.6;
+    p.posture = opts.posture ?? p.damage * 0.7;
+    p.poise = opts.poise ?? TUNING.PROJECTILE_POISE;
+    p.speed = opts.speed || 24;
+    p.life = opts.life || TUNING.PROJECTILE_LIFE;
+    p.gravity = opts.gravity ?? TUNING.PROJECTILE_GRAVITY;
+    p.radius = opts.radius ?? TUNING.PROJECTILE_RADIUS;
+    p.age = 0;
+    p.spawn = this.time;
+    p.pos.copy(opts.origin);
+    p.prev.copy(opts.origin);
+    p.vel.copy(opts.direction);
+    if (p.vel.lengthSq() < EPS) p.vel.copy(_fwdDefault);
+    p.vel.normalize().multiplyScalar(p.speed);
+
+    this.ctx.fx?.spawnProjectile?.(p.pos, opts.direction, p.speed, p.kind);
+    return true;
+  }
+
+  /** Projectiles in flight (debug/HUD). */
+  get projectileCount() {
+    let n = 0;
+    for (let i = 0; i < this._projectiles.length; i++) if (this._projectiles[i].alive) n++;
+    return n;
+  }
+
   /** Direct posture pressure (a shove, a heavy block, a shout). */
   addPosture(entity, amount, sourceDir) { this._addPosture(entity, amount, sourceDir); }
 
@@ -2013,11 +2069,13 @@ export class CombatDirector {
         TUNING.SWEEP_PAD,
         0.5 * Math.max(ra.prevBase.distanceTo(ra.base), ra.prevTip.distanceTo(ra.tip)),
       );
-      const mask = ph.LAYER?.CHARACTER ?? ph.LAYER?.ENEMY ?? ph.LAYER?.ALL ?? 0xffffffff;
-      ph.capsuleOverlap(_vA, _vB, radius, mask, out);
-      for (let i = 0; i < out.length; i++) {
+      const L = ph.LAYER;
+      const mask = L ? ((L.CHARACTER | L.PLAYER | L.ENEMY) || L.CHARACTER) : 0xffffffff;
+      // capsuleOverlap writes by index and returns the count — never trust out.length.
+      const n = ph.capsuleOverlap(_vA, _vB, radius, mask, out);
+      for (let i = 0; i < n; i++) {
         const hit = out[i];
-        const ent = hit?.entity || hit?.userData?.entity || hit?.body?.entity || null;
+        const ent = hit?.owner || hit?.entity || hit?.userData?.entity || null;
         if (ent) this._physCandidates.push(ent);
       }
       return this._physCandidates.length;

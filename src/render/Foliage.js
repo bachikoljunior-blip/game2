@@ -1235,4 +1235,206 @@ function paintGroundDetail(size) {
   return { albedo, normal };
 }
 
-//@@SECTION_8@@
+// =============================================================================
+// 8. LOD and density tables
+// =============================================================================
+
+/**
+ * Grass LOD bands, as a fraction of `quality.grassRadius`. A tile is assigned a LOD from
+ * its ring distance in the camera-relative grid, so LOD is a property of the *tile*, and
+ * the instance buffers only care when a tile actually crosses a band.
+ */
+const GRASS_LOD_BAND = [0.34, 0.66, 1.0];
+/** Blades (or clump cards) per square metre at `grassDensity` 1.0. */
+const GRASS_LOD_DENSITY = [18.0, 7.0, 0.85];
+/** Per-LOD (height, width) multiplier — coarser LODs grow to keep the same visual mass. */
+const GRASS_LOD_SIZE = [[1.0, 1.0], [1.15, 1.6], [2.0, 24.0]];
+/** Batches per LOD, per tier: more batches = finer frustum culling, more draw calls. */
+const GRASS_BATCHES = {
+  0: [0, 0, 0],
+  1: [4, 2, 1],
+  2: [4, 4, 2],
+  3: [4, 4, 2],
+};
+
+/** Everything else keys its cull radius off these, scaled by grassRadius where it makes sense. */
+const RANGE = {
+  bambooCulm: [0, 46],
+  bambooLeaf: [0, 38],
+  bambooCard: [30, 190],
+  canopy: [110, 900],
+  treeMesh: [0, 55],
+  treeReduced: [42, 96],
+  treeCard: [88, 340],
+  treeCardOnly: [38, 260],     // MEDIUM and below: mesh LOD straight to impostor
+  undergrowth: [0, 30],
+  groundCard: [0, 26],
+};
+
+const AUTUMN_A = new Color(0x4e6b3c);
+const AUTUMN_B = new Color(0x9c8548);
+const AUTUMN_C = new Color(0xc07a3a);
+
+// =============================================================================
+// 9. FoliageSystem
+// =============================================================================
+
+export class FoliageSystem {
+  constructor(ctx) {
+    this.ctx = ctx;
+    this.onProgress = null;
+
+    this.group = new Group();
+    this.group.name = 'foliage';
+    this.group.matrixAutoUpdate = false;
+
+    /** Sakura crown positions, consumed by Weather to emit falling petals. */
+    this.petalEmitters = [];
+    /** Momiji crowns — the same contract, different colour. */
+    this.leafEmitters = [];
+
+    /**
+     * The authoritative wind field GLSL. If Weather already published one we defer to it
+     * so there is exactly one field in the build; otherwise ours is the source of truth.
+     */
+    this.WIND_GLSL = ctx?.weather?.WIND_GLSL || FOLIAGE_WIND_GLSL;
+
+    // --- shared uniform objects (written once per frame, read by every material) ------
+    this.uniforms = {
+      uWindDir: { value: new Vector2(0.82, 0.57) },
+      uWindStrength: { value: 0.45 },
+      uWindGust: { value: 0.0 },
+      uWindTime: { value: 0.0 },
+      uCamPos: { value: new Vector3() },
+      uChars: { value: new Float32Array(MAX_CHARACTERS * 4) },
+      uDisturbP: { value: new Float32Array(MAX_DISTURB * 4) },
+      uDisturbA: { value: new Float32Array(MAX_DISTURB * 4) },
+      uSunDir: { value: new Vector3(0.3, 0.35, -0.88) },
+      uSunColor: { value: new Color(1, 0.86, 0.68) },
+    };
+
+    this._materials = [];
+    this._geometries = [];
+    this._textures = [];
+    this._meshes = [];
+    this._renderTargets = [];
+
+    this._elapsed = 0;
+    this._disturbCursor = 0;
+    this._characters = [];
+    this._extraCharacters = [];
+
+    this._grass = null;
+    this._bamboo = null;
+    this._trees = null;
+    this._undergrowth = null;
+    this._impostors = null;
+    this.groundDetail = null;
+
+    this._yBias = 0;
+    this._drawEstimate = 0;
+
+    this._onSlash = (p) => {
+      if (!p || !p.to) return;
+      this.disturb(p.to, p.heavy ? 2.6 : 1.7, p.heavy ? 1.35 : 0.85);
+    };
+    this._onHit = (p) => {
+      if (!p || !p.point) return;
+      this.disturb(p.point, 1.5, 0.7);
+    };
+  }
+
+  // ---------------------------------------------------------------- lifecycle
+
+  async init() {
+    const q = this.ctx.quality;
+    const steps = 11;
+    let done = 0;
+    const step = async (label, fn) => {
+      this.onProgress?.(done, steps, label);
+      await fn();
+      done++;
+      this.onProgress?.(done, steps, label);
+      await new Promise((r) => setTimeout(r, 0));
+    };
+
+    this._calibrateTerrain();
+
+    await step('sowing textures', () => this._buildTextures(q));
+    await step('shaping blades', () => this._buildGrassAssets(q));
+    await step('laying the grass ring', () => this._buildGrassBuckets(q));
+    await step('growing bamboo', () => this._buildBambooAssets(q));
+    await step('planting the bamboo sea', () => this._scatterBamboo(q));
+    await step('branching the sakura', () => this._buildTreeAssets(q));
+    await step('baking impostors', () => this._bakeImpostors(q));
+    await step('planting the grove', () => this._scatterTrees(q));
+    await step('seeding undergrowth', () => this._buildUndergrowth(q));
+    await step('scattering leaves', () => this._buildGroundCards(q));
+    await step('hanging the canopy', () => this._buildCanopy(q));
+
+    this.ctx.scene.add(this.group);
+    this.ctx.bus?.on?.('slash', this._onSlash);
+    this.ctx.bus?.on?.('hit', this._onHit);
+
+    // Terrain owns the ground material; offer it our detail maps rather than reaching in.
+    this.ctx.terrain?.setGroundDetail?.(this.groundDetail);
+
+    this._recomputeDrawEstimate();
+    return this;
+  }
+
+  /**
+   * Terrain may not have published real heights yet (or may be a stub returning 0). All
+   * world Y is absolute metres above sea level, so a terrain that answers ~0 at the origin
+   * is not answering at all — bias to the plateau so nothing spawns at sea level.
+   */
+  _calibrateTerrain() {
+    const h = this.ctx.terrain?.heightAt?.(0, 0);
+    this._yBias = (typeof h === 'number' && Math.abs(h) > 1) ? 0 : WORLD.PLATEAU_HEIGHT;
+  }
+
+  _heightAt(x, z) {
+    const h = this.ctx.terrain?.heightAt?.(x, z);
+    return (typeof h === 'number' && Number.isFinite(h) ? h : 0) + this._yBias;
+  }
+
+  _slopeAt(x, z) {
+    const s = this.ctx.terrain?.slopeAt?.(x, z);
+    if (typeof s === 'number' && Number.isFinite(s)) return s;
+    const n = this.ctx.terrain?.normalAt?.(x, z);
+    if (n && typeof n.y === 'number') return clamp(1 - n.y, 0, 1);
+    return 0;
+  }
+
+  _surfaceAt(x, z) {
+    const s = this.ctx.terrain?.surfaceAt?.(x, z);
+    return typeof s === 'string' ? s : 'soil';
+  }
+
+  /**
+   * How much vegetation belongs at this spot, 0..1. Stone, gravel, water and the shrine's
+   * swept courtyard get none; soil gets all of it; slope thins it out.
+   */
+  _siteWeight(x, z, y) {
+    const surf = this._surfaceAt(x, z);
+    let w;
+    switch (surf) {
+      case 'rock': case 'stone': case 'gravel': case 'water': case 'wood': case 'path':
+        w = 0; break;
+      case 'sand': w = 0.12; break;
+      case 'dirt': w = 0.7; break;
+      case 'soil': case 'grass': case 'moss': w = 1.0; break;
+      default: w = 0.65;
+    }
+    if (w <= 0) return 0;
+    if (y < WORLD.WATER_LEVEL + 0.35) return 0;
+    w *= 1 - smoothstep(0.34, 0.78, this._slopeAt(x, z));
+    // The plateau immediately around the honden is swept gravel, not meadow.
+    w *= lerp(1, 0.18, plateauMask(x, z));
+    return clamp(w, 0, 1);
+  }
+
+  //@@SECTION_10@@
+}
+
+export default FoliageSystem;
