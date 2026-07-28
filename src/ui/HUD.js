@@ -150,19 +150,28 @@ export const Ink = {
   },
 
   /**
-   * Punch paper grain out of whatever has been drawn so far. Only ever called
-   * while baking a sprite — it is far too many small paths for a live frame.
+   * Paper grain. Only ever called while baking a sprite — it is far too many
+   * small paths for a live frame.
+   *
+   * The default mode punches holes (`destination-out`), which is what makes a
+   * brush stroke break up on rough paper. NEVER use it on a sprite that is
+   * stretched across the whole screen as a dimming wash: every hole becomes a
+   * transparent dot, and magnified 6× over a bright sky it reads as white
+   * speckle rather than grain. Full-screen washes must pass `'dark'`, which
+   * mottles by darkening instead of erasing.
    */
-  grain(g, w, h, amount, seed, dotMax) {
+  grain(g, w, h, amount, seed, dotMax, mode) {
     const r = mulberry32(seed | 0);
     const n = Math.min(2600, Math.round(w * h * 0.055 * amount));
     const dm = dotMax || 1.6;
+    const dark = mode === 'dark';
     g.save();
-    g.globalCompositeOperation = 'destination-out';
+    if (dark) g.fillStyle = 'rgb(8,6,6)';
+    else g.globalCompositeOperation = 'destination-out';
     for (let i = 0; i < n; i++) {
       const x = r() * w, y = r() * h;
       const rad = 0.22 + r() * dm;
-      g.globalAlpha = 0.05 + r() * 0.30;
+      g.globalAlpha = dark ? 0.03 + r() * 0.13 : 0.05 + r() * 0.30;
       g.beginPath();
       g.arc(x, y, rad, 0, 6.2831853);
       g.fill();

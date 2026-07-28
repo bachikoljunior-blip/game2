@@ -46,8 +46,12 @@ export class Menus {
     this._saveTimer = -1;                // > 0 while a settings write is pending
     this._appliedMirror = false;         // matches TouchControls' default layout
 
-    // Opening title card.
+    // Opening title card. The card's content alpha and its dimming wash are
+    // tracked separately from the HUD's global alpha, so cancelling the intro
+    // can never leave either the world or the HUD permanently darkened.
     this._title = -1;                    // < 0 = not playing
+    this._titleA = 0;                    // kanji / underline / objective line
+    this._introWash = 0;                 // full-screen dim behind the card
     this._titleSub = '';
 
     // Death / victory card.
@@ -347,13 +351,39 @@ export class Menus {
   /** Called by main.js the moment the boot veil lifts. */
   onGameStart() {
     this._title = 0;
+    this._titleA = 1;
+    this._introWash = 0;
     this.ctx.hud?.setAlpha?.(0);
     if (!this._titleSub) this._titleSub = '山の社を目指せ';
+  }
+
+  /**
+   * Hard-cancel the opening title sequence: kanji, brush underline, objective
+   * line and — critically — the dimming ink wash all go, and the world and HUD
+   * return to full alpha on the very next composite.
+   *
+   * Idempotent and safe both before the intro has started and after it has
+   * already finished. Returns true only if something was actually cancelled.
+   */
+  skipIntro() {
+    const running = this._title >= 0 || this._titleA > 0 || this._introWash > 0;
+    this._endIntro();
+    return running;
+  }
+
+  _endIntro() {
+    this._title = -1;
+    this._titleA = 0;
+    this._introWash = 0;
+    // The intro is the only thing that ever drives the HUD's global alpha down.
+    this.ctx.hud?.setAlpha?.(1);
   }
 
   isOpen() { return this.mode !== 'none'; }
 
   openPause() {
+    // Never layer the pause wash on top of the intro wash — cancel the intro.
+    this.skipIntro();
     this.mode = 'pause';
     this.rows = this._pauseRows;
     this.index = 0;
@@ -364,6 +394,7 @@ export class Menus {
   }
 
   openSettings() {
+    this.skipIntro();
     this.mode = 'settings';
     this.rows = this._settingsRows;
     this.index = 0;
@@ -389,6 +420,7 @@ export class Menus {
     const c = this.ctx;
     this.mode = 'none';
     this._card = 0;
+    this.skipIntro();
     this._setPaused(false);
     if (c.level?.restart) c.level.restart();
     else if (c.player?.respawn) c.player.respawn();
@@ -399,6 +431,7 @@ export class Menus {
 
   showDeath() {
     if (this.mode === 'death') return;
+    this.skipIntro();
     this.mode = 'death';
     this._card = 0;
     this._drag = null;
@@ -605,7 +638,10 @@ export class Menus {
         const y = 30 + i * 46 + Ink.rand() * 20;
         Ink.stroke(g, -20, y, W + 20, y + (Ink.rand() - 0.5) * 34, 26 + Ink.rand() * 26, 0.5, 12);
       }
-      Ink.grain(g, W, H, 0.7, 0x2c2c, 2.4);
+      // 'dark' mottling, never the default erasing grain: this sprite is
+      // stretched over the entire frame, and punched holes would show the sky
+      // through as white speckle.
+      Ink.grain(g, W, H, 0.7, 0x2c2c, 2.4, 'dark');
     });
     return this._sprites.wash;
   }
