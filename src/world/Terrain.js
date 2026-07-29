@@ -1544,6 +1544,9 @@ ${this._heightGLSL()}
       ppNormal ? `#define TERRAIN_PPNORMAL ${ppNormal}` : '',
       q.tier >= 1 ? '#define TERRAIN_STOCHASTIC 1' : '',
     ].join('\n');
+    console.warn(`[terrain-diag] heightMode=${this.encodedHeight ? 'encoded' : 'float/half'} ` +
+      `ppNormal=${ppNormal} tier=${q.tier} triplanar=${triplanar} ` +
+      `caps=${JSON.stringify(this.ctx.engine?.capabilities ?? null)}`);
 
     chainOnBeforeCompile(mat, (shader) => {
       Object.assign(shader.uniforms, uniforms);
@@ -1626,15 +1629,15 @@ ${glslNoise}
  * in every height encoding.
  *
  * Everything that draws a *line* across the far mountain — the tree line, the scree
- * band, the snow line — must key on this and never on `vKgWorld.y` or on the
+ * band, the snow line — must key on this and never on 'vKgWorld.y' or on the
  * interpolated vertex normal. Those two are per-vertex quantities: on the outermost
  * clipmap ring a quad is 45 m, so a threshold against them is straight inside a
  * triangle and kinks at its edges, which is exactly the "flat-fill polygons with step
  * edges" the review measured — straight sides, sharp corners, dead-flat interiors.
  *
- * `kgHeightFast` is not a substitute: on the 8-bit encoded path it is a single
+ * 'kgHeightFast' is not a substitute: on the 8-bit encoded path it is a single
  * NEAREST tap, so it returns the 16 m data grid as a staircase and the same mask
- * comes back blocky instead of triangular. `kgTexH` is the hand-rolled bilinear and
+ * comes back blocky instead of triangular. 'kgTexH' is the hand-rolled bilinear and
  * is C0 on both paths. The core field is deliberately not blended in — nothing that
  * uses this is within a kilometre of the core, and skipping it halves the taps.
  */
@@ -1911,7 +1914,7 @@ void kgComputeSurface(){
     float treeLine = 1006.0 + nC * 92.0 + nB * 28.0;
     float veg = smoothstep(treeLine + 34.0, treeLine - 48.0, hLand) *
                 (1.0 - smoothstep(0.40, 0.76, lFallW));
-    // Soft knee, not a clamp. `clamp(smoothstep * smoothstep * 3.0, 0, 1)` is a
+    // Soft knee, not a clamp. 'clamp(smoothstep * smoothstep * 3.0, 0, 1)' is a
     // *threshold* wearing a gradient's clothes: the 3x pins it to exactly 1 over most
     // of its domain, so the band came out as a plate with a dead-flat interior and a
     // step at its rim. This approaches its ceiling asymptotically and never reaches
@@ -1937,73 +1940,77 @@ void kgComputeSurface(){
   //   altitude    a 230 m ramp, wandered by at most ±80 m of landscape noise. The
   //               wander stays well inside its own ramp; a line noisier than its
   //               ramp stops being a snow line and becomes scattered plates.
-  //   slope       what the mountain can hold: nothing past ~40°, everything under
-  //               ~24°. This is *landform* slope, differenced over four macro texels
-  //               (~134 m), never the shading slope. The macro field is a 16 m grid
-  //               and at 1.5 km one of its cells covers about a pixel, so a
-  //               threshold on the shading slope is a threshold on the lattice.
+  //   slope       what the mountain can hold: nothing past ~41°, everything under
+  //               ~22°. This is the *landform* slope from the shared frame above,
+  //               never the shading slope and never the vertex normal.
   //   collection  bowls, cirques and gully heads fill first; ribs and spurs blow
   //               bare, and the lee of the prevailing wind drifts deepest.
   //
   // Coverage then stays *partial* over most of the field: at the drift scale the
   // sheet runs from bare rock to buried inside one patch, so rock stands through it
   // and no sample of it can come back as a flat fill (§5.9).
-  float snowAlt = smoothstep(1042.0, 1272.0, hPix + nC * 58.0 + nB * 22.0);
+  //
+  // None of this may be gated on TERRAIN_PPNORMAL. It used to be, and where that
+  // define is absent the whole model collapsed onto 'vKgWorld.y' and the interpolated
+  // vertex normal — a per-triangle altitude and a per-triangle slope — which is how a
+  // model written entirely in smooth terms still rendered as hard-edged plates.
+  float snowAlt = smoothstep(1042.0, 1272.0, hLand + nC * 58.0 + nB * 22.0);
   float kgSnowCover = 0.0;
   vec2 kgSnowRipple = vec2(0.0);
   if (snowAlt > 0.002) {
-    vec3 LN = N;
-    float bowl = 0.0;
-#ifdef TERRAIN_PPNORMAL
-    float ls = uNormalStep.y * 4.0;
-    float aL = kgHeightFast(P.xz - vec2(ls, 0.0));
-    float aR = kgHeightFast(P.xz + vec2(ls, 0.0));
-    float aD = kgHeightFast(P.xz - vec2(0.0, ls));
-    float aU = kgHeightFast(P.xz + vec2(0.0, ls));
-    LN = normalize(vec3(aL - aR, 2.0 * ls, aD - aU));
-    bowl = clamp(((aL + aR + aD + aU) * 0.25 - hPix) * (3.0 / ls), -1.0, 1.0);
-#endif
-    float lFall = length(LN.xz);
+    vec3 LN = kgLandN;
+    float bowl = bowlW;
+    float lFall = lFallW;
     // The scallop on the shed line is a tenth of the ramp: it breaks the contour
     // without ever being able to cut it.
-    float hold = smoothstep(0.70, 0.40, lFall + nB * 0.045);
+    float hold = smoothstep(0.66, 0.38, lFall + nB * 0.04);
     vec2 lDir = lFall > 1e-4 ? LN.xz / lFall : vec2(0.0);
     float lee = clamp(0.5 - dot(lDir, uWindXZ) * 0.5, 0.0, 1.0);
 
-    // Drift, at the three scales the eye can resolve on this massif from the shrine:
-    // 150 m banks, 45 m drifts, 16 m wind ripple. The finest is still eleven pixels
-    // at this range, so none of it can turn into fizz — and the coverage mask leans
-    // on the two coarse ones, so the *edge* it draws is always tens of metres wide
-    // even where the ripple is what you read inside the field.
+    // Coverage is built from *coarse* drift only: 940 m banks and 280 m drifts, and
+    // the finest octave in either is about 140 m. The gradient of this is what sets
+    // the width of the snow line, and 140 m is ~150 px at the range the massif is
+    // seen from, so the fringe it draws is tens of pixels deep and cannot come back
+    // as a cut. Fine detail is deliberately kept out of the coverage decision — it
+    // belongs to the interior, below, where it cannot sharpen the boundary.
     float s1 = fbm2(P.xz * 0.0067 + 91.3, 3);
-    float s2 = fbm2(P.xz * 0.0224 - 57.1, 3);
-    float s3 = fbm2(P.xz * 0.0630 + 13.9, 2);
-    float driftCov = s1 * 0.55 + s2 * 0.32 + s3 * 0.10;
+    float s2 = fbm2(P.xz * 0.0224 - 57.1, 2);
+    float driftCov = s1 * 0.62 + s2 * 0.38;
 
     float depth = snowAlt * (0.34 + 0.36 * lee)
                 + snowAlt * max(bowl, 0.0) * 0.62
                 - max(-bowl, 0.0) * 0.34
                 + driftCov * 0.46 * snowAlt;
     float cover = clamp(depth, 0.0, 1.0) * hold;
-    float blanket = smoothstep(0.05, 0.62, cover);
+    float blanket = smoothstep(0.02, 0.70, cover);
     if (blanket > 0.003) {
+      // Rock stands through the sheet. Coverage over a real snowfield is partial
+      // almost everywhere, and a mask that saturates is precisely what makes a
+      // sampled interior come back as a flat colour surface (§5.9). The finest
+      // octave here is ~28 m — about thirty pixels at this range, so it reads as
+      // drift and bare ground, never as fizz, and because it is bounded well away
+      // from zero it wobbles the boundary without ever steepening it.
+      float bare = fbm2(P.xz * 0.0560 + 3.7, 3) * 0.5 + 0.5;
+      float s3 = fbm2(P.xz * 0.0630 + 13.9, 2);
+      float sheet = blanket * (0.52 + 0.48 * bare);
+
       // Cooler and brighter than the rock it lies on — the warm key does the rest.
       // Shadowed snow is the sky bounce of §5 (#4a6b8f), never a neutral grey.
-      vec3 snowCol = mix(vec3(0.286, 0.360, 0.505), vec3(0.780, 0.815, 0.880),
+      vec3 snowCol = mix(vec3(0.250, 0.335, 0.520), vec3(0.760, 0.830, 0.960),
                          clamp(LN.y * 0.45 + N.y * 0.55, 0.0, 1.0));
       // Drift shading. Wind-packed crests catch the light, the troughs between them
       // stay blue; this and the partial coverage are the interior variance.
-      snowCol *= 0.78 + 0.30 * (s2 * 0.5 + 0.5) + 0.16 * (s3 * 0.5 + 0.5);
-      albedo = mix(albedo, snowCol, blanket * 0.95);
-      rough = mix(rough, mix(0.74, 0.38, blanket), blanket * 0.85);
-      kgSnowCover = blanket;
+      snowCol *= 0.74 + 0.34 * (s2 * 0.5 + 0.5) + 0.18 * (s3 * 0.5 + 0.5);
+      albedo = mix(albedo, snowCol, sheet * 0.95);
+      rough = mix(rough, mix(0.74, 0.38, sheet), sheet * 0.85);
+      kgSnowCover = sheet;
       // Sastrugi: two more taps of the ripple field give it a gradient, and a 13°
       // sun turns that gradient into the banding a real snowfield has. Bounded, so
       // it can bend the sheet but never re-point it.
       float se = 7.0;
       kgSnowRipple = clamp(vec2(fbm2((P.xz + vec2(se, 0.0)) * 0.0630 + 13.9, 2) - s3,
                                 fbm2((P.xz + vec2(0.0, se)) * 0.0630 + 13.9, 2) - s3) * 2.2,
-                           -0.22, 0.22) * blanket;
+                           -0.22, 0.22) * sheet;
     }
   }
 
