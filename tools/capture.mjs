@@ -91,6 +91,7 @@ const SHOTS = {
   wide: { wait: 2200, script: `k.debugCam?.('wide')` },
   torii: { wait: 2200, script: `k.debugCam?.('torii')` },
   valley: { wait: 2600, script: `k.debugCam?.('valley')` },
+  sun: { wait: 2600, script: `k.debugCam?.('sun')` },
   combat: { wait: 3200, script: `k.debugCam?.('combat'); k.enemies?.spawnWave?.(3)` },
   parry: { wait: 3400, script: `k.debugCam?.('combat'); k.combat?.__demoParry?.()` },
   closeup: { wait: 2200, script: `k.debugCam?.('closeup')` },
@@ -153,7 +154,7 @@ async function main() {
   // `--review` is the set the art critic judges. It has to be captured in one pass from
   // one build: round 2 was handed three shots from one build and one from the next, and
   // the reviewer nearly filed an already-fixed bug as a regression off the stale frame.
-  const REVIEW_SET = ['hero', 'wide', 'torii', 'valley'];
+  const REVIEW_SET = ['hero', 'wide', 'torii', 'valley', 'sun'];
   const wantShots = argv.review
     ? REVIEW_SET
     : argv.shots ? String(argv.shots).split(',') : Object.keys(SHOTS);

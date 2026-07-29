@@ -51,6 +51,23 @@ export const SHOTS = {
    */
   valley: { pos: [33.0, 5.5, 33.0], target: [175.0, -52.0, 175.0], fov: 54 },
 
+  /**
+   * Straight into the sun through the great torii — the disc and god-ray test.
+   *
+   * This shot exists because the other five do not contain the sun at all: measured
+   * from the running pipeline, `hero` sits 93° off it (behind the camera plane),
+   * `torii` 119.8°, `wide` 122.8°, and `valley` puts it 61 px above the top edge. A
+   * reviewer correctly reported "no sun disc anywhere" and it was a framing fault,
+   * not a renderer one — recomposing `valley` to look down at the cloud sea pushed
+   * the sun out of the last shot that had it.
+   *
+   * The sun is ESE at 13° elevation, direction (0.86, 0.225, 0.457). Standing 12 m
+   * short of the great torii on that bearing puts the ray through the gate opening
+   * at 4.5 m — under the 5.6 m kasagi — so the uprights and the shimenawa are between
+   * the lens and the disc, which is what god rays need to be legible.
+   */
+  sun: { pos: [-10.3, 1.8, 33.0], target: [41.3, 15.3, 60.4], fov: 52 },
+
   /** Over-the-shoulder gameplay framing, anchored on the gravel arena at z = 26. */
   combat: { pos: [4.4, 2.9, 8.0], target: [-1.4, 1.55, -3.2], fov: 55, follow: true },
 
