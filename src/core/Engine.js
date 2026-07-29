@@ -238,6 +238,42 @@ export class Engine {
     this._adapt(performance.now() - t0);
   }
 
+  /**
+   * One-shot audit for silently dead shader programs.
+   *
+   * A material whose vertex shader references a varying *before* three declares it —
+   * easy to do when injecting at `#include <common>` — fails to link on some drivers
+   * without raising anything three checks for. The mesh is still submitted, the
+   * instances are still correct, no exception is thrown, and nothing rasterises. That
+   * shipped here: 11,390 bamboo cards drew zero pixels across three art reviews before
+   * anyone thought to interrogate the program rather than the geometry.
+   *
+   * A linked program with no active uniforms cannot be doing useful work, so that is
+   * the tell. Runs once, only under `?capture` or `?debug`, and costs nothing at
+   * runtime.
+   */
+  auditPrograms() {
+    if (this._auditedPrograms) return [];
+    this._auditedPrograms = true;
+    const gl = this.renderer.getContext();
+    const dead = [];
+    for (const p of this.renderer.info.programs || []) {
+      const prog = p.program;
+      if (!prog) continue;
+      const linked = gl.getProgramParameter(prog, gl.LINK_STATUS);
+      const uniforms = gl.getProgramParameter(prog, gl.ACTIVE_UNIFORMS);
+      if (!linked || uniforms === 0) {
+        dead.push({ name: p.name || '(unnamed)', linked: !!linked, uniforms });
+        console.error(
+          `[engine] shader program "${p.name || '(unnamed)'}" is dead — ` +
+          `linked=${!!linked} activeUniforms=${uniforms}. Anything using this material ` +
+          'is being submitted and drawing nothing.',
+        );
+      }
+    }
+    return dead;
+  }
+
   dispose() {
     this.stop();
     window.removeEventListener('resize', this._onResize);

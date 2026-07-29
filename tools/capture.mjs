@@ -251,6 +251,19 @@ async function main() {
       shots.FAILED = file;
     }
 
+    // Catch materials that linked dead before judging what is in the frame — a bamboo
+    // sea that never rasterised looked exactly like a density problem for three rounds.
+    const deadPrograms = await page.evaluate(() => {
+      const k = window.__kagerou;
+      return k?.engine?.auditPrograms?.() ?? [];
+    }).catch(() => []);
+    if (deadPrograms.length) {
+      for (const d of deadPrograms) {
+        logs.unshift(`DEAD SHADER: ${d.name} linked=${d.linked} activeUniforms=${d.uniforms}`);
+      }
+      console.log(`[${pname}] ${deadPrograms.length} dead shader program(s) — see report`);
+    }
+
     const stats = await page.evaluate(() => {
       const k = window.__kagerou;
       if (!k?.engine) return null;
