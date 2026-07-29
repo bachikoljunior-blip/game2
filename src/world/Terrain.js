@@ -1471,8 +1471,13 @@ ${this._heightGLSL()}
     // on the massif came from. `dirt` is the right surface anyway — clods, half-
     // buried pebbles and grit, no joints and no cracks — and the library bakes it
     // wrapped, which our own soil grain (kept last) is not.
-    const detailN = prepTiling(dirt.normalMap || moss.normalMap || stone.normalMap, aniso) ||
-      this.detailNormalTex;
+    // `lib.detailNormal` is the map the library bakes for exactly this job: wrapped,
+    // high-frequency grain with no macro structure in it. Everything else here is a
+    // *surface* map authored at 1.67 m per tile — `stone`'s carries slab joints and a
+    // crack net, and stamping that across the ground at detail strength is what put
+    // metre-scale joints on the terrain and fed the striation its ceiling.
+    const detailN = prepTiling(lib?.detailNormal || dirt.normalMap || moss.normalMap ||
+      stone.normalMap, aniso) || this.detailNormalTex;
 
     // Triplanar rock costs one extra fetch; it is what stops cliffs from smearing.
     const triplanar = q.tier >= 2;
@@ -1615,6 +1620,28 @@ varying vec3 vKgNormal;
 varying float vKgCore;
 ${this._heightGLSL()}
 ${glslNoise}
+
+/**
+ * The landform field: the macro heightfield alone, per pixel, filtered the same way
+ * in every height encoding.
+ *
+ * Everything that draws a *line* across the far mountain — the tree line, the scree
+ * band, the snow line — must key on this and never on `vKgWorld.y` or on the
+ * interpolated vertex normal. Those two are per-vertex quantities: on the outermost
+ * clipmap ring a quad is 45 m, so a threshold against them is straight inside a
+ * triangle and kinks at its edges, which is exactly the "flat-fill polygons with step
+ * edges" the review measured — straight sides, sharp corners, dead-flat interiors.
+ *
+ * `kgHeightFast` is not a substitute: on the 8-bit encoded path it is a single
+ * NEAREST tap, so it returns the 16 m data grid as a staircase and the same mask
+ * comes back blocky instead of triangular. `kgTexH` is the hand-rolled bilinear and
+ * is C0 on both paths. The core field is deliberately not blended in — nothing that
+ * uses this is within a kilometre of the core, and skipping it halves the taps.
+ */
+float kgLandH(vec2 w){
+  vec2 muv = (w - uMacroRect.xy) * uMacroRect.z;
+  return kgTexH(tMacro, muv * uMacroUV.x + uMacroUV.y, uMacroUV.z, uMacroUV.w);
+}
 
 vec3 kgAlbedo;
 float kgRough;

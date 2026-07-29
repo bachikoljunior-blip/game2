@@ -751,6 +751,24 @@ function blossomTexture(seed = 0x5a1201) {
   return tex;
 }
 
+/**
+ * Repeats per metre for the courtyard flagstone, and the single number every one
+ * of its map channels is sampled at.
+ *
+ * 0.62 rep/m = one texture tile every 1.61 m. The cobble recipe lays 8 worley
+ * cells across a tile, so a stone is ~20 cm across and a joint a couple of cm —
+ * paving, at the size paving actually is.
+ *
+ * This used to be applied to `map` alone. `normalMap`, `roughnessMap`,
+ * `metalnessMap` and `aoMap` kept the raw geometry UV, and since the forecourt
+ * slab is one `BoxGeometry` whose top face is UV 0..1 across 28 x 22 m, the same
+ * 8 cells came out as 3.55 x 2.80 m "stones" with 30 cm "joints" in the relief
+ * and the packed ORM — a 16x/12x magnification sitting on top of correct 20 cm
+ * albedo. Two unrelated patterns on one surface. Every channel now goes through
+ * `kagGroundTex`, so there is exactly one scale on the ground.
+ */
+const GROUND_UV_SCALE = 0.62;
+
 /** Colour/roughness/metalness for every material name in the library contract. */
 const FALLBACK = {
   cedar: [0x5a4436, 0.86, 0.0],
@@ -1282,39 +1300,56 @@ export class PropFactory {
       shader.fragmentShader = shader.fragmentShader
         .replace('#include <common>', '#include <common>\nvarying vec3 vKagGroundW;\n' + glslNoise + /* glsl */`
           vec2 kagRot(vec2 p, vec2 sc){ return vec2(p.x * sc.y - p.y * sc.x, p.x * sc.x + p.y * sc.y); }
+          vec2 kagUvA; vec2 kagUvB; float kagBlend; float kagWear; float kagGn;
+          // Every channel goes through this one function, so albedo, normal and
+          // the packed ORM cannot disagree about where they are on the ground.
+          vec4 kagGroundTex(sampler2D t){
+            return mix(texture2D(t, kagUvA), texture2D(t, kagUvB), kagBlend);
+          }
         `)
-        .replace('#include <map_fragment>', /* glsl */`
-        #ifdef USE_MAP
+        // Establish the world-space frame once, at the top of main.
+        .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>' + /* glsl */`
           {
             vec2 P = vKagGroundW.xz;
-            // (1) domain warp: long wavelength decorrelates, short bends the seam
             vec2 wLo = vec2(fbm2(P * 0.0730 + 12.7, 2), fbm2(P * 0.0730 - 5.1, 2));
             vec2 wHi = vec2(fbm2(P * 0.3300 + 41.3, 1), fbm2(P * 0.3300 - 9.6, 1));
             vec2 q = P + wLo * 1.25 + wHi * 0.28;
-            // (2) irrational rotation — 0.3746/0.9272 is Terrain's gravel angle
-            vec2 uvA = kagRot(q, vec2(0.3746, 0.9272)) * 0.62;
-            // (3) second lookup at 0.617x under a low-frequency mask
-            vec2 uvB = kagRot(q + vec2(37.13, -18.77), vec2(0.7071, 0.7071)) * (0.62 * 0.617);
-            float gn = fbm2(P * 0.058 + 27.5, 2);
-            vec4 texA = texture2D(map, uvA);
-            vec4 texB = texture2D(map, uvB);
-            vec4 sampledDiffuseColor = mix(texA, texB, smoothstep(-0.24, 0.24, gn));
-            #ifdef DECODE_VIDEO_TEXTURE
-              sampledDiffuseColor = sRGBTransferEOTF(sampledDiffuseColor);
-            #endif
-            diffuseColor *= sampledDiffuseColor;
-
-            // Terrain's weathering mask: grime in the hollows, scrubbed out of the
-            // traffic band down the middle of the sandō.
-            float wear = 1.0 - smoothstep(1.6, 4.4, abs(P.x));
-            float weather = clamp((gn * 0.5 + 0.5) * 0.8 - wear * 0.75, 0.0, 1.0);
-            diffuseColor.rgb *= mix(1.0, 0.76, weather * 0.65);
-            diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.16, 1.12, 1.06), wear * 0.75);
+            kagUvA = kagRot(q, vec2(0.3746, 0.9272)) * ${GROUND_UV_SCALE.toFixed(4)};
+            kagUvB = kagRot(q + vec2(37.13, -18.77), vec2(0.7071, 0.7071)) * ${(GROUND_UV_SCALE * 0.617).toFixed(4)};
+            kagGn = fbm2(P * 0.058 + 27.5, 2);
+            kagBlend = smoothstep(-0.24, 0.24, kagGn);
+            kagWear = 1.0 - smoothstep(1.6, 4.4, abs(P.x));
           }
-        #endif
         `);
+
+      // Swap the sampler call in each stock chunk, leaving three's own logic —
+      // defines, tangent frame, clearcoat/sheen branches — exactly as authored.
+      const swap = (chunk, tex, uv) => {
+        const src = ShaderChunk[chunk];
+        if (!src) return;
+        const rx = new RegExp('texture2D\\(\\s*' + tex + '\\s*,\\s*' + uv + '\\s*\\)', 'g');
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <' + chunk + '>', src.replace(rx, 'kagGroundTex( ' + tex + ' )'));
+      };
+      swap('map_fragment', 'map', 'vMapUv');
+      swap('normal_fragment_maps', 'normalMap', 'vNormalMapUv');
+      swap('roughnessmap_fragment', 'roughnessMap', 'vRoughnessMapUv');
+      swap('metalnessmap_fragment', 'metalnessMap', 'vMetalnessMapUv');
+      swap('aomap_fragment', 'aoMap', 'vAoMapUv');
+
+      // Terrain's weathering mask, applied after the albedo lookup: grime in the
+      // hollows, scrubbed out of the traffic band down the middle of the sandō.
+      shader.fragmentShader = shader.fragmentShader.replace(
+        'diffuseColor *= sampledDiffuseColor;', /* glsl */`
+        diffuseColor *= sampledDiffuseColor;
+        {
+          float weather = clamp((kagGn * 0.5 + 0.5) * 0.8 - kagWear * 0.75, 0.0, 1.0);
+          diffuseColor.rgb *= mix(1.0, 0.76, weather * 0.65);
+          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.16, 1.12, 1.06), kagWear * 0.75);
+        }
+      `);
     };
-    m.customProgramCacheKey = () => 'kagGround1';
+    m.customProgramCacheKey = () => 'kagGround2';
     this.ctx?.sky?.applyFog?.(m);
     this._ground = m;
     this.disposables.push(m);
