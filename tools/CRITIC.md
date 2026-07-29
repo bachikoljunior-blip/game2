@@ -110,3 +110,26 @@ measure. You have no authority over code you have not read and cannot run.
 
 A finding that is right about the symptom and silent about the cause is worth more than one
 that is right about both, because the second kind teaches everyone to trust the guesses too.
+
+---
+
+## Output protocol (binding, added after round 3)
+
+**Write your JSON to `shots/review-r<N>.json` with the Write tool. Do not also return it
+in your reply.** Reply with only: the verdict, the score, the count of blockers/majors,
+and a one-line note per finding — `owner: short symptom`. Nothing else.
+
+The full findings carry the measurements that make them actionable, and those belong on
+disk where the owning agent reads its own section directly. Returning them through the
+coordinator means the same text is paid for three times: once in your reply, once when it
+is quoted into a dispatch, once when the owner reads the quote. On disk it is paid for
+once, by the one agent that needs it.
+
+Dispatches now say: *"read `shots/review-r<N>.json`, act on every finding whose `owner`
+is your file."* So your `owner` field must name **exactly one file path** that exists, and
+your `problem` and `fix` fields must be complete enough to act on without any surrounding
+context — assume the owner sees nothing but your JSON entry and their own source.
+
+Keep `hypothesis` separate and keep labelling it. That rule earned its place: across three
+rounds your symptom calls have been reliable and your mechanism guesses have not, and the
+labelling is what lets an owner disprove one in minutes instead of rebuilding around it.

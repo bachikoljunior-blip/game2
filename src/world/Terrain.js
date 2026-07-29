@@ -2759,7 +2759,8 @@ void kgRank(float row, float u0, float tang, float par, float soft, float haze,
             float sunT, float h, inout vec3 col, inout float alpha){
   // Parallax: shift the sampling angle by the camera's tangential offset, scaled
   // by how far away this rank is meant to be.
-  vec4 r = kgRidge(u0 + tang * par, row);
+  float uu = u0 + tang * par;
+  vec4 r = kgRidge(uu, row);
   float top = uBase + r.x;
   float m = smoothstep(top + soft, top - soft, h);
   if (m <= 0.0) return;
@@ -2770,9 +2771,29 @@ void kgRank(float row, float u0, float tang, float par, float soft, float haze,
   rock *= 0.90 + 0.20 * r.z;              // per-massif identity
   rock *= 0.84 + 0.30 * r.y;              // crests catch more than cols
 
-  // Mist pools below every crest — aerial perspective inside a single rank.
+  // Gullies and ribs down the face: narrow in angle, very slow in height, so it
+  // reads as drainage rather than as noise. One cycle is ~60 px on screen and its
+  // finest octave ~30 px, so it cannot fizz. This is the only thing carrying
+  // surface on a rank once the haze has taken the rest of the contrast, and
+  // without it every face here is a flat tint, which §5.9 forbids by name.
+  float gul = fbm2(vec2(uu * 200.0, h * 0.0030), 2) * 0.5 + 0.5;
+  rock *= 0.82 + 0.36 * gul;
+
+  // Snow, on the same accumulation rule the terrain uses: it collects near the
+  // crests and sheds off the steep stretches. Applied to the rock *before* the haze
+  // mix, so aerial perspective still decides how much survives at this depth — on
+  // the furthest rank it should be a suggestion, not a highlight.
+  float band = smoothstep(360.0, 40.0, top - h);
+  float shed = smoothstep(0.85, 0.32, abs(r.w) * 0.045);
+  float sn = clamp(band * shed * (0.45 + 0.55 * gul), 0.0, 1.0);
+  rock = mix(rock, vec3(0.62, 0.69, 0.84), sn * 0.72);
+
+  // Mist pools below every crest — aerial perspective inside a single rank. Bounded
+  // well short of 1: at 0.72 the furthest rank reached 93% sky tint and every face
+  // below its own crest became the flat pale fill the review measured across a third
+  // of the frame — which was never snow, and never the terrain either.
   float pool = smoothstep(top - 20.0, top - 430.0, h);
-  vec3 lay = mix(rock, uSkyTint * 1.06, clamp(haze + (1.0 - haze) * pool * 0.72, 0.0, 1.0));
+  vec3 lay = mix(rock, uSkyTint * 1.06, clamp(haze + (1.0 - haze) * pool * 0.45, 0.0, 0.90));
   col = mix(col, lay, m);
   alpha = max(alpha, m);
 }
