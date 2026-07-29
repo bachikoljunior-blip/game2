@@ -1,0 +1,22 @@
+{
+  "name": "kagerou",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "KAGEROU - a mobile-first AAA samurai action game built with Three.js",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 5173",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 4173",
+    "capture": "node tools/capture.mjs",
+    "shots": "vite build && node tools/capture.mjs"
+  },
+  "dependencies": {
+    "three": "^0.180.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.1",
+    "terser": "^5.44.0",
+    "vite": "^6.3.6"
+  }
+}

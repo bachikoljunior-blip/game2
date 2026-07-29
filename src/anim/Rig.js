@@ -1,0 +1,3631 @@
+/**
+ * Rig.js — the skeleton, the procedurally generated character, and the animation engine.
+ *
+ * There are no imported assets in KAGEROU, which means the character mesh, the costume,
+ * the katana and every frame of animation are generated here, in code, at boot. That
+ * constraint turns out to be liberating: because we own the mesh generator we can bind
+ * skin weights analytically from bone-segment distance, and because we own the animation
+ * system we can use a pose-blend graph with procedural layers instead of baked clips.
+ *
+ * Design notes worth knowing before editing:
+ *
+ * - **Bind rotations are identity.** Every bone's rest orientation is world-aligned and
+ *   the A-pose lives entirely in the bone *offsets*. That is what lets Poses.js author
+ *   readable euler deltas ("+X on the thigh swings the leg forward") instead of the
+ *   unreadable numbers you get from a rig whose bone axes follow the limbs.
+ * - **No AnimationMixer.** Clips are keyframed poses; the sampler slerps them and four
+ *   layers compose the result. Locomotion is a 2D blend space driven by *distance
+ *   travelled*, which is the only real cure for foot skate.
+ * - **Zero per-frame allocation.** Everything transient comes from the scratch pools at
+ *   the top of the file. If you add a `new Vector3()` inside `update()`, you have
+ *   regressed the frame budget on mobile.
+ *
+ * See ARCHITECTURE §4 for units and §7 for the triangle budget this file must respect.
+ */
+
+import {
+  Bone, Skeleton, SkinnedMesh, Mesh, Group, Object3D,
+  BufferGeometry, Float32BufferAttribute, Uint16BufferAttribute,
+  Vector3, Quaternion, Matrix4, Euler, Color, Sphere,
+  MeshStandardMaterial, DoubleSide, FrontSide, DynamicDrawUsage,
+} from 'three';
+import { noise, clamp, lerp, damp } from '../core/Noise.js';
+import { getClip, CLIPS, LOCOMOTION_FORWARD } from './Poses.js';
+
+// ===========================================================================
+// SKELETON DEFINITION
+// ===========================================================================
+
+/**
+ * 26 bones. The four that are not classic humanoid joints — `root`, `topknot`,
+ * `sayaMount`, `backMount` — exist because they are load-bearing: root gives the
+ * controller a clean parent, topknot drives the hair chain, and the two mount bones
+ * are the attachment sockets the entity contract asks for.
+ *
+ * Offsets are for a 1.75 m character (ARCHITECTURE §4): eye at 1.615, top of skull
+ * at 1.752, fingertips at mid-thigh. `opts.height` scales all of it uniformly.
+ */
+const BONE_DEFS = [
+  ['root',      null,        0,       0,       0],
+  ['hips',      'root',      0,       0.960,   0],
+  ['spine1',    'hips',      0,       0.095,   0.005],
+  ['spine2',    'spine1',    0,       0.125,   0.002],
+  ['spine3',    'spine2',    0,       0.140,  -0.002],
+  ['neck',      'spine3',    0,       0.115,  -0.012],
+  ['head',      'neck',      0,       0.095,   0.012],
+  ['topknot',   'head',      0,       0.170,   0.050],
+  ['clavicleR', 'spine3',    0.045,   0.125,   0.005],
+  ['upperArmR', 'clavicleR', 0.135,  -0.015,   0],
+  ['foreArmR',  'upperArmR', 0.0896, -0.2758,  0],
+  ['handR',     'foreArmR',  0.0530, -0.2494,  0],
+  ['clavicleL', 'spine3',   -0.045,   0.125,   0.005],
+  ['upperArmL', 'clavicleL', -0.135, -0.015,   0],
+  ['foreArmL',  'upperArmL', -0.0896, -0.2758, 0],
+  ['handL',     'foreArmL',  -0.0530, -0.2494, 0],
+  ['thighR',    'hips',      0.092,  -0.055,   0],
+  ['shinR',     'thighR',    0,      -0.435,   0.012],
+  ['footR',     'shinR',     0,      -0.385,  -0.012],
+  ['toeR',      'footR',     0,      -0.055,  -0.130],
+  ['thighL',    'hips',     -0.092,  -0.055,   0],
+  ['shinL',     'thighL',    0,      -0.435,   0.012],
+  ['footL',     'shinL',     0,      -0.385,  -0.012],
+  ['toeL',      'footL',     0,      -0.055,  -0.130],
+  ['sayaMount', 'hips',     -0.118,   0.020,   0.055],
+  ['backMount', 'spine3',    0,       0.060,   0.090],
+];
+
+export const BONE_NAMES = Object.freeze(BONE_DEFS.map((d) => d[0]));
+export const BONE_COUNT = BONE_DEFS.length;
+const NB = BONE_COUNT;
+
+const BONE_INDEX = Object.create(null);
+for (let i = 0; i < BONE_DEFS.length; i++) BONE_INDEX[BONE_DEFS[i][0]] = i;
+
+const BONE_PARENT = new Int8Array(NB);
+for (let i = 0; i < NB; i++) {
+  const p = BONE_DEFS[i][1];
+  BONE_PARENT[i] = p === null ? -1 : BONE_INDEX[p];
+}
+
+/** Precomputed subtree membership — masks are specified as subtree roots. */
+const SUBTREE = Object.create(null);
+for (let i = 0; i < NB; i++) {
+  const m = new Uint8Array(NB);
+  for (let j = 0; j < NB; j++) {
+    let k = j;
+    while (k >= 0) { if (k === i) { m[j] = 1; break; } k = BONE_PARENT[k]; }
+  }
+  SUBTREE[BONE_NAMES[i]] = m;
+}
+
+/** Leaf bones need a synthetic tip so skin binding has a segment, not a point. */
+const BONE_TIP = {
+  handR: [0.062, -0.098, 0], handL: [-0.062, -0.098, 0],
+  toeR: [0, -0.010, -0.062], toeL: [0, -0.010, -0.062],
+  head: [0, 0.190, 0.010], topknot: [0, 0.050, 0.075],
+  sayaMount: [0, 0, 0.10], backMount: [0, 0.05, 0], root: [0, 0.10, 0],
+};
+
+/** Bones that never receive skin weights — sockets and the controller parent. */
+const NON_SKIN = new Set(['root', 'sayaMount', 'backMount']);
+
+// ===========================================================================
+// SCRATCH POOLS — every transient in update() comes from here
+// ===========================================================================
+
+const _v = []; for (let i = 0; i < 20; i++) _v.push(new Vector3());
+const _q = []; for (let i = 0; i < 14; i++) _q.push(new Quaternion());
+const _m = []; for (let i = 0; i < 6; i++) _m.push(new Matrix4());
+const _e = new Euler();
+const _col = new Color();
+const _IDENTITY = new Matrix4();
+const _UP = new Vector3(0, 1, 0);
+const _FWD = new Vector3(0, 0, -1);
+
+// ===========================================================================
+// EASING
+// ===========================================================================
+
+const EASE_FN = {
+  linear: (x) => x,
+  smooth: (x) => x * x * (3 - 2 * x),
+  smoother: (x) => x * x * x * (x * (x * 6 - 15) + 10),
+  in: (x) => x * x * x,
+  out: (x) => 1 - Math.pow(1 - x, 3),
+  inOut: (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2),
+  // Anticipation overshoot — used on guard raises so the block "sets".
+  back: (x) => 1 + 2.2 * Math.pow(x - 1, 3) + 1.2 * Math.pow(x - 1, 2),
+  // Three-frame strike: almost all of the motion in the first sixth of the interval.
+  snap: (x) => 1 - Math.pow(1 - x, 6),
+  hold: () => 0,
+  elastic: (x) => (x <= 0 ? 0 : x >= 1 ? 1
+    : Math.pow(2, -9 * x) * Math.sin((x * 10 - 0.75) * 2.0944) + 1),
+};
+
+// ===========================================================================
+// FLAT-ARRAY QUATERNION MATH (poses live in Float32Arrays, not objects)
+// ===========================================================================
+
+function qFromEuler(out, o, x, y, z) {
+  const c1 = Math.cos(x * 0.5), c2 = Math.cos(y * 0.5), c3 = Math.cos(z * 0.5);
+  const s1 = Math.sin(x * 0.5), s2 = Math.sin(y * 0.5), s3 = Math.sin(z * 0.5);
+  out[o] = s1 * c2 * c3 + c1 * s2 * s3;
+  out[o + 1] = c1 * s2 * c3 - s1 * c2 * s3;
+  out[o + 2] = c1 * c2 * s3 + s1 * s2 * c3;
+  out[o + 3] = c1 * c2 * c3 - s1 * s2 * s3;
+}
+
+function qSlerp(a, ao, b, bo, t, out, oo) {
+  let ax = a[ao], ay = a[ao + 1], az = a[ao + 2], aw = a[ao + 3];
+  const bx = b[bo], by = b[bo + 1], bz = b[bo + 2], bw = b[bo + 3];
+  if (t <= 0) { out[oo] = ax; out[oo + 1] = ay; out[oo + 2] = az; out[oo + 3] = aw; return; }
+  if (t >= 1) { out[oo] = bx; out[oo + 1] = by; out[oo + 2] = bz; out[oo + 3] = bw; return; }
+  let cos = ax * bx + ay * by + az * bz + aw * bw;
+  let sx = bx, sy = by, sz = bz, sw = bw;
+  if (cos < 0) { cos = -cos; sx = -sx; sy = -sy; sz = -sz; sw = -sw; }
+  let s0, s1;
+  if (cos > 0.9995) { s0 = 1 - t; s1 = t; }
+  else {
+    const theta = Math.acos(cos), sin = Math.sqrt(1 - cos * cos);
+    s0 = Math.sin((1 - t) * theta) / sin;
+    s1 = Math.sin(t * theta) / sin;
+  }
+  ax = s0 * ax + s1 * sx; ay = s0 * ay + s1 * sy;
+  az = s0 * az + s1 * sz; aw = s0 * aw + s1 * sw;
+  const inv = 1 / Math.hypot(ax, ay, az, aw);
+  out[oo] = ax * inv; out[oo + 1] = ay * inv; out[oo + 2] = az * inv; out[oo + 3] = aw * inv;
+}
+
+function qMul(a, ao, b, bo, out, oo) {
+  const ax = a[ao], ay = a[ao + 1], az = a[ao + 2], aw = a[ao + 3];
+  const bx = b[bo], by = b[bo + 1], bz = b[bo + 2], bw = b[bo + 3];
+  out[oo] = aw * bx + ax * bw + ay * bz - az * by;
+  out[oo + 1] = aw * by - ax * bz + ay * bw + az * bx;
+  out[oo + 2] = aw * bz + ax * by - ay * bx + az * bw;
+  out[oo + 3] = aw * bw - ax * bx - ay * by - az * bz;
+}
+
+/** Blend a delta rotation in by `w`, expressed as slerp-from-identity then multiply. */
+const _addTmp = new Float32Array(4);
+function qAddDelta(target, to, dq, dqo, w) {
+  if (w <= 0.0005) return;
+  _addTmp[0] = 0; _addTmp[1] = 0; _addTmp[2] = 0; _addTmp[3] = 1;
+  qSlerp(_addTmp, 0, dq, dqo, w, _addTmp, 0);
+  qMul(target, to, _addTmp, 0, target, to);
+}
+
+/** In-place additive euler delta — the workhorse of the procedural layers. */
+const _eulTmp = new Float32Array(4);
+function qAddEuler(target, to, x, y, z, w) {
+  if (w <= 0) return;
+  qFromEuler(_eulTmp, 0, x * w, y * w, z * w);
+  qMul(target, to, _eulTmp, 0, target, to);
+}
+
+// ===========================================================================
+// CLIP COMPILATION — shared across every Rig instance
+// ===========================================================================
+
+const _compiled = new Map();
+
+function compileClip(clipDef) {
+  const cached = _compiled.get(clipDef.name);
+  if (cached) return cached;
+
+  // Union of every bone any key touches; missing bones fall back to rest (identity),
+  // which makes the sampler a straight loop with no per-key branching.
+  const used = [];
+  const seen = new Uint8Array(NB);
+  for (const k of clipDef.keys) {
+    for (const b in k.pose) {
+      const i = BONE_INDEX[b];
+      if (i === undefined || seen[i]) continue;
+      seen[i] = 1; used.push(i);
+    }
+  }
+  used.sort((a, b) => a - b);
+  const n = used.length;
+
+  const keys = clipDef.keys.map((k) => {
+    const q = new Float32Array(n * 4);
+    const p = new Float32Array(n * 3);
+    let anyPos = 0;
+    for (let j = 0; j < n; j++) {
+      const entry = k.pose[BONE_NAMES[used[j]]];
+      if (entry) {
+        const r = entry.rot;
+        qFromEuler(q, j * 4, r[0], r[1], r[2]);
+        if (entry.pos) {
+          p[j * 3] = entry.pos[0]; p[j * 3 + 1] = entry.pos[1]; p[j * 3 + 2] = entry.pos[2];
+          anyPos = 1;
+        }
+      } else {
+        q[j * 4 + 3] = 1;
+      }
+    }
+    return { t: k.t, q, p, anyPos, ease: EASE_FN[k.ease] || EASE_FN.smoother };
+  });
+
+  const out = {
+    name: clipDef.name,
+    duration: clipDef.duration,
+    loop: clipDef.loop,
+    layer: clipDef.layer,
+    mask: clipDef.mask,
+    fade: clipDef.fade,
+    hold: clipDef.hold,
+    speed: clipDef.speed,
+    stride: clipDef.stride,
+    travel: clipDef.travel,
+    events: clipDef.events,
+    bones: Int8Array.from(used),
+    keys,
+    def: (() => { const d = new Float32Array(NB); for (const b of used) d[b] = 1; return d; })(),
+  };
+  _compiled.set(clipDef.name, out);
+  return out;
+}
+
+/** Sample a compiled clip at time `t` into full-width buffers. */
+function sampleClip(c, t, outQ, outP, outDef) {
+  const keys = c.keys, nk = keys.length;
+  let i = 0;
+  // Linear scan: clips top out at 13 keys, so a binary search costs more than it saves.
+  while (i < nk - 2 && keys[i + 1].t <= t) i++;
+  const k0 = keys[i], k1 = keys[i + 1] || keys[i];
+  const span = k1.t - k0.t;
+  const u = span > 1e-6 ? k0.ease(clamp((t - k0.t) / span, 0, 1)) : 0;
+
+  const bones = c.bones, n = bones.length;
+  outDef.set(c.def);
+  for (let j = 0; j < n; j++) {
+    const b = bones[j];
+    qSlerp(k0.q, j * 4, k1.q, j * 4, u, outQ, b * 4);
+    const o3 = b * 3, j3 = j * 3;
+    if (k0.anyPos || k1.anyPos) {
+      outP[o3] = k0.p[j3] + (k1.p[j3] - k0.p[j3]) * u;
+      outP[o3 + 1] = k0.p[j3 + 1] + (k1.p[j3 + 1] - k0.p[j3 + 1]) * u;
+      outP[o3 + 2] = k0.p[j3 + 2] + (k1.p[j3 + 2] - k0.p[j3 + 2]) * u;
+    } else {
+      outP[o3] = 0; outP[o3 + 1] = 0; outP[o3 + 2] = 0;
+    }
+  }
+}
+
+// ===========================================================================
+// MASKS
+// ===========================================================================
+
+const _maskCache = new Map();
+
+/**
+ * Graded masks, not binary ones. `upper` fades in across the pelvis and lumbar spine
+ * so an attack played over a run does not produce a visible seam at the waist.
+ */
+function buildMask(spec) {
+  if (spec instanceof Float32Array) return spec;
+  const key = typeof spec === 'string' ? spec : JSON.stringify(spec);
+  const hit = _maskCache.get(key);
+  if (hit) return hit;
+
+  const m = new Float32Array(NB);
+  const set = (name, w) => { const i = BONE_INDEX[name]; if (i !== undefined) m[i] = w; };
+  const setSub = (name, w) => {
+    const s = SUBTREE[name];
+    if (!s) return;
+    for (let i = 0; i < NB; i++) if (s[i]) m[i] = w;
+  };
+
+  if (typeof spec === 'string') {
+    switch (spec) {
+      case 'full': m.fill(1); break;
+      case 'upper':
+        setSub('spine1', 1); set('spine1', 0.55); set('spine2', 0.85);
+        set('hips', 0.15); set('backMount', 1);
+        break;
+      case 'lower':
+        setSub('thighL', 1); setSub('thighR', 1); set('hips', 1); set('sayaMount', 1);
+        set('spine1', 0.35); set('spine2', 0.12);
+        break;
+      case 'arms': setSub('clavicleL', 1); setSub('clavicleR', 1); break;
+      case 'armR': setSub('clavicleR', 1); break;
+      case 'armL': setSub('clavicleL', 1); break;
+      case 'head': setSub('neck', 1); set('neck', 0.8); break;
+      case 'spine': set('spine1', 1); set('spine2', 1); set('spine3', 1); break;
+      case 'none': break;
+      default: m.fill(1); break;
+    }
+  } else if (Array.isArray(spec)) {
+    for (const name of spec) setSub(name, 1);
+  } else if (spec && typeof spec === 'object') {
+    if (spec.include) for (const name of spec.include) setSub(name, 1); else m.fill(1);
+    if (spec.exclude) for (const name of spec.exclude) setSub(name, 0);
+    if (spec.weights) for (const name in spec.weights) set(name, spec.weights[name]);
+  } else {
+    m.fill(1);
+  }
+  _maskCache.set(key, m);
+  return m;
+}
+
+// ===========================================================================
+// ANIMATION LAYER
+// ===========================================================================
+
+const LAYER_BASE = 0, LAYER_UPPER = 1, LAYER_ACTION = 2, LAYER_ADD = 3;
+const LAYER_NAMES = ['base', 'upper', 'action', 'additive'];
+
+class Layer {
+  constructor(index, name, additive, defaultMask) {
+    this.index = index;
+    this.name = name;
+    this.additive = additive;
+    this.mask = buildMask(defaultMask);
+    this.weight = 0;
+    this.targetWeight = 0;
+    this.fadeRate = 8;
+
+    this.clip = null;
+    this.time = 0;
+    this.speed = 1;
+    this.loop = false;
+    this.finished = false;
+    this.onEnd = null;
+
+    // Cross-fade: the outgoing clip keeps playing under the incoming one.
+    this.prev = null;
+    this.prevTime = 0;
+    this.prevSpeed = 1;
+    this.blend = 1;
+    this.blendRate = 0;
+
+    this.q = new Float32Array(NB * 4);
+    this.p = new Float32Array(NB * 3);
+    this.def = new Float32Array(NB);
+    this.qb = new Float32Array(NB * 4);
+    this.pb = new Float32Array(NB * 3);
+    this.defb = new Float32Array(NB);
+
+  }
+}
+
+// ===========================================================================
+// PROCEDURAL MESH GENERATION
+// ===========================================================================
+
+/** UV metres→tile scale. One texture repeat covers 0.5 m, which reads right for cloth. */
+const UV_PER_METRE = 2.0;
+
+const WHITE_TINT = Object.freeze([1, 1, 1]);
+const _tintTmp = [1, 1, 1];
+
+/**
+ * sRGB hex → linear RGB triple, reusing one array. Vertex colours multiply the
+ * diffuse term in linear space, so an sRGB hex written straight into the attribute
+ * comes out roughly 2.2× too bright — a mistake that reads as "washed out" and gets
+ * blamed on the tone mapper.
+ */
+function tint(hex, scale) {
+  _col.setHex(hex);
+  const k = scale === undefined ? 1 : scale;
+  _tintTmp[0] = _col.r * k; _tintTmp[1] = _col.g * k; _tintTmp[2] = _col.b * k;
+  return _tintTmp;
+}
+
+/**
+ * Teach a standard material to read per-vertex roughness/metalness from `aRM`.
+ *
+ * This is the trick that makes the one-draw-call character possible: skin at 0.74
+ * roughness, cloth at 0.92, lacquer at 0.22 and lamellar plate at 0.42/0.35 metal
+ * can all live in a single mesh, because the surface parameters travel with the
+ * vertices instead of with the material. Colour travels the same way, in `color`.
+ */
+function patchPerVertexRM(material) {
+  if (!material || material.userData.rmPatched) return material;
+  material.userData.rmPatched = true;
+  material.vertexColors = true;
+  // Multiplied in, not assigned: with the scalars at 1 the vertex value *is* the
+  // result, but a roughness/metalness map added later still modulates on top.
+  material.roughness = 1;
+  material.metalness = 1;
+  material.onBeforeCompile = (shader) => {
+    shader.vertexShader = 'attribute vec2 aRM;\nvarying vec2 vRM;\n' +
+      shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n\tvRM = aRM;');
+    shader.fragmentShader = 'varying vec2 vRM;\n' + shader.fragmentShader
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n\troughnessFactor *= vRM.x;')
+      .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\n\tmetalnessFactor *= vRM.y;');
+  };
+  material.customProgramCacheKey = () => 'kagerou-rm';
+  return material;
+}
+
+/**
+ * Accumulates one welded BufferGeometry. Skin weights are resolved analytically from
+ * bone-segment distance with a gaussian falloff: on the shaft of a limb one bone wins
+ * outright, and at a joint the two neighbours land at 50/50 and blend smoothly across
+ * roughly a 10 cm band. That is the whole trick — no painted weights required.
+ */
+class Mesher {
+  constructor(segA, segB, falloff) {
+    this.pos = [];
+    this.nor = [];
+    this.uv = [];
+    this.col = [];
+    this.rm = [];
+    this.si = [];
+    this.sw = [];
+    this.idx = [];
+    this.segA = segA;      // Float32Array(NB*3) segment start, root space
+    this.segB = segB;      // Float32Array(NB*3) segment end
+    this.falloff = falloff || 0.055;
+    this._cand = null;
+    this._ao = 1;
+    this._d = new Float32Array(NB);
+    this._tint = [1, 1, 1];
+    this._rough = 0.85;
+    this._metal = 0;
+    this._rigid = -1;
+  }
+
+  /**
+   * Open a part. `opts.tint` (linear RGB), `opts.rough` and `opts.metal` are baked
+   * per-vertex, which is the whole reason the skin, the kimono, the obi and a
+   * lamellar cuirass can end up in ONE SkinnedMesh and therefore one draw call.
+   * `opts.rigid` binds every vertex to a single bone at full weight — geometrically
+   * identical to parenting the part to that bone, but without the extra draw.
+   */
+  begin(candidates, aoBias, opts) {
+    const o = opts || {};
+    this._cand = candidates;
+    this._ao = aoBias === undefined ? 1 : aoBias;
+    this._tint = o.tint || WHITE_TINT;
+    this._rough = o.rough === undefined ? 0.85 : o.rough;
+    this._metal = o.metal === undefined ? 0 : o.metal;
+    this._rigid = o.rigid === undefined ? -1 : o.rigid;
+  }
+
+  /** Append an existing geometry transformed into bind space. Used by the armour. */
+  append(geo, matrix, quat) {
+    const gp = geo.attributes.position.array, gn = geo.attributes.normal.array;
+    const gu = geo.attributes.uv ? geo.attributes.uv.array : null;
+    const n = geo.attributes.position.count;
+    const base = this.vertexCount;
+    const v = _v[6];
+    for (let i = 0; i < n; i++) {
+      v.set(gp[i * 3], gp[i * 3 + 1], gp[i * 3 + 2]).applyMatrix4(matrix);
+      const px = v.x, py = v.y, pz = v.z;
+      v.set(gn[i * 3], gn[i * 3 + 1], gn[i * 3 + 2]).applyQuaternion(quat);
+      this.vertex(px, py, pz, v.x, v.y, v.z,
+        gu ? gu[i * 2] : 0, gu ? gu[i * 2 + 1] : 0);
+    }
+    const gi = geo.index.array;
+    for (let i = 0; i < gi.length; i++) this.idx.push(gi[i] + base);
+  }
+
+  get vertexCount() { return this.pos.length / 3; }
+
+  _skin(x, y, z) {
+    if (this._rigid >= 0) {
+      this.si.push(this._rigid, this._rigid, 0, 0);
+      this.sw.push(1, 0, 0, 0);
+      return 0;
+    }
+    const cand = this._cand, d = this._d;
+    let dmin = Infinity;
+    for (let i = 0; i < cand.length; i++) {
+      const b = cand[i];
+      const dd = pointSegDist(x, y, z, this.segA, this.segB, b);
+      d[i] = dd;
+      if (dd < dmin) dmin = dd;
+    }
+    // Top two by gaussian score. Two influences is deliberate: it keeps deformation
+    // predictable at joints and halves the skinning cost on mobile.
+    let i0 = -1, i1 = -1, w0 = -1, w1 = -1;
+    const f = this.falloff;
+    for (let i = 0; i < cand.length; i++) {
+      const t = (d[i] - dmin) / f;
+      const w = Math.exp(-t * t);
+      if (w > w0) { w1 = w0; i1 = i0; w0 = w; i0 = i; }
+      else if (w > w1) { w1 = w; i1 = i; }
+    }
+    if (i0 < 0) { i0 = 0; w0 = 1; }
+    if (i1 < 0 || w1 < 1e-4) { i1 = i0; w1 = 0; }
+    const inv = 1 / (w0 + w1);
+    w0 *= inv; w1 *= inv;
+    this.si.push(cand[i0], cand[i1], 0, 0);
+    this.sw.push(w0, w1, 0, 0);
+    // A vertex split evenly between two bones is, by construction, at a joint crease.
+    return 4 * w0 * w1;
+  }
+
+  vertex(x, y, z, nx, ny, nz, u, vv) {
+    this.pos.push(x, y, z);
+    this.nor.push(nx, ny, nz);
+    this.uv.push(u, vv);
+    const jointness = this._skin(x, y, z);
+    let ao = this._ao;
+    ao *= 1 - 0.22 * jointness;              // creases at every joint
+    ao *= 1 - 0.16 * Math.max(0, -ny);       // downward faces catch less sky
+    ao *= aoHotspots(x, y, z);
+    const t = this._tint;
+    this.col.push(ao * t[0], ao * t[1], ao * t[2]);
+    this.rm.push(this._rough, this._metal);
+    return this.pos.length / 3 - 1;
+  }
+
+  tri(a, b, c) { this.idx.push(a, b, c); }
+  quad(a, b, c, d) { this.idx.push(a, b, c, a, c, d); }
+
+  toGeometry(name) {
+    const g = new BufferGeometry();
+    g.name = name || 'body';
+    g.setAttribute('position', new Float32BufferAttribute(this.pos, 3));
+    g.setAttribute('normal', new Float32BufferAttribute(this.nor, 3));
+    g.setAttribute('uv', new Float32BufferAttribute(this.uv, 2));
+    g.setAttribute('color', new Float32BufferAttribute(this.col, 3));
+    g.setAttribute('aRM', new Float32BufferAttribute(this.rm, 2));
+    g.setAttribute('skinIndex', new Uint16BufferAttribute(this.si, 4));
+    g.setAttribute('skinWeight', new Float32BufferAttribute(this.sw, 4));
+    g.setIndex(this.idx);
+    g.computeBoundingSphere();
+    // Skinned bounds must survive a jōdan windup and a death sprawl.
+    if (g.boundingSphere) g.boundingSphere.radius *= 2.1;
+    return g;
+  }
+}
+
+function pointSegDist(px, py, pz, A, B, b) {
+  const i = b * 3;
+  const ax = A[i], ay = A[i + 1], az = A[i + 2];
+  const bx = B[i], by = B[i + 1], bz = B[i + 2];
+  const ex = bx - ax, ey = by - ay, ez = bz - az;
+  const len2 = ex * ex + ey * ey + ez * ez;
+  let t = len2 > 1e-9 ? ((px - ax) * ex + (py - ay) * ey + (pz - az) * ez) / len2 : 0;
+  t = t < 0 ? 0 : t > 1 ? 1 : t;
+  const dx = px - (ax + ex * t), dy = py - (ay + ey * t), dz = pz - (az + ez * t);
+  return Math.sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+/**
+ * Hand-placed ambient occlusion. Baked vertex AO in crevices is an explicit
+ * ARCHITECTURE §5 requirement and it is what stops a procedural body reading as a
+ * balloon animal: armpits, the crotch, under the jaw and the backs of the knees.
+ */
+let AO_SPOTS = [];
+function aoHotspots(x, y, z) {
+  let ao = 1;
+  for (let i = 0; i < AO_SPOTS.length; i++) {
+    const s = AO_SPOTS[i];
+    const dx = x - s[0], dy = y - s[1], dz = z - s[2];
+    const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    if (d >= s[3]) continue;
+    const t = 1 - d / s[3];
+    ao *= 1 - s[4] * t * t;
+  }
+  return ao;
+}
+
+/** Catmull-Rom resample of a control-station list into `n` evenly spaced stations. */
+function resampleStations(ctrl, n, out) {
+  const m = ctrl.length;
+  for (let i = 0; i < n; i++) {
+    const s = (i / (n - 1)) * (m - 1);
+    const i1 = Math.min(m - 1, Math.floor(s));
+    const t = s - i1;
+    const i0 = Math.max(0, i1 - 1), i2 = Math.min(m - 1, i1 + 1), i3 = Math.min(m - 1, i1 + 2);
+    const o = out[i] || (out[i] = new Float64Array(6));
+    for (let c = 0; c < 5; c++) {
+      const p0 = ctrl[i0][c], p1 = ctrl[i1][c], p2 = ctrl[i2][c], p3 = ctrl[i3][c];
+      o[c] = 0.5 * ((2 * p1) + (-p0 + p2) * t
+        + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t
+        + (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t);
+    }
+    o[5] = i / (n - 1);
+  }
+  return out;
+}
+
+/**
+ * Loft an elliptical tube through a station list. Stations are
+ * `[x, y, z, radiusN, radiusB]`; the cross-section frame is parallel-transported so a
+ * bent limb does not twist. Normals are analytic (ellipse gradient plus the taper
+ * term) rather than accumulated, which keeps the UV seam smooth instead of faceted.
+ */
+function loftTube(mesher, ctrl, nStations, nSeg, opts) {
+  const o = opts || {};
+  const st = resampleStations(ctrl, nStations, []);
+  const capStart = o.capStart !== false;
+  const capEnd = o.capEnd !== false;
+  const uOff = o.uOffset || 0;
+
+  // Parallel-transported frames.
+  const T = new Float64Array(nStations * 3);
+  const N = new Float64Array(nStations * 3);
+  const Bn = new Float64Array(nStations * 3);
+  for (let i = 0; i < nStations; i++) {
+    const a = st[Math.max(0, i - 1)], b = st[Math.min(nStations - 1, i + 1)];
+    let tx = b[0] - a[0], ty = b[1] - a[1], tz = b[2] - a[2];
+    const l = Math.hypot(tx, ty, tz) || 1;
+    tx /= l; ty /= l; tz /= l;
+    T[i * 3] = tx; T[i * 3 + 1] = ty; T[i * 3 + 2] = tz;
+  }
+  {
+    // Seed the frame with whichever world axis is least parallel to the first tangent.
+    let rx = 1, ry = 0, rz = 0;
+    if (Math.abs(T[0]) > 0.85) { rx = 0; ry = 0; rz = 1; }
+    let nx = ry * T[2] - rz * T[1], ny = rz * T[0] - rx * T[2], nz = rx * T[1] - ry * T[0];
+    let l = Math.hypot(nx, ny, nz) || 1; nx /= l; ny /= l; nz /= l;
+    N[0] = nx; N[1] = ny; N[2] = nz;
+    Bn[0] = T[1] * nz - T[2] * ny; Bn[1] = T[2] * nx - T[0] * nz; Bn[2] = T[0] * ny - T[1] * nx;
+    for (let i = 1; i < nStations; i++) {
+      const i3 = i * 3, p3 = i3 - 3;
+      // Project the previous normal onto the new station's plane.
+      const d = N[p3] * T[i3] + N[p3 + 1] * T[i3 + 1] + N[p3 + 2] * T[i3 + 2];
+      nx = N[p3] - T[i3] * d; ny = N[p3 + 1] - T[i3 + 1] * d; nz = N[p3 + 2] - T[i3 + 2] * d;
+      l = Math.hypot(nx, ny, nz) || 1; nx /= l; ny /= l; nz /= l;
+      N[i3] = nx; N[i3 + 1] = ny; N[i3 + 2] = nz;
+      Bn[i3] = T[i3 + 1] * nz - T[i3 + 2] * ny;
+      Bn[i3 + 1] = T[i3 + 2] * nx - T[i3] * nz;
+      Bn[i3 + 2] = T[i3] * ny - T[i3 + 1] * nx;
+    }
+  }
+
+  // Arc length for V, average circumference for U — both in metres so cloth tiles.
+  const arc = new Float64Array(nStations);
+  for (let i = 1; i < nStations; i++) {
+    arc[i] = arc[i - 1] + Math.hypot(st[i][0] - st[i - 1][0], st[i][1] - st[i - 1][1], st[i][2] - st[i - 1][2]);
+  }
+
+  const ringStart = mesher.vertexCount;
+  const cols = nSeg + 1;   // duplicated seam column for a clean UV wrap
+  for (let i = 0; i < nStations; i++) {
+    const s = st[i], i3 = i * 3;
+    const r1 = s[3], r2 = s[4];
+    const circ = Math.PI * (1.5 * (r1 + r2) - Math.sqrt(r1 * r2)) * 0.5;
+    // dr/ds gives the tangential tilt of the surface normal on a tapering limb.
+    const ip = Math.max(0, i - 1), inx = Math.min(nStations - 1, i + 1);
+    const ds = Math.max(1e-4, arc[inx] - arc[ip]);
+    const dr1 = (st[inx][3] - st[ip][3]) / ds, dr2 = (st[inx][4] - st[ip][4]) / ds;
+    for (let j = 0; j < cols; j++) {
+      const a = (j / nSeg) * Math.PI * 2;
+      const ca = Math.cos(a), sa = Math.sin(a);
+      const px = s[0] + N[i3] * r1 * ca + Bn[i3] * r2 * sa;
+      const py = s[1] + N[i3 + 1] * r1 * ca + Bn[i3 + 1] * r2 * sa;
+      const pz = s[2] + N[i3 + 2] * r1 * ca + Bn[i3 + 2] * r2 * sa;
+      // Ellipse normal in the ring plane, then lean it back along the taper.
+      let gu = ca / Math.max(1e-4, r1), gv = sa / Math.max(1e-4, r2);
+      const gl = Math.hypot(gu, gv) || 1; gu /= gl; gv /= gl;
+      const taper = -(dr1 * ca * gu + dr2 * sa * gv);
+      let nx = N[i3] * gu + Bn[i3] * gv + T[i3] * taper;
+      let ny = N[i3 + 1] * gu + Bn[i3 + 1] * gv + T[i3 + 1] * taper;
+      let nz = N[i3 + 2] * gu + Bn[i3 + 2] * gv + T[i3 + 2] * taper;
+      const nl = Math.hypot(nx, ny, nz) || 1;
+      mesher.vertex(px, py, pz, nx / nl, ny / nl, nz / nl,
+        (uOff + (j / nSeg) * circ) * UV_PER_METRE, arc[i] * UV_PER_METRE);
+    }
+  }
+  for (let i = 0; i < nStations - 1; i++) {
+    for (let j = 0; j < nSeg; j++) {
+      const a = ringStart + i * cols + j;
+      const b = a + 1, c = a + cols + 1, d = a + cols;
+      mesher.quad(a, b, c, d);
+    }
+  }
+
+  // Caps: a single centre vertex fanned to the end ring. Cheap and never seen.
+  if (capStart) capRing(mesher, st[0], N, Bn, T, 0, nSeg, ringStart, cols, -1);
+  if (capEnd) {
+    const i = nStations - 1;
+    capRing(mesher, st[i], N, Bn, T, i, nSeg, ringStart + i * cols, cols, 1);
+  }
+  return ringStart;
+}
+
+function capRing(mesher, s, N, Bn, T, i, nSeg, base, cols, dir) {
+  const i3 = i * 3;
+  const cx = s[0] + T[i3] * 0.004 * dir;
+  const cy = s[1] + T[i3 + 1] * 0.004 * dir;
+  const cz = s[2] + T[i3 + 2] * 0.004 * dir;
+  const c = mesher.vertex(cx, cy, cz, T[i3] * dir, T[i3 + 1] * dir, T[i3 + 2] * dir, 0, 0);
+  for (let j = 0; j < nSeg; j++) {
+    const a = base + j, b = base + j + 1;
+    if (dir > 0) mesher.tri(a, b, c); else mesher.tri(b, a, c);
+  }
+}
+
+/** Lathed ellipsoid with a profile modulator — used for the skull and the jingasa. */
+function loftSphere(mesher, cx, cy, cz, rx, ry, rz, nLat, nLon, shape) {
+  const start = mesher.vertexCount;
+  const cols = nLon + 1;
+  for (let i = 0; i <= nLat; i++) {
+    const v = i / nLat;
+    const phi = v * Math.PI;
+    const sp = Math.sin(phi), cp = Math.cos(phi);
+    const k = shape ? shape(v) : 1;
+    for (let j = 0; j < cols; j++) {
+      const u = j / nLon;
+      const th = u * Math.PI * 2;
+      const nx = sp * Math.cos(th), ny = -cp, nz = sp * Math.sin(th);
+      const px = cx + nx * rx * k, py = cy + ny * ry, pz = cz + nz * rz * k;
+      let gx = nx / rx, gy = ny / ry, gz = nz / rz;
+      const gl = Math.hypot(gx, gy, gz) || 1;
+      mesher.vertex(px, py, pz, gx / gl, gy / gl, gz / gl,
+        u * Math.PI * 2 * rx * UV_PER_METRE, v * Math.PI * ry * UV_PER_METRE);
+    }
+  }
+  for (let i = 0; i < nLat; i++) {
+    for (let j = 0; j < nLon; j++) {
+      const a = start + i * cols + j;
+      mesher.quad(a, a + 1, a + cols + 1, a + cols);
+    }
+  }
+  return start;
+}
+
+// ===========================================================================
+// BODY / COSTUME GEOMETRY
+// ===========================================================================
+
+/** Ring and station density per tier. Bone count is fixed; only the skin scales. */
+function meshDensity(quality) {
+  const tier = quality ? quality.tier : 1;
+  if (tier <= 0) return { ringL: 6, ringT: 8, lon: 0.70, sphere: [6, 8] };
+  if (tier === 1) return { ringL: 12, ringT: 16, lon: 1.15, sphere: [9, 13] };
+  return { ringL: 16, ringT: 22, lon: 1.55, sphere: [12, 18] };
+}
+
+/**
+ * Bind-pose position of a bone in root space. Reads the cached segment table rather
+ * than `bone.matrixWorld`, so geometry generation is immune to the rig having already
+ * been parented under a transformed node.
+ */
+function bindPos(rig, name, out) {
+  const i = BONE_INDEX[name] * 3;
+  return out.set(rig._segA[i], rig._segA[i + 1], rig._segA[i + 2]);
+}
+
+/**
+ * The skinned body. Torso is one loft from the crotch to the neck with an elliptical
+ * section that widens at the ribcage; the limbs are tapered tubes; hands and feet are
+ * short lofts with flattened sections. Candidate bone lists are scoped per part, which
+ * is what stops the left thigh from claiming vertices on the right thigh at the crotch.
+ */
+function buildBody(rig, mesher, dens, pal) {
+  const S = rig.scale;
+  const SKIN = { tint: tint(pal.skin), rough: 0.74, metal: 0 };
+  const a = _v[0], b = _v[1], c = _v[2];
+  const L = dens.lon;
+  const R = (n) => Math.max(3, Math.round(n * L));
+
+  const hips = bindPos(rig, 'hips', a).clone();
+  const sp1 = bindPos(rig, 'spine1', a).clone();
+  const sp2 = bindPos(rig, 'spine2', a).clone();
+  const sp3 = bindPos(rig, 'spine3', a).clone();
+  const neck = bindPos(rig, 'neck', a).clone();
+  const head = bindPos(rig, 'head', a).clone();
+
+  // ---- torso
+  mesher.begin(rig._candTorso, 1.0, SKIN);
+  loftTube(mesher, [
+    [hips.x, hips.y - 0.105 * S, hips.z + 0.010 * S, 0.108 * S, 0.098 * S],
+    [hips.x, hips.y - 0.020 * S, hips.z + 0.004 * S, 0.136 * S, 0.110 * S],
+    [sp1.x, sp1.y, sp1.z, 0.122 * S, 0.099 * S],
+    [sp2.x, sp2.y, sp2.z, 0.142 * S, 0.107 * S],
+    [sp3.x, sp3.y - 0.020 * S, sp3.z, 0.163 * S, 0.114 * S],
+    [sp3.x, sp3.y + 0.075 * S, sp3.z - 0.004 * S, 0.150 * S, 0.104 * S],
+    [neck.x, neck.y + 0.006 * S, neck.z + 0.006 * S, 0.076 * S, 0.074 * S],
+  ], R(11), dens.ringT, { capStart: true, capEnd: false });
+
+  // ---- neck + skull
+  mesher.begin(rig._candHead, 0.94, SKIN);
+  loftTube(mesher, [
+    [neck.x, neck.y - 0.020 * S, neck.z + 0.004 * S, 0.070 * S, 0.070 * S],
+    [neck.x, neck.y + 0.040 * S, neck.z + 0.006 * S, 0.062 * S, 0.062 * S],
+    [head.x, head.y + 0.010 * S, head.z + 0.010 * S, 0.066 * S, 0.068 * S],
+  ], R(4), dens.ringT, { capStart: false, capEnd: false });
+  // Jaw is narrower than the cranium; the shape function does that in one line.
+  loftSphere(mesher, head.x, head.y + 0.098 * S, head.z + 0.008 * S,
+    0.089 * S, 0.116 * S, 0.099 * S, dens.sphere[0], dens.sphere[1],
+    (v) => 0.72 + 0.30 * Math.sin(Math.min(1, v * 1.22) * Math.PI * 0.86));
+
+  // ---- arms
+  for (const side of ['R', 'L']) {
+    const sh = bindPos(rig, 'upperArm' + side, a).clone();
+    const el = bindPos(rig, 'foreArm' + side, b).clone();
+    const wr = bindPos(rig, 'hand' + side, c).clone();
+    const sgn = side === 'R' ? 1 : -1;
+    mesher.begin(side === 'R' ? rig._candArmR : rig._candArmL, 0.97, SKIN);
+    loftTube(mesher, [
+      [sh.x - sgn * 0.030 * S, sh.y + 0.048 * S, sh.z, 0.050 * S, 0.052 * S],
+      [sh.x, sh.y - 0.010 * S, sh.z, 0.059 * S, 0.058 * S],
+      [lerp(sh.x, el.x, 0.45), lerp(sh.y, el.y, 0.45), lerp(sh.z, el.z, 0.45), 0.050 * S, 0.049 * S],
+      [el.x, el.y, el.z, 0.043 * S, 0.044 * S],
+      [lerp(el.x, wr.x, 0.30), lerp(el.y, wr.y, 0.30), lerp(el.z, wr.z, 0.30), 0.046 * S, 0.045 * S],
+      [lerp(el.x, wr.x, 0.72), lerp(el.y, wr.y, 0.72), lerp(el.z, wr.z, 0.72), 0.034 * S, 0.033 * S],
+      [wr.x, wr.y, wr.z, 0.028 * S, 0.026 * S],
+    ], R(9), dens.ringL, { capStart: true, capEnd: false });
+
+    // Hand: a flattened mitten. Fingers would cost more than they are worth at this
+    // silhouette scale, and the hands are wrapped around a tsuka most of the time.
+    const dx = (wr.x - el.x), dy = (wr.y - el.y), dz = (wr.z - el.z);
+    const dl = Math.hypot(dx, dy, dz) || 1;
+    const ux = dx / dl, uy = dy / dl, uz = dz / dl;
+    mesher.begin(side === 'R' ? rig._candHandR : rig._candHandL, 0.93, SKIN);
+    loftTube(mesher, [
+      [wr.x, wr.y, wr.z, 0.028 * S, 0.024 * S],
+      [wr.x + ux * 0.035 * S, wr.y + uy * 0.035 * S, wr.z + uz * 0.035 * S, 0.040 * S, 0.023 * S],
+      [wr.x + ux * 0.085 * S, wr.y + uy * 0.085 * S, wr.z + uz * 0.085 * S, 0.041 * S, 0.021 * S],
+      [wr.x + ux * 0.125 * S, wr.y + uy * 0.125 * S, wr.z + uz * 0.125 * S, 0.032 * S, 0.017 * S],
+      [wr.x + ux * 0.155 * S, wr.y + uy * 0.155 * S, wr.z + uz * 0.155 * S, 0.014 * S, 0.010 * S],
+    ], R(5), Math.max(6, dens.ringL - 2), { capStart: false, capEnd: true });
+  }
+
+  // ---- legs
+  for (const side of ['R', 'L']) {
+    const hp = bindPos(rig, 'thigh' + side, a).clone();
+    const kn = bindPos(rig, 'shin' + side, b).clone();
+    const an = bindPos(rig, 'foot' + side, c).clone();
+    mesher.begin(side === 'R' ? rig._candLegR : rig._candLegL, 0.98, SKIN);
+    loftTube(mesher, [
+      [hp.x, hp.y + 0.050 * S, hp.z, 0.088 * S, 0.092 * S],
+      [hp.x, hp.y - 0.030 * S, hp.z, 0.097 * S, 0.098 * S],
+      [lerp(hp.x, kn.x, 0.45), lerp(hp.y, kn.y, 0.45), lerp(hp.z, kn.z, 0.45), 0.085 * S, 0.088 * S],
+      [kn.x, kn.y + 0.030 * S, kn.z, 0.068 * S, 0.071 * S],
+      [kn.x, kn.y, kn.z, 0.064 * S, 0.066 * S],
+      [lerp(kn.x, an.x, 0.28), lerp(kn.y, an.y, 0.28), lerp(kn.z, an.z, 0.28) + 0.012 * S, 0.070 * S, 0.072 * S],
+      [lerp(kn.x, an.x, 0.68), lerp(kn.y, an.y, 0.68), lerp(kn.z, an.z, 0.68), 0.048 * S, 0.049 * S],
+      [an.x, an.y, an.z, 0.037 * S, 0.040 * S],
+    ], R(10), dens.ringL, { capStart: true, capEnd: false });
+
+    // Foot: heel behind the ankle, ball forward, tapering toe box. Stations are
+    // lifted so the sole lands exactly on y = 0 — the entity contract puts the feet
+    // at the root's origin, and a body that sinks 2 cm reads as floating on stairs.
+    const to = bindPos(rig, 'toe' + side, _v[3]).clone();
+    const sole = 0.021 * S;
+    mesher.begin(side === 'R' ? rig._candFootR : rig._candFootL, 0.86, SKIN);
+    loftTube(mesher, [
+      [an.x, an.y + 0.012 * S + sole, an.z + 0.070 * S, 0.032 * S, 0.036 * S],
+      [an.x, an.y - 0.020 * S + sole, an.z + 0.045 * S, 0.040 * S, 0.043 * S],
+      [an.x, an.y - 0.048 * S + sole, an.z - 0.010 * S, 0.043 * S, 0.038 * S],
+      [to.x, to.y - 0.005 * S + sole, to.z + 0.010 * S, 0.045 * S, 0.030 * S],
+      [to.x, to.y - 0.002 * S + sole, to.z - 0.048 * S, 0.038 * S, 0.024 * S],
+      [to.x, to.y + 0.004 * S + sole, to.z - 0.070 * S, 0.020 * S, 0.014 * S],
+    ], R(6), Math.max(6, dens.ringL - 2), { capStart: true, capEnd: true });
+  }
+}
+
+/**
+ * The kimono / haori upper: an inflated shell over the torso and upper arms, skinned
+ * to the same skeleton so it deforms with the body for free. The wide sleeve *hems*
+ * are cloth-simulated separately; this is only the part that stays on the arm.
+ */
+function buildUpperGarment(rig, mesher, dens, opts) {
+  const S = rig.scale;
+  const CLOTH = { tint: tint(opts.color), rough: 0.93, metal: 0 };
+  const a = _v[0], b = _v[1], c = _v[2];
+  const L = dens.lon;
+  const R = (n) => Math.max(3, Math.round(n * L));
+  const puff = opts.puff === undefined ? 0.022 : opts.puff;
+
+  const hips = bindPos(rig, 'hips', a).clone();
+  const sp1 = bindPos(rig, 'spine1', a).clone();
+  const sp2 = bindPos(rig, 'spine2', a).clone();
+  const sp3 = bindPos(rig, 'spine3', a).clone();
+  const neck = bindPos(rig, 'neck', a).clone();
+
+  mesher.begin(rig._candTorso, 1.0, CLOTH);
+  loftTube(mesher, [
+    [hips.x, hips.y - 0.150 * S, hips.z, (0.128 + puff) * S, (0.116 + puff) * S],
+    [hips.x, hips.y - 0.020 * S, hips.z, (0.140 + puff) * S, (0.114 + puff) * S],
+    [sp1.x, sp1.y, sp1.z, (0.128 + puff) * S, (0.104 + puff) * S],
+    [sp2.x, sp2.y, sp2.z, (0.148 + puff) * S, (0.112 + puff) * S],
+    [sp3.x, sp3.y - 0.020 * S, sp3.z, (0.170 + puff) * S, (0.120 + puff) * S],
+    [sp3.x, sp3.y + 0.080 * S, sp3.z - 0.004 * S, (0.156 + puff) * S, (0.110 + puff) * S],
+    // The collar stands away from the neck — that gap is most of the kimono read.
+    [neck.x, neck.y + 0.030 * S, neck.z + 0.030 * S, 0.098 * S, 0.100 * S],
+  ], R(10), dens.ringT, { capStart: true, capEnd: true });
+
+  // Sleeves: they start tight at the shoulder and flare hard past the elbow.
+  for (const side of ['R', 'L']) {
+    const sh = bindPos(rig, 'upperArm' + side, a).clone();
+    const el = bindPos(rig, 'foreArm' + side, b).clone();
+    const wr = bindPos(rig, 'hand' + side, c).clone();
+    const sgn = side === 'R' ? 1 : -1;
+    mesher.begin(side === 'R' ? rig._candArmR : rig._candArmL, 0.96, CLOTH);
+    loftTube(mesher, [
+      [sh.x - sgn * 0.020 * S, sh.y + 0.055 * S, sh.z, 0.070 * S, 0.072 * S],
+      [sh.x, sh.y - 0.010 * S, sh.z, 0.082 * S, 0.080 * S],
+      [lerp(sh.x, el.x, 0.5), lerp(sh.y, el.y, 0.5), lerp(sh.z, el.z, 0.5), 0.082 * S, 0.082 * S],
+      [el.x, el.y, el.z, 0.088 * S, 0.090 * S],
+      [lerp(el.x, wr.x, 0.45), lerp(el.y, wr.y, 0.45), lerp(el.z, wr.z, 0.45), 0.096 * S, 0.098 * S],
+    ], R(6), dens.ringL, { capStart: true, capEnd: false });
+  }
+}
+
+/** 帯 obi — a flat wrapped band. Rigid, parented to spine1; it never needs to flex. */
+function buildObi(rig, mesher, dens, pal) {
+  const S = rig.scale;
+  const OBI = { tint: tint(pal.trim), rough: 0.86, metal: 0 };
+  const p = bindPos(rig, 'spine1', _v[0]).clone();
+  mesher.begin(rig._candTorso, 0.88, OBI);
+  loftTube(mesher, [
+    [p.x, p.y - 0.075 * S, p.z, 0.152 * S, 0.126 * S],
+    [p.x, p.y - 0.040 * S, p.z, 0.160 * S, 0.132 * S],
+    [p.x, p.y + 0.030 * S, p.z, 0.158 * S, 0.130 * S],
+    [p.x, p.y + 0.062 * S, p.z, 0.148 * S, 0.122 * S],
+  ], Math.max(4, Math.round(5 * dens.lon)), dens.ringT, { capStart: true, capEnd: true });
+  // Knot at the back — a small offset lump, but it is what makes the obi read as tied.
+  mesher.begin(rig._candTorso, 0.8, OBI);
+  loftSphere(mesher, p.x, p.y - 0.005 * S, p.z + 0.140 * S,
+    0.062 * S, 0.048 * S, 0.045 * S, Math.max(4, dens.sphere[0] - 3), Math.max(6, dens.sphere[1] - 4));
+}
+
+/**
+ * 胴 dō — the lamellar cuirass, and the sode, menpō and jingasa with it.
+ *
+ * These used to be five separate objects (two InstancedMeshes plus three meshes)
+ * parented to five different bones. They are now emitted straight into the character
+ * mesh with each vertex rigid-bound to the bone that used to be its parent, which is
+ * mathematically the same transform and five fewer draw calls. Instancing was the
+ * right answer when the plates were their own object; folding them into a mesh that
+ * was already being drawn is strictly better.
+ */
+function buildArmour(rig, mesher, dens, costume, pal) {
+  const S = rig.scale;
+  const I = BONE_INDEX;
+  const m4 = _m[0], qq = _q[0], pv = _v[0], sv = _v[1].set(1, 1, 1);
+
+  const PLATE = { tint: tint(pal.armour), rough: 0.42, metal: 0.35, rigid: I.spine1 };
+  const CORD = { tint: tint(pal.lacing), rough: 0.86, metal: 0, rigid: I.spine1 };
+
+  // ---- 胴: rows of laced plates on a barrel-shaped body.
+  const rows = dens.lon > 1.2 ? 6 : 5;
+  const cols = dens.lon > 1.2 ? 16 : 13;
+  const plateGeo = plateGeometry(0.030 * S, 0.040 * S, 0.005 * S, 3, 3, false);
+  const cordGeo = plateGeometry(0.006 * S, 0.030 * S, 0.004 * S, 1, 1, false);
+  const sp1 = bindPos(rig, 'spine1', _v[2]).clone();
+  const sp3 = bindPos(rig, 'spine3', _v[3]).clone();
+
+  for (let r = 0; r < rows; r++) {
+    const t = r / (rows - 1);
+    const y = lerp(sp1.y - 0.055 * S, sp3.y + 0.045 * S, t);
+    // The cuirass is barrel-shaped: widest at the ribs, drawn in at the waist.
+    const flare = 1 + 0.16 * Math.sin(t * Math.PI);
+    const rx = (0.168 * S) * flare, rz = (0.128 * S) * flare;
+    for (let cI = 0; cI < cols; cI++) {
+      const ang = (cI / cols) * Math.PI * 2 + (r % 2) * (Math.PI / cols) * 0.5;
+      const ca = Math.cos(ang), sa = Math.sin(ang);
+      _v[4].set(ca / rx, 0.16, sa / rz).normalize().multiplyScalar(-1);
+      qq.setFromUnitVectors(_FWD, _v[4]);
+      mesher.begin(null, 0.92, PLATE);
+      pv.set(sp1.x + ca * rx, y, sp1.z + sa * rz);
+      mesher.append(plateGeo, m4.compose(pv, qq, sv), qq);
+      mesher.begin(null, 0.72, CORD);
+      pv.set(sp1.x + ca * (rx + 0.006 * S), y - 0.018 * S, sp1.z + sa * (rz + 0.006 * S));
+      mesher.append(cordGeo, m4.compose(pv, qq, sv), qq);
+    }
+  }
+  plateGeo.dispose();
+  cordGeo.dispose();
+
+  // ---- 袖 sode: four descending plates per shoulder, bound to the clavicle.
+  if (costume.sleeves === 'sode' || costume.armour === 'heavy') {
+    const sodeGeo = plateGeometry(0.085 * S, 0.048 * S, 0.006 * S, 3, 3, false);
+    for (const side of ['R', 'L']) {
+      const sgn = side === 'R' ? 1 : -1;
+      const base = bindPos(rig, 'clavicle' + side, _v[2]).clone();
+      mesher.begin(null, 0.90, {
+        tint: tint(pal.armour), rough: 0.42, metal: 0.35, rigid: I['clavicle' + side],
+      });
+      for (let r = 0; r < 4; r++) {
+        const t = r / 3;
+        pv.set(base.x + sgn * (0.055 + t * 0.030) * S, base.y + (-0.010 - t * 0.088) * S, base.z + 0.004 * S);
+        _e.set(0.12 * t, 0, sgn * (0.34 + t * 0.22));
+        qq.setFromEuler(_e);
+        mesher.append(sodeGeo, m4.compose(pv, qq, sv), qq);
+      }
+    }
+    sodeGeo.dispose();
+  }
+
+  // ---- 面頬 menpō: a shell swept under the cheekbones, bound to the head.
+  if (costume.mask) {
+    const head = bindPos(rig, 'head', _v[2]).clone();
+    mesher.begin(null, 0.86, {
+      tint: tint(pal.armour, 0.85), rough: 0.30, metal: 0.16, rigid: I.head,
+    });
+    const cols2 = dens.ringT >= 16 ? 11 : 8;
+    const rowsDef = MENPO_ROWS;
+    const first = mesher.vertexCount;
+    for (let r = 0; r < rowsDef.length; r++) {
+      const rd = rowsDef[r];
+      for (let cI = 0; cI <= cols2; cI++) {
+        const u = cI / cols2;
+        const ang = (u - 0.5) * Math.PI * 1.08;
+        const sn = Math.sin(ang), cs = Math.cos(ang);
+        const l = Math.hypot(sn, 0.22 * rd[3], -cs);
+        mesher.vertex(
+          head.x + sn * rd[2] * S,
+          head.y + (rd[0] + 0.070) * S,
+          head.z + (rd[1] + (1 - cs) * 0.085 + 0.010) * S,
+          sn / l, (0.22 * rd[3]) / l, -cs / l,
+          u, r / (rowsDef.length - 1));
+      }
+    }
+    for (let r = 0; r < rowsDef.length - 1; r++) {
+      for (let cI = 0; cI < cols2; cI++) {
+        const a = first + r * (cols2 + 1) + cI;
+        mesher.quad(a, a + 1, a + cols2 + 2, a + cols2 + 1);
+      }
+    }
+  }
+
+  // ---- 陣笠 jingasa: a lathed conical hat, bound to the head.
+  if (costume.hat) {
+    const head = bindPos(rig, 'head', _v[2]).clone();
+    mesher.begin(null, 0.88, { tint: tint(0x101014), rough: 0.24, metal: 0.10, rigid: I.head });
+    const seg = Math.max(10, dens.ringT);
+    const prof = JINGASA_PROFILE;
+    const first = mesher.vertexCount;
+    for (let r = 0; r < prof.length; r++) {
+      const dr = prof[Math.min(prof.length - 1, r + 1)][0] - prof[Math.max(0, r - 1)][0];
+      const dy = prof[Math.min(prof.length - 1, r + 1)][1] - prof[Math.max(0, r - 1)][1];
+      const l = Math.hypot(dr, dy) || 1;
+      for (let cI = 0; cI <= seg; cI++) {
+        const u = cI / seg, th = u * Math.PI * 2;
+        const rad = prof[r][0] * S;
+        mesher.vertex(
+          head.x + Math.cos(th) * rad, head.y + (prof[r][1] + 0.145) * S, head.z + Math.sin(th) * rad + 0.012 * S,
+          Math.cos(th) * (-dy / l), dr / l, Math.sin(th) * (-dy / l),
+          u, r / (prof.length - 1));
+      }
+    }
+    for (let r = 0; r < prof.length - 1; r++) {
+      for (let cI = 0; cI < seg; cI++) {
+        const a = first + r * (seg + 1) + cI;
+        mesher.tri(a, a + seg + 2, a + 1);
+        mesher.tri(a, a + seg + 1, a + seg + 2);
+      }
+    }
+  }
+}
+
+/** menpō section rows: [y, zFront, halfWidth, bulge]. */
+const MENPO_ROWS = [
+  [0.070, -0.086, 0.082, 0.30],
+  [0.030, -0.098, 0.080, 0.55],
+  [-0.005, -0.100, 0.072, 0.70],
+  [-0.042, -0.088, 0.058, 0.85],
+  [-0.072, -0.058, 0.040, 0.60],
+];
+
+/** jingasa lathe profile: [radius, y]. */
+const JINGASA_PROFILE = [
+  [0.000, 0.098], [0.070, 0.088], [0.140, 0.060], [0.205, 0.024], [0.255, 0.000], [0.250, -0.012],
+];
+
+/** A slightly domed rounded plate — flat quads read as cardboard under a rim light. */
+function plateGeometry(w, h, d, nx, ny, twoSided) {
+  const g = new BufferGeometry();
+  const pos = [], nor = [], uv = [], idx = [];
+  nx = nx || 3; ny = ny || 3;
+  const sides = twoSided ? 2 : 1;
+  for (let s = 0; s < sides; s++) {
+    const sign = s === 0 ? 1 : -1;
+    const base = pos.length / 3;
+    for (let j = 0; j <= ny; j++) {
+      for (let i = 0; i <= nx; i++) {
+        const u = i / nx, v = j / ny;
+        const x = (u - 0.5) * w, y = (v - 0.5) * h;
+        const dome = Math.cos((u - 0.5) * Math.PI) * Math.cos((v - 0.5) * Math.PI * 0.5);
+        const z = sign * (d * 0.5 + d * 0.9 * dome);
+        pos.push(x, y, z);
+        const gx = -sign * (Math.sin((u - 0.5) * Math.PI) * d * 1.6) / Math.max(1e-4, w);
+        const gy = -sign * (Math.sin((v - 0.5) * Math.PI * 0.5) * d * 0.8) / Math.max(1e-4, h);
+        const l = Math.hypot(gx, gy, 1);
+        nor.push(gx / l, gy / l, sign / l);
+        uv.push(u, v);
+      }
+    }
+    for (let j = 0; j < ny; j++) {
+      for (let i = 0; i < nx; i++) {
+        const a = base + j * (nx + 1) + i;
+        if (sign > 0) idx.push(a, a + 1, a + nx + 2, a, a + nx + 2, a + nx + 1);
+        else idx.push(a, a + nx + 2, a + 1, a, a + nx + 1, a + nx + 2);
+      }
+    }
+  }
+  g.setAttribute('position', new Float32BufferAttribute(pos, 3));
+  g.setAttribute('normal', new Float32BufferAttribute(nor, 3));
+  g.setAttribute('uv', new Float32BufferAttribute(uv, 2));
+  g.setIndex(idx);
+  return g;
+}
+
+/**
+ * The whole character in one geometry: skin, kimono, obi and — for an oni — the
+ * cuirass, sode, mask and hat. One SkinnedMesh, one material, one draw call.
+ */
+function buildCharacterGeometry(rig, dens, costume, pal) {
+  const mesher = new Mesher(rig._segA, rig._segB, 0.055);
+  buildBody(rig, mesher, dens, pal);
+  if (costume.chest !== 'none') {
+    buildUpperGarment(rig, mesher, dens, {
+      puff: rig.variant === 'oni' ? 0.016 : 0.024, color: pal.cloth,
+    });
+  }
+  if (costume.sash !== false) buildObi(rig, mesher, dens, pal);
+  if (rig.variant === 'oni' && costume.armour && costume.armour !== 'none') {
+    buildArmour(rig, mesher, dens, costume, pal);
+  }
+  return mesher.toGeometry('kagerou-character');
+}
+
+// ===========================================================================
+// KATANA + SAYA
+// ===========================================================================
+
+/** Snapshot of `tint()`, because that helper hands back a shared scratch array. */
+function tintOf(hex, scale) { const t = tint(hex, scale); return [t[0], t[1], t[2]]; }
+
+/**
+ * Bake a list of rigid meshes into one geometry, keeping each part's colour and
+ * surface response in vertex attributes. Six brass
+ * fittings on a sword are six draw calls, and with eight enemies on screen that is
+ * most of the ARCHITECTURE §7 budget spent on things smaller than a thumbnail.
+ * Transforms are translation+rotation only here, so normals just take the rotation.
+ */
+function mergeMeshes(entries, material, name) {
+  const pos = [], nor = [], uv = [], col = [], rm = [], idx = [];
+  const v = new Vector3(), q = new Quaternion();
+  let base = 0;
+  for (const entry of entries) {
+    const m = entry.mesh;
+    const t = entry.tint || WHITE_TINT;
+    const rough = entry.rough === undefined ? 0.6 : entry.rough;
+    const metal = entry.metal === undefined ? 0 : entry.metal;
+    m.updateMatrix();
+    q.setFromRotationMatrix(m.matrix);
+    const g = m.geometry;
+    const gp = g.attributes.position.array, gn = g.attributes.normal.array;
+    const gu = g.attributes.uv ? g.attributes.uv.array : null;
+    const n = g.attributes.position.count;
+    for (let i = 0; i < n; i++) {
+      v.set(gp[i * 3], gp[i * 3 + 1], gp[i * 3 + 2]).applyMatrix4(m.matrix);
+      pos.push(v.x, v.y, v.z);
+      v.set(gn[i * 3], gn[i * 3 + 1], gn[i * 3 + 2]).applyQuaternion(q);
+      nor.push(v.x, v.y, v.z);
+      uv.push(gu ? gu[i * 2] : 0, gu ? gu[i * 2 + 1] : 0);
+      col.push(t[0], t[1], t[2]);
+      rm.push(rough, metal);
+    }
+    const gi = g.index.array;
+    for (let i = 0; i < gi.length; i++) idx.push(gi[i] + base);
+    base += n;
+    g.dispose();
+  }
+  const out = new BufferGeometry();
+  out.setAttribute('position', new Float32BufferAttribute(pos, 3));
+  out.setAttribute('normal', new Float32BufferAttribute(nor, 3));
+  out.setAttribute('uv', new Float32BufferAttribute(uv, 2));
+  out.setAttribute('color', new Float32BufferAttribute(col, 3));
+  out.setAttribute('aRM', new Float32BufferAttribute(rm, 2));
+  out.setIndex(idx);
+  const mesh = new Mesh(out, material);
+  mesh.name = name;
+  mesh.castShadow = true;
+  return mesh;
+}
+
+const KATANA = {
+  nagasa: 0.720,     // blade length, machi to kissaki
+  sori: 0.019,       // max deviation from the chord — this is what "curved" means
+  motohaba: 0.0320,  // width at the machi
+  sakihaba: 0.0225,  // width at the yokote
+  kasane: 0.0072,    // thickness at the mune
+  tsuka: 0.258,      // handle length
+  yokoteU: 0.955,    // where the kissaki facet begins
+};
+
+/** Blade spine at parameter u ∈ [-tsuka/nagasa, 1]: chord along +Y, sori toward +Z. */
+function bladePoint(u, out, s) {
+  const K = KATANA;
+  const y = u * K.nagasa * s;
+  // Parabolic arc: zero at both ends of the chord, max `sori` at the middle. The
+  // handle continues the same curve backwards, which is exactly how a mounted
+  // katana's tsuka ends up angled relative to the blade.
+  const z = K.sori * s * (1 - (2 * u - 1) * (2 * u - 1));
+  out[0] = 0; out[1] = y; out[2] = z;
+  return out;
+}
+
+/**
+ * The blade. Five flat-shaded bands — mune, two ji faces, two ha bevels — so the
+ * shinogi ridge stays a crisp highlight line instead of a smeared gradient. That
+ * ridge is where the anisotropic specular in Materials.js does its work.
+ */
+function buildBlade(seg, scale, material) {
+  const K = KATANA;
+  const g = new BufferGeometry();
+  const pos = [], nor = [], uv = [], idx = [];
+  const p = [0, 0, 0], pn = [0, 0, 0];
+  const S = scale;
+
+  // Section outline in (x, zOffsetFromMune) as fractions of kasane/width.
+  const ring = new Float64Array(10);
+  const bands = 5;
+  const vertsPerStation = bands * 2;
+
+  for (let i = 0; i < seg; i++) {
+    const u = i / (seg - 1);
+    bladePoint(u, p, S);
+    bladePoint(Math.min(1, u + 0.01), pn, S);
+    let ty = pn[1] - p[1], tz = pn[2] - p[2];
+    const tl = Math.hypot(ty, tz) || 1; ty /= tl; tz /= tl;
+
+    let w = lerp(K.motohaba, K.sakihaba, u) * S;
+    let k = K.kasane * S * lerp(1.0, 0.72, u);
+    if (u > K.yokoteU) {
+      const kt = (u - K.yokoteU) / (1 - K.yokoteU);
+      const shrink = Math.sqrt(Math.max(0, 1 - kt * kt));
+      w *= shrink; k *= Math.max(0.12, shrink);
+    }
+    // Outline points: mune+, shinogi+, ha, shinogi-, mune-
+    ring[0] = k * 0.16; ring[1] = 0;
+    ring[2] = k * 0.5; ring[3] = -0.30 * w;
+    ring[4] = 0; ring[5] = -w;
+    ring[6] = -k * 0.5; ring[7] = -0.30 * w;
+    ring[8] = -k * 0.16; ring[9] = 0;
+
+    for (let bIdx = 0; bIdx < bands; bIdx++) {
+      const a0 = bIdx * 2, a1 = ((bIdx + 1) % bands) * 2;
+      const x0 = ring[a0], d0 = ring[a0 + 1];
+      const x1 = ring[a1], d1 = ring[a1 + 1];
+      // Facet normal in the section plane, lifted into world by the tangent frame.
+      let ex = x1 - x0, ed = d1 - d0;
+      const el = Math.hypot(ex, ed) || 1; ex /= el; ed /= el;
+      const nx = ed, nd = -ex;
+      const wnx = nx;
+      const wny = nd * -tz;
+      const wnz = nd * ty;
+      const nl = Math.hypot(wnx, wny, wnz) || 1;
+      for (const [xx, dd] of [[x0, d0], [x1, d1]]) {
+        pos.push(p[0] + xx, p[1] + dd * -tz, p[2] + dd * ty);
+        nor.push(wnx / nl, wny / nl, wnz / nl);
+        // U runs along the blade so the tangent (and the anisotropy) does too.
+        uv.push(u, bIdx / bands);
+      }
+    }
+  }
+  for (let i = 0; i < seg - 1; i++) {
+    for (let bIdx = 0; bIdx < bands; bIdx++) {
+      const a = i * vertsPerStation + bIdx * 2;
+      const c = a + vertsPerStation;
+      idx.push(a, a + 1, c + 1, a, c + 1, c);
+    }
+  }
+  g.setAttribute('position', new Float32BufferAttribute(pos, 3));
+  g.setAttribute('normal', new Float32BufferAttribute(nor, 3));
+  g.setAttribute('uv', new Float32BufferAttribute(uv, 2));
+  g.setIndex(idx);
+  const mesh = new Mesh(g, material);
+  mesh.name = 'blade';
+  mesh.castShadow = true;
+  return mesh;
+}
+
+/** Lathed ring solid — tsuba, habaki, fuchi, kashira all come out of this. */
+function latheRing(profile, seg, material, name) {
+  const g = new BufferGeometry();
+  const pos = [], nor = [], uv = [], idx = [];
+  const rows = profile.length;
+  for (let r = 0; r < rows; r++) {
+    for (let cI = 0; cI <= seg; cI++) {
+      const u = cI / seg, th = u * Math.PI * 2;
+      const ca = Math.cos(th), sa = Math.sin(th);
+      // Tsuba and fuchi are ovals, not discs — the third profile column squashes Z.
+      const rad = profile[r][0];
+      pos.push(ca * rad, profile[r][1], sa * rad * (profile[r][2] || 1));
+      const rp = profile[Math.max(0, r - 1)], rn = profile[Math.min(rows - 1, r + 1)];
+      const dr = rn[0] - rp[0], dy = rn[1] - rp[1];
+      const l = Math.hypot(dr, dy) || 1;
+      nor.push(ca * (dy / l), -(dr / l), sa * (dy / l));
+      uv.push(u, r / (rows - 1));
+    }
+  }
+  for (let r = 0; r < rows - 1; r++) {
+    for (let cI = 0; cI < seg; cI++) {
+      const a = r * (seg + 1) + cI;
+      idx.push(a, a + 1, a + seg + 2, a, a + seg + 2, a + seg + 1);
+    }
+  }
+  g.setAttribute('position', new Float32BufferAttribute(pos, 3));
+  g.setAttribute('normal', new Float32BufferAttribute(nor, 3));
+  g.setAttribute('uv', new Float32BufferAttribute(uv, 2));
+  g.setIndex(idx);
+  const mesh = new Mesh(g, material);
+  mesh.name = name || 'lathe';
+  mesh.castShadow = true;
+  return mesh;
+}
+
+/**
+ * 柄巻き ito wrap, in geometry. Two pairs of counter-wound ribbons laid on the tsuka
+ * surface; where they cross they form the diamond lattice, and the gaps between the
+ * crossings show the samegawa underneath. Doing this with geometry rather than a
+ * normal map means the silhouette of the handle is correct in a close-up finisher.
+ */
+function buildItoWrap(scale, turns, ribbons, material) {
+  const S = scale;
+  const L = KATANA.tsuka * S;
+  const rx = 0.0175 * S, rz = 0.0128 * S;
+  const g = new BufferGeometry();
+  const pos = [], nor = [], uv = [], idx = [];
+  const samples = 26;
+  const halfW = 0.0062 * S;
+
+  for (let rb = 0; rb < ribbons; rb++) {
+    const dir = rb % 2 === 0 ? 1 : -1;
+    const phase = Math.floor(rb / 2) * Math.PI;
+    const base = pos.length / 3;
+    for (let i = 0; i < samples; i++) {
+      const t = i / (samples - 1);
+      const y = 0.012 * S + t * (L - 0.030 * S);
+      const ang = dir * (t * turns * Math.PI * 2) + phase;
+      const ca = Math.cos(ang), sa = Math.sin(ang);
+      // Surface tangent along the helix, used to widen the ribbon across the wrap.
+      const cx = ca * rx, cz = sa * rz;
+      const nx = ca / rx, nz = sa / rz;
+      const nl = Math.hypot(nx, nz) || 1;
+      const ux = -sa * rx * dir, uz = ca * rz * dir;
+      const dy = (L - 0.030 * S) / (samples - 1);
+      const tl = Math.hypot(ux, dy, uz) || 1;
+      // Across-vector = tangent × normal.
+      let ax = (dy / tl) * (nz / nl) - 0;
+      let az = 0 - (dy / tl) * (nx / nl);
+      const al = Math.hypot(ax, az) || 1; ax /= al; az /= al;
+      for (let s = -1; s <= 1; s += 2) {
+        pos.push(cx + ax * halfW * s + (nx / nl) * 0.0016 * S, y,
+          cz + az * halfW * s + (nz / nl) * 0.0016 * S);
+        nor.push(nx / nl, 0.12, nz / nl);
+        uv.push(t * 4, (s + 1) * 0.5);
+      }
+    }
+    for (let i = 0; i < samples - 1; i++) {
+      const a = base + i * 2;
+      idx.push(a, a + 1, a + 3, a, a + 3, a + 2);
+    }
+  }
+  g.setAttribute('position', new Float32BufferAttribute(pos, 3));
+  g.setAttribute('normal', new Float32BufferAttribute(nor, 3));
+  g.setAttribute('uv', new Float32BufferAttribute(uv, 2));
+  g.setIndex(idx);
+  const mesh = new Mesh(g, material);
+  mesh.name = 'ito';
+  mesh.castShadow = true;
+  return mesh;
+}
+
+/**
+ * The full koshirae. Local origin sits at the grip point on the tsuka with the blade
+ * running along +Y; the attachment node on the hand supplies the rest of the transform
+ * so Player.js can tune the grip without touching geometry.
+ */
+export function buildKatana(quality, materials, scale, pal) {
+  const S = scale === undefined ? 1 : scale;
+  const dens = meshDensity(quality);
+  const seg = dens.lon > 1.2 ? 22 : dens.lon > 0.8 ? 16 : 11;
+  const latheSeg = dens.lon > 1.2 ? 16 : dens.lon > 0.8 ? 12 : 8;
+  const g = new Group();
+  g.name = 'katana';
+
+  // The blade stays its own mesh: it is the one surface in the game that needs a
+  // dedicated anisotropic material (ARCHITECTURE §5.6) and it owns the motion trail.
+  const blade = buildBlade(seg, S, materials.steel);
+  blade.position.y = KATANA.tsuka * S * 0.42;
+  g.add(blade);
+
+  // Everything else on the sword — habaki, tsuba, tsuka core, ito wrap, fuchi,
+  // kashira — is one merged mesh. Six fittings on a prop the size of a thumb is not
+  // worth six draw calls with eight enemies on screen.
+  const parts = [];
+  const habaki = latheRing([
+    [0.0125 * S, -0.004 * S, 0.62], [0.0142 * S, 0.000, 0.62],
+    [0.0140 * S, 0.026 * S, 0.62], [0.0118 * S, 0.030 * S, 0.62],
+  ], latheSeg, null, 'habaki');
+  habaki.position.y = blade.position.y - 0.002 * S;
+  parts.push({ mesh: habaki, tint: tintOf(0xc9a227), rough: 0.34, metal: 0.92 });
+
+  const tsuba = latheRing([
+    [0.0110 * S, -0.0026 * S, 0.68], [0.0380 * S, -0.0030 * S, 0.86],
+    [0.0392 * S, 0.0000, 0.88], [0.0380 * S, 0.0030 * S, 0.86],
+    [0.0110 * S, 0.0026 * S, 0.68],
+  ], latheSeg, null, 'tsuba');
+  tsuba.position.y = blade.position.y - 0.006 * S;
+  parts.push({ mesh: tsuba, tint: tintOf(0x35383c), rough: 0.44, metal: 0.90 });
+
+  const core = latheRing([
+    [0.0176 * S, 0.006 * S, 0.73], [0.0182 * S, 0.030 * S, 0.73],
+    [0.0170 * S, KATANA.tsuka * S * 0.55, 0.72], [0.0166 * S, KATANA.tsuka * S - 0.020 * S, 0.72],
+    [0.0150 * S, KATANA.tsuka * S - 0.004 * S, 0.72],
+  ], latheSeg, null, 'tsuka');
+  core.position.y = blade.position.y - KATANA.tsuka * S;
+  parts.push({ mesh: core, tint: tintOf(0xd8d2c4), rough: 0.66, metal: 0 });
+
+  const wrap = buildItoWrap(S, dens.lon > 1.2 ? 5 : 4, dens.lon > 0.8 ? 4 : 2, null);
+  wrap.position.y = core.position.y;
+  parts.push({ mesh: wrap, tint: tintOf(pal && pal.lacing !== undefined ? pal.lacing : 0x241f1c, 0.85), rough: 0.78, metal: 0 });
+
+  const fuchi = latheRing([
+    [0.0184 * S, 0.000, 0.73], [0.0196 * S, 0.004 * S, 0.74],
+    [0.0192 * S, 0.016 * S, 0.74], [0.0176 * S, 0.018 * S, 0.73],
+  ], latheSeg, null, 'fuchi');
+  fuchi.position.y = core.position.y + KATANA.tsuka * S - 0.020 * S;
+  parts.push({ mesh: fuchi, tint: tintOf(0xc9a227), rough: 0.34, metal: 0.92 });
+
+  const kashira = latheRing([
+    [0.0120 * S, -0.002 * S, 0.72], [0.0168 * S, 0.002 * S, 0.72],
+    [0.0164 * S, 0.014 * S, 0.72], [0.0090 * S, 0.019 * S, 0.72],
+  ], latheSeg, null, 'kashira');
+  kashira.position.y = core.position.y - 0.014 * S;
+  parts.push({ mesh: kashira, tint: tintOf(0xc9a227), rough: 0.34, metal: 0.92 });
+
+  const koshirae = mergeMeshes(parts, materials.fittings, 'koshirae');
+  // Tsuba and wrap are 3 cm of geometry: their shadow is unresolvable at any
+  // cascade resolution we ship, and it costs a draw in each one.
+  koshirae.castShadow = false;
+  koshirae.userData.detail = 1;
+  g.add(koshirae);
+
+  // Socket at the kissaki: Combat.js reads this for the weapon capsule and Effects.js
+  // hangs the blade trail off it, so it must be an object, not a computed offset.
+  const tip = new Object3D();
+  tip.name = 'kissaki';
+  tip.position.set(0, blade.position.y + KATANA.nagasa * S, KATANA.sori * S * 0.05);
+  g.add(tip);
+  const guard = new Object3D();
+  guard.name = 'tsuba-point';
+  guard.position.copy(tsuba.position);
+  g.add(guard);
+
+  g.userData.tip = tip;
+  g.userData.guard = guard;
+  g.userData.length = KATANA.nagasa * S;
+  return g;
+}
+
+/** 鞘 saya — the lacquered scabbard, curved to match the blade, with a kurigata knob. */
+export function buildSaya(quality, materials, scale) {
+  const S = scale === undefined ? 1 : scale;
+  const dens = meshDensity(quality);
+  const seg = dens.lon > 1.1 ? 14 : dens.lon > 0.8 ? 10 : 7;
+  const latheSeg = dens.lon > 1.1 ? 12 : 8;
+  const g = new Group();
+  g.name = 'saya';
+
+  const geo = new BufferGeometry();
+  const pos = [], nor = [], uv = [], idx = [];
+  const ringSeg = dens.lon > 0.8 ? 8 : 6;
+  const p = [0, 0, 0], pn = [0, 0, 0];
+  for (let i = 0; i < seg; i++) {
+    const u = (i / (seg - 1)) * 1.028 - 0.010;
+    bladePoint(u, p, S);
+    bladePoint(u + 0.01, pn, S);
+    let ty = pn[1] - p[1], tz = pn[2] - p[2];
+    const tl = Math.hypot(ty, tz) || 1; ty /= tl; tz /= tl;
+    const t = clamp(u, 0, 1);
+    let hw = lerp(KATANA.motohaba, KATANA.sakihaba, t) * 0.5 * S + 0.0052 * S;
+    let hk = KATANA.kasane * S * lerp(1.0, 0.78, t) * 0.5 + 0.0048 * S;
+    if (u > 0.99) { const k = (u - 0.99) / 0.038; hw *= Math.max(0.25, 1 - k); hk *= Math.max(0.25, 1 - k); }
+    for (let j = 0; j <= ringSeg; j++) {
+      const a = (j / ringSeg) * Math.PI * 2;
+      const ca = Math.cos(a), sa = Math.sin(a);
+      const ox = ca * hk, od = sa * hw - lerp(KATANA.motohaba, KATANA.sakihaba, t) * 0.5 * S;
+      pos.push(p[0] + ox, p[1] + od * -tz, p[2] + od * ty);
+      let gx = ca / hk, gd = sa / hw;
+      const gl = Math.hypot(gx, gd) || 1;
+      nor.push(gx / gl, (gd / gl) * -tz, (gd / gl) * ty);
+      uv.push(j / ringSeg, u * KATANA.nagasa * S * UV_PER_METRE);
+    }
+  }
+  for (let i = 0; i < seg - 1; i++) {
+    for (let j = 0; j < ringSeg; j++) {
+      const a = i * (ringSeg + 1) + j, c = a + ringSeg + 1;
+      idx.push(a, a + 1, c + 1, a, c + 1, c);
+    }
+  }
+  geo.setAttribute('position', new Float32BufferAttribute(pos, 3));
+  geo.setAttribute('normal', new Float32BufferAttribute(nor, 3));
+  geo.setAttribute('uv', new Float32BufferAttribute(uv, 2));
+  geo.setIndex(idx);
+  const body = new Mesh(geo, null);
+  body.name = 'saya-body';
+
+  const koiguchi = latheRing([
+    [0.0150 * S, -0.004 * S, 0.60], [0.0166 * S, 0.000, 0.60],
+    [0.0162 * S, 0.020 * S, 0.60], [0.0148 * S, 0.024 * S, 0.60],
+  ], latheSeg, null, 'koiguchi');
+
+  const kojiri = latheRing([
+    [0.0090 * S, KATANA.nagasa * S * 0.985, 0.58], [0.0116 * S, KATANA.nagasa * S * 0.995, 0.58],
+    [0.0110 * S, KATANA.nagasa * S * 1.020, 0.58], [0.0040 * S, KATANA.nagasa * S * 1.030, 0.58],
+  ], latheSeg, null, 'kojiri');
+  kojiri.position.z = KATANA.sori * S * 0.06;
+
+  // 栗形 kurigata: the little knob the sageo threads through.
+  const kurigata = latheRing([
+    [0.0040 * S, 0.000, 1], [0.0072 * S, 0.004 * S, 1],
+    [0.0070 * S, 0.016 * S, 1], [0.0038 * S, 0.020 * S, 1],
+  ], 8, null, 'kurigata');
+  kurigata.rotation.z = Math.PI * 0.5;
+  kurigata.position.set(0.0, 0.100 * S, -0.014 * S);
+  // Scabbard body and all three horn fittings in one mesh: the lacquer and the horn
+  // differ only by tint and roughness, and both of those now ride on the vertices.
+  const LACQ = tintOf(0x101014), HORN = tintOf(0x1a1614);
+  const merged = mergeMeshes([
+    { mesh: body, tint: LACQ, rough: 0.22, metal: 0.12 },
+    { mesh: koiguchi, tint: HORN, rough: 0.42, metal: 0.05 },
+    { mesh: kojiri, tint: HORN, rough: 0.42, metal: 0.05 },
+    { mesh: kurigata, tint: HORN, rough: 0.42, metal: 0.05 },
+  ], materials.fittings, 'saya');
+  merged.userData.detail = 2;
+  g.add(merged);
+
+  const mouth = new Object3D();
+  mouth.name = 'koiguchi-point';
+  g.add(mouth);
+  g.userData.mouth = mouth;
+  g.userData.cordAnchor = merged;
+  return g;
+}
+
+// ===========================================================================
+// VERLET CLOTH
+// ===========================================================================
+
+const WIND_FORCE = 8.5;
+const CLOTH_GRAVITY = -14.0;   // softer than game gravity; real cloth has drag
+
+/**
+ * A cols × rows particle grid solved with Verlet integration and distance
+ * constraints. Everything soft on the character is one of these: the hakama is a
+ * closed ring, the sash tail and sageo are two-column ribbons, the topknot is three.
+ *
+ * Particles live in the rig's root-local space, which means the whole simulation is
+ * unaffected by the character running across the map — only the anchors move, and
+ * they move by the amount the *bones* moved, which is exactly the excitation cloth
+ * should receive. World-space cloth on a fast-moving character is a lag machine.
+ */
+class ClothPatch {
+  constructor(cols, rows, closed, opts) {
+    const o = opts || {};
+    this.cols = cols;
+    this.rows = rows;
+    this.closed = !!closed;
+    this.n = cols * rows;
+    this.pos = new Float32Array(this.n * 3);
+    this.prev = new Float32Array(this.n * 3);
+    this.invMass = new Float32Array(this.n);
+    this.damping = o.damping === undefined ? 0.020 : o.damping;
+    this.windScale = o.windScale === undefined ? 1 : o.windScale;
+    this.stiffness = o.stiffness === undefined ? 1 : o.stiffness;
+    this.maxStretch = o.maxStretch === undefined ? 1.35 : o.maxStretch;
+    this.collide = o.collide !== false;
+    this.doubleSided = o.doubleSided !== false;
+
+    /** Pin descriptors for row 0: `{bone, off:[x,y,z]}` resolved to root space each frame. */
+    this.anchors = new Array(cols);
+    this.anchorPos = new Float32Array(cols * 3);
+    this.restDown = new Float32Array(cols * 3);
+    this.segLen = o.segLen || 0.08;
+
+    this.constraints = [];   // flat [i, j, rest, w]
+    this._cIdx = null;
+    this._cRest = null;
+
+    this.tint = o.tint || WHITE_TINT;
+    this.rough = o.rough === undefined ? 0.93 : o.rough;
+    this.metal = o.metal === undefined ? 0 : o.metal;
+    this.uvScale = o.uvScale || 1;
+    /** Slot inside the shared ClothBatch buffers, in vertices. */
+    this.vOffset = 0;
+    this.batch = null;
+    this._swayPhase = o.phase === undefined ? 0 : o.phase;
+  }
+
+  index(c, r) { return r * this.cols + c; }
+
+  /** `fn(c, r, out3)` writes the initial root-space position of each particle. */
+  layout(fn) {
+    const out = _v[0];
+    for (let r = 0; r < this.rows; r++) {
+      for (let c = 0; c < this.cols; c++) {
+        const i = this.index(c, r) * 3;
+        fn(c, r, out);
+        this.pos[i] = out.x; this.pos[i + 1] = out.y; this.pos[i + 2] = out.z;
+        this.prev[i] = out.x; this.prev[i + 1] = out.y; this.prev[i + 2] = out.z;
+        this.invMass[this.index(c, r)] = r === 0 ? 0 : 1;
+      }
+    }
+    // Row-0 rest direction, used by the LOW-tier fallback and the stretch clamp.
+    for (let c = 0; c < this.cols; c++) {
+      const a = this.index(c, 0) * 3, b = this.index(c, Math.min(1, this.rows - 1)) * 3;
+      this.restDown[c * 3] = this.pos[b] - this.pos[a];
+      this.restDown[c * 3 + 1] = this.pos[b + 1] - this.pos[a + 1];
+      this.restDown[c * 3 + 2] = this.pos[b + 2] - this.pos[a + 2];
+    }
+    this._buildConstraints();
+    return this;
+  }
+
+  _buildConstraints() {
+    const add = (a, b, w) => {
+      const i = a * 3, j = b * 3;
+      const d = Math.hypot(this.pos[i] - this.pos[j], this.pos[i + 1] - this.pos[j + 1],
+        this.pos[i + 2] - this.pos[j + 2]);
+      this.constraints.push(a, b, d, w);
+    };
+    const C = this.cols, R = this.rows;
+    for (let r = 0; r < R; r++) {
+      for (let c = 0; c < C; c++) {
+        const i = this.index(c, r);
+        if (r + 1 < R) add(i, this.index(c, r + 1), 1);                    // structural
+        if (c + 1 < C) add(i, this.index(c + 1, r), 0.9);
+        else if (this.closed && C > 2) add(i, this.index(0, r), 0.9);
+        // Shear keeps a skirt from collapsing into a fan; bend keeps it from folding
+        // back on itself. Both at reduced weight so the cloth still reads as soft.
+        if (r + 1 < R && c + 1 < C) add(i, this.index(c + 1, r + 1), 0.35);
+        if (r + 1 < R && c > 0) add(i, this.index(c - 1, r + 1), 0.35);
+        if (r + 2 < R) add(i, this.index(c, r + 2), 0.22);
+      }
+    }
+    const n = this.constraints.length / 4;
+    this._cIdx = new Uint16Array(n * 2);
+    this._cRest = new Float32Array(n * 2);
+    for (let k = 0; k < n; k++) {
+      this._cIdx[k * 2] = this.constraints[k * 4];
+      this._cIdx[k * 2 + 1] = this.constraints[k * 4 + 1];
+      this._cRest[k * 2] = this.constraints[k * 4 + 2];
+      this._cRest[k * 2 + 1] = this.constraints[k * 4 + 3];
+    }
+    this.constraints.length = 0;
+  }
+
+  /** Emit this patch's slice of the shared batch geometry. Called once, at build. */
+  writeStatic(uv, col, rm, idx) {
+    const C = this.cols, R = this.rows, o = this.vOffset;
+    const t = this.tint, k = this.uvScale;
+    for (let r = 0; r < R; r++) {
+      for (let c = 0; c < C; c++) {
+        const i = o + this.index(c, r);
+        uv[i * 2] = (c / C) * k;
+        uv[i * 2 + 1] = (r / (R - 1)) * k;
+        col[i * 3] = t[0]; col[i * 3 + 1] = t[1]; col[i * 3 + 2] = t[2];
+        rm[i * 2] = this.rough; rm[i * 2 + 1] = this.metal;
+      }
+    }
+    const wrap = this.closed ? C : C - 1;
+    for (let r = 0; r < R - 1; r++) {
+      for (let c = 0; c < wrap; c++) {
+        const c1 = (c + 1) % C;
+        const a = o + this.index(c, r), b = o + this.index(c1, r);
+        const d = o + this.index(c, r + 1), e = o + this.index(c1, r + 1);
+        idx.push(a, d, e, a, e, b);
+      }
+    }
+  }
+
+  /** Resolve the pin row from bone matrices. `toLocal` maps world → rig-root space. */
+  updateAnchors(bones, toLocal) {
+    const v = _v[5];
+    for (let c = 0; c < this.cols; c++) {
+      const a = this.anchors[c];
+      if (!a) continue;
+      const bone = bones[a.bone];
+      if (!bone) continue;
+      v.set(a.off[0], a.off[1], a.off[2]).applyMatrix4(bone.matrixWorld).applyMatrix4(toLocal);
+      const i = c * 3;
+      this.anchorPos[i] = v.x; this.anchorPos[i + 1] = v.y; this.anchorPos[i + 2] = v.z;
+      const p = this.index(c, 0) * 3;
+      this.pos[p] = v.x; this.pos[p + 1] = v.y; this.pos[p + 2] = v.z;
+      this.prev[p] = v.x; this.prev[p + 1] = v.y; this.prev[p + 2] = v.z;
+    }
+  }
+
+  step(dt, wx, wy, wz, colliders, iterations) {
+    const pos = this.pos, prev = this.prev, im = this.invMass;
+    const d = 1 - this.damping;
+    const dt2 = dt * dt;
+    const ax = wx * this.windScale, ay = CLOTH_GRAVITY + wy * this.windScale, az = wz * this.windScale;
+    for (let i = 0; i < this.n; i++) {
+      if (im[i] === 0) continue;
+      const o = i * 3;
+      for (let k = 0; k < 3; k++) {
+        const cur = pos[o + k];
+        const a = k === 0 ? ax : k === 1 ? ay : az;
+        pos[o + k] = cur + (cur - prev[o + k]) * d + a * dt2;
+        prev[o + k] = cur;
+      }
+    }
+    const idx = this._cIdx, rest = this._cRest, nc = idx.length / 2;
+    const stiff = this.stiffness;
+    for (let it = 0; it < iterations; it++) {
+      for (let k = 0; k < nc; k++) {
+        const a = idx[k * 2], b = idx[k * 2 + 1];
+        const wa = im[a], wb = im[b];
+        const w = wa + wb;
+        if (w === 0) continue;
+        const ao = a * 3, bo = b * 3;
+        const dx = pos[bo] - pos[ao], dy = pos[bo + 1] - pos[ao + 1], dz = pos[bo + 2] - pos[ao + 2];
+        const len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (len < 1e-6) continue;
+        const diff = ((len - rest[k * 2]) / len) * rest[k * 2 + 1] * stiff;
+        const sa = (wa / w) * diff, sb = (wb / w) * diff;
+        pos[ao] += dx * sa; pos[ao + 1] += dy * sa; pos[ao + 2] += dz * sa;
+        pos[bo] -= dx * sb; pos[bo + 1] -= dy * sb; pos[bo + 2] -= dz * sb;
+      }
+      if (this.collide && colliders) this._collide(colliders);
+    }
+    this._clampStretch();
+  }
+
+  /** Push particles out of the body capsules. Two passes of this is plenty. */
+  _collide(colliders) {
+    const pos = this.pos, im = this.invMass;
+    for (let i = 0; i < this.n; i++) {
+      if (im[i] === 0) continue;
+      const o = i * 3;
+      const px = pos[o], py = pos[o + 1], pz = pos[o + 2];
+      for (let k = 0; k < colliders.length; k++) {
+        const cp = colliders[k];
+        const ex = cp[3] - cp[0], ey = cp[4] - cp[1], ez = cp[5] - cp[2];
+        const l2 = ex * ex + ey * ey + ez * ez;
+        let t = l2 > 1e-9 ? ((px - cp[0]) * ex + (py - cp[1]) * ey + (pz - cp[2]) * ez) / l2 : 0;
+        t = t < 0 ? 0 : t > 1 ? 1 : t;
+        const cx = cp[0] + ex * t, cy = cp[1] + ey * t, cz = cp[2] + ez * t;
+        let dx = px - cx, dy = py - cy, dz = pz - cz;
+        const dl = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (dl >= cp[6] || dl < 1e-6) continue;
+        const push = (cp[6] - dl) / dl;
+        pos[o] += dx * push; pos[o + 1] += dy * push; pos[o + 2] += dz * push;
+      }
+    }
+  }
+
+  /** Hard limit on how far a particle can drift from its pin — no exploding hakama. */
+  _clampStretch() {
+    const pos = this.pos, C = this.cols, R = this.rows;
+    const maxPerRow = this.segLen * this.maxStretch;
+    for (let c = 0; c < C; c++) {
+      for (let r = 1; r < R; r++) {
+        const a = this.index(c, r - 1) * 3, b = this.index(c, r) * 3;
+        const dx = pos[b] - pos[a], dy = pos[b + 1] - pos[a + 1], dz = pos[b + 2] - pos[a + 2];
+        const l = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (l <= maxPerRow || l < 1e-6) continue;
+        const s = maxPerRow / l;
+        pos[b] = pos[a] + dx * s; pos[b + 1] = pos[a + 1] + dy * s; pos[b + 2] = pos[a + 2] + dz * s;
+      }
+    }
+  }
+
+  /**
+   * LOW-tier fallback: no solver, just a travelling wave down each column driven by
+   * the wind vector. Costs nothing and, at the distance a LOW-tier device renders
+   * these characters, is genuinely hard to tell from the simulation.
+   */
+  sway(t, wx, wy, wz) {
+    const pos = this.pos, C = this.cols, R = this.rows;
+    const wl = Math.hypot(wx, wy, wz) || 1;
+    const ux = wx / wl, uz = wz / wl;
+    const amp = Math.min(0.10, 0.012 + wl * 0.006);
+    for (let c = 0; c < C; c++) {
+      const a = c * 3;
+      const ax = this.anchorPos[a], ay = this.anchorPos[a + 1], az = this.anchorPos[a + 2];
+      const dxr = this.restDown[a], dyr = this.restDown[a + 1], dzr = this.restDown[a + 2];
+      const phase = this._swayPhase + c * 0.55;
+      for (let r = 0; r < R; r++) {
+        const o = this.index(c, r) * 3;
+        const f = r;
+        const s = Math.sin(t * 2.4 + phase - r * 0.7) * amp * (r / (R - 1));
+        pos[o] = ax + dxr * f + ux * s;
+        pos[o + 1] = ay + dyr * f - Math.abs(s) * 0.35;
+        pos[o + 2] = az + dzr * f + uz * s;
+      }
+    }
+  }
+
+  /** Write positions and recomputed normals into the batch's shared arrays. */
+  flush() {
+    const b = this.batch;
+    if (!b) return;
+    const o3 = this.vOffset * 3;
+    b.pos.set(this.pos, o3);
+    const nor = b.nor, pos = this.pos, C = this.cols, R = this.rows;
+    for (let r = 0; r < R; r++) {
+      for (let c = 0; c < C; c++) {
+        const i = this.index(c, r);
+        const cL = this.closed ? (c - 1 + C) % C : Math.max(0, c - 1);
+        const cR = this.closed ? (c + 1) % C : Math.min(C - 1, c + 1);
+        const rU = Math.max(0, r - 1), rD = Math.min(R - 1, r + 1);
+        const l = this.index(cL, r) * 3, rr = this.index(cR, r) * 3;
+        const u = this.index(c, rU) * 3, dn = this.index(c, rD) * 3;
+        const ax = pos[rr] - pos[l], ay = pos[rr + 1] - pos[l + 1], az = pos[rr + 2] - pos[l + 2];
+        const bx = pos[dn] - pos[u], by = pos[dn + 1] - pos[u + 1], bz = pos[dn + 2] - pos[u + 2];
+        let nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx;
+        const nl = Math.hypot(nx, ny, nz) || 1;
+        const o = o3 + i * 3;
+        nor[o] = nx / nl; nor[o + 1] = ny / nl; nor[o + 2] = nz / nl;
+      }
+    }
+  }
+}
+
+/**
+ * Every soft thing on a character in ONE dynamic draw call: hakama, sash tail,
+ * sageo, both sleeve hems and the topknot. The patches keep their own particles and
+ * constraints — the simulation is unchanged — but they write into a single shared
+ * position/normal buffer, and per-patch colour and roughness ride along in the
+ * vertex attributes so indigo hakama, vermilion sash and black hair still differ.
+ */
+class ClothBatch {
+  constructor() {
+    this.patches = [];
+    this.count = 0;
+    this.pos = null;
+    this.nor = null;
+    this.geometry = null;
+    this.mesh = null;
+  }
+
+  add(patch) {
+    patch.vOffset = this.count;
+    patch.batch = this;
+    this.count += patch.n;
+    this.patches.push(patch);
+    return patch;
+  }
+
+  build(material) {
+    if (this.count === 0) return null;
+    this.pos = new Float32Array(this.count * 3);
+    this.nor = new Float32Array(this.count * 3);
+    const uv = new Float32Array(this.count * 2);
+    const col = new Float32Array(this.count * 3);
+    const rm = new Float32Array(this.count * 2);
+    const idx = [];
+    for (const p of this.patches) p.writeStatic(uv, col, rm, idx);
+
+    const g = new BufferGeometry();
+    g.setAttribute('position', new Float32BufferAttribute(this.pos, 3));
+    g.setAttribute('normal', new Float32BufferAttribute(this.nor, 3));
+    g.setAttribute('uv', new Float32BufferAttribute(uv, 2));
+    g.setAttribute('color', new Float32BufferAttribute(col, 3));
+    g.setAttribute('aRM', new Float32BufferAttribute(rm, 2));
+    g.setIndex(idx);
+    g.attributes.position.setUsage(DynamicDrawUsage);
+    g.attributes.normal.setUsage(DynamicDrawUsage);
+    g.boundingSphere = new Sphere(new Vector3(0, 1, 0), 2.4);
+    this.geometry = g;
+    const mesh = new Mesh(g, material);
+    mesh.name = 'cloth';
+    // Particles move every frame, so per-frame bounds would be wrong — but the patch
+    // is anchored to the body and cannot leave a 2.4 m sphere around the root. A
+    // fixed conservative bound lets the mesh be culled normally, which matters
+    // because an unculled mesh costs a draw in the colour pass *and* in every
+    // shadow cascade, for a character that is behind the camera.
+    mesh.frustumCulled = true;
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    this.mesh = mesh;
+    return mesh;
+  }
+
+  /** One attribute upload for every piece of cloth on the character. */
+  upload() {
+    if (!this.geometry) return;
+    this.geometry.attributes.position.needsUpdate = true;
+    this.geometry.attributes.normal.needsUpdate = true;
+  }
+
+  dispose() {
+    if (this.geometry) this.geometry.dispose();
+    this.patches.length = 0;
+  }
+}
+
+// ===========================================================================
+// MATERIALS
+// ===========================================================================
+
+/**
+ * Materials.js owns the procedural PBR library, but it is written in parallel and may
+ * not be up yet — and enemy archetypes carry their own palettes anyway. Resolution
+ * order is: the shared library, then a palette-tinted standard material cached by
+ * palette signature so eight enemies of one archetype still share one material set.
+ */
+const _matCache = new Map();
+
+function resolveMaterials(ctx, palette, variant) {
+  const p = palette || {};
+  const key = variant + '|' + [p.cloth, p.armour, p.lacing, p.trim, p.metal, p.skin].join(',');
+  const hit = _matCache.get(key);
+  if (hit) return hit;
+
+  const lib = ctx && ctx.materials;
+  /**
+   * Materials.js owns the look if it has one. Our fallback gets the per-vertex
+   * patch; a library material is used exactly as authored, on the contract that a
+   * material named `character*` reads the `color` attribute for albedo tint × baked
+   * AO and the `aRM` attribute for (roughness, metalness).
+   */
+  const pick = (name, fallback) => {
+    if (lib) {
+      try {
+        const m = (typeof lib.get === 'function' ? lib.get(name) : lib[name]);
+        if (m && m.isMaterial) return m;
+      } catch { /* library not ready */ }
+    }
+    return patchPerVertexRM(fallback());
+  };
+  const std = (color, rough, metal, opts) => new MeshStandardMaterial(Object.assign({
+    color: new Color(color), roughness: rough, metalness: metal || 0,
+    vertexColors: false, side: FrontSide,
+  }, opts || {}));
+
+  const cloth = p.cloth !== undefined ? p.cloth : 0x2a2f38;
+  const armour = p.armour !== undefined ? p.armour : 0x3a3128;
+  const lacing = p.lacing !== undefined ? p.lacing : 0x7a1d16;
+  const trim = p.trim !== undefined ? p.trim : 0xc8321e;
+  const metal = p.metal !== undefined ? p.metal : 0xc9d3dc;
+  const skin = p.skin !== undefined ? p.skin : 0xb08a63;
+
+  // Three materials per character, not fifteen. Colour lives in the `color`
+  // attribute and roughness/metalness in `aRM`, so skin, indigo cloth, a vermilion
+  // obi and a lacquered plate can share one program and one draw call. A material
+  // supplied by Materials.js wins outright — it is assumed to know what it is doing.
+  const set = {
+    character: pick('character', () => std(0xffffff, 1, 1)),
+    clothBatch: pick('character_cloth', () => std(0xffffff, 1, 1, { side: DoubleSide })),
+    fittings: pick('character_trim', () => std(0xffffff, 1, 1)),
+    // The blade is the one surface that keeps a dedicated material: it needs the
+    // anisotropic specular from ARCHITECTURE §5.6 and it carries the motion trail.
+    steel: (lib && ((typeof lib.get === 'function' ? lib.get('steel_blade') : lib.steel_blade)))
+      || std(metal, 0.16, 1.0),
+  };
+  // Palette entries the geometry builders read directly for their vertex tints.
+  set.palette = { cloth, armour, lacing, trim, metal, skin };
+  _matCache.set(key, set);
+  return set;
+}
+
+// ===========================================================================
+// NAME COMPATIBILITY
+// ===========================================================================
+
+/** camelCase → snake_case, so `bones.hand_r` and `bones.handR` are the same Bone. */
+function snakeName(n) {
+  return n.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
+}
+
+/** Attachment point aliases — the two call sites spell these differently. */
+const ATTACH_ALIAS = {
+  'hand.r': 'handR', 'hand_r': 'handR', 'handr': 'handR', 'righthand': 'handR',
+  'hand.l': 'handL', 'hand_l': 'handL', 'handl': 'handL', 'lefthand': 'handL',
+  'hip.l': 'sayaMount', 'hip_l': 'sayaMount', 'hipl': 'sayaMount', 'saya': 'sayaMount',
+  'hip.r': 'hipR', 'hip_r': 'hipR',
+  'head': 'head', 'back': 'backMount', 'spine': 'backMount', 'root': 'root', 'hips': 'hips',
+};
+
+/**
+ * Enemy.js and Player.js were authored against their own move vocabularies. Rather
+ * than force three files to agree on 60 strings, the rig maps their names onto the
+ * clips Poses.js actually shipped. An unmapped name is a no-op, never a throw.
+ */
+const CLIP_ALIAS = {
+  idle: 'idle_drawn_seigan', idle_alert: 'idle_drawn_seigan', idle_drawn: 'idle_drawn_seigan',
+  idle_sheathed: 'idle_sheathed', alert: 'idle_drawn_jodan', stance_shift: 'idle_drawn_gedan',
+  look_around: 'idle_drawn_seigan', riposte_ready: 'guard',
+  back: 'walk_back', walk_backward: 'walk_back', turn_l: 'strafe_l', turn_r: 'strafe_r',
+  strafe_left: 'strafe_l', strafe_right: 'strafe_r',
+  taunt: 'taunt_sheathe_flourish', sheathe_flourish: 'taunt_sheathe_flourish',
+  draw: 'draw_iai', iai: 'draw_iai',
+
+  guard_hit: 'guard_impact', block: 'guard', deflect: 'parry',
+  dodge_left: 'dodge_step_l', dodge_right: 'dodge_step_r', roll_back: 'dodge_roll',
+  dodge: 'dodge_roll', roll: 'dodge_roll',
+
+  hit_light: 'stagger_back', hit_heavy: 'stagger_back', hit_l: 'stagger_l', hit_r: 'stagger_r',
+  flinch: 'stagger_back', stagger: 'stagger_back',
+  death: 'death_forward', death_front: 'death_forward', dead: 'death_forward',
+  executed: 'execution_victim', execute: 'execution_attacker',
+
+  // 足軽 — yari. A spear has no katana arc, but the body mechanics of a thrust and a
+  // sweep are the same shapes, and these enemies are read at 6 m through a rim light.
+  atk_spear_thrust: 'thrust', atk_spear_thrust_step: 'thrust',
+  atk_spear_sweep: 'slash_horizontal_r', atk_spear_shove: 'slash_overhead',
+  // 浪人 — katana
+  atk_katana_slash1: 'combo_1', atk_katana_slash2: 'combo_2', atk_katana_slash3: 'combo_3',
+  atk_katana_kesa: 'slash_diagonal_dl', atk_katana_tsuki: 'thrust',
+  atk_katana_feint: 'slash_horizontal_r', atk_katana_riposte: 'rising_cut',
+  // 大鎧 — ōdachi
+  atk_odachi_overhead: 'heavy_overhead', atk_odachi_cleave: 'slash_diagonal_dl',
+  atk_odachi_cleave_back: 'slash_diagonal_dr', atk_odachi_charge: 'slash_overhead',
+  atk_odachi_slam: 'heavy_overhead',
+  // 忍 — kusarigama
+  atk_kama_flurry1: 'combo_1', atk_kama_flurry2: 'combo_2', atk_kama_flurry3: 'slash_horizontal_l',
+  atk_kama_dash: 'thrust', atk_kama_chain: 'slash_horizontal_r', atk_kama_throw: 'rising_cut',
+
+  light_attack: 'combo_1', heavy_attack: 'heavy_overhead',
+};
+
+/** Base-layer clips that mean "drive the blend space", not "override locomotion". */
+const LOCO_CLIP_SPEED = {
+  idle_sheathed: [0, 0], idle_drawn_seigan: [0, 0], idle_drawn_jodan: [0, 0], idle_drawn_gedan: [0, 0],
+  walk: [1.9, 0], run: [5.4, 0], sprint: [7.2, 0], walk_back: [-1.7, 0],
+  strafe_l: [0, -2.4], strafe_r: [0, 2.4],
+};
+
+const STANCE_IDLE = {
+  sheathed: 'idle_sheathed', seigan: 'idle_drawn_seigan', chudan: 'idle_drawn_seigan',
+  mid: 'idle_drawn_seigan', jodan: 'idle_drawn_jodan', high: 'idle_drawn_jodan',
+  gedan: 'idle_drawn_gedan', low: 'idle_drawn_gedan',
+};
+
+// ===========================================================================
+// RIG
+// ===========================================================================
+
+export class Rig {
+  /**
+   * @param {object} ctx  the game context (quality, wind, physics, materials, bus)
+   * @param {object} opts { variant, build, height, faction, costume, weapon, entity,
+   *                        armour, cloth, parent, owner, archetype, seed, autoBuild }
+   */
+  constructor(ctx, opts) {
+    const o = opts || {};
+    this.ctx = ctx || {};
+    this.opts = o;
+    this.entity = o.entity || o.owner || null;
+    this.faction = o.faction || (o.variant === 'oni' ? 'oni' : 'player');
+    this.variant = o.variant || (this.faction === 'oni' ? 'oni' : 'player');
+    this.build_ = o.build || 'normal';
+    this.archetype = o.archetype || null;
+    this.costume = o.costume || null;
+    this.height = o.height || 1.75;
+    this.scale = this.height / 1.75;
+    this.seed = o.seed === undefined ? 1337 : o.seed;
+
+    /** The canonical scene object. `group` / `object3D` are aliases of the same thing. */
+    this.root = new Group();
+    this.root.name = 'rig:' + this.variant;
+    this.group = this.root;
+    this.object3D = this.root;
+
+    this.bones = Object.create(null);
+    this.boneList = [];
+    this.skeleton = null;
+    this.mesh = null;
+    this.parts = Object.create(null);
+    this.attachments = Object.create(null);
+    this.cloths = [];
+    this.materials = null;
+    this.weaponTip = null;
+    this.built = false;
+    this.disposed = false;
+
+    // ---- animation state
+    this.time = 0;
+    this.lod = 0;
+    this._ik = true;
+    this._cloth = o.cloth !== undefined ? !!o.cloth : true;
+    this._lodSkip = 0;
+    this.timeScale = 1;
+
+    this.layers = [
+      new Layer(LAYER_BASE, 'base', false, 'full'),
+      new Layer(LAYER_UPPER, 'upper', false, 'upper'),
+      new Layer(LAYER_ACTION, 'action', false, 'full'),
+      new Layer(LAYER_ADD, 'additive', true, 'full'),
+    ];
+    this.layers[LAYER_BASE].weight = 1;
+    this.layers[LAYER_BASE].targetWeight = 1;
+
+    this._outQ = new Float32Array(NB * 4);
+    this._outP = new Float32Array(NB * 3);
+    this._tmpQ = new Float32Array(NB * 4);
+    this._tmpP = new Float32Array(NB * 3);
+    this._tmpD = new Float32Array(NB);
+    this._restP = new Float32Array(NB * 3);
+    this._lb = [new Float32Array(NB * 4), new Float32Array(NB * 4), new Float32Array(NB * 4)];
+    this._lbp = [new Float32Array(NB * 3), new Float32Array(NB * 3), new Float32Array(NB * 3)];
+    this._lbd = [new Float32Array(NB), new Float32Array(NB), new Float32Array(NB)];
+
+    // ---- locomotion blend space
+    this._loco = { forward: 0, strafe: 0, speed: 0, norm: 0 };
+    this._locoDriven = false;
+    this._locoMode = true;
+    this.locoPhase = 0;
+    this.stance = this.variant === 'oni' ? 'seigan' : 'sheathed';
+    this._stanceClip = STANCE_IDLE[this.stance];
+    this._clipRates = Object.create(null);
+
+    // ---- procedural layer state
+    this._look = new Vector3();
+    this._lookActive = false;
+    this._lookWeight = 0;
+    this._lookTargetWeight = 0;
+    this._breath = Math.random() * 6.28;
+    this._swayPhase = Math.random() * 6.28;
+    this._yawPrev = 0;
+    this._yawVel = 0;
+    this._lagSpine = 0; this._lagSpineV = 0;
+    this._lagHead = 0; this._lagHeadV = 0;
+    this._flinchX = 0; this._flinchZ = 0;
+    this._flinchVX = 0; this._flinchVZ = 0;
+    this._recoil = 0; this._recoilV = 0;
+
+    // ---- foot IK state
+    this.grounded = true;
+    this.groundNormal = new Vector3(0, 1, 0);
+    this.groundSurface = 'dirt';
+    this._hipDrop = 0;
+    this._footY = [0, 0];
+    this._footN = [new Vector3(0, 1, 0), new Vector3(0, 1, 0)];
+    this._footLock = [new Vector3(), new Vector3()];
+    this._footLocked = [0, 0];
+    this._groundMode = -1;
+
+    // ---- events
+    this._listeners = new Map();
+    this._evt = { name: '', foot: null, t: 0, clip: '', layer: '', rig: this, entity: this.entity };
+
+    // ---- cloth scratch
+    this._rootInv = new Matrix4();
+    this._colliders = [];
+    this._wind = new Vector3();
+    this._clothAccum = 0;
+
+    this._buildSkeleton();
+    if (o.autoBuild !== false) this.build(o);
+    // Parented last: the skeleton's bind inverses and the mesh generator both read
+    // root-space transforms, and a transformed parent would poison both.
+    if (o.parent && o.parent.isObject3D) o.parent.add(this.root);
+  }
+
+  // ---------------------------------------------------------------- skeleton
+
+  _buildSkeleton() {
+    const S = this.scale;
+    for (let i = 0; i < BONE_DEFS.length; i++) {
+      const d = BONE_DEFS[i];
+      const b = new Bone();
+      b.name = d[0];
+      b.position.set(d[2] * S, d[3] * S, d[4] * S);
+      this.bones[d[0]] = b;
+      this.boneList.push(b);
+      this._restP[i * 3] = b.position.x;
+      this._restP[i * 3 + 1] = b.position.y;
+      this._restP[i * 3 + 2] = b.position.z;
+    }
+    for (let i = 0; i < BONE_DEFS.length; i++) {
+      const p = BONE_DEFS[i][1];
+      if (p) this.bones[p].add(this.boneList[i]);
+    }
+    this.root.add(this.bones.root);
+    this.root.updateMatrixWorld(true);
+
+    // Bone-segment table in bind (root) space — the analytic skin binder reads this.
+    this._segA = new Float32Array(NB * 3);
+    this._segB = new Float32Array(NB * 3);
+    const v = _v[0], w = _v[1];
+    for (let i = 0; i < NB; i++) {
+      const name = BONE_NAMES[i];
+      v.setFromMatrixPosition(this.boneList[i].matrixWorld);
+      this._segA[i * 3] = v.x; this._segA[i * 3 + 1] = v.y; this._segA[i * 3 + 2] = v.z;
+      let child = null;
+      for (let j = 0; j < NB; j++) {
+        if (BONE_PARENT[j] === i && !NON_SKIN.has(BONE_NAMES[j])) { child = this.boneList[j]; break; }
+      }
+      if (child) w.setFromMatrixPosition(child.matrixWorld);
+      else {
+        const t = BONE_TIP[name] || [0, 0.06, 0];
+        w.set(v.x + t[0] * S, v.y + t[1] * S, v.z + t[2] * S);
+      }
+      this._segB[i * 3] = w.x; this._segB[i * 3 + 1] = w.y; this._segB[i * 3 + 2] = w.z;
+    }
+
+    // Candidate bone sets per body part. Scoping these is what keeps the left thigh
+    // from claiming vertices on the right thigh where they meet at the crotch.
+    const I = BONE_INDEX;
+    this._candTorso = [I.hips, I.spine1, I.spine2, I.spine3, I.neck, I.clavicleL, I.clavicleR];
+    this._candHead = [I.neck, I.head, I.spine3];
+    this._candArmR = [I.clavicleR, I.upperArmR, I.foreArmR, I.handR, I.spine3];
+    this._candArmL = [I.clavicleL, I.upperArmL, I.foreArmL, I.handL, I.spine3];
+    this._candHandR = [I.foreArmR, I.handR];
+    this._candHandL = [I.foreArmL, I.handL];
+    this._candLegR = [I.hips, I.thighR, I.shinR, I.footR];
+    this._candLegL = [I.hips, I.thighL, I.shinL, I.footL];
+    this._candFootR = [I.shinR, I.footR, I.toeR];
+    this._candFootL = [I.shinL, I.footL, I.toeL];
+
+    // AO hotspots, in bind space. Placed by hand because that is the only way to get
+    // an armpit that reads; a generic cavity solver smears the whole torso.
+    const bp = (n, ox, oy, oz) => {
+      const i = I[n] * 3;
+      return [this._segA[i] + ox * S, this._segA[i + 1] + oy * S, this._segA[i + 2] + oz * S];
+    };
+    AO_SPOTS = [];
+    const spot = (p, r, s) => AO_SPOTS.push([p[0], p[1], p[2], r * S, s]);
+    spot(bp('upperArmR', -0.030, -0.055, 0), 0.140, 0.58);
+    spot(bp('upperArmL', 0.030, -0.055, 0), 0.140, 0.58);
+    spot(bp('hips', 0, -0.085, 0), 0.125, 0.52);
+    spot(bp('head', 0, 0.020, -0.030), 0.105, 0.48);
+    spot(bp('neck', 0, 0.010, 0.010), 0.095, 0.36);
+    spot(bp('foreArmR', -0.012, 0.006, -0.014), 0.078, 0.34);
+    spot(bp('foreArmL', 0.012, 0.006, -0.014), 0.078, 0.34);
+    spot(bp('shinR', 0, 0.010, 0.030), 0.088, 0.32);
+    spot(bp('shinL', 0, 0.010, 0.030), 0.088, 0.32);
+    spot(bp('spine1', 0, -0.010, 0), 0.115, 0.22);
+    spot(bp('footR', 0, 0.010, 0.020), 0.062, 0.30);
+    spot(bp('footL', 0, 0.010, 0.020), 0.062, 0.30);
+
+    // Name aliases. Player.js reads `bones.hand_r`, Enemy.js reads `bones.foot_l`;
+    // both must resolve to the same Bone object, not a copy.
+    for (let i = 0; i < NB; i++) {
+      const n = BONE_NAMES[i];
+      const s = snakeName(n);
+      if (s !== n) this.bones[s] = this.boneList[i];
+    }
+    this.bones.hand_r = this.bones.handR;
+    this.bones.hand_l = this.bones.handL;
+    this.bones.foot_r = this.bones.footR;
+    this.bones.foot_l = this.bones.footL;
+
+    this.skeleton = new Skeleton(this.boneList);
+
+    for (let i = 0; i < NB; i++) { this._outQ[i * 4 + 3] = 1; this._tmpQ[i * 4 + 3] = 1; }
+  }
+
+  // ------------------------------------------------------------------- build
+
+  /**
+   * Build the visual: skinned body, costume, weapon. Idempotent — Enemy.js calls it
+   * from a pool warm-up and the constructor calls it too.
+   */
+  build(opts) {
+    if (this.built) return this;
+    const o = Object.assign({}, this.opts, opts || {});
+    const quality = this.ctx.quality;
+    const dens = meshDensity(quality);
+    this._dens = dens;
+    const costume = this.costume || o.costume || {};
+    this.materials = resolveMaterials(this.ctx, costume.palette, this.variant);
+    const M = this.materials;
+
+    // ---- The entire character — skin, kimono, obi, cuirass, sode, menpō, jingasa —
+    //      is a single SkinnedMesh. Parts that used to be parented to a bone are now
+    //      rigid-bound to that same bone inside this geometry, which is the identical
+    //      transform for one draw call instead of six.
+    const geo = buildCharacterGeometry(this, dens, costume, M.palette);
+    const body = new SkinnedMesh(geo, M.character);
+    body.name = 'character';
+    body.castShadow = true;
+    body.receiveShadow = true;
+    this.root.add(body);
+    body.bind(this.skeleton, _IDENTITY);
+    this.mesh = body;
+    this.parts.body = body;
+    this.parts.character = body;
+
+    this._buildAttachments();
+    if (o.weapon !== false && o.weapon !== 'none') this._buildWeapon(o.weapon);
+    this._buildCloth(costume);
+
+    // Sword furniture and the saya: readable in a finisher close-up, invisible past
+    // ~20 m. Collected once so LOD can drop them with a flag flip, not a search.
+    this._detail = [];
+    this.root.traverse((n) => { if (n.userData && n.userData.detail) this._detail.push(n); });
+
+    this.built = true;
+    this.setStance(this.stance);
+    return this;
+  }
+
+  _buildAttachments() {
+    const S = this.scale;
+    const mk = (key, boneName, px, py, pz, rx, ry, rz) => {
+      const n = new Object3D();
+      n.name = 'attach:' + key;
+      n.position.set(px * S, py * S, pz * S);
+      n.rotation.set(rx, ry, rz);
+      this.bones[boneName].add(n);
+      this.attachments[key] = n;
+      return n;
+    };
+    // Grip: the tsuka lies across the palm with the blade running forward out of the
+    // fist. Exposed as an Object3D precisely so gameplay can tune it without a rebuild.
+    mk('handR', 'handR', 0.010, -0.052, -0.012, -3.13, 0.16, 0.10);
+    mk('handL', 'handL', -0.010, -0.052, -0.012, -3.13, -0.16, -0.10);
+    mk('sayaMount', 'sayaMount', 0, 0, 0, 1.30, -0.20, 0.34);
+    mk('head', 'head', 0, 0.100, 0, 0, 0, 0);
+    mk('backMount', 'backMount', 0, 0, 0, 0, 0, 0);
+    mk('hipR', 'hips', 0.118 * 1, 0.020, 0.055, 1.36, 0.20, -0.14);
+  }
+
+  _buildWeapon(kind) {
+    const S = this.scale;
+    const M = this.materials;
+    const katana = buildKatana(this.ctx.quality, M, S, M.palette);
+    this.attachments.handR.add(katana);
+    this.parts.katana = katana;
+    this.weaponTip = katana.userData.tip;
+    this.weaponGuard = katana.userData.guard;
+
+    // Only a swordsman who sheathes needs a saya. The oni fight with drawn steel, and
+    // four extra draw calls × eight enemies is a real slice of the frame budget.
+    if (this.variant !== 'oni') {
+      const saya = buildSaya(this.ctx.quality, M, S);
+      this.attachments.sayaMount.add(saya);
+      this.parts.saya = saya;
+      this.bones.saya_mouth = saya.userData.mouth;
+    }
+
+    // Weapon sockets are exposed through `bones` because both call sites look up the
+    // blade tip by bone name (`weapon_tip`, `katana_tip`, `odachi_tip`, …).
+    const tip = this.weaponTip;
+    for (const n of ['weapon_tip', 'katana_tip', 'odachi_tip', 'yari_tip', 'kama_tip', 'blade_tip']) {
+      this.bones[n] = tip;
+    }
+    this.bones.weapon_grip = this.attachments.handR;
+    if (kind && typeof kind === 'string' && kind !== 'katana') katana.userData.kind = kind;
+  }
+
+  // ------------------------------------------------------------------- cloth
+
+  _buildCloth(costume) {
+    const S = this.scale;
+    const M = this.materials;
+    const pal = M.palette;
+    const q = this.ctx.quality;
+    const tier = q ? q.tier : 1;
+    const rich = this.variant !== 'oni' && tier >= 1;
+    const cols = tier >= 2 ? 16 : tier >= 1 ? 12 : 10;
+    const batch = new ClothBatch();
+    this.clothBatch = batch;
+
+    // ---- 袴 hakama: a closed skirt hanging off the pelvis with vertical pleats.
+    const hipY = this._segA[BONE_INDEX.hips * 3 + 1];
+    const rows = tier >= 2 ? 6 : 5;
+    const hakama = new ClothPatch(cols, rows, true, {
+      segLen: 0.135 * S, damping: 0.045, windScale: 0.55, stiffness: 0.9, phase: 0.0,
+      tint: tintOf(pal.cloth, 0.78), rough: 0.94, uvScale: 3,
+    });
+    for (let c = 0; c < cols; c++) {
+      const a = (c / cols) * Math.PI * 2;
+      // Alternate columns sit slightly proud — that is the pleat, in geometry.
+      const pleat = (c % 2 === 0) ? 1.0 : 0.90;
+      hakama.anchors[c] = {
+        bone: 'hips',
+        off: [Math.cos(a) * 0.150 * S * pleat, -0.055 * S, Math.sin(a) * 0.122 * S * pleat],
+      };
+    }
+    hakama.layout((c, r, out) => {
+      const a = (c / cols) * Math.PI * 2;
+      const pleat = (c % 2 === 0) ? 1.0 : 0.90;
+      const flare = 1 + r * 0.16;
+      out.set(Math.cos(a) * 0.150 * S * pleat * flare,
+        hipY - 0.055 * S - r * 0.135 * S,
+        Math.sin(a) * 0.122 * S * pleat * flare);
+    });
+    batch.add(hakama);
+    this.cloths.push(hakama);
+
+    // ---- 帯 sash tail: the long strip off the obi knot. Pure show, and worth it.
+    const tail = new ClothPatch(2, tier >= 1 ? 9 : 6, false, {
+      segLen: 0.085 * S, damping: 0.030, windScale: 1.6, stiffness: 0.95, phase: 1.7,
+      tint: tintOf(pal.trim), rough: 0.80, uvScale: 2,
+    });
+    const spine1Y = this._segA[BONE_INDEX.spine1 * 3 + 1];
+    for (let c = 0; c < 2; c++) {
+      tail.anchors[c] = { bone: 'spine1', off: [(c - 0.5) * 0.075 * S, -0.020 * S, 0.135 * S] };
+    }
+    tail.layout((c, r, out) => {
+      out.set((c - 0.5) * 0.075 * S, spine1Y - 0.020 * S - r * 0.085 * S, 0.135 * S + r * 0.010 * S);
+    });
+    batch.add(tail);
+    this.cloths.push(tail);
+
+    // ---- 下緒 sageo: the cord off the kurigata, tied back to the obi.
+    if (this.parts.saya) {
+      const sageo = new ClothPatch(2, 7, false, {
+        segLen: 0.062 * S, damping: 0.045, windScale: 1.1, stiffness: 1.0, phase: 3.1,
+        tint: tintOf(pal.lacing), rough: 0.88,
+      });
+      for (let c = 0; c < 2; c++) {
+        sageo.anchors[c] = { bone: 'sayaMount', off: [(c - 0.5) * 0.012 * S, -0.010 * S, 0.070 * S] };
+      }
+      const sayaY = this._segA[BONE_INDEX.sayaMount * 3 + 1];
+      sageo.layout((c, r, out) => {
+        out.set(-0.118 * S + (c - 0.5) * 0.012 * S, sayaY - r * 0.062 * S, 0.070 * S);
+      });
+      batch.add(sageo);
+      this.cloths.push(sageo);
+    }
+
+    // ---- sleeve hems, player/ronin only: the wide haori cuffs that hang off the arm.
+    if (rich && costume.sleeves !== 'wrapped' && costume.sleeves !== 'none') {
+      for (const side of ['R', 'L']) {
+        const sc = tier >= 2 ? 10 : 8;
+        const sleeve = new ClothPatch(sc, 3, true, {
+          segLen: 0.085 * S, damping: 0.040, windScale: 1.2, stiffness: 0.85,
+          phase: side === 'R' ? 0.8 : 2.2,
+          tint: tintOf(pal.cloth), rough: 0.93, uvScale: 2,
+        });
+        const bone = 'foreArm' + side;
+        const bi = BONE_INDEX[bone] * 3;
+        for (let c = 0; c < sc; c++) {
+          const a = (c / sc) * Math.PI * 2;
+          sleeve.anchors[c] = {
+            bone, off: [Math.cos(a) * 0.098 * S, 0.020 * S, Math.sin(a) * 0.098 * S],
+          };
+        }
+        sleeve.layout((c, r, out) => {
+          const a = (c / sc) * Math.PI * 2;
+          const flare = 1 + r * 0.22;
+          out.set(this._segA[bi] + Math.cos(a) * 0.098 * S * flare,
+            this._segA[bi + 1] + 0.020 * S - r * 0.085 * S,
+            this._segA[bi + 2] + Math.sin(a) * 0.098 * S * flare);
+        });
+        batch.add(sleeve);
+        this.cloths.push(sleeve);
+      }
+    }
+
+    // ---- 髷 topknot / hair chain
+    if (costume.topknot !== false && costume.hood !== true) {
+      const knot = new ClothPatch(3, 4, true, {
+        segLen: 0.048 * S, damping: 0.070, windScale: 0.5, stiffness: 1.0, phase: 4.4,
+        tint: tintOf(0x14100e), rough: 0.62,
+      });
+      const ki = BONE_INDEX.topknot * 3;
+      for (let c = 0; c < 3; c++) {
+        const a = (c / 3) * Math.PI * 2;
+        knot.anchors[c] = { bone: 'topknot', off: [Math.cos(a) * 0.026 * S, 0, Math.sin(a) * 0.026 * S] };
+      }
+      knot.layout((c, r, out) => {
+        const a = (c / 3) * Math.PI * 2;
+        const taper = 1 - r * 0.20;
+        out.set(this._segA[ki] + Math.cos(a) * 0.026 * S * taper,
+          this._segA[ki + 1] - r * 0.048 * S,
+          this._segA[ki + 2] + Math.sin(a) * 0.026 * S * taper + r * 0.020 * S);
+      });
+      batch.add(knot);
+      this.cloths.push(knot);
+    }
+
+    const mesh = batch.build(M.clothBatch);
+    if (mesh) {
+      mesh.userData.detail = 2;
+      this.root.add(mesh);
+      this.parts.cloth = mesh;
+    }
+
+    // Body colliders for the cloth: torso, both thighs, both shins. Five capsules is
+    // the whole budget — any more and the skirt starts costing more than the skin.
+    this._colliders = [
+      new Float32Array(7), new Float32Array(7), new Float32Array(7),
+      new Float32Array(7), new Float32Array(7),
+    ];
+    this._colliderDefs = [
+      ['hips', 'spine3', 0.190 * S], ['thighR', 'shinR', 0.108 * S], ['thighL', 'shinL', 0.108 * S],
+      ['shinR', 'footR', 0.078 * S], ['shinL', 'footL', 0.078 * S],
+    ];
+  }
+
+  // ==================================================================== events
+
+  /** Subscribe to a clip event marker. `'*'` receives every marker. */
+  on(name, fn) {
+    if (typeof fn !== 'function') return () => {};
+    let l = this._listeners.get(name);
+    if (!l) { l = []; this._listeners.set(name, l); }
+    l.push(fn);
+    return () => this.off(name, fn);
+  }
+
+  off(name, fn) {
+    const l = this._listeners.get(name);
+    if (!l) return;
+    const i = l.indexOf(fn);
+    if (i >= 0) l.splice(i, 1);
+  }
+
+  _fire(name, foot, t, clipName, layerName) {
+    const e = this._evt;
+    e.name = name; e.foot = foot || null; e.t = t;
+    e.clip = clipName; e.layer = layerName; e.entity = this.entity;
+    const l = this._listeners.get(name);
+    if (l) for (let i = 0; i < l.length; i++) { try { l[i](e); } catch (err) { console.error('[rig]', err); } }
+    const any = this._listeners.get('*');
+    if (any) for (let i = 0; i < any.length; i++) { try { any[i](e); } catch (err) { console.error('[rig]', err); } }
+  }
+
+  // ================================================================= playback
+
+  /** Resolve a caller's clip name through the alias table. Returns null, never throws. */
+  _resolve(name) {
+    if (!name) return null;
+    let c = CLIPS[name];
+    if (c) return compileClip(c);
+    const alias = CLIP_ALIAS[name];
+    if (alias && CLIPS[alias]) return compileClip(CLIPS[alias]);
+    const def = getClip(name);
+    return def ? compileClip(def) : null;
+  }
+
+  /**
+   * `play(clipName, { fade, speed, layer, loop, mask, weight, offset, duration, onEnd })`.
+   *
+   * Playing a locomotion clip on the base layer does NOT take the base layer out of
+   * blend-space mode — it feeds the blend space instead. That is deliberate: both
+   * gameplay call sites drive locomotion by clip name, and switching the base layer to
+   * a single clip is exactly how you get feet that skate.
+   */
+  play(name, opts) {
+    const o = opts || {};
+    const c = this._resolve(name);
+    if (!c) return null;
+
+    if (o.stance) this.setStance(o.stance);
+
+    // Locomotion routing.
+    const loco = LOCO_CLIP_SPEED[c.name];
+    const wantsBase = o.layer === 'base' || o.layer === LAYER_BASE
+      || (o.layer === undefined && c.layer === 'base');
+    if (loco && wantsBase && this._locoMode) {
+      if (c.name.startsWith('idle_')) {
+        this.stance = c.name === 'idle_sheathed' ? 'sheathed'
+          : c.name === 'idle_drawn_jodan' ? 'jodan'
+            : c.name === 'idle_drawn_gedan' ? 'gedan' : 'seigan';
+        this._stanceClip = c.name;
+      }
+      // Enemy.js never calls setLocomotion, so the clip itself has to supply the
+      // blend-space input. Player.js does call it, and then this is ignored.
+      if (!this._locoDriven) {
+        const rate = o.speed || 1;
+        this._loco.forward = loco[0] * rate;
+        this._loco.strafe = loco[1] * rate;
+        this._loco.speed = Math.hypot(this._loco.forward, this._loco.strafe);
+        this._loco.norm = clamp(this._loco.speed / 7.2, 0, 1);
+      }
+      if (o.speed) this._clipRates[c.name] = o.speed;
+      return this.layers[LAYER_BASE];
+    }
+
+    let li;
+    if (o.additive) li = LAYER_ADD;
+    else if (typeof o.layer === 'number') li = clamp(o.layer | 0, 0, 3);
+    else if (typeof o.layer === 'string') {
+      const k = LAYER_NAMES.indexOf(o.layer);
+      li = k >= 0 ? k : (c.layer === 'upper' ? LAYER_UPPER : LAYER_ACTION);
+    } else li = c.layer === 'base' ? LAYER_BASE : c.layer === 'upper' ? LAYER_UPPER
+      : c.layer === 'additive' ? LAYER_ADD : LAYER_ACTION;
+
+    const layer = this.layers[li];
+    if (li === LAYER_BASE) this._locoMode = false;
+
+    const fade = o.fade !== undefined ? o.fade : (c.fade !== undefined ? c.fade : 0.14);
+    if (layer.clip && fade > 0.001) {
+      layer.prev = layer.clip;
+      layer.prevTime = layer.time;
+      layer.prevSpeed = layer.speed;
+      layer.blend = 0;
+      layer.blendRate = 1 / fade;
+    } else {
+      layer.prev = null;
+      layer.blend = 1;
+      layer.blendRate = 0;
+    }
+
+    layer.clip = c;
+    layer.time = o.offset || 0;
+    // `duration` retimes the clip to fit a gameplay window (Enemy.js drives startup
+    // and recovery lengths from its archetype table, not from the clip).
+    layer.speed = o.duration > 0 ? (c.duration / o.duration) : (o.speed || 1);
+    layer.loop = o.loop !== undefined ? !!o.loop : !!c.loop;
+    layer.finished = false;
+    layer.onEnd = o.onEnd || null;
+    layer.mask = buildMask(o.mask || c.mask || (li === LAYER_UPPER ? 'upper' : 'full'));
+    layer.targetWeight = o.weight !== undefined ? o.weight : 1;
+    layer.fadeRate = fade > 0.001 ? 1 / fade : 40;
+    return layer;
+  }
+
+  /** Fade a layer out. `stop()` with no argument stops every non-base layer. */
+  stop(layerName, fade) {
+    const f = fade === undefined ? 0.16 : fade;
+    const doStop = (l) => {
+      l.targetWeight = 0;
+      l.fadeRate = f > 0.001 ? 1 / f : 40;
+      l.loop = false;
+    };
+    if (layerName === undefined) {
+      for (let i = 1; i < this.layers.length; i++) doStop(this.layers[i]);
+      return;
+    }
+    const li = typeof layerName === 'number' ? layerName : LAYER_NAMES.indexOf(layerName);
+    if (li >= 0) doStop(this.layers[li]);
+  }
+
+  isPlaying(name) {
+    for (const l of this.layers) {
+      if (l.weight > 0.001 && l.clip && (l.clip.name === name || CLIP_ALIAS[name] === l.clip.name)) return true;
+    }
+    return false;
+  }
+
+  /** `setSpeed(rate)` or `setSpeed(clipName, rate)` — both call sites use one each. */
+  setSpeed(a, b) {
+    if (typeof a === 'string') {
+      this._clipRates[a] = b;
+      for (const l of this.layers) if (l.clip && l.clip.name === a) l.speed = b;
+      return;
+    }
+    this.timeScale = a;
+  }
+
+  // ============================================================== locomotion
+
+  /** Player.js: metres per second along facing and to the right, plus 0..1 normalised. */
+  setLocomotion(forward, strafe, normalized) {
+    this._locoDriven = true;
+    this._locoMode = true;
+    this._loco.forward = forward || 0;
+    this._loco.strafe = strafe || 0;
+    this._loco.speed = Math.hypot(this._loco.forward, this._loco.strafe);
+    this._loco.norm = normalized !== undefined ? normalized : clamp(this._loco.speed / 7.2, 0, 1);
+    if (this.layers[LAYER_BASE].clip) this.layers[LAYER_BASE].clip = null;
+  }
+
+  /** Generic blend-space setter. `setBlend('locomotion', strafe, forward)`. */
+  setBlend(name, x, y) {
+    if (name === 'locomotion' || name === 'loco' || name === undefined) {
+      this.setLocomotion(y || 0, x || 0);
+    }
+  }
+
+  /** Generic scalar parameter, so a caller that only has `setParam` still works. */
+  setParam(name, value) {
+    switch (name) {
+      case 'speed': this._locoDriven = true; this._locoMode = true; this._loco.speed = value; break;
+      case 'forward': this._locoDriven = true; this._loco.forward = value; break;
+      case 'strafe': this._locoDriven = true; this._loco.strafe = value; break;
+      case 'stance': this.setStance(value); break;
+      case 'timeScale': this.timeScale = value; break;
+      default: break;
+    }
+    if (name === 'speed' || name === 'forward' || name === 'strafe') {
+      const s = Math.hypot(this._loco.forward, this._loco.strafe);
+      if (s > 0.001) this._loco.speed = s;
+      this._loco.norm = clamp(this._loco.speed / 7.2, 0, 1);
+    }
+  }
+
+  setStance(name) {
+    const key = String(name || '').toLowerCase();
+    const clipName = STANCE_IDLE[key];
+    if (!clipName) return;
+    this.stance = key;
+    this._stanceClip = clipName;
+  }
+
+  setSheathed(v) { this.setStance(v ? 'sheathed' : 'seigan'); }
+
+  // ================================================================== look-at
+
+  /** `setLookTarget(v3)` aims head→spine at a world point; `null` releases it. */
+  setLookTarget(target, weight) {
+    if (!target) { this._lookActive = false; this._lookTargetWeight = 0; return; }
+    this._look.copy(target);
+    this._lookActive = true;
+    this._lookTargetWeight = weight === undefined ? 1 : clamp(weight, 0, 1);
+  }
+
+  /** Player.js hands us what it already knows about the ground under the capsule. */
+  setGround(normal, grounded, surface) {
+    if (normal) this.groundNormal.copy(normal);
+    if (grounded !== undefined) this.grounded = !!grounded;
+    if (surface) this.groundSurface = surface;
+  }
+
+  // ====================================================== impulses / reactions
+
+  /** Hit reaction from a world-space impact direction. Feeds a critically damped spring. */
+  addFlinch(dirWorld, strength) {
+    const s = strength === undefined ? 1 : strength;
+    if (!dirWorld) { this._flinchVX += 9 * s; return; }
+    // Into the rig's own frame so a hit from behind bends the spine forward.
+    _v[10].copy(dirWorld).normalize();
+    this.root.updateWorldMatrix(true, false);
+    _q[6].setFromRotationMatrix(this.root.matrixWorld).invert();
+    _v[10].applyQuaternion(_q[6]);
+    this._flinchVX += -_v[10].z * 11 * s;
+    this._flinchVZ += _v[10].x * 9 * s;
+  }
+
+  /** Clash / parry kickback on the arms and chest. */
+  addRecoil(strength) { this._recoilV += (strength === undefined ? 1 : strength) * 12; }
+
+  // ========================================================= LOD and toggles
+
+  /** 0 = full fidelity, 1 = no cloth sim / no IK / no look-at, 2 = pose only. */
+  setLOD(level) {
+    const l = clamp(level | 0, 0, 2);
+    if (l === this.lod) return;
+    this.lod = l;
+    this._ik = l === 0;
+    this._applyClothVisibility();
+    if (l >= 1) { this._lookActive = false; this._lookTargetWeight = 0; }
+    if (l >= 1) { this._hipDrop = 0; }
+  }
+
+  setCloth(on) {
+    this._cloth = !!on;
+    this._applyClothVisibility();
+  }
+
+  setIK(on) { this._ik = !!on; }
+
+  /**
+   * Detail culling. `userData.detail` is the LOD at which a mesh stops being drawn:
+   * 1 for sword furniture (a thumb-sized object past 20 m), 2 for the saya and the
+   * cloth batch. At LOD 2 the cloth also stops simulating, and a skirt frozen
+   * mid-flap looks worse than no skirt at all, so it goes with them.
+   */
+  _applyClothVisibility() {
+    if (!this._detail) return;
+    for (const n of this._detail) n.visible = this.lod < n.userData.detail;
+  }
+
+  get clothEnabled() { return this._cloth && this.lod === 0; }
+  set clothEnabled(v) { this.setCloth(v); }
+  get ikEnabled() { return this._ik && this.lod === 0; }
+  set ikEnabled(v) { this.setIK(v); }
+
+  // ============================================================= attachments
+
+  /**
+   * `attach('hand_r', object3D)` — parents an object to a socket and returns the
+   * socket node. Called with no object it just returns the node, so gameplay can
+   * read or tune the grip transform.
+   */
+  attach(point, object3D) {
+    const key = ATTACH_ALIAS[String(point).toLowerCase()] || point;
+    const node = this.attachments[key] || (this.bones[key] ? this.bones[key] : null);
+    if (!node) return null;
+    if (object3D && object3D.isObject3D && object3D.parent !== node) node.add(object3D);
+    return node;
+  }
+
+  detach(point, object3D) {
+    const key = ATTACH_ALIAS[String(point).toLowerCase()] || point;
+    const node = this.attachments[key];
+    if (node && object3D) node.remove(object3D);
+    return node || null;
+  }
+
+  getBone(name) { return this.bones[name] || null; }
+
+  /** World position of a bone plus an optional local offset. Allocation-free. */
+  getWorldPoint(boneName, offset, out) {
+    const b = this.bones[boneName];
+    const target = out || _v[11];
+    if (!b) return target.set(0, 0, 0);
+    if (offset) target.copy(offset).applyMatrix4(b.matrixWorld);
+    else target.setFromMatrixPosition(b.matrixWorld);
+    return target;
+  }
+
+  // ================================================================== update
+
+  /**
+   * One frame. Order matters and is not negotiable:
+   *   locomotion phase → layer advance + events → pose compose → procedural additives
+   *   → write bones → world matrices → look-at → foot IK → cloth.
+   * Look-at and IK need world matrices, so they run after the first update and each
+   * refreshes only the subtree it touched.
+   */
+  update(dt, elapsed) {
+    if (this.disposed || !this.built) return;
+    const d = Math.min(0.1, (dt || 0) * this.timeScale);
+    this.time += d;
+
+    // At LOD 2 the character is a distant silhouette: pose it at 10 Hz and skip
+    // everything else. Twelve rigs at full fidelity does not fit the frame budget.
+    if (this.lod >= 2) {
+      this._lodSkip += d;
+      if (this._lodSkip < 0.1) return;
+      this._lodSkip = 0;
+    }
+
+    this._advanceLoco(d);
+    this._advanceLayers(d);
+    this._compose();
+    if (this.lod === 0) this._procedural(d);
+    this._writeBones();
+    this.root.updateMatrixWorld(true);
+
+    if (this.lod >= 2) return;
+    if (this._lookActive || this._lookWeight > 0.001) this._applyLookAt(d);
+    if (this._ik && this.lod === 0) this._applyFootIK(d);
+    if (this.lod < 2) this._updateCloth(d);   // drawn ⇒ moving, simulated or swayed
+  }
+
+  /** Nothing here needs the render to have happened; kept for interface symmetry. */
+  lateUpdate() {}
+
+  // -------------------------------------------------------------- locomotion
+
+  /**
+   * Phase advances by *distance travelled over stride length*, never by wall time.
+   * That single choice is what makes the feet stick: at 3 m/s in a 2.05 m stride the
+   * cycle runs at 1.46 Hz, and it keeps doing so through every blend.
+   */
+  _advanceLoco(dt) {
+    const L = this._loco;
+    const sp = Math.max(Math.abs(L.forward), Math.hypot(L.forward, L.strafe));
+    L.speed = sp;
+    let stride = 1.34;
+    if (sp > 5.9) stride = 2.48;
+    else if (sp > 3.4) stride = lerp(2.05, 2.48, (sp - 3.4) / 2.5);
+    else if (sp > 1.9) stride = lerp(1.34, 2.05, (sp - 1.9) / 1.5);
+    if (L.forward < -0.2 && Math.abs(L.forward) > Math.abs(L.strafe)) stride = 1.05;
+    else if (Math.abs(L.strafe) > Math.abs(L.forward) * 1.15) stride = 1.15;
+    // Idle still ticks so a stopped character resumes on the correct foot.
+    const cadence = sp > 0.06 ? sp / stride : 0.5;
+    this.locoPhase = (this.locoPhase + cadence * dt) % 1;
+    if (this.locoPhase < 0) this.locoPhase += 1;
+  }
+
+  /**
+   * The 2D blend space. At most three clips are sampled: the two gaits bracketing the
+   * current speed (or walk_back when reversing) and one strafe, cross-faded by the
+   * lateral fraction. All three are sampled at the same phase.
+   */
+  _sampleLocomotion(outQ, outP, outDef) {
+    const L = this._loco;
+    const phase = this.locoPhase;
+    const q0 = this._lb[0], p0 = this._lbp[0], d0 = this._lbd[0];
+    const q1 = this._lb[1], p1 = this._lbp[1], d1 = this._lbd[1];
+    const q2 = this._lb[2], p2 = this._lbp[2], d2 = this._lbd[2];
+
+    const fwd = L.forward, lat = L.strafe;
+    const absF = Math.abs(fwd), absL = Math.abs(lat);
+    const speed = Math.hypot(fwd, lat);
+
+    // --- forward/backward axis
+    let clipA, clipB, tAB;
+    if (fwd < -0.25 && absF >= absL * 0.6) {
+      const back = compileClip(CLIPS.walk_back);
+      const idle = compileClip(CLIPS[this._stanceClip] || CLIPS.idle_drawn_seigan);
+      clipA = idle; clipB = back; tAB = clamp(absF / 1.7, 0, 1);
+    } else {
+      const table = LOCOMOTION_FORWARD;
+      let i = 0;
+      while (i < table.length - 2 && speed > table[i + 1].speed) i++;
+      const a = table[i], b = table[i + 1];
+      const nameA = a.speed === 0 ? (this._stanceClip || a.clip) : a.clip;
+      clipA = compileClip(CLIPS[nameA] || CLIPS[a.clip]);
+      clipB = compileClip(CLIPS[b.clip]);
+      tAB = clamp((speed - a.speed) / Math.max(0.001, b.speed - a.speed), 0, 1);
+    }
+    sampleClip(clipA, phase * clipA.duration, q0, p0, d0);
+    sampleClip(clipB, phase * clipB.duration, q1, p1, d1);
+    blendBuffers(q0, p0, d0, q1, p1, d1, tAB, outQ, outP, outDef);
+
+    // --- lateral axis
+    const latW = clamp((absL - absF * 0.25) / 2.4, 0, 1);
+    if (latW > 0.002) {
+      const strafe = compileClip(CLIPS[lat < 0 ? 'strafe_l' : 'strafe_r']);
+      sampleClip(strafe, phase * strafe.duration, q2, p2, d2);
+      blendBuffers(outQ, outP, outDef, q2, p2, d2, latW, outQ, outP, outDef);
+    }
+
+    // Footstep markers come from the dominant clip's authored phase, so they stay in
+    // sync with whatever the blend space is actually showing.
+    const prev = this._phasePrev === undefined ? phase : this._phasePrev;
+    if (speed > 0.35) {
+      if (crossedPhase(prev, phase, 0.02)) this._fire('footstep', 'R', phase, 'locomotion', 'base');
+      if (crossedPhase(prev, phase, 0.52)) this._fire('footstep', 'L', phase, 'locomotion', 'base');
+    }
+    this._phasePrev = phase;
+  }
+
+  // ------------------------------------------------------------- layer state
+
+  _advanceLayers(dt) {
+    for (let i = 0; i < this.layers.length; i++) {
+      const l = this.layers[i];
+      l.weight = approach(l.weight, l.targetWeight, l.fadeRate, dt);
+      if (l.blend < 1) l.blend = Math.min(1, l.blend + l.blendRate * dt);
+      if (!l.clip) continue;
+
+      const prevT = l.time;
+      l.time += dt * l.speed;
+      if (l.prev) l.prevTime += dt * l.prevSpeed;
+
+      // Once the incoming clip has fully faded in, stop sampling the outgoing one.
+      if (l.prev && l.blend >= 1) l.prev = null;
+
+      const dur = l.clip.duration;
+      if (l.loop) {
+        if (l.time >= dur) {
+          this._fireRange(l, prevT, dur);
+          l.time -= dur * Math.floor(l.time / dur);
+          this._fireRange(l, -1e-6, l.time);
+        } else this._fireRange(l, prevT, l.time);
+      } else if (l.time >= dur) {
+        this._fireRange(l, prevT, dur + 1e-6);
+        l.time = dur;
+        if (!l.finished) {
+          l.finished = true;
+          this._fire('clip-end', null, dur, l.clip.name, l.name);
+          if (l.onEnd) { const f = l.onEnd; l.onEnd = null; try { f(l.clip.name); } catch { /* ignore */ } }
+          // Layers release themselves at the end of a clip — unless the clip is
+          // marked `hold`, which is how a guard stays up and a corpse stays down.
+          if (i !== LAYER_BASE && !l.clip.hold) { l.targetWeight = 0; l.fadeRate = 1 / 0.18; }
+        }
+      } else this._fireRange(l, prevT, l.time);
+    }
+  }
+
+  _fireRange(l, t0, t1) {
+    const ev = l.clip.events;
+    if (!ev || ev.length === 0) return;
+    for (let i = 0; i < ev.length; i++) {
+      const e = ev[i];
+      if (e.t > t0 && e.t <= t1) this._fire(e.name, e.foot, e.t, l.clip.name, l.name);
+    }
+  }
+
+  // ----------------------------------------------------------- pose compose
+
+  _compose() {
+    const outQ = this._outQ, outP = this._outP;
+    for (let i = 0; i < NB; i++) {
+      outQ[i * 4] = 0; outQ[i * 4 + 1] = 0; outQ[i * 4 + 2] = 0; outQ[i * 4 + 3] = 1;
+      outP[i * 3] = 0; outP[i * 3 + 1] = 0; outP[i * 3 + 2] = 0;
+    }
+
+    for (let li = 0; li < this.layers.length; li++) {
+      const l = this.layers[li];
+      if (l.weight <= 0.0008) continue;
+
+      if (li === LAYER_BASE && this._locoMode && !l.clip) {
+        this._sampleLocomotion(l.q, l.p, l.def);
+      } else if (l.clip) {
+        sampleClip(l.clip, l.time, l.q, l.p, l.def);
+        if (l.prev && l.blend < 1) {
+          sampleClip(l.prev, l.prevTime, l.qb, l.pb, l.defb);
+          blendBuffers(l.qb, l.pb, l.defb, l.q, l.p, l.def, EASE_FN.smooth(l.blend), l.q, l.p, l.def);
+        }
+      } else continue;
+
+      const mask = l.mask, w = l.weight;
+      if (l.additive) {
+        for (let b = 0; b < NB; b++) {
+          const bw = w * mask[b] * l.def[b];
+          if (bw <= 0.0008) continue;
+          qAddDelta(outQ, b * 4, l.q, b * 4, bw);
+          outP[b * 3] += l.p[b * 3] * bw;
+          outP[b * 3 + 1] += l.p[b * 3 + 1] * bw;
+          outP[b * 3 + 2] += l.p[b * 3 + 2] * bw;
+        }
+      } else {
+        for (let b = 0; b < NB; b++) {
+          const bw = w * mask[b] * l.def[b];
+          if (bw <= 0.0008) continue;
+          qSlerp(outQ, b * 4, l.q, b * 4, bw, outQ, b * 4);
+          const o = b * 3;
+          outP[o] += (l.p[o] - outP[o]) * bw;
+          outP[o + 1] += (l.p[o + 1] - outP[o + 1]) * bw;
+          outP[o + 2] += (l.p[o + 2] - outP[o + 2]) * bw;
+        }
+      }
+    }
+  }
+
+  // ------------------------------------------------- procedural motion layer
+
+  /**
+   * The layer that costs almost nothing and does most of the work of making a
+   * character look expensive: breathing, weight shift, the spine and head lagging
+   * behind a fast turn, and the flinch/recoil springs.
+   */
+  _procedural(dt) {
+    const Q = this._outQ, I = BONE_INDEX;
+    const t = this.time;
+    const still = 1 - clamp(this._loco.speed / 2.2, 0, 1);
+    const combat = this.stance === 'sheathed' ? 0.6 : 1.0;
+
+    // --- breathing: two sines an octave apart plus a slow noise wander, so it never
+    //     lands on an obvious period.
+    this._breath += dt * (1.05 + this._loco.norm * 1.9);
+    const br = Math.sin(this._breath) * 0.55 + Math.sin(this._breath * 2.13 + 1.1) * 0.18;
+    const ba = (0.014 + 0.010 * this._loco.norm) * combat;
+    qAddEuler(Q, I.spine1 * 4, br * ba * 0.8, 0, 0, 1);
+    qAddEuler(Q, I.spine2 * 4, br * ba, 0, 0, 1);
+    qAddEuler(Q, I.spine3 * 4, br * ba * 0.7, 0, 0, 1);
+    qAddEuler(Q, I.clavicleR * 4, 0, 0, -br * ba * 1.4, 1);
+    qAddEuler(Q, I.clavicleL * 4, 0, 0, br * ba * 1.4, 1);
+    qAddEuler(Q, I.head * 4, br * ba * 0.35, 0, 0, 1);
+
+    // --- idle sway and weight shift: noise, not sine, so two enemies standing side
+    //     by side never move in lockstep.
+    if (still > 0.02) {
+      const n1 = noise.noise2(t * 0.23 + this.seed * 0.017, 0.0);
+      const n2 = noise.noise2(0.0, t * 0.19 + this.seed * 0.031);
+      const n3 = noise.noise2(t * 0.11 + this.seed * 0.007, 4.7);
+      const s = still * 0.7;
+      qAddEuler(Q, I.hips * 4, n3 * 0.010, n1 * 0.030, n2 * 0.026, s);
+      qAddEuler(Q, I.spine2 * 4, 0, -n1 * 0.018, -n2 * 0.016, s);
+      qAddEuler(Q, I.neck * 4, n3 * 0.012, n1 * 0.020, 0, s);
+      qAddEuler(Q, I.head * 4, n2 * 0.014, n1 * 0.034, n3 * 0.016, s);
+      this._outP[I.hips * 3 + 1] += n2 * 0.004 * s * this.scale;
+    }
+
+    // --- secondary motion: the chest and head lag a fast turn by a few frames. One
+    //     spring per bone; this is the cheapest "expensive" effect in the file.
+    this.root.updateWorldMatrix(true, false);
+    const yaw = Math.atan2(this.root.matrixWorld.elements[8], this.root.matrixWorld.elements[10]);
+    let dyaw = yaw - this._yawPrev;
+    while (dyaw > Math.PI) dyaw -= Math.PI * 2;
+    while (dyaw < -Math.PI) dyaw += Math.PI * 2;
+    this._yawPrev = yaw;
+    this._yawVel = damp(this._yawVel, dt > 1e-5 ? dyaw / dt : 0, 14, dt);
+    const drive = clamp(this._yawVel * 0.085, -0.30, 0.30);
+    this._lagSpineV += (drive - this._lagSpine) * 190 * dt - this._lagSpineV * 21 * dt;
+    this._lagSpine += this._lagSpineV * dt;
+    this._lagHeadV += (drive * 1.5 - this._lagHead) * 130 * dt - this._lagHeadV * 17 * dt;
+    this._lagHead += this._lagHeadV * dt;
+    qAddEuler(Q, I.spine1 * 4, 0, -this._lagSpine * 0.35, 0, 1);
+    qAddEuler(Q, I.spine2 * 4, 0, -this._lagSpine * 0.45, 0, 1);
+    qAddEuler(Q, I.spine3 * 4, 0, -this._lagSpine * 0.40, 0, 1);
+    qAddEuler(Q, I.neck * 4, 0, -this._lagHead * 0.50, 0, 1);
+    qAddEuler(Q, I.head * 4, 0, -this._lagHead * 0.35, 0, 1);
+
+    // --- flinch: critically damped, so a hit reads as one sharp displacement and a
+    //     settle rather than a wobble.
+    const K = 165, C = 2 * Math.sqrt(K) * 0.85;
+    this._flinchVX += (-K * this._flinchX - C * this._flinchVX) * dt;
+    this._flinchVZ += (-K * this._flinchZ - C * this._flinchVZ) * dt;
+    this._flinchX += this._flinchVX * dt;
+    this._flinchZ += this._flinchVZ * dt;
+    if (Math.abs(this._flinchX) > 1e-4 || Math.abs(this._flinchZ) > 1e-4) {
+      const fx = clamp(this._flinchX, -0.55, 0.55), fz = clamp(this._flinchZ, -0.55, 0.55);
+      qAddEuler(Q, I.spine1 * 4, fx * 0.22, 0, fz * 0.22, 1);
+      qAddEuler(Q, I.spine2 * 4, fx * 0.30, 0, fz * 0.30, 1);
+      qAddEuler(Q, I.spine3 * 4, fx * 0.26, 0, fz * 0.26, 1);
+      qAddEuler(Q, I.neck * 4, fx * 0.32, 0, fz * 0.30, 1);
+      qAddEuler(Q, I.head * 4, fx * 0.40, 0, fz * 0.36, 1);
+      qAddEuler(Q, I.clavicleR * 4, fx * 0.18, 0, -fz * 0.22, 1);
+      qAddEuler(Q, I.clavicleL * 4, fx * 0.18, 0, -fz * 0.22, 1);
+      this._outP[I.hips * 3 + 1] -= Math.abs(fx) * 0.035 * this.scale;
+    }
+
+    // --- clash recoil, arms only
+    this._recoilV += (-260 * this._recoil - 2 * Math.sqrt(260) * 0.9 * this._recoilV) * dt;
+    this._recoil += this._recoilV * dt;
+    if (Math.abs(this._recoil) > 1e-4) {
+      const r = clamp(this._recoil, -0.6, 0.6);
+      qAddEuler(Q, I.upperArmR * 4, -r * 0.40, 0, r * 0.14, 1);
+      qAddEuler(Q, I.foreArmR * 4, -r * 0.30, 0, 0, 1);
+      qAddEuler(Q, I.upperArmL * 4, -r * 0.40, 0, -r * 0.14, 1);
+      qAddEuler(Q, I.foreArmL * 4, -r * 0.30, 0, 0, 1);
+      qAddEuler(Q, I.spine2 * 4, r * 0.16, 0, 0, 1);
+    }
+  }
+
+  _writeBones() {
+    const Q = this._outQ, P = this._outP, R = this._restP, S = this.scale;
+    for (let i = 0; i < NB; i++) {
+      const b = this.boneList[i], o4 = i * 4, o3 = i * 3;
+      b.quaternion.set(Q[o4], Q[o4 + 1], Q[o4 + 2], Q[o4 + 3]);
+      b.position.set(R[o3] + P[o3] * S, R[o3 + 1] + P[o3 + 1] * S + (i === 1 ? this._hipDrop : 0),
+        R[o3 + 2] + P[o3 + 2] * S);
+      b.matrixWorldNeedsUpdate = true;
+    }
+  }
+
+  // ------------------------------------------------------------------ IK
+
+  /**
+   * Analytic two-bone IK. `chain` is three bone names or Bones (root, mid, end);
+   * `pole` steers the elbow/knee plane. Solved entirely in world quaternions so no
+   * matrix rebuild is needed between the two joints.
+   */
+  solveIK(chain, target, poleTarget, weight) {
+    const w = weight === undefined ? 1 : clamp(weight, 0, 1);
+    if (w <= 0.001) return false;
+    const b0 = typeof chain[0] === 'string' ? this.bones[chain[0]] : chain[0];
+    const b1 = typeof chain[1] === 'string' ? this.bones[chain[1]] : chain[1];
+    const b2 = typeof chain[2] === 'string' ? this.bones[chain[2]] : chain[2];
+    if (!b0 || !b1 || !b2) return false;
+
+    const A = _v[0].setFromMatrixPosition(b0.matrixWorld);
+    const B = _v[1].setFromMatrixPosition(b1.matrixWorld);
+    const C = _v[2].setFromMatrixPosition(b2.matrixWorld);
+    const l1 = A.distanceTo(B), l2 = B.distanceTo(C);
+    if (l1 < 1e-5 || l2 < 1e-5) return false;
+
+    const T = _v[3].copy(target);
+    const toT = _v[4].subVectors(T, A);
+    let dist = toT.length();
+    const maxLen = (l1 + l2) * 0.998;
+    if (dist > maxLen) { toT.multiplyScalar(maxLen / dist); dist = maxLen; T.copy(A).add(toT); }
+    if (dist < 1e-4) return false;
+    const dir = _v[5].copy(toT).divideScalar(dist);
+
+    // Bend plane: prefer the pole, fall back to the current elbow offset so a
+    // straight-armed chain does not snap to an arbitrary axis.
+    const pole = _v[6];
+    if (poleTarget) pole.copy(poleTarget).sub(A);
+    else pole.copy(B).sub(A);
+    pole.addScaledVector(dir, -pole.dot(dir));
+    if (pole.lengthSq() < 1e-8) {
+      pole.copy(_UP).addScaledVector(dir, -_UP.dot(dir));
+      if (pole.lengthSq() < 1e-8) pole.set(1, 0, 0).addScaledVector(dir, -dir.x);
+    }
+    pole.normalize();
+
+    const cosA = clamp((l1 * l1 + dist * dist - l2 * l2) / (2 * l1 * dist), -1, 1);
+    const angA = Math.acos(cosA);
+    // Desired mid-joint position: swing `dir` toward the pole by the root angle.
+    const Bd = _v[7].copy(dir).multiplyScalar(Math.cos(angA))
+      .addScaledVector(pole, Math.sin(angA)).multiplyScalar(l1).add(A);
+
+    // --- root bone
+    const cur0 = _v[8].subVectors(B, A).normalize();
+    const want0 = _v[9].subVectors(Bd, A).normalize();
+    const d0 = _q[0].setFromUnitVectors(cur0, want0);
+    if (w < 1) d0.slerp(_q[5].identity(), 1 - w);
+    const w0 = _q[1].setFromRotationMatrix(_m[0].extractRotation(b0.matrixWorld));
+    const n0 = _q[2].copy(d0).multiply(w0);
+    const p0 = b0.parent
+      ? _q[3].setFromRotationMatrix(_m[1].extractRotation(b0.parent.matrixWorld)).invert()
+      : _q[3].identity();
+    b0.quaternion.copy(p0).multiply(n0);
+
+    // --- mid bone: its world position is Bd and its world rotation picked up d0.
+    const curC = _v[10].copy(C).sub(B).applyQuaternion(d0).normalize();
+    const wantC = _v[11].subVectors(T, Bd).normalize();
+    const d1 = _q[4].setFromUnitVectors(curC, wantC);
+    if (w < 1) d1.slerp(_q[5].identity(), 1 - w);
+    const w1 = _q[5].setFromRotationMatrix(_m[2].extractRotation(b1.matrixWorld));
+    const n1 = _q[6].copy(d1).multiply(_q[7].copy(d0).multiply(w1));
+    b1.quaternion.copy(_q[8].copy(n0).invert()).multiply(n1);
+
+    b0.updateMatrixWorld(true);
+    return true;
+  }
+
+  /**
+   * Foot planting. Probes the ground under each ankle, drops the hips so the lower
+   * foot can reach without the higher one hyperextending, runs two-bone IK per leg
+   * and tilts each foot onto the surface normal. This is what stops a character from
+   * floating up a stone stair or standing on air on a slope.
+   */
+  _applyFootIK(dt) {
+    const S = this.scale;
+    const ankleLift = 0.085 * S;
+    const maxLift = 0.42 * S, maxDrop = 0.34 * S;
+    const feet = ['footR', 'footL'];
+    let lowest = 0;
+    let anyHit = false;
+
+    for (let i = 0; i < 2; i++) {
+      const foot = this.bones[feet[i]];
+      const a = _v[12].setFromMatrixPosition(foot.matrixWorld);
+      const hit = this._probeGround(a.x, a.y + 0.60 * S, a.z, 1.4 * S);
+      if (!hit) { this._footY[i] = a.y; this._footN[i].copy(this.groundNormal); continue; }
+      anyHit = true;
+      const want = clamp(this._groundY + ankleLift, a.y - maxDrop, a.y + maxLift);
+      this._footY[i] = damp(this._footY[i] || want, want, 16, dt);
+      this._footN[i].lerp(this._groundNrm, 1 - Math.exp(-12 * dt)).normalize();
+      lowest = Math.min(lowest, this._footY[i] - a.y);
+    }
+    if (!anyHit) { this._hipDrop = damp(this._hipDrop, 0, 10, dt); return; }
+
+    // Counter-rotate — really counter-translate — the hips so the character does not
+    // grow taller on a slope.
+    this._hipDrop = damp(this._hipDrop, clamp(lowest, -maxDrop, 0), 11, dt);
+    const hips = this.bones.hips;
+    hips.position.y = this._restP[1 * 3 + 1] + this._outP[1 * 3 + 1] * S + this._hipDrop;
+    hips.updateMatrixWorld(true);
+
+    for (let i = 0; i < 2; i++) {
+      const sideU = i === 0 ? 'R' : 'L';
+      const foot = this.bones['foot' + sideU];
+      const a = _v[13].setFromMatrixPosition(foot.matrixWorld);
+      // Knee pole: forward of the knee in the rig's own frame, so it never inverts.
+      const knee = _v[14].setFromMatrixPosition(this.bones['shin' + sideU].matrixWorld);
+      const hip = _v[15].setFromMatrixPosition(this.bones['thigh' + sideU].matrixWorld);
+      _v[16].copy(knee).sub(hip);
+      _v[17].copy(a).sub(hip).normalize();
+      _v[16].addScaledVector(_v[17], -_v[16].dot(_v[17]));
+      if (_v[16].lengthSq() < 1e-7) this.root.getWorldDirection(_v[16]).multiplyScalar(-1);
+      _v[16].normalize().multiplyScalar(0.9 * S).add(knee);
+
+      _v[18].set(a.x, this._footY[i], a.z);
+      // Standing still is where foot skate is most visible, so lock the plant only
+      // then — at speed the phase-driven cadence already keeps the feet honest.
+      if (this._loco.speed < 0.4) {
+        if (!this._footLocked[i]) { this._footLock[i].copy(_v[18]); this._footLocked[i] = 1; }
+        _v[18].x = lerp(_v[18].x, this._footLock[i].x, 0.35);
+        _v[18].z = lerp(_v[18].z, this._footLock[i].z, 0.35);
+      } else this._footLocked[i] = 0;
+
+      this.solveIK(['thigh' + sideU, 'shin' + sideU, 'foot' + sideU], _v[18], _v[16], 1);
+
+      // Roll the sole onto the surface, clamped so a steep face does not snap the ankle.
+      const n = this._footN[i];
+      const up = _v[19].set(0, 1, 0).applyQuaternion(
+        _q[9].setFromRotationMatrix(_m[3].extractRotation(foot.matrixWorld))).normalize();
+      const dot = clamp(up.dot(n), -1, 1);
+      if (dot < 0.9995) {
+        const ang = Math.acos(dot);
+        const lim = Math.min(ang, 0.42);
+        const d = _q[10].setFromUnitVectors(up, n);
+        if (lim < ang) d.slerp(_q[11].identity(), 1 - lim / ang);
+        const wq = _q[11].setFromRotationMatrix(_m[4].extractRotation(foot.matrixWorld));
+        const nq = _q[12].copy(d).multiply(wq);
+        const pq = _q[13].setFromRotationMatrix(_m[5].extractRotation(foot.parent.matrixWorld)).invert();
+        foot.quaternion.copy(pq).multiply(nq);
+        foot.updateMatrixWorld(true);
+      }
+    }
+  }
+
+  /**
+   * Ground query. `ctx.physics.raycastDown` is the intended path, but Physics.js is
+   * written in parallel and its return shape is not pinned, so every plausible shape
+   * is accepted and the working one is cached. Terrain height is the fallback, and a
+   * flat plane at the root is the fallback's fallback.
+   */
+  _probeGround(x, y, z, maxDist) {
+    const phys = this.ctx.physics;
+    if (this._groundMode !== 1 && phys && typeof phys.raycastDown === 'function') {
+      try {
+        const r = phys.raycastDown(x, y, z, maxDist);
+        if (r === null || r === undefined || r === false) { this._groundMode = 0; return false; }
+        if (typeof r === 'number') {
+          this._groundMode = 0; this._groundY = r; this._groundNrm = this.groundNormal; return true;
+        }
+        if (r.point) {
+          this._groundMode = 0;
+          this._groundY = r.point.y;
+          this._groundNrm = r.normal || this.groundNormal;
+          return true;
+        }
+        if (typeof r.distance === 'number') {
+          this._groundMode = 0;
+          this._groundY = y - r.distance;
+          this._groundNrm = r.normal || this.groundNormal;
+          return true;
+        }
+        if (typeof r.y === 'number') {
+          this._groundMode = 0; this._groundY = r.y; this._groundNrm = r.normal || this.groundNormal; return true;
+        }
+      } catch { this._groundMode = 1; }
+    }
+    const terr = this.ctx.terrain;
+    if (terr) {
+      const fn = terr.heightAt || terr.getHeight || terr.sampleHeight;
+      if (typeof fn === 'function') {
+        try {
+          const h = fn.call(terr, x, z);
+          if (typeof h === 'number' && Number.isFinite(h)) {
+            this._groundY = h; this._groundNrm = this.groundNormal; return true;
+          }
+        } catch { /* fall through */ }
+      }
+    }
+    this._groundY = this.root.matrixWorld.elements[13];
+    this._groundNrm = this.groundNormal;
+    return this.grounded;
+  }
+
+  // --------------------------------------------------------------- look-at
+
+  /**
+   * Head/neck/spine aim with per-bone weight and an angular limit, applied outward
+   * along the chain so the spine contributes a little and the head does most of it.
+   */
+  _applyLookAt(dt) {
+    this._lookWeight = damp(this._lookWeight, this._lookActive ? this._lookTargetWeight : 0, 9, dt);
+    if (this._lookWeight <= 0.004) return;
+    const chain = LOOK_CHAIN;
+    for (let i = 0; i < chain.length; i++) {
+      const c = chain[i];
+      const bone = this.bones[c.bone];
+      if (!bone) continue;
+      const p = _v[0].setFromMatrixPosition(bone.matrixWorld);
+      const wq = _q[0].setFromRotationMatrix(_m[0].extractRotation(bone.matrixWorld));
+      const fwd = _v[1].copy(_FWD).applyQuaternion(wq).normalize();
+      const want = _v[2].copy(this._look).sub(p);
+      if (want.lengthSq() < 1e-6) continue;
+      want.normalize();
+      const dot = clamp(fwd.dot(want), -1, 1);
+      const ang = Math.acos(dot);
+      if (ang < 1e-4) continue;
+      const w = this._lookWeight * c.weight;
+      const applied = Math.min(ang * w, c.limit);
+      const d = _q[1].setFromUnitVectors(fwd, want);
+      d.slerp(_q[2].identity(), 1 - applied / ang);
+      const nq = _q[3].copy(d).multiply(wq);
+      const pq = _q[4].setFromRotationMatrix(_m[1].extractRotation(bone.parent.matrixWorld)).invert();
+      bone.quaternion.copy(pq).multiply(nq);
+      bone.updateMatrixWorld(true);
+    }
+  }
+
+  // ----------------------------------------------------------------- cloth
+
+  _updateCloth(dt) {
+    if (this.cloths.length === 0) return;
+    const q = this.ctx.quality;
+    const simulate = this._cloth && this.lod === 0 && (!q || q.cloth !== false);
+
+    this._rootInv.copy(this.root.matrixWorld).invert();
+    for (let i = 0; i < this.cloths.length; i++) this.cloths[i].updateAnchors(this.bones, this._rootInv);
+
+    this._sampleWind(this._wind);
+    const w = this._wind;
+
+    if (!simulate) {
+      // LOW tier / distant LOD: a travelling wave instead of a solver.
+      for (let i = 0; i < this.cloths.length; i++) {
+        const c = this.cloths[i];
+        c.sway(this.time, w.x, w.y, w.z);
+        c.flush();
+      }
+      this.clothBatch.upload();
+      return;
+    }
+
+    // Fixed 60 Hz substeps: Verlet with a variable timestep is not stable, and a
+    // hakama that explodes once is a hakama the player never trusts again.
+    const iters = q && q.tier >= 2 ? 6 : q && q.tier >= 1 ? 4 : 3;
+    this._updateColliders();
+    this._clothAccum = Math.min(this._clothAccum + dt, 0.05);
+    const h = 1 / 60;
+    let steps = 0;
+    while (this._clothAccum >= h && steps < 3) {
+      for (let i = 0; i < this.cloths.length; i++) {
+        this.cloths[i].step(h, w.x, w.y, w.z, this._colliders, iters);
+      }
+      this._clothAccum -= h;
+      steps++;
+    }
+    if (steps > 0) {
+      for (let i = 0; i < this.cloths.length; i++) this.cloths[i].flush();
+      this.clothBatch.upload();   // one attribute upload for every soft thing on the body
+    }
+  }
+
+  _updateColliders() {
+    const defs = this._colliderDefs;
+    const inv = this._rootInv;
+    for (let i = 0; i < defs.length; i++) {
+      const d = defs[i], c = this._colliders[i];
+      const a = this.bones[d[0]], b = this.bones[d[1]];
+      if (!a || !b) continue;
+      _v[0].setFromMatrixPosition(a.matrixWorld).applyMatrix4(inv);
+      _v[1].setFromMatrixPosition(b.matrixWorld).applyMatrix4(inv);
+      c[0] = _v[0].x; c[1] = _v[0].y; c[2] = _v[0].z;
+      c[3] = _v[1].x; c[4] = _v[1].y; c[5] = _v[1].z;
+      c[6] = d[2];
+    }
+  }
+
+  /**
+   * Wind in the rig's local frame. Reads `ctx.wind` (written by Weather) when present
+   * so cloth gusts in step with the grass and the bamboo — ARCHITECTURE §5.5 asks for
+   * wind that visibly propagates, and cloth moving on its own private schedule breaks
+   * that illusion instantly. Falls back to a built-in gust field.
+   */
+  _sampleWind(out) {
+    const w = this.ctx.wind;
+    let dx = 0.82, dz = 0.57, strength = 0.45, gust = 0;
+    if (w) {
+      if (w.direction) { dx = w.direction.x; dz = w.direction.z; }
+      else if (typeof w.x === 'number') { dx = w.x; dz = w.z; }
+      if (typeof w.strength === 'number') strength = w.strength;
+      if (typeof w.gust === 'number') gust = w.gust;
+    } else {
+      dx = Math.cos(this.time * 0.11);
+      dz = Math.sin(this.time * 0.09);
+    }
+    const l = Math.hypot(dx, dz) || 1;
+    // Two noise fields an octave apart: a slow swell and the sharp leading edge.
+    const g = 0.62 + 0.42 * noise.noise2(this.time * 0.33, this.seed * 0.011)
+      + 0.20 * noise.noise2(this.time * 0.95, 7.3) + gust;
+    const mag = WIND_FORCE * strength * Math.max(0, g);
+    out.set((dx / l) * mag, Math.abs(noise.noise2(this.time * 0.5, 2.2)) * mag * 0.16, (dz / l) * mag);
+    // Into rig space, so a character running crosswind gets the right side loading.
+    _q[0].setFromRotationMatrix(_m[0].extractRotation(this.root.matrixWorld)).invert();
+    out.applyQuaternion(_q[0]);
+    return out;
+  }
+
+  // ------------------------------------------------------------- lifecycle
+
+  /** Return to the bind pose and clear every layer, spring and lock. Pool-safe. */
+  reset() {
+    for (const l of this.layers) {
+      l.clip = null; l.prev = null; l.time = 0; l.blend = 1;
+      l.weight = l.index === LAYER_BASE ? 1 : 0;
+      l.targetWeight = l.weight;
+      l.finished = false; l.onEnd = null;
+    }
+    this._locoMode = true;
+    this._locoDriven = false;
+    this._loco.forward = 0; this._loco.strafe = 0; this._loco.speed = 0; this._loco.norm = 0;
+    this.locoPhase = 0;
+    this._phasePrev = undefined;
+    this._hipDrop = 0;
+    this._flinchX = this._flinchZ = this._flinchVX = this._flinchVZ = 0;
+    this._recoil = this._recoilV = 0;
+    this._lagSpine = this._lagSpineV = this._lagHead = this._lagHeadV = 0;
+    this._lookActive = false; this._lookWeight = 0; this._lookTargetWeight = 0;
+    this._footLocked[0] = 0; this._footLocked[1] = 0;
+    this.lod = 0; this._ik = true;
+    this._applyClothVisibility();
+    for (let i = 0; i < NB; i++) {
+      this._outQ[i * 4] = 0; this._outQ[i * 4 + 1] = 0; this._outQ[i * 4 + 2] = 0; this._outQ[i * 4 + 3] = 1;
+      this._outP[i * 3] = 0; this._outP[i * 3 + 1] = 0; this._outP[i * 3 + 2] = 0;
+    }
+    this._writeBones();
+    this.root.updateMatrixWorld(true);
+    this._rootInv.copy(this.root.matrixWorld).invert();
+    for (const c of this.cloths) c.updateAnchors(this.bones, this._rootInv);
+    for (const c of this.cloths) c.flush();
+    if (this.clothBatch) this.clothBatch.upload();
+    return this;
+  }
+
+  /** Tier changed at runtime. Mesh density is baked, so only the live knobs move. */
+  applyQuality(quality) {
+    const q = quality || this.ctx.quality;
+    if (q && q.cloth === false) this.setCloth(false);
+    else if (this.lod === 0) this.setCloth(true);
+  }
+
+  dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
+    this._listeners.clear();
+    if (this.clothBatch) this.clothBatch.dispose();
+    this.cloths.length = 0;
+    this.root.traverse((o) => {
+      // Materials are shared by palette across every instance of an archetype, so
+      // only geometry is ours to free here.
+      if (o.geometry && o.geometry.dispose) o.geometry.dispose();
+    });
+    if (this.root.parent) this.root.parent.remove(this.root);
+    if (this.skeleton && this.skeleton.dispose) this.skeleton.dispose();
+    this.mesh = null;
+    this.built = false;
+  }
+}
+
+// ===========================================================================
+// SHARED HELPERS USED BY THE RIG
+// ===========================================================================
+
+/**
+ * Aim chain. Weights sum to more than 1 on purpose: each bone consumes part of the
+ * remaining angle, so the head finishes the job the spine started, and the per-bone
+ * limits stop the neck from snapping when the target is behind the character.
+ */
+const LOOK_CHAIN = [
+  { bone: 'spine2', weight: 0.10, limit: 0.16 },
+  { bone: 'spine3', weight: 0.16, limit: 0.22 },
+  { bone: 'neck', weight: 0.34, limit: 0.44 },
+  { bone: 'head', weight: 0.62, limit: 0.70 },
+];
+
+/** Frame-rate independent approach toward a target at a fixed rate. */
+function approach(cur, target, rate, dt) {
+  if (cur === target) return target;
+  const step = rate * dt;
+  if (step >= 1) return target;
+  return cur + (target - cur) * step;
+}
+
+/**
+ * Blend two sampled pose buffers, respecting each side's "defined" mask.
+ *
+ * A bone that only one side defines does not slerp toward identity — it keeps its
+ * rotation and gives up *authority* instead, by scaling its `def` weight. The layer
+ * compose then slerps it in from whatever is underneath. That distinction is what
+ * lets an upper-body attack cross-fade over a run without the arms briefly snapping
+ * through the rest pose on the way.
+ */
+function blendBuffers(qa, pa, da, qb, pb, db, t, oq, op, od) {
+  const it = 1 - t;
+  for (let b = 0; b < NB; b++) {
+    const wa = da[b], wb = db[b];
+    const o4 = b * 4, o3 = b * 3;
+    if (wa === 0 && wb === 0) {
+      od[b] = 0;
+      oq[o4] = 0; oq[o4 + 1] = 0; oq[o4 + 2] = 0; oq[o4 + 3] = 1;
+      op[o3] = 0; op[o3 + 1] = 0; op[o3 + 2] = 0;
+      continue;
+    }
+    if (wa === 0) {
+      oq[o4] = qb[o4]; oq[o4 + 1] = qb[o4 + 1]; oq[o4 + 2] = qb[o4 + 2]; oq[o4 + 3] = qb[o4 + 3];
+      op[o3] = pb[o3]; op[o3 + 1] = pb[o3 + 1]; op[o3 + 2] = pb[o3 + 2];
+      od[b] = wb * t;
+    } else if (wb === 0) {
+      if (oq !== qa) {
+        oq[o4] = qa[o4]; oq[o4 + 1] = qa[o4 + 1]; oq[o4 + 2] = qa[o4 + 2]; oq[o4 + 3] = qa[o4 + 3];
+        op[o3] = pa[o3]; op[o3 + 1] = pa[o3 + 1]; op[o3 + 2] = pa[o3 + 2];
+      }
+      od[b] = wa * it;
+    } else {
+      qSlerp(qa, o4, qb, o4, t, oq, o4);
+      op[o3] = pa[o3] + (pb[o3] - pa[o3]) * t;
+      op[o3 + 1] = pa[o3 + 1] + (pb[o3 + 1] - pa[o3 + 1]) * t;
+      op[o3 + 2] = pa[o3 + 2] + (pb[o3 + 2] - pa[o3 + 2]) * t;
+      od[b] = wa * it + wb * t;
+    }
+  }
+}
+
+/** Did a looping phase cross `mark` between `prev` and `cur`? */
+function crossedPhase(prev, cur, mark) {
+  if (cur >= prev) return prev < mark && cur >= mark;
+  return prev < mark || cur >= mark;   // wrapped through 1.0
+}
+
+// ===========================================================================
+// FACTORY
+// ===========================================================================
+
+/**
+ * `buildCharacter(opts)` — the one-call path. Returns a fully built Rig with its
+ * skeleton, skinned body, costume, katana and cloth ready, parented to `opts.parent`
+ * if one is given. Accepts `(ctx, opts)` too, because both spellings appear in the
+ * wild and neither is worth an integration bug.
+ */
+export function buildCharacter(optsOrCtx, maybeOpts) {
+  let ctx, opts;
+  if (optsOrCtx && (optsOrCtx.renderer || optsOrCtx.quality || optsOrCtx.bus) && maybeOpts !== undefined) {
+    ctx = optsOrCtx; opts = maybeOpts || {};
+  } else if (optsOrCtx && optsOrCtx.ctx) {
+    ctx = optsOrCtx.ctx; opts = optsOrCtx;
+  } else {
+    ctx = optsOrCtx || {}; opts = maybeOpts || {};
+  }
+  const rig = new Rig(ctx, opts);
+  if (!rig.built) rig.build(opts);
+  return rig;
+}
+
+/** Default costume descriptions, so a caller can spawn a character with one string. */
+export const COSTUMES = Object.freeze({
+  player: {
+    silhouette: 'ronin', chest: 'kimono', sleeves: 'haori', sash: true,
+    armour: 'none', hat: false, mask: false, topknot: true,
+    palette: { cloth: 0x2a2f38, armour: 0x3a3128, lacing: 0x5a4436, trim: 0x7a1d16, metal: 0xc9d3dc, skin: 0xb08a63 },
+  },
+  oni: {
+    silhouette: 'oyoroi', chest: 'o_yoroi', sleeves: 'sode', sash: true,
+    armour: 'heavy', hat: false, mask: 'menpo', topknot: false,
+    palette: { cloth: 0x241d1a, armour: 0x50221c, lacing: 0xc9a227, trim: 0xc8321e, metal: 0x6d6a63, skin: 0x8c6b4a },
+  },
+});
+
+export { CLIP_ALIAS, BONE_INDEX, KATANA };
+export default Rig;
