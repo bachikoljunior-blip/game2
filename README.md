@@ -57,6 +57,42 @@ sample four times.
 - **Audio** is synthesised: struck-bar models for the blade clash, Karplus-Strong for the
   koto, a membrane model for the taiko, and a generative score that reacts to the fight.
 
+## Where this build actually stands
+
+Measured, not asserted. An independent art-direction critic reviewed the build in four
+rounds against a Ghost of Tsushima / SEKIRO bar, scoring 34 → 48 → 58 out of 100. It has
+not passed; the numbers below are what is verified and what is not.
+
+**Verified good**
+
+| | measured |
+|---|---|
+| tonal range | true blacks (p0.1 = 0) and real highlights (p99.9 = 254 on the sun and torii frames) |
+| shader programs | zero linked dead — audited every capture |
+| page errors | zero |
+| paving / granite joint walls | p95 24° and 23°, down from 56° and 60° |
+| massif surface detail | high-frequency 4.61, up from 1.44 |
+| foliage | zero detached leaf clusters; green-dominant pixels 6–9% |
+| PWA | installs and launches offline |
+| bundle | 425 KB gzip, zero external assets |
+
+**Over budget**
+
+| | measured | contract |
+|---|---|---|
+| phone draw calls | 156 | ≤ 140 |
+| phone triangles | 1,146,570 | ≤ 900,000 |
+
+The triangle count nearly doubled from 676 k across two rounds of detail work. Each
+addition was individually justified and every owner respected their own draw-call budget;
+nobody owned the total. `tools/capture.mjs` now asserts both caps on every phone capture so
+the next drift is named immediately.
+
+**Known open**
+
+- The `wide` framing is the last shot under the highlight gate (p99.9 = 225 against 235).
+- Round-4 review was stopped before its verdict; `shots/review-r*.json` holds the earlier ones.
+
 ## Performance
 
 The pass/fail line is **60 fps on a mid-range Android at the MEDIUM tier**. The engine
