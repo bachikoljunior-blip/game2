@@ -1327,11 +1327,14 @@ export class PostFX {
     // 0.30 UV from the sun crosses the disc's blown plateau in ~2.4 taps carrying
     // decay^48 = 0.23, so the disc term is 2.4 * min(147, uEmitClamp) * 0.23 and the
     // prox-weighted sky adds ~4 on top. At uEmitClamp 8 that whole sum is ~9 and no
-    // gain recovers a shaft without a veil; at 120 it is ~71, and 0.10 puts ~0.44
-    // linear into an unobstructed march against ~0.31 for one an upright interrupts —
-    // roughly 20 code values of wedge on a magic-hour sky, which is countable in an
-    // unmodified frame. The clamp, not the gain, was the binding constraint.
-    this.godRayStrength = 0.10;
+    // gain recovers a shaft without a veil; at 120 it is ~71, i.e. an unobstructed
+    // march accumulates ~4.4 before gain. The wedge an upright cuts is that figure
+    // times the *decay-weighted* fraction of the march it interrupts — and because the
+    // decay front-loads the taps nearest the shading pixel, a post crossing the middle
+    // of the ray only takes about 22% of the weight, not the ~40% of its screen width.
+    // 4.4 * 0.22 * ~100 code per linear unit at magic-hour sky levels puts the gain at
+    // 0.18 for a wedge around 20 code values, which is countable unaided.
+    this.godRayStrength = 0.18;
     this.aoStrength = 0.85;
     this.aoRadius = 0.65;
     this.saturation = 1.06;
