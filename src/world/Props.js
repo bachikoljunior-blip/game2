@@ -1110,7 +1110,31 @@ export class PropFactory {
       vertexColors: true,
     });
     m.name = 'prop:blossom';
+
+    // Translucency floor.
+    //
+    // A plain alpha-tested cutout has no path for sky bounce to reach a face
+    // turned away from the sun, so every clump's shadow half went near-black
+    // maroon and the crown's mean colour was carried entirely by the few sunlit
+    // clusters. Petals are thin and scatter from every direction, so the honest
+    // fix is an ambient term that is *tinted by the petal's own albedo* — the
+    // shadow half then reads as blush lit by cool sky rather than as dead
+    // material. The tint is deliberately cool (ARCHITECTURE §5's `#4a6b8f`
+    // bounce) because the amber key crushes blue 7.5x; blush only exists on the
+    // shadowed side, and only if there is a blue path for it.
+    const prevCompile = m.onBeforeCompile;
+    m.onBeforeCompile = (shader, renderer) => {
+      if (prevCompile) prevCompile.call(m, shader, renderer);
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <emissivemap_fragment>',
+        '#include <emissivemap_fragment>\n  totalEmissiveRadiance += diffuseColor.rgb * vec3(0.155, 0.200, 0.268);',
+      );
+    };
     this._installWind(m);
+    // `_installWind` stamps its own cache key, which other cloth materials share.
+    // This one's shader differs, so it needs a key of its own or three can hand
+    // it a program compiled for a material without the translucency patch.
+    m.customProgramCacheKey = () => 'kagBlossom1';
     this.ctx?.sky?.applyFog?.(m);
     this._blossom = m;
     this.disposables.push(m);
@@ -3749,11 +3773,29 @@ export class PropFactory {
       });
       wood.push(g);
 
-      if (level >= depth - 1 || r < 0.035) {
-        tips++;
-        if (leafy && level >= 2) this._blossomCluster(leaves, cx, cy, cz, rnd);
-        return;
+      const terminal = level >= depth - 1 || r < 0.035;
+
+      // Blossom is carried by the whole outer branch, not just the last point of
+      // it. Emitting only at terminal tips gave ~20 clumps on a 9.5 m tree, which
+      // covered about 15% of the crown silhouette and read as a diseased tree
+      // rather than one in bloom. Every branch from level 2 outward now flowers
+      // along its length, and terminal twigs carry a cluster of clumps.
+      if (leafy && level >= 1) {
+        const n = terminal ? 5 : 4;
+        for (let k = 0; k < n; k++) {
+          const t = 0.30 + 0.70 * ((k + rnd() * 0.9) / n);
+          const si = Math.min(segs, Math.max(0, Math.round(t * segs)));
+          const sp = samples[si];
+          const j = len * 0.16;
+          this._blossomCluster(
+            leaves,
+            sp.x + (rnd() - 0.5) * j, sp.y + (rnd() - 0.5) * j * 0.7, sp.z + (rnd() - 0.5) * j,
+            rnd,
+          );
+        }
       }
+
+      if (terminal) { tips++; return; }
 
       const kids = level === 0 ? 3 : (rnd() < 0.32 ? 3 : 2);
       const baseA = rnd() * Math.PI * 2;
@@ -3799,16 +3841,19 @@ export class PropFactory {
   }
 
   /**
-   * One clump of blossom at a branch tip: a **crossed pair** of alpha-tested
-   * cards, fully tumbled in yaw, pitch and roll.
+   * One clump of blossom: a **crossed pair** of alpha-tested cards, fully tumbled
+   * in yaw, pitch and roll.
    *
    * A single quad per tip reads as a card from every angle no matter how good the
    * texture is, and a set of them that all share an up vector reads as a set of
    * cards. Crossing two planes gives the clump depth from any approach, and the
    * tumble means no two clumps in the crown present the same plane to the camera.
+   *
+   * Clump size is the cheap half of crown coverage: it buys silhouette without
+   * buying instances, so it is pushed as far as it goes before adding mass.
    */
   _blossomCluster(out, cx, cy, cz, rnd) {
-    const s = 0.42 + rnd() * 0.34;
+    const s = 1.00 + rnd() * 0.68;
     const rot = new Matrix4()
       .makeRotationY(rnd() * Math.PI * 2)
       .multiply(new Matrix4().makeRotationX((rnd() - 0.5) * 1.25))
@@ -3819,12 +3864,14 @@ export class PropFactory {
     const bone = rnd() * 0.5;
     const cr = k, cg = k * lerp(0.99, 0.94, bone), cb = k * lerp(0.97, 0.90, bone);
 
-    for (let q = 0; q < 2; q++) {
-      const hw = s * (q === 0 ? 1.0 : 0.86);
-      const hh = s * (q === 0 ? 0.82 : 0.94);
+    for (let q = 0; q < 3; q++) {
+      const hw = s * (q === 0 ? 1.0 : q === 1 ? 0.86 : 0.78);
+      const hh = s * (q === 0 ? 0.82 : q === 1 ? 0.94 : 0.78);
       const vs = q === 0
         ? new Float32Array([-hw, -hh, 0, hw, -hh, 0, hw, hh, 0, -hw, hh, 0])
-        : new Float32Array([0, -hh, -hw, 0, -hh, hw, 0, hh, hw, 0, hh, -hw]);
+        : q === 1
+          ? new Float32Array([0, -hh, -hw, 0, -hh, hw, 0, hh, hw, 0, hh, -hw])
+          : new Float32Array([-hw, 0, -hh, hw, 0, -hh, hw, 0, hh, -hw, 0, hh]);
       const g = new BufferGeometry();
       g.setAttribute('position', new BufferAttribute(vs, 3));
       g.setAttribute('uv', new BufferAttribute(new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]), 2));

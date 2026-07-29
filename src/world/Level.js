@@ -726,7 +726,10 @@ export class Level {
   _buildTrees() {
     const f = this.factory;
     const S = LAYOUT.sacredTree;
-    const tree = f.sacredTree({ height: S.height, depth: this._treeDepth, seed: 1861, leafy: true });
+    // The sacred tree is pinned to full depth on every tier. It is one tree, its
+    // crown has to read as *in bloom* at thumbnail size, and the whole thing is
+    // ~4.3k triangles — tier-gating it only ever bought back noise.
+    const tree = f.sacredTree({ height: S.height, depth: 5, seed: 1861, leafy: true });
     const m = this._ground(S.x, S.z, 0.4);
     this._emit(tree, m);
     // The rope is tied round the trunk at chest height, not draped over a branch.
