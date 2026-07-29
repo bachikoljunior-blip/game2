@@ -229,4 +229,21 @@ async function boot() {
   return ctx;
 }
 
-boot().catch(fatal);
+/**
+ * Register the offline shell. The whole game is a handful of hashed chunks and no
+ * external assets, so "added to home screen" genuinely means playable offline — but
+ * only if this runs. Deliberately after boot so it never competes with the first
+ * frame for bandwidth or main-thread time on a phone.
+ */
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost'
+    && location.hostname !== '127.0.0.1') return;
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch((err) => {
+      console.warn('[pwa] service worker registration failed', err);
+    });
+  });
+}
+
+boot().then(registerServiceWorker).catch(fatal);
