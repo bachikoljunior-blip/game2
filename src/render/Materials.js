@@ -805,7 +805,9 @@ RECIPES.push({
 //     stones 22 cm apart. Under a low sun that is not paving, it is a crevasse
 //     field: every joint went to black, the stone faces kept only the ~4% albedo
 //     mottle they were given, and the ground read as cracked dried mud. Joint
-//     depth here is a measurement, not a taste knob — 0.11 of `h` is 2.2 cm.
+//     depth here is a measurement, not a taste knob — and see the wall-angle note
+//     below, because depth alone does not settle it: 0.11 of `h` is 2.2 cm, which
+//     is a sane depth and still a 58 degree wall once you divide it by the width.
 //
 // The joint is *filled*, not open. Rammed grit and sand sit flush in it and moss
 // takes over only where the damp field says water stands. A joint darker than
