@@ -111,7 +111,10 @@ const SHOTS = {
 async function acquireLock() {
   const lock = join(OUT, '.capture.lock');
   mkdirSync(OUT, { recursive: true });
-  const deadline = Date.now() + 30 * 60 * 1000;
+  // Six owners share this rig and a SwiftShader boot is 2-5 min, so a queue of four is
+  // routine. Thirty minutes was timing out the agents at the back of the line, which
+  // cost real verification runs rather than preventing a deadlock.
+  const deadline = Date.now() + 120 * 60 * 1000;
   for (;;) {
     try {
       writeFileSync(lock, String(process.pid), { flag: 'wx' });
@@ -125,7 +128,7 @@ async function acquireLock() {
         rmSync(lock, { force: true });
         continue;
       }
-      if (Date.now() > deadline) throw new Error('capture lock held for over 30 min');
+      if (Date.now() > deadline) throw new Error('capture lock held for over 2 h');
       console.log('[capture] another run holds the lock; waiting…');
       await new Promise((r) => setTimeout(r, 15000));
     }

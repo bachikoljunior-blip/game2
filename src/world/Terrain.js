@@ -416,16 +416,19 @@ const RIDGE_LAYERS = [
   {
     seed: 0x2f1103, lift: 115, amp: 620, massifs: 4, groupLo: 0.46, groupHi: 1.00,
     baseR: 1.55, baseAmp: 0.30, detR: 8.5, detAmp: 0.060, gulR: 23.0, notch: 0.075,
+    serR: 148.0, serAmp: 0.050,
     presR: 0.75, presOff: 3.1, dirLo: 0.30, par: 0.000024, soft: 12.0, haze: 0.74,
   },
   {
     seed: 0x7a3d19, lift: 66, amp: 450, massifs: 5, groupLo: 0.40, groupHi: 0.98,
     baseR: 2.30, baseAmp: 0.24, detR: 12.5, detAmp: 0.068, gulR: 34.0, notch: 0.095,
+    serR: 186.0, serAmp: 0.058,
     presR: 0.95, presOff: 27.7, dirLo: 0.14, par: 0.000053, soft: 8.0, haze: 0.51,
   },
   {
     seed: 0x11c7e5, lift: 24, amp: 320, massifs: 6, groupLo: 0.34, groupHi: 0.94,
     baseR: 3.10, baseAmp: 0.20, detR: 17.0, detAmp: 0.076, gulR: 44.0, notch: 0.110,
+    serR: 232.0, serAmp: 0.066,
     presR: 1.30, presOff: 61.3, dirLo: 0.06, par: 0.000094, soft: 5.0, haze: 0.30,
   },
 ];
@@ -639,6 +642,24 @@ export class Terrain {
     h += noise.ridged2(x * 0.0016, z * 0.0016, 5) * 210 * Math.pow(nwT, 1.1);
     h += smootherstep(400, 1500, ax) *
       noise.ridged2(x * 0.00055 + 31.7, z * 0.00055 - 12.3, 4) * 320;
+
+    // Spurs and gullies, 40–90 m. Everything above works at 600 m and coarser, which
+    // is why the massif came back as one smooth arc: there was no relief at the scale
+    // that turns a ridge into overlapping planes, so its silhouette had exactly one
+    // edge and its shading had exactly one gradient. Ridged rather than fbm because a
+    // drainage divide is a crease, not a bump — ridged noise puts the sharp feature on
+    // the spur and the smooth one in the gully floor, which is the right way round.
+    //
+    // Gated past r = 520. The eroded core field only reaches r = 362, so the plateau
+    // flatten, the stair and river carve, the droplet erosion, the derived splat and
+    // the core/macro seam blend cannot see this term at all — it exists solely where
+    // the terrain is silhouette. The floor subtraction keeps the mean near zero so it
+    // cuts as much as it adds and the authored ridge line does not drift upward.
+    const spurT = smootherstep(520, 980, r) * (0.34 + 0.66 * nwT);
+    if (spurT > 0.001) {
+      h += (noise.ridged2(x * 0.0128 + 71.3, z * 0.0128 - 19.4, 2) - 0.44) * 30 * spurT;
+      h += (noise.ridged2(x * 0.0235 - 44.1, z * 0.0235 + 63.8, 1) - 0.44) * 11 * spurT;
+    }
 
     // Mid-scale relief, then a domain-warped detail octave. The warp is what stops
     // the whole field reading as one noise function stretched over a hill.
@@ -1519,6 +1540,18 @@ ${this._heightGLSL()}
       uWaterLevel: { value: this.waterLevel },
       uSkyTint: { value: new Color(0x9fb4c8) },
       uAerial: { value: new Vector2(90, 0.00085) },
+      // Haze layer: (top of the dense layer in metres ASL, 1 / scale height). Nothing
+      // at or below x is affected at all — see the optical-depth block in the aerial
+      // perspective patch below.
+      uAerialH: { value: new Vector2(900, 1 / 430) },
+      // Sun bearing and tint, mirrored from whoever owns them. Only the snow model
+      // uses these: a snowfield needs a terminator that follows the *landform*, and
+      // the stock lambert term alone cannot supply the multiple-scattering surge that
+      // makes a sunlit snowfield the brightest natural surface in a frame.
+      // Bound to the instance vector by identity, so _syncEnvironment's existing
+      // update is the only write and update() stays allocation-free.
+      uSunDir: { value: this._sunDir },
+      uSunTint: { value: new Color(0xff9b52) },
       // Finite-difference step for the per-pixel normal, in metres. This *must* be
       // wider than one texel of the field being differenced. A bilinear texture is
       // C0, not C1: its gradient is discontinuous across every texel boundary, so a
@@ -1569,9 +1602,38 @@ ${this._heightGLSL()}
     // what gives a single mountain depth across its own thousand metres: its foot
     // sits in the valley air and its summit does not.
     float kgDist = length(vKgWorld - cameraPosition);
-    float kgA = 1.0 - exp(-pow(max(kgDist - uAerial.x, 0.0) * uAerial.y, 1.18));
+
+    // Haze is a *layer*, not a fill. Its density falls off exponentially with height,
+    // so the optical depth along a ray is the mean density over the segment, not the
+    // density at the ground. With a flat law the summit of a 1.4 km massif carried
+    // exactly the same extinction as the valley floor at its foot: 62% of its colour
+    // was replaced by one horizon tint, which levelled its terminator into a 50-level
+    // band in the mid-tones and turned the largest surface in frame into flat colour.
+    //
+    // Analytic mean of exp(-y/H) over the segment, which is the standard closed form
+    // and is what keeps this one exp-pair rather than a march. Both endpoints clamp
+    // to zero below uAerialH.x, so every fragment at or under 900 m — the whole
+    // plateau, the gorge, the valley floor, the confirmed mid-distance recession —
+    // gets density exactly 1 and comes out bit-for-bit as before.
+    float kgHa = max(cameraPosition.y - uAerialH.x, 0.0) * uAerialH.y;
+    float kgHb = max(vKgWorld.y - uAerialH.x, 0.0) * uAerialH.y;
+    float kgDh = kgHb - kgHa;
+    float kgDens = abs(kgDh) < 1e-3 ? exp(-0.5 * (kgHa + kgHb))
+                                    : (exp(-kgHa) - exp(-kgHb)) / kgDh;
+
+    float kgA = 1.0 - exp(-pow(max(kgDist * kgDens - uAerial.x, 0.0) * uAerial.y, 1.18));
     float kgMist = smoothstep(915.0, 806.0, vKgWorld.y) * smoothstep(130.0, 520.0, kgDist);
     kgA = clamp(kgA * (1.0 + kgMist * 0.60) + kgMist * 0.10, 0.0, 1.0);
+
+    // Snow's multiple-scattering surge, added as radiance *before* the haze so the
+    // air still decides how much of it survives to the eye. A snowpack returns light
+    // after many internal bounces and backscatters hard toward the source; a single
+    // lambert lobe at albedo 0.9 tops out near 0.6 radiance under this key and simply
+    // cannot put a sunlit snowfield where a sunlit snowfield belongs, which is the
+    // brightest thing in the frame. Confined to the sheet by construction — snow only
+    // exists above 1042 m and the plateau is at 812 — so no near surface can see it.
+    gl_FragColor.rgb += uSunTint * kgSnowLit;
+
     float kgLum = dot(gl_FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
     vec3 kgFar = mix(vec3(kgLum), uSkyTint, 0.7);
     gl_FragColor.rgb = mix(gl_FragColor.rgb, kgFar, kgA * 0.88);
@@ -1613,8 +1675,11 @@ uniform vec4 uTexScale;
 uniform float uWaterLevel;
 uniform vec3 uSkyTint;
 uniform vec2 uAerial;
+uniform vec2 uAerialH;
 uniform vec2 uNormalStep;
 uniform vec2 uWindXZ;
+uniform vec3 uSunDir;
+uniform vec3 uSunTint;
 varying vec3 vKgWorld;
 varying vec3 vKgNormal;
 varying float vKgCore;
@@ -1646,6 +1711,8 @@ float kgLandH(vec2 w){
 vec3 kgAlbedo;
 float kgRough;
 vec3 kgShadingNormal;
+/** Radiance the snowpack returns beyond the lambert lobe. See the aerial patch. */
+float kgSnowLit;
 
 /** Shared per-fragment tile-breaking state, set once at the top of the surface pass. */
 vec2 kgWarp;
@@ -1694,6 +1761,12 @@ void kgComputeSurface(){
   float core = clamp(vKgCore, 0.0, 1.0);
   float dist = length(P - cameraPosition);
   float curv = 0.0;
+  // World-space size of one pixel here. Hoisted to the top because a derivative
+  // taken inside a branch is undefined when neighbouring lanes disagree about the
+  // branch, and the snow mask is exactly such a branch. Costs two ALU everywhere and
+  // buys the only honest answer to "would this band still resolve", which distance
+  // alone cannot give: a grazing face compresses metres into a pixel.
+  float kgFoot = max(fwidth(P.x), fwidth(P.z));
 
   // --- surface normal ------------------------------------------------------
   // The vertex normal is a lattice sample: on the outer clipmap rings the mesh is
@@ -1953,11 +2026,20 @@ void kgComputeSurface(){
   // model written entirely in smooth terms still rendered as hard-edged plates.
   float snowAlt = smoothstep(1042.0, 1272.0, hLand + nC * 58.0 + nB * 22.0);
   float kgSnowCover = 0.0;
+  kgSnowLit = 0.0;
   vec2 kgSnowRipple = vec2(0.0);
   if (snowAlt > 0.002) {
     vec3 LN = kgLandN;
     float bowl = bowlW;
     float lFall = lFallW;
+
+    // The rock the sheet lies on. High rock is darker and warmer than the scree
+    // below the tree line, and it has to be: a snowcap only reads as a snowcap
+    // because there is a boundary, and a boundary needs the far side of it to be a
+    // different value. Snow that is pinkish-beige on pale putty reads as a dune.
+    albedo = mix(albedo, albedo * vec3(0.60, 0.54, 0.49) + vec3(0.028, 0.022, 0.017),
+                 snowAlt * 0.88);
+    rough = mix(rough, 0.93, snowAlt * 0.6);
     // The scallop on the shed line is a tenth of the ramp: it breaks the contour
     // without ever being able to cut it.
     float hold = smoothstep(0.66, 0.38, lFall + nB * 0.04);
@@ -1974,11 +2056,17 @@ void kgComputeSurface(){
     float s2 = fbm2(P.xz * 0.0224 - 57.1, 2);
     float driftCov = s1 * 0.75 + s2 * 0.25;
 
+    // Wind-scoured spurs. Negative curvature is a rib standing proud of its
+    // neighbours; on a real range those blow bare while the gullies either side of
+    // them fill. Without this the sheet is continuous across the whole cap and the
+    // spur-and-gully relief underneath it never gets to break the white.
+    float scour = smoothstep(0.06, 0.54, -bowl) * (0.58 + 0.42 * (nB * 0.5 + 0.5));
+
     float depth = snowAlt * (0.34 + 0.36 * lee)
                 + snowAlt * max(bowl, 0.0) * 0.62
                 - max(-bowl, 0.0) * 0.34
                 + driftCov * 0.46 * snowAlt;
-    float cover = clamp(depth, 0.0, 1.0) * hold;
+    float cover = clamp(depth, 0.0, 1.0) * hold * (1.0 - scour * 0.80);
     // The window is deliberately wider than the range 'cover' actually spans at a
     // snow line. Transition width in pixels is the window divided by the coverage
     // gradient, so widening the window is the one lever that buys fringe depth
@@ -2004,32 +2092,49 @@ void kgComputeSurface(){
       // that the wide coverage window was widened to produce.
       float sheet = blanket * mix(0.72, through, blanket);
 
-      // Cooler and brighter than the rock it lies on — the warm key does the rest.
-      // Shadowed snow is the sky bounce of §5 (#4a6b8f), never a neutral grey.
-      //
-      // These are deliberately well under a real snowpack's ~0.85 albedo. The key is
-      // 3.4 and the grade is ACES: at 0.85 the lit sheet lands radiance ~1.5, which is
-      // inside the shoulder, and the shoulder is where a tone curve stops resolving
-      // differences. Every bit of drift shading and partial coverage below was being
-      // compressed into the same white by it — a flat interior produced by the grade
-      // rather than by the mask. At these values the sheet sits on the responsive part
-      // of the curve and its own variation survives to the frame. It is still by some
-      // margin the brightest surface on the massif; rock up here sits near 0.25.
-      vec3 snowCol = mix(vec3(0.180, 0.246, 0.390), vec3(0.520, 0.580, 0.700),
-                         clamp(LN.y * 0.45 + N.y * 0.55, 0.0, 1.0));
+      // The terminator, drawn on the *landform* normal. A ridge that runs for a
+      // kilometre has to change side where the ridge turns, not where the surface
+      // grain turns, or the split reads as noise rather than as a mountain having
+      // two faces. This is the one term the whole massif's readability rests on.
+      float sunL = dot(LN, uSunDir);
+      float sunF = smoothstep(-0.16, 0.30, sunL);
+
+      // Fresh snow is albedo ~0.9 and there is no honest way around that. The shadow
+      // side is neither grey nor black: it is the sky bounce of §5 (#4a6b8f) at a
+      // snowfield's own reflectance, which is why shadowed snow photographs blue.
+      vec3 snowCol = mix(vec3(0.244, 0.338, 0.508), vec3(0.902, 0.922, 0.962), sunF);
       // Drift shading. Wind-packed crests catch the light, the troughs between them
       // stay blue; this and the partial coverage are the interior variance.
-      snowCol *= 0.74 + 0.34 * (s2 * 0.5 + 0.5) + 0.18 * (s3 * 0.5 + 0.5);
+      snowCol *= 0.80 + 0.26 * (s2 * 0.5 + 0.5) + 0.14 * (s3 * 0.5 + 0.5);
       albedo = mix(albedo, snowCol, sheet * 0.95);
       rough = mix(rough, mix(0.74, 0.38, sheet), sheet * 0.85);
       kgSnowCover = sheet;
+
+      // Screen-space guard for everything fine below. One cycle of the 5.6 m band is
+      // ~4 px at the range the massif is seen from, which resolves; on a face seen
+      // edge-on it can compress under a pixel, and that is where a static grain turns
+      // into motion fizz. Gate on the actual world-space size of a pixel rather than
+      // on distance, because distance is not what decides it.
+      float fine = 1.0 - smoothstep(1.9, 4.2, kgFoot);
+
       // Sastrugi: two more taps of the ripple field give it a gradient, and a 13°
       // sun turns that gradient into the banding a real snowfield has. Bounded, so
       // it can bend the sheet but never re-point it.
       float se = 7.0;
       kgSnowRipple = clamp(vec2(fbm2((P.xz + vec2(se, 0.0)) * 0.0630 + 13.9, 2) - s3,
-                                fbm2((P.xz + vec2(0.0, se)) * 0.0630 + 13.9, 2) - s3) * 2.2,
-                           -0.22, 0.22) * sheet;
+                                fbm2((P.xz + vec2(0.0, se)) * 0.0630 + 13.9, 2) - s3) * 2.6,
+                           -0.26, 0.26) * sheet * mix(0.45, 1.0, fine);
+
+      // The multiple-scattering surge, handed to the aerial-perspective patch as
+      // radiance rather than as albedo. A lambert lobe at 0.9 tops out near 0.6 under
+      // this key; a sunlit snowfield is the brightest natural surface there is and has
+      // to leave the shoulder of the curve with the frame's highlights in it. The
+      // drift and grit bands ride on it at full weight — modulating two and a half
+      // units of radiance is what puts surface into the sheet, where modulating the
+      // albedo of a lambert lobe could only ever move it by tenths.
+      kgSnowLit = sheet * sunF * (0.55 + 0.45 * clamp(sunL, 0.0, 1.0)) * 2.55
+                * clamp(0.72 + 0.56 * (s2 * 0.5 + 0.5)
+                        - (0.30 * grit + 0.16 * bare) * fine, 0.10, 1.55);
     }
   }
 
@@ -2569,8 +2674,17 @@ void main(){
           h: gh * (0.50 + rnd() * 0.50) * (1 - Math.abs(t - 0.5) * 2 * 0.30 * rnd()),
           wl: flip ? w / asym : w,
           wr: flip ? w : w / asym,
-          sharp: 0.85 + rnd() * 1.60,
-          blunt: rnd() * rnd(),
+          // Never near 1. `pow(f, 1)` is exactly linear in angular distance, and
+          // linear in angle is a dead-straight line on screen — which is how a peak
+          // generated entirely from smooth terms still rendered as a cardboard
+          // triangle with a straightedge for a flank. Below 1 the flank bulges out
+          // into a shoulder, above 1.45 it hollows into a scarp; neither has a
+          // straight stretch anywhere on it.
+          sharp: rnd() < 0.45 ? 0.46 + rnd() * 0.30 : 1.45 + rnd() * 1.30,
+          // Biased off zero as well: `rnd()*rnd()` lands under 0.1 a third of the
+          // time, and at blunt ~0 the mesa term drops out and the profile is the
+          // pure power curve with nothing rounding its apex.
+          blunt: 0.20 + rnd() * rnd() * 0.80,
           id: gid,
         });
       }
@@ -2641,6 +2755,19 @@ void main(){
           const g = noise.fbm2(cx * cfg.gulR - 5.5, cz * cfg.gulR + 21.0, 2);
           const nk = Math.max(0, 1 - Math.abs(g) * 2.6);
           v -= nk * nk * nk * cfg.notch * local;
+
+          // Serration. Every term above works at 8° of arc and coarser, which on a
+          // 1920 px frame is a 190 px wavelength — so a peak flank 150 px long had
+          // literally nothing breaking it and came back as a cardboard edge. These
+          // run at ~2.4° and ~1.2°, i.e. 55 px and 27 px, and both are scaled by the
+          // local relief so cols, saddles and the drowned stretches stay smooth.
+          v += noise.fbm2(cx * cfg.serR + 88.3, cz * cfg.serR - 51.7, 2) * cfg.serAmp * local;
+          // A second, narrower notch field on top: erosion takes bites out of a crest,
+          // it does not just wobble it, and a bite is what stops the eye rejoining
+          // two stretches of edge into one line.
+          const g2 = noise.fbm2(cx * cfg.serR * 2.05 + 12.9, cz * cfg.serR * 2.05 - 33.4, 1);
+          const nk2 = Math.max(0, 1 - Math.abs(g2) * 3.4);
+          v -= nk2 * nk2 * cfg.serAmp * 0.85 * local;
 
           // The rock rises to the north-west (WORLD.RIDGE_AZIMUTH); to the south-east
           // the bamboo valley falls away and only a low, drowned rank survives.
@@ -2756,7 +2883,7 @@ vec4 kgRidge(float u, float row){
 }
 
 void kgRank(float row, float u0, float tang, float par, float soft, float haze,
-            float sunT, float h, inout vec3 col, inout float alpha){
+            float sunT, float radS, float h, inout vec3 col, inout float alpha){
   // Parallax: shift the sampling angle by the camera's tangential offset, scaled
   // by how far away this rank is meant to be.
   float uu = u0 + tang * par;
@@ -2765,11 +2892,23 @@ void kgRank(float row, float u0, float tang, float par, float soft, float haze,
   float m = smoothstep(top + soft, top - soft, h);
   if (m <= 0.0) return;
 
-  // Which way this stretch of crest falls, and whether that face sees the sun.
+  // Two faces, not one. 'lit' is which way this stretch of crest falls; 'radS' is
+  // whether the flank turned toward the camera at this bearing is the one the key is
+  // on at all. Without the bearing term every rank took the same tint at every
+  // azimuth, which is a paper cut-out lit by an ambient probe, not rock under a
+  // 13° sun.
   float lit = clamp(-r.w * 0.055 * sunT, -1.0, 1.0);
-  vec3 rock = mix(uRockCool, uRockWarm, 0.5 + 0.5 * lit);
+  float face = smoothstep(-0.42, 0.52, radS + lit * 0.42);
+  vec3 rock = mix(uRockCool, uRockWarm, face);
+  rock *= 0.58 + 0.80 * face;
   rock *= 0.90 + 0.20 * r.z;              // per-massif identity
   rock *= 0.84 + 0.30 * r.y;              // crests catch more than cols
+
+  // A face is not one value from crest to foot. The lower slopes turn away, sit in
+  // their own shadow and pick up the bounce off the valley; this vertical gradient
+  // is the one the review found missing across every one of these faces.
+  float down = smoothstep(0.0, 270.0, top - h);
+  rock *= 1.08 - 0.36 * down;
 
   // Gullies and ribs down the face: narrow in angle, very slow in height, so it
   // reads as drainage rather than as noise. One cycle is ~60 px on screen and its
@@ -2786,16 +2925,25 @@ void kgRank(float row, float u0, float tang, float par, float soft, float haze,
   float band = smoothstep(360.0, 40.0, top - h);
   float shed = smoothstep(0.85, 0.32, abs(r.w) * 0.045);
   float sn = clamp(band * shed * (0.45 + 0.55 * gul), 0.0, 1.0);
-  rock = mix(rock, vec3(0.62, 0.69, 0.84), sn * 0.72);
+  rock = mix(rock, mix(vec3(0.40, 0.50, 0.72), vec3(0.86, 0.87, 0.92), face), sn * 0.72);
 
-  // Mist pools below every crest — aerial perspective inside a single rank. Bounded
-  // well short of 1: at 0.72 the furthest rank reached 93% sky tint and every face
-  // below its own crest became the flat pale fill the review measured across a third
-  // of the frame — which was never snow, and never the terrain either.
-  float pool = smoothstep(top - 20.0, top - 430.0, h);
-  vec3 lay = mix(rock, uSkyTint * 1.06, clamp(haze + (1.0 - haze) * pool * 0.45, 0.0, 0.90));
-  col = mix(col, lay, m);
-  alpha = max(alpha, m);
+  // Mist pools below every crest — aerial perspective inside a single rank. It runs
+  // deep on purpose: a rank's foot has to still be carrying air when it reaches the
+  // terrain horizon, or its body ends in mid-sky and the whole rank reads as a plate
+  // hung in front of the hills rather than as a range standing behind them.
+  float pool = smoothstep(top - 20.0, top - 980.0, h);
+  float hz = clamp(haze + (1.0 - haze) * pool * 0.80, 0.0, 0.965);
+
+  // Composite as transmittance, not as a paint. The rank contributes its own rock
+  // colour at the fraction of it that survives the air; everything else in the pixel
+  // is whatever is genuinely behind — the graded sky, or a nearer rank. Painting a
+  // flat uSkyTint at alpha 1 is why these faces measured lighter than the haze in
+  // one place and darker in another: they were painted with a single colour and the
+  // sky they were painted over is a gradient.
+  float aIn = m * (1.0 - hz);
+  float aOut = aIn + alpha * (1.0 - aIn);
+  col = aOut > 1e-5 ? (rock * aIn + col * alpha * (1.0 - aIn)) / aOut : rock;
+  alpha = aOut;
 }
 
 void main(){
@@ -2808,24 +2956,29 @@ void main(){
   vec2 tangent = vec2(cos(a), -sin(a));
   float tang = dot(uCam.xz, tangent);
   float sunT = dot(tangent, uSunXZ);
+  // The flank we are looking at faces back along the radial, so it takes the key
+  // when the outward radial points away from the sun.
+  float radS = -dot(vec2(sin(a), cos(a)), uSunXZ);
 
-  vec3 col = uSkyTint;
+  vec3 col = vec3(0.0);
   float alpha = 0.0;
 
   // Back to front. Higher, hazier, slower-parallaxing ranks first.
   kgRank(0.0, u0, tang, ${RIDGE_LAYERS[0].par.toFixed(8)}, ${RIDGE_LAYERS[0].soft.toFixed(1)},
-         ${RIDGE_LAYERS[0].haze.toFixed(2)}, sunT, h, col, alpha);
+         ${RIDGE_LAYERS[0].haze.toFixed(2)}, sunT, radS, h, col, alpha);
   kgRank(1.0, u0, tang, ${RIDGE_LAYERS[1].par.toFixed(8)}, ${RIDGE_LAYERS[1].soft.toFixed(1)},
-         ${RIDGE_LAYERS[1].haze.toFixed(2)}, sunT, h, col, alpha);
+         ${RIDGE_LAYERS[1].haze.toFixed(2)}, sunT, radS, h, col, alpha);
   kgRank(2.0, u0, tang, ${RIDGE_LAYERS[2].par.toFixed(8)}, ${RIDGE_LAYERS[2].soft.toFixed(1)},
-         ${RIDGE_LAYERS[2].haze.toFixed(2)}, sunT, h, col, alpha);
+         ${RIDGE_LAYERS[2].haze.toFixed(2)}, sunT, radS, h, col, alpha);
 
   // Fade the very bottom so the band never shows a hard cut under the terrain.
   alpha *= smoothstep(uBase - 900.0, uBase - 320.0, h);
   if (alpha < 0.004) discard;
 
-  // Nothing in frame is a flat tint: a slow grain across the rock faces.
-  col *= 0.97 + 0.06 * (fbm2(vec2(a * 140.0, h * 0.022), 2) * 0.5 + 0.5);
+  // Nothing in frame is a flat tint: grain across the rock faces. Now that the haze
+  // is carried in the alpha rather than mixed into the colour, this rides on the
+  // rock itself and survives to the frame at the depth it was authored for.
+  col *= 0.90 + 0.20 * (fbm2(vec2(a * 150.0, h * 0.024), 2) * 0.5 + 0.5);
   gl_FragColor = vec4(col, alpha * 0.96);
 }
 `,
@@ -2876,6 +3029,21 @@ void main(){
     const tint = (sky && sky.horizonColor && sky.horizonColor.isColor) ? sky.horizonColor
       : (this.ctx.scene.fog && this.ctx.scene.fog.color) ? this.ctx.scene.fog.color : null;
     if (tint) this.uniforms.uSkyTint.value.copy(tint);
+
+    // Key colour *and* level. The snow surge is radiance, so it has to go out with
+    // the sun: at dusk the same sheet must fall with the key rather than stay lit.
+    const sc = (sky && sky.sunColor && sky.sunColor.isColor) ? sky.sunColor
+      : ((lighting && lighting.sun && lighting.sun.color) || null);
+    const st = this.uniforms.uSunTint.value;
+    if (sc) {
+      st.copy(sc);
+      const si = (sky && Number.isFinite(sky.sunIntensity)) ? sky.sunIntensity
+        : (lighting && lighting.sun && Number.isFinite(lighting.sun.intensity))
+          ? lighting.sun.intensity : 2.35;
+      // Referenced to the magic-hour key so the tuned surge is exactly 1x there and
+      // the term simply follows the sun the rest of the day.
+      st.multiplyScalar(clamp(si / 2.35, 0, 1.6));
+    }
   }
 
   update(dt, elapsed) {

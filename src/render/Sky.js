@@ -120,6 +120,7 @@ const AZIMUTH_OFFSET = WORLD.SUN_AZIMUTH_DEFAULT * DEG - solarAzimuthRaw(MAGIC_H
 
 const _colA = new Color();
 const _colB = new Color();
+const _colCool = new Color();
 const _irr = [0, 0, 0];
 const _skySample = { r: 0, g: 0, b: 0 };
 /** Rec.709 luminance — used to re-hue the ambient without changing its level. */
@@ -315,7 +316,7 @@ void main() {
 }
 `;
 
-function buildSkyFragment(cloudLayers, cloudOct) {
+function buildSkyFragment(cloudLayers, cloudOct, cloudDetail) {
   return /* glsl */`
 precision highp float;
 
@@ -345,11 +346,15 @@ uniform float uCloudThickness;
 uniform float uCloudDensity;
 uniform vec2  uCloudWind;
 uniform vec3  uCloudLit;
+uniform vec3  uCloudCool;
 uniform vec3  uCloudDark;
 uniform float uCloudOpacity;
 
 #define CLOUD_LAYERS ${cloudLayers}
 #define CLOUD_OCT ${cloudOct}
+#define CLOUD_DETAIL ${cloudDetail}
+// Precomputed on the JS side: GLSL ES 1.00 has no integer max(), and this is a constant.
+#define CLOUD_SPAN ${Math.max(cloudLayers - 1, 1).toFixed(1)}
 #define SUN_ANG_R ${SUN_ANGULAR_RADIUS.toFixed(8)}
 #define MOON_ANG_R ${MOON_ANGULAR_RADIUS.toFixed(8)}
 #define SUN_GLARE_R ${(SUN_ANGULAR_RADIUS * SUN_GLARE_SPREAD).toFixed(8)}
@@ -431,53 +436,120 @@ float stars( vec3 rd ) {
 // ---------------------------------------------------------------- cloud deck
 
 #if CLOUD_LAYERS > 0
-float cloudField( vec2 p, float cov ) {
+/**
+ * The deck's mass at one point on one slab plane, at two frequencies. The low band carves
+ * the cells; the high band is *subtracted* before the coverage threshold, so it erodes the
+ * silhouette into billows rather than adding another layer of blur on top of it. One band
+ * against a 0.30-wide threshold is what made the old deck a uniformly soft smear: there
+ * was nowhere in it for an edge to happen.
+ *
+ * detailAmp is faded out toward the horizon by the caller. On a flat slab the high band
+ * is the first thing to cross Nyquist, and when it does it stops being cloud and becomes
+ * the horizontal dashes the deck was showing a couple of degrees above the skyline.
+ */
+float cloudMass( vec2 p, float cov, float detailAmp ) {
   float f = fbm2( p, CLOUD_OCT ) * 0.5 + 0.5;
-  return smoothstep( cov, cov + 0.30, f );
+#if CLOUD_DETAIL
+  f -= fbm2( p * 5.9 + 23.1, 2 ) * 0.16 * detailAmp;   // zero-mean, so coverage is preserved
+#endif
+  // Narrow (0.17 wide, not 0.30) so the deck has an actual edge, and centred on the same
+  // value the wide ramp was so the amount of sky it covers is unchanged. That matters
+  // beyond the look: this shader is also what the cube camera bakes into the PMREM probe
+  // that lights the world, and sharpening an edge must not quietly repaint the sky.
+  return smoothstep( cov + 0.065, cov + 0.235, f );
 }
 
 /**
- * Flat-slab "raymarch lite": intersect the view ray with CLOUD_LAYERS stacked planes.
- * The parallax between layers, plus a single toward-sun tap for self-shadowing, reads
- * as volume for a fraction of the cost of a real march.
+ * Flat-slab "raymarch lite": intersect the view ray with CLOUD_LAYERS stacked planes, the
+ * lowest being the deck's underside and the highest its sunlit top. Returns an already
+ * *graded* colour, because the aerial-perspective blend at the bottom needs the deck and
+ * the sky behind it in the same space.
+ *
+ * Every warm pixel here is a function of the angle between the view ray and the sun. That
+ * is the whole point of the rewrite: the previous version keyed its lit/dark mix on a
+ * self-shadow tap taken at a fixed offset that did not depend on the sun's position at
+ * all, so the key colour landed wherever the noise happened to be thin — orange overhead,
+ * orange in the upper left, orange in the upper right, all at once.
  */
-vec4 clouds( vec3 rd, vec3 Fex ) {
-  float horizon = smoothstep( 0.008, 0.10, rd.y );
+vec4 clouds( vec3 rd, vec3 Fex, vec3 grade, vec3 skyCol ) {
+  float horizon = smoothstep( 0.006, 0.070, rd.y );
   if ( horizon <= 0.0 ) return vec4( 0.0 );
 
+  // Slant range to the deck in units of its height, soft-saturating. Taken raw this is
+  // 1/rd.y, which runs to 80 a degree above the horizon and drags the noise far past the
+  // sampling rate. Saturating the growth keeps features shrinking with distance — so the
+  // deck still reads as receding — while holding the frequency finite.
+  float sr = 1.0 / max( rd.y, 0.014 );
+  float slant = sr / ( 1.0 + sr * 0.055 );
+  float detailAmp = 1.0 - smoothstep( 5.0, 14.0, slant );
+
   float acc = 0.0;
-  float topDens = 0.0;
-  vec2 topP = vec2( 0.0 );
+  float dBase = 0.0;
+  float dTop = 0.0;
+  vec2 pTop = vec2( 0.0 );
 
   for ( int i = 0; i < CLOUD_LAYERS; i++ ) {
-    float k = float( i ) / float( CLOUD_LAYERS );
-    float h = uCloudHeight * ( 1.0 + k * uCloudThickness );
-    float t = h / max( rd.y, 0.008 );
-    vec2 p = rd.xz * t * uCloudScale + uCloudWind * ( 1.0 + k * 0.18 );
-    float d = cloudField( p, uCloudCoverage + k * 0.055 );
-    acc += d * ( 1.0 - k * 0.35 );
-    if ( i == 0 ) { topDens = d; topP = p; }
+    float k = float( i ) / CLOUD_SPAN;                 // 0 at the base plane, 1 at the top
+    vec2 p = rd.xz * ( uCloudHeight * ( 1.0 + k * uCloudThickness ) * slant * uCloudScale )
+           + uCloudWind * ( 1.0 + k * 0.18 );
+    // Coverage tightens with height, so the stack domes instead of reading as a slab and
+    // the lower planes show through the gaps in the upper ones.
+    float d = cloudMass( p, uCloudCoverage + k * 0.085, detailAmp );
+    acc += d * ( 1.0 - 0.22 * k );
+    if ( i == 0 ) dBase = d;
+    dTop = d; pTop = p;
   }
   float dens = clamp( acc / float( CLOUD_LAYERS ) * uCloudDensity, 0.0, 1.0 );
-  if ( dens <= 0.001 ) return vec4( 0.0 );
+  if ( dens <= 0.002 ) return vec4( 0.0 );
 
-  // One extra tap displaced toward the sun approximates the transmittance through
-  // the deck; the difference is what makes the sunward edges glow.
-  vec2 sunOff = normalize( uSunDirection.xz + vec2( 1e-4, 0.0 ) ) * 0.55;
-  float toSun = cloudField( topP + sunOff, uCloudCoverage );
-  float transmit = exp( -2.6 * toSun );
+  // Self-shadow, one tap, displaced by the horizontal throw of the deck's own thickness at
+  // this solar elevation — nearly two cell widths at 13 degrees. That elevation dependence
+  // is what makes a low sun light one flank of every cell and leave the rest of it dark.
+  vec2 sunAz = normalize( uSunDirection.xz + vec2( 1e-5, 0.0 ) );
+  float throwP = min( uCloudHeight * uCloudThickness / max( uSunDirection.y, 0.07 ), 5200.0 ) * uCloudScale;
+  // The shade tap dominates; the deck's own depth only contributes a little, because what
+  // is being lit here is the top surface and it is not behind itself.
+  float shade = cloudMass( pTop + sunAz * throwP, uCloudCoverage, 0.0 );
+  float lightT = exp( -2.9 * shade - 0.7 * dens );
 
+  // ---- colour: a function of the angle to the sun, and of nothing else ---------------
   float cs = dot( rd, uSunDirection );
-  float silver = pow( max( cs, 0.0 ), 12.0 ) * ( 1.0 - dens ) * 2.4 + hgPhase( cs, 0.62 ) * 1.2;
+  // cos 62 deg = 0.47, cos 18 deg = 0.95. Past 62 degrees the deck is lit by the sky dome
+  // rather than by the key, so it falls to the cool colour. The weak wrap term keeps the
+  // sun's own hemisphere from ending in a hard-edged ring and is exactly zero past 84.
+  float warm = smoothstep( 0.47, 0.95, cs );
+  warm = clamp( warm + 0.22 * smoothstep( 0.10, 0.75, cs ) * ( 1.0 - warm ), 0.0, 1.0 );
+  vec3 keyCol = mix( uCloudCool, uCloudLit, warm );
 
-  vec3 lit = uCloudLit * ( 0.35 + 0.65 * transmit ) * ( 1.0 + silver );
-  vec3 col = mix( uCloudDark, lit, clamp( transmit + silver * 0.35, 0.0, 1.0 ) );
-  col *= Fex * 0.6 + 0.4;
+  // Forward scatter through thin cloud, with the phase function's isotropic pedestal taken
+  // off: an HG lobe still returns 0.0115 straight backwards, and multiplied up that was
+  // depositing a silver lining on the anti-solar side of the dome.
+  float fwd = max( hgPhase( cs, 0.74 ) - 0.021, 0.0 );
+  float thin = 1.0 - dens;
+  float burn = ( fwd * 1.9 + pow( max( cs, 0.0 ), 16.0 ) * 1.6 ) * thin * thin;
 
-  float alpha = dens * horizon * uCloudOpacity;
-  // Thin the deck out toward the zenith edge of the slab so it never hard-cuts.
-  alpha *= smoothstep( 0.0, 0.06, rd.y );
-  return vec4( col, clamp( alpha, 0.0, 1.0 ) );
+  // Lit top against shaded base. The upper plane is the one the sun reaches, and the
+  // parallax between it and the base plane is positive on the far flank of every cell —
+  // where the light is — and negative on the underside we are looking up into.
+  float topFace = clamp( ( dTop - dBase ) * 1.7 + 0.5, 0.0, 1.0 );
+  vec3 base = mix( uCloudDark, uCloudCool, 0.22 );
+  vec3 col = mix( base, keyCol * ( 0.55 + 1.5 * lightT ),
+                  clamp( topFace * ( 0.28 + 0.72 * lightT ), 0.0, 1.0 ) );
+  col += uCloudLit * burn * warm;
+
+  // Extinction along the ray to the deck. Fex is the whole-atmosphere figure and the deck
+  // is 1.7 km up, so take a third of it. Taken neat it reddened every low cloud in the
+  // dome — including the ones behind us — which is the other half of the misplaced orange.
+  col *= mix( vec3( 1.0 ), Fex, 0.34 );
+  col *= grade;
+
+  // Aerial perspective on the deck itself: it dissolves into the air in front of it as it
+  // recedes, which is what makes it read as a plane going away rather than as a texture
+  // smeared across the bottom of the sky. It also disposes of whatever structure survives
+  // down there, which is where a flat slab is worst behaved.
+  col = mix( col, skyCol, smoothstep( 4.5, 14.0, slant ) * 0.85 );
+
+  return vec4( col, clamp( dens * horizon * uCloudOpacity, 0.0, 1.0 ) );
 }
 #endif
 
@@ -537,8 +609,10 @@ void main() {
 
   float cloudAlpha = 0.0;
 #if CLOUD_LAYERS > 0
-  vec4 cl = clouds( rd, Fex );
-  col = mix( col, cl.rgb * grade, cl.a );
+  // col goes in as the sky the deck is drawn against — the deck hazes into it as it
+  // recedes — and comes back already graded.
+  vec4 cl = clouds( rd, Fex, grade, col );
+  col = mix( col, cl.rgb, cl.a );
   cloudAlpha = cl.a;
 #endif
 
@@ -551,7 +625,12 @@ void main() {
   // highlight, so it is the only thing the tone mapper clips and the only thing the bloom
   // and god-ray passes have to work from. A thick deck dims it rather than deleting it —
   // thin cloud lets it burn through, which is the whole look of a low sun behind autumn cloud.
-  col += sunDisc( cosTheta, Fex ) * ( 1.0 - 0.88 * cloudAlpha ) * ( 1.0 - below );
+  //
+  // The floor is what guarantees the limb: the core is ~147 linear in red at 13 degrees
+  // against a dome capped at uSkyKnee = 0.62, so a quarter of it is still 59x the brightest
+  // sky it can be drawn against and clips while nothing around it does. The old 0.12 also
+  // clipped, but there is no reason to spend that much of the margin on a cloud tap.
+  col += sunDisc( cosTheta, Fex ) * mix( 1.0, 0.25, cloudAlpha ) * ( 1.0 - below );
 
   gl_FragColor = vec4( max( col, vec3( 0.0 ) ), 1.0 );
 
@@ -720,6 +799,7 @@ export class SkySystem {
       uCloudDensity: { value: 1.25 },
       uCloudWind: { value: this._cloudWind },
       uCloudLit: { value: new Vector3(1, 0.69, 0.42) },
+      uCloudCool: { value: new Vector3(0.53, 0.60, 0.71) },
       uCloudDark: { value: new Vector3(0.3, 0.31, 0.4) },
       uCloudOpacity: { value: 0.95 },
     };
@@ -763,12 +843,15 @@ export class SkySystem {
   }
 
   _cloudTier(q) {
-    // taps = layers * octaves; the brief allows 6-10, LOW gets a token 2-tap deck.
+    // [slab planes, octaves in the low band, high band on]. Taps are
+    // `layers * (oct + 2 * detail) + oct` — 4 / 9 / 13 / 18. The high band is the
+    // expensive half and the half that aliases first, so it is what goes away below HIGH;
+    // MEDIUM stays inside the 6-10 tap budget the deck was always held to.
     switch (q.tier) {
-      case 0: return [1, 2];
-      case 1: return [2, 3];
-      case 2: return [3, 3];
-      default: return [3, 4];
+      case 0: return [1, 2, 0];
+      case 1: return [2, 3, 0];
+      case 2: return [2, 3, 1];
+      default: return [3, 3, 1];
     }
   }
 
@@ -894,6 +977,19 @@ export class SkySystem {
       u.uCloudCoverage.value = g.cloudCoverage;
       u.uCloudLit.value.set(g.cloudLit.r, g.cloudLit.g, g.cloudLit.b);
       u.uCloudDark.value.set(g.cloudDark.r, g.cloudDark.g, g.cloudDark.b);
+
+      // Cloud more than ~60 degrees off the sun is lit by the sky dome, not by the key,
+      // and it has to have somewhere cool to go or the warmth spreads over the whole deck.
+      // Derived from the ladder's own sky colour rather than added as a tenth keyframe
+      // knob, so it tracks every hour for free; held at a fixed fraction of the lit
+      // colour's luminance so the deck keeps its tops-brighter-than-bases ordering; and
+      // pulled part way to white because cloud is never as saturated as the air behind it.
+      _colCool.copy(g.sky);
+      const lCool = lum(_colCool);
+      if (lCool > 1e-5) _colCool.multiplyScalar(lum(g.cloudLit) * 0.52 / lCool);
+      u.uCloudCool.value.set(
+        lerp(_colCool.r, 1, 0.18), lerp(_colCool.g, 1, 0.18), lerp(_colCool.b, 1, 0.18),
+      );
     }
 
     // --- key light -----------------------------------------------------------
@@ -1211,8 +1307,7 @@ export class SkySystem {
 
   applyQuality(q) {
     if (!this.material) return;
-    const [layers, oct] = this._cloudTier(q);
-    const next = buildSkyFragment(layers, oct);
+    const next = buildSkyFragment(...this._cloudTier(q));
     if (next !== this.material.fragmentShader) {
       this.material.fragmentShader = next;
       this.material.needsUpdate = true;

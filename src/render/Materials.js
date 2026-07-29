@@ -811,25 +811,60 @@ RECIPES.push({
 // takes over only where the damp field says water stands. A joint darker than
 // about half its stone face stops reading as a filled joint and starts reading as
 // a crack, which is the single thing that made this surface read as mud.
+//
+// WALL ANGLE IS THE OTHER MEASUREMENT, and it is the one that shipped wrong twice.
+// Depth and width are not independent: what the eye reads is the *slope* between
+// them, and the previous recipe's numbers work out to a slot. The joint ramp ran
+// over 0.0465 cells of perpendicular distance (0.0058 of the tile) for 0.075 of
+// `h`, i.e. dh/du = 12.9, i.e. tan(slope) = 12.9/8 = 1.61 — **58 degree walls**;
+// the contact seam was 59. Measured off the baked normal map that is p95 = 56 deg,
+// p99 = 60 deg. At the shot's 13 degrees of solar elevation a 56 degree wall tilted
+// sunward sits 21 degrees off the sun and returns N.L = 0.93, against sin(13) = 0.22
+// for the flat paving beside it: the sunward wall of every joint is **four times**
+// the brightness of the stone, and the far wall is below the horizon and goes black.
+// That pair — lit lip, black core — is the dried-lakebed signature the review named,
+// and it is a lighting fact about a 58 degree wall, not an artistic choice about
+// depth. It is also why the ground got *worse* as the camera got lower rather than
+// closer: at grazing incidence anisotropic filtering averages along the view ray,
+// which erases the stone faces (low contrast, isotropic) but preserves the joints
+// that run with the ray (4:1 contrast, and the filter runs *along* them), so runs
+// of 20 cm joints fuse into continuous 2 m curves. `wide` sits 9.5 m up, looks down
+// at a much steeper incidence, and shows the same tile as correct flagstone.
+//
+// So the joint stops being modelled as a groove and becomes what a swept, sand-filled
+// joint is — 4 mm of dish at ~22 degrees — and the per-stone reading moves to two
+// things that survive both filtering and mip: the crown (a 27 cm feature, not a 2 cm
+// one) and each flag's own tilt in its bed. Slope budget for anything that forms a
+// *line* is 25 degrees. Isolated pockmarks may be steeper; they cannot fuse.
 RECIPES.push({
   key: 'cobble', label: '石畳 flagstone path', seed: 2111, k: 2,
   setup(t, res) {
     return {
       hf: Math.max(24, res >> 2),
-      moss: coarse(56, (u, v) => tileWarp(u, v, 3.6, 0.9, 4, 4.4, 9.9)),
-      wet: coarse(48, (u, v) => tileFbm(u, v, 2.8, 4, 71.3, 13.9)),
+      // Both weathering fields run above the review's 60 cm ceiling for a surface
+      // feature: at 6.0 and 5.2 repeats of a 1.61 m tile they are 27 cm and 31 cm
+      // blotches, so nothing in the damp story can read as a crack in the earth.
+      moss: coarse(56, (u, v) => tileWarp(u, v, 6.0, 0.9, 4, 4.4, 9.9)),
+      wet: coarse(48, (u, v) => tileFbm(u, v, 5.2, 4, 71.3, 13.9)),
     };
   },
   shade(u, v, s, c, t) {
     // Warp the lookup so the cell boundaries meander like laid stone, not Voronoi.
     const wx = t.fbmA(u, v, 6, 6, 3) * 0.045;
     const wy = t.fbmA(u + 0.5, v + 0.25, 6, 6, 3) * 0.045;
-    const w = t.worleyA(u + wx, v + wy, 8, 8, 1.0);
+    // Six cells, not eight: 1.61 / 6 = 27 cm, mid-range of the 20–40 cm the review
+    // asks to stay legible at *every* distance, and 43 texels of a 256 px tile per
+    // stone instead of 32 — the per-stone tone survives two more mip levels, which
+    // is what has to carry the paving at 40 m once the joints are below a pixel.
+    const w = t.worleyA(u + wx, v + wy, 6, 6, 1.0);
     // worleyA hands back shared scratch — drain it before the next cellular call.
     const edge = w.f2 - w.f1, f1 = w.f1, id = w.id;
 
-    const joint = 1 - smoothstep(0.022, 0.115, edge);   // ~2.6 cm of filled joint
-    const seam = 1 - smoothstep(0.0, 0.042, edge);      // ~1.0 cm contact line
+    // `edge` is 2x the perpendicular distance to the bisector in *cell* units, so
+    // these ramps are 2.5 cm and 0.9 cm of joint on a 27 cm stone — widths unchanged
+    // from the round the review cleared. Only the depths they drive have moved.
+    const joint = 1 - smoothstep(0.018, 0.093, edge);   // ~2.5 cm of filled joint
+    const seam = 1 - smoothstep(0.0, 0.034, edge);      // ~0.9 cm contact line
     const crown = smoothstep(0.58, 0.10, f1);           // centuries of feet
     // A second independent draw per stone. hash2 truncates to int, and `id` is
     // already hashed off the *wrapped* cell index, so this stays tile-periodic.
@@ -857,10 +892,44 @@ RECIPES.push({
     const moss = smoothstep(0.42, 0.86, mossF) * (0.22 + joint * 0.78);
     const wet = cs(c.wet, u, v);
 
-    // See the scale note: 1.0 of `h` is ~20 cm of relief at the laid tile size.
-    let h = 0.66 + (id - 0.5) * 0.045 + crown * 0.030;   // 0.9 cm of set, 0.6 cm crown
-    h -= joint * 0.075 + seam * 0.035;                   // 2.2 cm of joint at the core
-    h += (grain - 0.5) * 0.022 + (bed - 0.5) * 0.014 - pitting * 0.020;
+    // Each flag is bedded at its own slight angle. Three periods across the tile is
+    // a 54 cm wavelength — a third of a cycle inside one stone, so within a stone it
+    // is a plane, not a wave — and because it is sampled in the per-stone shifted
+    // frame the plane's direction and offset are redrawn at every joint. That makes
+    // it a 27 cm feature, never a 54 cm one: it cannot survive across a joint, so it
+    // cannot organise neighbours into anything the eye reads as a macro cell.
+    // The period count is an integer and the offset is a constant, which is the only
+    // reason this still wraps — scaling `gu` here instead would put half a period
+    // across the tile and hand the ground a seam.
+    const tilt = t.fbmA(gu + 0.71, gv + 0.23, 3, 3, 1) * 0.5 + 0.5;
+
+    // Anything drawn *per stone* is discontinuous at the joint by construction —
+    // `id` is a per-cell hash and `gu`/`gv` shift the grain frame per cell — so left
+    // raw it is a cliff one texel wide, and the previous recipe's per-stone terms
+    // summed to 0.08 of `h` across that one texel, which is a 55 degree wall dressed
+    // up as randomness. It is also the one wall that cannot be argued for: two dressed
+    // flags do not sit 4 cm apart in height. `face` lands them on a common joint floor
+    // and lets each rise onto its own set over the joint's own width, which is both
+    // what a bedded joint looks like and what keeps the step inside the slope budget.
+    const face = smoothstep(0.012, 0.32, edge);
+
+    // See the scale note: 1.0 of `h` is ~20 cm of relief at the laid tile size, and
+    // the Sobel resolves tan(slope) = (dh/du) / 8. Every line-forming term below is
+    // quoted with the wall angle it produces, because that — not depth — is what the
+    // low sun reads. Budget: 25 degrees for anything that forms a line.
+    //   joint  0.020 over 0.00625 u  -> tan 0.40  -> 22 deg, 4.0 mm of dish
+    //   seam   0.008 over 0.00283 u  -> tan 0.35  -> 19 deg, 1.6 mm
+    //   crown  0.090 over 0.0800 u   -> tan 0.14  ->  8 deg of dome across the flag
+    //   face   0.100 over 0.0257 u   -> tan 0.49  -> 26 deg worst case, ~12 typical
+    // `crown` is a function of the distance to the cell *site*, which is continuous
+    // across the bisector, so it needs no mask. The crown and the per-stone set are
+    // what the eye now reads a stone by, and both are 27 cm features — unlike the old
+    // 2 cm joint wall they survive minification, and they do not fuse into lines when
+    // grazing anisotropy averages along the view ray.
+    let h = 0.66 + crown * 0.090;
+    h += face * ((id - 0.5) * 0.028 + (tilt - 0.5) * 0.140
+      + (grain - 0.5) * 0.022 + (bed - 0.5) * 0.014);
+    h -= joint * 0.020 + seam * 0.008 + pitting * 0.014;
 
     // --- quarry identity ----------------------------------------------------
     // A courtyard where every flag carries the same value is a texture; ±15% of
@@ -906,10 +975,111 @@ RECIPES.push({
     s.ao = clamp(ao, 0.52, 1);
     s.me = 0;
   },
-  // ns/ao down from 1.7/1.15: the height field they were amplifying is now an
-  // honest 2 cm joint instead of a 15 cm one, and a 2 cm joint does not occlude
-  // three quarters of the sky.
+  // ns stays at 1.05 and is now load-bearing rather than cosmetic: normalScale
+  // multiplies tan(slope) before the normalize, so 1.05 x tan(22 deg) = 22.8 deg at
+  // the joint, still inside the 25 degree line budget. Anything above ~1.2 puts the
+  // joint wall back over the angle at which a 13 degree sun lights one side of it.
+  // AO is deliberately *not* reduced with the depth — occlusion darkens the joint in
+  // the ambient term only, so it reads the joint without ever lighting a wall, which
+  // is exactly the trade this fix is making.
   mat(maps) { return pbr(maps, { ns: 1.05, ao: 0.85 }); },
+});
+
+// ------------------------------------------------------- 花崗岩 lantern granite
+// The lanterns' own stone. They used to borrow 石 weathered granite steps at 3.6
+// repeats, which brought that recipe's worley crack net along at roughly a 15 cm
+// cell — the same *kind* of signal, at nearly the same size, as the courtyard's
+// joint web. Lantern and ground therefore read as one crazed ceramic surface
+// rather than as two objects made of stone, and Props already publishes the hook
+// (`LANTERN_STONE_NAMES`) for a dedicated one.
+//
+// So this is granite by its mineralogy and nothing else. No slab joints, no crack
+// net, no cellular network of any size — the largest structural feature is a 6 cm
+// lichen rosette, and every load-bearing signal is a 5–15 mm speckle. That makes it
+// scale-tolerant, which matters because Props lays it at repeat 1 onto lathe and
+// box UVs whose world scale varies part by part: whether one tile lands on 0.5 m or
+// 1.5 m of lantern, a speckle stays a speckle. A crack net does not — it becomes
+// damage at one scale and noise at another, which is how the old one failed.
+RECIPES.push({
+  key: 'lanternStone', label: '花崗岩 lantern granite', seed: 6301, k: 2,
+  setup(t, res) {
+    return {
+      hf: Math.max(64, res >> 1),
+      // Weathering runs at 7.5 repeats — 11 cm at a nominal 0.8 m tile — and is
+      // spent on tone and roughness, never on relief.
+      age: coarse(48, (u, v) => tileFbm(u, v, 7.5, 4, 19.3, 51.7)),
+      lich: coarse(56, (u, v) => tileWarp(u, v, 11.0, 0.85, 3, 63.1, 24.9)),
+    };
+  },
+  shade(u, v, s, c, t) {
+    // Three minerals at three scales. `spar` is the coarse crystal draw: feldspar
+    // laths come back as bright cells, biotite as the near-black ones between them.
+    const spar = t.worleyA(u + 0.19, v + 0.63, c.hf >> 1, c.hf >> 1, 0.95);
+    const felds = smoothstep(0.55, 0.88, spar.id);
+    const dark = smoothstep(0.20, 0.02, spar.id);
+    // Crystal boundaries, one texel of contact and nothing more. This is the only
+    // cellular *edge* in the recipe and it is deliberately a hundredth the size of
+    // the paving's joint, which is what keeps the two surfaces from rhyming.
+    const facet = 1 - smoothstep(0.0, 0.06, spar.f2 - spar.f1);
+
+    // The fine speckle, a full octave above the crystal draw, is what stops the
+    // surface going smooth when the camera is a metre away.
+    const fleck = t.worleyA(u + 0.77, v + 0.11, c.hf, c.hf, 1.0);
+    const quartz = smoothstep(0.70, 0.95, fleck.id) * (1 - smoothstep(0.12, 0.30, fleck.f1));
+    const mica = smoothstep(0.06, 0.0, fleck.id);
+
+    const grain = t.fbmA(u, v, c.hf >> 2, c.hf >> 2, 3) * 0.5 + 0.5;
+    // Chisel work. A dressed lantern shaft carries the nomi's traces as shallow
+    // parallel striae, so the frame is stretched 1:4 — and it is 3 mm deep, because
+    // tooling that reads as relief at a distance reads as corrugation up close.
+    const tool = t.ridgedA(u + 0.31, v + 0.47, c.hf >> 3, c.hf >> 1, 2);
+
+    const age = cs(c.age, u, v);
+    // `cs` returns a coarse field remapped to roughly 0.25–0.75, not 0–1, so a
+    // threshold authored against a full range never fires. These are picked against
+    // the range the field actually occupies.
+    const lich = smoothstep(0.51, 0.70, cs(c.lich, u, v));
+
+    // Relief budget: this tile lands on 0.5–1.5 m of prop, so 1.0 of `h` is at most
+    // ~19 cm of relief (tile/8). Everything here is under 4 mm, and no term forms a
+    // continuous line — which is the whole difference from the recipe it replaces.
+    let h = 0.62;
+    h += (grain - 0.5) * 0.030;
+    h += felds * 0.016 - dark * 0.014;
+    h += quartz * 0.012 - mica * 0.010;
+    h += (tool - 0.35) * 0.020;
+    h -= facet * 0.008 + lich * 0.006;
+
+    setc(s, PAL.stone);
+    mixc(s, PAL.stoneWarm, clamp(grain - 0.42, 0, 1) * 1.7 * 0.60);
+    mixc(s, PAL.stoneDark, clamp(0.46 - grain, 0, 1) * 1.7 * 0.42);
+    mixc(s, PAL.quartz, felds * 0.34 + quartz * 0.72);
+    mixc(s, PAL.biotite, dark * 0.40 + mica * 0.62);
+    // Age is a tonal drift, not a stain map: a granite lantern weathers evenly and
+    // goes grey. It runs at 11 cm, so it is not a macro feature at any plausible UV
+    // scale, and it is the only thing keeping the shaft off a flat tint at 8 m once
+    // the speckle has mipped away (§5.9).
+    scalec(s, 1 + (age - 0.5) * 0.30);
+    tint(s, 0.014, 0.010, -0.006, (age - 0.5) * 1.4);
+    scalec(s, 1 - facet * 0.10 - clamp(0.30 - tool, 0, 1) * 0.22);   // chisel traces
+    mixc(s, PAL.mossDry, lich * 0.26);
+    mixc(s, PAL.mossDeep, lich * lich * 0.30);
+    mixc(s, PAL.algae, lich * 0.18);
+
+    let ro = 0.76 + (grain - 0.5) * 0.14 - quartz * 0.26 + mica * 0.08;
+    ro = lerp(ro, 0.95, lich * 0.8);
+    ro = lerp(ro, 0.66, felds * 0.25);      // cleaved feldspar keeps a little sheen
+
+    const ao = 1 - dark * 0.10 - lich * 0.12 - facet * 0.10 - clamp(0.35 - tool, 0, 1) * 0.18;
+
+    s.h = clamp(h, 0, 1);
+    s.ro = clamp(ro, 0.06, 1);
+    s.ao = clamp(ao, 0.58, 1);
+    s.me = 0;
+  },
+  // ns above the paving's because none of this relief forms a line: the speckle is
+  // isolated crystals, so a strong normal buys grain rather than a web of walls.
+  mat(maps) { return pbr(maps, { ns: 1.45, ao: 1.05 }); },
 });
 
 // ------------------------------------------------------------------ 土 dirt

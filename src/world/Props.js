@@ -72,8 +72,22 @@ export const EMISSIVE = {
    * Rec709 luma ≈ 6.4 linear, G/R 0.90.
    */
   flame: { color: 0xfff4e8, intensity: 7.0 },
-  /** Lit paper seen from outside. Rec709 luma ≈ 2.65 linear, G/R 0.69. */
-  paper: { color: 0xffd9a8, intensity: 3.6 },
+  /**
+   * Lit paper seen from outside. Rec709 luma ≈ 1.91 linear, G/R 0.69.
+   *
+   * This is a *peak*, not a level. It used to be 3.6 — luma 2.65, i.e. every
+   * texel of every hibukuro aperture and every chōchin belly landing past the
+   * transfer function's 2.2 white point at once. That is a flat 255 rectangle
+   * with a hard aliased edge where it meets the stone, which is what a lit paper
+   * panel never looks like: paper is a diffuser with a lamp behind it, so it is
+   * hottest opposite the flame and falls off toward the frame it is glued to.
+   *
+   * The falloff now lives in the vertex colour (see `lanternPaperMaterial`,
+   * which routes `vColor` onto the emissive), so the number here only has to put
+   * the *centre* of a panel at the top of the curve rather than the whole panel
+   * past it. 2.6 lands the centre near 250 and lets a 0.38 rim land near 180.
+   */
+  paper: { color: 0xffd9a8, intensity: 2.6 },
   /** Warm spill on flagstone. Rec709 luma ≈ 0.38 — below the bloom threshold. */
   pool: { color: 0xff9a52, intensity: 0.85 },
   /** Sky caught in still water. Reads as a glint without becoming a lamp. */
@@ -253,6 +267,92 @@ export function roughen(geo, amount, freq = 1.6, axisMask = null) {
   return geo;
 }
 
+/**
+ * Lengthwise grain, written into the vertex colour of a *round* member.
+ *
+ * The albedo and normal maps already carry grain; the reason it does not survive
+ * a front key is that a tone curve compresses hard where the sun puts a surface,
+ * so a 4% albedo mottle that reads fine in shadow lands inside one code value
+ * when lit. Vertex colour multiplies diffuse *before* the curve, so a ±11% band
+ * here comes out the other side as a real streak.
+ *
+ * Sampled through `cos/sin` of the angle around the axis so the field is exactly
+ * periodic and no seam runs up the post, with a slow drift along it — which is
+ * what makes a streak wander like grain rather than sit like a stripe.
+ */
+export function axialGrain(geo, cx, cz, amount = 0.12, scale = 1, warm = 0.55) {
+  const pos = geo.getAttribute('position');
+  let col = geo.getAttribute('color');
+  if (!col) { normalizeGeo(geo); col = geo.getAttribute('color'); }
+  const inv = 1 / Math.max(1e-3, scale);
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const th = Math.atan2(z - cz, x - cx);
+    const c = Math.cos(th), s = Math.sin(th);
+    const coarse = noise.fbm2(c * 9.0, s * 9.0 + y * 0.55 * inv, 3);
+    const fine = noise.noise2(c * 27.0, s * 27.0 + y * 1.9 * inv);
+    const g = coarse * 0.68 + fine * 0.32;
+    const k = 1 + g * amount;
+    // Late wood is darker *and* browner than early wood; a purely luminance
+    // streak reads as dirt, the hue shift is what makes it read as timber.
+    const kb = 1 + g * amount * (1 + warm);
+    col.setXYZ(i, col.getX(i) * k, col.getY(i) * kb, col.getZ(i) * kb);
+  }
+  col.needsUpdate = true;
+  return geo;
+}
+
+/** As `axialGrain`, but for a beam swept along X — grain runs the long way. */
+export function beamGrain(geo, amount = 0.10, scale = 1, warm = 0.55) {
+  const pos = geo.getAttribute('position');
+  let col = geo.getAttribute('color');
+  if (!col) { normalizeGeo(geo); col = geo.getAttribute('color'); }
+  const inv = 1 / Math.max(1e-3, scale);
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const across = (y * 7.4 + z * 6.1) * inv;
+    const g = noise.fbm2(x * 0.55 * inv, across, 3) * 0.7
+      + noise.noise2(x * 1.7 * inv, across * 2.6) * 0.3;
+    const k = 1 + g * amount;
+    const kb = 1 + g * amount * (1 + warm);
+    col.setXYZ(i, col.getX(i) * k, col.getY(i) * kb, col.getZ(i) * kb);
+  }
+  col.needsUpdate = true;
+  return geo;
+}
+
+/**
+ * 雨だれ the dark run a joint leaves down the member below it.
+ *
+ * Rain sheets off the nuki and runs down the pillar, and it does not run evenly:
+ * it picks a handful of tracks and follows them for a metre or two, leaving a
+ * grey-green stain that is the single clearest "this has stood outside for a
+ * century" cue on a painted post. Only some angular bands run (the mask is
+ * thresholded), the run fades out downward, and it fades *in* just below the
+ * joint because the first few centimetres are sheltered by the beam itself.
+ */
+export function runoffStain(geo, yTop, drop, cx, cz, strength = 0.34) {
+  const pos = geo.getAttribute('position');
+  let col = geo.getAttribute('color');
+  if (!col) { normalizeGeo(geo); col = geo.getAttribute('color'); }
+  for (let i = 0; i < pos.count; i++) {
+    const y = pos.getY(i);
+    const t = (yTop - y) / drop;
+    if (t < 0 || t > 1) continue;
+    const th = Math.atan2(pos.getZ(i) - cz, pos.getX(i) - cx);
+    const m = smoothstep(0.02, 0.40, noise.fbm2(
+      Math.cos(th) * 12.0 + yTop * 0.21, Math.sin(th) * 12.0, 2));
+    if (m <= 0.001) continue;
+    const fade = smoothstep(0.0, 0.10, t) * (1 - smoothstep(0.35, 1.0, t));
+    const k = 1 - m * fade * strength;
+    // Rainwater carries dust and algae down with it: the stain is cooler and
+    // greener than the paint, not just darker.
+    col.setXYZ(i, col.getX(i) * k, col.getY(i) * (k + (1 - k) * 0.45), col.getZ(i) * (k + (1 - k) * 0.30));
+  }
+  col.needsUpdate = true;
+  return geo;
+}
+
 /** Build a TRS matrix. Build-time only — allocates. */
 export function trs(x, y, z, ry = 0, sx = 1, sy = sx, sz = sx) {
   const m = new Matrix4().makeRotationY(ry);
@@ -297,11 +397,26 @@ export function ropeProfile(n = 12, lobes = 3, depth = 0.16) {
   return p;
 }
 
-/** Five-sided kasagi/beam section: flat soffit, sloped shoulders, ridged top. */
-export function kasagiProfile() {
+/**
+ * Five-sided kasagi/beam section: flat soffit, sloped shoulders, ridged top.
+ *
+ * `chamfer` breaks the two soffit arrises. A carpenter planes them off and a
+ * century of weather rounds them further; left square they are a mathematically
+ * exact edge, and an exact edge under a directional key is a single-pixel
+ * discontinuity that reads as a rendered box rather than as a cut timber.
+ */
+export function kasagiProfile(chamfer = 0) {
+  const c = clamp(chamfer, 0, 0.30);
+  if (c <= 0.002) {
+    return [
+      [-0.50, -0.50], [0.50, -0.50],
+      [0.50, 0.16], [0.30, 0.40], [0.00, 0.50], [-0.30, 0.40], [-0.50, 0.16],
+    ];
+  }
   return [
-    [-0.50, -0.50], [0.50, -0.50],
+    [-0.50 + c, -0.50], [0.50 - c, -0.50], [0.50, -0.50 + c],
     [0.50, 0.16], [0.30, 0.40], [0.00, 0.50], [-0.30, 0.40], [-0.50, 0.16],
+    [-0.50, -0.50 + c],
   ];
 }
 
@@ -769,6 +884,22 @@ function blossomTexture(seed = 0x5a1201) {
  */
 const GROUND_UV_SCALE = 0.62;
 
+/**
+ * Names `lanternStoneMaterial` will adopt from `MaterialLibrary`, in order of
+ * preference. Nothing here has to exist — the first one that does wins, and the
+ * fallback below carries the prop until one lands. This is the coordination
+ * point with [materials]; adding a key there needs no change here.
+ */
+const LANTERN_STONE_NAMES = ['lanternStone', 'graniteFine', 'granite'];
+
+/**
+ * Tiling for the `stone` fallback under a lantern. The stonework's own UVs run
+ * roughly one tile around the hexagon (~0.9 m of perimeter), so 3.6 puts the
+ * crack net's cells at about 3.5 cm — fine enough to integrate into speckle at
+ * the 4–8 m the prop is ever seen from, instead of a hand-sized web.
+ */
+const LANTERN_STONE_REPEAT = 3.6;
+
 /** Colour/roughness/metalness for every material name in the library contract. */
 const FALLBACK = {
   cedar: [0x5a4436, 0.86, 0.0],
@@ -974,6 +1105,7 @@ export class PropFactory {
       case '__blossom': return this.blossomMaterial;
       case '__wetStone': return this.wetStoneMaterial;
       case '__groundStone': return this.groundMaterial;
+      case '__lanternStone': return this.lanternStoneMaterial;
       default: return this.material(name);
     }
   }
@@ -990,11 +1122,87 @@ export class PropFactory {
       mat.side = DoubleSide;
       this._installWind(mat);
     }
+    if (name === 'vermilion') this._weatherUrushi(mat);
     this.ctx?.sky?.applyFog?.(mat);
     mat.needsUpdate = true;
     this._mats.set(key, mat);
     this.disposables.push(mat);
     return mat;
+  }
+
+  /**
+   * Age the torii lacquer down off a showroom finish.
+   *
+   * The library authors `vermilion` as fresh urushi — clearcoat 0.92 at
+   * roughness 0.10 over an ORM whose lacquer band sits at 0.13, with the
+   * clearcoat normal at 0.35 so the film is very nearly optically flat. On a
+   * 5 m round pillar that is one specular lobe wide enough to cover the whole
+   * lit side and smooth enough to run unbroken from the nemaki to the nuki, and
+   * a clean saturated field under an unbroken sheen is *exactly* the signature
+   * of injection-moulded plastic. It also swallows the substrate: the grain is
+   * in the albedo and in the normal, but front-lit it sits under a specular
+   * term two stops brighter than the diffuse and never gets out.
+   *
+   * Three knobs, all of them removing gloss rather than adding decoration:
+   *  - the film thins to a fifth and roughens, so what is left is a broken band
+   *    rather than a mirror;
+   *  - the clearcoat normal comes up to full strength, so the band that remains
+   *    is chopped up by the grain underneath it instead of gliding over it;
+   *  - `roughness` multiplies the ORM (three clamps the product, not the
+   *    factor), so 2.6 takes the lacquer from 0.13 to 0.34 and pins the chipped
+   *    wood at 1.0 — which is the whole point, a chip has to look *matte* next
+   *    to the paint or it reads as a decal.
+   * The normal comes up with it so the grain survives a front key, and the env
+   * term comes down because a broad sky reflection is the other half of the
+   * sheen.
+   */
+  _weatherUrushi(m) {
+    // Only as a *multiplier*. Without a roughness map the 2.6 would clamp to a
+    // dead matte, which is the opposite failure.
+    m.roughness = m.roughnessMap ? 2.6 : Math.min(1, (m.roughness || 0.48) * 1.5);
+    m.envMapIntensity = 0.60;
+    if (m.normalScale) m.normalScale.set(2.15, 2.15);
+    m.aoMapIntensity = 1.25;
+    if ('clearcoat' in m) {
+      m.clearcoat = 0.20;
+      m.clearcoatRoughness = 0.58;
+      if (m.clearcoatNormalScale) m.clearcoatNormalScale.set(1.15, 1.15);
+    }
+  }
+
+  /**
+   * 花崗岩 the lantern stonework.
+   *
+   * A kasuga-dōrō is dressed granite in six dry-stacked pieces, and it was
+   * borrowing `stone` at repeat 1 — a texture whose dominant feature is a 7x7
+   * worley crack net over 2x3 slab joints, authored for shrine *steps*. Wrapped
+   * once around a 2 m lantern those cracks are 12 cm apart and the whole prop
+   * reads as crazed clay; worse, Terrain adopts the same normal map as its
+   * ground detail, so the lantern wore the courtyard's own crack web and lost
+   * its identity as a separate object.
+   *
+   * `MaterialLibrary` is re-deriving a dedicated lantern granite — a mineral
+   * speckle without the paving damage layer. This resolves the first name it
+   * offers so the swap is a no-op here when it lands; until then the fallback
+   * is `stone` tiled hard enough that the crack net drops below the size the eye
+   * reads as damage and becomes what granite actually looks like at 4 m: grain.
+   */
+  get lanternStoneMaterial() {
+    if (this._lanternStone) return this._lanternStone;
+    let m = null;
+    for (const name of LANTERN_STONE_NAMES) {
+      m = this._libMaterial(name, 1);
+      if (m) break;
+    }
+    if (!m) m = this._libMaterial('stone', LANTERN_STONE_REPEAT)
+      || this._fallbackMaterial('stone', LANTERN_STONE_REPEAT);
+    m.vertexColors = true;
+    m.name = 'prop:lanternStone';
+    this.ctx?.sky?.applyFog?.(m);
+    m.needsUpdate = true;
+    this._lanternStone = m;
+    this.disposables.push(m);
+    return m;
   }
 
   /**
@@ -1022,8 +1230,16 @@ export class PropFactory {
 
   /**
    * Lit paper — the hibukuro glow shell and the chōchin body. Carries the real
-   * paper albedo so it still has grain, plus an emissive that puts it just past
-   * the 2.2-linear mark where the grade reaches 250.
+   * paper albedo so it still has grain, plus an emissive that puts the *centre*
+   * of a panel just under the 2.2-linear mark where the grade reaches 250.
+   *
+   * The vertex colour is routed onto the emissive, the same trick `glowPool`
+   * uses and for the same reason: on a self-lit surface the diffuse term is
+   * three orders of magnitude below the emissive, so a gradient baked into
+   * `vColor` was multiplying a number nobody could see. Routed, it becomes the
+   * only thing that separates paper from a cutout in white card — the panel is
+   * hot opposite the flame and cools toward the ribs and the frame it is pasted
+   * to (`_paperFalloff` bakes the profile).
    */
   get lanternPaperMaterial() {
     if (this._litPaper) return this._litPaper;
@@ -1046,6 +1262,18 @@ export class PropFactory {
     m.side = DoubleSide;
     m.name = 'prop:lanternPaper';
     this._installWind(m);
+    const prevCompile = m.onBeforeCompile;
+    m.onBeforeCompile = (shader, renderer) => {
+      if (prevCompile) prevCompile.call(m, shader, renderer);
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <emissivemap_fragment>',
+        '#include <emissivemap_fragment>\n#ifdef USE_COLOR\n  totalEmissiveRadiance *= vColor;\n#endif',
+      );
+    };
+    // `_installWind` stamps the key every cloth material shares; this one's
+    // fragment stage differs, so it needs its own or three hands it a program
+    // compiled without the routing.
+    m.customProgramCacheKey = () => 'kagLitPaper1';
     this._litPaper = m;
     this.disposables.push(m);
     return m;
@@ -1469,8 +1697,13 @@ export class PropFactory {
     const sori = 0.20 * s;                    // arc rise at the ends
     const flick = 0.13 * s;                   // extra kick in the last tenth
 
-    const pillarProfile = circleProfile(12);
-    const SEG = 9;
+    // 20 columns and 26 rings, up from 12 and 9. Both are carrying the grain:
+    // the streaks in `axialGrain` are per-vertex, so the column count sets how
+    // many grain lines run up the post (20 around a 1.4 m circumference is a
+    // 7 cm line, about right for old cedar) and the ring count sets how far a
+    // stain or a run can travel before it has to be straight.
+    const pillarProfile = circleProfile(20);
+    const SEG = 26;
 
     for (let side = 0; side < 2; side++) {
       const sx = side === 0 ? -1 : 1;
@@ -1493,10 +1726,16 @@ export class PropFactory {
       const pillar = sweepProfile(samples, pillarProfile, { smooth: true, uvScale: 0.9, capStart: false });
       bakeAO(pillar, { ground: 0.42, groundH: 0.55 * s, cavity: 0.12, down: 0.2, floor: 0.34 });
       weatherBand(pillar, 0.0, 1.05 * s, 0.70, 0.66, 0.60, 0.22);
+      axialGrain(pillar, x0, 0, 0.115, s, 0.55);
+      // Water sheets off both faces of the nuki and runs the height of a man
+      // down the post below it.
+      runoffStain(pillar, nukiY - nukiH * 0.5, 2.1 * s, x0, 0, 0.38);
       PropFactory.add(b, pillar, 'vermilion');
 
-      // Bare cedar showing through where the lacquer has gone at the foot.
-      this._lacquerChips(b, x0, 0, rBase, 0.95 * s, 7, rnd, s);
+      // Bare grey wood showing through where the lacquer has gone. Not only at
+      // the foot: paint fails wherever water sits or a hand touches, so the
+      // flakes climb the whole post with a bias toward the wet end.
+      this._lacquerChips(b, x0, 0, rBase, h * 0.80, 22, rnd, s);
 
       // 根巻き nemaki — the stone collar that keeps the post out of the wet.
       const collar = sweepProfile([
@@ -1516,15 +1755,29 @@ export class PropFactory {
     {
       const half = halfSpan + nukiOut;
       const samples = [];
-      for (let i = 0; i <= 6; i++) {
-        const t = i / 6;
+      for (let i = 0; i <= 20; i++) {
+        const t = i / 20;
         const x = lerp(-half, half, t);
         const taper = 1 - Math.pow(Math.abs(t * 2 - 1), 6) * 0.22;
         samples.push({ x, y: nukiY, z: 0, sx: nukiD * taper, sy: nukiH * taper, ao: 0.92 });
       }
       const nuki = sweepProfile(samples, rectProfile(0.16), { ref: [0, 0, -1], uvScale: 1.0 });
       bakeAO(nuki, { ground: 0, cavity: 0.22, down: 0.34, floor: 0.4 });
+      beamGrain(nuki, 0.10, s, 0.55);
       PropFactory.add(b, nuki, 'vermilion');
+      // Four long arrises, both protruding ends, and the two shoulders where the
+      // beam leaves the pillar — where a passer-by's shoulder and a century of
+      // frost have taken the paint off.
+      this._arrisChips(b, (t) => {
+        const taper = 1 - Math.pow(Math.abs(t * 2 - 1), 6) * 0.22;
+        return { x: lerp(-half, half, t), y: nukiY, z: 0, hy: nukiH * 0.5 * taper, hz: nukiD * 0.5 * taper, slope: 0 };
+      }, 26, rnd, s);
+      // Cut ends: the sawn face is end grain, and end grain never holds paint.
+      // The section is 0.78 of full at the tip and chamfered, so the plate has
+      // to fit inside the octagon rather than inside the rectangle.
+      for (const e of [-1, 1]) {
+        this._endGrain(b, e * half, nukiY, 0, nukiD * 0.312, nukiH * 0.312, e, s, rnd);
+      }
       PropFactory.addCollider(b, PropFactory.boxCollider(
         half * 2, nukiH, nukiD, 0, nukiY - nukiH * 0.5, 0), 'wood', true, false);
     }
@@ -1539,6 +1792,11 @@ export class PropFactory {
       ], rectProfile(0.14), { uvScale: 1.2 });
       bakeAO(strut, { ground: 0, cavity: 0.3, down: 0.3, floor: 0.38 });
       PropFactory.add(b, strut, 'vermilion');
+      // The strut stands in the rain with nothing over it but the shimaki, so
+      // its arrises go first. `hy` is the half-width in X for a vertical member.
+      this._arrisChips(b, (t) => ({
+        x: 0, y: lerp(y0, y1, t), z: 0, hy: 0.100 * s, hz: 0.095 * s, slope: 0,
+      }), 7, rnd, s, { axis: 'y' });
 
       // 額 the plaque. Dead centre of the god-ray shot, so the leaf is a chamfered
       // raised frame rather than a flat face: the bevels present several different
@@ -1575,14 +1833,48 @@ export class PropFactory {
       return sweepProfile(samples, profile, { ref: [0, 0, -1], uvScale: 1.0 });
     };
 
+    /** The same curve `curved` sweeps, sampled for chips and end grain. */
+    const curvePath = (length, height, depth, yAt, rise, kick) => (t) => {
+      const u = t * 2 - 1;
+      const taper = 1 - Math.pow(Math.abs(u), 3) * 0.16;
+      const du = 2 / length;                       // d(u)/d(x)
+      return {
+        x: u * length * 0.5,
+        y: yAt + rise * u * u + kick * Math.pow(Math.abs(u), 8),
+        z: 0,
+        hy: height * taper * 0.5,
+        hz: depth * taper * 0.5,
+        slope: (2 * rise * u + 8 * kick * Math.pow(Math.abs(u), 7) * Math.sign(u)) * du,
+      };
+    };
+
     const shimaki = curved(shimakiL, shimakiH, shimakiD, h + shimakiH * 0.5, sori * 0.55, flick * 0.5, rectProfile(0.10), 0.88);
     bakeAO(shimaki, { ground: 0, cavity: 0.2, down: 0.42, floor: 0.36 });
+    beamGrain(shimaki, 0.095, s, 0.55);
     PropFactory.add(b, shimaki, 'vermilion');
+    // rectProfile(0.10) puts its planed facets at 0.90 of the half-section.
+    this._arrisChips(b, curvePath(shimakiL, shimakiH, shimakiD, h + shimakiH * 0.5, sori * 0.55, flick * 0.5), 22, rnd, s,
+      { corners: [[0.90, 0.90], [0.90, -0.90], [-0.90, 0.90], [-0.90, -0.90]] });
 
     const kasagiY = h + shimakiH + kasagiH * 0.5;
-    const kasagi = curved(kasagiL, kasagiH, kasagiD, kasagiY, sori, flick, kasagiProfile(), 1.0);
+    // 0.055 of the section is a 4 cm planed arris on a 5 m gate — the size a
+    // carpenter actually takes off, and enough to hold its own highlight.
+    const kasagi = curved(kasagiL, kasagiH, kasagiD, kasagiY, sori, flick, kasagiProfile(0.055), 1.0);
     bakeAO(kasagi, { ground: 0, cavity: 0.16, down: 0.4, floor: 0.38 });
+    beamGrain(kasagi, 0.09, s, 0.55);
     PropFactory.add(b, kasagi, 'vermilion');
+    const kasagiPath = curvePath(kasagiL, kasagiH, kasagiD, kasagiY, sori, flick);
+    // A kasagi is five-sided: two planed soffit arrises at 0.945 of the section
+    // and two shoulder breaks where the vertical face turns into the slope.
+    this._arrisChips(b, kasagiPath, 20, rnd, s, {
+      corners: [[-0.945, -0.945], [-0.945, 0.945], [0.32, -1.0], [0.32, 1.0]],
+    });
+    // The kasagi section loses width above the shoulder, so its end plate sits
+    // low in the face and stays clear of the sloped top.
+    for (const e of [-1, 1]) {
+      const p = kasagiPath(e < 0 ? 0 : 1);
+      this._endGrain(b, p.x, p.y - p.hy * 0.16, 0, p.hz * 0.80, p.hy * 0.58, e, s, rnd, p.slope);
+    }
 
     // Copper cap along the ridge of the kasagi — one bright specular line that
     // separates the gate from the sky at magic hour.
@@ -1598,22 +1890,168 @@ export class PropFactory {
     return b;
   }
 
-  /** Flakes of bare cedar where the vermilion has come off the foot of a post. */
+  /**
+   * The tint that turns the cedar albedo into the *grey* wood under failed
+   * paint. Cedar is authored as `#5a4436`, a warm dark brown — correct for a
+   * sheltered beam, wrong for timber that has been in the weather since the
+   * lacquer left it. Wood that has lost its finish silvers: the lignin goes and
+   * what is left scatters neutrally. So the tint is not a brightening, it is a
+   * strong blue lift on top of one — which keeps cedar's grain (the chip is
+   * still sampling the cedar map) while landing the mean near `#9a938c`.
+   *
+   * It matters that this is grey and not brown. A warm chip on a warm-red post
+   * is a value difference; a grey chip is a *hue* difference, and hue survives
+   * a bright key where value does not.
+   */
+  static _bareWood(g, rnd, k = 1) {
+    tintGeo(g, (1.62 + rnd() * 0.30) * k, (2.02 + rnd() * 0.34) * k, (2.34 + rnd() * 0.40) * k);
+    return g;
+  }
+
+  /**
+   * A patch of surface lying *on* a cylinder — the shape a flake of failed paint
+   * actually is on a round post.
+   *
+   * A flat plate cannot do this job. The pillar is 47 cm across, so a 12 cm chord
+   * across it sags 8 mm from the surface: a flat plate big enough to read at 3 m
+   * either buries its middle in the post or lifts its ends off it by most of a
+   * centimetre, and both of those read as a tab stuck on rather than as bare
+   * wood in a hole. Two millimetres of clearance over a curved grid does not.
+   */
+  _cylPatch(cx, cz, radius, a0, halfA, y0, y1, cols = 4, rows = 2) {
+    const verts = [], uvs = [], cols3 = [], idx = [];
+    for (let j = 0; j <= rows; j++) {
+      const v = j / rows;
+      const y = lerp(y0, y1, v);
+      for (let i = 0; i <= cols; i++) {
+        const u = i / cols;
+        const a = a0 + (u * 2 - 1) * halfA;
+        verts.push(cx + Math.sin(a) * radius, y, cz + Math.cos(a) * radius);
+        uvs.push(u * halfA * radius * 4, v * (y1 - y0) * 4);
+        cols3.push(1, 1, 1);
+      }
+    }
+    const W = cols + 1;
+    for (let j = 0; j < rows; j++) {
+      for (let i = 0; i < cols; i++) {
+        // Wound so the face points *out* of the cylinder. Cedar is FrontSide;
+        // the other order culls the whole patch and the chip simply is not there.
+        const a = j * W + i, b2 = a + 1, c = a + W + 1, d = a + W;
+        idx.push(a, c, d, a, b2, c);
+      }
+    }
+    const geo = new BufferGeometry();
+    geo.setAttribute('position', new BufferAttribute(new Float32Array(verts), 3));
+    geo.setAttribute('uv', new BufferAttribute(new Float32Array(uvs), 2));
+    geo.setAttribute('color', new BufferAttribute(new Float32Array(cols3), 3));
+    geo.setIndex(idx);
+    geo.computeVertexNormals();
+    return geo;
+  }
+
+  /**
+   * Flakes of bare grey wood where the vermilion has come off a round post.
+   *
+   * Sat 2 mm proud of the pillar so the patch wins the depth test everywhere,
+   * with the lacquer's lifted rim written into the border vertices — a chip is
+   * legible because of its edge, not because of its middle.
+   */
   _lacquerChips(build, cx, cz, radius, maxY, count, rnd, s) {
+    const parts = [];
     for (let i = 0; i < count; i++) {
       const a = rnd() * Math.PI * 2;
-      const y = Math.pow(rnd(), 1.9) * maxY;
-      const w = (0.05 + rnd() * 0.11) * s;
-      const hh = (0.05 + rnd() * 0.16) * s;
-      const g = new BoxGeometry(w, hh, 0.014 * s);
-      const m = new Matrix4().makeRotationY(-a);
-      m.setPosition(cx + Math.sin(a) * (radius * 0.995), y + hh * 0.5, cz + Math.cos(a) * (radius * 0.995));
+      // Biased low — the foot stays wet — but the whole post loses paint.
+      const y = Math.pow(rnd(), 1.7) * maxY;
+      const halfA = (0.10 + rnd() * 0.26);            // radians, ~2.5–8 cm of arc
+      const hh = (0.06 + rnd() * 0.26) * s;
+      const g = this._cylPatch(cx, cz, radius + 0.002 * s, a, halfA, y, y + hh, 4, 3);
+      PropFactory._bareWood(g, rnd);
+      // The rim of surrounding lacquer overhangs the hole it left.
+      shadeGeo(g, (px, py, pz) => {
+        const th = Math.atan2(pz - cz, px - cx);
+        let da = Math.abs(th - a); if (da > Math.PI) da = Math.PI * 2 - da;
+        const eu = 1 - clamp(da / halfA, 0, 1);
+        const ev = Math.min((py - y) / (hh * 0.35), (y + hh - py) / (hh * 0.35));
+        return lerp(0.46, 1.0, clamp(Math.min(eu * 3.2, ev), 0, 1));
+      });
+      parts.push(g);
+    }
+    if (!parts.length) return build;
+    return PropFactory.add(build, mergeGeometries(parts, false), 'cedar');
+  }
+
+  /**
+   * Chipped paint along the arrises of a swept beam.
+   *
+   * `path(t)` returns `{ x, y, z, hy, hz, slope }` — the beam centreline and its
+   * half-section at `t`, plus dy/dx so a chip on the kasagi's upturned end sits
+   * on the timber instead of floating off it. An arris is the one place on a
+   * beam where the paint film has to bend over a hard edge, so it is the first
+   * place it lets go; the plate is rolled 45° about the beam axis so it lies in
+   * the planed chamfer facet rather than crossing it.
+   *
+   * `opts.corners` gives the arrises as `[fy, fz]` fractions of the half-section
+   * — a five-sided kasagi has its edges somewhere other than a rectangle does,
+   * and a chip aimed at a corner the section does not have floats in air.
+   */
+  _arrisChips(build, path, count, rnd, s, opts = {}) {
+    const axisY = opts.axis === 'y';
+    const corners = opts.corners || [[0.86, 0.86], [0.86, -0.86], [-0.86, 0.86], [-0.86, -0.86]];
+    const parts = [];
+    for (let i = 0; i < count; i++) {
+      const p = path(rnd());
+      const [fy, fz] = corners[(rnd() * corners.length) | 0];
+      const len = (0.07 + rnd() * 0.24) * s;
+      const wide = (0.030 + rnd() * 0.040) * s;
+      const g = new BoxGeometry(axisY ? wide : len, axisY ? len : wide, 0.009 * s);
+      const m = new Matrix4();
+      const out = 0.004 * s;                     // proud of the facet, not in it
+      if (axisY) {
+        // `hy` is the half-width in X here, `hz` the half-width in Z.
+        m.makeRotationY(Math.atan2(fy, fz));
+        m.setPosition(p.x + fy * p.hy + Math.sign(fy) * out, p.y, p.z + fz * p.hz + Math.sign(fz) * out);
+      } else {
+        m.makeRotationZ(Math.atan(p.slope || 0));
+        m.multiply(new Matrix4().makeRotationX(Math.atan2(-fy, fz)));
+        m.setPosition(
+          p.x,
+          p.y + fy * p.hy + Math.sign(fy) * out,
+          p.z + fz * p.hz + Math.sign(fz) * out,
+        );
+      }
       g.applyMatrix4(m);
       normalizeGeo(g);
-      tintGeo(g, 0.9 + rnd() * 0.2, 0.86 + rnd() * 0.16, 0.8 + rnd() * 0.14);
-      shadeGeo(g, (x, yy) => lerp(0.55, 1.0, clamp(yy / (maxY + 0.2), 0, 1)));
-      PropFactory.add(build, g, 'cedar');
+      PropFactory._bareWood(g, rnd, 0.92);
+      parts.push(g);
     }
+    if (!parts.length) return build;
+    const merged = parts.length === 1 ? parts[0] : mergeGeometries(parts, false);
+    return PropFactory.add(build, merged, 'cedar');
+  }
+
+  /**
+   * The sawn end of a beam. `nx` is +1 or -1 along X.
+   *
+   * A cut end shows growth rings, takes the weather straight into the fibres and
+   * goes silver and checked within a decade, so it is never the same colour as
+   * the painted long grain beside it. Two plates deep so the ring pattern has a
+   * shadowed inner face, with the rings written into the vertex colour.
+   */
+  _endGrain(build, x, y, z, hz, hy, nx, s, rnd, slope = 0) {
+    const g = new BoxGeometry(0.016 * s, hy * 2, hz * 2);
+    const m = new Matrix4().makeRotationZ(Math.atan(slope || 0));
+    m.setPosition(x - nx * 0.006 * s, y, z);
+    g.applyMatrix4(m);
+    normalizeGeo(g);
+    PropFactory._bareWood(g, rnd, 0.88);
+    // Growth rings, centred a little off the pith the way a sawn baulk is.
+    const cy = y + hy * 0.22, cz = z - hz * 0.30;
+    shadeGeo(g, (px, py, pz) => {
+      const d = Math.hypot(py - cy, pz - cz);
+      const ring = 0.5 + 0.5 * Math.sin(d / (0.013 * s) + noise.fbm2(py * 9, pz * 9, 2) * 1.4);
+      return lerp(0.72, 1.06, ring);
+    });
+    return PropFactory.add(build, g, 'cedar');
   }
 
   // =====================================================================
@@ -1720,10 +2158,23 @@ export class PropFactory {
   // =====================================================================
 
   /**
-   * Six parts stacked the way a real one is dry-stacked: kiso, sao, chūdai,
-   * hibukuro (fire box, pierced with a full moon and a crescent), kasa with
-   * upturned warabi-te corners, and the hōju jewel. The fire box gets an emissive
-   * core and, when the lighting system will take it, a real flickering point light.
+   * Six stones dry-stacked: kiso, sao, chūdai, hibukuro (fire box, pierced with
+   * a full moon and a crescent), kasa with upturned warabi-te corners, and the
+   * hōju jewel. The fire box gets an emissive core and, when the lighting system
+   * will take it, a real flickering point light.
+   *
+   * **The joints are the prop.** These used to be six profiles pushed into one
+   * array, merged, and given a single `bakeAO` over the merged bounding box —
+   * which meant the AO could only see one object, so no interface between two
+   * stones got any darkening at all, the silhouette flowed smoothly from footing
+   * to firebox, and the whole thing read as one extruded column of crazed clay
+   * rather than as masonry. Each course is now built, chipped, roughened and
+   * AO'd *on its own bounds*, then seated: the bottom few centimetres of every
+   * course go dark and the exposed top of the course beneath it goes dark under
+   * it, so there is a real shadowed line at every joint. Where the geometry
+   * allows, the course above is also undercut — a narrow neck below a wider
+   * stone throws a line that survives any light direction, which vertex AO
+   * alone cannot promise.
    */
   stoneLantern(opts = {}) {
     const H = opts.height ?? 2.05;
@@ -1732,80 +2183,153 @@ export class PropFactory {
     const b = PropFactory.build();
     const hex = hexProfile();
 
-    const stone = [];
-    const push = (g) => stone.push(g);
+    /** Courses, each with the y-span its neighbours have to seat against. */
+    const courses = [];
+    const course = (geo, y0, y1, opts2 = {}) => {
+      courses.push({ geo, y0, y1, chip: opts2.chip ?? 1, seat: opts2.seat !== false });
+      return geo;
+    };
 
-    // 基礎 kiso — a squat hexagonal footing, half-sunk and lipped.
-    push(sweepProfile([
-      { x: 0, y: -0.10 * s, z: 0, sx: 0.62 * s, sy: 0.62 * s, ao: 0.42 },
-      { x: 0, y: 0.16 * s, z: 0, sx: 0.60 * s, sy: 0.60 * s, ao: 0.6 },
-      { x: 0, y: 0.24 * s, z: 0, sx: 0.50 * s, sy: 0.50 * s, ao: 0.78 },
-      { x: 0, y: 0.30 * s, z: 0, sx: 0.40 * s, sy: 0.40 * s, ao: 0.85 },
-    ], hex, { uvScale: 1.1, capStart: false }));
+    // 基礎 kiso — a plinth, not a mound. Straight die, chamfered cap, top pad.
+    // Half-sunk: Level beds it 4 cm into the flagstone.
+    course(sweepProfile([
+      { x: 0, y: -0.12 * s, z: 0, sx: 0.66 * s, sy: 0.66 * s, ao: 0.40 },
+      { x: 0, y: 0.03 * s, z: 0, sx: 0.64 * s, sy: 0.64 * s, ao: 0.52 },
+      { x: 0, y: 0.20 * s, z: 0, sx: 0.62 * s, sy: 0.62 * s, ao: 0.72 },
+      { x: 0, y: 0.27 * s, z: 0, sx: 0.50 * s, sy: 0.50 * s, ao: 0.86 },
+      { x: 0, y: 0.30 * s, z: 0, sx: 0.47 * s, sy: 0.47 * s, ao: 0.90 },
+    ], hex, { uvScale: 1.1, capStart: false }), -0.12 * s, 0.30 * s);
 
-    // 竿 sao — the shaft, with two swollen nodes.
+    // 竿 sao — the shaft, with two swollen nodes and a collar at each end. The
+    // collars are what a mason cuts so the shaft has a face to bed on; they also
+    // give the joint a lip to cast from.
     const saoTop = 1.06 * s;
     const saoSamples = [];
-    for (let i = 0; i <= 12; i++) {
-      const t = i / 12;
-      const y = lerp(0.28 * s, saoTop, t);
+    for (let i = 0; i <= 16; i++) {
+      const t = i / 16;
+      const y = lerp(0.30 * s, saoTop, t);
       const node = Math.exp(-Math.pow((t - 0.34) * 7, 2)) + Math.exp(-Math.pow((t - 0.74) * 7, 2));
-      const r = (0.145 - t * 0.016 + node * 0.038) * s;
-      saoSamples.push({ x: 0, y, z: 0, sx: r * 2, sy: r * 2, ao: lerp(0.7, 1.0, t) });
+      // Collars: a ring of extra radius in the first and last 7% of the shaft.
+      const collar = (1 - smoothstep(0.0, 0.07, t)) * 0.030 + smoothstep(0.93, 1.0, t) * 0.030;
+      const r = (0.142 - t * 0.014 + node * 0.038 + collar) * s;
+      saoSamples.push({ x: 0, y, z: 0, sx: r * 2, sy: r * 2, ao: lerp(0.74, 1.0, t) });
     }
-    push(sweepProfile(saoSamples, circleProfile(10), { smooth: true, uvScale: 1.4 }));
+    // No corner chipping on the shaft: `_chipStone` works off the hexagon's
+    // corner angles, and a round member has none — applying it here would press
+    // six flats into a cylinder.
+    course(sweepProfile(saoSamples, circleProfile(12), { smooth: true, uvScale: 1.4 }),
+      0.30 * s, saoTop, { chip: 0 });
 
-    // 中台 chūdai — the flared platform the fire box sits on.
-    push(sweepProfile([
-      { x: 0, y: saoTop - 0.01 * s, z: 0, sx: 0.30 * s, sy: 0.30 * s, ao: 0.55 },
-      { x: 0, y: saoTop + 0.10 * s, z: 0, sx: 0.52 * s, sy: 0.52 * s, ao: 0.78 },
-      { x: 0, y: saoTop + 0.20 * s, z: 0, sx: 0.55 * s, sy: 0.55 * s, ao: 0.92 },
-      { x: 0, y: saoTop + 0.26 * s, z: 0, sx: 0.47 * s, sy: 0.47 * s, ao: 0.85 },
-    ], hex, { uvScale: 1.1, capStart: false, capEnd: false }));
+    // 中台 chūdai — the flared platform the fire box sits on. Its foot is
+    // *narrower* than the sao collar under it, so the stack is undercut here and
+    // the joint reads as a shadow whatever the sun is doing.
+    course(sweepProfile([
+      { x: 0, y: saoTop, z: 0, sx: 0.28 * s, sy: 0.28 * s, ao: 0.48 },
+      { x: 0, y: saoTop + 0.05 * s, z: 0, sx: 0.30 * s, sy: 0.30 * s, ao: 0.58 },
+      { x: 0, y: saoTop + 0.16 * s, z: 0, sx: 0.54 * s, sy: 0.54 * s, ao: 0.82 },
+      { x: 0, y: saoTop + 0.22 * s, z: 0, sx: 0.57 * s, sy: 0.57 * s, ao: 0.94 },
+      { x: 0, y: saoTop + 0.26 * s, z: 0, sx: 0.52 * s, sy: 0.52 * s, ao: 0.86 },
+      { x: 0, y: saoTop + 0.30 * s, z: 0, sx: 0.49 * s, sy: 0.49 * s, ao: 0.88 },
+    ], hex, { uvScale: 1.1, capStart: false, capEnd: false }), saoTop, saoTop + 0.30 * s);
 
     // 火袋 hibukuro — six panels: moon, crescent, two windows, two solid.
     // The apertures are cut generously: at magic hour this is the brightest thing
     // in the frame and a coin-sized hole at 8 m is a sub-pixel highlight, which is
     // to say no highlight at all.
-    const fbY = saoTop + 0.26 * s;
+    const fbY = saoTop + 0.30 * s;
     const fbH = 0.44 * s;
     const fbR = 0.235 * s;
     const panelW = fbR * 1.02;
+    // 4.5 cm of reveal rather than 3.5. The rim band inside an aperture is the
+    // only thing standing between a 250-nit paper panel and the stone beside it;
+    // at 3.5 cm it was one polygon wide and the transition aliased. Deeper, it
+    // occludes the liner at grazing angles and grades the edge. Not deeper still
+    // — the liner sits 24 mm behind the panel, so a reveal much past this starts
+    // eating the aperture from the near side at oblique angles.
+    const panelT = 0.045 * s;
+    const fbParts = [];
+    // A bed course under the panels and a head course over them, both proud of
+    // the panel line: the fire box is a hollowed block with a lid, not a drum.
+    for (const [y0, y1, r0, r1] of [
+      [fbY, fbY + 0.055 * s, 0.50, 0.47],
+      [fbY + fbH - 0.05 * s, fbY + fbH, 0.47, 0.51],
+    ]) {
+      fbParts.push(sweepProfile([
+        { x: 0, y: y0, z: 0, sx: r0 * s, sy: r0 * s, ao: 0.72 },
+        { x: 0, y: y1, z: 0, sx: r1 * s, sy: r1 * s, ao: 0.94 },
+      ], hex, { uvScale: 1.1, capStart: false, capEnd: false }));
+    }
     for (let i = 0; i < 6; i++) {
       const a = (i / 6) * Math.PI * 2 + Math.PI / 6;
+      const panelH = fbH * 0.80;
       let panel;
+      let hole = null;
+      // Every hole has to fit *inside* the panel. `panelWithHole` projects each
+      // hole vertex outward to the panel rectangle, so a hole wider than the
+      // panel projects its rim inward — an inside-out band one polygon deep
+      // sitting exactly where the lit paper meets the stone, which is the
+      // aliased 255-to-dark edge the frame was showing. The moon was 0.136 of
+      // the prop across a 0.120 half-panel and the crescent 0.145; both now
+      // clear it.
       if (i === 0) {
-        panel = panelWithHole(panelW, fbH * 0.86, 0.035 * s, circleProfile(12).map((p) => [p[0] * fbH * 0.62, p[1] * fbH * 0.62]));
+        const mr = Math.min(fbH * 0.52, panelW * 0.90) * 0.5;
+        hole = circleProfile(14).map((p) => [p[0] * mr * 2, p[1] * mr * 2]);
       } else if (i === 3) {
         // Crescent: a circle with a shallow bite, kept star-shaped so the
         // outward projection in panelWithHole stays well defined.
-        const pts = [];
+        hole = [];
+        const cr = Math.min(fbH * 0.30, panelW * 0.45);
         for (let k = 0; k < 14; k++) {
           const th = (k / 14) * Math.PI * 2;
-          const r = fbH * (0.33 - 0.13 * Math.max(0, Math.cos(th)));
-          pts.push([Math.cos(th) * r, Math.sin(th) * r]);
+          const r = cr * (1 - 0.40 * Math.max(0, Math.cos(th)));
+          hole.push([Math.cos(th) * r, Math.sin(th) * r]);
         }
-        panel = panelWithHole(panelW, fbH * 0.86, 0.035 * s, pts);
       } else if (i === 1 || i === 4) {
-        const w2 = panelW * 0.38, h2 = fbH * 0.34;
-        panel = panelWithHole(panelW, fbH * 0.86, 0.035 * s,
-          [[-w2, -h2], [w2, -h2], [w2, h2], [-w2, h2]]);
+        const w2 = panelW * 0.38, h2 = fbH * 0.32;
+        hole = [[-w2, -h2], [w2, -h2], [w2, h2], [-w2, h2]];
+      }
+      if (hole) {
+        panel = panelWithHole(panelW, panelH, panelT, hole, { rimAO: 0.30 });
       } else {
-        panel = new BoxGeometry(panelW, fbH * 0.86, 0.035 * s);
+        panel = new BoxGeometry(panelW, panelH, panelT);
         normalizeGeo(panel);
       }
       const m = new Matrix4().makeRotationY(a);
       m.setPosition(Math.sin(a) * fbR, fbY + fbH * 0.5, Math.cos(a) * fbR);
       panel.applyMatrix4(m);
       normalizeGeo(panel);
-      push(panel);
+      fbParts.push(panel);
+
+      // 骨 the frame ribs. A hibukuro is a stone shell with a wooden lattice
+      // holding the paper, and without one an aperture is a flat lit rectangle
+      // — which is exactly what a lit rectangle in a game looks like. One
+      // mullion and one rail across each opening, set inside the reveal so they
+      // sit between the eye and the paper and read as dark lines across it.
+      if (hole) {
+        let hw = 0, hh = 0;
+        for (const p of hole) { hw = Math.max(hw, Math.abs(p[0])); hh = Math.max(hh, Math.abs(p[1])); }
+        const rib = 0.014 * s;
+        const rz = fbR + panelT * 0.05;
+        for (const [rw, rh] of [[rib, hh * 2.02], [hw * 2.02, rib]]) {
+          const g = new BoxGeometry(rw, rh, panelT * 0.62);
+          const mm = new Matrix4().makeRotationY(a);
+          mm.setPosition(Math.sin(a) * rz, fbY + fbH * 0.5, Math.cos(a) * rz);
+          g.applyMatrix4(mm);
+          normalizeGeo(g);
+          shadeGeo(g, () => 0.62);
+          fbParts.push(g);
+        }
+      }
+
       // Corner posts between panels so the box does not read as a paper drum.
       const ap = a + Math.PI / 6;
-      const post = new BoxGeometry(0.05 * s, fbH, 0.05 * s);
-      post.translate(Math.sin(ap) * fbR * 1.03, fbY + fbH * 0.5, Math.cos(ap) * fbR * 1.03);
+      const post = new BoxGeometry(0.055 * s, fbH * 0.92, 0.055 * s);
+      post.translate(Math.sin(ap) * fbR * 1.05, fbY + fbH * 0.5, Math.cos(ap) * fbR * 1.05);
       normalizeGeo(post);
-      push(post);
+      fbParts.push(post);
     }
+    course(mergeGeometries(fbParts.map((g) => normalizeGeo(g)), false), fbY, fbY + fbH,
+      { chip: 0.25 });
 
     // 笠 kasa — hexagonal roof with a concave sweep and lifted corners.
     const kasaY = fbY + fbH;
@@ -1821,7 +2345,6 @@ export class PropFactory {
       for (let e = 0; e < SEG; e++) {
         for (let k = 0; k < SUB; k++) {
           const f = k / SUB;
-          const a0 = ((e + f) / SEG) * Math.PI * 2 + Math.PI / 6;
           // Flat-sided hexagon, not a cone: interpolate along the chord.
           const aA = (e / SEG) * Math.PI * 2 + Math.PI / 6;
           const aB = ((e + 1) / SEG) * Math.PI * 2 + Math.PI / 6;
@@ -1834,20 +2357,34 @@ export class PropFactory {
       }
       kasaRings.push({ pts, pao });
     }
-    const kasa = loftRings(kasaRings, { uvScale: 1.2 });
-    push(kasa);
+    const kasaParts = [loftRings(kasaRings, { uvScale: 1.2 })];
     // Underside so the deep eave is not a one-sided sheet.
-    const under = loftRings(kasaRings.map((r, i) => ({
+    kasaParts.push(loftRings(kasaRings.map((r) => ({
       pts: r.pts.map((p) => [p[0] * 0.985, p[1] - 0.055 * s, p[2] * 0.985]),
       pao: r.pao.map((v) => v * 0.5),
-    })), { flip: true, uvScale: 1.2 });
-    push(under);
+    })), { flip: true, uvScale: 1.2 }));
+    course(mergeGeometries(kasaParts.map((g) => normalizeGeo(g)), false),
+      kasaY - 0.055 * s, kasaY + 0.30 * s, { chip: 0.7 });
 
-    let merged = stone.length === 1 ? stone[0] : mergeGeometries(stone.map((g) => normalizeGeo(g)), false);
-    roughen(merged, 0.006 * s, 6.5);
-    bakeAO(merged, { ground: 0.5, groundH: 0.4 * s, cavity: 0.3, down: 0.34, floor: 0.3 });
+    // Dress each stone on its own before they are merged into one draw.
+    for (let i = 0; i < courses.length; i++) {
+      const c = courses[i];
+      if (c.chip > 0) this._chipStone(c.geo, s, i * 7.3, c.chip);
+      roughen(c.geo, 0.005 * s, 6.5);
+      // Kept close to the old whole-stack numbers on purpose: the joints are
+      // supposed to come from the seat passes below, which are narrow bands. If
+      // the ambient terms carry the work as well, the prop stops being granite
+      // with dark lines in it and becomes a dark prop.
+      bakeAO(c.geo, { ground: 0, cavity: 0.28, down: 0.34, floor: 0.34 });
+      if (c.seat) this._seatCourse(c.geo, c.y0, c.y1, s);
+      // The exposed top of the stone below sits under this one's footprint.
+      if (i > 0) this._seatShadow(courses[i - 1].geo, courses[i - 1].y1, s);
+    }
+    const merged = mergeGeometries(courses.map((c) => normalizeGeo(c.geo)), false);
+    // Ground contact for the whole stack, once, after the per-course pass.
+    shadeGeo(merged, (x, y) => (y > 0.34 * s ? 1 : lerp(0.58, 1, clamp(y / (0.34 * s), 0, 1))));
     weatherBand(merged, 0, 0.5 * s, 0.72, 0.82, 0.66, 0.3);   // moss creeping up the base
-    PropFactory.add(b, merged, 'stone');
+    PropFactory.add(b, merged, '__lanternStone');
 
     // 宝珠 hōju — the jewel finial, in polished leaf so the low sun finds it.
     const jewel = sweepProfile([
@@ -1861,10 +2398,15 @@ export class PropFactory {
     // The lit paper liner. This is what you actually see through the moon and the
     // crescent — a hot *surface* filling each aperture edge to edge, rather than a
     // small box floating in the middle of the box that reads as a grey lump.
-    const liner = sweepProfile([
-      { x: 0, y: fbY + 0.012 * s, z: 0, sx: fbR * 1.86, sy: fbR * 1.86, ao: 1 },
-      { x: 0, y: fbY + fbH - 0.012 * s, z: 0, sx: fbR * 1.86, sy: fbR * 1.86, ao: 1 },
-    ], hex, { uvScale: 1.4, capStart: false, capEnd: false });
+    //
+    // It is lofted rather than swept because it has to carry a gradient: the
+    // emissive is multiplied by the vertex colour, and a two-ring hexagonal tube
+    // has nowhere to put one. Six facets subdivided five ways, six rings up,
+    // gives 30 columns of falloff — hot on the axis of each facet where the
+    // flame faces it, cooling into the corner posts and into the bed and head
+    // courses. That gradient is the whole difference between lit paper and a
+    // rectangle of white card.
+    const liner = this._paperFalloff(fbR * 0.90, fbY + 0.010 * s, fbY + fbH - 0.010 * s, 0.34, 0.50);
     bakeFlutter(liner, 4, () => 0);              // rigid: it is glued to the stone
     PropFactory.add(b, liner, '__lanternPaper');
 
@@ -1891,6 +2433,110 @@ export class PropFactory {
     b.anchors.fire = [0, fbY + fbH * 0.5, 0];
     b.bounds = { r: Math.max(0.62 * s, poolR), h: kasaY + 0.55 * s };
     return b;
+  }
+
+  /**
+   * Knock the corners off a hexagonal stone.
+   *
+   * Dressed granite that has stood in a courtyard for three hundred years has
+   * lost pieces, and it loses them at the arrises — nowhere else, because an
+   * arris is the only part of a block with material on one side only. The
+   * displacement is a function of position alone, so the duplicated vertices a
+   * hard-edged sweep emits at each profile corner all move together and the
+   * stone stays watertight.
+   *
+   * A fresh break is *brighter* than the weathered face around it, which is the
+   * cue that makes it read as damage rather than as dirt.
+   */
+  _chipStone(geo, s, seed = 0, strength = 1, depth = 0.020) {
+    const pos = geo.getAttribute('position');
+    let col = geo.getAttribute('color');
+    if (!col) { normalizeGeo(geo); col = geo.getAttribute('color'); }
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+      const r = Math.hypot(x, z);
+      if (r < 1e-4) continue;
+      const th = Math.atan2(z, x);
+      // Angular distance to the nearest hexagon corner.
+      const k = Math.round((th - Math.PI / 6) / (Math.PI / 3));
+      let d = Math.abs(th - (Math.PI / 6 + k * (Math.PI / 3)));
+      if (d > Math.PI) d = Math.PI * 2 - d;
+      const near = 1 - smoothstep(0.09, 0.30, d);
+      if (near <= 0) continue;
+      // Coarse along the corner so a chip is a patch a hand could have knocked
+      // off, not a per-vertex sparkle.
+      const m = smoothstep(0.10, 0.62, noise.fbm2(k * 3.7 + seed, y * 5.6 / s, 2) * 0.5 + 0.5);
+      const a = near * m * strength;
+      if (a <= 0.001) continue;
+      const off = depth * a * s;
+      pos.setXYZ(i, x - (x / r) * off, y, z - (z / r) * off);
+      const c = 1 + a * 0.13;
+      col.setXYZ(i, col.getX(i) * c, col.getY(i) * c, col.getZ(i) * c * 0.98);
+    }
+    pos.needsUpdate = true;
+    col.needsUpdate = true;
+    geo.computeVertexNormals();
+    return geo;
+  }
+
+  /** Darken the bottom of a course where it beds onto the stone below it. */
+  _seatCourse(geo, y0, y1, s, band = 0.055, floor = 0.46) {
+    const reach = Math.min(band * s, (y1 - y0) * 0.45);
+    return shadeGeo(geo, (x, y) => {
+      const t = (y - y0) / Math.max(1e-4, reach);
+      if (t >= 1) return 1;
+      return lerp(floor, 1, Math.pow(clamp(t, 0, 1), 0.65));
+    });
+  }
+
+  /**
+   * Darken the exposed top of a course, where the stone above it sits. Only
+   * up-facing geometry: the side of a stone is not in its neighbour's shadow.
+   */
+  _seatShadow(geo, yTop, s, band = 0.075, floor = 0.52) {
+    return shadeGeo(geo, (x, y, z, nx, ny) => {
+      if (ny < 0.35) return 1;
+      const t = (yTop - y) / (band * s);
+      if (t < 0 || t > 1) return 1;
+      return lerp(floor, 1, smoothstep(0.0, 1.0, t));
+    });
+  }
+
+  /**
+   * The lit-paper shell of a hibukuro, with the falloff baked into the vertex
+   * colour that `lanternPaperMaterial` routes onto the emissive.
+   *
+   * `edge` is the multiplier at the corner of a facet, `cap` at the top and
+   * bottom rings. A panel is hottest where the flame faces it square on, so the
+   * profile is a raised cosine across each facet, and it dies into the bed and
+   * head courses because paper is pasted to a frame and a frame is not lit.
+   */
+  _paperFalloff(radius, y0, y1, edge = 0.34, cap = 0.50, SEG = 6, SUB = 5, ROWS = 6) {
+    const rings = [];
+    for (let i = 0; i <= ROWS; i++) {
+      const t = i / ROWS;
+      const y = lerp(y0, y1, t);
+      // Hot band across the middle, dying at both ends.
+      const gv = lerp(cap, 1.0, Math.pow(Math.sin(Math.PI * t), 0.55));
+      const pts = [];
+      const pao = [];
+      for (let e = 0; e < SEG; e++) {
+        for (let k = 0; k < SUB; k++) {
+          const f = k / SUB;
+          const aA = (e / SEG) * Math.PI * 2 + Math.PI / 6;
+          const aB = ((e + 1) / SEG) * Math.PI * 2 + Math.PI / 6;
+          pts.push([
+            lerp(Math.cos(aA), Math.cos(aB), f) * radius,
+            y,
+            lerp(Math.sin(aA), Math.sin(aB), f) * radius,
+          ]);
+          const off = Math.abs(f * 2 - 1);                 // 0 mid-facet, 1 at a corner
+          pao.push(lerp(1.0, edge, smoothstep(0.12, 1.0, off)));
+        }
+      }
+      rings.push({ pts, pao, ao: gv });
+    }
+    return loftRings(rings, { uvScale: 1.2 });
   }
 
   /**
@@ -3353,17 +3999,27 @@ export class PropFactory {
     const b = PropFactory.build();
 
     const samples = [];
-    const RN = 9;
+    const RN = 18;
     for (let i = 0; i <= RN; i++) {
       const t = i / RN;
       const bulge = Math.sin(t * Math.PI);
-      const rr = lerp(r * 0.42, r, bulge) + Math.sin(t * Math.PI * RN) * 0.006;
-      samples.push({ x: 0, y: -cord - t * h, z: 0, sx: rr * 2, sy: rr * 2, ao: lerp(1.05, 0.8, t) });
+      // 竹ひご the split-bamboo ribs the paper is pasted over. Twice the samples
+      // so the rib ripple resolves, and the ripple is carried in the vertex
+      // colour as well as the radius — `lanternPaperMaterial` multiplies the
+      // emissive by it, so each rib lands as a genuine darker line across the
+      // belly instead of a shading detail lost under a flat 250.
+      const rib = Math.sin(t * Math.PI * 9);
+      const rr = lerp(r * 0.42, r, bulge) + rib * 0.006;
+      samples.push({
+        x: 0, y: -cord - t * h, z: 0, sx: rr * 2, sy: rr * 2,
+        // Hot across the belly opposite the flame, dying into both metal rings.
+        ao: lerp(0.44, 1.0, Math.pow(bulge, 0.5)) * (1 - Math.max(0, -rib) * 0.20),
+      });
     }
     // Lit paper, not paper. A row of these under a dark eave is the single most
     // characteristic highlight in this setting and the whole surface has to carry
     // it — the AO stays in the vertex colour so the ribs still read.
-    const body = sweepProfile(samples, circleProfile(12), { smooth: true, uvScale: 1.4, capStart: false, capEnd: false });
+    const body = sweepProfile(samples, circleProfile(14), { smooth: true, uvScale: 1.4, capStart: false, capEnd: false });
     bakeFlutter(body, 3.0, (x, y) => clamp((-y) / (cord + h), 0, 1));
     PropFactory.add(b, body, '__lanternPaper');
 

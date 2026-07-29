@@ -755,8 +755,15 @@ export class Level {
       _m.makeRotationY(this.rnd() * Math.PI * 2);
       _m.scale(_v.set(s, s, s));
       _m.setPosition(x, y - 0.04, z);
-      const k = 0.88 + this.rnd() * 0.24;
-      proto.place(_m, [k, k * (0.98 + this.rnd() * 0.05), k * (0.94 + this.rnd() * 0.08)]);
+      // Quarry variation is a *value* shift, not a warm one. The old tint took
+      // up to 6% off blue on every single lantern and never added any back, so
+      // twenty-six of them leaned the same way at once — under an amber key that
+      // is the difference between dressed granite and sandstone, and it is a
+      // large part of why these read as pale sandy clay. Half the stones now lean
+      // warm and half lean cool, and neither by much.
+      const k = 0.86 + this.rnd() * 0.26;
+      const warm = (this.rnd() - 0.5) * 0.075;
+      proto.place(_m, [k * (1 + warm), k, k * (1 - warm)]);
       // Instanced props never pass through `_emit`, so hoist their flame here.
       if (fireLight) {
         this._lightRequests.push({
