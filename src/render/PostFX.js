@@ -574,11 +574,17 @@ void main() {
   // Colour is carried through rather than collapsed to luma, so an amber disc throws
   // amber shafts without the composite having to tint them back in.
   //
-  // The clamp is the same guard the bloom prefilter uses: a ~150-linear disc a handful
-  // of pixels wide, sampled by a 48-tap line march, is a firefly generator — one tap
-  // landing on or off the limb swings the shaft by an order of magnitude. Clamping the
-  // source puts the disc and the Mie halo around it on comparable footing and makes the
-  // pass robust to Sky.js retuning the disc's peak.
+  // The clamp is the firefly guard, and it has to be sized against the source that is
+  // actually there. It was set to 8 when the emitter was a fabricated constant, where
+  // anything larger only amplified the veil. Sky.js now writes a real ~147-linear amber
+  // disc with a 17x17 px blown plateau (217 px at >= 250), and at 8 the clamp was
+  // throwing away 94% of it: the march deposited ~0.05 linear onto a ~0.5 linear sky,
+  // which is under 4 code values after the shoulder — invisible, which is exactly what
+  // was measured. The guard exists to stop a *single* tap swinging a shaft by an order
+  // of magnitude; a stable plateau spanning several taps of the march does not need
+  // protecting from itself, so this now sits just under the disc's peak rather than two
+  // orders below it. The sky mask means only the sky and the disc ever reach this term,
+  // so there is no near-field specular for it to guard against either.
   vec3 emit = min(texture2D(tScene, vUv).rgb, vec3(uEmitClamp)) * (sky * prox);
   gl_FragColor = vec4(emit, 1.0);
 }
@@ -1314,11 +1320,18 @@ export class PostFX {
     // Tuned against a real solar disc in the occlusion buffer, not against the constant
     // emission floor that used to be there (see FRAG_GOD_OCCLUSION). Scattering actual
     // radiance needs *far* less gain than manufacturing it did: the source is now
-    // ~150 linear at the disc rather than a flat 0.65, so a shaft carries its energy
-    // from the sun instead of from an arbitrary constant. Integrated emission scales
-    // with uSunRadius squared, so this tracks it: measured against the sun row of the
-    // valley beat, the pass now adds roughly a tenth of what the floor did.
-    this.godRayStrength = 0.14;
+    // ~147 linear at the disc rather than a flat 0.65, so a shaft carries its energy
+    // from the sun instead of from an arbitrary constant.
+    //
+    // Derived, not dialled. With march weight 3 over 48 taps at decay 0.970, a pixel
+    // 0.30 UV from the sun crosses the disc's blown plateau in ~2.4 taps carrying
+    // decay^48 = 0.23, so the disc term is 2.4 * min(147, uEmitClamp) * 0.23 and the
+    // prox-weighted sky adds ~4 on top. At uEmitClamp 8 that whole sum is ~9 and no
+    // gain recovers a shaft without a veil; at 120 it is ~71, and 0.10 puts ~0.44
+    // linear into an unobstructed march against ~0.31 for one an upright interrupts —
+    // roughly 20 code values of wedge on a magic-hour sky, which is countable in an
+    // unmodified frame. The clamp, not the gain, was the binding constraint.
+    this.godRayStrength = 0.10;
     this.aoStrength = 0.85;
     this.aoRadius = 0.65;
     this.saturation = 1.06;
@@ -1909,7 +1922,7 @@ export class PostFX {
       uSunUv: { value: new Vector2(0.5, 0.5) },
       uSunRadius: { value: 0.11 },
       uAspect: { value: 1.78 },
-      uEmitClamp: { value: 8.0 },
+      uEmitClamp: { value: 120.0 },
     });
     this.mGodBlur = this._mat(FRAG_GOD_BLUR, {
       tSrc: { value: black },
@@ -2926,7 +2939,10 @@ export class PostFX {
     // safe now that the emission is real radiance — with the old constant floor, widening
     // this was what smeared an untextured veil across the quadrant.
     ou.uSunRadius.value = 0.18;
-    ou.uEmitClamp.value = this._hdr ? 8.0 : 1.0;
+    // Just under the disc's measured peak on HDR. The LDR fallback has no headroom to
+    // clamp — the scene render already clipped everything at 1.0 — so it takes the disc
+    // for whatever survived that.
+    ou.uEmitClamp.value = this._hdr ? 120.0 : 1.0;
     this._draw(this.mGodOcclusion, this.rtGodA);
 
     const bu = this.mGodBlur.uniforms;
