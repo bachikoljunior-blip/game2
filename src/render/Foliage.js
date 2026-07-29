@@ -86,6 +86,20 @@ function chainCacheKey(material, token) {
   };
 }
 
+/**
+ * The archetype-atlas grid, as preprocessor constants rather than a uniform.
+ *
+ * Both halves matter. The dimensions have to be *in the shader body* because as a
+ * `uniform vec2 uAtlas` the divide in KAG_ATLAS evaluated against (0,0) and every fragment
+ * of the material alpha-tested away — the mid-ground bamboo band drew literally nothing.
+ * And they have to be *in the cache key* because three hands back a program by key: a bare
+ * `#define KAG_ATLAS` made a 2x2 material and a 2x1 material indistinguishable, so whether
+ * you got the right grid depended on which compiled first.
+ */
+const atlasDefines = (a) =>
+  `#define KAG_ATLAS\n#define KAG_ATLAS_C ${a[0].toFixed(1)}\n#define KAG_ATLAS_R ${a[1].toFixed(1)}\n`;
+const atlasKey = (a) => (a ? `x${a[0]}x${a[1]}` : '-');
+
 // Module-scope scratch. Nothing in update() or the tile generator may allocate.
 const _colScratch = new Color();
 const _windScratch = new Vector3();
@@ -188,8 +202,14 @@ class GeoBuilder {
     this.quad(a, b, d2, e);
   }
 
-  /** One ring of a tube. Returns the first vertex index. */
-  ring(c, n, b, radius, sides, v, flex, jit) {
+  /**
+   * One ring of a tube. Returns the first vertex index.
+   *
+   * `u0`/`u1` map the way round the tube into a sub-range of the texture, so a culm can
+   * take a narrow bark strip out of a sheet it shares with its own leaf cards. The strip
+   * is painted dark at both ends, which is what keeps the wrap seam invisible.
+   */
+  ring(c, n, b, radius, sides, v, flex, jit, u0 = 0, u1 = 1) {
     const start = this.vertexCount;
     for (let s = 0; s <= sides; s++) {
       const a = (s / sides) * Math.PI * 2;
@@ -197,7 +217,8 @@ class GeoBuilder {
       const nx = n[0] * ca + b[0] * sa;
       const ny = n[1] * ca + b[1] * sa;
       const nz = n[2] * ca + b[2] * sa;
-      this.vert(c[0] + nx * radius, c[1] + ny * radius, c[2] + nz * radius, nx, ny, nz, s / sides, v, flex, jit);
+      this.vert(c[0] + nx * radius, c[1] + ny * radius, c[2] + nz * radius, nx, ny, nz,
+        u0 + (u1 - u0) * (s / sides), v, flex, jit);
     }
     return start;
   }
@@ -269,9 +290,7 @@ uniform vec2  uSink;        // x, y = range over which the clipmap chord sink bl
 uniform vec2  uSize;        // per-LOD global (height, width) multiplier
 uniform float uBendGain;
 uniform float uFlutter;
-#ifdef KAG_ATLAS
-uniform vec2  uAtlas;       // x = columns, y = rows of the archetype atlas
-#endif
+// The archetype grid is NOT a uniform. See KAG_ATLAS below.
 
 varying float vKagFade;
 varying float vKagT;
@@ -317,8 +336,22 @@ void kagFoliageVertex() {
 #if defined( KAG_ATLAS ) && defined( USE_MAP )
   // Remap into the archetype's cell. Unconditional, so the varying is written on the
   // degenerate path too — an undefined varying is a driver-dependent NaN source (§5b).
-  vec2 kagCellIJ = vec2( mod( kagCell, uAtlas.x ), floor( kagCell / uAtlas.x ) );
-  vMapUv = ( clamp( uv, 0.0, 1.0 ) + kagCellIJ ) / uAtlas;
+  //
+  // The grid is a compile-time constant, not a uniform, and that is load-bearing. As a
+  // uniform vec2 this divide silently evaluated against (0,0) — vMapUv came out non-finite,
+  // every sample missed the atlas, and the alpha test discarded *every* fragment of the
+  // material. That is what "there is no bamboo sea" was: 11 390 mid-ground cards, all in
+  // their fade window, all submitted, none of them rasterising a pixel. Proven by
+  // elimination on the shipped build: writing (1,1) into the uniform at runtime changed
+  // nothing (so it was never reaching the program), while rebuilding the same material
+  // with the atlas removed rendered instantly.
+  //
+  // A grid is a property of the texture, so it belongs in the shader body and in the
+  // program cache key — where, as a bare KAG_ATLAS define carrying no dimensions, it also
+  // was not.
+  const vec2 kagAtlas = vec2( KAG_ATLAS_C, KAG_ATLAS_R );
+  vec2 kagCellIJ = vec2( mod( kagCell, kagAtlas.x ), floor( kagCell / kagAtlas.x ) );
+  vMapUv = ( clamp( uv, 0.0, 1.0 ) + kagCellIJ ) / kagAtlas;
 #endif
 
   float dist = distance( base, uCamPos );
@@ -674,26 +707,101 @@ function buildCrossCard(planes = 2, aspect = 1.0, centred = false, flex = 1.0) {
 }
 
 /**
- * A bamboo culm: tapered, nodded, and never quite straight. The node rings are a small
- * radial bulge plus a UV band, which is all it takes for the silhouette to read as bamboo
- * rather than as a green pipe.
+ * UV layout of the combined bamboo-plant sheet. The left fifth is the opaque bark strip
+ * the culm tube wraps; the right two thirds is the alpha-cut leaf spray. The gap between
+ * them is dead space so the mip chain cannot bleed the opaque bark into the cut-out card
+ * — bleeding the other way is the failure that matters, because it would make the culm
+ * itself alpha-test away at range and put us straight back to floating leaves.
  */
-function buildCulmGeometry(sides = 5, internodes = 9, curve = 0.035) {
+const PLANT_UV = { culmU0: 0.014, culmU1: 0.196, leafU0: 0.302, leafU1: 0.996 };
+
+/**
+ * A whole bamboo plant — culm AND its leaf sprays — as one mesh.
+ *
+ * This is the structural fix for foliage floating in open sky, and it is structural rather
+ * than a tuned agreement between two numbers.
+ *
+ * The culm and its leaf clusters used to be two instanced meshes. Both ran the same LOD
+ * dissolve, `grow = smoothstep(thr*0.72, thr*0.72+0.28, fade)`, and both keyed `thr` off
+ * `fract(phase * 31.7 + 0.137)` — but the leaf's phase was its parent's plus `l * 0.13`,
+ * and multiplying by 31.7 turns a 0.13 offset into a completely uncorrelated threshold.
+ * So inside the fade window a leaf and the culm holding it crossed *independently*.
+ * Measured on the shipped build at the valley pose: 810 culms scattered, six of them
+ * drawn, against forty-seven leaf clusters — seventeen of which had no culm at all, eight
+ * of those inside the 400x240 px the critic counted. Equalising the two thresholds would
+ * only have narrowed the window; the leaf's own base is up to 1.6 m off the culm's, so
+ * `dist` differs too and the divergence comes back at the boundary.
+ *
+ * One instance cannot half-exist. There is no threshold left to agree on, the shadow pass
+ * gets the same treatment for free, and it costs one draw call fewer than before.
+ *
+ * Canonical space is ISOTROPIC here: `aFoliageB.y` (width) is set equal to `aFoliageB.x`
+ * (height) by the scatterer, so x/z and y scale together and a square leaf card stays
+ * square. Everything below is therefore a fraction of the plant's height.
+ */
+function buildBambooPlantGeometry(sides, internodes, sprays, seed = 0x8B0011) {
   const g = new GeoBuilder();
+  const rnd = makeRandom(seed);
+
+  // Radius as a fraction of height, and deliberately shallow. A 12 m moso is 12-18 cm
+  // through and still 10 cm at the top; the old profile tapered 0.5 -> 0.14, which put the
+  // upper half of every culm under one pixel at the distance its leaves were still being
+  // drawn, and a sub-pixel line does not fade — it aliases into the dashes the critic
+  // measured. At 0.0065 a 12 m culm is 15.6 cm at the base and 11.5 cm at the tip, which
+  // is 3.6 and 2.6 px at the 46 m edge of the fade window.
+  const rBase = 0.0065, rTip = 0.0048;
+  const lean = 0.055;
+
   const rows = internodes * 2 + 1;
+  const nAx = [1, 0, 0], bAx = [0, 0, 1];
   let prev = -1;
-  const n = [1, 0, 0], b = [0, 0, 1];
   for (let r = 0; r < rows; r++) {
     const t = r / (rows - 1);
-    const nodeT = (r % 2) === 0 ? 1 : 0;                 // even rows sit on a node
-    const taper = 0.5 * (1.0 - 0.55 * t * t) * (0.62 + 0.38 * (1.0 - t));
-    const radius = taper * (1.0 + 0.13 * nodeT);
-    // A natural culm leans away from vertical and straightens near the base.
-    const c = [curve * t * t * 1.0, t, curve * t * t * 0.35];
-    const ring = g.ring(c, n, b, radius, sides, t * internodes, t * 0.35, 0);
+    // Even rows sit on a node: a small radial bulge, and the bark strip carries the ring.
+    const node = (r % 2) === 0 ? 1 : 0;
+    const rad = (rBase + (rTip - rBase) * t) * (1 + 0.11 * node);
+    const c = [lean * t * t, t, lean * t * t * 0.35];
+    // Stiff: the culm may bend as a whole but must not shiver, or it reads as a reed.
+    const ring = g.ring(c, nAx, bAx, rad, sides, t, 0.10, 0, PLANT_UV.culmU0, PLANT_UV.culmU1);
     if (prev >= 0) g.linkRings(prev, ring, sides);
     prev = ring;
   }
+
+  // Leaf sprays along the upper third and a little below it — a real culm leafs out over
+  // its top 40-50%, and a tuft on the end of a bare pole is a palm, not bamboo. Successive
+  // sprays step round by the golden angle so the crown has an outline instead of stacking
+  // into a bottle-brush, and the attachment radius grows with height.
+  const leafFrom = 0.54;
+  for (let i = 0; i < sprays; i++) {
+    const f = i / Math.max(1, sprays - 1);
+    const t = leafFrom + f * (1.0 - leafFrom) + (rnd() - 0.5) * 0.03;
+    const ang = i * 2.39996 + rnd() * 0.5;
+    const dx = Math.cos(ang), dz = Math.sin(ang);
+    // Attachment sits on the culm surface at that height, offset by its own short branch.
+    const rr = rBase + (rTip - rBase) * t;
+    const branch = rr + (0.020 + rnd() * 0.045) * (0.5 + t * 0.7);
+    const ax = lean * t * t + dx * branch, az = lean * t * t * 0.35 + dz * branch;
+    const ay = t + (rnd() - 0.5) * 0.02;
+
+    // Card size as a fraction of height. A 12 m culm carries sprays about 1.5 m across.
+    const s = (0.105 + rnd() * 0.055) * (0.62 + t * 0.55);
+    // paintBambooLeaves hangs its branch from about (0.24, 0.78) of the cell, so shift the
+    // card until that point lands on the attachment rather than the card's centre.
+    const hw = s * 0.5, hh = s * 0.5;
+    const cx = ax + dx * hw * 0.52, cz = az + dz * hw * 0.52;
+    const cy = ay - hh * 0.56;
+
+    for (let p = 0; p < 2; p++) {
+      const pa = ang + p * Math.PI * 0.5;
+      const px = Math.cos(pa), pz = Math.sin(pa);
+      const rv = [px * hw, 0, pz * hw];
+      const uv = [0, hh, 0];
+      const nv = nrm3([px * 0.45, 0.86, pz * 0.45]);
+      g.card([cx, cy, cz], rv, uv, nv,
+        PLANT_UV.leafU0, 0, PLANT_UV.leafU1, 1, 1.0, rnd());
+    }
+  }
+
   return g.toGeometry();
 }
 
@@ -745,16 +853,34 @@ function buildSusukiGeometry(seed = 5) {
       pl = l; pr = r;
     }
   }
-  // Plumes: three stems, each capped by a crossed card.
-  for (let i = 0; i < 3; i++) {
-    const a = rnd() * Math.PI * 2;
-    const lean = 0.12 + rnd() * 0.14;
-    const h = 0.82 + rnd() * 0.18;
+  // Plumes: five slender feathers on visible stems, at five different heights.
+  //
+  // Three fat crossed cards all sitting at h ~ 0.9 within half a metre of each other is
+  // most of why a clump rasterised as ONE cream lozenge rather than as a spray: the cards
+  // union into a single convex blob before the shading ever gets a say. A susuki head is
+  // narrow — roughly 1:3 — and the heads in a clump sit at obviously different heights.
+  const plumes = 5;
+  for (let i = 0; i < plumes; i++) {
+    const a = (i / plumes) * Math.PI * 2 + rnd() * 0.9;
+    const lean = 0.10 + rnd() * 0.32;
+    const h = 0.62 + (i / plumes) * 0.34 + rnd() * 0.10;
     const cx = Math.cos(a) * lean, cz = Math.sin(a) * lean;
+    const s = 0.80 + rnd() * 0.45;
+
+    // The stem, sampled off the opaque blade strip. A plume floating free of the clump is
+    // the same failure as a leaf cluster floating free of its culm, one scale down.
+    const sw = 0.008;
+    const nx = -Math.sin(a), nz = Math.cos(a);
+    const s0 = g.vert(-nx * sw, 0.10, -nz * sw, nx, 0.3, nz, SUSUKI_UV.bladeU0, 0, 0.25, i * 0.19);
+    const s1 = g.vert(nx * sw, 0.10, nz * sw, nx, 0.3, nz, SUSUKI_UV.bladeU1, 0, 0.25, i * 0.19);
+    const s2 = g.vert(cx + nx * sw * 0.6, h - 0.16 * s, cz + nz * sw * 0.6, nx, 0.3, nz, SUSUKI_UV.bladeU1, 1, 0.8, i * 0.19);
+    const s3 = g.vert(cx - nx * sw * 0.6, h - 0.16 * s, cz - nz * sw * 0.6, nx, 0.3, nz, SUSUKI_UV.bladeU0, 1, 0.8, i * 0.19);
+    g.quad(s0, s1, s2, s3);
+
     for (let p = 0; p < 2; p++) {
       const pa = a + p * Math.PI * 0.5;
-      const r = [Math.cos(pa) * 0.11, 0, Math.sin(pa) * 0.11];
-      const u = [0, 0.17, 0];
+      const r = [Math.cos(pa) * 0.062 * s, 0, Math.sin(pa) * 0.062 * s];
+      const u = [0, 0.165 * s, 0];
       const n = nrm3([Math.sin(pa) * 0.4, 0.9, -Math.cos(pa) * 0.4]);
       g.card([cx, h, cz], r, u, n, SUSUKI_UV.plumeU0, 0, SUSUKI_UV.plumeU1, 1, 1.0, rnd());
     }
@@ -1295,7 +1421,7 @@ function paintBambooClump(w, h, spec, seed) {
   return c;
 }
 
-/** The four archetypes, packed 2x2. `uAtlas` and the per-instance cell do the rest. */
+/** The four archetypes, packed 2x2. KAG_ATLAS and the per-instance cell do the rest. */
 function paintBambooCard(cellW, cellH) {
   const c = newCanvas(cellW * 2, cellH * 2);
   const g = c.getContext('2d');
@@ -1373,6 +1499,86 @@ function paintBambooLeaves(size) {
     }
   }
   speckle(g, size, size, 0.26, 771);
+  return c;
+}
+
+/**
+ * The sheet a whole near bamboo plant is drawn from: an OPAQUE bark strip on the left, the
+ * alpha-cut leaf spray on the right (see PLANT_UV).
+ *
+ * The bark strip is the piece the critic was missing. It carries three things a per-instance
+ * tint could never carry: the node rings that separate bamboo from a green pipe, the
+ * green-at-the-base to straw-at-the-top gradient a mature moso actually has, and a cylinder
+ * shading ramp that is *dark at both edges*. That last one does two jobs — it stops the
+ * culm silhouetting brighter than the sky it stands against, and because both ends of the
+ * strip are dark the tube's wrap seam disappears.
+ */
+function paintBambooPlant(size) {
+  const c = newCanvas(size, size);
+  const g = c.getContext('2d');
+  g.clearRect(0, 0, size, size);
+  const rnd = makeRandom(0x3AC012);
+
+  // Fill past PLANT_UV.culmU1 all the way to the leaf card's edge: the surplus is opaque
+  // gutter, so the mip chain has bark to bleed *into* rather than transparency to bleed
+  // out of. Bark that alpha-tests away at range is exactly how leaves end up orphaned.
+  const stripW = Math.max(2, Math.round(size * 0.27));
+  const uSpan = PLANT_UV.culmU1 - PLANT_UV.culmU0;
+
+  for (let x = 0; x < stripW; x++) {
+    // Where this column sits across the visible strip, saturating outside it.
+    const u = clamp(((x + 0.5) / size - PLANT_UV.culmU0) / uSpan, 0, 1);
+    // Lambert-ish across a cylinder, keyed a third of the way round so the culm has a lit
+    // side and a shadow side rather than a symmetric highlight.
+    const round = Math.pow(Math.max(0, Math.sin(Math.PI * clamp(u * 0.88 + 0.06, 0, 1))), 0.85);
+    const k = 0.34 + 0.66 * round + 0.16 * Math.exp(-Math.pow((u - 0.36) / 0.13, 2));
+    const grad = g.createLinearGradient(0, size, 0, 0);
+    // v = 0 is the canvas bottom under flipY, which is the base of the culm.
+    grad.addColorStop(0.00, `rgb(${(72 * k) | 0},${(94 * k) | 0},${(46 * k) | 0})`);
+    grad.addColorStop(0.30, `rgb(${(112 * k) | 0},${(136 * k) | 0},${(64 * k) | 0})`);
+    grad.addColorStop(0.66, `rgb(${(168 * k) | 0},${(178 * k) | 0},${(104 * k) | 0})`);
+    grad.addColorStop(1.00, `rgb(${(214 * k) | 0},${(210 * k) | 0},${(150 * k) | 0})`);
+    g.fillStyle = grad;
+    g.fillRect(x, 0, 1, size);
+  }
+
+  // Node rings. Sixteen reads as segmented at arm's length and still leaves a visible tick
+  // every few pixels once the culm is 200 px tall in frame, which is where the overlook
+  // composes it. A dark groove with a pale collar just above is the whole trick.
+  const nodes = 16;
+  for (let n = 1; n < nodes; n++) {
+    const v = n / nodes;
+    const y = Math.round((1 - v) * size);
+    const k = 0.55 + 0.45 * v;
+    g.fillStyle = `rgba(${(48 * k) | 0},${(58 * k) | 0},${(28 * k) | 0},0.62)`;
+    g.fillRect(0, y, stripW, Math.max(1, size * 0.006));
+    g.fillStyle = `rgba(${(232 * k) | 0},${(230 * k) | 0},${(178 * k) | 0},0.42)`;
+    g.fillRect(0, y - Math.max(1, size * 0.009), stripW, Math.max(1, size * 0.005));
+    // A sheath scar: a couple of short flecks below the node, never a clean machined band.
+    for (let i = 0; i < 3; i++) {
+      g.fillStyle = `rgba(${(96 * k) | 0},${(96 * k) | 0},${(58 * k) | 0},${0.14 + rnd() * 0.2})`;
+      g.fillRect(rnd() * stripW, y + size * 0.008 + rnd() * size * 0.02,
+        Math.max(1, size * 0.02), Math.max(1, size * 0.004));
+    }
+  }
+
+  // Lengthwise fibre. Without it the strip is a smooth gradient and §5.9 forbids that.
+  for (let i = 0; i < 90; i++) {
+    const x = rnd() * stripW;
+    const y0 = rnd() * size;
+    g.strokeStyle = rnd() < 0.5
+      ? `rgba(40,52,26,${0.05 + rnd() * 0.14})`
+      : `rgba(226,224,178,${0.05 + rnd() * 0.12})`;
+    g.lineWidth = Math.max(1, size * 0.004);
+    g.beginPath(); g.moveTo(x, y0); g.lineTo(x + (rnd() - 0.5) * size * 0.008, y0 + rnd() * size * 0.28); g.stroke();
+  }
+
+  // The leaf spray, feathered on its own square so the card can never show its quad, then
+  // laid into the right-hand region.
+  const leaf = feather(paintBambooLeaves(size), { inner: 0.44, power: 1.30 });
+  const lx = Math.round(size * 0.29);
+  g.drawImage(leaf, lx, 0, size - lx, size);
+
   return c;
 }
 
@@ -1564,38 +1770,6 @@ function paintCedarSpray(size) {
   return c;
 }
 
-/** Fern frond: pinnate, one rachis with paired pinnae. */
-function paintFern(size) {
-  const c = newCanvas(size, size);
-  const g = c.getContext('2d');
-  g.clearRect(0, 0, size, size);
-  const rnd = makeRandom(7723);
-  g.translate(size * 0.5, size);
-  const len = size * 0.94;
-  g.strokeStyle = 'rgb(72,96,52)';
-  g.lineWidth = Math.max(1, size * 0.012);
-  g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(size * 0.06, -len * 0.5, 0, -len); g.stroke();
-  const pairs = 13;
-  for (let i = 1; i <= pairs; i++) {
-    const t = i / (pairs + 1);
-    const y = -len * t;
-    const pl = size * 0.34 * (1 - t * 0.85) * (0.8 + rnd() * 0.4);
-    for (const s of [-1, 1]) {
-      g.save();
-      g.translate(0, y);
-      g.rotate(s * (Math.PI * 0.5 - 0.45 - t * 0.25));
-      const shade = 0.6 + rnd() * 0.4;
-      drawLeafShape(g, pl, pl * 0.20,
-        `rgb(${(38 * shade) | 0},${(80 * shade) | 0},${(36 * shade) | 0})`,
-        `rgb(${(74 * shade) | 0},${(140 * shade) | 0},${(58 * shade) | 0})`, false);
-      g.restore();
-    }
-  }
-  g.setTransform(1, 0, 0, 1, 0, 0);
-  speckle(g, size, size, 0.26, 331);
-  return c;
-}
-
 /**
  * Susuki, in two zones of one texture: the left quarter is an OPAQUE blade strip and the
  * right three quarters is the silvery plume. The arching blades sample the strip and the
@@ -1632,27 +1806,114 @@ function paintSusuki(size) {
   g.lineWidth = Math.max(1, size * 0.006);
   g.beginPath(); g.moveTo(bw * 0.5, 0); g.lineTo(bw * 0.5, size); g.stroke();
 
-  // --- plume (low alpha, so a low sun blows straight through it) --------------
+  // --- plume ----------------------------------------------------------------
+  // A plume is a *spray of separate filaments*, and it has to stay one at every distance,
+  // because the alternative is what shipped: a filled cream lozenge measured at (134, 111,
+  // 106) with an internal luma standard deviation of 5.3 and a hard rectangular-ish edge —
+  // "spilled paint", correctly. Two things caused that. Two hundred and twenty short
+  // strokes at alpha 0.34-0.78 packed into a third of the card averaged to solid coverage
+  // the moment the card was minified, and the material's transmission then clipped on the
+  // FRAGMENT_SSS ceiling, which replaces every surviving fragment with the same constant.
+  //
+  // So: fewer, longer, thinner filaments, radiating from a real rachis, with an explicit
+  // radial alpha falloff, and roughly a third of them dark. The dark ones are what give
+  // the plume internal value structure that survives a mip level.
   const px0 = size * 0.30, pw = size * 0.70;
+  const cxP = px0 + pw * 0.5;
   g.lineCap = 'round';
-  for (let i = 0; i < 220; i++) {
-    const t = rnd();
-    const x = px0 + pw * (0.5 + (rnd() - 0.5) * (0.24 + t * 0.62));
-    const y = size * (0.94 - t * 0.88);
-    const len = size * (0.05 + rnd() * 0.12);
-    const a = -Math.PI * 0.5 + (rnd() - 0.5) * 1.5;
-    const v = 190 + rnd() * 60;
-    g.strokeStyle = `rgba(${v | 0},${(v * 0.93) | 0},${(v * 0.80) | 0},${0.34 + rnd() * 0.44})`;
-    g.lineWidth = Math.max(1, size * 0.006);
+
+  // The rachis first, so filaments read as leaving something.
+  g.strokeStyle = 'rgba(158,148,100,0.8)';
+  g.lineWidth = Math.max(1, size * 0.009);
+  g.beginPath(); g.moveTo(cxP, size); g.quadraticCurveTo(cxP + size * 0.03, size * 0.55, cxP + size * 0.05, size * 0.10); g.stroke();
+
+  for (let i = 0; i < 120; i++) {
+    // Attachment along the rachis; the plume opens out toward its top.
+    const t = Math.pow(rnd(), 0.75);
+    const ax = cxP + size * 0.05 * t * t;
+    const ay = size * (0.92 - t * 0.84);
+    // Filaments sweep up and out, then nod over — a fountain, not a brush.
+    const side = rnd() < 0.5 ? -1 : 1;
+    const spread = (0.12 + t * 0.40) * pw * (0.35 + rnd() * 0.75) * side;
+    const rise = size * (0.10 + rnd() * 0.22);
+    const tipX = ax + spread, tipY = ay - rise + size * 0.03 * rnd();
+    // Radial falloff, measured from the plume's own centre of mass: the outermost
+    // filaments have to be able to disappear or the silhouette is the card again.
+    const rN = Math.min(1, Math.hypot((tipX - cxP) / (pw * 0.5), (tipY - size * 0.46) / (size * 0.46)));
+    const edge = Math.pow(1 - smoothstep(0.42, 1.0, rN), 1.2);
+    // A third dark. Silver-on-silver is a fill; silver-on-shadow is a plume.
+    const dark = rnd() < 0.34;
+    const v = dark ? 96 + rnd() * 46 : 196 + rnd() * 56;
+    const alpha = (dark ? 0.30 + rnd() * 0.26 : 0.44 + rnd() * 0.42) * edge;
+    if (alpha < 0.04) continue;
+    g.strokeStyle = `rgba(${v | 0},${(v * 0.93) | 0},${(v * 0.78) | 0},${alpha.toFixed(3)})`;
+    g.lineWidth = Math.max(1, size * (dark ? 0.0045 : 0.0055));
     g.beginPath();
-    g.moveTo(x, y);
-    g.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len);
+    g.moveTo(ax, ay);
+    g.quadraticCurveTo(ax + spread * 0.55, ay - rise * 0.85, tipX, tipY);
     g.stroke();
   }
-  // A stem so the plume is attached to something.
-  g.strokeStyle = 'rgba(150,142,96,0.75)';
-  g.lineWidth = Math.max(1, size * 0.008);
-  g.beginPath(); g.moveTo(px0 + pw * 0.5, size); g.lineTo(px0 + pw * 0.5, size * 0.35); g.stroke();
+  return c;
+}
+
+/**
+ * Four low-shrub silhouettes in a 2x2 atlas.
+ *
+ * One stamp repeated across a hillside is legible as a stamp no matter how good the stamp
+ * is — the eye finds the repeat before it finds the plant. Cell 0 is the pinnate fern the
+ * file already had; 1 is a broader, blunter frond; 2 is a sparse wiry shrub; 3 is a dense
+ * low cushion. Per-instance yaw and scale then do the rest.
+ */
+function paintFernAtlas(size) {
+  const half = size >> 1;
+  const c = newCanvas(size, size);
+  const g = c.getContext('2d');
+  g.clearRect(0, 0, size, size);
+  const specs = [
+    { pairs: 13, lean: 0.45, taper: 0.85, plen: 0.34, pwid: 0.20, fronds: 1, dry: 0.0, seed: 7723 },
+    { pairs: 9, lean: 0.62, taper: 0.55, plen: 0.42, pwid: 0.34, fronds: 1, dry: 0.35, seed: 3311 },
+    { pairs: 7, lean: 0.30, taper: 0.95, plen: 0.26, pwid: 0.12, fronds: 3, dry: 0.55, seed: 9157 },
+    { pairs: 15, lean: 0.78, taper: 0.40, plen: 0.30, pwid: 0.28, fronds: 2, dry: 0.15, seed: 2087 },
+  ];
+  for (let i = 0; i < 4; i++) {
+    const cell = newCanvas(half, half);
+    const cg = cell.getContext('2d');
+    cg.clearRect(0, 0, half, half);
+    const s = specs[i];
+    const rnd = makeRandom(s.seed);
+    for (let f = 0; f < s.fronds; f++) {
+      cg.save();
+      cg.translate(half * (0.5 + (s.fronds > 1 ? (f / (s.fronds - 1) - 0.5) * 0.44 : 0)), half);
+      cg.rotate((s.fronds > 1 ? (f / (s.fronds - 1) - 0.5) * 0.7 : 0));
+      const len = half * (0.90 - f * 0.10);
+      cg.strokeStyle = 'rgb(72,96,52)';
+      cg.lineWidth = Math.max(1, half * 0.014);
+      cg.beginPath(); cg.moveTo(0, 0); cg.quadraticCurveTo(half * 0.06, -len * 0.5, 0, -len); cg.stroke();
+      for (let p = 1; p <= s.pairs; p++) {
+        const t = p / (s.pairs + 1);
+        const y = -len * t;
+        const pl = half * s.plen * (1 - t * s.taper) * (0.78 + rnd() * 0.44);
+        for (const side of [-1, 1]) {
+          cg.save();
+          cg.translate(0, y);
+          cg.rotate(side * (Math.PI * 0.5 - s.lean - t * 0.25));
+          const shade = 0.58 + rnd() * 0.44;
+          const dry = s.dry * rnd();
+          const r0 = (38 + dry * 110) * shade, g0 = (80 + dry * 50) * shade, b0 = (36 + dry * 16) * shade;
+          const r1 = (74 + dry * 120) * shade, g1 = (140 + dry * 40) * shade, b1 = (58 + dry * 24) * shade;
+          drawLeafShape(cg, pl, pl * s.pwid,
+            `rgb(${r0 | 0},${g0 | 0},${b0 | 0})`, `rgb(${r1 | 0},${g1 | 0},${b1 | 0})`, false);
+          cg.restore();
+        }
+      }
+      cg.restore();
+    }
+    speckle(cg, half, half, 0.26, s.seed ^ 0x77);
+    // Rooted feathering per cell: sides and top only, so the clump still meets the soil.
+    feather(cell, { inner: 0.50, power: 1.15, keepBottom: true });
+    // Cell (col,row); UV row 0 is the canvas bottom band under flipY.
+    g.drawImage(cell, (i % 2) * half, (1 - ((i / 2) | 0)) * half);
+  }
   return c;
 }
 
@@ -1837,17 +2098,18 @@ const fadeOut = (range) => [range[1] * 0.88, range[1]];
 const fadeIn = (range) => [range[0], range[0] + Math.max(6, range[0] * 0.25)];
 
 const RANGE = {
+  // There is no separate leaf range any more, and there must never be one again: culm and
+  // leaves are ONE instance of ONE mesh (see buildBambooPlantGeometry). Two ranges that
+  // happen to be equal is not the same thing — the dissolve threshold is derived from each
+  // instance's own phase, so two meshes diverge inside the window however the numbers are
+  // set, and that is what filled the valley overlook with leaves hanging in open sky.
   bambooCulm: [0, 46],
-  // Leaves must outlive the culm they hang on. At 38 against the culm's 46 there was an
-  // eight-metre shell in which every near culm rendered as a bare pole, and the valley
-  // overlook is composed almost entirely inside it — the whole stand read as dead sticks.
-  bambooLeaf: [0, 46],
   // Out to 300, not 190. The overlook and the wide framing both compose their mid-ground
   // on ground 200-400 m out, and between the old card cutoff at 190 and the canopy shell —
   // which only exists where the ground has already dropped 6 m below the plateau, so not on
   // the far ridge that rises again — there was a band with no bamboo in it at all. That gap
   // is exactly where the critic measured "no bamboo" and read the leftover scrub instead.
-  bambooCard: [26, 300],
+  bambooCard: [23, 300],
   canopy: [110, 900],
   treeMesh: [0, 55],
   treeCard: [88, 340],
@@ -2141,7 +2403,9 @@ export class FoliageSystem {
     const rooted = { keepBottom: true, inner: 0.52, power: 1.1 };
     this.tex = {
       clump: T(feather(paintGrassClump(px, palette), rooted)),
-      bambooLeaf: T(feather(paintBambooLeaves(px))),
+      // Culm bark and leaf spray on ONE sheet, because the near plant is one mesh — see
+      // buildBambooPlantGeometry for why that is not negotiable.
+      bambooPlant: T(paintBambooPlant(px)),
       // The mid-ground impostor: four archetypes in 2x2, each painted in a 1:2 frame so a
       // 12 m culm never has to stretch a square texture. Its own feathering is per cell
       // and side-only, so `feather()` must not run over the whole atlas.
@@ -2149,7 +2413,9 @@ export class FoliageSystem {
       blossom: T(feather(paintBlossom(px), { inner: 0.50, power: 1.05 })),
       momiji: T(feather(paintMomiji(px), { inner: 0.40, power: 1.4 })),
       cedar: T(feather(paintCedarSpray(px), { inner: 0.42, power: 1.3 })),
-      fern: T(feather(paintFern(px), rooted)),
+      // Four shrub silhouettes, 2x2. A hillside carrying one repeated stamp reads as a
+      // stamp; the atlas cell rides in the integer part of the instance phase.
+      fern: T(paintFernAtlas(px)),
       susuki: T(paintSusuki(px)),
       // Two cells: fallen leaves and moss. Each is feathered before it is composited.
       fallen: T(paintGroundAtlas(px)),
@@ -2224,7 +2490,6 @@ export class FoliageSystem {
       uBroad: { value: broad },
       uTintAmount: { value: tintAmount },
     };
-    if (atlas) local.uAtlas = { value: new Vector2(atlas[0], atlas[1]) };
     mat.userData.kag = local;
 
     const shared = this.uniforms;
@@ -2236,7 +2501,7 @@ export class FoliageSystem {
     const defines = `#define KAG_MODE ${mode}\n#define KAG_BEND_EXP ${bendExp.toFixed(2)}\n` +
       (whip > 0 ? `#define KAG_WHIP ${whip.toFixed(3)}\n` : '') +
       (sink ? '#define KAG_SINK\n' : '') +
-      (atlas ? '#define KAG_ATLAS\n' : '') +
+      (atlas ? atlasDefines(atlas) : '') +
       (tintModulate ? '#define KAG_TINT_MODULATE\n' : '');
 
     chainBeforeCompile(mat, (shader) => {
@@ -2257,7 +2522,7 @@ export class FoliageSystem {
         .replace('#include <lights_fragment_begin>', '#include <lights_fragment_begin>\n' + FRAGMENT_SHADOW_CAPTURE)
         .replace('#include <envmap_fragment>', FRAGMENT_SSS + '\n#include <envmap_fragment>');
     });
-    chainCacheKey(mat, `kagfol|${mode}|${bendExp}|${whip}|${sink ? 's' : '-'}|${atlas ? 'x' : '-'}|${tintModulate ? 'm' : 'a'}`);
+    chainCacheKey(mat, `kagfol|${mode}|${bendExp}|${whip}|${sink ? 's' : '-'}|${atlasKey(atlas)}|${tintModulate ? 'm' : 'a'}`);
 
     this.ctx.sky?.applyFog?.(mat);
     this._materials.push(mat);
@@ -2287,7 +2552,7 @@ export class FoliageSystem {
     const defines = `#define KAG_MODE ${mode}\n#define KAG_BEND_EXP ${bendExp.toFixed(2)}\n` +
       (whip > 0 ? `#define KAG_WHIP ${whip.toFixed(3)}\n` : '') +
       (sink ? '#define KAG_SINK\n' : '') +
-      (atlas ? '#define KAG_ATLAS\n' : '');
+      (atlas ? atlasDefines(atlas) : '');
 
     chainBeforeCompile(depth, (shader) => {
       shader.uniforms.uWind = wind.uWind;
@@ -2304,7 +2569,7 @@ export class FoliageSystem {
         .replace('#include <clipping_planes_fragment>',
           '#include <clipping_planes_fragment>\nif ( vKagFade <= 0.0 ) discard;');
     });
-    chainCacheKey(depth, `kagfold|${mode}|${bendExp}|${whip}|${sink ? 's' : '-'}|${atlas ? 'x' : '-'}`);
+    chainCacheKey(depth, `kagfold|${mode}|${bendExp}|${whip}|${sink ? 's' : '-'}|${atlasKey(atlas)}`);
     this._materials.push(depth);
     return depth;
   }
@@ -2665,52 +2930,44 @@ export class FoliageSystem {
   // -------------------------------------------------------------------- bamboo
 
   _buildBambooAssets(q) {
-    const sides = q.tier >= 2 ? 6 : 5;
-    const culm = buildCulmGeometry(sides, q.tier >= 2 ? 10 : 8, 0.045);
-    const leaf = buildCrossCard(2, 1.0, true, 1.0);
+    const hi = q.tier >= 2;
+    // One geometry for the whole near plant. Culm and sprays scale together — the
+    // scatterer sets width = height so canonical space stays isotropic.
+    const plant = buildBambooPlantGeometry(hi ? 6 : 4, hi ? 13 : 8, hi ? 13 : 8);
     const card = buildCrossCard(2, 1.0, false, 0.55);
-    this._geometries.push(culm, leaf, card);
+    this._geometries.push(plant, card);
 
-    // Culms: stiff, and they whip. A bamboo sea reads as bamboo because the tops lag.
-    const culmOpts = {
-      // No map: the per-instance tint carries the albedo, so the material must be white.
-      name: 'bamboo-culm', mode: 0, map: null, color: 0xffffff,
-      bendExp: 1.6, whip: 0.28, bendGain: 1.35, flutter: 0.35,
+    // Stiff, and it whips: a bamboo sea reads as bamboo because the tops lag the gust.
+    // `flutter` now drives both parts of one mesh, which is fine because aFlex.x separates
+    // them — the bark ring vertices carry 0.10 and the spray corners carry 1.0, so the
+    // sprays shiver at the culm's own frequency without the culm shivering with them.
+    const plantOpts = {
+      name: 'bamboo-plant', mode: 0, map: this.tex.bambooPlant, color: 0xffffff,
+      bendExp: 1.6, whip: 0.28, bendGain: 1.35, flutter: 1.15, alphaTest: 0.30,
       fadeFar: fadeOut(RANGE.bambooCulm), size: [1, 1], side: DoubleSide,
-      sss: 0.55, sssColor: 0xd9dd8e, tipGlow: 0.10, baseAO: 0.28, grain: 0.20,
+      // A leaf held up to a low sun passes green, and at the 0.6 default desaturation the
+      // amber key turns that into another orange surface in a frame that already has too
+      // many. The green itself comes from the sheet's albedo (see paintBambooLeaves); this
+      // only tints the light coming *through* it. Pulled back from the old leaf-only 1.05
+      // because the same term now also lands on the opaque bark strip, and a culm that
+      // transmits is a culm that silhouettes brighter than the sky behind it.
+      sss: 0.80, sssColor: 0x5cc233, sssFloor: 0.22, sssSat: 0.88,
+      tipGlow: 0.14, baseAO: 0.26, grain: 0.16, broad: 0.10,
+      // The sheet is the albedo now, so the instance tint may only shift its hue.
+      tintAmount: 0.55,
     };
-    const culmMat = this._makeMaterial(culmOpts);
-    const culmDepth = this._makeDepthMaterial(culmMat, culmOpts);
-
-    // Leaves hang off the culm and flutter at a much higher frequency.
-    const leafOpts = {
-      name: 'bamboo-leaf', mode: 1, map: this.tex.bambooLeaf, color: 0xffffff,
-      bendExp: 1.6, whip: 0.28, bendGain: 1.35, flutter: 1.6, alphaTest: 0.38,
-      fadeFar: fadeOut(RANGE.bambooLeaf), size: [1, 1],
-      // Same transmission as the mid-ground card, for the same reason: a leaf held up to
-      // a low sun passes green, and at the 0.6 default desaturation the amber key turns
-      // that into another orange surface in a frame that already has too many.
-      //
-      // 1.9 x 0.45 was the pair that painted the near clusters as flat unlit green slabs
-      // over the mountain in the hero framing. The green now comes from the card's albedo
-      // (see paintBambooLeaves) and this only tints the light coming through it.
-      sss: 1.05, sssColor: 0x5cc233, sssFloor: 0.26, sssSat: 0.88,
-      tipGlow: 0.18, baseAO: 0.22, grain: 0.16,
-    };
-    const leafMat = this._makeMaterial(leafOpts);
-    const leafDepth = this._makeDepthMaterial(leafMat, leafOpts);
+    const plantMat = this._makeMaterial(plantOpts);
+    const plantDepth = this._makeDepthMaterial(plantMat, plantOpts);
 
     // Impostor cards for the mid distance. This is the *only* bamboo the critic's four
     // framings can see — every one of them is composed from 45 m or further out, past the
-    // culm and leaf fade windows — so the whole silhouette read of "shrine above a bamboo
+    // near plant's fade window — so the whole silhouette read of "shrine above a bamboo
     // sea" lives or dies on this card and nothing else.
     //
-    // It used to sample `bambooLeaf`: a leaf spray with no culm in it at all, painted at
-    // luma 60, stretched 4x vertically because the card is 12 m tall and 3 m wide. That is
-    // exactly a black dagger burst. Now it samples the four-archetype atlas, which carries
-    // a pale segmented culm all the way down to v = 0, and it runs the file's second
-    // highest transmission floor with a near-undesaturated green so the low sun coming
-    // through the sea reads as chlorophyll rather than as more amber.
+    // It is also the material that was drawing nothing at all: 11 390 instances, 10 933 of
+    // them inside their fade window, every fragment discarded because KAG_ATLAS divided by
+    // an unbound uniform. See atlasDefines(). Everything below about how the card is tuned
+    // was therefore never actually visible in a review frame.
     const cardOpts = {
       name: 'bamboo-card', mode: 0, map: this.tex.bambooCard, color: 0xffffff,
       atlas: [2, 2],
@@ -2736,8 +2993,7 @@ export class FoliageSystem {
     const cardMat = this._makeMaterial(cardOpts);
 
     this._bambooAssets = {
-      culm: { geo: culm, mat: culmMat, depth: culmDepth },
-      leaf: { geo: leaf, mat: leafMat, depth: leafDepth },
+      plant: { geo: plant, mat: plantMat, depth: plantDepth },
       card: { geo: card, mat: cardMat, depth: null },
     };
   }
@@ -2796,25 +3052,28 @@ export class FoliageSystem {
     // window collapses to a degenerate point in the vertex shader, so the cost of raising
     // these is vertex invocations on instances that are never rasterised — not draw calls
     // and not fill. The draw-call budget is unchanged at three.
-    const nearTarget = Math.round(1250 * density);
-    // 9000 over a 310 m disc is one clump per 50 m2, and a clump every seven metres does
-    // not close: at range you read individual bushes on open ground, which is the "scrub"
-    // note. A stand only becomes a *sea* when neighbouring clumps overlap in silhouette,
-    // and that needs roughly one per 18 m2. This is still one instanced draw.
-    const cardTarget = Math.round(17000 * density);
+    // A plant is now one instance rather than one culm plus ten leaf clusters, so this
+    // count buys eleven times less buffer than it used to and can be spent on coverage.
+    // It is also spent over a 105 m disc instead of 140: the plant fades out at 46 m and no
+    // camera sits more than ~55 m from the origin, so everything past ~105 m was budget
+    // handed to instances that can never be rasterised. Measured at the valley pose on the
+    // shipped build, 810 scattered plants put SIX culms on screen.
+    const nearTarget = Math.round((q.tier >= 2 ? 2400 : 1100) * density);
+    // 17 000 over a 310 m disc is one clump per 57 m2. A clump every seven and a half
+    // metres does not close: at range you read individual bushes on open ground, which is
+    // the "scrub" note, and the ridgeline stays visible straight through the band. A stand
+    // becomes a *sea* when neighbouring clumps overlap in silhouette, and at 6-9 m of card
+    // width that needs roughly one per 12 m2. Still one instanced draw.
+    const cardTarget = Math.round((q.tier >= 2 ? 26000 : 11000) * density);
 
     const nearA = new Float32Array(nearTarget * 4);
     const nearB = new Float32Array(nearTarget * 4);
     const nearC = new Float32Array(nearTarget * 4);
-    const leavesPer = q.tier >= 2 ? 10 : 7;
-    const leafA = new Float32Array(nearTarget * leavesPer * 4);
-    const leafB = new Float32Array(nearTarget * leavesPer * 4);
-    const leafC = new Float32Array(nearTarget * leavesPer * 4);
     const cardA = new Float32Array(cardTarget * 4);
     const cardB = new Float32Array(cardTarget * 4);
     const cardC = new Float32Array(cardTarget * 4);
 
-    let n = 0, ln = 0, cn = 0;
+    let n = 0, cn = 0;
     const col = _colScratch;
 
     // Bamboo wants the sheltered, damp, valley-facing ground below the plateau lip.
@@ -2838,32 +3097,31 @@ export class FoliageSystem {
     // for the near culms to live in — a handful of survivors for the whole world. Sample
     // out to the far edge of the playable region and let the mask only defend the swept
     // courtyard itself.
-    for (let i = 0; i < nearTarget * 7 && n < nearTarget; i++) {
-      // Culms fade out 46 m from the camera and no camera sits more than ~90 m from the
-      // origin, so nothing past ~140 m can ever be rasterised. Sampling to 180 spent a
-      // third of the budget outside the window it draws in.
-      const [x, z] = sample(140);
+    for (let i = 0; i < nearTarget * 8 && n < nearTarget; i++) {
+      const [x, z] = sample(105);
       const y = this._heightAt(x, z);
       if (y < WORLD.WATER_LEVEL + 0.4) continue;
       // Never inside the swept courtyard, and never on the stone stair.
       if (plateauMask(x, z) > 0.82) continue;
       const surf = this._surfaceAt(x, z);
       if (surf === 'stone' || surf === 'gravel' || surf === 'rock' || surf === 'path' || surf === 'water') continue;
-      if (this._slopeAt(x, z) > 0.62) continue;
+      // Bamboo is the plant that holds a hillside together and the wall below the plateau
+      // lip is the one place the sea has to be thickest. At 0.62 this filter rejected
+      // exactly that wall — the ground the overlook actually frames — and left the lip bare.
+      if (this._slopeAt(x, z) > 0.88) continue;
       const c = clumpNoise(x, z);
-      if (rnd() > 0.22 + c * 0.95) continue;
+      if (rnd() > 0.34 + c * 0.95) continue;
 
-      // Skewed toward the shorter culms, with a long tail — a real stand is mostly waist
-      // to head height with a scatter of 15 m leaders through it, and that spread is what
-      // stops the band from reading as one wall at one depth. The exponent was 0.75, which
-      // put the mean at 10.6 m: nearly every culm was a leader, and a stand of nothing but
-      // leaders is a row of masts.
-      const h = 3.0 + Math.pow(rnd(), 1.15) * 11.5;   // 3.0-14.5 m, mean ~8.4
-      const lean = 0.55 + rnd() * 0.9;
+      // Skewed toward the shorter culms with a long tail: a real stand is mostly head to
+      // two-storey height with a scatter of 16 m leaders through it, and that spread is
+      // what stops the band reading as one wall at one depth. The floor is 5 m rather than
+      // 3 — below that the culm is under two pixels wide at the far edge of its own fade
+      // window, and a sub-pixel culm is the thing that aliased into dashes.
+      const h = 5.0 + Math.pow(rnd(), 1.20) * 11.0;   // 5.0-16.0 m, mean ~10.0
       const yaw = rnd() * Math.PI * 2;
       const green = 0.55 + rnd() * 0.45;
-      // The tint IS the albedo here (no map), and a culm is *pale* — straw-green, near
-      // sRGB 200. It is the one thing in the mid-ground that must not silhouette black.
+      // The sheet carries the albedo now (bark gradient, nodes, blades), so this only
+      // shifts hue per plant — KAG_TINT_MODULATE normalises it to unit luminance first.
       col.setRGB(0.50 * green + 0.28, 0.62 * green + 0.24, 0.28 * green + 0.14);
       // Older culms yellow off; a monoculture of one green reads as plastic.
       if (rnd() < 0.24) col.lerp(AUTUMN_B, 0.35 + rnd() * 0.4);
@@ -2871,43 +3129,15 @@ export class FoliageSystem {
       const o = n * 4;
       nearA[o] = x; nearA[o + 1] = y; nearA[o + 2] = z; nearA[o + 3] = yaw;
       nearB[o] = h;
-      // Moso is 10-20 cm through at 15 m tall, which is dimensionally right and, at 40 m
-      // with no MSAA, half a pixel wide — the culm the whole silhouette depends on was
-      // aliasing away to a broken hairline. Carry it a little heavy so it survives to the
-      // far edge of its fade window.
-      nearB[o + 1] = (0.075 + rnd() * 0.070) * (0.78 + h / 17);
+      // Width EQUALS height. buildBambooPlantGeometry authors culm radius and spray size as
+      // fractions of height, so canonical space has to scale isotropically or a square leaf
+      // card comes out stretched by height/width. The culm's real thickness lives in the
+      // geometry (0.0065 of height at the base), not here.
+      nearB[o + 1] = h;
       nearB[o + 2] = 2.0 + rnd() * 1.5 + h * 0.04;   // stiff: >1 per Weather's convention
       nearB[o + 3] = rnd();
-      nearC[o] = col.r; nearC[o + 1] = col.g; nearC[o + 2] = col.b; nearC[o + 3] = lean;
+      nearC[o] = col.r; nearC[o + 1] = col.g; nearC[o + 2] = col.b; nearC[o + 3] = 0;
       n++;
-
-      // Leaf clusters live on the top half, where a real culm actually leafs out. Spread
-      // wider and sized larger than before: at seven small cards over the top 40% a 16 m
-      // culm carried a crown about a metre across, which from anywhere in the courtyard is
-      // a bare pole with a smudge on the end.
-      for (let l = 0; l < leavesPer; l++) {
-        const t = 0.52 + (l / leavesPer) * 0.46 + rnd() * 0.04;
-        const lo = ln * 4;
-        // Splay off the culm axis. Every cluster used to attach dead on centre, so ten of
-        // them stacked into a column no wider than one card and the culm read as a
-        // bottle-brush. A branch leaves the stem, so the cluster's own root does too — the
-        // golden angle spins successive branches around and the radius grows with the card,
-        // which is what turns a column into a crown with an outline.
-        const bAng = yaw + l * 2.39996 + rnd() * 0.4;
-        const bRad = (0.30 + rnd() * 0.55) * (0.72 + h / 16);
-        leafA[lo] = x + Math.cos(bAng) * bRad;
-        leafA[lo + 1] = y;
-        leafA[lo + 2] = z + Math.sin(bAng) * bRad;
-        leafA[lo + 3] = bAng;
-        leafB[lo] = h;
-        // Scaled off the culm: a 16 m leader carries a far bigger crown than a 4 m shoot.
-        leafB[lo + 1] = (0.95 + rnd() * 0.85) * (0.72 + h / 16);
-        leafB[lo + 2] = nearB[o + 2];
-        leafB[lo + 3] = nearB[o + 3] + l * 0.13;
-        leafC[lo] = col.r * 1.12; leafC[lo + 1] = col.g * 1.18; leafC[lo + 2] = col.b * 0.9;
-        leafC[lo + 3] = clamp(t, 0, 1);
-        ln++;
-      }
     }
 
     // The card fades out 190 m from the *camera* and no camera sits more than ~90 m from
@@ -2915,7 +3145,10 @@ export class FoliageSystem {
     // more than half the budget on instances the frustum and the fade window both throw
     // away; pulling the disc in concentrates the same count where the band is actually read.
     for (let i = 0; i < cardTarget * 10 && cn < cardTarget; i++) {
-      const [x, z] = sample(310);
+      // 280, not 310. Beyond ~290 m the valley floor is already under WATER_LEVEL along
+      // the overlook's own ray, so the outer annulus was budget spent on candidates the
+      // height floor rejects anyway; pulling it in raises the density where the band reads.
+      const [x, z] = sample(280);
       const d = Math.hypot(x, z);
       if (d < RANGE.bambooCard[0] * 0.5) continue;
       const y = this._heightAt(x, z);
@@ -2956,18 +3189,15 @@ export class FoliageSystem {
     }
 
     const shadows = !!q.foliageShadows;
-    const culmMesh = this._makeBatchMesh(A.culm.geo, A.culm.mat, A.culm.depth, Math.max(1, n), shadows);
-    const leafMesh = this._makeBatchMesh(A.leaf.geo, A.leaf.mat, A.leaf.depth, Math.max(1, ln), shadows);
+    const plantMesh = this._makeBatchMesh(A.plant.geo, A.plant.mat, A.plant.depth, Math.max(1, n), shadows);
     const cardMesh = this._makeBatchMesh(A.card.geo, A.card.mat, null, Math.max(1, cn), false);
-    culmMesh.name = 'bamboo-culms';
-    leafMesh.name = 'bamboo-leaves';
+    plantMesh.name = 'bamboo-plants';
     cardMesh.name = 'bamboo-cards';
 
-    this._fill(culmMesh, nearA, nearB, nearC, n, 16);
-    this._fill(leafMesh, leafA, leafB, leafC, ln, 16);
-    this._fill(cardMesh, cardA, cardB, cardC, cn, 20);
+    this._fill(plantMesh, nearA, nearB, nearC, n, 18);
+    this._fill(cardMesh, cardA, cardB, cardC, cn, 22);
 
-    this._bamboo = { culmMesh, leafMesh, cardMesh, near: n, cards: cn };
+    this._bamboo = { plantMesh, cardMesh, near: n, cards: cn };
 
     // §5's setting is a shrine above a bamboo sea. When the filters starve this scatter the
     // symptom in frame is not "less bamboo" — it is a mid-ground of unrelated scrub that a
@@ -2975,12 +3205,12 @@ export class FoliageSystem {
     // card art while the real fault is that eighty per cent of the instances were rejected
     // at placement. Say which filter ate them, here, once, at boot.
     if (cn < cardTarget * 0.6 || n < nearTarget * 0.6) {
-      console.warn(`[foliage] bamboo scatter starved: ${n}/${nearTarget} culms, ` +
-        `${cn}/${cardTarget} cards. Candidates are rejected by _slopeAt (culms > 0.62, ` +
+      console.warn(`[foliage] bamboo scatter starved: ${n}/${nearTarget} plants, ` +
+        `${cn}/${cardTarget} cards. Candidates are rejected by _slopeAt (plants > 0.88, ` +
         `cards > 0.95), _surfaceAt (stone/gravel/rock/path/water), plateauMask > 0.82 and ` +
         `the WATER_LEVEL floor — check those against the landform Terrain is drawing.`);
     } else if (this.ctx.debug) {
-      console.info(`[foliage] bamboo: ${n} culms, ${ln} leaf clusters, ${cn} cards`);
+      console.info(`[foliage] bamboo: ${n} plants, ${cn} cards`);
     }
   }
 
@@ -3441,6 +3671,8 @@ ${WIND_GLSL}
 
     const fernOpts = {
       name: 'fern', mode: 0, map: this.tex.fern, color: 0xffffff,
+      // Four silhouettes, 2x2 — the archetype rides in the integer part of the phase slot.
+      atlas: [2, 2],
       bendExp: 2.1, bendGain: 0.85, flutter: 1.0, alphaTest: 0.40,
       fadeFar: [radius * 0.85, radius], size: [1, 1], sink: true,
       sss: 1.35, sssColor: 0xa8c86a, sssFloor: 0.45,
@@ -3448,13 +3680,20 @@ ${WIND_GLSL}
     };
     const susukiOpts = {
       name: 'susuki', mode: 0, map: this.tex.susuki, color: 0xffffff,
-      bendExp: 2.2, bendGain: 1.15, flutter: 1.25, alphaTest: 0.18,
+      // 0.18 let a plume's outermost filaments survive at any coverage, and once minified
+      // that averaged the whole spray up into solid coverage: measured in frame at
+      // (134, 111, 106) with an internal luma standard deviation of 5.3, i.e. a filled
+      // cream lozenge with a hard edge. The card has to be able to lose its edges.
+      bendExp: 2.2, bendGain: 1.15, flutter: 1.25, alphaTest: 0.34,
       fadeFar: [radius * 1.35, radius * 1.6], size: [1, 1], sink: true,
-      // The whole point of susuki is that a low sun blows straight through the plume, so
-      // it runs the highest transmission floor in the file: the blade strip is an opaque,
-      // dark texture and without the floor the money shot renders as black paper.
-      sss: 2.6, sssColor: 0xf0e2c0, sssFloor: 0.58,
-      tipGlow: 0.45, baseAO: 0.30, grain: 0.10, broad: 0.16,
+      // A low sun blowing through the plume is still the point, but 2.6 x 0.58 was not
+      // transmission — it was a *replacement*. FRAGMENT_SSS clamps `through * trans` at
+      // 0.85, and at that strength every fragment with any alpha reached the ceiling, so
+      // the clamp handed back the same constant for all of them and erased the plume's
+      // entire internal value range. That is the mechanism behind "no lighting response,
+      // 1.33x the ground around it". Below the ceiling the filaments shade again.
+      sss: 1.10, sssColor: 0xf0e2c0, sssFloor: 0.26,
+      tipGlow: 0.26, baseAO: 0.30, grain: 0.14, broad: 0.16,
     };
     const shadows = !!q.foliageShadows;
     const fernMat = this._makeMaterial(fernOpts);
@@ -3479,7 +3718,10 @@ ${WIND_GLSL}
         a[o] = x; a[o + 1] = y; a[o + 2] = z; a[o + 3] = rnd() * Math.PI * 2;
         b[o] = h; b[o + 1] = h * (cfg.aspect * (0.8 + rnd() * 0.4));
         b[o + 2] = cfg.stiff * (0.8 + rnd() * 0.4);
-        b[o + 3] = rnd();
+        // Integer part = atlas cell where the material has one (see KAG_ATLAS); fraction is
+        // always the dissolve/wind phase. `cells` is 1 for a single-silhouette material,
+        // which leaves the slot byte-identical to a plain phase.
+        b[o + 3] = ((rnd() * cfg.cells) | 0) + rnd() * 0.999;
         _colScratch.set(cfg.color).lerp(AUTUMN_B, rnd() * cfg.dry);
         const v = 0.82 + rnd() * 0.34;
         c[o] = _colScratch.r * v; c[o + 1] = _colScratch.g * v; c[o + 2] = _colScratch.b * v;
@@ -3493,15 +3735,19 @@ ${WIND_GLSL}
     };
 
     const scale = clamp(density, 0, 1.5);
+    // clumpPow 2.4 on top of the site weight was compounding two rejections: of a 535-fern
+    // target the scatter was landing TWENTY-NINE instances world-wide, which is not a
+    // clumping bias, it is an empty layer. 1.5 keeps the hollows thicker than the spurs
+    // without deleting the field.
     const fernMesh = mk(fernGeo, fernMat, this._makeDepthMaterial(fernMat, fernOpts),
-      Math.round(900 * scale) + 40, {
-        name: 'ferns', far: radius, bias: 1.0, scale: 0.075, seed: 3.1, clumpPow: 2.4,
-        hMin: 0.35, hMax: 0.95, aspect: 1.5, stiff: 0.75, color: 0x4e6b3c, dry: 0.35, shadow: false,
+      Math.round(1600 * scale) + 60, {
+        name: 'ferns', far: radius, bias: 1.35, scale: 0.075, seed: 3.1, clumpPow: 1.5, cells: 4,
+        hMin: 0.32, hMax: 1.10, aspect: 1.5, stiff: 0.75, color: 0x4e6b3c, dry: 0.35, shadow: false,
       });
 
     const susukiMesh = mk(susukiGeo, susukiMat, null,
-      Math.round(420 * scale) + 24, {
-        name: 'susuki', far: radius * 1.5, bias: 0.85, scale: 0.032, seed: 19.7, clumpPow: 3.2,
+      Math.round(560 * scale) + 30, {
+        name: 'susuki', far: radius * 1.5, bias: 1.05, scale: 0.032, seed: 19.7, clumpPow: 2.0, cells: 1,
         hMin: 1.1, hMax: 2.0, aspect: 1.15, stiff: 0.62, color: 0x9c8548, dry: 0.75, shadow: false,
       });
 
@@ -3919,16 +4165,17 @@ vCanopyG = cg;
 
     if (this._bambooAssets) {
       const A = this._bambooAssets;
-      const culmFar = clamp(radius * 1.35, 26, RANGE.bambooCulm[1]);
-      const leafFar = clamp(radius * 1.1, 22, RANGE.bambooLeaf[1]);
-      A.culm.mat.userData.kag.uFadeFar.value.set(culmFar * 0.9, culmFar);
-      A.leaf.mat.userData.kag.uFadeFar.value.set(leafFar * 0.9, leafFar);
-      A.card.mat.userData.kag.uFadeNear.value.set(culmFar * 0.82, culmFar);
-      A.card.mat.userData.kag.uFadeFar.value.set(RANGE.bambooCard[1] * 0.86, RANGE.bambooCard[1]);
+      const plantFar = clamp(radius * 1.35, 26, RANGE.bambooCulm[1]);
+      A.plant.mat.userData.kag.uFadeFar.value.set(plantFar * 0.88, plantFar);
+      // The card has to be at FULL strength before the near plant starts thinning, or the
+      // two layers hand off through a band where neither is at full density and the slope
+      // goes thin exactly where the overlook frames it. Fade in over the 40% of the plant's
+      // range below its own fade-out, never later.
+      A.card.mat.userData.kag.uFadeNear.value.set(plantFar * 0.50, plantFar * 0.80);
+      A.card.mat.userData.kag.uFadeFar.value.set(RANGE.bambooCard[1] * 0.88, RANGE.bambooCard[1]);
     }
     if (this._bamboo) {
-      this._bamboo.culmMesh.castShadow = shadows;
-      this._bamboo.leafMesh.castShadow = shadows;
+      this._bamboo.plantMesh.castShadow = shadows;
     }
 
     if (this._treeAssets) {

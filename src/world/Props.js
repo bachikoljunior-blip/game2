@@ -893,12 +893,28 @@ const GROUND_UV_SCALE = 0.62;
 const LANTERN_STONE_NAMES = ['lanternStone', 'graniteFine', 'granite'];
 
 /**
- * Tiling for the `stone` fallback under a lantern. The stonework's own UVs run
- * roughly one tile around the hexagon (~0.9 m of perimeter), so 3.6 puts the
- * crack net's cells at about 3.5 cm — fine enough to integrate into speckle at
- * the 4–8 m the prop is ever seen from, instead of a hand-sized web.
+ * Tiling for the `stone` fallback under a lantern, and how hard its damage
+ * layers are allowed to shade.
+ *
+ * Tiling alone cannot fix this. `stone` carries *two* structures — a 7x7 worley
+ * crack net and a 2x3 grid of slab joints — and scaling the tile scales both:
+ * at 1.0 the crack cells are 12 cm and read as crazing, and at 3.6 (measured)
+ * the slab grid becomes a 7x11 lattice of dead-straight lines wrapped round the
+ * prop, which is worse — a basket rather than a stone.
+ *
+ * What actually separates "damage" from "mineral" is not size, it is *relief*.
+ * Both structures are cut into the height field and the recipe ships
+ * `normalScale` 1.9 (raised there to compensate the shrine *steps*, and adopted
+ * by Terrain as its ground detail), so a low sun turns every crack into a lit
+ * ridge and a black trough. Taking the normal and the AO down leaves the same
+ * features as a faint albedo mottle — which is exactly what granite grain is —
+ * while the courses, seats and chipped corners carry the form. So: a modest
+ * retile to get the cell size down to a few centimetres, and the damage layers
+ * flattened out of the shading.
  */
-const LANTERN_STONE_REPEAT = 3.6;
+const LANTERN_STONE_REPEAT = 2.6;
+const LANTERN_STONE_NORMAL = 0.55;
+const LANTERN_STONE_AO = 0.65;
 
 /** Colour/roughness/metalness for every material name in the library contract. */
 const FALLBACK = {
@@ -1143,30 +1159,43 @@ export class PropFactory {
    * in the albedo and in the normal, but front-lit it sits under a specular
    * term two stops brighter than the diffuse and never gets out.
    *
-   * Three knobs, all of them removing gloss rather than adding decoration:
-   *  - the film thins to a fifth and roughens, so what is left is a broken band
-   *    rather than a mirror;
-   *  - the clearcoat normal comes up to full strength, so the band that remains
-   *    is chopped up by the grain underneath it instead of gliding over it;
+   * Four knobs. Three remove gloss rather than adding decoration:
+   *  - the film thins to a third and roughens, so what is left is a band rather
+   *    than a mirror;
+   *  - the clearcoat normal goes past full strength, so the band that remains is
+   *    chopped up by the grain underneath it instead of gliding over it — this
+   *    is what makes it *broken*, and it is the one that matters;
    *  - `roughness` multiplies the ORM (three clamps the product, not the
    *    factor), so 2.6 takes the lacquer from 0.13 to 0.34 and pins the chipped
    *    wood at 1.0 — which is the whole point, a chip has to look *matte* next
    *    to the paint or it reads as a decal.
-   * The normal comes up with it so the grain survives a front key, and the env
-   * term comes down because a broad sky reflection is the other half of the
-   * sheen.
+   *
+   * The fourth adds one back, and it is not an aesthetic choice. Measured after
+   * the first three: the lit face went (237, 76, 29) -> (228, 52, 11). Green
+   * landed on the vermilion target, and blue fell off a cliff — because on a
+   * post lit by a `#ffd9a8` key, whose blue is 0.40 of its red, and painted with
+   * an albedo whose blue is 0.025 of *its* red, the reflected sky was carrying
+   * essentially all of the blue in the pixel. Killing the gloss killed the only
+   * cool path onto the surface and left a hotter, *more* saturated post than the
+   * one being complained about. So the env term goes up rather than down: on a
+   * `MeshStandardMaterial` it scales the diffuse irradiance as well as the
+   * specular, and the diffuse half is the cool sky bounce ARCHITECTURE §5 says
+   * a shadow must never be without. The chalk tint on `color` does the rest —
+   * an old torii is bleached, and bleached means desaturated toward the sky, not
+   * simply darker.
    */
   _weatherUrushi(m) {
     // Only as a *multiplier*. Without a roughness map the 2.6 would clamp to a
     // dead matte, which is the opposite failure.
     m.roughness = m.roughnessMap ? 2.6 : Math.min(1, (m.roughness || 0.48) * 1.5);
-    m.envMapIntensity = 0.60;
+    m.envMapIntensity = 1.35;
     if (m.normalScale) m.normalScale.set(2.15, 2.15);
     m.aoMapIntensity = 1.25;
+    if (m.color) m.color.setRGB(0.78, 0.95, 2.05);
     if ('clearcoat' in m) {
-      m.clearcoat = 0.20;
-      m.clearcoatRoughness = 0.58;
-      if (m.clearcoatNormalScale) m.clearcoatNormalScale.set(1.15, 1.15);
+      m.clearcoat = 0.30;
+      m.clearcoatRoughness = 0.34;
+      if (m.clearcoatNormalScale) m.clearcoatNormalScale.set(1.75, 1.75);
     }
   }
 
@@ -1194,8 +1223,12 @@ export class PropFactory {
       m = this._libMaterial(name, 1);
       if (m) break;
     }
-    if (!m) m = this._libMaterial('stone', LANTERN_STONE_REPEAT)
-      || this._fallbackMaterial('stone', LANTERN_STONE_REPEAT);
+    if (!m) {
+      m = this._libMaterial('stone', LANTERN_STONE_REPEAT)
+        || this._fallbackMaterial('stone', LANTERN_STONE_REPEAT);
+      if (m.normalScale) m.normalScale.set(LANTERN_STONE_NORMAL, LANTERN_STONE_NORMAL);
+      m.aoMapIntensity = LANTERN_STONE_AO;
+    }
     m.vertexColors = true;
     m.name = 'prop:lanternStone';
     this.ctx?.sky?.applyFog?.(m);
@@ -1904,7 +1937,7 @@ export class PropFactory {
    * a bright key where value does not.
    */
   static _bareWood(g, rnd, k = 1) {
-    tintGeo(g, (1.62 + rnd() * 0.30) * k, (2.02 + rnd() * 0.34) * k, (2.34 + rnd() * 0.40) * k);
+    tintGeo(g, (2.35 + rnd() * 0.45) * k, (2.90 + rnd() * 0.50) * k, (3.30 + rnd() * 0.55) * k);
     return g;
   }
 
@@ -2205,13 +2238,19 @@ export class PropFactory {
     // give the joint a lip to cast from.
     const saoTop = 1.06 * s;
     const saoSamples = [];
-    for (let i = 0; i <= 16; i++) {
-      const t = i / 16;
+    // Bands, not bulges. A gaussian swell wide enough to see is wide enough to
+    // make the shaft undulate, and an undulating column is the termite-mound
+    // read this prop was accused of. A carved node is a short cylinder with
+    // square shoulders — `smoothstep` in and out over 4% of the shaft — so the
+    // shaft between two nodes stays dead straight and the nodes themselves cast.
+    const band = (t, c, w) => smoothstep(c - w - 0.04, c - w, t) * (1 - smoothstep(c + w, c + w + 0.04, t));
+    for (let i = 0; i <= 24; i++) {
+      const t = i / 24;
       const y = lerp(0.30 * s, saoTop, t);
-      const node = Math.exp(-Math.pow((t - 0.34) * 7, 2)) + Math.exp(-Math.pow((t - 0.74) * 7, 2));
-      // Collars: a ring of extra radius in the first and last 7% of the shaft.
-      const collar = (1 - smoothstep(0.0, 0.07, t)) * 0.030 + smoothstep(0.93, 1.0, t) * 0.030;
-      const r = (0.142 - t * 0.014 + node * 0.038 + collar) * s;
+      const node = band(t, 0.34, 0.035) + band(t, 0.74, 0.035);
+      // Collars: a ring of extra radius in the first and last 6% of the shaft.
+      const collar = (1 - smoothstep(0.0, 0.06, t)) * 0.032 + smoothstep(0.94, 1.0, t) * 0.032;
+      const r = (0.142 - t * 0.010 + node * 0.028 + collar) * s;
       saoSamples.push({ x: 0, y, z: 0, sx: r * 2, sy: r * 2, ao: lerp(0.74, 1.0, t) });
     }
     // No corner chipping on the shaft: `_chipStone` works off the hexagon's
@@ -2375,14 +2414,14 @@ export class PropFactory {
       // supposed to come from the seat passes below, which are narrow bands. If
       // the ambient terms carry the work as well, the prop stops being granite
       // with dark lines in it and becomes a dark prop.
-      bakeAO(c.geo, { ground: 0, cavity: 0.28, down: 0.34, floor: 0.34 });
+      bakeAO(c.geo, { ground: 0, cavity: 0.28, down: 0.34, floor: 0.38 });
       if (c.seat) this._seatCourse(c.geo, c.y0, c.y1, s);
       // The exposed top of the stone below sits under this one's footprint.
       if (i > 0) this._seatShadow(courses[i - 1].geo, courses[i - 1].y1, s);
     }
     const merged = mergeGeometries(courses.map((c) => normalizeGeo(c.geo)), false);
     // Ground contact for the whole stack, once, after the per-course pass.
-    shadeGeo(merged, (x, y) => (y > 0.34 * s ? 1 : lerp(0.58, 1, clamp(y / (0.34 * s), 0, 1))));
+    shadeGeo(merged, (x, y) => (y > 0.34 * s ? 1 : lerp(0.64, 1, clamp(y / (0.34 * s), 0, 1))));
     weatherBand(merged, 0, 0.5 * s, 0.72, 0.82, 0.66, 0.3);   // moss creeping up the base
     PropFactory.add(b, merged, '__lanternStone');
 
@@ -2406,7 +2445,12 @@ export class PropFactory {
     // flame faces it, cooling into the corner posts and into the bed and head
     // courses. That gradient is the whole difference between lit paper and a
     // rectangle of white card.
-    const liner = this._paperFalloff(fbR * 0.90, fbY + 0.010 * s, fbY + fbH - 0.010 * s, 0.34, 0.50);
+    // `peak` 1.28 rather than 1.0: an aperture is seen through 4.5 cm of stone
+    // reveal and across a rib, so the hottest pixel the camera can reach is
+    // never the hottest pixel on the liner. Measured, a flat liner at the
+    // contract's 2.6 put the panel centre at 238; the target is ~250.
+    const liner = this._paperFalloff(
+      fbR * 0.90, fbY + 0.010 * s, fbY + fbH - 0.010 * s, 0.34, 0.50, 1.28);
     bakeFlutter(liner, 4, () => 0);              // rigid: it is glued to the stone
     PropFactory.add(b, liner, '__lanternPaper');
 
@@ -2511,13 +2555,13 @@ export class PropFactory {
    * profile is a raised cosine across each facet, and it dies into the bed and
    * head courses because paper is pasted to a frame and a frame is not lit.
    */
-  _paperFalloff(radius, y0, y1, edge = 0.34, cap = 0.50, SEG = 6, SUB = 5, ROWS = 6) {
+  _paperFalloff(radius, y0, y1, edge = 0.34, cap = 0.50, peak = 1.0, SEG = 6, SUB = 5, ROWS = 6) {
     const rings = [];
     for (let i = 0; i <= ROWS; i++) {
       const t = i / ROWS;
       const y = lerp(y0, y1, t);
       // Hot band across the middle, dying at both ends.
-      const gv = lerp(cap, 1.0, Math.pow(Math.sin(Math.PI * t), 0.55));
+      const gv = peak * lerp(cap, 1.0, Math.pow(Math.sin(Math.PI * t), 0.55));
       const pts = [];
       const pao = [];
       for (let e = 0; e < SEG; e++) {
