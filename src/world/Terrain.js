@@ -416,19 +416,19 @@ const RIDGE_LAYERS = [
   {
     seed: 0x2f1103, lift: 115, amp: 620, massifs: 4, groupLo: 0.46, groupHi: 1.00,
     baseR: 1.55, baseAmp: 0.30, detR: 8.5, detAmp: 0.060, gulR: 23.0, notch: 0.075,
-    serR: 148.0, serAmp: 0.050,
+    serR: 148.0, serM: 62.0,
     presR: 0.75, presOff: 3.1, dirLo: 0.30, par: 0.000024, soft: 12.0, haze: 0.74,
   },
   {
     seed: 0x7a3d19, lift: 66, amp: 450, massifs: 5, groupLo: 0.40, groupHi: 0.98,
     baseR: 2.30, baseAmp: 0.24, detR: 12.5, detAmp: 0.068, gulR: 34.0, notch: 0.095,
-    serR: 186.0, serAmp: 0.058,
+    serR: 186.0, serM: 55.0,
     presR: 0.95, presOff: 27.7, dirLo: 0.14, par: 0.000053, soft: 8.0, haze: 0.51,
   },
   {
     seed: 0x11c7e5, lift: 24, amp: 320, massifs: 6, groupLo: 0.34, groupHi: 0.94,
     baseR: 3.10, baseAmp: 0.20, detR: 17.0, detAmp: 0.076, gulR: 44.0, notch: 0.110,
-    serR: 232.0, serAmp: 0.066,
+    serR: 232.0, serM: 48.0,
     presR: 1.30, presOff: 61.3, dirLo: 0.06, par: 0.000094, soft: 5.0, haze: 0.30,
   },
 ];
@@ -650,12 +650,17 @@ export class Terrain {
     // drainage divide is a crease, not a bump — ridged noise puts the sharp feature on
     // the spur and the smooth one in the gully floor, which is the right way round.
     //
-    // Gated past r = 520. The eroded core field only reaches r = 362, so the plateau
-    // flatten, the stair and river carve, the droplet erosion, the derived splat and
-    // the core/macro seam blend cannot see this term at all — it exists solely where
-    // the terrain is silhouette. The floor subtraction keeps the mean near zero so it
-    // cuts as much as it adds and the authored ridge line does not drift upward.
-    const spurT = smootherstep(520, 980, r) * (0.34 + 0.66 * nwT);
+    // Gated on the *box* the core field occupies, not on radius. `kgCoreWeight` and
+    // `heightAt` both drop the core to exactly zero at max(|x|,|z|) = 0.475 * 512 =
+    // 243 m, so starting at 262 leaves a 19 m dead band and this term is invisible to
+    // the plateau flatten, the stair and river carve, the droplet erosion, the derived
+    // splat and the core/macro seam alike. A radius gate was the wrong shape: the
+    // ridge that fills the top third of the establishing shot stands at |z| = 260–480
+    // but r = 400–520, so a 520 m radius gate missed the one landform the note is
+    // about. The floor subtraction keeps the mean near zero, so this cuts as much as
+    // it adds and the authored ridge line does not drift upward.
+    const spurT = smootherstep(262, 440, Math.max(Math.abs(x), Math.abs(z)))
+      * (0.28 + 0.72 * nwT);
     if (spurT > 0.001) {
       h += (noise.ridged2(x * 0.0128 + 71.3, z * 0.0128 - 19.4, 2) - 0.44) * 30 * spurT;
       h += (noise.ridged2(x * 0.0235 - 44.1, z * 0.0235 + 63.8, 1) - 0.44) * 11 * spurT;
@@ -1713,6 +1718,9 @@ float kgRough;
 vec3 kgShadingNormal;
 /** Radiance the snowpack returns beyond the lambert lobe. See the aerial patch. */
 float kgSnowLit;
+/** Fine far-ground relief, in the fall-line frame, and how much of it resolves. */
+vec2 kgFarBump;
+float kgFine;
 
 /** Shared per-fragment tile-breaking state, set once at the top of the surface pass. */
 vec2 kgWarp;
@@ -1954,6 +1962,8 @@ void kgComputeSurface(){
 
   vec3 gp = vec3(0.0);
   float groove = 0.0;
+  kgFarBump = vec2(0.0);
+  kgFine = 0.0;
   {
     // Striation runs down the fall line, so the sampling frame is stretched along
     // it: features come out as gullies and ribs, not as a blanket of noise.
@@ -1977,6 +1987,22 @@ void kgComputeSurface(){
     // an edge to form along.
     float gs = length(g1.xy) * 0.70 + length(g2.xy) * 0.55;
     groove = (gs / (gs + 0.85)) * amp;
+
+    // A third tap, an order of magnitude finer. g1 and g2 repeat every 72 m and 21 m
+    // along the fall line; the ridge that fills the top third of the establishing
+    // shot stands 600 m out, where one pixel is half a metre, so those are 145 px and
+    // 42 px features — both wider than the window a high-frequency read looks
+    // through. The face measured as flat colour not because it carried no relief but
+    // because none of its relief was ever the size of a pixel neighbourhood. This one
+    // repeats every ~6 m, i.e. 12 px at that range, and it carries its own bounded
+    // budget rather than sharing the striation's: the soft knee above exists to stop
+    // the *striation* tipping a whole face into the sky term, and pushing a second
+    // field through it would only trade one for the other.
+    float fineAmp = (1.0 - smoothstep(1.15, 2.70, kgFoot)) * mix(0.55, 1.0, amp)
+                  * smoothstep(0.02, 0.30, wild2);
+    vec3 g3 = texture2D(tDetailN, vec2(along * 0.0610, across * 0.1640) + 0.67).xyz * 2.0 - 1.0;
+    kgFarBump = clamp(g3.xy * 0.66 * fineAmp, -0.30, 0.30);
+    kgFine = fineAmp;
   }
   if (wild2 > 0.002) {
     // Cedar mantle low, bare rock and scree above it, and the line between them
@@ -1997,6 +2023,19 @@ void kgComputeSurface(){
     far *= 0.78 + 0.44 * (nB * 0.5 + 0.5);
     far *= 0.82 + 0.28 * (nC * 0.5 + 0.5);
     far *= 1.0 - groove * 0.38;
+
+    // Rubble and bedding, at the scale a pixel can actually see. Everything above
+    // this line works at 95 m and 320 m — 190 px and 640 px on the ridge in shot —
+    // and past ~100 m the tiled lookups have all mipped to their own mean, so once
+    // 'far' takes 88% of the albedo there is by construction nothing left in this
+    // surface finer than a fifth of the frame. These two run at ~8 m and ~3 m, which
+    // is 16 px and 6 px at 600 m, and they carry the variance a 9x9 read is looking
+    // for. Both ride the same pixel-footprint gate as the fine normal, so they leave
+    // together before either can alias.
+    float rk1 = fbm2(P.xz * 0.128 + 61.7, 2);
+    float rk2 = fbm2(P.xz * 0.345 - 14.9, 2);
+    far *= 1.0 + (rk1 * 0.30 + rk2 * 0.19) * kgFine * (1.0 - veg * 0.5);
+
     albedo = mix(albedo, far, wild2 * 0.88);
     rough = mix(rough, mix(0.88, 0.96, veg), wild2 * 0.8);
   }
@@ -2007,12 +2046,14 @@ void kgComputeSurface(){
   // saturates, which is what makes the boundary a fringe tens of metres deep on a
   // real face instead of a cut.
   //
-  //   altitude    a 230 m ramp, wandered by at most ±80 m of landscape noise. The
+  //   altitude    a 123 m ramp, wandered by at most ±48 m of landscape noise. The
   //               wander stays well inside its own ramp; a line noisier than its
   //               ramp stops being a snow line and becomes scattered plates.
-  //   slope       what the mountain can hold: nothing past ~41°, everything under
-  //               ~22°. This is the *landform* slope from the shared frame above,
-  //               never the shading slope and never the vertex normal.
+  //   slope       what the mountain can hold: nothing past ~53°, everything under
+  //               ~26°. This is the *landform* slope from the shared frame above,
+  //               never the shading slope and never the vertex normal. The crests in
+  //               shot run 0.30–0.70 of fall, so a shed line tighter than this took
+  //               the sheet off every one of them and left the cap with nothing on it.
   //   collection  bowls, cirques and gully heads fill first; ribs and spurs blow
   //               bare, and the lee of the prevailing wind drifts deepest.
   //
@@ -2024,7 +2065,21 @@ void kgComputeSurface(){
   // define is absent the whole model collapsed onto 'vKgWorld.y' and the interpolated
   // vertex normal — a per-triangle altitude and a per-triangle slope — which is how a
   // model written entirely in smooth terms still rendered as hard-edged plates.
-  float snowAlt = smoothstep(1042.0, 1272.0, hLand + nC * 58.0 + nB * 22.0);
+  // The line itself. It used to sit at 1042–1272 m, and a ray-march of the shot says
+  // that is above the frame: the ridge that fills the top third of 'wide' stands at
+  // 600 m out and crests at 1005–1055 m, and the 1314 m summits behind it are hidden
+  // by it. So there was no snow anywhere in that frame — the pale fill the review
+  // measured and called a snowfield was bare scree the whole time, which is exactly
+  // why it had neither a snowline nor exposed rock to bound one.
+  //
+  // 942–1065 puts first snow on the crests that are actually in shot, and the
+  // accumulation model below keeps it to the sheltered top fifth of them, so what it
+  // draws is late-autumn snow on a crest with rock standing through it rather than an
+  // alpine snowfield the setting does not have. Sampled over the ridge the shot sees,
+  // a fifth of it takes a sheet and none of it below 930 m does; the shrine's own
+  // ground tops out at 879 m inside 300 m and 932 m inside 400 m, so nothing the
+  // player can walk to ever whitens.
+  float snowAlt = smoothstep(942.0, 1065.0, hLand + nC * 34.0 + nB * 14.0);
   float kgSnowCover = 0.0;
   kgSnowLit = 0.0;
   vec2 kgSnowRipple = vec2(0.0);
@@ -2042,7 +2097,7 @@ void kgComputeSurface(){
     rough = mix(rough, 0.93, snowAlt * 0.6);
     // The scallop on the shed line is a tenth of the ramp: it breaks the contour
     // without ever being able to cut it.
-    float hold = smoothstep(0.66, 0.38, lFall + nB * 0.04);
+    float hold = smoothstep(0.80, 0.44, lFall + nB * 0.04);
     vec2 lDir = lFall > 1e-4 ? LN.xz / lFall : vec2(0.0);
     float lee = clamp(0.5 - dot(lDir, uWindXZ) * 0.5, 0.0, 1.0);
 
@@ -2062,16 +2117,16 @@ void kgComputeSurface(){
     // spur-and-gully relief underneath it never gets to break the white.
     float scour = smoothstep(0.06, 0.54, -bowl) * (0.58 + 0.42 * (nB * 0.5 + 0.5));
 
-    float depth = snowAlt * (0.34 + 0.36 * lee)
+    float depth = snowAlt * (0.88 + 0.40 * lee)
                 + snowAlt * max(bowl, 0.0) * 0.62
                 - max(-bowl, 0.0) * 0.34
                 + driftCov * 0.46 * snowAlt;
-    float cover = clamp(depth, 0.0, 1.0) * hold * (1.0 - scour * 0.80);
+    float cover = clamp(depth, 0.0, 1.0) * hold * (1.0 - scour * 0.50);
     // The window is deliberately wider than the range 'cover' actually spans at a
     // snow line. Transition width in pixels is the window divided by the coverage
     // gradient, so widening the window is the one lever that buys fringe depth
     // without putting any structure back into the mask.
-    float blanket = smoothstep(-0.06, 0.88, cover);
+    float blanket = smoothstep(-0.06, 0.56, cover);
     if (blanket > 0.003) {
       // Rock stands through the sheet. Coverage over a real snowfield is partial
       // almost everywhere, and a mask that saturates is precisely what makes a
@@ -2165,7 +2220,13 @@ void kgComputeSurface(){
   // light it pale, which is half of why those plates read as snow in the first place.
   vec2 gpv = vec2(gp.x * 0.34, gp.y * 0.48) * (1.0 - kgSnowCover * 0.65);
   gpv /= 1.0 + length(gpv) * 1.7;
-  kgShadingNormal = normalize(N + T * tn.x + B * tn.y + dn3 * gpv.x + ac3 * gpv.y +
+  // The fine far-ground band, in the same fall-line frame and on its own budget. A
+  // 13 degree key turns a 0.2 tilt into most of a stop, which is what makes a rock
+  // face at 600 m read as rock rather than as tinted paper. Snow buries it like
+  // everything else.
+  vec2 fbv = kgFarBump * (1.0 - kgSnowCover * 0.72);
+  kgShadingNormal = normalize(N + T * tn.x + B * tn.y +
+                              dn3 * (gpv.x + fbv.x) + ac3 * (gpv.y + fbv.y) +
                               vec3(kgSnowRipple.x, 0.0, kgSnowRipple.y));
 }
 `;
@@ -2756,19 +2817,6 @@ void main(){
           const nk = Math.max(0, 1 - Math.abs(g) * 2.6);
           v -= nk * nk * nk * cfg.notch * local;
 
-          // Serration. Every term above works at 8° of arc and coarser, which on a
-          // 1920 px frame is a 190 px wavelength — so a peak flank 150 px long had
-          // literally nothing breaking it and came back as a cardboard edge. These
-          // run at ~2.4° and ~1.2°, i.e. 55 px and 27 px, and both are scaled by the
-          // local relief so cols, saddles and the drowned stretches stay smooth.
-          v += noise.fbm2(cx * cfg.serR + 88.3, cz * cfg.serR - 51.7, 2) * cfg.serAmp * local;
-          // A second, narrower notch field on top: erosion takes bites out of a crest,
-          // it does not just wobble it, and a bite is what stops the eye rejoining
-          // two stretches of edge into one line.
-          const g2 = noise.fbm2(cx * cfg.serR * 2.05 + 12.9, cz * cfg.serR * 2.05 - 33.4, 1);
-          const nk2 = Math.max(0, 1 - Math.abs(g2) * 3.4);
-          v -= nk2 * nk2 * cfg.serAmp * 0.85 * local;
-
           // The rock rises to the north-west (WORLD.RIDGE_AZIMUTH); to the south-east
           // the bamboo valley falls away and only a low, drowned rank survives.
           const nw = -(Math.sin(a) + Math.cos(a)) * 0.70710678;
@@ -2779,7 +2827,29 @@ void main(){
           const pres = 0.24 + 0.76 * smootherstep(-0.36, 0.32,
             noise.fbm2(cx * cfg.presR + cfg.presOff, cz * cfg.presR - cfg.presOff, 2));
 
-          const metres = (cfg.lift + Math.max(0, v) * cfg.amp) * dirScale * pres;
+          let metres = (cfg.lift + Math.max(0, v) * cfg.amp) * dirScale * pres;
+
+          // Serration, and it has to be applied here, in metres, *after* dirScale and
+          // pres. Every other term above is a fraction of the rank's own amplitude,
+          // and toward the valley dirScale falls to 0.06–0.30 — so a break authored
+          // as a fraction shrank to under a pixel on exactly the ranks that show over
+          // the bamboo sea, which is where the review found flat triangles with
+          // dead-straight edges. The band sits on a 5 km cylinder where one metre is
+          // a quarter of a pixel, so 55 m is ±13 px of edge break at any bearing.
+          //
+          // The two fields run at ~2.4° and ~1.2° of arc — 50 px and 25 px — so a
+          // flank 150 px long gets at least three breaks in it and no straightedge
+          // lies along more than about a sixth of its span. The notch is one-sided
+          // because erosion takes bites out of a crest rather than wobbling it, and a
+          // bite is what stops the eye rejoining two stretches of edge into one line.
+          const relf = clamp(metres / 200, 0, 1);
+          if (relf > 0.001) {
+            const ser = noise.fbm2(cx * cfg.serR + 88.3, cz * cfg.serR - 51.7, 2);
+            const g2 = noise.fbm2(cx * cfg.serR * 2.05 + 12.9, cz * cfg.serR * 2.05 - 33.4, 1);
+            const nk2 = Math.max(0, 1 - Math.abs(g2) * 3.2);
+            metres += (ser * cfg.serM - nk2 * nk2 * cfg.serM * 0.95) * relf;
+            metres = Math.max(0, metres);
+          }
           if (metres + cfg.soft > maxTop) maxTop = metres + cfg.soft;
 
           const enc = clamp((metres - RIDGE_LOW) / RIDGE_SPAN, 0, 0.9999847) * 255;
@@ -2978,7 +3048,12 @@ void main(){
   // Nothing in frame is a flat tint: grain across the rock faces. Now that the haze
   // is carried in the alpha rather than mixed into the colour, this rides on the
   // rock itself and survives to the frame at the depth it was authored for.
-  col *= 0.90 + 0.20 * (fbm2(vec2(a * 150.0, h * 0.024), 2) * 0.5 + 0.5);
+  col *= 0.88 + 0.24 * (fbm2(vec2(a * 150.0, h * 0.024), 2) * 0.5 + 0.5);
+  // And one band at the size of a pixel neighbourhood — 12 px across the arc, 5 px up
+  // the face. Everything else on this cylinder works at 50 px and coarser, which is
+  // wider than the window a surface-detail read looks through, so the faces measured
+  // as flat no matter how much slow variation they carried.
+  col *= 0.92 + 0.16 * (fbm2(vec2(a * 620.0, h * 0.105), 2) * 0.5 + 0.5);
   gl_FragColor = vec4(col, alpha * 0.96);
 }
 `,

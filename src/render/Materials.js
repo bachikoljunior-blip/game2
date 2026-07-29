@@ -694,11 +694,56 @@ RECIPES.push({
 // ------------------------------------------------------------------ 石 stone
 // Granite shrine steps. Three signals stacked: slab joints (structure), a worley
 // crack net with chipped arrises (damage), and a three-mineral speckle (identity).
+//
+// SCALE. Props resolves this at repeat 1 and `normalizeGeo` hands untextured prop
+// geometry `uv = (x, z)` in *object metres*, so the nominal tile is 1 m: the 2x3
+// slab grid is 50 x 33 cm blocks, the 7x7 crack net is 14 cm, the joint half-ramp
+// is 1.4 cm. The chōzuya takes it at 1.6 (0.62 m tile). Terrain lays it at
+// `uTexScale.z = 0.105`, a 9.5 m tile — see the note on the albedo below, because
+// that consumer constrains what the *colour* is allowed to do and nothing else.
+//
+// WALL ANGLE — the same measurement that had to be made on 石畳 cobble, and this
+// recipe was the worse offender of the two. The Sobel resolves tan(slope) =
+// (dh/du)/8, and `normalScale` multiplies tan(slope) again before three normalizes,
+// so ns is part of the geometry, not a taste knob laid over it. At ns 1.9 the old
+// numbers were: slab joint 0.11 over 0.015 u -> 60 deg; crack1 0.0425 over 0.0039 u
+// -> 69 deg; crack2 -> 77 deg; chip -> 44 deg; and the micro grain at 0.045 was
+// carrying the *median* to 30 deg all by itself. Measured off the baked map:
+// p50 = 30.0, p95 = 60.1, p99 = 67.1, max 81.7 deg.
+//
+// At the shot's 13 degrees of solar elevation that is not a surface, it is a
+// pincushion: **40.4% of the tile faces away from the sun far enough to be black**,
+// and the sunward walls return 4.20x the flat-face radiance at p98. Half a surface
+// in shadow and the other half four times over-lit is exactly the crazed-ceramic
+// read the review named on the lanterns — and this material is on the stair the
+// player climbs in, on the cairns, the chōzuya and the basins.
+//
+// The fix is the paving's fix: the *shading* relief comes down to something a mason
+// would recognise (5 mm joints, hairline cracks, 5 mm spalls) and ns comes down with
+// it, while the reading that these are separate blocks moves into albedo, which is
+// view-independent, survives mip, and cannot light one wall and shadow another.
+// Geometry, not this texture, carries the fact that a stair is made of steps —
+// `PropFactory.stairs` builds every riser as real geometry at `rise` metres, so
+// flattening a 1.4 cm painted joint cannot take a 15 cm step away.
 RECIPES.push({
   key: 'stone', label: '石 weathered granite steps', seed: 1913, hero: true, k: 1,
   setup(t, res) {
+    // The 2 x 3 block draw is a six-sample lottery, and six samples of a hash are
+    // not balanced — this seed's blocks average darker than mid. Left uncentred, the
+    // per-block tone added below would have taken 5% of value off the whole tile,
+    // and since Terrain lays *this albedo* as its rock layer that is a darker, less
+    // rock-favouring hillside handed to another owner as a side effect. Centring the
+    // draw on its own tile mean makes per-block spread cost the mean exactly nothing.
+    let a = 0, b = 0;
+    for (let j = 0; j < 3; j++) {
+      for (let i = 0; i < 2; i++) {
+        const sl = cellRnd2(i, j, 2, 3, 7);
+        a += sl; b += hash2((sl * 4093) | 0, 6151);
+      }
+    }
     return {
       hf: Math.max(48, res >> 2),
+      slabMid: a / 6, slab2Mid: b / 6,
       wet: coarse(56, (u, v) => tileWarp(u, v, 3.0, 0.9, 4, 8.8, 3.3)),
       stain: coarse(48, (u, v) => tileFbm(u, v, 4.5, 4, 27.7, 66.1)),
       lich: coarse(56, (u, v) => tileWarp(u, v, 6.0, 1.0, 3, 15.5, 40.2)),
@@ -712,21 +757,35 @@ RECIPES.push({
     const jointV = Math.min(smoothstep(0, 0.040, bg), smoothstep(0, 0.040, 1 - bg));
     const joint = Math.min(jointU, jointV);
     const slab = cellRnd2(Math.floor(bu), Math.floor(bv), 2, 3, 7);
+    // A second independent draw per block, same trick as 石畳's `id2`.
+    const slab2 = hash2((slab * 4093) | 0, 6151);
 
     // Crack net. Two octaves of cellular so cracks branch instead of tiling flat.
+    // The ramps are wider than they were: a crack 0.075 cells across is 1.0 cm on
+    // the 14 cm cell, which is a hairline in granite and, more to the point, is the
+    // width that lets the same depth arrive at a slope instead of at a wall.
+    // Widening a band widens the *area* it covers, so the grime and occlusion it
+    // drives are re-weighted below to keep the total the same — otherwise a change
+    // made for the normal map's sake quietly darkens the albedo, and this albedo is
+    // Terrain's rock layer.
     const w1 = t.worleyA(u, v, 7, 7, 1.0);
-    const crack1 = 1 - smoothstep(0.0, 0.055, w1.f2 - w1.f1);
+    const crack1 = 1 - smoothstep(0.006, 0.075, w1.f2 - w1.f1);
     const w2 = t.worleyA(u + 0.31, v + 0.17, 17, 17, 0.95);
-    const crack2 = 1 - smoothstep(0.0, 0.045, w2.f2 - w2.f1);
+    const crack2 = 1 - smoothstep(0.006, 0.075, w2.f2 - w2.f1);
     const crack = clamp(crack1 * 0.85 + crack2 * 0.55 * crack1, 0, 1);
 
     // Chipped arrises: cells that lost their corner.
     const chipCell = t.worleyA(u + 0.5, v + 0.2, 15, 14, 1.0);
     const chip = smoothstep(0.42, 0.16, chipCell.f1) * smoothstep(0.35, 0.62, chipCell.id) * (1 - joint * 0.6);
 
-    // Mineral speckle — quartz, feldspar, biotite at three different scales.
-    const grain = t.fbmA(u, v, c.hf, c.hf, 2) * 0.5 + 0.5;
-    const spar = t.worleyA(u + 0.31, v + 0.77, c.hf, c.hf, 1.0);
+    // Mineral speckle — quartz, feldspar, biotite at three different scales, with
+    // the frame shifted per block so the speckle stops dead at every joint. A grain
+    // that runs across a joint is the tell that says one cracked substrate rather
+    // than six blocks; this costs nothing and it is most of what the crack net was
+    // being asked to say. The offsets are constants, so the tile still wraps.
+    const su = u + slab * 0.43, sv = v + slab2 * 0.71;
+    const grain = t.fbmA(su, sv, c.hf >> 1, c.hf >> 1, 2) * 0.5 + 0.5;
+    const spar = t.worleyA(su + 0.31, sv + 0.77, c.hf, c.hf, 1.0);
     const quartz = smoothstep(0.62, 0.90, spar.id) * (1 - smoothstep(0.10, 0.34, spar.f1));
     const mica = smoothstep(0.02, 0.0, spar.id) + smoothstep(0.86, 0.99, grain) * 0.6;
 
@@ -734,37 +793,84 @@ RECIPES.push({
     const stain = cs(c.stain, u, v);
     const lich = smoothstep(0.58, 0.80, cs(c.lich, u, v));
 
-    // Depth, honestly. The Sobel below resolves the height field as
-    // tan(slope) = (dh/du)/8 regardless of resolution, so `h` swinging by 1.0
-    // across the tile means relief of one eighth of the tile. The slab joint is
-    // 0.03 of the tile wide, so at the old 0.30 it was recessed 0.0375 of the tile
-    // — deeper than it is wide, walls past 65 degrees. Granite laid by hand is not
-    // that. It matters far past this material: Terrain adopts *this* normal map as
-    // its ground detail normal (Terrain.js `detailN`, applied at 0.75 on a 1.67 m
-    // tile), so every one of these walls is stamped across the whole courtyard,
-    // where a low sun turns each into a black line with a lit rim — which is what
-    // made the paving read as cracked mud rather than as stone. Widths unchanged;
-    // only the depths come back to something a mason would recognise.
-    let h = 0.72 + (slab - 0.5) * 0.05;
-    h -= (1 - joint) * 0.11;
-    h -= crack * 0.050;
-    h -= chip * 0.070;
-    h += (grain - 0.5) * 0.045 + quartz * 0.020 - mica * 0.010;
-    h -= smoothstep(0.55, 0.0, Math.abs(bg - 0.5) * 2) * 0.0;   // tread stays flat
+    // Depth, honestly — and now angle, honestly, which is the number that decides
+    // whether a low sun reads masonry or reads a shattered plate. 1.0 of `h` is one
+    // eighth of the tile, so 12.5 cm at the 1 m prop tile. Each line-forming term is
+    // quoted with the wall it produces *after* ns 1.10. Budget is 25 degrees; the old
+    // values are in the header for comparison.
+    //   slab joint  0.036 over 0.0150 u -> tan 0.30 -> 18 deg,  4.5 mm recessed
+    //   crack1      0.0094 over 0.0049 u-> tan 0.26 -> 15 deg,  1.2 mm
+    //   crack2      0.0051 over 0.0020 u-> tan 0.35 -> 19 deg,  0.6 mm
+    //   chip        0.034 over 0.0173 u -> tan 0.27 -> 15 deg,  4.3 mm spall
+    //   grain       0.022 at c.hf       -> carries the median, not the tail
+    // `slab` is a per-block constant and `grain`/`quartz`/`mica` now run in a
+    // per-block frame, so all four are discontinuous at the joint by construction.
+    // Multiplying them by `joint` — which is already the face mask, 1 on the block
+    // and 0 in the joint — lands every block on one joint floor and lets it rise onto
+    // its own set over the joint's own width, instead of stepping there in one texel.
+    let h = 0.72 + (slab - 0.5) * 0.030 * joint;
+    h -= (1 - joint) * 0.036;
+    h -= crack * 0.011;
+    h -= chip * 0.034;
+    h += joint * ((grain - 0.5) * 0.022 + quartz * 0.010 - mica * 0.005);
 
+    // --- block identity -------------------------------------------------------
+    // With the relief down to 5 mm the crack net is no longer allowed to be the
+    // thing that says "six blocks, not one slab", so tone takes the job over. It is
+    // the better carrier anyway: it is view-independent, it survives every mip the
+    // joints do not, and it cannot light one wall while shadowing the one facing it.
+    //
+    // Two things cap how far it can go, and neither of them is taste.
+    //
+    // Terrain. `tStone` is this albedo, laid at a 9.5 m tile, and Terrain uses it
+    // twice: as the rock layer's tint, and as `hRock = kgLum(cRock)*1.30 + 0.12`,
+    // which enters the displacement-aware blend as `hRock * HI` against a 0.17-wide
+    // window that decides whether rock or grass wins a pixel. A block is 4.8 x 3.2 m
+    // up there with straight edges on the slab grid. At the spread below that lands
+    // as 0.0162 of block-to-block variation in the blend term — 9.5% of the window,
+    // measured, against 1.0% before. That is a real change on the hillside and it is
+    // the reason this is not larger.
+    //
+    // The review's own rule. A block is a 50 cm feature at the prop tile, so per-block
+    // tone *is* macro contrast: at this setting the tile measures 3.7% above 60 cm,
+    // and pushing the block spread to the 15% the review asks for takes it past the
+    // 5% ceiling. 10.8% of per-block SD is where the two rules meet.
+    //
+    // The rest of the spread is bought from `stain`, whose edges are organic and whose
+    // cell is 22 cm here and 2.1 m up there — a mountainside may vary at 2 m; a slab
+    // grid may not.
     setc(s, PAL.stone);
+    const dTone = slab - c.slabMid;
+    const dk = clamp(-dTone * 1.5, 0, 1) * 0.42;
+    const wm = clamp(dTone * 1.5, 0, 1) * 0.46;
+    mixc(s, PAL.stoneDark, dk);
+    mixc(s, PAL.stoneWarm, wm);
+    // PAL.stoneDark sits 38.5% below PAL.stone in luma and PAL.stoneWarm only 14.6%
+    // above, so those two hue mixes are nowhere near value-neutral even once the draw
+    // is centred. Divide back out the value each one carried, then put the value
+    // spread in symmetrically, where it cannot bias the tile mean however the
+    // six-block lottery happens to fall.
+    scalec(s, 1 / (1 - dk * 0.385 + wm * 0.146));
+    scalec(s, 1 + (slab2 - c.slab2Mid) * 0.62);
     mixc(s, PAL.stoneWarm, clamp((grain - 0.4) * 1.6, 0, 1) * 0.55);
     mixc(s, PAL.stoneDark, clamp((0.5 - grain) * 1.4, 0, 1) * 0.45);
     tint(s, 0.022, 0.010, -0.018, (stain - 0.5) * 1.6);   // iron staining drifts warm
+    scalec(s, 1 + (stain - 0.5) * 0.34);                  // weathering, organic edges
     mixc(s, PAL.quartz, quartz * 0.70);
     mixc(s, PAL.biotite, mica * 0.55);
     mixc(s, PAL.stoneWarm, chip * 0.55);                  // fresh break is brighter
     mixc(s, PAL.mossDeep, lich * (1 - joint) * 0.20 + lich * 0.30);
     mixc(s, PAL.mossDry, lich * 0.22);
-    mixc(s, PAL.grime, crack * 0.45 + (1 - joint) * 0.40);
+    mixc(s, PAL.grime, crack * 0.33 + (1 - joint) * 0.40);
 
     // Water tracks the low ground: crevices go dark and glossy, crests stay dry.
-    const pool = clamp((0.74 - h) * 2.6, 0, 1) * wet;
+    // Re-fitted to the shallower field rather than left alone: the old constants
+    // read a 0.23-deep crest-to-crack range, the new one is 0.094, and leaving them
+    // would have halved the pooling and quietly lifted the whole tile's value —
+    // which Terrain would have picked up as a brighter, more rock-favouring hillside.
+    // These reproduce the old pool to within 0.02 at the face, the joint and the
+    // crack floor alike, so nothing downstream of albedo or roughness moves.
+    const pool = clamp((0.7285 - h) * 6.4, 0, 1) * wet;
     let ro = 0.74 + (grain - 0.5) * 0.16 - quartz * 0.22 + mica * 0.10;
     ro = lerp(ro, 0.90, chip * 0.6);
     ro = lerp(ro, 0.96, lich * 0.7);
@@ -772,18 +878,25 @@ RECIPES.push({
     ro = lerp(ro, 0.16, pool * 0.85);
     scalec(s, 1 - pool * 0.42);
 
-    const ao = 1 - (1 - joint) * 0.62 - crack * 0.42 - chip * 0.22 - lich * 0.14;
+    const ao = 1 - (1 - joint) * 0.62 - crack * 0.32 - chip * 0.22 - lich * 0.14;
 
     s.h = clamp(h, 0, 1);
     s.ro = clamp(ro, 0.06, 1);
     s.ao = clamp(ao, 0.16, 1);
     s.me = 0;
   },
-  // ns up from 1.5 to compensate the steps for the shallower height field above.
-  // Deliberately applied *here* and not in the field: normalScale is a material
-  // property, so props keep their relief while Terrain — which samples this map
-  // raw as its detail normal — gets the full flattening.
-  mat(maps) { return pbr(maps, { ns: 1.9, ao: 1.15 }); },
+  // ns 1.9 -> 1.10. The 1.9 was justified by Terrain sampling this normal map raw
+  // as its ground detail normal, so the strength had to be added at the material to
+  // spare the terrain — and that is no longer true: `Terrain._buildMaterial` resolves
+  // `detailN` as `lib.detailNormal || dirt.normalMap || ... || stone.normalMap`, and
+  // `lib.detailNormal` always exists, so this map has not reached the ground since
+  // the shared detail grain landed. Terrain takes `stone.map` and nothing else.
+  // With no second consumer to compensate for, ns is free to be what the surface
+  // actually is, and 1.9 was multiplying every wall angle above by 1.9.
+  // AO stays at 1.15 on purpose: occlusion is the one channel that can darken a
+  // joint without lighting its facing wall, so as the relief came down the ambient
+  // term is what keeps the joints reading at all.
+  mat(maps) { return pbr(maps, { ns: 1.10, ao: 1.15 }); },
 });
 
 // ----------------------------------------------------------------- 石畳 cobble

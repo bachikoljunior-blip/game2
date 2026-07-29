@@ -887,8 +887,12 @@ const GROUND_UV_SCALE = 0.62;
 /**
  * Names `lanternStoneMaterial` will adopt from `MaterialLibrary`, in order of
  * preference. Nothing here has to exist — the first one that does wins, and the
- * fallback below carries the prop until one lands. This is the coordination
- * point with [materials]; adding a key there needs no change here.
+ * fallback below carries the prop otherwise. This is the coordination point with
+ * [materials]; adding a key there needs no change here.
+ *
+ * `lanternStone` has since landed (`花崗岩 lantern granite`), authored for
+ * repeat 1 against exactly these UVs, so the fallback is now the dead path and
+ * is kept only so the prop degrades to something rather than to nothing.
  */
 const LANTERN_STONE_NAMES = ['lanternStone', 'graniteFine', 'granite'];
 

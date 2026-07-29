@@ -99,6 +99,17 @@ function chainCacheKey(material, token) {
 const atlasDefines = (a) =>
   `#define KAG_ATLAS\n#define KAG_ATLAS_C ${a[0].toFixed(1)}\n#define KAG_ATLAS_R ${a[1].toFixed(1)}\n`;
 const atlasKey = (a) => (a ? `x${a[0]}x${a[1]}` : '-');
+/**
+ * Spliced in at the `kagFoliageVertex()` call site, which is inside main() and therefore
+ * after `#include <uv_pars_vertex>` has declared `vMapUv` and `#include <uv_vertex>` has
+ * written it. It must not move back into vertexPars(): that text lands at
+ * `#include <common>`, above the declaration, and the shader silently fails to compile.
+ */
+const KAG_ATLAS_UV = /* glsl */`
+#if defined( KAG_ATLAS ) && defined( USE_MAP )
+  vMapUv = ( clamp( uv, 0.0, 1.0 ) + kagAtlasIJ ) / vec2( KAG_ATLAS_C, KAG_ATLAS_R );
+#endif
+`;
 
 // Module-scope scratch. Nothing in update() or the tile generator may allocate.
 const _colScratch = new Color();
@@ -299,6 +310,10 @@ varying vec3  vKagWorld;
 
 vec3 kagPosG;
 vec3 kagNrmG;
+#ifdef KAG_ATLAS
+// Written here, consumed at the call site — see KAG_ATLAS_UV.
+vec2 kagAtlasIJ;
+#endif
 
 // The shared field: brings in glslNoise, the uWind/uGust block, kagerouGust/Wind/Bend.
 ${WIND_GLSL}
@@ -333,25 +348,28 @@ void kagFoliageVertex() {
   float phase  = aFoliageB.w;
 #endif
 
-#if defined( KAG_ATLAS ) && defined( USE_MAP )
-  // Remap into the archetype's cell. Unconditional, so the varying is written on the
-  // degenerate path too — an undefined varying is a driver-dependent NaN source (§5b).
+#ifdef KAG_ATLAS
+  // Which cell of the archetype atlas this instance draws. Written unconditionally, so it
+  // is defined on the degenerate path too — an undefined varying downstream is a
+  // driver-dependent NaN source (§5b).
   //
-  // The grid is a compile-time constant, not a uniform, and that is load-bearing. As a
-  // uniform vec2 this divide silently evaluated against (0,0) — vMapUv came out non-finite,
-  // every sample missed the atlas, and the alpha test discarded *every* fragment of the
-  // material. That is what "there is no bamboo sea" was: 11 390 mid-ground cards, all in
-  // their fade window, all submitted, none of them rasterising a pixel. Proven by
-  // elimination on the shipped build: writing (1,1) into the uniform at runtime changed
-  // nothing (so it was never reaching the program), while rebuilding the same material
-  // with the atlas removed rendered instantly.
+  // The *write into vMapUv* deliberately does not happen here. This whole function is
+  // injected at the common include, and three declares vMapUv further down in the
+  // uv_pars_vertex include — so touching the varying from in here is a reference before
+  // declaration and the shader does not compile. It does not throw, either: three
+  // logs and carries on, the material keeps a program with zero active uniforms, and the
+  // symptom is that every fragment of that material vanishes. That is what "there is no
+  // bamboo sea" was — 11 390 mid-ground cards, all inside their fade window, all submitted
+  // by the renderer, not one of them rasterising a pixel, for three review rounds. It took
+  // out every atlas material in the file at once: the bamboo band, the fallen leaves and
+  // the moss. The assignment now lives in KAG_ATLAS_UV, spliced in at the call site inside
+  // main(), which is after both the declaration and three's own write to it.
   //
-  // A grid is a property of the texture, so it belongs in the shader body and in the
-  // program cache key — where, as a bare KAG_ATLAS define carrying no dimensions, it also
-  // was not.
-  const vec2 kagAtlas = vec2( KAG_ATLAS_C, KAG_ATLAS_R );
-  vec2 kagCellIJ = vec2( mod( kagCell, kagAtlas.x ), floor( kagCell / kagAtlas.x ) );
-  vMapUv = ( clamp( uv, 0.0, 1.0 ) + kagCellIJ ) / kagAtlas;
+  // The grid is a compile-time constant rather than a uniform for a second, independent
+  // reason: a bare KAG_ATLAS define carried no dimensions into the program cache key, so a
+  // 2x2 material and a 2x1 material were indistinguishable to three's program cache and
+  // which grid you got depended on which compiled first.
+  kagAtlasIJ = vec2( mod( kagCell, KAG_ATLAS_C ), floor( kagCell / KAG_ATLAS_C ) );
 #endif
 
   float dist = distance( base, uCamPos );
@@ -1530,8 +1548,16 @@ function paintBambooPlant(size) {
     const u = clamp(((x + 0.5) / size - PLANT_UV.culmU0) / uSpan, 0, 1);
     // Lambert-ish across a cylinder, keyed a third of the way round so the culm has a lit
     // side and a shadow side rather than a symmetric highlight.
+    //
+    // The floor is high on purpose. A culm is 2-3 px wide at the far edge of its own fade
+    // window, so almost every texel a distant one samples comes from the *edges* of this
+    // ramp, and a ramp that reaches 0.34 at its edges averages a thin backlit culm down to
+    // a black hairline. §5.10 wants silhouette readability and the culm is the one thing
+    // in the mid-ground that may not go to black. 0.52 keeps the shading gradient a real
+    // gradient while putting the mean where a pale straw stem belongs; both ends still
+    // match, which is what hides the tube's wrap seam.
     const round = Math.pow(Math.max(0, Math.sin(Math.PI * clamp(u * 0.88 + 0.06, 0, 1))), 0.85);
-    const k = 0.34 + 0.66 * round + 0.16 * Math.exp(-Math.pow((u - 0.36) / 0.13, 2));
+    const k = 0.52 + 0.48 * round + 0.18 * Math.exp(-Math.pow((u - 0.36) / 0.13, 2));
     const grad = g.createLinearGradient(0, size, 0, 0);
     // v = 0 is the canvas bottom under flipY, which is the base of the culm.
     grad.addColorStop(0.00, `rgb(${(72 * k) | 0},${(94 * k) | 0},${(46 * k) | 0})`);
@@ -2512,7 +2538,8 @@ export class FoliageSystem {
 
       shader.vertexShader = shader.vertexShader
         .replace('#include <common>', '#include <common>\n' + defines + pars)
-        .replace('#include <beginnormal_vertex>', 'kagFoliageVertex();\nvec3 objectNormal = kagNrmG;')
+        .replace('#include <beginnormal_vertex>',
+          'kagFoliageVertex();\n' + (atlas ? KAG_ATLAS_UV : '') + 'vec3 objectNormal = kagNrmG;')
         .replace('#include <begin_vertex>', 'vec3 transformed = kagPosG;');
 
       shader.fragmentShader = shader.fragmentShader
@@ -2561,7 +2588,8 @@ export class FoliageSystem {
       for (const k in local) shader.uniforms[k] = local[k];
       shader.vertexShader = shader.vertexShader
         .replace('#include <common>', '#include <common>\n' + defines + pars)
-        .replace('#include <begin_vertex>', 'kagFoliageVertex();\nvec3 transformed = kagPosG;');
+        .replace('#include <begin_vertex>',
+          'kagFoliageVertex();\n' + (atlas ? KAG_ATLAS_UV : '') + 'vec3 transformed = kagPosG;');
       shader.fragmentShader = shader.fragmentShader
         .replace('#include <common>', '#include <common>\nvarying float vKagFade;')
         // The shadow must dissolve on the same per-instance threshold as the lit pass, or a
@@ -2952,7 +2980,10 @@ export class FoliageSystem {
       // because the same term now also lands on the opaque bark strip, and a culm that
       // transmits is a culm that silhouettes brighter than the sky behind it.
       sss: 0.80, sssColor: 0x5cc233, sssFloor: 0.22, sssSat: 0.88,
-      tipGlow: 0.14, baseAO: 0.26, grain: 0.16, broad: 0.10,
+      // baseAO down from the old culm's 0.28: the sheet now paints its own base-to-tip
+      // value ramp, and stacking a second one on top of it drove the lower half of every
+      // culm toward black at exactly the distance the culm has to stay readable.
+      tipGlow: 0.14, baseAO: 0.16, grain: 0.16, broad: 0.10,
       // The sheet is the albedo now, so the instance tint may only shift its hue.
       tintAmount: 0.55,
     };
@@ -3041,29 +3072,26 @@ export class FoliageSystem {
 
     const [vx, vz] = this._valleyDir();
 
-    // Density, measured rather than guessed. The previous pair scattered 336 culms over a
-    // 180 m disc and 1742 cards over a 260 m one — 0.003 and 0.008 instances per square
-    // metre. That is one culm every 300 m2 and one clump every 122 m2, which in frame is
-    // a dusting of isolated poles on a bare hillside, not a sea. §5 calls the setting a
-    // shrine *above a bamboo sea*, and a sea has to close: the band only reads as a canopy
-    // once neighbouring clumps overlap in silhouette.
+    // Density, measured rather than guessed. §5 calls the setting a shrine *above a bamboo
+    // sea*, and a sea has to close: the band only reads as a canopy once neighbouring
+    // clumps overlap in silhouette, and it only hides a ridgeline once they overlap
+    // several deep. Both layers are single instanced draws whatever the count, and
+    // anything outside its fade window collapses to a degenerate point in the vertex
+    // shader, so raising these costs vertex invocations on instances that are never
+    // rasterised — not draw calls, not fill. The bamboo draw-call budget is two, down from
+    // three now that a plant is one mesh.
     //
-    // Both are single instanced draws whatever the count, and everything outside its fade
-    // window collapses to a degenerate point in the vertex shader, so the cost of raising
-    // these is vertex invocations on instances that are never rasterised — not draw calls
-    // and not fill. The draw-call budget is unchanged at three.
-    // A plant is now one instance rather than one culm plus ten leaf clusters, so this
-    // count buys eleven times less buffer than it used to and can be spent on coverage.
-    // It is also spent over a 105 m disc instead of 140: the plant fades out at 46 m and no
-    // camera sits more than ~55 m from the origin, so everything past ~105 m was budget
-    // handed to instances that can never be rasterised. Measured at the valley pose on the
-    // shipped build, 810 scattered plants put SIX culms on screen.
+    // A plant is one instance rather than one culm plus ten leaf clusters, so this count
+    // buys eleven times less buffer than it used to and the difference goes into coverage.
+    // It is also spent over an annulus round the plateau shoulder rather than a disc
+    // centred on the shrine: the plant fades out 46 m from the camera, so the old disc was
+    // handing five sixths of its budget to instances inside the courtyard that the mask
+    // then threw away. Measured at the valley pose on the shipped build, 810 scattered
+    // plants put SIX culms on screen.
     const nearTarget = Math.round((q.tier >= 2 ? 2400 : 1100) * density);
-    // 17 000 over a 310 m disc is one clump per 57 m2. A clump every seven and a half
+    // 17 000 over a 310 m disc was one clump per 57 m2. A clump every seven and a half
     // metres does not close: at range you read individual bushes on open ground, which is
-    // the "scrub" note, and the ridgeline stays visible straight through the band. A stand
-    // becomes a *sea* when neighbouring clumps overlap in silhouette, and at 6-9 m of card
-    // width that needs roughly one per 12 m2. Still one instanced draw.
+    // the "scrub" note, and the ridgeline stays visible straight through the band.
     const cardTarget = Math.round((q.tier >= 2 ? 26000 : 11000) * density);
 
     const nearA = new Float32Array(nearTarget * 4);
@@ -3077,17 +3105,25 @@ export class FoliageSystem {
     const col = _colScratch;
 
     // Bamboo wants the sheltered, damp, valley-facing ground below the plateau lip.
-    const sample = (maxR) => {
+    //
+    // The radius is now honoured. The old form built its point by summing three vectors —
+    // a unit-circle direction at 0.6 r, the valley direction at 0.4 r, and a +/-0.3 r box
+    // jitter — and those partly cancel, so a nominal 105 m disc actually put most of its
+    // mass inside 50 m. Measured: of 20 000 near candidates, 16 805 landed inside the
+    // plateau mask and were thrown away, and the whole world got 465 plants out of a 3 600
+    // target. The bias now steers the *direction* only; `r` is the real distance from the
+    // shrine, area-uniform across [rMin, rMax], so an annulus is an annulus.
+    const sample = (rMin, rMax) => {
       const a = rnd() * Math.PI * 2;
-      const r = Math.sqrt(rnd()) * maxR;
-      // Bias toward the valley without ever becoming a visible wedge. Deliberately under
-      // half: the shrine sits *in* the sea, so bamboo has to wrap the plateau below the
-      // lip on every side and only thicken toward the valley. At 0.55 it was a lobe, and
-      // the framings that look up the ridge (wide, torii) saw no bamboo at all.
+      const r = Math.sqrt(rMin * rMin + (rMax * rMax - rMin * rMin) * rnd());
+      // Under half, deliberately: the shrine sits *in* the sea, so bamboo has to wrap the
+      // plateau below the lip on every side and only thicken toward the valley. At 0.55 it
+      // was a visible lobe and the framings that look up the ridge saw no bamboo at all.
       const bias = 0.40;
-      const x = Math.cos(a) * r * (1 - bias) + vx * r * bias + (rnd() - 0.5) * r * 0.6;
-      const z = Math.sin(a) * r * (1 - bias) + vz * r * bias + (rnd() - 0.5) * r * 0.6;
-      return [x, z];
+      let dx = Math.cos(a) * (1 - bias) + vx * bias + (rnd() - 0.5) * 0.5;
+      let dz = Math.sin(a) * (1 - bias) + vz * bias + (rnd() - 0.5) * 0.5;
+      const l = Math.hypot(dx, dz) || 1;
+      return [(dx / l) * r, (dz / l) * r];
     };
 
     const clumpNoise = (x, z) => clamp(noise.fbm2(x * 0.035, z * 0.035, 3) * 0.5 + 0.5, 0, 1);
@@ -3098,11 +3134,20 @@ export class FoliageSystem {
     // out to the far edge of the playable region and let the mask only defend the swept
     // courtyard itself.
     for (let i = 0; i < nearTarget * 8 && n < nearTarget; i++) {
-      const [x, z] = sample(105);
+      // A ring around the plateau shoulder. The plant fades out 46 m from the camera and
+      // the overlook stands at r = 47, so where this ring starts decides whether the lip
+      // carries any bamboo at all: at a 0.82 mask threshold nothing could grow inside
+      // 88.5 m, which put the entire near band 41.5 m from that camera — on the far side
+      // of the 40.5 m fade-out ramp. Three plants rendered.
+      const [x, z] = sample(76, 126);
       const y = this._heightAt(x, z);
       if (y < WORLD.WATER_LEVEL + 0.4) continue;
-      // Never inside the swept courtyard, and never on the stone stair.
-      if (plateauMask(x, z) > 0.82) continue;
+      // The courtyard guard is `_surfaceAt` below, which knows where the swept stone and
+      // the stair actually are. This one only has to keep the mask's dead-flat core clear,
+      // so it sits at the top of the falloff (d < 80.3 m) rather than a third of the way
+      // down it. A stand that stops ten metres short of the rim is not a sea the shrine
+      // sits in, it is a hedge with a moat.
+      if (plateauMask(x, z) > 0.995) continue;
       const surf = this._surfaceAt(x, z);
       if (surf === 'stone' || surf === 'gravel' || surf === 'rock' || surf === 'path' || surf === 'water') continue;
       // Bamboo is the plant that holds a hillside together and the wall below the plateau
@@ -3145,12 +3190,15 @@ export class FoliageSystem {
     // more than half the budget on instances the frustum and the fade window both throw
     // away; pulling the disc in concentrates the same count where the band is actually read.
     for (let i = 0; i < cardTarget * 10 && cn < cardTarget; i++) {
-      // 280, not 310. Beyond ~290 m the valley floor is already under WATER_LEVEL along
-      // the overlook's own ray, so the outer annulus was budget spent on candidates the
-      // height floor rejects anyway; pulling it in raises the density where the band reads.
-      const [x, z] = sample(280);
+      // An annulus that starts *below the lip*, not at it. The plateau is flat out to 78 m
+      // and the overlook stands at 47, so cards planted from 56 m grew to their full 14-20 m
+      // at plateau height ten metres in front of the camera and the framing stopped being a
+      // view over a sea and became a view into a thicket. From 88 m the ground has already
+      // begun to fall, so the band's tops sit at the horizon where the composition wants
+      // them. Beyond ~290 the valley floor is under WATER_LEVEL along the overlook's own
+      // ray and the height filter would reject the candidates one at a time anyway.
+      const [x, z] = sample(96, 285);
       const d = Math.hypot(x, z);
-      if (d < RANGE.bambooCard[0] * 0.5) continue;
       const y = this._heightAt(x, z);
       if (y < WORLD.WATER_LEVEL + 0.2) continue;
       // Bamboo takes steep ground — it is the plant that holds a hillside together, and
@@ -3169,9 +3217,21 @@ export class FoliageSystem {
       // one stops any layer reading as a repeated stamp.
       const cell = (rnd() * 4) | 0;
       const spec = BAMBOO_ARCHETYPES[cell];
-      // Moso runs 15-20 m. At a 9 m base the band was shorter than the trees standing in
-      // front of it and never rose above the ridge line into the skyline the critic reads.
-      const h = 13.0 * spec.hScale * (0.66 + rnd() * 0.70);
+      // Height grades with distance from the shrine, and that grading is the difference
+      // between a sea and a hedge.
+      //
+      // The terrain only starts to fall in earnest past r ~ 200: along the overlook's own
+      // ray it is still 812 m at 100 out and 791 at 150, against a camera at 817.5. So a
+      // flat 13-20 m band planted from the rim stands with its crown well ABOVE the eye
+      // line and the shot stops being a view over a valley — the first version of this
+      // fix walled off the horizon, the cloud deck and the sky together. Grading it puts
+      // the near canopy at roughly 200 px, under the horizon, and lets the tall leaders be
+      // the ones 200 m out where they break the skyline and hide the ridge.
+      //
+      // It is also true: bamboo on a wind-exposed shoulder is half the height of the same
+      // grove down in the sheltered basin.
+      const rF = clamp((Math.hypot(x, z) - 96) / 150, 0, 1);
+      const h = (6.5 + 11.0 * rF) * spec.hScale * (0.74 + rnd() * 0.50);
       const green = 0.5 + rnd() * 0.5;
       col.setRGB(0.52 * green + 0.30, 0.70 * green + 0.30, 0.30 * green + 0.16);
       const o = cn * 4;
