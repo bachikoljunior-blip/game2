@@ -147,7 +147,13 @@ async function main() {
   const base = `http://127.0.0.1:${port}/index.html`;
 
   const wantProfiles = argv.profile ? String(argv.profile).split(',') : ['phone', 'desktop'];
-  const wantShots = argv.shots ? String(argv.shots).split(',') : Object.keys(SHOTS);
+  // `--review` is the set the art critic judges. It has to be captured in one pass from
+  // one build: round 2 was handed three shots from one build and one from the next, and
+  // the reviewer nearly filed an already-fixed bug as a regression off the stale frame.
+  const REVIEW_SET = ['hero', 'wide', 'torii', 'valley'];
+  const wantShots = argv.review
+    ? REVIEW_SET
+    : argv.shots ? String(argv.shots).split(',') : Object.keys(SHOTS);
   const tag = argv.tag ? `-${argv.tag}` : '';
 
   mkdirSync(OUT, { recursive: true });
@@ -300,6 +306,13 @@ async function main() {
       } catch (e) { logs.push(`histogram ${sname}: ${e.message}`); }
     }
 
+    // Stamp the build so a reviewer can tell at a glance whether a set is coherent.
+    if (argv.review) {
+      const missing = REVIEW_SET.filter((s) => !shots[s]);
+      if (missing.length) {
+        logs.unshift(`REVIEW SET INCOMPLETE — missing ${missing.join(', ')}; do not send to review`);
+      }
+    }
     report.profiles[pname] = { booted, stats, histograms, errors: logs.slice(0, 40), shots };
     console.log(`[${pname}] booted=${booted}`, stats ? JSON.stringify(stats) : '(no stats)');
     if (logs.length) console.log(`[${pname}] ${logs.length} console problems; first: ${logs[0]}`);
