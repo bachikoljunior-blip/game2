@@ -2001,7 +2001,7 @@ void kgComputeSurface(){
     float fineAmp = (1.0 - smoothstep(1.15, 2.70, kgFoot)) * mix(0.55, 1.0, amp)
                   * smoothstep(0.02, 0.30, wild2);
     vec3 g3 = texture2D(tDetailN, vec2(along * 0.0610, across * 0.1640) + 0.67).xyz * 2.0 - 1.0;
-    kgFarBump = clamp(g3.xy * 0.66 * fineAmp, -0.30, 0.30);
+    kgFarBump = clamp(g3.xy * 1.50 * fineAmp, -0.40, 0.40);
     kgFine = fineAmp;
   }
   if (wild2 > 0.002) {
@@ -2034,7 +2034,12 @@ void kgComputeSurface(){
     // together before either can alias.
     float rk1 = fbm2(P.xz * 0.128 + 61.7, 2);
     float rk2 = fbm2(P.xz * 0.345 - 14.9, 2);
-    far *= 1.0 + (rk1 * 0.30 + rk2 * 0.19) * kgFine * (1.0 - veg * 0.5);
+    // The coefficients look large and are not: two octaves of fbm land an RMS near a
+    // quarter of their nominal range, so these are about ±0.24 in practice — a rock
+    // face varying by a third of a stop over a few metres, which is less than a real
+    // one does. Both bands are weighted equally because the finer of the two is the
+    // one that lands inside a 9x9 window at this range; the coarser reads as bedding.
+    far *= 1.0 + (rk1 * 0.95 + rk2 * 0.95) * kgFine * (1.0 - veg * 0.5);
 
     albedo = mix(albedo, far, wild2 * 0.88);
     rough = mix(rough, mix(0.88, 0.96, veg), wild2 * 0.8);
@@ -2046,7 +2051,7 @@ void kgComputeSurface(){
   // saturates, which is what makes the boundary a fringe tens of metres deep on a
   // real face instead of a cut.
   //
-  //   altitude    a 123 m ramp, wandered by at most ±48 m of landscape noise. The
+  //   altitude    a 110 m ramp, wandered by at most ±42 m of landscape noise. The
   //               wander stays well inside its own ramp; a line noisier than its
   //               ramp stops being a snow line and becomes scattered plates.
   //   slope       what the mountain can hold: nothing past ~53°, everything under
@@ -2072,14 +2077,14 @@ void kgComputeSurface(){
   // measured and called a snowfield was bare scree the whole time, which is exactly
   // why it had neither a snowline nor exposed rock to bound one.
   //
-  // 942–1065 puts first snow on the crests that are actually in shot, and the
+  // 935–1045 puts first snow on the crests that are actually in shot, and the
   // accumulation model below keeps it to the sheltered top fifth of them, so what it
   // draws is late-autumn snow on a crest with rock standing through it rather than an
   // alpine snowfield the setting does not have. Sampled over the ridge the shot sees,
   // a fifth of it takes a sheet and none of it below 930 m does; the shrine's own
   // ground tops out at 879 m inside 300 m and 932 m inside 400 m, so nothing the
   // player can walk to ever whitens.
-  float snowAlt = smoothstep(942.0, 1065.0, hLand + nC * 34.0 + nB * 14.0);
+  float snowAlt = smoothstep(935.0, 1045.0, hLand + nC * 30.0 + nB * 12.0);
   float kgSnowCover = 0.0;
   kgSnowLit = 0.0;
   vec2 kgSnowRipple = vec2(0.0);
@@ -2117,16 +2122,16 @@ void kgComputeSurface(){
     // spur-and-gully relief underneath it never gets to break the white.
     float scour = smoothstep(0.06, 0.54, -bowl) * (0.58 + 0.42 * (nB * 0.5 + 0.5));
 
-    float depth = snowAlt * (0.88 + 0.40 * lee)
+    float depth = snowAlt * (0.95 + 0.40 * lee)
                 + snowAlt * max(bowl, 0.0) * 0.62
                 - max(-bowl, 0.0) * 0.34
                 + driftCov * 0.46 * snowAlt;
-    float cover = clamp(depth, 0.0, 1.0) * hold * (1.0 - scour * 0.50);
+    float cover = clamp(depth, 0.0, 1.0) * hold * (1.0 - scour * 0.45);
     // The window is deliberately wider than the range 'cover' actually spans at a
     // snow line. Transition width in pixels is the window divided by the coverage
     // gradient, so widening the window is the one lever that buys fringe depth
     // without putting any structure back into the mask.
-    float blanket = smoothstep(-0.06, 0.56, cover);
+    float blanket = smoothstep(-0.06, 0.48, cover);
     if (blanket > 0.003) {
       // Rock stands through the sheet. Coverage over a real snowfield is partial
       // almost everywhere, and a mask that saturates is precisely what makes a
