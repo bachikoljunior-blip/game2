@@ -330,6 +330,21 @@ async function main() {
         logs.unshift(`REVIEW SET INCOMPLETE — missing ${missing.join(', ')}; do not send to review`);
       }
     }
+    // The phone profile is the pass/fail line in ARCHITECTURE §7, and it drifted 676k →
+    // 1.15M triangles across two review rounds without anyone noticing: every owner was
+    // given a draw-call budget for their own system, nobody owned the total. Assert it
+    // here so the next drift is named the moment it lands rather than two rounds later.
+    if (pname === 'phone' && stats) {
+      const BUDGET = { drawCalls: 140, triangles: 900000 };
+      for (const [k, cap] of Object.entries(BUDGET)) {
+        if (stats[k] > cap) {
+          const over = Math.round((stats[k] / cap - 1) * 100);
+          logs.unshift(`BUDGET: ${k} ${stats[k].toLocaleString()} over the ${cap.toLocaleString()} cap by ${over}%`);
+          console.log(`[${pname}] BUDGET ${k} ${stats[k]} > ${cap} (+${over}%)`);
+        }
+      }
+    }
+
     report.profiles[pname] = { booted, stats, histograms, errors: logs.slice(0, 40), shots };
     console.log(`[${pname}] booted=${booted}`, stats ? JSON.stringify(stats) : '(no stats)');
     if (logs.length) console.log(`[${pname}] ${logs.length} console problems; first: ${logs[0]}`);
