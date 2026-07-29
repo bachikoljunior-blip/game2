@@ -1544,9 +1544,6 @@ ${this._heightGLSL()}
       ppNormal ? `#define TERRAIN_PPNORMAL ${ppNormal}` : '',
       q.tier >= 1 ? '#define TERRAIN_STOCHASTIC 1' : '',
     ].join('\n');
-    console.warn(`[terrain-diag] heightMode=${this.encodedHeight ? 'encoded' : 'float/half'} ` +
-      `ppNormal=${ppNormal} tier=${q.tier} triplanar=${triplanar} ` +
-      `caps=${JSON.stringify(this.ctx.engine?.capabilities ?? null)}`);
 
     chainOnBeforeCompile(mat, (shader) => {
       Object.assign(shader.uniforms, uniforms);
@@ -1975,28 +1972,50 @@ void kgComputeSurface(){
     // belongs to the interior, below, where it cannot sharpen the boundary.
     float s1 = fbm2(P.xz * 0.0067 + 91.3, 3);
     float s2 = fbm2(P.xz * 0.0224 - 57.1, 2);
-    float driftCov = s1 * 0.62 + s2 * 0.38;
+    float driftCov = s1 * 0.75 + s2 * 0.25;
 
     float depth = snowAlt * (0.34 + 0.36 * lee)
                 + snowAlt * max(bowl, 0.0) * 0.62
                 - max(-bowl, 0.0) * 0.34
                 + driftCov * 0.46 * snowAlt;
     float cover = clamp(depth, 0.0, 1.0) * hold;
-    float blanket = smoothstep(0.02, 0.70, cover);
+    // The window is deliberately wider than the range 'cover' actually spans at a
+    // snow line. Transition width in pixels is the window divided by the coverage
+    // gradient, so widening the window is the one lever that buys fringe depth
+    // without putting any structure back into the mask.
+    float blanket = smoothstep(-0.06, 0.88, cover);
     if (blanket > 0.003) {
       // Rock stands through the sheet. Coverage over a real snowfield is partial
       // almost everywhere, and a mask that saturates is precisely what makes a
-      // sampled interior come back as a flat colour surface (§5.9). The finest
-      // octave here is ~28 m — about thirty pixels at this range, so it reads as
-      // drift and bare ground, never as fizz, and because it is bounded well away
-      // from zero it wobbles the boundary without ever steepening it.
-      float bare = fbm2(P.xz * 0.0560 + 3.7, 3) * 0.5 + 0.5;
+      // sampled interior come back as a flat colour surface (§5.9).
+      //
+      // Two bands. 'bare' is the 112 m drift field; 'grit' is a 35 m one and it has
+      // to carry real weight, because "flat fill" is a statement about the variance
+      // inside a ~90 m window and only this band lives at that scale — a drift field
+      // coarser than the patch you sample cannot vary within it by construction.
+      // 35 m is ~38 px at this range and its finest octave ~19 px, so neither can fizz.
+      float bare = fbm2(P.xz * 0.0560 + 3.7, 2) * 0.5 + 0.5;
+      float grit = fbm2(P.xz * 0.1800 - 21.4, 2) * 0.5 + 0.5;
       float s3 = fbm2(P.xz * 0.0630 + 13.9, 2);
-      float sheet = blanket * (0.52 + 0.48 * bare);
+      float through = clamp(0.30 + 0.44 * bare + 0.34 * grit, 0.0, 1.0);
+      // Interior only. Near the rim 'blanket' is small and the sheet stays smooth, so
+      // the boundary keeps the width the coarse mask gave it; the fine bands come up
+      // as the field deepens. Letting them reach the rim would re-sharpen the edge
+      // that the wide coverage window was widened to produce.
+      float sheet = blanket * mix(0.72, through, blanket);
 
       // Cooler and brighter than the rock it lies on — the warm key does the rest.
       // Shadowed snow is the sky bounce of §5 (#4a6b8f), never a neutral grey.
-      vec3 snowCol = mix(vec3(0.250, 0.335, 0.520), vec3(0.760, 0.830, 0.960),
+      //
+      // These are deliberately well under a real snowpack's ~0.85 albedo. The key is
+      // 3.4 and the grade is ACES: at 0.85 the lit sheet lands radiance ~1.5, which is
+      // inside the shoulder, and the shoulder is where a tone curve stops resolving
+      // differences. Every bit of drift shading and partial coverage below was being
+      // compressed into the same white by it — a flat interior produced by the grade
+      // rather than by the mask. At these values the sheet sits on the responsive part
+      // of the curve and its own variation survives to the frame. It is still by some
+      // margin the brightest surface on the massif; rock up here sits near 0.25.
+      vec3 snowCol = mix(vec3(0.180, 0.246, 0.390), vec3(0.520, 0.580, 0.700),
                          clamp(LN.y * 0.45 + N.y * 0.55, 0.0, 1.0));
       // Drift shading. Wind-packed crests catch the light, the troughs between them
       // stay blue; this and the partial coverage are the interior variance.
