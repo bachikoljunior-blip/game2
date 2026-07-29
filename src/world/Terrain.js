@@ -1855,6 +1855,30 @@ void kgComputeSurface(){
   // mountain turns into one grey ramp. Everything it should have had — a tree
   // line, scree fans, gullies, snow — has to be reconstructed per pixel here.
   float wild2 = (1.0 - core) * smoothstep(90.0, 300.0, dist);
+
+  // --- the landform frame --------------------------------------------------
+  // One set of macro taps, shared by every rule below that draws a line on the
+  // massif. Differenced over three macro texels (48 m): wide enough that what comes
+  // back is the shape of the mountain rather than the shape of the data grid, and
+  // still about fifty pixels at the range the massif is seen from, so the lines it
+  // carries stay legible. Gated on distance — near ground keeps the shading normal.
+  vec3 kgLandN = N;
+  float hLand = hPix;
+  float lFallW = fall;
+  float bowlW = 0.0;
+  if (wild2 > 0.002 || hPix > 1000.0) {
+    const float LS = 48.0;
+    hLand = kgLandH(P.xz);
+    float bL = kgLandH(P.xz - vec2(LS, 0.0));
+    float bR = kgLandH(P.xz + vec2(LS, 0.0));
+    float bD = kgLandH(P.xz - vec2(0.0, LS));
+    float bU = kgLandH(P.xz + vec2(0.0, LS));
+    kgLandN = normalize(vec3(bL - bR, 2.0 * LS, bD - bU));
+    lFallW = length(kgLandN.xz);
+    // Bowls, cirques and gully heads come back positive; ribs and spurs negative.
+    bowlW = clamp(((bL + bR + bD + bU) * 0.25 - hLand) * (2.0 / LS), -1.0, 1.0);
+  }
+
   vec3 gp = vec3(0.0);
   float groove = 0.0;
   {
@@ -1885,9 +1909,15 @@ void kgComputeSurface(){
     // Cedar mantle low, bare rock and scree above it, and the line between them
     // wanders on a 160 m noise so it is never a contour.
     float treeLine = 1006.0 + nC * 92.0 + nB * 28.0;
-    float veg = smoothstep(treeLine + 34.0, treeLine - 48.0, hPix) *
-                (1.0 - smoothstep(0.40, 0.76, fall));
-    float scree = clamp(smoothstep(0.58, 0.24, fall) * smoothstep(0.18, 0.44, fall) * 3.0, 0.0, 1.0) *
+    float veg = smoothstep(treeLine + 34.0, treeLine - 48.0, hLand) *
+                (1.0 - smoothstep(0.40, 0.76, lFallW));
+    // Soft knee, not a clamp. `clamp(smoothstep * smoothstep * 3.0, 0, 1)` is a
+    // *threshold* wearing a gradient's clothes: the 3x pins it to exactly 1 over most
+    // of its domain, so the band came out as a plate with a dead-flat interior and a
+    // step at its rim. This approaches its ceiling asymptotically and never reaches
+    // it, so the band has no level set anywhere for an edge to form along.
+    float sband = smoothstep(0.15, 0.38, lFallW) * smoothstep(0.64, 0.30, lFallW);
+    float scree = (sband / (sband + 0.42)) * 1.55 *
                   (1.0 - veg) * (0.45 + 0.55 * (nB * 0.5 + 0.5));
     vec3 far = mix(vec3(0.255, 0.245, 0.232), vec3(0.104, 0.126, 0.082), veg);
     far = mix(far, vec3(0.300, 0.262, 0.212), scree * 0.7);

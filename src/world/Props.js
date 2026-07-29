@@ -27,7 +27,7 @@
 
 import {
   BufferGeometry, BufferAttribute, BoxGeometry, Matrix4, Vector3, Color,
-  MeshStandardMaterial, MeshBasicMaterial, FrontSide, DoubleSide, InstancedMesh, DataTexture, RGBAFormat,
+  MeshStandardMaterial, MeshBasicMaterial, ShaderChunk, FrontSide, DoubleSide, InstancedMesh, DataTexture, RGBAFormat,
   SRGBColorSpace, RepeatWrapping, LinearMipmapLinearFilter, LinearFilter,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
