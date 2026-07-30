@@ -59,6 +59,9 @@ sample four times.
 
 ## Where this build actually stands
 
+> Picking the work up in a new session? [`HANDOFF.md`](./HANDOFF.md) carries the state
+> the container does not — `shots/` is gitignored and the review images do not survive.
+
 Measured, not asserted. Six review rounds against a Ghost of Tsushima / SEKIRO bar,
 scoring 34 → 48 → 58 out of 100 through round 3. **It has not passed.** Everything below
 is a number off the round-6 phone capture (`npm run shots -- --review --profile=phone`),
