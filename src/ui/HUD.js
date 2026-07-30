@@ -323,6 +323,21 @@ export class HUD {
     this.time = 0;
     this.demoMode = false;
 
+    /**
+     * `?capture` frames are graded as art, not as UI. Control-affordance layers —
+     * the desktop keyboard card, the thumb stick and action seals, the pause seal —
+     * are onboarding furniture and read as a debug overlay in a store-page frame
+     * (round 5 filed the keyboard card at [1612,848 284x208] of every desktop shot).
+     * They are suppressed for the capture rig's review set; the diegetic gameplay
+     * furniture (stance badge, health, posture, target reticle) stays, because that
+     * is the game's own language rather than an instruction to the player.
+     *
+     * `__demo()` clears the flag: the rig's `hud` shot exists to photograph the HUD,
+     * and it is the only shot that asks for it explicitly. `?capture&debug` also
+     * clears it, so reproducing a rig frame by hand still shows the whole layer.
+     */
+    this.captureClean = !!ctx.engine?.captureMode && !ctx.debug;
+
     // Live sampled state — written in place every frame, never reallocated.
     this.v = {
       health: 1, posture: 0, postureDisp: 0, stance: 0, lowPulse: 0,
@@ -730,6 +745,7 @@ export class HUD {
   /** Populate the HUD with a believable mid-combat state for the capture rig. */
   __demo() {
     this.demoMode = true;
+    this.captureClean = false;      // this shot is *of* the HUD — see the field's note
     this.alpha = 1;
     this.v.stance = this.demo.stance;
     this._chip = 0.78;

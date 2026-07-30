@@ -253,7 +253,12 @@ export class TouchControls {
   }
 
   _bakeHint() {
-    const hud = this.hud, s = hud.s, Ink = hud.ink, P = hud.palette;
+    const hud = this.hud;
+    // Under `?capture` the card never reaches the frame (suppressed for the review
+    // shots, and the `hud` shot forces the thumb layer on, which hides it anyway),
+    // so don't pay for the surface. `_drawHint` tolerates a null sprite.
+    if (hud.captureClean === true) { this._sprites.hint = null; return; }
+    const s = hud.s, Ink = hud.ink, P = hud.palette;
     const rowH = 17 * s;
     const W = 210 * s, H = 18 * s + HINTS.length * rowH;
     this._sprites.hint = Ink.sprite(W, H, hud.dpr, (g, w, h) => {
@@ -348,7 +353,11 @@ export class TouchControls {
 
     this._pollButtons(dt);
 
-    const a = this._vis * (hud.alpha === undefined ? 1 : hud.alpha);
+    // Input keeps working under `?capture` (the rig scripts presses through it); only
+    // the drawing is suppressed. See HUD.captureClean.
+    const clean = hud.captureClean === true;
+
+    const a = clean ? 0 : this._vis * (hud.alpha === undefined ? 1 : hud.alpha);
     if (a > 0.004) {
       const prev = g.globalAlpha;
       g.globalAlpha = prev * a;
@@ -360,7 +369,7 @@ export class TouchControls {
 
     if (!this.visible && this._hintTimer > 0) {
       this._hintTimer -= dt;
-      this._drawHint(g);
+      if (!clean) this._drawHint(g);
     }
   }
 

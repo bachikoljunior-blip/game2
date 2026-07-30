@@ -616,7 +616,9 @@ export class Menus {
 
     if (this._title >= 0) this._advanceIntro(rd);
     if (this._introWash > 0.004 || this._titleA > 0.004) this._drawIntro(g);
-    if (this._pauseZoneVisible) this._drawPauseSeal(g);
+    // The zone stays registered under `?capture` — only the glyph is withheld, so a
+    // scripted press still pauses. See HUD.captureClean.
+    if (this._pauseZoneVisible && hud.captureClean !== true) this._drawPauseSeal(g);
     if (this._open > 0.004) this._drawPanel(rd, g);
     if (this.mode === 'death' || this.mode === 'victory') this._drawCard(g);
   }
