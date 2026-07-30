@@ -20,29 +20,37 @@ every texture, mesh, animation and sound is synthesised at boot. `ARCHITECTURE.m
 binding contract that lets independent agents work on it in parallel; read §5 (art
 direction), §7 (perf budget) and §8 (file ownership) before dispatching anything.
 
-> **Last completed round: 5.** The next one is round 6 — use `--tag=r6`,
-> `shots/review-r6.json`, `--round=6`. Round 5's work is on branch `claude/round-q78i6x`
-> (11 commits, pushed); start from there or from wherever it has since been merged.
+> **Last completed round: 7.** The next one is round 8 — use `--tag=r8`,
+> `shots/review-r8.json`, `--round=8`. Round 7's work is four owner commits on
+> `claude/kagerou-round-7-review-1tk2pn` (`60275bf`, `48af465`, `4f8c9c7`, `64fd0ba`);
+> **merge that branch to `main` before starting**, or round 8 will be built on round 6.
 
-An independent critic has scored it 34 → 48 → 58 → (round 4 unfiled) → 58 out of 100
-against a *Ghost of Tsushima* / *SEKIRO* bar. It has not passed. Round 5 filed FAIL with
-three blockers, repaired all three and verified them.
+An independent critic has scored it 34 → 48 → 58 → (round 4 unfiled) → (5 and 6 unscored)
+→ **44** out of 100 against a *Ghost of Tsushima* / *SEKIRO* bar. It has not passed. Round 7
+filed FAIL with four blockers, dispatched four of the fourteen owners, and closed both
+standing contract breaches.
 
-Currently open, measured at the end of round 5:
+The score gap from round 3's 58 is not a regression measurement — different critic
+instances, four rounds apart, against a review set that has since had the HUD blanked.
+
+Met at the end of round 7:
 
 | | measured | contract |
 |---|---|---|
-| phone draw calls | 117 | ≤ 140 ✓ |
-| phone triangles | 628,216 | ≤ 900,000 ✓ |
-| `wide` highlight gate | p99.9 = 206 phone, 211 desktop | > 235 |
-| `desktop-sun` black gate | p0.1 = 18 | < 15 |
-| §4 light levels | sun 7.39, hemi 1.038 | ~3.0, ~0.35 — needs an authoring decision |
-| phone shadow reach | 70 m (`Quality.js` MEDIUM) | the valley framing needs 130–160 m |
+| phone draw calls | **117** worst pose | ≤ 140 ✓ |
+| phone triangles | **735,886** worst pose | ≤ 900,000 ✓ |
+| black gate, all five | p0.1 = 0, 5, 0, 0, 0 | < 15 ✓ |
+| white gate, all five | p99.9 = 236, 213, 253, 224, 254 | > 235 ✓ |
 
-The last four are round-6 work and the README's "Known open" section carries the reasoning.
-Two of them are *consequences* of round 5's fixes rather than defects in them, which is the
-normal shape of this loop: the highlight gate moved away from passing because the fix
-correctly removed an over-bright massif that had been supplying the frame's only highlights.
+Still open, measured at the end of round 7 — `HANDOFF.md` carries the reasoning and the full
+list of what round 7 disproved:
+
+| | measured | owner |
+|---|---|---|
+| god rays overwrite the shadow-cooling where they are live | dark-population R−B rose on `valley`/`sun`, fell on the three frames with no god-ray term | `PostFX.js` |
+| contact shadows missing under props | ground under a stone lantern is a local *maximum*, 4.5× open ground | `Lighting.js` |
+| mid-ground short of dressed ground | `detail` 4.79 against 9.19 at the same depth | `Terrain.js` |
+| aerial perspective converges above the sky | massif reads as a pale cut-out; not re-filed by round 7's blind critic | `Sky.js` |
 
 ---
 
@@ -99,9 +107,15 @@ Before going further, read `shots/report-rN.json` and check three things:
 - `stats.tier` is what you asked for. Five rounds were reviewed at LOW tier because a
   persisted setting was overriding `?q=`.
 
-**The measurement apparatus has broken four times on this project, and every time it drove
+**The measurement apparatus has broken six times on this project, and every time it drove
 a correct critique into a wrong fix.** Checking it costs a minute. Skipping it costs a
 round, which is about 2M tokens.
+
+The sixth was round 7's own prediction checker, and it is the cheapest one to avoid: it
+indexed 3-channel RGB captures with a hard-coded 4-byte stride and returned *plausible*
+numbers — `detail` 38.91 where `probe.mjs` says 2.58 — without throwing. **Whenever you
+write a new measurement tool here, run one region through `tools/probe.mjs` first and
+require the two to agree to the digit.**
 
 Two things round 5 hit, both now handled but worth recognising:
 
