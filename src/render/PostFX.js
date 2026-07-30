@@ -565,27 +565,29 @@ void main() {
   // floor with no dependence on scene radiance: every visible sky pixel emitted it
   // whether the sky wrote 0.1 or 150. Multiplied through a 48-tap march it deposited
   // roughly two linear units of untextured white around the sun, which pinned the
-  // whole quadrant at the grade's white point and erased the solar disc Sky.js draws —
-  // zeroing the disc barely moved the frame, because the disc was never what we were
-  // scattering. A volumetric pass may only redistribute radiance; it may never
-  // manufacture it, because a manufactured term cannot be tuned out downstream. It
-  // does not scale with anything.
+  // whole quadrant at the grade's white point. A volumetric pass may only redistribute
+  // radiance; it may never manufacture it, because a manufactured term cannot be tuned
+  // out downstream. The ceiling below is not that mistake and cannot become it: it is
+  // multiplicative and monotone, so a black texel still emits exactly zero.
   //
-  // Colour is carried through rather than collapsed to luma, so an amber disc throws
-  // amber shafts without the composite having to tint them back in.
+  // Colour is carried through rather than collapsed to luma, so an amber sky throws
+  // amber shafts.
   //
-  // The clamp is the firefly guard, and it has to be sized against the source that is
-  // actually there. It was set to 8 when the emitter was a fabricated constant, where
-  // anything larger only amplified the veil. Sky.js now writes a real ~147-linear amber
-  // disc with a 17x17 px blown plateau (217 px at >= 250), and at 8 the clamp was
-  // throwing away 94% of it: the march deposited ~0.05 linear onto a ~0.5 linear sky,
-  // which is under 4 code values after the shoulder — invisible, which is exactly what
-  // was measured. The guard exists to stop a *single* tap swinging a shaft by an order
-  // of magnitude; a stable plateau spanning several taps of the march does not need
-  // protecting from itself, so this now sits just under the disc's peak rather than two
-  // orders below it. The sky mask means only the sky and the disc ever reach this term,
-  // so there is no near-field specular for it to guard against either.
-  vec3 emit = min(texture2D(tScene, vUv).rgb, vec3(uEmitClamp)) * (sky * prox);
+  // The ceiling clamps *magnitude*, not each channel. Two reasons, both measured.
+  // (1) A per-channel min() on a 176/100/40 amber disc clips red first and greys the
+  //     shaft; scaling by max-channel keeps the hue exactly.
+  // (2) It has to sit near the sky, not near the disc. This is an occlusion integral:
+  //     every ray's march ends at the sun, so a source 200x the sky beside it deposits
+  //     the *same* tap into every pixel in the frame. That is a lens star with no
+  //     legible structure, and at a gain large enough for the shafts it is a white-out.
+  //     Sky.js's order-4 knee folds the atmosphere onto 0.62 and the near-sun sky
+  //     reconstructs at 0.9-1.4 linear on the into-the-sun pose, so a ceiling at 2
+  //     leaves the sky alone and turns the disc into a bright core, not a common-mode
+  //     flood. The disc's own glare belongs to the bloom pass, which clamps at 28 and
+  //     has the resolution for it; this pass owns the shafts.
+  vec3 src = texture2D(tScene, vUv).rgb;
+  float peak = max(max(src.r, src.g), max(src.b, 1e-5));
+  vec3 emit = src * min(1.0, uEmitClamp / peak) * (sky * prox);
   gl_FragColor = vec4(emit, 1.0);
 }
 `;
@@ -1308,33 +1310,53 @@ export class PostFX {
     this.keyValue = 0.18;
     this.exposureMin = 0.68;
     this.exposureMax = 1.50;
-    // The skirt, not the glow. Raising the threshold while roughly doubling the
-    // strength moves bloom off the general sky wash and onto genuine highlights — the
-    // sun disc, wet stone speculars, lantern paper — and the wider tent radius is what
-    // turns that into a soft halation that falls off over a third of the screen
-    // instead of a tight ring.
-    this.bloomStrength = 0.105;
+    // The skirt, not the glow. The threshold stays at 1.0 so bloom only ever finds
+    // genuine emitters — lantern paper writes 2.6 linear, its flame 7.0, the solar
+    // disc ~150, while the knee'd sky sits at 0.6-1.4 and contributes ~0.02. That is
+    // what keeps every frame's true black at 0 while the strength climbs: simulating
+    // this chain on the reconstructed `hero` and `torii` buffers holds p0.1 at 0.7 code
+    // values from strength 0.105 all the way to 0.40, because the source is localised.
+    //
+    // Strength and radius are the halation itself, and both were too small to read.
+    // Measured on `phone-sun-r7`, 45 px off the big chochin's edge, the old chain lifted
+    // the sky by 24 code values and was down to 7 by 170 px — under the critic's
+    // "15/255 over 228 px", i.e. indistinguishable from the sky's own gradient. Paper
+    // lanterns against a dusk sky are the signature image of the reference titles and
+    // they work because the halo is *wide*: 0.36 with a 1.75-texel tent puts that same
+    // sample around 75 code values and keeps it measurable past 350 px. Radius stops at
+    // 1.75 because a 3x3 tent sampled further apart than about two texels stops
+    // overlapping and prints its own diamond on a small source.
+    this.bloomStrength = 0.40;
     this.bloomThreshold = 1.0;
     this.bloomKnee = 0.62;
-    this.bloomRadius = 1.35;
-    // Tuned against a real solar disc in the occlusion buffer, not against the constant
-    // emission floor that used to be there (see FRAG_GOD_OCCLUSION). Scattering actual
-    // radiance needs *far* less gain than manufacturing it did: the source is now
-    // ~147 linear at the disc rather than a flat 0.65, so a shaft carries its energy
-    // from the sun instead of from an arbitrary constant.
+    this.bloomRadius = 1.75;
+    // The derivation this replaced assumed the shafts are carried by the solar disc,
+    // and that assumption does not survive contact with the pose the effect exists for.
+    // On the `sun` framing the camera axis *is* the sun direction — SHOTS.sun aims at
+    // (47.64, 15.3, 63.16) from (-3.96, 1.8, 35.76), which normalises to (0.8605,
+    // 0.2251, 0.4570) against a sun direction of (0.860, 0.225, 0.457) — so the disc
+    // lands on UV (0.500, 0.500), and the pixel there is the shimenawa's tassel. The
+    // depth mask correctly emits nothing for an occluded texel, so the ~150-linear
+    // source the old gain was derived from is simply not in the buffer, and what the
+    // march actually integrates is the knee'd sky at 0.9-1.4 linear.
     //
-    // Derived, not dialled. With march weight 3 over 48 taps at decay 0.970, a pixel
-    // 0.30 UV from the sun crosses the disc's blown plateau in ~2.4 taps carrying
-    // decay^48 = 0.23, so the disc term is 2.4 * min(147, uEmitClamp) * 0.23 and the
-    // prox-weighted sky adds ~4 on top. At uEmitClamp 8 that whole sum is ~9 and no
-    // gain recovers a shaft without a veil; at 120 it is ~71, i.e. an unobstructed
-    // march accumulates ~4.4 before gain. The wedge an upright cuts is that figure
-    // times the *decay-weighted* fraction of the march it interrupts — and because the
-    // decay front-loads the taps nearest the shading pixel, a post crossing the middle
-    // of the ray only takes about 22% of the weight, not the ~40% of its screen width.
-    // 4.4 * 0.22 * ~100 code per linear unit at magic-hour sky levels puts the gain at
-    // 0.18 for a wedge around 20 code values, which is countable unaided.
-    this.godRayStrength = 0.18;
+    // The old comment also mis-stated the mechanism: an upright crossing the *middle*
+    // of a ray cannot remove the disc's tap, because that tap sits at the end of the
+    // march. The disc is common-mode; the wedges come from the sky field being cut. So
+    // the gain has to be sized against the sky, not against the disc, and the disc has
+    // to be stopped from voting (see uEmitClamp in FRAG_GOD_OCCLUSION).
+    //
+    // Derived: with the emitter at ~0.95 linear, density 0.85 and decay 0.94, the
+    // decay-weighted tap count is (1 - 0.94^24)/0.06 = 12.9, of which the prox envelope
+    // passes about 0.6, so an unobstructed ray accumulates 12.9 * 0.6 * 0.95 * (3/24) =
+    // 0.91 linear before gain and a fully-shadowed one accumulates near zero. At the
+    // ~60 display code values per linear unit the shoulder gives around a 190-code sky,
+    // a gain of 1.25 puts the lit-to-shadowed wedge near 45 code values, which is a
+    // shaft rather than a gradient. Simulating the pass on the reconstructed `sun`
+    // buffer at these values moves the frame's darkest 0.1% from 1.2 code values to
+    // 0.8 — *down*, because density and decay both cut the far field the old settings
+    // spread across the whole frame.
+    this.godRayStrength = 1.25;
     this.aoStrength = 0.85;
     this.aoRadius = 0.65;
     this.saturation = 1.06;
@@ -2027,12 +2049,22 @@ export class PostFX {
       uVignetteScale: { value: 1.15 },
       uVignetteTint: { value: new Color(0.72, 0.80, 0.95) },
       uBloomStrength: { value: this.bloomStrength },
-      // Amber, not neutral: the halation belongs to a low sun and to lantern paper.
-      uBloomTint: { value: new Color(1.0, 0.905, 0.79) },
+      // ARCHITECTURE §5's key light, #ffd9a8, in linear. The old (1.0, 0.905, 0.79) was
+      // a 10% warm bias, and it was invisible for a measurable reason: the brightest
+      // thing inside a lantern is EMISSIVE.flame, authored near-white (#fff4e8) so the
+      // Rec.709 weights can get a high-luma core out of it, so the halo inherits a
+      // neutral source and the grade's hiNeutral term then collapses what chroma is
+      // left as it approaches white. The halo has to be tinted here or it is white.
+      uBloomTint: { value: new Color(1.0, 0.694, 0.391) },
       uGodStrength: { value: 0 },
-      // Near-neutral now that the occlusion pass carries real colour: the shafts are
-      // already the sun's own amber, and tinting them again would double the cast.
-      uGodTint: { value: new Color(1.0, 0.97, 0.93) },
+      // Warm, because the source is not. Sky.js's order-4 knee folds *every channel*
+      // onto uSkyKnee (0.62), so the sky within a few degrees of the sun converges on
+      // neutral — measured saturation 0.049 on `phone-sun-r7`, R-B of 16. A pass that
+      // faithfully carries that radiance therefore throws grey shafts. Scattered
+      // sunlight at 13 degrees of elevation is between §5's #ffd9a8 and its #ff9b52;
+      // this is that, and it is a stand-in until the dome stops neutralising its own
+      // aureole.
+      uGodTint: { value: new Color(1.0, 0.52, 0.26) },
       uDofBlend: { value: this.dofBlend },
       uLutMix: { value: 0 },
       uLutStrength: { value: this.lutStrength },
@@ -2942,20 +2974,26 @@ export class PostFX {
     // safe now that the emission is real radiance — with the old constant floor, widening
     // this was what smeared an untextured veil across the quadrant.
     ou.uSunRadius.value = 0.18;
-    // Just under the disc's measured peak on HDR. The LDR fallback has no headroom to
-    // clamp — the scene render already clipped everything at 1.0 — so it takes the disc
-    // for whatever survived that.
-    ou.uEmitClamp.value = this._hdr ? 120.0 : 1.0;
+    // A ceiling near the sky, not near the disc — see FRAG_GOD_OCCLUSION. The LDR
+    // fallback keeps 1.0 because the scene render already clipped there, so nothing can
+    // exceed it and the ceiling never binds.
+    ou.uEmitClamp.value = this._hdr ? 2.0 : 1.0;
     this._draw(this.mGodOcclusion, this.rtGodA);
 
     const bu = this.mGodBlur.uniforms;
     bu.tSrc.value = this.rtGodA.texture;
     bu.uSunUv.value.copy(this._sunUv);
-    // March the whole way to the sun. With the old wide emitter a partial march still
-    // landed inside the source; with a tight one a pixel that stops 28% short never
-    // reaches the light at all and its shaft simply does not exist.
-    bu.uDensity.value = 1.0;
-    bu.uDecay.value = 0.970;    // slow enough that the far end of the march still reads
+    // Density and decay are the distance falloff, and marching all the way at 0.970 put
+    // it in the wrong place. Every ray ends at the sun, so with density 1.0 a pixel in
+    // the far corner still collects the bright near-sun emission — at the gain the
+    // shafts need, that is a frame-wide veil, and it is what lifted the `sun` frame's
+    // darkest 0.1% off zero. Stopping 15% short costs nothing near the sun (a ray from
+    // 0.5 UV out still ends at 0.075, well inside the 0.18 envelope) and starves the
+    // far field, and the shorter decay tail does the same. Simulated on the
+    // reconstructed `sun` buffer, the two together hold the frame's p0.1 at the value
+    // it has with the pass switched off entirely, while the near-sun fan is untouched.
+    bu.uDensity.value = 0.85;
+    bu.uDecay.value = 0.94;
     bu.uWeight.value = 3.0;
     bu.uNoise.value = (this._frame & 31) * 0.137;
     this._draw(this.mGodBlur, this.rtGodB);
