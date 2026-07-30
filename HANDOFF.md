@@ -12,7 +12,13 @@ Update this file at the end of every round. It is the only thing that carries st
 
 ## Where the work is
 
-- Branch: `claude/2-rounds-only-9uukb7` (pushed). No pull request has been opened.
+- Branch: **`main`**. Commit and push there unless a human names something else.
+  This branch's history came from `claude/2-rounds-only-9uukb7` and was merged to `main`
+  because a new session starts from the default branch — work parked on a feature branch is
+  invisible to the next session no matter how well it is documented. Two sessions branched
+  from stale points and lost the brief entirely before this was fixed, and each spent a
+  round solving the same triangle-count problem. `claude/round-q78i6x` is that other line,
+  still on the remote and not merged; see the note at the end of this file.
 - Last two rounds: `f0543b2` (round 5), `16f21e4` (round 6).
 - Rounds 1–3 scored 34 → 48 → 58 out of 100 against a Ghost of Tsushima / SEKIRO bar.
   Round 4 was stopped before its verdict. Rounds 5–6 were not scored — they were run
@@ -123,3 +129,32 @@ Ordered by what a hostile art director would hit first.
   object; `capture.mjs` rolls it up by owning system whenever a cap is missed.
 - Budgets are frustum-dependent. The rig samples every pose and asserts the worst, and
   names it. Do not go back to sampling once at the end of a run.
+
+---
+
+## The other line: `claude/round-q78i6x`
+
+Not merged. It is a parallel round 5 run from a different base, and it is worth reading
+before repeating anything it already did — it reached several results independently:
+
+- Phone budget met on its own line: 628,216 triangles and 117 draw calls, by the same
+  insight recorded above (`renderer.info.render.triangles` counts *submitted* geometry, so
+  instances the vertex shader collapses still land in the count). It re-packed each layer's
+  survivors to the front of its buffer, which *raised* near-field density while cutting the
+  count — the phone valley framing went 61 → 715 bamboo instances.
+- Sky chroma: saturation 0.052 → 0.342 on the `sun` frame. A per-channel tone knee had been
+  converging all three channels to neutral.
+- Shadow-side colour: dark-population R−B +12 → −36. §5's authored `#4a6b8f` cool fill was
+  being delivered at 0.09 irradiance against its authored 0.35.
+- Aerial perspective: far massif 3.70× → 1.09× the airlight luminance. This is the same
+  defect listed as open item 1 above, approached from the other side.
+- Wet stone: 16.4% of paving below roughness 0.25, from 0.00%.
+
+It also carries a round kit this branch does not have: `tools/dispatch.mjs` (spawn only the
+owners the critic named), `tools/manifest.mjs` plus `capture.mjs --diff` (carry unchanged
+shots forward instead of re-photographing them), `tools/AGENT-PREAMBLE.md` (a byte-identical
+cacheable prompt prefix) and `ROUND.md`.
+
+Merging it is a real conflict-resolution job — both lines edited `Foliage.js`, `Terrain.js`,
+`Sky.js`, `capture.mjs`, `HUD.js` and `Menus.js` — so it is a decision for a human, not
+something to attempt mid-round. Ask before starting it.
