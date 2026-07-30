@@ -35,6 +35,12 @@ const argv = Object.fromEntries(
   }),
 );
 
+// The screenshot allowance. 420 s was measured against the desktop/ultra profile's
+// steady state, but the *first* frame after boot also pays SwiftShader's lazy pipeline
+// compilation and has now missed 420 s twice while every later frame landed at ~390 s.
+// `--shot-timeout=<ms>` widens it for a targeted retry without touching the default.
+const SHOT_TIMEOUT = Number(argv['shot-timeout']) || 420000;
+
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
@@ -299,7 +305,7 @@ async function main() {
         // webfonts, so this wait has nothing to find — it just needs room to resolve.
         // One bad shot must not cost us the rest of the profile's set either.
         try {
-          await page.screenshot({ path: file, type: 'png', timeout: 420000 });
+          await page.screenshot({ path: file, type: 'png', timeout: SHOT_TIMEOUT });
           shots[sname] = file;
           // Stamp the manifest per shot rather than once at the end: a run that dies
           // on shot four should still let the next round carry shots one to three.
@@ -308,7 +314,7 @@ async function main() {
       }
     } else {
       const file = join(OUT, `${pname}-FAILED${tag}.png`);
-      await page.screenshot({ path: file, type: 'png', timeout: 420000 }).catch(() => {});
+      await page.screenshot({ path: file, type: 'png', timeout: SHOT_TIMEOUT }).catch(() => {});
       shots.FAILED = file;
     }
 
