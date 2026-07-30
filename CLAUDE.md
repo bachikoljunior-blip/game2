@@ -27,6 +27,27 @@ out, devices get swapped mid-round. So **finish a round, update `HANDOFF.md` and
 commit, push** — in that order, before reporting. A session that reports and then dies has
 lost the round; one that records and then dies has not.
 
+### End every session with a handoff prompt
+
+The last thing in your final reply — after the round report — is a fenced code block the
+person can paste straight into a new session. Nothing after it.
+
+It must state: the branch and the commit you pushed, the round just finished and its
+verdict, the single next action, and any trap the next session would otherwise walk into
+(a held capture lock, a half-finished edit, an unverified fix). Write it standalone: assume
+the reader has none of this conversation.
+
+```
+KAGEROU を続けて。main の <sha> まで push 済み。
+ラウンド<N>は<verdict>。次は<次の一手>。
+<次のセッションが踏みそうな罠があれば1行>
+```
+
+Keep it short. `CLAUDE.md` and `HANDOFF.md` carry the method and the state; this block only
+has to get the next session pointed at the right thing. Emit it even when the session ends
+badly — especially then, because a session that failed mid-round is exactly the one whose
+state is not obvious from the repository.
+
 ## The goal, unchanged
 
 Build a game at the level of a shipped AAA console title. The bar is *Ghost of Tsushima* and
@@ -93,10 +114,20 @@ no-op and reverted.
 This removes waste that was *measured* to contribute nothing. It is not permission to think
 less about hard problems.
 
-- **Dispatch only the owners the critic actually named.** One round spawned all fourteen
-  owners against six findings; eight read their files, found nothing, and returned — about
+- **Dispatch only the owners the critic actually named.** `node tools/dispatch.mjs
+  --round=N` reads `shots/review-rN.json` and prints exactly which teams to spawn, at what
+  model and effort, and — out loud — which it is skipping. One round spawned all fourteen
+  owners against six findings; eight read their files, found nothing, and returned, about
   1.6M tokens for no change to the frame. The width that makes this method work is in the
   *reviewing*, and that stays untouched.
+- **Capture differentially.** `node tools/capture.mjs --review --diff` carries a shot
+  forward when nothing it depends on changed (`tools/manifest.mjs` hashes each shot's
+  dependency set by content). The saving lands on the verification pass after fixes:
+  re-shoot only the framings the changed files can affect. When nothing needs taking it
+  does not launch a browser or queue for the rig lock.
+- **Use `tools/AGENT-PREAMBLE.md` verbatim** as the head of every dispatch prompt, after
+  `ARCHITECTURE.md` and before anything variable. It is a file rather than a rule so the
+  cacheable prefix cannot drift between agents.
 - **The critic stays at the top tier and full effort.** So do diagnosis and repair. What
   drops to a cheap model is only work with one checkable right answer: histograms, budget
   counts, README tables, file moves.

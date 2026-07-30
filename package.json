@@ -9,7 +9,10 @@
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0 --port 4173",
     "capture": "node tools/capture.mjs",
-    "shots": "vite build && node tools/capture.mjs"
+    "shots": "vite build && node tools/capture.mjs",
+    "review": "vite build && node tools/capture.mjs --review --diff --profile=phone",
+    "dispatch": "node tools/dispatch.mjs",
+    "stale": "node tools/manifest.mjs"
   },
   "dependencies": {
     "three": "^0.180.0"

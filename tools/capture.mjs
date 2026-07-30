@@ -14,7 +14,8 @@
 
 import { chromium, devices } from 'playwright';
 import { measureLuma, HUD_MASKS } from './luma.mjs';
-import { mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
+import { plan as diffPlan, record as recordShot } from './manifest.mjs';
+import { mkdirSync, writeFileSync, rmSync, existsSync, copyFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'node:http';
@@ -32,6 +33,14 @@ const argv = Object.fromEntries(
     return [k, v ?? true];
   }),
 );
+
+/**
+ * A frame can miss its screenshot allowance without the run failing: the first frame after
+ * boot pays SwiftShader's lazy pipeline compile on top of its own render, and `desktop-hero`
+ * timed out at 420 s twice. `--shot-timeout=<ms>` widens it for a targeted retry without
+ * moving the default for everyone.
+ */
+const SHOT_TIMEOUT = Number(argv['shot-timeout']) || 420000;
 
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -136,12 +145,32 @@ async function acquireLock() {
   }
 }
 
+/**
+ * `--review` is the set the art critic judges. It has to be captured in one pass from
+ * one build: round 2 was handed three shots from one build and one from the next, and
+ * the reviewer nearly filed an already-fixed bug as a regression off the stale frame.
+ */
+const REVIEW_SET = ['hero', 'wide', 'torii', 'valley', 'sun'];
+
 async function main() {
   if (!existsSync(DIST)) {
     console.error('dist/ is missing — run `npm run build` first.');
     process.exit(2);
   }
-  const releaseLock = await acquireLock();
+
+  // Resolve `--diff` before taking the lock. A run in which every shot is carried forward
+  // never launches a browser, so it has nothing to serialise against — and queueing it
+  // behind a live capture would make the cheap path wait minutes for permission to do
+  // nothing.
+  const wantProfilesEarly = argv.profile ? String(argv.profile).split(',') : ['phone', 'desktop'];
+  const wantShotsEarly = argv.review
+    ? REVIEW_SET
+    : argv.shots ? String(argv.shots).split(',') : Object.keys(SHOTS);
+  const needsBrowser = !argv.diff || wantProfilesEarly
+    .filter((p) => PROFILES[p])
+    .some((p) => diffPlan(p, wantShotsEarly).stale.length > 0);
+
+  const releaseLock = needsBrowser ? await acquireLock() : () => {};
   process.on('exit', releaseLock);
   process.on('SIGINT', () => { releaseLock(); process.exit(130); });
   process.on('SIGTERM', () => { releaseLock(); process.exit(143); });
@@ -150,14 +179,8 @@ async function main() {
   const server = await serve(DIST, port);
   const base = `http://127.0.0.1:${port}/index.html`;
 
-  const wantProfiles = argv.profile ? String(argv.profile).split(',') : ['phone', 'desktop'];
-  // `--review` is the set the art critic judges. It has to be captured in one pass from
-  // one build: round 2 was handed three shots from one build and one from the next, and
-  // the reviewer nearly filed an already-fixed bug as a regression off the stale frame.
-  const REVIEW_SET = ['hero', 'wide', 'torii', 'valley', 'sun'];
-  const wantShots = argv.review
-    ? REVIEW_SET
-    : argv.shots ? String(argv.shots).split(',') : Object.keys(SHOTS);
+  const wantProfiles = wantProfilesEarly;
+  const wantShots = wantShotsEarly;
   const tag = argv.tag ? `-${argv.tag}` : '';
 
   mkdirSync(OUT, { recursive: true });
@@ -174,6 +197,51 @@ async function main() {
   for (const pname of wantProfiles) {
     const prof = PROFILES[pname];
     if (!prof) { console.warn(`unknown profile ${pname}`); continue; }
+
+    // `--diff` carries an unchanged shot forward from the previous round rather than
+    // paying another SwiftShader boot for a byte-identical frame. The copy is what makes
+    // it safe: the histogram pass, the review-set completeness check and everything
+    // downstream key off `shots`, and all of them keep working on a carried file without
+    // knowing it was carried.
+    const shotPlan = argv.diff ? diffPlan(pname, wantShots) : null;
+    const carried = {};
+    let takeShots = wantShots;
+    if (shotPlan) {
+      takeShots = shotPlan.stale.map((s) => s.shot);
+      for (const f of shotPlan.fresh) {
+        const dest = join(OUT, `${pname}-${f.shot}${tag}.png`);
+        try {
+          if (resolve(f.from) !== resolve(dest)) copyFileSync(f.from, dest);
+          carried[f.shot] = dest;
+        } catch (e) {
+          // Carrying it failed, so take it. Never let a copy error silently drop a frame
+          // out of a review set.
+          takeShots = [...takeShots, f.shot];
+          console.warn(`[${pname}] could not carry ${f.shot} forward (${e.message}); recapturing`);
+        }
+      }
+      console.log(`[${pname}] --diff: capturing ${takeShots.join(', ') || '(none)'}; ` +
+        `carried ${Object.keys(carried).join(', ') || '(none)'}`);
+    }
+
+    // Nothing to take means nothing to boot — this is where the saving actually lands.
+    if (shotPlan && takeShots.length === 0) {
+      const histograms = {};
+      for (const [sname, file] of Object.entries(carried)) {
+        // Same masking rule as the booted path below — kept identical rather than
+        // simplified, so the two cannot drift into measuring different things.
+        try { histograms[sname] = measureLuma(file, sname === 'hud' ? HUD_MASKS : []); }
+        catch { /* surfaced in the errors list */ }
+      }
+      report.profiles[pname] = {
+        booted: true, carriedOnly: true, stats: null, histograms, shots: carried,
+        carriedForward: Object.keys(carried),
+        errors: ['all shots carried forward from the previous round; no browser was booted'],
+      };
+      console.log(`[${pname}] all ${Object.keys(carried).length} shots unchanged — skipped`);
+      continue;
+    }
+
     const context = await browser.newContext({
       viewport: prof.viewport, deviceScaleFactor: prof.deviceScaleFactor,
       isMobile: prof.isMobile, hasTouch: prof.hasTouch,
@@ -205,7 +273,7 @@ async function main() {
       await page.waitForFunction(
         'window.__kagerouReady === true',
         undefined,
-        { timeout: 420000, polling: 500 },
+        { timeout: SHOT_TIMEOUT, polling: 500 },
       );
     } catch {
       booted = false;
@@ -216,7 +284,7 @@ async function main() {
     }
     console.log(`[${pname}] boot ${booted ? 'ok' : 'FAILED'} in ${((Date.now() - bootStarted) / 1000).toFixed(1)}s`);
 
-    const shots = {};
+    const shots = { ...carried };
     const histograms = {};
     const perShot = {};
     if (booted) {
@@ -230,7 +298,7 @@ async function main() {
         k?.weather?.setPreset?.('petals', true);
       }).catch(() => {});
       await page.waitForTimeout(6000);
-      for (const sname of wantShots) {
+      for (const sname of takeShots) {
         const shot = SHOTS[sname];
         if (!shot) continue;
         // The review judges the world. Round 5 was reviewed with the four action seals,
@@ -252,8 +320,11 @@ async function main() {
         // webfonts, so this wait has nothing to find — it just needs room to resolve.
         // One bad shot must not cost us the rest of the profile's set either.
         try {
-          await page.screenshot({ path: file, type: 'png', timeout: 420000 });
+          await page.screenshot({ path: file, type: 'png', timeout: SHOT_TIMEOUT });
           shots[sname] = file;
+          // Stamp the manifest per shot rather than once at the end: a run that dies on
+          // shot four should still let the next round carry shots one to three.
+          recordShot(pname, sname, file, argv.tag || null);
         } catch (e) { logs.push(`screenshot ${sname}: ${e.message}`); }
         // Per pose, not once at the end. Draw calls and triangles are frustum-dependent
         // and the spread is not small: the round-5 audit measured 123 calls at the `sun`
@@ -270,7 +341,7 @@ async function main() {
       }
     } else {
       const file = join(OUT, `${pname}-FAILED${tag}.png`);
-      await page.screenshot({ path: file, type: 'png', timeout: 420000 }).catch(() => {});
+      await page.screenshot({ path: file, type: 'png', timeout: SHOT_TIMEOUT }).catch(() => {});
       shots.FAILED = file;
     }
 
@@ -429,7 +500,7 @@ async function main() {
 
     report.profiles[pname] = {
       booted, stats, perShot, histograms, draws, drawsByOwner,
-      errors: logs.slice(0, 40), shots,
+      errors: logs.slice(0, 40), shots, carriedForward: Object.keys(carried),
     };
     console.log(`[${pname}] booted=${booted}`, stats ? JSON.stringify(stats) : '(no stats)');
     if (logs.length) console.log(`[${pname}] ${logs.length} console problems; first: ${logs[0]}`);
@@ -440,8 +511,23 @@ async function main() {
   await browser.close();
   server.close();
   releaseLock();
-  writeFileSync(join(OUT, `report${tag}.json`), JSON.stringify(report, null, 2));
-  console.log(`\nwrote ${OUT}/report${tag}.json`);
+  // Merge into any existing report for this tag rather than replacing it. A run scoped to
+  // one profile — a retry after a timeout, or a desktop pass added to a phone round — used
+  // to erase the other profile's record, and in round 5 that lost the phone baseline the
+  // whole round was being measured against, mid-round.
+  const reportFile = join(OUT, `report${tag}.json`);
+  let merged = report;
+  if (existsSync(reportFile)) {
+    try {
+      const prev = JSON.parse(readFileSync(reportFile, 'utf8'));
+      merged = { ...prev, ...report, profiles: { ...(prev.profiles || {}), ...report.profiles } };
+    } catch {
+      // An unreadable previous report is not a reason to lose this run's numbers.
+    }
+  }
+  writeFileSync(reportFile, JSON.stringify(merged, null, 2));
+  const kept = Object.keys(merged.profiles).filter((p) => !(p in report.profiles));
+  console.log(`\nwrote ${reportFile}${kept.length ? ` (carried ${kept.join(', ')} from the previous run)` : ''}`);
 
   const anyFailed = Object.values(report.profiles).some((p) => !p.booted);
   process.exit(anyFailed ? 1 : 0);
