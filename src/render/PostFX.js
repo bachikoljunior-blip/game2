@@ -930,6 +930,8 @@ uniform vec3 uGain;
 uniform float uContrast;
 uniform vec4 uFilmic;        // x = black point, y = white point, z = toe power, w = shoulder power
 uniform float uFilmicPivot;
+uniform vec4 uHighlight;     // x = expander knee, y = expander gain, z = soft-white knee, w = over-range gain
+uniform float uToneWhite;    // 1 / aces(referenceWhite) — see tonemap()
 uniform float uVignette;
 uniform float uVignetteScale;
 uniform vec3 uVignetteTint;
@@ -998,6 +1000,12 @@ vec3 rrtOdtFit(vec3 v) {
   return a / b;
 }
 vec3 tonemap(vec3 c) {
+  // Bounded input, for two reasons. rrtOdtFit is a ratio of quadratics, so an infinite
+  // channel gives inf/inf = NaN and a NaN survives sat3 (ARCHITECTURE §5b — it would
+  // reach three's uniform upload and the audio graph before anything logged). 1e4 is
+  // four decades above the brightest thing the scene authors (EMISSIVE.flame at 7), so
+  // clamping there is unobservable and closes the path.
+  c = min(max(c, vec3(0.0)), vec3(1e4));
 #ifdef TONEMAP_NARKOWICZ
   // LOW tier / clipped-LDR fallback: the cheap fit, three fewer matrix multiplies.
   c *= 0.6;
@@ -1006,7 +1014,12 @@ vec3 tonemap(vec3 c) {
   c = ACES_IN * c;
   c = rrtOdtFit(c);
   c = ACES_OUT * c;
-  return sat3(c);
+  // No sat3. The fit asymptotes at 1/0.983729 = 1.0165, and uToneWhite normalises it
+  // so a chosen scene-linear reference white lands on display 1.0 — which is what gives
+  // the chain headroom above 1.0 to carry over the grade (see the base/over split in
+  // main). With the old sat3 here, every scene value from linear 2.9 upwards arrived at
+  // the print curve identical, and that is why lantern cores came out as a flat plateau.
+  return max(c, vec3(0.0)) * uToneWhite;
 #endif
 }
 
@@ -1035,6 +1048,41 @@ vec3 filmicToeShoulder(vec3 c) {
   vec3 toe = p * pow(x / p, vec3(uFilmic.z));
   vec3 shoulder = 1.0 - (1.0 - p) * pow((1.0 - x) / (1.0 - p), vec3(uFilmic.w));
   return mix(toe, shoulder, step(vec3(p), x));
+}
+
+/**
+ * The white end: expand the highlight band, then approach white asymptotically.
+ *
+ * Everything above me used to end in a hard sat3, and the arithmetic of that is the
+ * whole "no clean white / blown core" complaint at once. Measured on the r5 build's own
+ * transfer function: scene-linear 2.9 already reached code 255, and *every* value above
+ * it — 3, 8, 30, 300 — mapped to the same 255. So a lantern's paper, which sits at
+ * linear ~3.2 once its own bloom lands on it, came out as a flat 254/255 plateau with no
+ * gradient left to read as paper (desktop-torii cores measured p95 253.8 with 2537
+ * pixels pinned at the top bin), while the frames with no emitter in shot topped out at
+ * 234 (hero) and 225 (wide) and never reached white at all.
+ *
+ * Two terms, both operating only on the top of the range:
+ *
+ *  - uHighlight.x/.y — knee and gain. Below the knee (code ~204) this is the identity,
+ *    so p50 and p90 do not move and the mids stay where the grade put them; above it the
+ *    band is expanded so a practical light climbs into the 240s.
+ *  - uHighlight.z — the soft white. 1 - (1-w)*exp(-(x-w)/(1-w)) is C1 at w, slope
+ *    1 there, and asymptotes to 1 without ever reaching it. Measured on the shipped
+ *    constants, scene-linear 2.9 / 6 / 20 / 200 now land on 251.8 / 253.4 / 254.7 / 254.9,
+ *    where r5 put all four on 255. The gradient at the very top is thin — that is what an
+ *    asymptotic print shoulder looks like in eight bits — but it is monotone, so a core
+ *    always has a readable falloff and no exposure can produce a flat region.
+ *
+ * A film print behaves exactly this way — Dmin is never paper-white — and it is also
+ * why no amount of over-exposure can produce a flat clipped region here any more.
+ */
+vec3 highlightWhite(vec3 c) {
+  vec3 e = max(c - uHighlight.x, vec3(0.0));
+  vec3 x = c + e * (uHighlight.y - 1.0);
+  float w = uHighlight.z;
+  vec3 soft = 1.0 - (1.0 - w) * exp(-(x - w) / max(1.0 - w, 1e-3));
+  return mix(x, soft, step(vec3(w), x));
 }
 
 #ifdef USE_LUT
@@ -1103,12 +1151,32 @@ vec3 resolveAA(vec2 uv) {
     vec3 mx = max(max(max(n, s), max(e, w)), m);
     // CAS's amplitude term assumes a 0..1 signal. Our source is HDR, so measure the
     // local contrast on a Reinhard-normalised proxy and apply the weights to HDR.
-    vec3 mnT = mn / (1.0 + mn);
-    vec3 mxT = mx / (1.0 + mx);
-    vec3 amp = sqrt(sat3(min(mnT, max(vec3(0.0), 2.0 - mxT)) / max(mxT, vec3(1e-4))));
-    vec3 wgt = amp * (-1.0 / mix(9.0, 5.5, sat(uSharpen)));
-    vec3 rcp = 1.0 / (1.0 + 4.0 * wgt);
-    outc = max(vec3(0.0), (outc + (n + s + e + w) * wgt) * rcp);
+    //
+    // One *scalar* amplitude, from luma, not a per-channel vec3. A per-channel
+    // amplitude gives each channel a different sharpening gain on the same edge, and
+    // that is a hue shift by construction: it is what put the magenta and green fringes
+    // on the bamboo culms against the sky (desktop-valley-r5.png y=60 x=1164 reads
+    // [81,2,18] — green driven to 2 while red held at 81, one pixel wide, at an edge
+    // whose two sides are [126,132,109] and [190,188,167]). Nothing about that edge is
+    // magenta; the fringe is entirely manufactured here.
+    float mnT = lumaN(mn);          // already Reinhard-normalised
+    float mxT = lumaN(mx);
+    float amp = sqrt(sat(min(mnT, max(0.0, 2.0 - mxT)) / max(mxT, 1e-4)));
+    float wgt = amp * (-1.0 / mix(9.0, 5.5, sat(uSharpen)));
+    float rcp = 1.0 / (1.0 + 4.0 * wgt);
+    // Clamped to the neighbourhood it was sharpened against. The unclamped form
+    // overshoots without bound on an HDR signal and then loses the negative lobe to
+    // max(0.0, ...) per channel — an asymmetric clip that breaks hue and leaves the
+    // isolated speckled pixels on every foliage alpha edge. Inside this range no pixel
+    // can be a colour its own neighbours do not already contain, so single-pixel
+    // fringes and speckle are impossible rather than merely rarer.
+    //
+    // The range includes the incoming value, because FXAA above may legitimately have
+    // moved the centre outside the cross (its edge-direction taps are diagonal). Bounding
+    // to the cross alone would quietly undo part of the AA on diagonal edges; bounding to
+    // the union constrains only what sharpening added.
+    vec3 lo = min(mn, outc), hi = max(mx, outc);
+    outc = clamp((outc + (n + s + e + w) * wgt) * rcp, lo, hi);
   }
   #endif
   return outc;
@@ -1153,8 +1221,14 @@ void main() {
   // ---- chromatic aberration ------------------------------------------------
 #ifdef USE_CHROMATIC
   {
-    float r2 = dot(fromCenter, fromCenter);
-    vec2 off = fromCenter * r2 * uChromatic;
+    // Authored as a *pixel* split, not a UV split. The uniform used to be in UV, which
+    // silently made the aberration resolution-dependent: the same 0.0022 gave 1.39 px of
+    // R/B separation at the corner of a 2532-wide phone buffer and 1.05 px at 1920, so
+    // the pass/fail profile got 32% more fringing than the showcase one from identical
+    // config. Above about half a pixel lateral CA stops reading as a lens and starts
+    // reading as a bug, so uChromatic is now px at the corner and is capped there.
+    float r2 = dot(fromCenter, fromCenter) * 2.0;          // 0 at centre, 1 at corner
+    vec2 off = normalize(fromCenter + vec2(1e-6)) * r2 * uChromatic * uTexel;
     color.r = fetch(uv + off).r;
     color.b = fetch(uv - off).b;
   }
@@ -1214,20 +1288,33 @@ void main() {
   // only carries the shadow *hue* — the toe below runs after the LUT and takes the
   // level back down, so this cannot flatten the bottom of the range the way it did
   // when it was the last word on black.
+  // Only the bottom is clamped now. The three sat3 calls that used to sit here were
+  // each individually harmless and collectively responsible for the blown cores: they
+  // threw away everything above display 1.0 *before* the LUT, so the print curve and the
+  // white end below could not tell scene-linear 3 from scene-linear 30.
   color = color * (1.0 - uLift) + uLift;
-  color = sat3(color);
-  color = pow(color, 1.0 / max(uGamma, vec3(1e-3))) * uGain;
-  color = sat3(color);
-  color = sat3((color - 0.435) * uContrast + 0.435);
+  color = pow(max(color, vec3(0.0)), 1.0 / max(uGamma, vec3(1e-3))) * uGain;
+  color = (color - 0.435) * uContrast + 0.435;
+
+  // The LUT is a 32^3 table addressed in [0,1] and cannot represent over-range light, so
+  // split: grade the in-gamut part, carry the over-range residual around the table and
+  // fold it back in afterwards. uHighlight.w scales it, because the residual is small
+  // in absolute terms (0.038 at the fit's asymptote) and it is the only thing left that
+  // separates a lantern core from a sun disc.
+  vec3 base = min(max(color, vec3(0.0)), vec3(1.0));
+  vec3 over = max(color - vec3(1.0), vec3(0.0));
 
 #ifdef USE_LUT
   {
-    vec3 graded = mix(sampleLUT(tLutDay, color), sampleLUT(tLutNight, color), uLutMix);
-    color = mix(color, graded, uLutStrength);
+    vec3 graded = mix(sampleLUT(tLutDay, base), sampleLUT(tLutNight, base), uLutMix);
+    base = mix(base, graded, uLutStrength);
   }
 #endif
 
-  color = filmicToeShoulder(color);
+  color = filmicToeShoulder(base) + over * uHighlight.w;
+  // Before the lens water, the flash and the letterbox: those are allowed to reach a
+  // true 1.0, scene light is not.
+  color = highlightWhite(color);
 
   // ---- rain on the lens, part 2: the drop itself ---------------------------
   // After the grade, with the vignette and grain: water sitting on the front element
@@ -1313,10 +1400,29 @@ export class PostFX {
     // sun disc, wet stone speculars, lantern paper — and the wider tent radius is what
     // turns that into a soft halation that falls off over a third of the screen
     // instead of a tight ring.
-    this.bloomStrength = 0.105;
+    //
+    // ...which is what the comment claimed and the mip weights did not deliver. Every
+    // upsample step ran at scale 1, so mip j reached the composite with the amplitude a
+    // 2^-j downsample leaves it — A/4^j for a point source — and the sum is dominated by
+    // the *finest* octave. Simulating the exact 13-tap down / 3x3 tent up chain on a
+    // point source, the r5 profile was 28.7% of peak at 6 px, 2.7% at 24 px and 0.06% at
+    // 150 px: a tight bright ring with no skirt at all, i.e. the single most recognisable
+    // glow-filter tell, and the critic measured it dying inside 30 px on the torii shot.
+    //
+    // `bloomMipGain` is the per-octave upsample scale, so octave j reaches the composite
+    // at gain^j. At 2.6 the profile becomes 80.4% / 29.8% / 6.9% at the same radii — a
+    // halation that is still 3.9% of peak 250 px out. `bloomEnergy` is the *total* added
+    // energy and is divided by the octave weight sum at build time, so the knob means
+    // the same thing whether a tier runs five octaves or seven, and so a retune of
+    // `bloomMipGain` does not silently change overall brightness.
+    this.bloomEnergy = 2.4;
+    this.bloomMipGain = 2.6;
     this.bloomThreshold = 1.0;
     this.bloomKnee = 0.62;
     this.bloomRadius = 1.35;
+    // Composite-side value, derived in _buildTargets from bloomEnergy / sum(gain^j).
+    this.bloomStrength = 0.105;
+    this._bloomWeightSum = 1;
     // Tuned against a real solar disc in the occlusion buffer, not against the constant
     // emission floor that used to be there (see FRAG_GOD_OCCLUSION). Scattering actual
     // radiance needs *far* less gain than manufacturing it did: the source is now
@@ -1352,10 +1458,45 @@ export class PostFX {
     this.filmicToe = 1.25;
     this.filmicShoulder = 1.14;
     this.filmicPivot = 0.44;
+    // The white end (see `highlightWhite`). The knee is in display code values / 255, so
+    // 0.80 = code 204: nothing below that moves, which is why p50 and p90 are unchanged
+    // by this and the mids stay where the LUT and the print curve put them.
+    //
+    // 1.55 is a measured choice, not a taste one, and it is where two of the r5 review's
+    // own targets stop being jointly satisfiable. Re-grading the r5 frames through this
+    // exact chain (tone + the new bloom), hiGain trades white against blown area
+    // monotonically and there is no setting that wins both:
+    //
+    //   hiGain   phone-hero p99.9   phone-wide p99.9   desktop-torii % above 250
+    //   (r5)           234                225                    0.390
+    //   1.00           235                227                    0.000
+    //   1.25           240                233                    0.000
+    //   1.55           245                238                    0.370
+    //   1.70           247                240                    0.485
+    //
+    // The rig gates the highlight shots at p99.9 > 235, and r5 failed it on hero (234) and
+    // wide (225). 1.55 clears it on both with margin on the pass/fail profile while
+    // leaving torii's blown fraction slightly below where it already was. Going further
+    // buys code values of white by making the blown area worse than the build being
+    // fixed, which is the same defect one step down the range.
+    this.hiKnee = 0.80;
+    this.hiGain = 1.55;
+    this.whiteKnee = 0.90;
+    this.overGain = 5.0;
+    // Scene-linear that maps to display white, used to normalise the ACES fit (which
+    // asymptotes at 1.0165, not 1.0). At 12 the mid-tone lift is 1.0194^0.41666 = +0.8%,
+    // i.e. code 93 becomes 94 — below the noise — while over-range light from linear
+    // ~3.2 upwards survives the grade instead of being clamped flat.
+    this.toneWhitePoint = 12.0;
     this.vignette = 0.42;
     this.grain = 0.028;
     this.sharpen = 0.55;
-    this.chromatic = 0.0022;
+    // Per-channel radial offset in *pixels* at the frame corner, not UV — see the
+    // composite. R and B move opposite ways, so the R/B separation is twice this: 0.60 px
+    // at the corner, against a measured 3.07 px on the r5 phone buffer and 2.42 px on
+    // desktop from the old UV-space 0.0022. Sub-pixel is where lateral CA reads as glass
+    // rather than as a broken filter.
+    this.chromatic = 0.30;
     this.lutStrength = 0.85;
     this.shutterAngle = 180;
     this.focusDistance = 6.0;
@@ -1468,6 +1609,19 @@ export class PostFX {
     return this;
   }
 
+  /**
+   * Normaliser for the ACES fit's own asymptote, so toneWhitePoint scene-linear lands
+   * on display 1.0. Evaluated on the neutral axis: both ACES matrices have rows summing
+   * to 1.0 to within 1e-5, so a grey passes the change of basis unchanged and the scalar
+   * fit is exact for it.
+   */
+  _toneWhiteGain() {
+    const w = clamp(this.toneWhitePoint || 12, 1, 1e4);
+    const y = (w * (w + 0.0245786) - 0.000090537) / (w * (0.983729 * w + 0.432951) + 0.238081);
+    // y is in (0, 1.0165] for any w >= 1, so this cannot divide by zero or exceed ~4.6.
+    return y > 1e-4 ? 1 / y : 1;
+  }
+
   _readQuality(q) {
     const quality = q || this.ctx.quality || {};
     const tier = quality.tier === undefined ? TIER.MEDIUM : quality.tier;
@@ -1497,7 +1651,13 @@ export class PostFX {
     this._godSamples = tier >= TIER.ULTRA ? 48 : (tier >= TIER.HIGH ? 32 : 24);
     this._dofRings = tier >= TIER.ULTRA ? 3 : 2;
     this._mbTaps = tier >= TIER.ULTRA ? 6 : 4;   // x2 (symmetric) = 12 / 8 taps
-    this._bloomStartShift = tier <= TIER.LOW ? 2 : 1;
+    // Start one octave coarser than before. The finest octave (half-res) is the tight
+    // ring we are trying to get rid of, so dropping it widens the reach of a fixed mip
+    // count by 2x *and* cuts the prefilter target from 1/4 of the buffer to 1/16 — on
+    // the phone profile that is 474k -> 118k pixels of fill on mip 0, with no change to
+    // the draw-call count. MEDIUM's five octaves now cover shifts 2..6, which tracks
+    // ULTRA's 2..8 to within 2 percentage points of peak out to 110 px.
+    this._bloomStartShift = tier <= TIER.LOW ? 3 : 2;
     this._godShift = tier >= TIER.HIGH ? 1 : 2;
 
     // LOW tier and the clipped-LDR fallback both take the cheap curve: the full
@@ -2023,6 +2183,8 @@ export class PostFX {
       uContrast: { value: this.contrast },
       uFilmic: { value: new Vector4(this.filmicBlack, this.filmicWhite, this.filmicToe, this.filmicShoulder) },
       uFilmicPivot: { value: this.filmicPivot },
+      uHighlight: { value: new Vector4(this.hiKnee, this.hiGain, this.whiteKnee, this.overGain) },
+      uToneWhite: { value: this._toneWhiteGain() },
       uVignette: { value: this.vignette },
       uVignetteScale: { value: 1.15 },
       uVignetteTint: { value: new Color(0.72, 0.80, 0.95) },
@@ -2223,6 +2385,16 @@ export class PostFX {
         this.bloomMips.push(this._rt(mw, mh, true, false));
       }
     }
+    // Octave weight sum, so `bloomEnergy` is total added energy independent of how many
+    // octaves the tier and buffer size actually gave us. The break above means the count
+    // is not `_bloomIterations` — a small buffer silently drops the coarsest levels, and
+    // reading the intended count here instead of the real one would make bloom brighter
+    // on exactly the devices that dropped them.
+    const g = Math.max(1, this.bloomMipGain);
+    let sum = 0;
+    for (let i = 0; i < Math.max(1, this.bloomMips.length); i++) sum += Math.pow(g, i);
+    this._bloomWeightSum = sum;
+    this.bloomStrength = this.bloomEnergy / sum;
 
     // 8/9 — god rays
     this.rtGodA = null; this.rtGodB = null;
@@ -2470,7 +2642,11 @@ export class PostFX {
     if (g.contrast !== undefined) this.contrast = g.contrast;
     if (g.vignette !== undefined) this.vignette = g.vignette;
     if (g.grain !== undefined) this.grain = g.grain;
-    if (g.bloom !== undefined) this.bloomStrength = g.bloom;
+    // `bloom` is total added energy now (see bloomEnergy), not the composite multiplier.
+    if (g.bloom !== undefined) {
+      this.bloomEnergy = g.bloom;
+      this.bloomStrength = this.bloomEnergy / Math.max(1, this._bloomWeightSum);
+    }
     if (g.lutStrength !== undefined) this.lutStrength = clamp(g.lutStrength, 0, 1);
     if (g.chromatic !== undefined) this.chromatic = g.chromatic;
     if (g.sharpen !== undefined) this.sharpen = clamp(g.sharpen, 0, 1);
@@ -2917,7 +3093,10 @@ export class PostFX {
 
     const uu = this.mBloomUp.uniforms;
     uu.uRadius.value = this.bloomRadius;
-    uu.uScale.value = 1.0;
+    // Per-octave gain: upsampling mip i+1 into mip i multiplies everything already
+    // accumulated in i+1, so octave j reaches the composite at bloomMipGain^j. At 1.0
+    // (what this was) the finest octave dominates and there is no skirt.
+    uu.uScale.value = Math.max(1, this.bloomMipGain);
     for (let i = mips.length - 2; i >= 0; i--) {
       uu.tSrc.value = mips[i + 1].texture;
       uu.uTexel.value.set(1 / mips[i + 1].width, 1 / mips[i + 1].height);
@@ -3086,6 +3265,16 @@ export class PostFX {
     u.uContrast.value = this.contrast;
     u.uFilmic.value.set(this.filmicBlack, this.filmicWhite, this.filmicToe, this.filmicShoulder);
     u.uFilmicPivot.value = this.filmicPivot;
+    // Both knees clamped away from 1: the soft-white denominator is (1 - whiteKnee), and
+    // a caller pushing it to 1.0 through setGrade would divide by zero and put a NaN into
+    // every pixel of the frame (ARCHITECTURE §5b — three's uniform upload would not even
+    // be the thing that threw; the frame would just go black with a stale draw count).
+    u.uHighlight.value.set(
+      clamp(this.hiKnee, 0.2, 0.98),
+      Math.max(1, this.hiGain),
+      clamp(this.whiteKnee, 0.5, 0.98),
+      Math.max(0, this.overGain));
+    u.uToneWhite.value = this._toneWhiteGain();
     u.uVignette.value = this.vignette;
     u.uSharpen.value = this.sharpen;
     u.uTime.value = this._time;
