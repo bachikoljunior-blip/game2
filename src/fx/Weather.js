@@ -23,7 +23,7 @@ import {
   ShaderMaterial, SRGBColorSpace, Vector3, Vector4,
 } from 'three';
 
-import { noise, makeRandom, clamp, lerp, damp, glslNoise } from '../core/Noise.js';
+import { noise, makeRandom, clamp, lerp, damp, smoothstep, glslNoise } from '../core/Noise.js';
 
 const TAU = Math.PI * 2;
 
@@ -134,6 +134,25 @@ const W_MOTE = 4, W_RING = 5, W_MIST = 6, W_GLOW = 7;
 
 /** Default out-param for `windAt`, so a caller that ignores it allocates nothing. */
 const _v1 = new Vector3();
+
+/**
+ * The cool anchor every body of mist is pulled toward — the contract's shadow/ambient
+ * (§5). Mist is lit by the sky dome, not by the key, so it belongs on the cool side of
+ * the frame even at magic hour; a neutral or warm veil is what makes a shot read as a
+ * sunset filter over a grey render.
+ */
+const MIST_COOL = new Color('#4a6b8f');
+const _fogTarget = new Color();
+
+/**
+ * How many valley slabs the *reference* (ULTRA) build stacks. Lower tiers build fewer,
+ * and each surviving slab is thickened by `REF_SEA_LAYERS / seaLayers` so the composited
+ * sea reaches the same opacity on a phone as on a desktop. Before this, MEDIUM built 4
+ * slabs against ULTRA's 6 and additionally scaled density by `quality.weather` (0.7),
+ * which left the phone's mist 2.0x thinner across the band and 13x thinner at its top —
+ * measured, not estimated: see the alpha envelope in the round-5 report.
+ */
+const REF_SEA_LAYERS = 5;
 
 export class WeatherSystem {
   constructor(ctx) {
@@ -423,8 +442,22 @@ export class WeatherSystem {
 
     const c = s?.sunColor || l?.sunColor || l?.sun?.color;
     if (c && c.isColor) this.sunColor.copy(c);
-    const fc = s?.fogColor || s?.horizonColor;
-    if (fc && fc.isColor) this.fogColor.copy(fc);
+
+    // SkySystem publishes its aerial-perspective colours on `fogParams`, not as a bare
+    // `fogColor` — the old probe for `sky.fogColor || sky.horizonColor` matched neither
+    // property, so the mist has been frozen at its constructor value all along and never
+    // tracked time of day. Read the real field, and anchor the result to the contract's
+    // cool shadow/ambient: `fogParams.color` is 0xa9a8ad at magic hour (R-B = -4, a
+    // neutral grey), and ARCHITECTURE §5 forbids neutral grey in the shadow band. The
+    // *top* colour is the cool one, so bias toward it and toward #4a6b8f.
+    const fp = s?.fogParams;
+    const fc = fp?.topColor?.isColor ? fp.topColor : (fp?.color?.isColor ? fp.color : null);
+    if (fc) {
+      _fogTarget.copy(MIST_COOL).lerp(fc, 0.45);
+      if (isFinite(_fogTarget.r) && isFinite(_fogTarget.g) && isFinite(_fogTarget.b)) {
+        this.fogColor.copy(_fogTarget);
+      }
+    }
 
     // Fireflies and embers only belong after the sun has gone down.
     this.nightFactor = clamp(1 - (this.sunDir.y + 0.08) * 4.5, 0, 1);
@@ -564,54 +597,98 @@ export class WeatherSystem {
 
   // ======================================================================= fog
   /**
-   * Two separate bodies of mist, because they are two different phenomena:
+   * Three bodies of mist, because they are three different phenomena. All of them are
+   * instances of one quad on one mesh, so the whole system is a single draw call and the
+   * instance count is identical to the pre-r5 build — the mid-ground bank below is paid
+   * for out of the sea's own layer budget, not added on top of it.
    *
-   *  1. **The valley cloud sea** (mode 0) — layers pinned to *absolute world
-   *     altitude* around the valley datum (`terrain.waterLevel`, 782 m), NOT to
-   *     the camera. The shrine plateau is flat at 812 m, so every slab sits tens
-   *     of metres below the flagstone and is simply occluded by the plateau
-   *     itself: the player looks *down* onto a sea of cloud, which is what
-   *     ARCHITECTURE §5 asks for. Per-layer density ramps up with depth below
-   *     the datum, so the top surface feathers out and the 723 m basin floor is
-   *     buried. Camera-anchoring this was what flooded the courtyard.
+   *  1. **The valley cloud sea** (mode 0, altitude −34…+13 m about the datum) — pinned
+   *     to *absolute world altitude* around the valley datum (`terrain.waterLevel`,
+   *     782 m), NOT to the camera. The shrine plateau is flat at 812 m, so every slab
+   *     sits tens of metres below the flagstone and is simply occluded by the plateau
+   *     itself: the player looks *down* onto a sea of cloud, which is what §5 asks for.
+   *     Camera-anchoring this was what flooded the courtyard.
    *
-   *  2. **The ground wisp** (mode 1) — a couple of centimetres of drift that
-   *     does follow the local ground, for the low sun to rake between the
-   *     lanterns. Deliberately tiny: it is driven by its own `wisp` preset knob
-   *     so 'clear' and 'petals' get a whisper and only 'mist' gets ankle-deep.
+   *  2. **The mid-ground bank** (mode 0, altitude +26 m = 808 m) — one slab in the
+   *     altitude gap between the sea's 795 m top and the 812 m flagstone. It exists
+   *     because r5 measured *nothing* between the wisp (which is explicitly killed past
+   *     70 m) and the sea's rim, so the ~120 m grass and the ~500 m bamboo slope sat at
+   *     one depth with no cue between them. Being 4 m *under* the flagstone it is still
+   *     occluded by the plateau, so it cannot flood the courtyard; it only shows past
+   *     the rim, where the ground has fallen away. In the `wide` pose that puts it in
+   *     rows ~486-545 — exactly the strip where the sea contributes a computed zero.
    *
-   * Horizontal layers are the only volumetric-looking mist inside a mobile
-   * budget; the tell-tale flatness is hidden by a grazing-angle term, a
+   *  3. **The ground wisp** (mode 1) — a couple of centimetres of drift that does follow
+   *     the local ground, for the low sun to rake between the lanterns. Deliberately
+   *     tiny: driven by its own `wisp` preset knob so 'clear' and 'petals' get a whisper
+   *     and only 'mist' gets ankle-deep.
+   *
+   * Horizontal layers are the only volumetric-looking mist inside a mobile budget; the
+   * tell-tale flatness is hidden by a grazing-angle term, a horizon feather (fPar2.w), a
    * camera-plane proximity fade and a soft-particle depth fade.
    */
   _buildFog(weather) {
-    const valleyLayers = weather >= 0.9 ? 6 : weather >= 0.6 ? 4 : 3;
+    // Total instances per tier is unchanged (8 / 6 / 4); only the split moved.
+    const seaLayers = weather >= 0.9 ? 5 : weather >= 0.6 ? 3 : 2;
     const wispLayers = weather >= 0.6 ? 2 : 1;
-    const layers = valleyLayers + wispLayers;
+    const layers = seaLayers + 1 + wispLayers;
     const geo = this._quadGeometry();
 
     const fPar = new Float32Array(layers * 4);   // altitude, scale, phase, speed
-    const fPar2 = new Float32Array(layers * 4);  // mode, alphaScale, grazePow, unused
+    const fPar2 = new Float32Array(layers * 4);  // mode, alphaScale, grazePow, horizonFeather
 
-    for (let i = 0; i < valleyLayers; i++) {
-      const t = i / Math.max(1, valleyLayers - 1);
+    // Fewer slabs must not mean a thinner sea: normalise so N layers over-composite to
+    // roughly the reference stack's opacity. First-order (alpha is small per layer), and
+    // it is the difference between a phone that has mist and one that does not.
+    const seaNorm = REF_SEA_LAYERS / seaLayers;
+
+    for (let i = 0; i < seaLayers; i++) {
+      const t = i / Math.max(1, seaLayers - 1);
       // −34 m to +13 m about the datum. The top of the sea lands near 795 m: high
       // enough to be a real cloud surface from the overlook, still 17 m under the
       // 812 m flagstone and 10 m under the 805 m near rim, so neither can flood.
-      fPar[i * 4] = -34 + t * 47;
+      const alt = -34 + t * 47;
+      fPar[i * 4] = alt;
       // The basin is read from 200 m (750 m ASL) out to 600 m (591 m ASL), and the
       // radial edge fade eats the outer 40% of every plane — so the plane has to be
       // several times the distance it must cover. Sized so the fully-opaque disc
-      // reaches ~270-510 m and the feathered rim lands past the far ridge.
-      fPar[i * 4 + 1] = 900 + t * 820;
+      // reaches ~306-707 m and the feathered rim lands past the far ridge.
+      //
+      // The span grew from 820 to 1180 because the *upper* slabs were the ones running
+      // out of radius: a sightline that only grazes 5-10 m below the datum travels
+      // 600-900 m to get there, past the old top plane's rim, so on any tier that
+      // dropped a middle slab a hole opened in the band. Measured on the `wide` pose,
+      // row 550: MEDIUM alpha 0.046 -> 0.103, and the worst ULTRA/MEDIUM row ratio
+      // across the band falls from 2.24 to 1.56. Triangles are unchanged — this is a
+      // vertex-position scale on the same two-triangle instance.
+      fPar[i * 4 + 1] = 900 + t * 1180;
       fPar[i * 4 + 2] = this.rng() * 100;
       fPar[i * 4 + 3] = 0.30 + this.rng() * 0.45;
       fPar2[i * 4] = 0;
-      fPar2[i * 4 + 1] = 1.0;
+      // Inversion profile, folded in on the CPU: it is a pure function of the layer's
+      // own altitude, so there is no reason to pay for it per fragment. Widened from
+      // smoothstep(−16, 10) — at (−16, 10) the 795 m top slab came out at 0.037 and the
+      // sea had no top surface at all, which left a hole in the middle of the band on
+      // any tier that dropped the layer below it.
+      fPar2[i * 4 + 1] = seaNorm * smoothstep(-26, 12, -alt);
       fPar2[i * 4 + 2] = 0.65;
+      fPar2[i * 4 + 3] = 0.032;                         // horizon feather, |V.y| units
     }
+
+    {
+      const i = seaLayers;
+      fPar[i * 4] = 26;                                 // 808 m: over the sea, under the floor
+      fPar[i * 4 + 1] = 1150;                           // opaque to ~390 m, feathered to 575 m
+      fPar[i * 4 + 2] = this.rng() * 100;
+      fPar[i * 4 + 3] = 0.42;
+      fPar2[i * 4] = 0;
+      fPar2[i * 4 + 1] = 1.15;
+      fPar2[i * 4 + 2] = 0.85;
+      fPar2[i * 4 + 3] = 0.022;
+    }
+
     for (let j = 0; j < wispLayers; j++) {
-      const i = valleyLayers + j;
+      const i = seaLayers + 1 + j;
       fPar[i * 4] = 0.10 + j * 0.28;                    // centimetres, not metres
       fPar[i * 4 + 1] = 70 + j * 40;
       fPar[i * 4 + 2] = this.rng() * 100;
@@ -619,6 +696,7 @@ export class WeatherSystem {
       fPar2[i * 4] = 1;
       fPar2[i * 4 + 1] = 0.34 - j * 0.10;
       fPar2[i * 4 + 2] = 2.4;                           // only visible near grazing
+      fPar2[i * 4 + 3] = 0.0;                           // the wisp has no horizon to feather
     }
 
     geo.setAttribute('fPar', new InstancedBufferAttribute(fPar, 4));
@@ -661,7 +739,7 @@ export class WeatherSystem {
     mesh.renderOrder = 8;
     this.ctx.scene?.add(mesh);
 
-    this.fog = { layers, valleyLayers, wispLayers, geo, mat, mesh };
+    this.fog = { layers, seaLayers, bankLayers: 1, wispLayers, geo, mat, mesh };
   }
 
   _updateFog(rdt) {
@@ -669,7 +747,13 @@ export class WeatherSystem {
     if (!f) return;
     const u = f.mat.uniforms;
     const q = clamp(this.ctx.quality?.weather ?? 0.7, 0.2, 1.2);
-    const density = clamp(this.current.fog, 0, 1.4) * q;
+    // Blending a slab that is already rasterised costs the same at alpha 0.1 and 0.2, so
+    // scaling *opacity* by the tier bought no frame time and cost the phone its only
+    // mid-ground depth cue. Cost still scales with the tier — via the layer count in
+    // `_buildFog`, which is what actually drives overdraw. Opacity gets a much shallower
+    // curve so the mist is present on MEDIUM (0.955x) and LOW (0.903x) rather than 0.7x.
+    const qMist = 0.85 + 0.15 * q;
+    const density = clamp(this.current.fog, 0, 1.4) * qMist;
     const wisp = clamp(this.current.wisp, 0, 1) * q;
     f.mesh.visible = density > 0.01 || wisp > 0.01;
     if (!f.mesh.visible) return;
@@ -1015,7 +1099,8 @@ void main(){
 
 const FOG_VERT = /* glsl */`
 attribute vec4 fPar;     // altitude, scale, phase, speed
-attribute vec4 fPar2;    // mode (0 = valley slab, 1 = ground wisp), alphaScale, grazePow
+attribute vec4 fPar2;    // mode (0 = altitude-pinned slab, 1 = ground wisp), alphaScale,
+                         // grazePow, horizonFeather
 
 uniform float uTime;
 uniform vec3 uOrigin;
@@ -1030,6 +1115,8 @@ varying float vSpeed;
 varying float vMode;
 varying float vAlphaScale;
 varying float vGrazePow;
+varying float vHorizon;
+varying float vNFreq;
 
 void main(){
   vQuad = position.xy + 0.5;
@@ -1037,16 +1124,27 @@ void main(){
   vSpeed = fPar.w;
   vMode = fPar2.x;
   vGrazePow = fPar2.z;
+  vHorizon = fPar2.w;
+  // Noise frequency from the layer's own reach: a slab that covers 500 m needs pools
+  // hundreds of metres across, a 70 m wisp needs metres. One expression for both, and it
+  // is the reason the band had "no variation along its length".
+  //
+  // A horizontal plane compresses depth savagely near its vanishing line: on the wide
+  // pose one pixel row spans 20.8 m along the 795 m slab at row 500 (measured — t goes
+  // 803.6 m to 762.0 m between rows 500 and 502). At the old fixed 0.018 that is 0.37
+  // periods of the base octave per row, so octaves 2-4 sat at 0.75, 1.5 and 3.0
+  // periods/row, all past Nyquist, and the fbm integrated to a constant. 6/scale gives
+  // 150-347 m wavelengths: 0.06-0.14 periods/row at the base, three octaves resolved.
+  vNFreq = 6.0 / max(fPar.y, 1.0);
 
   // Mode 0 pins to world altitude, so the plateau at 812 m is simply above the
   // whole stack and occludes it. Mode 1 rides the ground the player is on.
   float anchor = mix(uDatum, uBaseY, step(0.5, fPar2.x));
   float wy = anchor + fPar.x;
 
-  // Inversion profile: feathered at the top surface, thick deep in the basin.
-  float depthBelowDatum = uDatum - wy;
-  float altGain = mix(smoothstep(-16.0, 10.0, depthBelowDatum), 1.0, step(0.5, fPar2.x));
-  vAlphaScale = fPar2.y * altGain;
+  // The inversion profile now arrives baked into fPar2.y (it is a function of the
+  // layer's altitude alone, so _buildFog computes it once instead of per fragment).
+  vAlphaScale = fPar2.y;
 
   // Only the XZ extent follows the camera; the layer never rides our height.
   vec3 wp = vec3(position.x, 0.0, position.y) * fPar.y + vec3(uOrigin.x, wy, uOrigin.z);
@@ -1078,6 +1176,8 @@ varying float vSpeed;
 varying float vMode;
 varying float vAlphaScale;
 varying float vGrazePow;
+varying float vHorizon;
+varying float vNFreq;
 
 ${WIND_GLSL}
 
@@ -1087,10 +1187,17 @@ float perspectiveDepthToViewZ_(float invClipZ, float near, float far){
 
 void main(){
   vec2 wdir = normalize(uWind.xy + vec2(1e-5, 0.0));
-  vec2 q = vWorld.xz * 0.018 - wdir * (uWind.w * (0.05 + vSpeed * 0.05)) + vPhase;
+  vec2 q = vWorld.xz * vNFreq - wdir * (uWind.w * (0.05 + vSpeed * 0.05)) + vPhase;
+
+  // Two terms, same total noise cost as before (4 + 3 octaves):
+  //   n  — pools, at the layer's own scale, so opacity varies *along* the band instead
+  //        of sitting level. This is what makes the mist gather in hollows.
+  //   g  — the shared gust envelope. Not a second gust implementation: it is the same
+  //        kagerouGust() every other consumer calls (§10), so the ripple travelling
+  //        through the mist is the same wavefront that is bending the grass under it.
   float n = fbm2(q, 4);
-  float n2 = fbm2(q * 2.7 + vec2(vPhase, -vPhase), 3);
-  float density = smoothstep(-0.28, 0.52, n + n2 * 0.35);
+  float g = kagerouGust(vWorld.xz);
+  float density = smoothstep(-0.30, 0.55, n + (g - 0.5) * 0.55);
 
   float radial = 1.0 - smoothstep(0.34, 0.50, length(vQuad - 0.5));
 
@@ -1105,8 +1212,20 @@ void main(){
   // ...and never reveal the sheet while the camera sits inside it.
   float camFade = smoothstep(0.0, 1.8, abs(cameraPosition.y - vWorld.y));
 
+  // A horizontal plane below the eye has a vanishing line, and 'grazing' peaks exactly
+  // on it — so the slab reached full opacity in the same pixel row it appeared in, which
+  // is the hard horizontal top edge r5 measured across the bamboo treeline. Feather the
+  // last fraction of a degree instead: alpha now ramps to zero as the ray flattens onto
+  // the plane, which converts that discontinuity into a gradient tens of rows deep.
+  //
+  // The max() is not decoration: the wisp passes vHorizon = 0, and smoothstep with equal
+  // edges is 0/0. A ternary would not save it — GLSL compilers routinely flatten both
+  // sides of one — and a NaN here would cross into gl_FragColor (§5b). At 1e-4 the
+  // wisp's factor is 1.0 for every ray steeper than 0.006 degrees, i.e. the identity.
+  float horizonFade = smoothstep(0.0, max(vHorizon, 1e-4), abs(V.y));
+
   float strength = mix(uDensity, uWisp, step(0.5, vMode));
-  float alpha = density * radial * grazing * camFade * strength * vAlphaScale * 0.32;
+  float alpha = density * radial * grazing * horizonFade * camFade * strength * vAlphaScale * 0.32;
   alpha *= 0.15 + 0.85 * smoothstep(3.0, 24.0, dist);
 
   // The wisp is a foreground detail; do not let it haze the far half of the shot.
