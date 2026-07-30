@@ -3,6 +3,19 @@
 Read this before doing anything else in this repository. It is the brief that governs every
 session, not just the one that created it.
 
+## Resuming
+
+**Read `STATE.md` first.** It holds the round number, the last verdict, what is still open,
+and a list of hypotheses already disproved so nobody investigates them twice. If someone
+says only "continue" — or nothing at all beyond opening this repo — `STATE.md` is where the
+next action comes from.
+
+This loop is expected to outlive any single session. Containers get reclaimed, context runs
+out, people switch devices mid-round. So the rule is: **finish a round, update `STATE.md`,
+commit, push.** Work that exists only in a conversation does not survive the boundary, and
+three rounds of critic verdicts were already lost that way before the JSON was committed.
+Never leave a round's outcome unrecorded because the session felt like it was continuing.
+
 ## The goal, unchanged
 
 Build a game at the level of a shipped AAA console title. The reference bar is
@@ -62,10 +75,14 @@ Acting on an unverified guess is how the god-ray pass got worse instead of bette
 `ROUND.md` is the operational brief and it is self-contained — a fresh session can follow it
 without reading any prior conversation. The `/round` skill runs one round.
 
-**One round is the unit of work, not the end of the job.** After each round: commit, push,
-and report the verdict, the score delta, which teams were dispatched, which were gated out,
-and the measured numbers against ARCHITECTURE §7. Then continue to the next round — unless
-the critic has passed the build, or a human has said stop.
+**One round is the unit of work, not the end of the job.** After each round: update
+`STATE.md`, commit, push, and report the verdict, the score delta, which teams were
+dispatched, which were gated out, and the measured numbers against ARCHITECTURE §7. Then
+continue to the next round — unless the build meets the definition of done in `STATE.md`,
+or a human has said stop.
+
+`STATE.md` is updated *before* the report, not after. A session that reports and then dies
+has lost the round; a session that records and then dies has not.
 
 ## Spend tokens on judgement, not on repetition
 

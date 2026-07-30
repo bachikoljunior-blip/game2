@@ -167,7 +167,12 @@ between agents. Paste it; do not paraphrase it.
 
 ## When the round is done
 
-Commit on `claude/aaa-fps-threejs-ddcaix`, push, and report:
+**First update `STATE.md`** — the round log row, the verdict and score, the open table, and
+any hypothesis this round disproved. Then commit `STATE.md` together with
+`shots/review-r<N>.json` (that one is deliberately not gitignored) and push to
+`claude/aaa-fps-threejs-ddcaix`.
+
+Only then report:
 
 - the verdict and score, and the delta from last round
 - which teams were spawned and which were gated out

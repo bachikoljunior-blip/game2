@@ -2,5 +2,13 @@ node_modules/
 dist/
 .vite/
 *.log
-shots/
 dist-single/
+
+# Captures are large and machine-local, so the directory contents are ignored — but the
+# critic's verdicts are the record of what bar this build was held to, and they were being
+# discarded along with them. Three rounds of judgements were lost to a container restart
+# before anyone noticed they had never been committed. Keep the JSON, leave the PNGs out.
+# (Ignore the contents, not the directory: git cannot un-ignore a file inside an ignored
+# directory.)
+shots/*
+!shots/review-*.json
