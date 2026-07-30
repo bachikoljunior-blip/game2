@@ -4,3 +4,7 @@ dist/
 *.log
 shots/
 dist-single/
+# Generated dispatch scripts: each one pastes ARCHITECTURE.md and AGENT-PREAMBLE.md
+# verbatim so the prompt prefix is byte-exact, which makes them duplicated content with a
+# round number on it — an artifact of a round, like the shots, not a record of one.
+.round*-repair.mjs
