@@ -17,16 +17,25 @@ every texture, mesh, animation and sound is synthesised at boot. `ARCHITECTURE.m
 binding contract that lets independent agents work on it in parallel; read §5 (art
 direction), §7 (perf budget) and §8 (file ownership) before dispatching anything.
 
-An independent critic has scored it 34 → 48 → 58 out of 100 against a *Ghost of Tsushima*
-/ *SEKIRO* bar. It has not passed. Round 4 was captured but its verdict was never filed.
+An independent critic has scored it 34 → 48 → 58 → (round 4 unfiled) → 58 out of 100
+against a *Ghost of Tsushima* / *SEKIRO* bar. It has not passed. Round 5 filed FAIL with
+three blockers, repaired all three and verified them.
 
-Currently open, measured:
+Currently open, measured at the end of round 5:
 
 | | measured | contract |
 |---|---|---|
-| phone draw calls | 156 | ≤ 140 |
-| phone triangles | 1,146,570 | ≤ 900,000 |
-| `wide` highlight gate | p99.9 = 225 | > 235 |
+| phone draw calls | 117 | ≤ 140 ✓ |
+| phone triangles | 628,216 | ≤ 900,000 ✓ |
+| `wide` highlight gate | p99.9 = 206 phone, 211 desktop | > 235 |
+| `desktop-sun` black gate | p0.1 = 18 | < 15 |
+| §4 light levels | sun 7.39, hemi 1.038 | ~3.0, ~0.35 — needs an authoring decision |
+| phone shadow reach | 70 m (`Quality.js` MEDIUM) | the valley framing needs 130–160 m |
+
+The last four are round-6 work and the README's "Known open" section carries the reasoning.
+Two of them are *consequences* of round 5's fixes rather than defects in them, which is the
+normal shape of this loop: the highlight gate moved away from passing because the fix
+correctly removed an over-bright massif that had been supplying the frame's only highlights.
 
 ---
 
