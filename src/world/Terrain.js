@@ -416,19 +416,19 @@ const RIDGE_LAYERS = [
   {
     seed: 0x2f1103, lift: 115, amp: 620, massifs: 4, groupLo: 0.46, groupHi: 1.00,
     baseR: 1.55, baseAmp: 0.30, detR: 8.5, detAmp: 0.060, gulR: 23.0, notch: 0.075,
-    serR: 148.0, serM: 62.0,
+    serR: 34.0, serM: 62.0,
     presR: 0.75, presOff: 3.1, dirLo: 0.30, par: 0.000024, soft: 12.0, haze: 0.74,
   },
   {
     seed: 0x7a3d19, lift: 66, amp: 450, massifs: 5, groupLo: 0.40, groupHi: 0.98,
     baseR: 2.30, baseAmp: 0.24, detR: 12.5, detAmp: 0.068, gulR: 34.0, notch: 0.095,
-    serR: 186.0, serM: 55.0,
+    serR: 42.0, serM: 55.0,
     presR: 0.95, presOff: 27.7, dirLo: 0.14, par: 0.000053, soft: 8.0, haze: 0.51,
   },
   {
     seed: 0x11c7e5, lift: 24, amp: 320, massifs: 6, groupLo: 0.34, groupHi: 0.94,
     baseR: 3.10, baseAmp: 0.20, detR: 17.0, detAmp: 0.076, gulR: 44.0, notch: 0.110,
-    serR: 232.0, serM: 48.0,
+    serR: 52.0, serM: 48.0,
     presR: 1.30, presOff: 61.3, dirLo: 0.06, par: 0.000094, soft: 5.0, haze: 0.30,
   },
 ];
@@ -1544,7 +1544,22 @@ ${this._heightGLSL()}
       uTexScale: { value: new Vector4(0.30, 0.42, 0.105, 0.55) },
       uWaterLevel: { value: this.waterLevel },
       uSkyTint: { value: new Color(0x9fb4c8) },
+      // The airlight's upper end. Distant terrain converges on the sky, and the sky is
+      // a gradient — one flat tint cannot match it at both ends. Mirrored from
+      // Sky.fogParams.topColor in _syncEnvironment; this default is that table's
+      // magic-hour value so a boot without a sky still grades the right way.
+      uSkyTop: { value: new Color(0x7d97bd) },
+      // The airlight's forward in-scatter lobe: colour, then (power, strength). All three
+      // mirror Sky.fogParams so the halo round a backlit ridge is the same halo Sky's own
+      // fog draws round anything nearer.
+      uSkyGlow: { value: new Color(0xff9b52) },
+      uSkyGlowP: { value: new Vector2(9, 0.85) },
       uAerial: { value: new Vector2(90, 0.00085) },
+      // The kilometre-scale component: (start metres, extinction per metre). Separate
+      // from uAerial because it deliberately has no height law — see the aerial patch.
+      // 1/0.0023 is a 435 m mean free path, which puts a 2 km ridge at 99% extinction
+      // and leaves everything inside 450 m bit-for-bit unchanged.
+      uAerial2: { value: new Vector2(450, 0.0023) },
       // Haze layer: (top of the dense layer in metres ASL, 1 / scale height). Nothing
       // at or below x is affected at all — see the optical-depth block in the aerial
       // perspective patch below.
@@ -1630,6 +1645,21 @@ ${this._heightGLSL()}
     float kgMist = smoothstep(915.0, 806.0, vKgWorld.y) * smoothstep(130.0, 520.0, kgDist);
     kgA = clamp(kgA * (1.0 + kgMist * 0.60) + kgMist * 0.10, 0.0, 1.0);
 
+    // The long-range component, and it is the one the massif needs. Everything above
+    // this line is a *layer*, and so is the aerial perspective Sky patches in further
+    // down the chain — that one has a 26 m scale height (Sky.fogParams.heightFalloff),
+    // which is a mist deck sitting on the stream. Measured through the closed forms of
+    // both: on a horizontal ray at 500 m the two together extinguish 90% of the
+    // surface, and on the ray to a 1150 m summit 1135 m out they extinguish 54%. Total
+    // extinction *fell* with distance the moment the ray climbed out of the deck, which
+    // is why the range measured brighter than the sky beside it while the bamboo slope
+    // half its distance away did not. This term has no height law on purpose: it is the
+    // thin, kilometre-scale scattering that decides whether a 2 km ridge reads as 2 km
+    // away, and Beer-Lambert in plain distance is monotone at every bearing. With it,
+    // total extinction runs 0.07 / 0.24 / 0.64 / 0.91 / 0.90 / 0.98 at 40 / 120 / 300 /
+    // 500 / 1135 / 1600 m, and nothing under 450 m moves at all.
+    kgA = 1.0 - (1.0 - kgA) * exp(-max(kgDist - uAerial2.x, 0.0) * uAerial2.y);
+
     // Snow's multiple-scattering surge, added as radiance *before* the haze so the
     // air still decides how much of it survives to the eye. A snowpack returns light
     // after many internal bounces and backscatters hard toward the source; a single
@@ -1637,11 +1667,40 @@ ${this._heightGLSL()}
     // cannot put a sunlit snowfield where a sunlit snowfield belongs, which is the
     // brightest thing in the frame. Confined to the sheet by construction — snow only
     // exists above 1042 m and the plateau is at 812 — so no near surface can see it.
-    gl_FragColor.rgb += uSunTint * kgSnowLit;
+    //
+    // Rides out on transmittance a second time, and it has to. The surge is a
+    // *near-field* model of a forward lobe: at a kilometre no pixel resolves that lobe,
+    // while the term itself is the warmest thing in the frame — uSunTint is the key
+    // colour, linear R-B = +1.26 against a horizon at R-B = -0.03 — applied to the
+    // farthest surface in it. Squaring the transmittance is what stops the most distant
+    // thing on screen also being the warmest and brightest.
+    gl_FragColor.rgb += uSunTint * kgSnowLit * (1.0 - kgA);
 
-    float kgLum = dot(gl_FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
-    vec3 kgFar = mix(vec3(kgLum), uSkyTint, 0.7);
-    gl_FragColor.rgb = mix(gl_FragColor.rgb, kgFar, kgA * 0.88);
+    // Aerial perspective has to *asymptote to the sky*, and neither of the two terms
+    // this used to be built from could. mix(vec3(kgLum), uSkyTint, 0.7) keeps 30% of
+    // the surface's own luminance in the target it converges on, and the kgA * 0.88
+    // opacity keeps another 12% of the raw surface, so the ceiling at infinite depth
+    // was 0.12*C + 0.264*luma(C) + 0.616*sky — unbounded above the sky for any surface
+    // brighter than it. On the snow-surged massif that ceiling measured 0.62 linear
+    // luminance where the horizon is at 0.35, and it was reached from *warm*: linear
+    // R-B +1.24 against the horizon's -0.03. The airlight is the sky, full stop; the
+    // surface's own colour survives only through the transmittance.
+    //
+    // Graded on the ray's elevation for the same reason the sky is graded on it — a
+    // range that converges on one flat tint cannot match a sky that is a gradient, and
+    // it detaches at whichever end disagrees. Same pair of colours and the same knee as
+    // Sky's own fog, mirrored from fogParams so there is one opinion about the horizon.
+    // The forward in-scatter lobe belongs in the airlight too. Sky's fog carries it, but
+    // Sky's fog is a ground deck: on the ray to a distant summit it is only 15% opaque, so
+    // without this term the sunward ridge would converge on a cool tint while the sky
+    // behind it goes warm — a new defect in exchange for the one above. Same
+    // Henyey-Greenstein-ish form and the same mirrored power and strength as Sky's, so
+    // there is one opinion about the halo as well as one about the horizon.
+    vec3 kgRd = (vKgWorld - cameraPosition) / max(kgDist, 1e-4);
+    vec3 kgAir = mix(uSkyTint, uSkyTop, smoothstep(0.02, 0.55, kgRd.y));
+    kgAir = mix(kgAir, uSkyGlow,
+                clamp(pow(max(dot(kgRd, uSunDir), 0.0), uSkyGlowP.x) * uSkyGlowP.y, 0.0, 1.0));
+    gl_FragColor.rgb = mix(gl_FragColor.rgb, kgAir, kgA);
   }
 `);
     });
@@ -1679,7 +1738,11 @@ uniform sampler2D tDetailN;
 uniform vec4 uTexScale;
 uniform float uWaterLevel;
 uniform vec3 uSkyTint;
+uniform vec3 uSkyTop;
+uniform vec3 uSkyGlow;
+uniform vec2 uSkyGlowP;
 uniform vec2 uAerial;
+uniform vec2 uAerial2;
 uniform vec2 uAerialH;
 uniform vec2 uNormalStep;
 uniform vec2 uWindXZ;
@@ -1998,7 +2061,14 @@ void kgComputeSurface(){
     // budget rather than sharing the striation's: the soft knee above exists to stop
     // the *striation* tipping a whole face into the sky term, and pushing a second
     // field through it would only trade one for the other.
-    float fineAmp = (1.0 - smoothstep(1.15, 2.70, kgFoot)) * mix(0.55, 1.0, amp)
+    // The gate has to close where the *finest octave* stops resolving, not where the
+    // nominal frequency does. g3 repeats every 6.1 m across the fall line and fbm2's
+    // second octave halves that to 3.0 m, so it needs a footprint under about 1.5 m; the
+    // old 1.15-2.70 window still passed 71% of it at kgFoot = 1.7 m, which is one pixel
+    // on the massif that fills the top of the establishing shot. A normal-map band
+    // sampled at half its own Nyquist rate under a 13 degree key is a luminance
+    // salt-and-pepper, and that is what the review measured on that surface.
+    float fineAmp = (1.0 - smoothstep(0.95, 2.05, kgFoot)) * mix(0.55, 1.0, amp)
                   * smoothstep(0.02, 0.30, wild2);
     vec3 g3 = texture2D(tDetailN, vec2(along * 0.0610, across * 0.1640) + 0.67).xyz * 2.0 - 1.0;
     kgFarBump = clamp(g3.xy * 1.50 * fineAmp, -0.40, 0.40);
@@ -2039,7 +2109,22 @@ void kgComputeSurface(){
     // face varying by a third of a stop over a few metres, which is less than a real
     // one does. Both bands are weighted equally because the finer of the two is the
     // one that lands inside a 9x9 window at this range; the coarser reads as bedding.
-    far *= 1.0 + (rk1 * 0.95 + rk2 * 0.95) * kgFine * (1.0 - veg * 0.5);
+    // Per-band Nyquist, and bounded below.
+    //
+    // The two bands cannot share a gate: rk1's finest octave is ~3.9 m and rk2's ~1.4 m,
+    // so rk2 needs a footprint under about 0.7 m where rk1 tolerates 2 m. They shared
+    // kgFine, and at kgFoot = 1.7 m — one pixel on the 1.1 km massif — that passed rk2
+    // at most of its amplitude while it was being sampled at half its own rate.
+    //
+    // The amplitude was also unbounded below. Measured over 200k samples of the exact
+    // GLSL fbm2, rk1 * 0.95 + rk2 * 0.95 has p5/p95 of -0.78/+0.78 and reaches -1.56,
+    // so 1.0 + that went *negative* on 1.4% of the far ground: a negative albedo
+    // leaving this function, which is where the isolated magenta pixels on the peaks in
+    // phone-wide come from (417 of them, R-G > 45 and B-G > 25). exp() is the same curve
+    // to first order, is strictly positive, and costs one instruction.
+    float nyq1 = 1.0 - smoothstep(1.70, 3.60, kgFoot);
+    float nyq2 = 1.0 - smoothstep(0.62, 1.40, kgFoot);
+    far *= exp((rk1 * 0.72 * nyq1 + rk2 * 0.72 * nyq2) * kgFine * (1.0 - veg * 0.5));
 
     albedo = mix(albedo, far, wild2 * 0.88);
     rough = mix(rough, mix(0.88, 0.96, veg), wild2 * 0.8);
@@ -2145,7 +2230,16 @@ void kgComputeSurface(){
       float bare = fbm2(P.xz * 0.0560 + 3.7, 2) * 0.5 + 0.5;
       float grit = fbm2(P.xz * 0.1800 - 21.4, 2) * 0.5 + 0.5;
       float s3 = fbm2(P.xz * 0.0630 + 13.9, 2);
-      float through = clamp(0.30 + 0.44 * bare + 0.34 * grit, 0.0, 1.0);
+      // 'grit' is a 5.6 m band and fbm2's second octave puts its finest detail at
+      // 2.75 m, so at the 1.7 m pixel footprint of the massif in the establishing shot
+      // it is sampled at half its own Nyquist rate — and it goes into 'sheet', which
+      // multiplies both the albedo *and* the 2.55-unit radiance surge below. A ±0.17
+      // swing on 'through' therefore came out as a ±33% swing in the brightest surface
+      // in the frame at a two-pixel period: the salt-and-pepper the review measured at
+      // p95-p5 = 92 levels. It fades to its own mean rather than to zero, so the sheet's
+      // coverage does not shift as the gate closes.
+      float gritN = 1.0 - smoothstep(0.90, 2.00, kgFoot);
+      float through = clamp(0.30 + 0.44 * bare + 0.34 * mix(0.5, grit, gritN), 0.0, 1.0);
       // Interior only. Near the rim 'blanket' is small and the sheet stays smooth, so
       // the boundary keeps the width the coarse mask gave it; the fine bands come up
       // as the field deepens. Letting them reach the rim would re-sharpen the edge
@@ -2192,9 +2286,12 @@ void kgComputeSurface(){
       // drift and grit bands ride on it at full weight — modulating two and a half
       // units of radiance is what puts surface into the sheet, where modulating the
       // albedo of a lambert lobe could only ever move it by tenths.
+      // 'grit' carries its own Nyquist gate here as well: 'fine' closes at 1.9-4.2 m,
+      // which is far too late for a band whose finest octave is 2.75 m, and this is the
+      // one place a two-pixel wobble modulates two and a half units of radiance.
       kgSnowLit = sheet * sunF * (0.55 + 0.45 * clamp(sunL, 0.0, 1.0)) * 2.55
                 * clamp(0.72 + 0.56 * (s2 * 0.5 + 0.5)
-                        - (0.30 * grit + 0.16 * bare) * fine, 0.10, 1.55);
+                        - (0.30 * mix(0.5, grit, gritN) + 0.16 * bare) * fine, 0.10, 1.55);
     }
   }
 
@@ -2751,6 +2848,22 @@ void main(){
           // time, and at blunt ~0 the mesa term drops out and the profile is the
           // pure power curve with nothing rounding its apex.
           blunt: 0.20 + rnd() * rnd() * 0.80,
+          // Shoulders: where the flank changes gradient, how wide that break is, how
+          // deep. pow(f, sharp) has a monotone second derivative from apex to foot, so
+          // no choice of exponent can put a break anywhere on it — and a flank with no
+          // gradient break is a line the eye joins up, which is why peaks generated
+          // entirely from smooth terms still photographed as isoceles cardboard
+          // triangles (desktop-hero [760,300], phone-wide [1650,240]). Measured on the
+          // furthest rank's 38 flanks, projected to the 5 km cylinder at the wide shot's
+          // scale, the longest run deviating less than 1 px from its own chord was a
+          // median of 126 px and a max of 354; two breaks per flank take that to 82 and
+          // 226. Two, because one break just splits a straight edge into two shorter
+          // ones. Drawn independently for the two flanks, so the profile is not
+          // mirror-symmetric even where the widths happen to match.
+          shTL: 0.22 + rnd() * 0.36, shWL: 0.16 + rnd() * 0.22, shAL: 0.10 + rnd() * 0.22,
+          shTR: 0.22 + rnd() * 0.36, shWR: 0.16 + rnd() * 0.22, shAR: 0.10 + rnd() * 0.22,
+          shTL2: 0.58 + rnd() * 0.26, shWL2: 0.09 + rnd() * 0.13, shAL2: 0.09 + rnd() * 0.20,
+          shTR2: 0.58 + rnd() * 0.26, shWR2: 0.09 + rnd() * 0.13, shAR2: 0.09 + rnd() * 0.20,
           id: gid,
         });
       }
@@ -2770,6 +2883,17 @@ void main(){
     const mesa = 1 - Math.pow(1 - f, 1.7 + p.blunt * 2.6);
     const b = p.blunt * 0.8;
     let v = spike * (1 - b) + mesa * b;
+    // The shoulders. Smooth bumps on the flank's own parameter, so they bend the profile
+    // without ever adding a slope discontinuity. Weighted by v*(1-v), which vanishes at
+    // both the apex and the foot: that is what guarantees the apex stays the profile's
+    // global maximum (checked over all 38 flanks of the furthest rank) instead of the
+    // bump growing a false summit part-way down a blunt peak.
+    const R = d >= 0;
+    const env = 4 * v * (1 - v);
+    let s1 = 1 - Math.abs(t - (R ? p.shTR : p.shTL)) / (R ? p.shWR : p.shWL);
+    if (s1 > 0) v += (R ? p.shAR : p.shAL) * s1 * s1 * (3 - 2 * s1) * env;
+    let s2 = 1 - Math.abs(t - (R ? p.shTR2 : p.shTL2)) / (R ? p.shWR2 : p.shWL2);
+    if (s2 > 0) v += (R ? p.shAR2 : p.shAL2) * s2 * s2 * (3 - 2 * s2) * env;
     // Soften the foot so a peak merges into its neighbours without a kink.
     if (f < 0.16) v *= smoothstep(0, 0.16, f);
     return p.h * v;
@@ -2850,7 +2974,7 @@ void main(){
           const relf = clamp(metres / 200, 0, 1);
           if (relf > 0.001) {
             const ser = noise.fbm2(cx * cfg.serR + 88.3, cz * cfg.serR - 51.7, 2);
-            const g2 = noise.fbm2(cx * cfg.serR * 2.05 + 12.9, cz * cfg.serR * 2.05 - 33.4, 1);
+            const g2 = noise.fbm2(cx * cfg.serR * 1.45 + 12.9, cz * cfg.serR * 1.45 - 33.4, 1);
             const nk2 = Math.max(0, 1 - Math.abs(g2) * 3.2);
             metres += (ser * cfg.serM - nk2 * nk2 * cfg.serM * 0.95) * relf;
             metres = Math.max(0, metres);
@@ -2957,6 +3081,21 @@ vec4 kgRidge(float u, float row){
     (hb - ha) * uRidgeCfg.w);
 }
 
+/**
+ * Height only, at a texel offset. For the wide-baseline slope: one texel is 0.176 deg of
+ * arc and the serration writes tens of metres of edge break inside ten of them, so the
+ * per-texel derivative kgRidge returns in .w is a *silhouette* quantity, not a shading
+ * one. Measured over the baked profile, feeding it to the terminator saturated lit on
+ * 21% of the horizon and hard-flipped the snow's shed mask between adjacent texels on
+ * 29% of it — adjacent 6.6 px columns taking the warm and the cool face alternately,
+ * which is a salt-and-pepper rather than a mountain having two sides.
+ */
+float kgRidgeH(float u, float row){
+  float p = u * uRidgeCfg.x - 0.5;
+  vec4 A = texture2D(tRidge, vec2((floor(p) + 0.5) * uRidgeCfg.y, (row + 0.5) * 0.25));
+  return A.r + A.g * (1.0 / 255.0);
+}
+
 void kgRank(float row, float u0, float tang, float par, float soft, float haze,
             float sunT, float radS, float h, inout vec3 col, inout float alpha){
   // Parallax: shift the sampling angle by the camera's tangential offset, scaled
@@ -2972,7 +3111,13 @@ void kgRank(float row, float u0, float tang, float par, float soft, float haze,
   // on at all. Without the bearing term every rank took the same tint at every
   // azimuth, which is a paper cut-out lit by an ambient probe, not rock under a
   // 13° sun.
-  float lit = clamp(-r.w * 0.055 * sunT, -1.0, 1.0);
+  // Aspect over eight texels — 1.4 deg, about 53 px on screen, which is the scale a
+  // drainage aspect actually turns at. Same units as r.w (metres per texel), so the
+  // coefficients below are unchanged.
+  const float WB = 8.0;
+  float slope = (kgRidgeH(uu + WB * uRidgeCfg.y, row) - kgRidgeH(uu - WB * uRidgeCfg.y, row))
+                * uRidgeCfg.w / (2.0 * WB);
+  float lit = clamp(-slope * 0.055 * sunT, -1.0, 1.0);
   float face = smoothstep(-0.42, 0.52, radS + lit * 0.42);
   vec3 rock = mix(uRockCool, uRockWarm, face);
   rock *= 0.58 + 0.80 * face;
@@ -2998,7 +3143,7 @@ void kgRank(float row, float u0, float tang, float par, float soft, float haze,
   // mix, so aerial perspective still decides how much survives at this depth — on
   // the furthest rank it should be a suggestion, not a highlight.
   float band = smoothstep(360.0, 40.0, top - h);
-  float shed = smoothstep(0.85, 0.32, abs(r.w) * 0.045);
+  float shed = smoothstep(0.85, 0.32, abs(slope) * 0.045);
   float sn = clamp(band * shed * (0.45 + 0.55 * gul), 0.0, 1.0);
   rock = mix(rock, mix(vec3(0.40, 0.50, 0.72), vec3(0.86, 0.87, 0.92), face), sn * 0.72);
 
@@ -3109,6 +3254,16 @@ void main(){
     const tint = (sky && sky.horizonColor && sky.horizonColor.isColor) ? sky.horizonColor
       : (this.ctx.scene.fog && this.ctx.scene.fog.color) ? this.ctx.scene.fog.color : null;
     if (tint) this.uniforms.uSkyTint.value.copy(tint);
+    // The airlight's upper end, from the same read-only view of the fog that Weather
+    // tints its particles off. Guarded rather than assumed: the terrain's own default is
+    // the magic-hour value, and a sky that stops publishing topColor should degrade to a
+    // flat airlight, not to a black one.
+    const fp = sky && sky.fogParams;
+    if (fp && fp.topColor && fp.topColor.isColor) this.uniforms.uSkyTop.value.copy(fp.topColor);
+    if (fp && fp.sunColor && fp.sunColor.isColor) this.uniforms.uSkyGlow.value.copy(fp.sunColor);
+    if (fp && Number.isFinite(fp.sunPower) && Number.isFinite(fp.sunStrength)) {
+      this.uniforms.uSkyGlowP.value.set(Math.max(fp.sunPower, 0.5), clamp(fp.sunStrength, 0, 1));
+    }
 
     // Key colour *and* level. The snow surge is radiance, so it has to go out with
     // the sun: at dusk the same sheet must fall with the key rather than stay lit.

@@ -3853,20 +3853,91 @@ export class PropFactory {
 
     // Banner: hung from the arm and tied along the pole, so the free corner is
     // the far bottom one.
-    const NX = 5, NY = 8;
+    //
+    // The grid is sized by what the sheet has to *show*, not by its area. In the frame
+    // the review measured it is 60 px wide and 290 px tall (desktop-torii [425,595
+    // 60x290]), so 8 columns is a vertex every 7.5 px — enough to sample two and a half
+    // fold waves across the width — and 11 rows put the hem in a band of its own. At
+    // 5x8 a fold across 60 px had one and a half samples on it and could not exist, so
+    // the sheet came out as a flat vermilion rectangle with four straight edges, which
+    // is precisely what was measured. Ten banners stand in the level; this is +96
+    // triangles each, paid for below out of ropeCoil's 46-ring sweep.
+    const NX = 8, NY = 11;
+    // The last column and the last row are the rolled hem, not more cloth: a nobori is
+    // hemmed on its two free edges and that double thickness is what stops the edge
+    // reading as a cut in a plane. Both take their own vertex row so the fold has a
+    // surface rather than a crease.
+    const HEM = 0.030;
+    const hfU = HEM / bw, hfV = HEM / bh;
     const verts = [], uvs = [], cols = [], idx = [], fl = [];
     const y0 = poleH - 0.10, y1 = y0 - bh;
+    const phi = rnd() * 6.283;
+    // Per-row / per-column hem jitter. Two harmonics still leave stretches where three
+    // consecutive vertices happen to be collinear, and three collinear vertices 24 px
+    // apart is a 48 px straight edge however curved the underlying wave is. A hand-sewn
+    // hem is irregular, not sinusoidal; 1.2 px of baked jitter makes collinearity
+    // impossible by construction and costs nothing.
+    // Signs alternate rather than being drawn freely: for alternating +-a the middle of
+    // any three consecutive vertices sits 2a off the chord of the other two, so no triple
+    // can be collinear at all, where free jitter only makes it unlikely.
+    const jitU = [], jitV = [];
+    for (let k = 0; k <= NY; k++) jitU.push((k & 1 ? 1 : -1) * (0.020 + rnd() * 0.008));
+    for (let k = 0; k <= NX; k++) jitV.push((k & 1 ? 1 : -1) * (0.020 + rnd() * 0.008));
+    // Fold wavelength across the sheet, and the depth the free edge reaches. Three
+    // waves over 0.62 m is a 20 cm fold, which is what a hemp sheet this size takes.
+    const FOLDS = 2.6, FOLD_A = bw * 0.085;
     for (let j = 0; j <= NY; j++) {
+      const hemV = j === NY;
+      const v = hemV ? 1 : (j / (NY - 1)) * (1 - hfV);
       for (let i = 0; i <= NX; i++) {
-        const u = i / NX, v = j / NY;
-        const x = lerp(0.07, bw + 0.07, u);
-        const y = lerp(y0, y1, v);
-        verts.push(x, y, Math.sin(u * 3.1) * 0.012);
+        const hemU = i === NX;
+        const u = hemU ? 1 : (i / (NX - 1)) * (1 - hfU);
+        let x = lerp(0.07, bw + 0.07, u);
+        let y = lerp(y0, y1, v);
+        // The top rail sags between the tie on the pole and the tip of the arm, and the
+        // sag dies out a third of the way down the cloth.
+        y -= bh * 0.014 * Math.sin(Math.PI * u) * (1 - smoothstep(0.0, 0.42, v));
+        // Folds. Pinned along the tied pole edge, opening out toward the free edge, and
+        // the phase drifts with height so two folds are never parallel lines.
+        const ph = u * FOLDS * 6.283 + v * 1.9 + phi;
+        const amp = FOLD_A * smoothstep(0.0, 0.34, u) * (0.26 + 0.74 * v);
+        let z = Math.sin(ph) * amp + Math.sin(ph * 2.37 + 1.7) * amp * 0.34;
+        // The hem folds back behind the sheet, and its outer line wanders *in the plane
+        // of the cloth* rather than only in z. That matters: these banners stand at
+        // ry = +-pi/2 beside the torii, so from the review's camera the sheet is oblique
+        // and a z-only wobble foreshortens to nothing. At the measured scale the sheet is
+        // 290 px for 2.5 m, so 116 px per metre; a 2.2 cm excursion is 2.6 px, which is
+        // what it takes to stop 40 px of edge reading as a drawn line.
+        if (hemU) {
+          z -= HEM * 0.62;
+          // Two harmonics — 2.5 cycles over the drop (a 115 px period) and 6.5 cycles
+          // (44 px), the latter close to the twelve vertices' own Nyquist so it comes out
+          // as an irregular zigzag rather than a wave. Baked, so it cannot shimmer.
+          x -= 0.022 * (0.5 + 0.5 * Math.sin(v * 15.7 + phi)) + 0.012 * Math.sin(v * 41.0 - phi)
+               + jitU[j];
+        }
+        if (hemV) {
+          z -= HEM * 0.62;
+          // A weighted hem hangs in a shallow catenary; an unweighted one wanders.
+          y += 0.020 * (0.5 + 0.5 * Math.sin(u * 12.9 - phi)) + 0.010 * Math.sin(u * 31.0 + phi)
+             - 0.016 * Math.sin(Math.PI * u) + jitV[i];
+        }
+        verts.push(x, y, z);
         uvs.push(u, v);
-        const k = lerp(0.82, 1.0, 1 - v * 0.4);
+        // Cloth grain and fold shading, carried in the vertex colour because a grid cell
+        // here is 7 x 26 px on screen — which is the window a "flat colour" judgement is
+        // made through (§5.9). The dye band, the fold self-shadow and the hem's double
+        // thickness are three separate reads at three different scales.
+        let k = lerp(0.80, 1.0, 1 - v * 0.34);
+        k *= 0.86 + 0.30 * (noise.fbm2(u * 5.3 + phi, v * 9.1 - phi, 3) * 0.5 + 0.5);
+        k *= 1.0 - 0.26 * Math.max(0, Math.sin(ph));
+        if (hemU || hemV) k *= 0.70;
         cols.push(k, k, k);
-        // Anchored along the pole edge and the top rail.
-        fl.push(clamp(Math.max(u, v * 0.25) * (0.35 + v * 0.65), 0, 1), 0.9);
+        // Anchored along the pole edge and the top rail. Stiffness 0.45, not 0.9:
+        // kagerouBend divides its amplitude by the stiffness and raises the height term
+        // to 1 + stiffness, so 0.9 is a batten and this is hemp. Same shared gust as the
+        // grass and the bamboo — ARCHITECTURE §10, consumed, never re-derived.
+        fl.push(clamp(Math.max(u, v * 0.25) * (0.35 + v * 0.65), 0, 1), 0.45);
       }
     }
     for (let j = 0; j < NY; j++) {
@@ -4285,7 +4356,11 @@ export class PropFactory {
     const turns = opts.turns ?? 3.2;
     const b = PropFactory.build();
     const samples = [];
-    const N = 46;
+    // 46 rings put one ring every 1.3 px of arc on a 0.30 m coil seen from two metres,
+    // which is four times finer than the silhouette can show and cost 736 triangles for
+    // a piece of set dressing on the ground. 26 is still 2.4 px a ring. The 320
+    // triangles this returns, twice over, pay for the nobori sheet's fold grid.
+    const N = 26;
     for (let i = 0; i <= N; i++) {
       const t = i / N;
       const a = t * Math.PI * 2 * turns;
