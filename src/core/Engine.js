@@ -274,6 +274,57 @@ export class Engine {
     return dead;
   }
 
+  /**
+   * Per-object draw accounting for one frame.
+   *
+   * `renderer.info` gives a total and nothing else, which is exactly the shape of
+   * information that let the phone triangle count drift 676 k → 1.15 M with every
+   * owner still inside their own budget: the total belonged to nobody because
+   * nobody could see who held it. three has no per-object counter, so wrap the one
+   * funnel every draw passes through, tally a frame, and restore.
+   *
+   * Shadow and post passes go through the same funnel, so the tally is keyed by
+   * `renderer.info.render.calls` ordering rather than assumed to be the main pass —
+   * we report every submission and let the reader group them.
+   */
+  auditDraws() {
+    const r = this.renderer;
+    const original = r.renderBufferDirect.bind(r);
+    const rows = new Map();
+    r.renderBufferDirect = (camera, scene, geometry, material, object, group) => {
+      const idx = geometry.index;
+      const pos = geometry.attributes.position;
+      const range = geometry.drawRange;
+      let count = group ? group.count : Math.min(
+        (idx ? idx.count : pos ? pos.count : 0), range.count,
+      );
+      if (!Number.isFinite(count)) count = idx ? idx.count : pos ? pos.count : 0;
+      const instances = geometry.isInstancedBufferGeometry
+        ? (geometry.instanceCount ?? object.count ?? 1)
+        : (object.isInstancedMesh ? object.count : 1);
+      const tris = object.isLine || object.isPoints ? 0 : (count / 3) * instances;
+      // The path from the scene root is what routes a finding to an owner; a bare
+      // mesh name like "card" appears in four systems.
+      const path = [];
+      for (let o = object; o && o.parent; o = o.parent) path.unshift(o.name || o.type);
+      const key = path.join('/') || object.uuid;
+      const row = rows.get(key) || { object: key, calls: 0, triangles: 0, instances: 0 };
+      row.calls++;
+      row.triangles += tris;
+      row.instances = instances;
+      rows.set(key, row);
+      return original(camera, scene, geometry, material, object, group);
+    };
+    // Two frames: the first re-links anything the wrap perturbed, the second is clean.
+    this._frame();
+    rows.clear();
+    this._frame();
+    r.renderBufferDirect = original;
+    return [...rows.values()]
+      .map((row) => ({ ...row, triangles: Math.round(row.triangles) }))
+      .sort((a, b) => b.triangles - a.triangles);
+  }
+
   dispose() {
     this.stop();
     window.removeEventListener('resize', this._onResize);

@@ -1935,7 +1935,17 @@ void kgComputeSurface(){
   // Past ~100 m every tiled lookup has mipped down to its own average and the
   // mountain turns into one grey ramp. Everything it should have had — a tree
   // line, scree fans, gullies, snow — has to be reconstructed per pixel here.
-  float wild2 = (1.0 - core) * smoothstep(90.0, 300.0, dist);
+  float farLod = smoothstep(90.0, 320.0, dist);
+  float wild2 = (1.0 - core) * farLod;
+  // The mip chain does not stop at the core boundary, and the core is 512 m across:
+  // its outer half *is* the 100-250 m band the establishing shot composes its
+  // mid-ground on. Measured on the round-5 wide frame, ground at that depth with no
+  // props on it came back at detail 2.88 against 9.75 for dressed ground at the same
+  // depth in the same frame — a featureless olive sheet across 22% of the image.
+  // Inside the core the baked splat still says what the surface *is*, so only the
+  // high-frequency reconstruction is wanted here; the mountain-colour swap below
+  // stays gated on wild2, or the plateau apron would go tree-line green.
+  float farDetail = max(wild2, farLod * core * 0.62);
 
   // --- the landform frame --------------------------------------------------
   // One set of macro taps, shared by every rule below that draws a line on the
@@ -1947,7 +1957,7 @@ void kgComputeSurface(){
   float hLand = hPix;
   float lFallW = fall;
   float bowlW = 0.0;
-  if (wild2 > 0.002 || hPix > 1000.0) {
+  if (farDetail > 0.002 || hPix > 1000.0) {
     const float LS = 48.0;
     hLand = kgLandH(P.xz);
     float bL = kgLandH(P.xz - vec2(LS, 0.0));
@@ -1980,7 +1990,7 @@ void kgComputeSurface(){
     // everything past it to exactly 1. The striation came out as hard-edged plates
     // with dead-flat interiors — the "flat-fill polygons with step edges" the review
     // measured, which were never snow at all.
-    float amp = smoothstep(0.05, 0.90, fall) * mix(0.34, 1.0, wild2);
+    float amp = smoothstep(0.05, 0.90, fall) * mix(0.34, 1.0, farDetail);
     gp = vec3(g1.xy * 0.42 + g2.xy * 0.60, 0.0) * amp;
     // Soft knee rather than a clamp. Relief still rises with the local gradient but
     // it approaches its ceiling asymptotically, so it has no level set anywhere for
@@ -1999,7 +2009,7 @@ void kgComputeSurface(){
     // the *striation* tipping a whole face into the sky term, and pushing a second
     // field through it would only trade one for the other.
     float fineAmp = (1.0 - smoothstep(1.15, 2.70, kgFoot)) * mix(0.55, 1.0, amp)
-                  * smoothstep(0.02, 0.30, wild2);
+                  * smoothstep(0.02, 0.30, farDetail);
     vec3 g3 = texture2D(tDetailN, vec2(along * 0.0610, across * 0.1640) + 0.67).xyz * 2.0 - 1.0;
     kgFarBump = clamp(g3.xy * 1.50 * fineAmp, -0.40, 0.40);
     kgFine = fineAmp;
@@ -2043,6 +2053,27 @@ void kgComputeSurface(){
 
     albedo = mix(albedo, far, wild2 * 0.88);
     rough = mix(rough, mix(0.88, 0.96, veg), wild2 * 0.8);
+  }
+  // Inside the core the layer identity is right and only the variance is missing, so
+  // this modulates what the splat already chose instead of replacing it. Its own ramp,
+  // starting at 55 m rather than 90: the apron the establishing shot looks across
+  // begins at the plateau edge, and the massif ramp is authored for a 1.5 km face.
+  // Aliasing is held off by the pixel-footprint gate, not by the distance ramp — the
+  // same gate the massif's rubble rides, so both bands leave before either can fizz.
+  float coreFar = core * smoothstep(55.0, 240.0, dist);
+  if (coreFar > 0.002) {
+    float grit = 1.0 - smoothstep(1.15, 2.70, kgFoot);
+    float rk1c = fbm2(P.xz * 0.128 + 61.7, 2);
+    float rk2c = fbm2(P.xz * 0.345 - 14.9, 2);
+    // Two octaves of fbm land an RMS near a quarter of nominal, so 1.7 nominal is
+    // about ±0.20 in practice: dry ground varying by two thirds of a stop over a few
+    // metres, which is less than a real autumn hillside does.
+    float v = (rk1c * 0.95 + rk2c * 0.75) * grit * coreFar;
+    // Dry autumn ground is patchy in *colour*, not just value — the ochre comes and
+    // goes with the grass cover — so the variance is tinted rather than a grey gain.
+    // Without this the band gains contrast and stays the same desaturated olive.
+    albedo *= 1.0 + v * vec3(1.30, 1.0, 0.62);
+    rough = clamp(rough + v * 0.20, 0.04, 1.0);
   }
 
   // --- 雪 ------------------------------------------------------------------

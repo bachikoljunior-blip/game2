@@ -920,9 +920,29 @@ export class HUD {
     return true;
   }
 
+  /**
+   * Blank the overlay entirely. The art-direction review judges the *world*, and the
+   * review set had the four action seals, the stance seal, the health column and the
+   * objective card baked into all five frames — over 8% of the image, three of the
+   * masked regions in `luma.mjs` existing only to keep authored ink out of the
+   * histogram. A critic asked to compare a frame against a store page should not be
+   * looking at our UI. Clears once and stops drawing; call `__show()` to restore.
+   */
+  __hide() { this.hidden = true; this.touch?.__hide?.(); return this; }
+  __show() { this.hidden = false; this.touch?.__show?.(); return this; }
+
   update(dt, elapsed, rawDt) {
     const g = this.g;
     if (!g) return;
+    if (this.hidden) {
+      if (!this._hiddenCleared) {
+        g.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+        g.clearRect(0, 0, this.w, this.h);
+        this._hiddenCleared = true;
+      }
+      return;
+    }
+    this._hiddenCleared = false;
     const debug = !!this.ctx.debug;
     const t0 = debug ? performance.now() : 0;
     const rd = Math.min(rawDt === undefined ? 0.0166 : rawDt, 0.1);

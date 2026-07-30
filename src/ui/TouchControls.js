@@ -316,7 +316,12 @@ export class TouchControls {
 
   // --------------------------------------------------------------- per frame
 
+  /** See HUD.__hide — the review set photographs the world, not the control scheme. */
+  __hide() { this.hidden = true; this.forceVisible = false; this._vis = 0; return this; }
+  __show() { this.hidden = false; return this; }
+
   _shouldShow() {
+    if (this.hidden) return false;
     if (this.forceVisible) return true;
     if (!this.enabled) return false;
     const input = this.ctx.input;

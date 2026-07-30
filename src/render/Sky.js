@@ -264,10 +264,30 @@ uniform float uFogStart;
 uniform float uFogMaxOpacity;
 uniform float uFogSunPower;
 uniform float uFogSunStrength;
+uniform float uFogAirDensity;
+uniform float uFogAirFalloff;
+
+/** Optical depth of one exponentially-stratified layer along the ray. */
+float kagFogDepth( float travel, float ry, float dh, float H ) {
+  float baseH = exp( - dh / max( H, 0.05 ) );
+  if ( abs( ry ) > 1e-3 ) {
+    return baseH * H * ( 1.0 - exp( - travel * ry / H ) ) / ry;
+  }
+  return baseH * travel;
+}
 
 /**
  * Closed-form integral of an exponentially decaying density along the view ray.
  * Returns the blended colour. Linear space — call this *before* tone mapping.
+ *
+ * Two layers, because one cannot do this job. The 26 m mist deck is authored on the
+ * stream at 782 m and is what pools in the valley — but the plateau stands 30 m above
+ * it and the review camera another 9, so on that ray the deck has already decayed to
+ * 22% before the first metre of travel. Measured on the round-5 wide frame that left a
+ * 1.5 km snow massif at luma p99 226 against a sky at 155 and a 200 m mid-ground at
+ * 150: the furthest thing in frame was the brightest and most contrasty, so distance
+ * read as a matte painting pasted in *front* of the air rather than behind it.
+ * Aerial perspective is bulk air, whose scale height is kilometres, not tens of metres.
  */
 vec3 kagApplyFog( vec3 color, vec3 worldPos, vec3 camPos ) {
   vec3 d = worldPos - camPos;
@@ -276,16 +296,11 @@ vec3 kagApplyFog( vec3 color, vec3 worldPos, vec3 camPos ) {
   vec3 rd = d / dist;
 
   float travel = max( dist - uFogStart, 0.0 );
-  float H = max( uFogHeightFalloff, 0.05 );
-  float baseH = exp( - ( camPos.y - uFogBaseHeight ) / H );
   float ry = rd.y;
-  float integral;
-  if ( abs( ry ) > 1e-3 ) {
-    integral = baseH * H * ( 1.0 - exp( - travel * ry / H ) ) / ry;
-  } else {
-    integral = baseH * travel;
-  }
-  float f = 1.0 - exp( - uFogDensity * integral );
+  float dh = camPos.y - uFogBaseHeight;
+  float tMist = uFogDensity * kagFogDepth( travel, ry, dh, max( uFogHeightFalloff, 0.05 ) );
+  float tAir = uFogAirDensity * kagFogDepth( travel, ry, dh, max( uFogAirFalloff, 1.0 ) );
+  float f = 1.0 - exp( - ( tMist + tAir ) );
   f = clamp( f, 0.0, 1.0 ) * uFogMaxOpacity;
   if ( f <= 0.0005 ) return color;
 
@@ -519,6 +534,22 @@ vec4 clouds( vec3 rd, vec3 Fex, vec3 grade, vec3 skyCol ) {
   // sun's own hemisphere from ending in a hard-edged ring and is exactly zero past 84.
   float warm = smoothstep( 0.47, 0.95, cs );
   warm = clamp( warm + 0.22 * smoothstep( 0.10, 0.75, cs ) * ( 1.0 - warm ), 0.0, 1.0 );
+
+  // A cloud's warm/cool split is set by which of its flanks the sun reaches, not by
+  // where the viewer happens to be standing. At 13 degrees the key arrives under the
+  // deck almost horizontally, which is why a magic-hour sky is warm from horizon to
+  // horizon rather than only inside a 62-degree cone around the sun. Measured on the
+  // round-5 torii frame, where the sun sits 119.8 degrees off axis: every cloud pixel
+  // in the upper 45% of the image came back 20-30 luma below the sky with no hue
+  // separation from it — grey soot, under a key of (1.00, 0.41, 0.13).
+  //
+  // This is not the round-3 failure returning. That one keyed warmth on a self-shadow
+  // tap taken at a fixed offset with no dependence on the sun's position, so warmth
+  // landed wherever the noise happened to be thin. lightT is sampled along sunAz at
+  // throwP, both functions of the sun, so the warmth still lands on the flank the sun
+  // is actually on — now at every azimuth instead of only in its own quadrant.
+  float lowSun = 1.0 - smoothstep( 0.08, 0.46, uSunDirection.y );
+  warm = clamp( warm + lowSun * lightT * 0.75 * ( 1.0 - warm ), 0.0, 1.0 );
   vec3 keyCol = mix( uCloudCool, uCloudLit, warm );
 
   // Forward scatter through thin cloud, with the phase function's isotropic pedestal taken
@@ -533,6 +564,11 @@ vec4 clouds( vec3 rd, vec3 Fex, vec3 grade, vec3 skyCol ) {
   // where the light is — and negative on the underside we are looking up into.
   float topFace = clamp( ( dTop - dBase ) * 1.7 + 0.5, 0.0, 1.0 );
   vec3 base = mix( uCloudDark, uCloudCool, 0.22 );
+  // The underside is the face a ground observer sees across most of the sky, and at
+  // this solar elevation it is lit rather than self-shadowed. Left at uCloudDark the
+  // deck reads as smoke no matter what the lit top does, because the top is only
+  // visible near the anti-solar horizon.
+  base = mix( base, mix( uCloudDark, uCloudLit, 0.55 ), lowSun * 0.5 );
   vec3 col = mix( base, keyCol * ( 0.55 + 1.5 * lightT ),
                   clamp( topFace * ( 0.28 + 0.72 * lightT ), 0.0, 1.0 ) );
   col += uCloudLit * burn * warm;
@@ -704,6 +740,14 @@ export class SkySystem {
       maxOpacity: 0.96,
       sunPower: 9,
       sunStrength: 0.85,
+      /**
+       * Bulk air: the term that actually makes distance read. Tuned against the two
+       * ranges the review set contains rather than by eye — from the plateau camera
+       * this puts ~17% of atmosphere on the 200 m mid-ground and ~70% on the 1.5 km
+       * massif, which together with the mist deck lands the massif near 77%.
+       */
+      airDensity: 0.00098,
+      airFalloff: 900,
     };
 
     /** Shared uniform objects — patched materials hold these by reference. */
@@ -719,6 +763,8 @@ export class SkySystem {
       uFogMaxOpacity: { value: 0.96 },
       uFogSunPower: { value: 9 },
       uFogSunStrength: { value: 0.85 },
+      uFogAirDensity: { value: 0.00098 },
+      uFogAirFalloff: { value: 900 },
     };
 
     /** GLSL for authors who hand-write ShaderMaterials and want the same fog. */
@@ -1054,6 +1100,8 @@ export class SkySystem {
     fu.uFogMaxOpacity.value = fp.maxOpacity;
     fu.uFogSunPower.value = fp.sunPower;
     fu.uFogSunStrength.value = fp.sunStrength;
+    fu.uFogAirDensity.value = fp.airDensity;
+    fu.uFogAirFalloff.value = fp.airFalloff;
 
     // Keep the engine's built-in FogExp2 roughly in step for anything that escapes the
     // patch. FogExp2 squares the distance term, so the curves can only be matched at one

@@ -2168,6 +2168,13 @@ const SINK_CELL_FALLBACK = 5.6;
  * placement audit still reported five clamped instances out of 22 772; at 8.0 it is clean.
  */
 const SINK_MAX = 8.0;
+/**
+ * Slack added to every pack radius, and the distance the camera may travel before the
+ * sets are repacked. One number for both, so an instance can never leave the packed set
+ * while still being inside its own fade window: at sprint speed 7.2 m/s that is a repack
+ * about every 1.7 s, and the pass is a linear scan over a few thousand vec4s.
+ */
+const PACK_MARGIN = 12.0;
 /** Bury the base rather than leaving it tangent, so a card never shows daylight under it. */
 const PLANT_BURY = 0.14;
 
@@ -2238,6 +2245,9 @@ export class FoliageSystem {
     this._textures = [];
     this._meshes = [];
     this._renderTargets = [];
+    /** Instanced sets compacted against their own fade window. See `_registerPack`. */
+    this._packs = [];
+    this._packAt = new Vector3(Infinity, Infinity, Infinity);
 
     this._elapsed = 0;
     this._disturbCursor = 0;
@@ -2721,7 +2731,16 @@ export class FoliageSystem {
     for (const bucket of buckets) {
       const cap = Math.max(1, bucket.slots.length * perTile[bucket.lod]);
       const m = this._grassMat[bucket.lod];
-      const mesh = this._makeBatchMesh(this._grassBase[bucket.lod], m.mat, m.depth, cap, shadows);
+      // LOD2 never casts, at any tier. It is a two-triangle stand-in for a few hundred
+      // blades, blown to 24x width (GRASS_LOD_SIZE) with a painted bush silhouette, and
+      // that silhouette is a lie the moment anything reads it at shadow-map scale rather
+      // than as a distant mass. Measured on the round-5 ULTRA hero frame, where
+      // foliageShadows is on: the flagstone in front of the great torii carried a field
+      // of hard-edged near-black ellipses 2-4 m across with no caster anywhere in frame —
+      // one 24 m card each, projected by a 13° sun. It reads as decals dropped on the
+      // ground, which is worse than the shadow being absent.
+      const casts = shadows && bucket.lod < 2;
+      const mesh = this._makeBatchMesh(this._grassBase[bucket.lod], m.mat, m.depth, cap, casts);
       mesh.name = `grass-l${bucket.lod}-b${bucket.batch}`;
       bucket.mesh = mesh;
       bucket.geo = mesh.geometry;
@@ -3141,7 +3160,12 @@ export class FoliageSystem {
       // of the 40.5 m fade-out ramp. Three plants rendered.
       const [x, z] = sample(76, 126);
       const y = this._heightAt(x, z);
-      if (y < WORLD.WATER_LEVEL + 0.4) continue;
+      // Same correction as the card loop below: the channel test belongs to `_surfaceAt`,
+      // which is already consulted a few lines down. This ring only reaches 126 m, where
+      // the ground is still above the stream, so the floor was costing little here — but
+      // leaving the two loops disagreeing about what "water" means is how the card loop
+      // came to be excluding the whole basin.
+      if (y < WORLD.WATER_LEVEL - 240) continue;
       // The courtyard guard is `_surfaceAt` below, which knows where the swept stone and
       // the stair actually are. This one only has to keep the mask's dead-flat core clear,
       // so it sits at the top of the falloff (d < 80.3 m) rather than a third of the way
@@ -3200,7 +3224,20 @@ export class FoliageSystem {
       const [x, z] = sample(96, 285);
       const d = Math.hypot(x, z);
       const y = this._heightAt(x, z);
-      if (y < WORLD.WATER_LEVEL + 0.2) continue;
+      // NOT a WATER_LEVEL height floor. WATER_LEVEL is the *stream's* surface at 782 m,
+      // 30 m below the plateau, and the valley this sea is named for keeps falling past
+      // it — measured along the overlook's own ray, the ground is 791 m at 150 out, 750
+      // at 200 and 634 at 400. A `y < WATER_LEVEL` reject therefore threw away roughly
+      // three quarters of the annulus on the valley bearing: the entire basin, which is
+      // the one place §5 says the sea has to be. What reached the screen was the ring on
+      // the ridge sides where the ground stays high, i.e. a band at the horizon over an
+      // empty brown bowl — which is exactly what the round-5 valley frame photographed.
+      //
+      // The real question is "is this the wetted channel", and `surfaceAt` already
+      // answers it off the river spline and its per-station surface. The absolute floor
+      // stays only as a rail against the sea bed itself.
+      if (y < WORLD.WATER_LEVEL - 240) continue;
+      if (this._surfaceAt(x, z) === 'water') continue;
       // Bamboo takes steep ground — it is the plant that holds a hillside together, and
       // the wall below the plateau lip is the one place the sea has to be thickest. At
       // 0.75 this filter was rejecting exactly that wall and leaving the lip bare, which
@@ -3258,6 +3295,9 @@ export class FoliageSystem {
     this._fill(cardMesh, cardA, cardB, cardC, cn, 22);
 
     this._bamboo = { plantMesh, cardMesh, near: n, cards: cn };
+    // The plant is 160 triangles and lives in a 46 m window on a 220 m plateau; the card
+    // is four and is wanted out to 300 m, so only the first is worth compacting.
+    this._registerPack(plantMesh, nearA, nearB, nearC, n, A.plant.mat, 18);
 
     // §5's setting is a shrine above a bamboo sea. When the filters starve this scatter the
     // symptom in frame is not "less bamboo" — it is a mid-ground of unrelated scrub that a
@@ -3279,6 +3319,76 @@ export class FoliageSystem {
    * An InstancedBufferGeometry's bounds describe one blade, so without this every batch
    * would be frustum-culled the moment the camera looked away from the world origin.
    */
+  /**
+   * Register an instanced set for distance compaction, and pack it once now.
+   *
+   * Every set here already has a fade window, and past `uFadeFar.y` the vertex shader
+   * collapses the instance to a degenerate point — so it costs no fill. It costs
+   * everything else. `renderer.info.render.triangles` counts submitted primitives, and
+   * so does the GPU: vertex fetch, the wind/noise vertex shader, primitive assembly and
+   * the cull all run before the triangle is discovered to be degenerate. The round-5
+   * phone audit measured 1,138,406 triangles against a 900 k cap, and the six largest
+   * holders were all sets like this — 184,688 for 97 cedar trunks whose mesh LOD ends
+   * 46 m from the camera, 139,040 for 869 bamboo plants at the same window, on a
+   * plateau 220 m across. A handful were inside their window; the rest were paid for.
+   *
+   * Packing drops exactly the instances that are already fully faded, so the rendered
+   * frame is unchanged by construction — this is not a quality knob and must never be
+   * used as one. `padY` and the bounding sphere stay authored from the *full* extent:
+   * an over-large bound only costs a frustum test that passes, whereas re-fitting it to
+   * the packed subset would let the mesh cull itself out the moment the camera turned.
+   */
+  _registerPack(mesh, a, b, c, n, mat, padY) {
+    if (!mesh || !mat?.userData?.kag?.uFadeFar) return;
+    const rec = { mesh, a, b, c, n, mat, padY, packed: -1 };
+    this._packs.push(rec);
+    this._packOne(rec, this.ctx.camera?.position);
+    return rec;
+  }
+
+  _packOne(rec, camPos) {
+    if (!camPos) return;
+    const { mesh, a, b, c, n, mat } = rec;
+    // Cull at the far *end* of the fade, where the instance contributes nothing, plus a
+    // margin covering how far the camera may travel before the next repack.
+    const cut = mat.userData.kag.uFadeFar.value.y + PACK_MARGIN;
+    const cut2 = cut * cut;
+    const geo = mesh.geometry;
+    const dstA = geo.getAttribute('aFoliageA').array;
+    const dstB = geo.getAttribute('aFoliageB').array;
+    const dstC = geo.getAttribute('aFoliageC').array;
+    const cap = geo.getAttribute('aFoliageA').count;
+    const cx = camPos.x, cy = camPos.y, cz = camPos.z;
+    let k = 0;
+    for (let i = 0; i < n && k < cap; i++) {
+      const o = i * 4;
+      const dx = a[o] - cx, dy = a[o + 1] - cy, dz = a[o + 2] - cz;
+      // Height matters: a 16 m culm 40 m away is inside its window at the crown and
+      // outside it at the base. Measure to the nearest point of the instance's own
+      // vertical extent rather than to its root, or tall stock pops at the boundary.
+      const h = rec.b[o];
+      const dyN = dy > 0 ? dy : (dy + h > 0 ? 0 : dy + h);
+      if (dx * dx + dyN * dyN + dz * dz > cut2) continue;
+      const d = k * 4;
+      dstA[d] = a[o]; dstA[d + 1] = a[o + 1]; dstA[d + 2] = a[o + 2]; dstA[d + 3] = a[o + 3];
+      dstB[d] = b[o]; dstB[d + 1] = b[o + 1]; dstB[d + 2] = b[o + 2]; dstB[d + 3] = b[o + 3];
+      dstC[d] = c[o]; dstC[d + 1] = c[o + 1]; dstC[d + 2] = c[o + 2]; dstC[d + 3] = c[o + 3];
+      k++;
+    }
+    if (k === rec.packed) return;
+    rec.packed = k;
+    geo.getAttribute('aFoliageA').needsUpdate = true;
+    geo.getAttribute('aFoliageB').needsUpdate = true;
+    geo.getAttribute('aFoliageC').needsUpdate = true;
+    geo.instanceCount = k;
+    mesh.visible = k > 0;
+  }
+
+  /** Repack every registered set. Hysteresis lives in the caller. */
+  _repackAll(camPos) {
+    for (let i = 0; i < this._packs.length; i++) this._packOne(this._packs[i], camPos);
+  }
+
   _fill(mesh, a, b, c, count, padY) {
     const geo = mesh.geometry;
     const attrA = geo.getAttribute('aFoliageA');
@@ -3671,6 +3781,10 @@ ${WIND_GLSL}
       item.woodMesh = woodMesh;
       item.leafMesh = leafMesh;
       item.instances = { a, b, c, n };
+      // The trunks are the single largest submission in the build — 1,904 triangles per
+      // cedar against a mesh LOD that ends 46 m out at MEDIUM.
+      this._registerPack(woodMesh, a, b, c, n, item.woodMat, cfg.hMax);
+      this._registerPack(leafMesh, a, b, c, n, item.leafMat, cfg.hMax);
 
       // Below HIGH we go straight from mesh to impostor and save three draw calls.
       const meshFar = meshLod ? RANGE.treeMesh[1] : RANGE.treeCardOnly[0] + 8;
@@ -3791,6 +3905,7 @@ ${WIND_GLSL}
       const mesh = this._makeBatchMesh(geo, mat, depth, Math.max(1, n), shadows && cfg.shadow);
       mesh.name = cfg.name;
       this._fill(mesh, a, b, c, n, cfg.hMax + 1);
+      this._registerPack(mesh, a, b, c, n, mat, cfg.hMax + 1);
       return mesh;
     };
 
@@ -3882,6 +3997,7 @@ ${WIND_GLSL}
     const mesh = this._makeBatchMesh(geo, mat, null, Math.max(1, n), false);
     mesh.name = 'ground-cards';
     this._fill(mesh, a, b, c, n, 1);
+    this._registerPack(mesh, a, b, c, n, mat, 1);
     this._groundCards = { mesh, mat };
   }
 
@@ -4101,6 +4217,16 @@ vCanopyG = cg;
       }
     }
 
+    // Compact the fixed instanced sets against their fade windows. Hysteresis is the
+    // whole point — a repack per frame would cost more than the submissions it saves —
+    // and PACK_MARGIN is both the slack and the trigger, so nothing can leave the packed
+    // set while it is still inside its own window. See `_registerPack`.
+    if (cam && finiteVec(cam.position) &&
+        cam.position.distanceToSquared(this._packAt) > PACK_MARGIN * PACK_MARGIN) {
+      this._packAt.copy(cam.position);
+      this._repackAll(cam.position);
+    }
+
     this._updateCharacters();
     this._updateGrass(dt);
   }
@@ -4217,6 +4343,11 @@ vCanopyG = cg;
     if (!q || !this._grassMat) return;      // a tier flip before init() finishes
     const shadows = !!q.foliageShadows;
     const meshLod = q.tier >= 2;
+    // Every fade window below is about to move, and the packed sets are cut against
+    // those windows — so invalidate the hysteresis rather than wait for the camera to
+    // travel PACK_MARGIN. A tier flip that widened a window would otherwise leave the
+    // newly in-range instances missing until the player walked twelve metres.
+    this._packAt.set(Infinity, Infinity, Infinity);
 
     this._buildGrassBuckets(q);
 
