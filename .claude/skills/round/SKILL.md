@@ -10,7 +10,9 @@ current; do not work from a summary of it, including this one.
 
 Two things it says that are easy to skip and expensive to skip:
 
-- **One round, then stop and report.** The human re-enters the loop between rounds.
+- **Report at the end of the round** — verdict, score delta, teams dispatched, teams gated
+  out, measured numbers against §7. Invoking `/round` runs one round; the standing brief in
+  `CLAUDE.md` is to keep looping until the critic passes or a human stops it.
 - **Check `shots/report-rN.json` before sending anything to the critic** — booted, no dead
   shaders, correct tier. The measurement rig has broken four times on this project, and
   every time it turned a correct critique into a wrong fix.

@@ -3,10 +3,14 @@
 This file is the whole brief. A fresh session should be able to open it, run one round of
 the art-direction loop, and stop — without reading back through any previous conversation.
 
-**Run exactly one round. Then stop and report.** Not "until it passes", not "one more
-while I'm here". The loop is deliberately re-entered by a human between rounds, because
-the expensive failure mode of this project was never a bad round — it was three rounds
-built on a premise nobody re-checked.
+**One round is the unit of work. Report at the end of every round.** Then continue to the
+next one — unless the critic has passed the build or a human has said stop. Invoking
+`/round` runs a single round; the standing instruction in `CLAUDE.md` is to keep looping
+until the build is genuinely good.
+
+The report between rounds is not ceremony. The expensive failure mode here was never a bad
+round — it was three rounds built on a premise nobody re-checked, twice because the
+measurement rig was quietly broken. Surfacing the numbers each time is what stops that.
 
 ---
 
@@ -170,7 +174,9 @@ Commit on `claude/aaa-fps-threejs-ddcaix`, push, and report:
 - the measured numbers against §7 — draw calls, triangles, the histogram gates
 - what is still open
 
-Then **stop**. The next round is a human's call.
+Then start the next round, unless the critic passed or you have been told to stop. If the
+score did not move, say so and say what you think is actually blocking it — three rounds of
+polish on the wrong premise is the failure this loop is built to prevent.
 
 Expected cost for one round under this setup: roughly 2.5–3M tokens (about $9–12 at Opus 5
 rates), against 6–7M for the same round run ungated.
