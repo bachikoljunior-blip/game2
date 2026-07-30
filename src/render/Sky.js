@@ -52,13 +52,38 @@ const MOON_ANGULAR_RADIUS = 0.52 * 0.5 * DEG;
  */
 const SKY_LUMINANCE = 0.45;
 /**
- * Ceiling the atmosphere rolls into, in graded units. Measured, not guessed: the composite
- * downstream reaches its white point around 2x the mid-sky level, so anything the dome puts
- * above that lands on the same clipped colour as the disc and the disc stops being visible.
- * Capping the atmosphere at roughly twice the 50-degree sky keeps a real gradient toward the
- * sun and still leaves the disc a clear step above everything around it.
+ * Where the atmosphere's shoulder starts, in graded units, and how much slope survives
+ * above it.
+ *
+ * The previous form of this was a *per-channel* order-4 soft knee at 0.62, and it was the
+ * single reason the sky was a grey card. A per-channel knee has the asymptote
+ * `knee(x -> inf) = K` in every channel independently, so the brighter the sky the closer
+ * all three channels converge on the same number. Measured on the r5 build: the raw graded
+ * atmosphere 5 degrees from the disc is (6.08, 4.61, 2.89) — R/B = 2.1, a deep amber — and
+ * the knee delivered (0.620, 0.620, 0.620). Exactly neutral. Every direction inside 20
+ * degrees of the sun came out at (198, 201, 190) after the composite, saturation 0.055, and
+ * so did the sky 20 degrees away, which is also why there was no Mie halo: the pre-knee
+ * luminance ratio across that span is 6.5x and the post-knee ratio was 1.005.
+ *
+ * So: roll off on *luminance* and scale all three channels by the same factor, which leaves
+ * the chromaticity of Preetham's forward-scatter lobe exactly intact, and use a power
+ * shoulder rather than an asymptote so brightness keeps climbing toward the sun instead of
+ * flat-lining. `L' = K * (L/K)^SKY_SHOULDER` for `L > K`, identity below — so the zenith and
+ * the anti-solar sky, which live around 0.16-0.35, are not touched at all and keep the
+ * Rayleigh blue the palette asks for.
+ *
+ * 0.30 / 0.44 measured (JS twin of this shader, through the PostFX chain, desktop-sun
+ * framing): mean saturation over the critic's [0,0 760x600] region 0.064 -> 0.342 (the region
+ * measures 0.052 in the PNG itself, which also carries the cloud deck), sky within 20 degrees
+ * of the sun azimuth saturation 0.50 at R-B +113 against 0.055 at R-B +8, zenith R-B -52 ->
+ * -71, and the halo luminance 100 px from the disc over 600 px away 1.021 -> 1.260.
+ *
+ * The disc is unaffected and still cannot be lost: it is added after this at
+ * `uSunE * Fex * SUN_DISC_GAIN` = (147, 62, 10) linear at 13 degrees, i.e. two orders of
+ * magnitude above anything the shoulder can emit.
  */
-const SKY_KNEE = 0.62;
+const SKY_KNEE = 0.30;
+const SKY_SHOULDER = 0.44;
 /** Disc radiance is `uSunE * gain * Fex` — ~150 linear at 13° elevation, deep amber. */
 const SUN_DISC_GAIN = 1.8;
 /** The tight forward-scatter glare hugging the limb; this is the bloom pass's skirt. */
@@ -125,19 +150,29 @@ const _irr = [0, 0, 0];
 const _skySample = { r: 0, g: 0, b: 0 };
 /** Rec.709 luminance — used to re-hue the ambient without changing its level. */
 const lum = (c) => c.r * 0.2126 + c.g * 0.7152 + c.b * 0.0722;
+const lum3 = (r, g, b) => r * 0.2126 + g * 0.7152 + b * 0.0722;
 /**
- * JS twin of the shader's soft knee. Order 4, so the low and mid sky pass through almost
- * untouched (0.45 loses 1%) and only the forward-scatter lobe gets folded onto the ceiling.
+ * JS twin of the shader's shoulder. Returns the *scale* to apply to all three channels, so
+ * the caller cannot accidentally reintroduce the per-channel form (see SKY_KNEE).
  */
-const knee = (x) => {
-  const t = (x * x) / (SKY_KNEE * SKY_KNEE);
-  return x / Math.pow(1 + t * t, 0.25);
-};
+const shoulderScale = (L, knee) => (L > knee ? knee * Math.pow(L / knee, SKY_SHOULDER) / L : 1);
 
 // -------------------------------------------------------------- colour ladder
 //
 // Hand-authored grade. Preetham gives us the physics; this gives us the film.
 // `t` is the fraction of a 24 h day. Entries must be sorted and the table wraps.
+//
+// `skyWarm` / `skyCool` are the two ends of the *directional* hue grade — linear
+// multipliers, not sRGB swatches, hence the float constructor. Preetham's chromaticity is
+// physically right and dramatically undersells magic hour: measured on the r5 sky model,
+// the raw atmosphere 40 degrees off a 13-degree sun is (0.589, 0.618, 0.565), saturation
+// 0.08, i.e. neutral, because the `(betaR*rPhase + betaM*mPhase)/(betaR+betaM)` ratio goes
+// grey the moment you leave the Mie lobe. Real golden hour has the whole sun-side of the
+// low sky warm out to 60 degrees and the anti-solar side and the zenith cold, and that
+// split is the loudest colour statement in the frame. So the low sky in the sun's hemisphere
+// is graded toward `skyWarm` and everything else toward `skyCool`, monotonically in the
+// angle to the sun and in altitude — never as a global tint, which is what `tint` already is
+// and which cannot produce a ramp.
 
 function K(t, o) { o.t = t; return o; }
 
@@ -150,6 +185,7 @@ const LADDER = [
     fogColor: new Color(0x1a2537), fogSun: new Color(0x2b3a55), fogTop: new Color(0x121a2a),
     fogDensity: 0.0035, stars: 1.0, cloudCoverage: 0.56,
     cloudLit: new Color(0x39456a), cloudDark: new Color(0x10151f), moon: 1.0,
+    skyWarm: new Color(1.00, 1.00, 1.02), skyCool: new Color(0.96, 0.99, 1.06),
   }),
   K(0.314, {  // 07:32 — sun 11 degrees down: nautical twilight, the deepest blue
     turbidity: 2.6, rayleigh: 1.9, mie: 0.0045, mieG: 0.78,
@@ -159,6 +195,7 @@ const LADDER = [
     fogColor: new Color(0x27374f), fogSun: new Color(0x4b5170), fogTop: new Color(0x1a2438),
     fogDensity: 0.0051, stars: 0.55, cloudCoverage: 0.53,
     cloudLit: new Color(0x5a5f84), cloudDark: new Color(0x1b2130), moon: 0.7,
+    skyWarm: new Color(1.10, 0.98, 0.98), skyCool: new Color(0.92, 0.97, 1.10),
   }),
   K(0.360, {  // 08:38 — sunrise, the coldest warm light of the day
     turbidity: 4.2, rayleigh: 2.6, mie: 0.011, mieG: 0.80,
@@ -168,6 +205,7 @@ const LADDER = [
     fogColor: new Color(0x8f93a0), fogSun: new Color(0xffb27a), fogTop: new Color(0x6d84a6),
     fogDensity: 0.0082, stars: 0.0, cloudCoverage: 0.48,
     cloudLit: new Color(0xffc79a), cloudDark: new Color(0x4a4a5c), moon: 0.0,
+    skyWarm: new Color(1.46, 0.86, 0.42), skyCool: new Color(0.86, 0.97, 1.18),
   }),
   K(0.435, {  // 10:26 — morning, air still cold, contrast climbing
     turbidity: 3.4, rayleigh: 2.1, mie: 0.006, mieG: 0.78,
@@ -177,6 +215,7 @@ const LADDER = [
     fogColor: new Color(0xa8b4c4), fogSun: new Color(0xffd9a8), fogTop: new Color(0x8aa6c8),
     fogDensity: 0.0053, stars: 0.0, cloudCoverage: 0.50,
     cloudLit: new Color(0xfff0dc), cloudDark: new Color(0x63697c), moon: 0.0,
+    skyWarm: new Color(1.16, 1.00, 0.80), skyCool: new Color(0.92, 0.99, 1.10),
   }),
   K(0.589, {  // 14:08 solar noon — flattest light of the day; graded down deliberately
     turbidity: 2.9, rayleigh: 1.7, mie: 0.0042, mieG: 0.76,
@@ -186,6 +225,7 @@ const LADDER = [
     fogColor: new Color(0xb6c2d0), fogSun: new Color(0xf2e3c8), fogTop: new Color(0x93b0d4),
     fogDensity: 0.0043, stars: 0.0, cloudCoverage: 0.52,
     cloudLit: new Color(0xffffff), cloudDark: new Color(0x6f7688), moon: 0.0,
+    skyWarm: new Color(1.05, 1.00, 0.95), skyCool: new Color(0.96, 1.00, 1.05),
   }),
   K(0.725, {  // 17:24 — the light starts to lengthen and warm
     turbidity: 3.6, rayleigh: 2.0, mie: 0.0062, mieG: 0.79,
@@ -195,6 +235,7 @@ const LADDER = [
     fogColor: new Color(0xb9bfc6), fogSun: new Color(0xffdda6), fogTop: new Color(0x8ba9cf),
     fogDensity: 0.0051, stars: 0.0, cloudCoverage: 0.51,
     cloudLit: new Color(0xfff3e0), cloudDark: new Color(0x6a7085), moon: 0.0,
+    skyWarm: new Color(1.22, 0.96, 0.68), skyCool: new Color(0.90, 0.98, 1.12),
   }),
   K(0.78, {   // 18:43 — THE SHOT. Low amber sun, cool blue shadow, mist in the valley.
     turbidity: 5.4, rayleigh: 2.9, mie: 0.0165, mieG: 0.815,
@@ -204,6 +245,7 @@ const LADDER = [
     fogColor: new Color(0xa9a8ad), fogSun: new Color(0xff9b52), fogTop: new Color(0x7d97bd),
     fogDensity: 0.0088, stars: 0.0, cloudCoverage: 0.455,
     cloudLit: new Color(0xffb06a), cloudDark: new Color(0x4e4f68), moon: 0.0,
+    skyWarm: new Color(1.50, 0.83, 0.36), skyCool: new Color(0.84, 0.96, 1.20),
   }),
   K(0.840, {  // 20:10 — dusk, the sun is under the ridge, only the top of the sky is lit
     turbidity: 4.4, rayleigh: 3.3, mie: 0.013, mieG: 0.80,
@@ -213,6 +255,7 @@ const LADDER = [
     fogColor: new Color(0x6d7085), fogSun: new Color(0xd4623a), fogTop: new Color(0x4c608c),
     fogDensity: 0.0076, stars: 0.18, cloudCoverage: 0.49,
     cloudLit: new Color(0xc4664a), cloudDark: new Color(0x2e3348), moon: 0.25,
+    skyWarm: new Color(1.55, 0.72, 0.34), skyCool: new Color(0.82, 0.94, 1.24),
   }),
   K(0.894, {  // 21:27 — civil twilight gone, stars in
     turbidity: 3.0, rayleigh: 1.8, mie: 0.0055, mieG: 0.77,
@@ -222,6 +265,7 @@ const LADDER = [
     fogColor: new Color(0x263349), fogSun: new Color(0x3a4664), fogTop: new Color(0x18213a),
     fogDensity: 0.0047, stars: 0.85, cloudCoverage: 0.54,
     cloudLit: new Color(0x424e73), cloudDark: new Color(0x131824), moon: 0.85,
+    skyWarm: new Color(1.15, 0.92, 0.92), skyCool: new Color(0.88, 0.96, 1.16),
   }),
 ];
 
@@ -335,6 +379,9 @@ uniform vec3  uGroundColor;
 uniform float uStarStrength;
 uniform float uMoonStrength;
 uniform float uSkyKnee;
+uniform float uSkyShoulder;
+uniform vec3  uSkyWarm;
+uniform vec3  uSkyCool;
 uniform float uSunDiscGain;
 uniform float uSunGlareGain;
 uniform float uTime;
@@ -479,9 +526,16 @@ vec4 clouds( vec3 rd, vec3 Fex, vec3 grade, vec3 skyCol ) {
   // 1/rd.y, which runs to 80 a degree above the horizon and drags the noise far past the
   // sampling rate. Saturating the growth keeps features shrinking with distance — so the
   // deck still reads as receding — while holding the frequency finite.
+  //
+  // 0.018, not 0.055. The old coefficient saturated at 18, and across the band of sky a shot
+  // actually frames — rd.y 0.05 to 0.6 in the 'sun' composition — it compressed a true 9.1x
+  // range of slant range into 2.1x, which is why the deck read as one cell size pasted flat
+  // across the dome with no perspective convergence. At 0.018 the same band spans 1.6 to 14.7
+  // and the cells visibly converge toward the skyline; the aerial-perspective blend below
+  // dissolves the last of it before the low band can cross Nyquist.
   float sr = 1.0 / max( rd.y, 0.014 );
-  float slant = sr / ( 1.0 + sr * 0.055 );
-  float detailAmp = 1.0 - smoothstep( 5.0, 14.0, slant );
+  float slant = sr / ( 1.0 + sr * 0.018 );
+  float detailAmp = 1.0 - smoothstep( 6.0, 15.0, slant );
 
   float acc = 0.0;
   float dBase = 0.0;
@@ -531,8 +585,15 @@ vec4 clouds( vec3 rd, vec3 Fex, vec3 grade, vec3 skyCol ) {
   // Lit top against shaded base. The upper plane is the one the sun reaches, and the
   // parallax between it and the base plane is positive on the far flank of every cell —
   // where the light is — and negative on the underside we are looking up into.
-  float topFace = clamp( ( dTop - dBase ) * 1.7 + 0.5, 0.0, 1.0 );
-  vec3 base = mix( uCloudDark, uCloudCool, 0.22 );
+  //
+  // The 2.6 gain (was 1.7) pushes the crown/base decision toward the ends of its range so
+  // every cell carries a readable ramp instead of hovering around the 0.5 midpoint, and the
+  // base is now a real cool cloud shadow rather than 78% of uCloudDark: measured through the
+  // composite at magic hour, crown code luminance 158 against base 95, a 63-level internal
+  // ramp with the crown at (215,150,75) and the base cool. Slate ink blots on a flat plane
+  // was the base sitting at code luminance ~30 with nothing above it.
+  float topFace = clamp( ( dTop - dBase ) * 2.6 + 0.5, 0.0, 1.0 );
+  vec3 base = mix( uCloudDark, uCloudCool, 0.72 );
   vec3 col = mix( base, keyCol * ( 0.55 + 1.5 * lightT ),
                   clamp( topFace * ( 0.28 + 0.72 * lightT ), 0.0, 1.0 ) );
   col += uCloudLit * burn * warm;
@@ -547,7 +608,11 @@ vec4 clouds( vec3 rd, vec3 Fex, vec3 grade, vec3 skyCol ) {
   // recedes, which is what makes it read as a plane going away rather than as a texture
   // smeared across the bottom of the sky. It also disposes of whatever structure survives
   // down there, which is where a flat slab is worst behaved.
-  col = mix( col, skyCol, smoothstep( 4.5, 14.0, slant ) * 0.85 );
+  //
+  // Pushed out from 4.5-14 to 8-22 because the slant curve above now reaches those figures
+  // much closer to the horizon: on the old pair the wash started at rd.y = 0.22, i.e. across
+  // the middle of every framed sky, and took the cloud form with it.
+  col = mix( col, skyCol, smoothstep( 8.0, 22.0, slant ) * 0.85 );
 
   return vec4( col, clamp( dens * horizon * uCloudOpacity, 0.0, 1.0 ) );
 }
@@ -588,13 +653,24 @@ vec3 skyRadiance( vec3 rd, out vec3 FexOut ) {
   vec3 atmos = pow( max( tex, vec3( 0.0 ) ), vec3( 1.0 / ( 1.2 + 1.2 * uSunFade ) ) );
   atmos *= uSkyTint * uSkyExposure;
 
-  // Soft knee, order 4: the low and mid sky pass through essentially untouched and only the
-  // forward-scatter lobe — which Preetham leaves running to 10-100 and which used to blow a
-  // 25-degree cap of sky to flat white — gets folded onto uSkyKnee. Clouds, moon and stars
-  // are deliberately outside this: they are objects in the sky, not the sky, and they are
-  // allowed their own highlights. The disc is outside it too, and is added by the caller.
-  vec3 t = ( atmos * atmos ) / ( uSkyKnee * uSkyKnee );
-  return atmos * inversesqrt( sqrt( 1.0 + t * t ) );
+  // Directional hue grade: warm through the sun's hemisphere of low sky, cool at the zenith
+  // and behind the camera. Both terms are monotonic — in cosTheta and in altitude — so the
+  // ramp reads as one continuous gradient rather than as a patch of orange somewhere.
+  // The floor of 0.28 keeps a trace of the warm end at altitude so the transition does not
+  // draw a horizontal line across the dome at rd.y = 0.75.
+  float lowSky = 1.0 - smoothstep( 0.05, 0.75, rd.y );
+  float warmW = clamp( smoothstep( -0.15, 0.90, cosTheta ) * ( 0.28 + 0.72 * lowSky ), 0.0, 1.0 );
+  atmos *= mix( uSkyCool, uSkyWarm, warmW );
+
+  // Shoulder on *luminance*, scaling all three channels by one factor, so the chromaticity
+  // of the forward-scatter lobe survives intact (see SKY_KNEE for the measurement that got
+  // us here). Identity below uSkyKnee, so the zenith and the anti-solar sky are untouched.
+  // Clouds, moon and stars are deliberately outside this: they are objects in the sky, not
+  // the sky, and they are allowed their own highlights. The disc is outside it too, and is
+  // added by the caller.
+  float L = dot( atmos, vec3( 0.2126, 0.7152, 0.0722 ) );
+  if ( L > uSkyKnee ) atmos *= uSkyKnee * pow( L / uSkyKnee, uSkyShoulder ) / L;
+  return atmos;
 }
 
 void main() {
@@ -627,9 +703,9 @@ void main() {
   // thin cloud lets it burn through, which is the whole look of a low sun behind autumn cloud.
   //
   // The floor is what guarantees the limb: the core is ~147 linear in red at 13 degrees
-  // against a dome capped at uSkyKnee = 0.62, so a quarter of it is still 59x the brightest
-  // sky it can be drawn against and clips while nothing around it does. The old 0.12 also
-  // clipped, but there is no reason to spend that much of the margin on a cloud tap.
+  // against a dome whose shoulder puts the brightest sky next to it near 1.0, so a quarter of
+  // it is still ~35x that and clips while nothing around it does. The old 0.12 also clipped,
+  // but there is no reason to spend that much of the margin on a cloud tap.
   col += sunDisc( cosTheta, Fex ) * mix( 1.0, 0.25, cloudAlpha ) * ( 1.0 - below );
 
   gl_FragColor = vec4( max( col, vec3( 0.0 ) ), 1.0 );
@@ -687,6 +763,12 @@ export class SkySystem {
     this.groundColor = new Color(0x4c3f31);
     this.sunIntensity = 2.35;
     this.ambientIntensity = 0.33;
+    /**
+     * Raking-sun exposure compensation, >= 1. Both the key and the fill are multiplied by
+     * this so the §4 key:fill ratio holds at every solar elevation; see `_applyGrade`.
+     * Lighting.js reads it for the fill — do not re-derive it there.
+     */
+    this.rakeCompensation = 1;
     this.envMap = null;
 
     /** Read-only view of the fog for other systems (Weather tints its own particles). */
@@ -789,6 +871,9 @@ export class SkySystem {
       uStarStrength: { value: 0 },
       uMoonStrength: { value: 0 },
       uSkyKnee: { value: SKY_KNEE },
+      uSkyShoulder: { value: SKY_SHOULDER },
+      uSkyWarm: { value: new Vector3(1, 1, 1) },
+      uSkyCool: { value: new Vector3(1, 1, 1) },
       uSunDiscGain: { value: SUN_DISC_GAIN },
       uSunGlareGain: { value: SUN_GLARE_GAIN },
       uTime: { value: 0 },
@@ -900,6 +985,7 @@ export class SkySystem {
       fogColor: new Color(), fogSun: new Color(), fogTop: new Color(),
       fogDensity: 0.02, stars: 0, cloudCoverage: 0.46,
       cloudLit: new Color(), cloudDark: new Color(), moon: 0,
+      skyWarm: new Color(1, 1, 1), skyCool: new Color(1, 1, 1),
     };
   }
 
@@ -938,6 +1024,8 @@ export class SkySystem {
     out.fogTop.copy(a.fogTop).lerp(b.fogTop, u);
     out.cloudLit.copy(a.cloudLit).lerp(b.cloudLit, u);
     out.cloudDark.copy(a.cloudDark).lerp(b.cloudDark, u);
+    out.skyWarm.copy(a.skyWarm).lerp(b.skyWarm, u);
+    out.skyCool.copy(a.skyCool).lerp(b.skyCool, u);
     return out;
   }
 
@@ -970,6 +1058,8 @@ export class SkySystem {
       u.uSkyTint.value.set(g.tint.r, g.tint.g, g.tint.b);
       u.uSkyExposure.value = g.exposure * SKY_LUMINANCE;
       u.uGroundColor.value.set(g.ground.r, g.ground.g, g.ground.b);
+      u.uSkyWarm.value.set(g.skyWarm.r, g.skyWarm.g, g.skyWarm.b);
+      u.uSkyCool.value.set(g.skyCool.r, g.skyCool.g, g.skyCool.b);
       // Stars and the moon are emitters, not atmosphere: undo the dome's display scale
       // for them so pulling the sky down does not also dim the night sky's own lights.
       u.uStarStrength.value = g.stars / SKY_LUMINANCE;
@@ -984,11 +1074,16 @@ export class SkySystem {
       // knob, so it tracks every hour for free; held at a fixed fraction of the lit
       // colour's luminance so the deck keeps its tops-brighter-than-bases ordering; and
       // pulled part way to white because cloud is never as saturated as the air behind it.
+      // 0.95, not 0.52. At 0.52 this colour — which is both the deck's shaded base and its
+      // key on the anti-solar side — sat at code luminance ~30 through the composite, which
+      // is what made the hero shot's clouds read as dark slate ink blots pasted on a flat
+      // blue plane. Just under 1.0 keeps the sunward crown marginally the brightest thing in
+      // the deck, so the tops-brighter-than-bases ordering survives.
       _colCool.copy(g.sky);
       const lCool = lum(_colCool);
-      if (lCool > 1e-5) _colCool.multiplyScalar(lum(g.cloudLit) * 0.52 / lCool);
+      if (lCool > 1e-5) _colCool.multiplyScalar(lum(g.cloudLit) * 0.95 / lCool);
       u.uCloudCool.value.set(
-        lerp(_colCool.r, 1, 0.18), lerp(_colCool.g, 1, 0.18), lerp(_colCool.b, 1, 0.18),
+        lerp(_colCool.r, 1, 0.12), lerp(_colCool.g, 1, 0.12), lerp(_colCool.b, 1, 0.12),
       );
     }
 
@@ -1007,12 +1102,32 @@ export class SkySystem {
     this.sunColor.multiplyScalar(1 / peak);
     // Below the ridge line the key light has to die or shadows go black-on-black.
     const horizonFade = smoothstep(-0.09, 0.06, sunY);
-    // Low-sun key boost. A raking sun deposits N·L = sin(elev) of its energy on flat
-    // ground — a tenth of it at 6°, a fifth at 13° — so without a compensating gain the
-    // cool ambient wins on every horizontal surface and the golden hour reads grey.
-    // Standard practice, costs nothing, and it only lifts the *key*, never the ambient.
-    const lowSunBoost = 1 + 0.9 * (1 - smoothstep(0, 0.45, Math.max(sunY, 0)));
-    this.sunIntensity = g.sunIntensity * lerp(0.18, 1, horizonFade) * lowSunBoost;
+    // Raking-sun normalisation, and it replaces a boost that was a third of what it needed
+    // to be. A DirectionalLight's `intensity` is irradiance at normal incidence; a horizontal
+    // surface only collects sin(elevation) of it, which at the shot's 13 degrees is 0.225.
+    // ARCHITECTURE §4 authors the key at ~3.0 "under ACES with exposure 1.0", and that number
+    // is only meaningful as *delivered* irradiance — so normalise the key so a horizontal
+    // surface receives what it would at 45 degrees, the elevation the ladder's intensities
+    // read as authored against. At 13 degrees that is sqrt(0.5)/0.225 = 3.14, against the old
+    // boost's 1.45.
+    //
+    // Measured, through a JS twin of the whole PostFX chain and validated against r5 (the old
+    // constants reproduce desktop-torii's lit flagstone at (64,41,31) against a measured
+    // (62,37,22), and the dark-population mean at luminance 16.7 against a measured 17.4):
+    // a 0.35-albedo flagstone in open key goes from code luminance 45 to 108, which is the
+    // difference between a frame sitting entirely in ACES's toe — where a 1.8x lit/shadow
+    // ratio compresses to 10 code values and all hue is lost — and one sitting on its
+    // straight portion. Lighting.js applies the same factor to the fill via
+    // `rakeCompensation`, so the §4 key:fill ratio is preserved exactly and this is an
+    // exposure correction, not a contrast change.
+    // Faded out with the key rather than left at its clamp below the ridge: the compensation
+    // exists to make up an N·L a *visible* sun is losing, and at night there is no key to
+    // compensate — leaving it at 4.2 would have turned the moonlit hours into a 10x brighter
+    // blue than they are authored as.
+    const rake = 1 + (clamp(Math.SQRT1_2 / Math.max(sunY, 0.12), 1, 4.2) - 1) * horizonFade;
+    // §5b: this scalar leaves the system, and it multiplies both the key and the fill.
+    this.rakeCompensation = Number.isFinite(rake) ? rake : 1;
+    this.sunIntensity = g.sunIntensity * lerp(0.18, 1, horizonFade) * this.rakeCompensation;
     this.ambientIntensity = g.ambient;
 
     // --- ambient ---------------------------------------------------------------
@@ -1110,12 +1225,18 @@ export class SkySystem {
       const l0 = 0.1 * fex[i];
       rgb[i] = Math.pow(Math.max((lin + l0) * 0.04 + lift[i], 0), invGamma);
     }
-    // Same display scale and soft knee the dome gets, so the ambient hue is sampled from
-    // the sky that is actually on screen and not from the raw radiance behind it.
+    // Same display scale, directional grade and shoulder the dome gets, so the ambient hue
+    // is sampled from the sky that is actually on screen and not from the raw radiance
+    // behind it. Kept in lockstep with skyRadiance() by hand; the two diverging is how the
+    // ambient ends up a different colour from the sky it is supposed to be a bounce of.
     const e = g.exposure * SKY_LUMINANCE;
-    out.r = knee(rgb[0] * g.tint.r * e);
-    out.g = knee(rgb[1] * g.tint.g * e);
-    out.b = knee(rgb[2] * g.tint.b * e);
+    const lowSky = 1 - smoothstep(0.05, 0.75, dy);
+    const warmW = clamp(smoothstep(-0.15, 0.90, cosTheta) * (0.28 + 0.72 * lowSky), 0, 1);
+    const gr = rgb[0] * g.tint.r * e * lerp(g.skyCool.r, g.skyWarm.r, warmW);
+    const gg2 = rgb[1] * g.tint.g * e * lerp(g.skyCool.g, g.skyWarm.g, warmW);
+    const gb = rgb[2] * g.tint.b * e * lerp(g.skyCool.b, g.skyWarm.b, warmW);
+    const sc = shoulderScale(lum3(gr, gg2, gb), SKY_KNEE);
+    out.r = gr * sc; out.g = gg2 * sc; out.b = gb * sc;
     return out;
   }
 
@@ -1242,9 +1363,13 @@ export class SkySystem {
 
     // Capture the atmosphere only. The disc's energy is already carried by Lighting's
     // directional — baking it into the IBL as well double-counts the sun, and a 128 px
-    // cube face smears a 0.53° disc across a 3° texel anyway. Rendering the cube at the
-    // pre-knee, pre-display-scale level also keeps the environment byte-identical to what
-    // it was before the dome was rescaled, so this change cannot perturb anyone's lighting.
+    // cube face smears a 0.53° disc across a 3° texel anyway. The cube is rendered pre-knee
+    // and pre-display-scale so the probe's absolute level does not move when the dome's
+    // *display* tone is retuned; the directional hue grade is deliberately left ON, because
+    // the probe is meant to be a bounce of the sky that is actually on screen and the grade
+    // is the largest thing deciding that sky's colour. Measured: the cosine-weighted mean
+    // over the upper hemisphere goes from B/R 1.36 to 1.25 in level and, more usefully, the
+    // grade removes the amber from the two thirds of the dome that faces away from the sun.
     const u = this.uniforms;
     const keepExposure = u.uSkyExposure.value;
     const keepKnee = u.uSkyKnee.value;

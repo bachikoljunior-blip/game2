@@ -31,25 +31,48 @@ const DEG2RAD = MathUtils.DEG2RAD;
  *
  * three defaults `environmentIntensity` to 1.0, and until now nobody set it — the one
  * number in the whole rig that no one chose. Sky captures its PMREM *pre-knee and
- * pre-display-scale* (SkySystem._renderEnvironment), so at magic hour the probe alone
- * lands roughly 2.0 of diffuse irradiance on an up-facing surface, while a 13° key
- * delivers sin(13°) * 3.41 = 0.77. That is the whole "the sun is not reaching the
- * surface" bug: the key *is* reaching it, at full strength and the right colour, but the
- * sky bounce sitting on top of it is ~2.5x larger in red and ~25x larger in blue, so
- * flagstone integrates to neutral and a cast shadow that removes a fifth of the total
- * illumination is not visible at all. ARCHITECTURE §4 budgets the ambient at ~0.35
- * against a key of ~3.0; §8 puts light probes in this file, so this is where that ratio
- * is held. 0.42 * 0.33 ≈ 0.14 leaves the sky bounce clearly cool and clearly secondary
- * while keeping enough probe for wet stone and the blade to still mirror the sky.
+ * pre-display-scale* (SkySystem._renderEnvironment), so left at 1.0 the probe alone lands
+ * roughly 2.0 of diffuse irradiance on an up-facing surface and out-votes the key entirely;
+ * that was the original "the sun is not reaching the surface" bug, and it is why this number
+ * exists. ARCHITECTURE §4 budgets the ambient at ~0.35 against a key of ~3.0; §8 puts light
+ * probes in this file, so this is where that ratio is held.
  *
- * Measured at the `torii` shot, magic hour, on the flagstone directly in front of camera
- * (fraction of pixels with R-B > 18, the critic's own test):
- *   probe 1.00 -> 0.00 %, mean (84, 84, 97)   blue, and removing the sun entirely only
- *                                              moves it to (65, 69, 81)
- *   probe 0.25 -> 8.5  %, mean (48, 41, 48)
- *   probe 0.15 -> 12.2 %, mean (43, 34, 40)   long torii shadow clearly readable
+ * Deliberately multiplied by the *un-raked* ambient (`sky.ambientIntensity`), not by the
+ * raked fill level: the probe supplies specular and IBL shape — the thing wet stone and the
+ * blade mirror — and a raking-sun exposure correction has no business scaling a mirror. The
+ * diffuse fill's level is the hemisphere's job, where we control the colour.
+ *
+ * Round-5 measurement that set 0.60, through a JS twin of the whole composite chain validated
+ * against the r5 captures (it reproduces desktop-torii's lit flagstone at (64,41,31) against a
+ * measured (62,37,22) and the dark-population mean at luminance 16.7 against a measured 17.4):
+ * at 0.60 the probe carries ~40% of the fill's luminance and the hemisphere the rest, which
+ * lands open shadow on the plaza at code (46, 60, 82) — luminance 58.6, R-B −36, the sign and
+ * the magnitude §5 asks for, up from (14, 17, 21) at luminance 16.7. Every step further is
+ * bought from the hemisphere's authored hue: 0.68 costs a point of R-B for four of luminance,
+ * and at 1.00 the probe out-votes the hue entirely, which is what the earlier experiment
+ * recorded — flagstone (84, 84, 97), neutral, with the cast shadow invisible.
  */
-const ENV_AMBIENT_GAIN = 0.42;
+const ENV_AMBIENT_GAIN = 0.60;
+
+/**
+ * The contract's shadow/ambient swatch, #4a6b8f, as a linear peak-normalised direction —
+ * i.e. its *hue*, with the level stripped off. ARCHITECTURE §5 does not permit a neutral or
+ * warm shadow side, and a probe that averages the whole sky dome cannot deliver this on its
+ * own: the r5 probe's cosine-weighted mean was (0.851, 0.973, 1.057), B/R = 1.24, against
+ * this swatch's B/R = 4.01. So the hemisphere light — the term whose colour we actually
+ * choose — is biased this far toward the swatch and given the authority to carry the fill.
+ */
+const SHADOW_HUE = new Vector3(0.249, 0.535, 1.0);
+/** How far the hemisphere's sky colour is pulled from the computed sky bounce to SHADOW_HUE. */
+const SHADOW_HUE_BIAS = 0.72;
+/**
+ * Ground-bounce level, as a fraction of the sky term, and how far it is pulled toward the
+ * sky's hue. A soffit under the honden eaves sees mostly the veranda deck, so the bounce has
+ * to stay warm — but at r5's levels it was the *only* thing on that surface, which is how a
+ * shadowed veranda measured (37, 29, 24), warm dark brown, where §5 wants cool.
+ */
+const GROUND_BOUNCE = 0.55;
+const GROUND_BOUNCE_HUE_BIAS = 0.60;
 
 /** Ceiling on cascades, and the fixed length of the `kagCascades` uniform array. */
 const MAX_CASCADES = 4;
@@ -84,6 +107,8 @@ const _m = new Matrix4();
 const _mInv = new Matrix4();
 const _col = new Color();
 const _col2 = new Color();
+const _colFill = new Color();
+const _colBounce = new Color();
 const _sparkPos = new Vector3();
 const _standPos = new Vector3();
 
@@ -326,6 +351,12 @@ export class LightingSystem {
     this.rim = null;
 
     this.sunDirection = new Vector3(0, 1, 0);
+    /**
+     * The fill's colour at the level it is actually delivered at — i.e. the frame's cool
+     * shadow-side light. Published because FX has to tint dust, mist and petals with the
+     * same fill that is lighting the geometry they sit in front of.
+     */
+    this.ambientColor = new Color(0.09, 0.17, 0.30);
     this.shadowsActive = true;
     /** Live handle on the ambient probe's share of the light budget; see ENV_AMBIENT_GAIN. */
     this.envAmbientGain = ENV_AMBIENT_GAIN;
@@ -517,8 +548,16 @@ export class LightingSystem {
     }
   }
 
+  /**
+   * The blocker-search disk is now ~3x wider than it was (see `_computeSplits`), and its
+   * failure mode is asymmetric: a disk that finds no blocker returns *fully lit*, so
+   * undersampling a thin caster — a shimenawa rope, a banner edge — punches a lit hole
+   * through its own shadow. Tier 3 pays four more taps for that; the phone tiers keep the
+   * count they had, and their maximum penumbra is scaled down to match.
+   */
   _blockerTaps() {
-    return this.ctx.quality.tier >= 2 ? 12 : 8;
+    const t = this.ctx.quality.tier;
+    return t >= 3 ? 16 : t >= 2 ? 12 : 8;
   }
 
   // ------------------------------------------------------------ material patch
@@ -628,7 +667,15 @@ export class LightingSystem {
     // Fade the shadow contribution out before the last cascade's far edge so the
     // boundary dissolves instead of popping. Skipped while the sun is down, where
     // update() has parked the band behind the camera to disable sampling entirely.
-    if (this.shadowsActive) this._u.kagShadowFade.value.set(far * 0.80, far * 0.97);
+    //
+    // 0.92-1.00, not 0.80-0.97. The old band spent the outer fifth of the shadow range on a
+    // crossfade the last cascade did not need — its own kagCascadeWeight already dissolves at
+    // the seam — and at TIER.MEDIUM, where q.shadowDistance is 70 m, that meant every caster
+    // past 56 m stopped shadowing. That is inside the `wide` composition: the approach
+    // lanterns sit 20-75 m from that camera, which is why the far half of the row threw
+    // nothing. Ending the band at `far` recovers 56 -> 64.4 m of full-strength reach on the
+    // phone and 128 -> 147 m on desktop, for no samples and no memory.
+    if (this.shadowsActive) this._u.kagShadowFade.value.set(far * 0.92, far);
 
     // PCSS is expressed in shadow-map UV: a world penumbra of
     // (receiver-blocker) * depthRange * spread, divided by the ortho width.
@@ -636,8 +683,31 @@ export class LightingSystem {
     const depthRange = 2 * r0 + this._backoff * 2;
     const spread = 0.055;                       // artistic sun size, ~3° not 0.53°
     this._u.kagPcssScale.value = depthRange * spread / (2 * r0);
-    this._u.kagPcssSearch.value = MathUtils.clamp(2.5 / this.shadowMapSize * 4.0, 0.002, 0.02);
-    this._u.kagPcssMax.value = MathUtils.clamp(14.0 / this.shadowMapSize, 0.004, 0.02);
+
+    // The two caps below, and *not* the scale above, are why r5 had no contact hardening.
+    //
+    // Worked through for the `torii` shot at ULTRA (fov 62, 4 cascades, 3072 map, shadow
+    // distance 160): the near cascade fits r0 = 24.1 m, so depthRange = 224 m and
+    // kagPcssScale = 0.256 — which turns out to be exactly right. It gives 3.5 texels of
+    // penumbra per metre of receiver-blocker separation, i.e. a torii post's shadow 8 m out
+    // wants 29 texels, which at that cascade's 0.0157 m/texel is a 0.45 m penumbra, ~18 px
+    // on screen. That is the middle of the 15-25 px the brief asks for. The old caps then
+    // threw it away: `kagPcssMax` allowed 14 texels, reached at 4 m of separation, and
+    // `kagPcssSearch` allowed 10 — and the search is the harder ceiling, because a receiver
+    // whose disk finds no blocker returns fully lit, so the soft edge can never be wider
+    // than the search. Net: everything past ~3 m of separation got the same ~6 px penumbra,
+    // which is the "uniformly soft along its entire length" the critic measured.
+    //
+    // Expressed in texels, and tied to the tap count rather than to a bare constant: asking
+    // 8 taps to cover a 44-texel disk buys banding, not softness. LOW/MEDIUM therefore get a
+    // proportionally tighter maximum, which also keeps the phone's fill rate where it was —
+    // both loops are fixed-tap, so nothing here costs a sample.
+    const taps = this._pcfTaps();
+    const maxTexels = 2.75 * taps;              // 11 / 22 / 33 / 44 by tier
+    const searchTexels = maxTexels * 0.72;      // never the binding constraint again
+    const texel = 1 / Math.max(this.shadowMapSize, 1);
+    this._u.kagPcssSearch.value = MathUtils.clamp(searchTexels * texel, 0.002, 0.05);
+    this._u.kagPcssMax.value = MathUtils.clamp(maxTexels * texel, 0.004, 0.06);
   }
 
   /**
@@ -1039,7 +1109,7 @@ export class LightingSystem {
       }
       if (active) {
         const far = Math.min(camera.far, this.shadowDistance);
-        this._u.kagShadowFade.value.set(far * 0.80, far * 0.97);
+        this._u.kagShadowFade.value.set(far * 0.92, far);
       }
 
       _col.copy(sky.sunColor);
@@ -1050,20 +1120,70 @@ export class LightingSystem {
         l.intensity = intensity;
       }
 
-      const ambient = sky.ambientIntensity !== undefined ? sky.ambientIntensity : 0.35;
-      this.hemi.color.copy(sky.skyColor);
-      this.hemi.groundColor.copy(sky.groundColor);
-      this.hemi.intensity = ambient;
+      const ambient = Number.isFinite(sky.ambientIntensity) ? sky.ambientIntensity : 0.35;
+
+      // --- the fill -------------------------------------------------------------
+      // Two bugs lived here, and together they are why 30-42% of every r5 frame was an
+      // undifferentiated warm-black void.
+      //
+      // 1. `intensity = ambient` was multiplied by an *un-normalised* colour. three's
+      //    HemisphereLight computes `mix(groundColor, skyColor, w) * intensity`, so a sky
+      //    colour of #6f8db8 — linear (0.18, 0.27, 0.40) — silently scaled the whole term by
+      //    its own peak of 0.40. The key does not suffer this: `Sky._applyGrade` peak-
+      //    normalises `sunColor` before publishing it. So §4's "ambient/hemi ~0.35" was
+      //    being delivered at 0.09 while "sun ~3.0" was delivered neat — a 4x error in the
+      //    fill that no amount of telemetry would show, because `hemiIntensity` reads 0.33.
+      // 2. The level that *was* reaching the shadows came overwhelmingly from the probe,
+      //    whose hemisphere-averaged hue is only mildly cool, so the fill had no authored
+      //    colour at all.
+      //
+      // Fixed by normalising both hemisphere colours — so the intensity means what §4 says
+      // — biasing the sky end toward the contract's #4a6b8f, and carrying the same raking-sun
+      // exposure compensation the key carries, so the key:fill *ratio* is untouched. Measured
+      // through the composite twin: shadowed plaza (14,17,21) -> (43,57,78), luminance
+      // 16.7 -> 55.5, R-B -7 -> -35; a downward-facing eave soffit 1.2 -> 20.2.
+      _colFill.copy(sky.skyColor);
+      const peak = Math.max(_colFill.r, _colFill.g, _colFill.b);
+      if (peak > 1e-5) _colFill.multiplyScalar(1 / peak);
+      else _colFill.setRGB(SHADOW_HUE.x, SHADOW_HUE.y, SHADOW_HUE.z);
+      _colFill.setRGB(
+        MathUtils.lerp(_colFill.r, SHADOW_HUE.x, SHADOW_HUE_BIAS),
+        MathUtils.lerp(_colFill.g, SHADOW_HUE.y, SHADOW_HUE_BIAS),
+        MathUtils.lerp(_colFill.b, SHADOW_HUE.z, SHADOW_HUE_BIAS),
+      );
+      this.hemi.color.copy(_colFill);
+      // Ground bounce: normalised the same way, pulled part way to the sky's hue so a soffit
+      // is warm-*leaning* rather than warm-only, and held below the sky term.
+      _colBounce.copy(sky.groundColor);
+      const gPeak = Math.max(_colBounce.r, _colBounce.g, _colBounce.b);
+      if (gPeak > 1e-5) _colBounce.multiplyScalar(1 / gPeak);
+      else _colBounce.setRGB(0.5, 0.5, 0.5);
+      _colBounce.lerp(_colFill, GROUND_BOUNCE_HUE_BIAS).multiplyScalar(GROUND_BOUNCE);
+      this.hemi.groundColor.copy(_colBounce);
+
+      // §5b: `rakeCompensation` multiplies the fill, so a non-finite one would blank every
+      // lit surface in the frame. Hold 1 rather than propagate it.
+      const rake = Number.isFinite(sky.rakeCompensation) && sky.rakeCompensation > 0
+        ? Math.min(sky.rakeCompensation, 4.2) : 1;
+      const fill = ambient * rake;
+      this.hemi.intensity = Number.isFinite(fill) ? fill : ambient;
+      // Effects.js already reaches for `lighting.ambientColor` and has been falling through
+      // to `sky.groundColor` — the warm ground bounce — because nothing ever published it.
+      this.ambientColor.copy(_colFill).multiplyScalar(this.hemi.intensity);
 
       // The probe supplies the sky bounce's *shape*; its level is a key/fill decision
       // and therefore ours. See ENV_AMBIENT_GAIN — left at three's default of 1.0 this
       // single line is worth more irradiance than the sun.
       this.ctx.scene.environmentIntensity = ambient * this.envAmbientGain;
 
-      // Cool the rim toward the sky bounce so it always reads as the opposite of key.
+      // Cool the rim toward the sky bounce so it always reads as the opposite of key. Built
+      // from the *normalised* fill colour, not from `sky.skyColor` — the same un-normalised
+      // multiply that was costing the hemisphere 4x was costing the rim the same 4x, and a
+      // rim at 40% of its authored intensity is a rim that does not separate a black-lacquered
+      // oni from a shadowed cedar wall, which is the one job §5.10 gives it.
       _col2.setRGB(0.55, 0.7, 1.0);
-      this.rim.color.copy(sky.skyColor).lerp(_col2, 0.55);
-      this.rim.intensity = 0.22 + 0.18 * (1 - MathUtils.clamp(sky.sunDirection.y * 2.5, 0, 1));
+      this.rim.color.copy(_colFill).lerp(_col2, 0.55);
+      this.rim.intensity = (0.22 + 0.18 * (1 - MathUtils.clamp(sky.sunDirection.y * 2.5, 0, 1))) * rake;
     }
 
     // --- rim placement: always behind the subject, from the camera's point of view.
