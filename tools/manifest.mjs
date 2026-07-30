@@ -102,6 +102,14 @@ function depsFor(shot) {
  * A missing file is hashed as the literal string `absent` rather than skipped, so
  * deleting a dependency registers as a change.
  */
+/**
+ * Two shots with identical dependency sets hash identically — `wide` and `torii` both
+ * reduce to GLOBAL + Terrain/Props/Level/Foliage, so they always will. That looks alarming
+ * next to two visibly different PNGs and was raised as a suspected rig defect in round 5.
+ * It is harmless: the hash is a change detector per manifest key, never a frame identity.
+ * `plan()` compares `m[`${profile}-${shot}`].hash` against `shotHash(shot)` for that same
+ * shot, so two keys holding the same value cannot carry one pose forward as the other.
+ */
 export function shotHash(shot) {
   const h = createHash('sha1');
   for (const rel of depsFor(shot)) {
