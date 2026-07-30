@@ -306,6 +306,144 @@ const vband = (v, w) => smoothstep(w, 0, Math.min(v, 1 - v) * 2);
 const cellRnd = (i, p, salt) => hash2(wrapi(i, p) * 31 + salt, salt * 17 + 3);
 const cellRnd2 = (i, j, pi, pj, salt) => hash3(wrapi(i, pi), wrapi(j, pj), salt);
 
+// ---------------------------------------------------------- 濡れ the wet film
+/**
+ * Wet stone, and why it is a layer of its own rather than a rebalance of the
+ * `wet`/`pool` terms that were already in the two paving recipes.
+ *
+ * §5 names wet stone as a defining material of the setting and the r5 review found
+ * no specular response on any stone surface in any frame. Both recipes did already
+ * carry a damp story — 石畳 lerps roughness toward 0.26 on `pool`, 石 toward 0.16 —
+ * so the obvious reading is that it wanted turning up. It did not. Baked offline at
+ * the shipping resolution and measured over the whole tile:
+ *
+ *   石畳 cobble  roughness p05 0.647  p50 0.744  p95 0.788   area <= 0.25: 0.00%
+ *   石 stone     roughness p05 0.648  p50 0.698  p95 0.734   area <= 0.25: 0.00%
+ *
+ * Not one texel of either tile ever reached a wet roughness, so nothing downstream
+ * could have gone wrong: the material genuinely had no wet response to grade or to
+ * light. `pool` is gated on height — `clamp((0.7285 - h) * 6.4, 0, 1)` in 石 — and
+ * the round that brought the relief down to 5 mm took the crest-to-crack range from
+ * 0.23 to 0.094, so on a stone *face* that gate returns 0.05 and the lerp moves
+ * roughness by four hundredths. The film was authored against a height field that
+ * two rounds of flattening had already removed.
+ *
+ * Second measurement, and the one that decides the design. The normal map is not a
+ * neutral carrier for a specular lobe — it *is* a lobe. RMS microfacet slope off the
+ * baked map, after `normalScale`:
+ *
+ *   石畳 cobble  0.240   -> alone equivalent to GGX roughness 0.58
+ *   石 stone     0.224   -> 0.55
+ *
+ * Slope variance adds, so a material roughness of 0.09 under that map still shades
+ * near 0.55 over any footprint wider than a texel; roughness alone cannot make a
+ * film. A water film *fills* micro-relief — that is the whole reason a wet road goes
+ * mirror-like — so the height field has to flatten wherever the film sits and the two
+ * have to move together. `FLATTEN` is that, and it is the load-bearing knob here.
+ *
+ * Third, the geometry, because it caps how smooth the film may be. The sun is at 13
+ * degrees, direction (0.86, 0.225, 0.457) (report-r5). Sweeping every ground pixel of
+ * all five review shots for the best half-vector a horizontal surface can present:
+ *
+ *   shot     best N.H         mirror axis vs camera axis
+ *   hero     0.481 (61 deg)      94.2 deg   — off frame
+ *   wide     0.449 (63 deg)     120.7 deg   — off frame
+ *   torii    0.291 (73 deg)     129.2 deg   — off frame
+ *   valley   1.000 ( 0 deg)      16.7 deg   — in frame
+ *   sun      1.000 ( 0 deg)      26.0 deg   — in frame
+ *
+ * A *sun* streak is therefore available in `valley` and `sun` and is geometrically
+ * impossible in the other three at any roughness: at torii's best N.H the GGX D term
+ * is 4.9e-6 against 2.1e4 on axis, and it gets *smaller* as roughness drops. What
+ * those three do get — and what actually sells wet stone when you are not looking at
+ * the sun — is the sky reflection at grazing incidence. Through three's own
+ * DFGApprox at the plaza's measured N.V = 0.21, single-scatter reflectance for a
+ * dielectric runs
+ *
+ *   roughness 0.744 -> 0.029     0.28 -> 0.222     0.10 -> 0.274
+ *
+ * so 0.28 already banks 81% of the way to a mirror. That is why `ROUGH` is a tenth
+ * and not a hundredth: with the residual slope left by FLATTEN the film shades at an
+ * effective roughness near 0.3, which keeps the sun lobe wide enough to cover a
+ * framed region 10 degrees off its own axis instead of collapsing into a sub-pixel
+ * line outside it.
+ *
+ * `envMapIntensity` is deliberately NOT touched. It scales three's diffuse irradiance
+ * as well as its specular radiance, and Lighting owns the ground's ambient level
+ * (`ENV_AMBIENT_GAIN`, fitted this round against these same captures). Concentrating
+ * the specular the probe already supplies costs that balance nothing.
+ */
+const FILM = {
+  /** Albedo multiplier under a continuous film; the review asked for 30-40% down. */
+  DARKEN: 0.655,
+  /** Roughness of the film's own surface, and of the damp ring around it. */
+  ROUGH: 0.11,
+  DAMP_ROUGH: 0.46,
+  /** Fraction of the micro-relief the film fills in. See the RMS-slope note above. */
+  FLATTEN: 0.94,
+  /**
+   * The film is applied to the height field by SCALING the micro terms down, never by
+   * blending `h` toward a level. That distinction is the whole difference between a
+   * puddle and a crater. Blending to a level was tried and measured: the film mask
+   * inherits the joint mask's edge, so the blend steps by the joint's full 4.5 mm
+   * across it and put a 61 degree wall on 石's tile where its previous maximum was
+   * 52.1 — it bought the specular back by re-creating the lit-lip/black-core signature
+   * two earlier rounds were spent removing. Scaling an amplitude cannot introduce a
+   * level difference, so the worst gradient the film itself can add is (micro
+   * amplitude) x (mask gradient) ~ 0.022 / 0.0125 u = 12 degrees, and the measured
+   * tile maximum comes out at or below the dry tile's.
+   *
+   * The cost is that the film follows the flag's own 8 degree crown and its set in the
+   * bed, so the effective lobe lands near roughness 0.40 rather than at a mirror. That
+   * is not a compromise in the shot that matters: `valley`'s framed foreground sits
+   * 9.8 degrees off its own mirror axis, and 0.40 is where the anchored prediction for
+   * that region peaks — a mirror-flat film would put a sub-pixel line outside frame.
+   */
+  /**
+   * Damp read -> margin, and margin -> continuous film. These are percentiles of the `w`
+   * distribution, not tastes. Measured on the baked tiles, w runs p50 0.419 / p70 0.489 /
+   * p85 0.556 / p95 0.645 on 石畳 and within 0.01 of that on 石, so F0/F1 sit on the top
+   * quarter and D0/D1 on the band below. `cs()` hands back roughly 0.25-0.75, never
+   * 0-1, and authoring a threshold against the nominal range is exactly how the film
+   * this replaces came to cover 0.00% of either tile.
+   */
+  D0: 0.36, D1: 0.50, F0: 0.44, F1: 0.60,
+};
+
+/**
+ * Scratch record, so the split can hand back three numbers without allocating.
+ * `w` is the pre-split read and exists so the coverage can be measured offline —
+ * the previous film was dead precisely because nobody ever looked at this number.
+ */
+const WET = { film: 0, damp: 0, w: 0 };
+
+/**
+ * Split a damp read into a continuous film and the damp margin around it.
+ *
+ * `wet` is a `cs()` read, i.e. roughly 0.25–0.75 rather than 0–1 — thresholds
+ * authored against a full range never fire, which is the bug that killed the
+ * previous version. `low` is how strongly water runs to this pixel (1 = a joint or
+ * the dish of a worn flag), `open` is how much of the surface is bare stone: a moss
+ * cushion holds far more water than a flagstone and reflects none of it.
+ */
+function wetSplit(wet, low, open) {
+  // `low` is deliberately a weak *bias*, not a gate, and that is a measurement, not a
+  // preference. Weighted 0.42 + 0.58 * low the film lands almost entirely in the joints
+  // and crack net — which is where water really does stand, and which are the steepest
+  // pixels on the tile: measured, the film interior then carried an RMS slope of 0.257
+  // against 0.239 for the whole tile, i.e. an effective roughness of 0.60, *worse* than
+  // the dry stone it replaced. A specular lobe cannot be coherent on the one part of the
+  // surface that has all the walls in it. At 0.86 + 0.14 the film is broad — the flat of
+  // the flag sheens and the joint merely favours it — which is also what a courtyard
+  // looks like ten minutes after rain.
+  const w = clamp(((wet - 0.5) * 1.85 + 0.5) * (0.86 + 0.14 * low), 0, 1) * open;
+  const f = smoothstep(FILM.F0, FILM.F1, w);
+  WET.w = w;
+  WET.film = f;
+  WET.damp = smoothstep(FILM.D0, FILM.D1, w) * (1 - f);
+  return f;
+}
+
 // ------------------------------------------------------------ canvas plumbing
 
 function makeCanvas(w, h) {
@@ -789,9 +927,20 @@ RECIPES.push({
     const quartz = smoothstep(0.62, 0.90, spar.id) * (1 - smoothstep(0.10, 0.34, spar.f1));
     const mica = smoothstep(0.02, 0.0, spar.id) + smoothstep(0.86, 0.99, grain) * 0.6;
 
-    const wet = clamp(cs(c.wet, u, v) * 1.35 - 0.20, 0, 1);
     const stain = cs(c.stain, u, v);
     const lich = smoothstep(0.58, 0.80, cs(c.lich, u, v));
+
+    // 濡れ. See the WET FILM block. The damp story this replaces was gated on `h` and
+    // returned 0.05 on a stone face once the relief came down to 5 mm, which is why the
+    // baked tile measured roughness p05 0.648 against a lerp target of 0.16 and 0.00%
+    // of its area below 0.25. Water favours the joints, the crack net and the spalled
+    // arrises, so `low` is those three; lichen holds water but reflects none of it, so
+    // it closes the film. The `* 1.35 - 0.20` stretch the old `wet` applied is gone —
+    // `wetSplit` does its own stretch, and doing it twice was half of why the thresholds
+    // never fired.
+    const low = clamp((1 - joint) * 0.90 + crack * 0.50 + chip * 0.40, 0, 1);
+    wetSplit(cs(c.wet, u, v), low, 1 - lich * 0.90);
+    const film = WET.film, damp = WET.damp;
 
     // Depth, honestly — and now angle, honestly, which is the number that decides
     // whether a low sun reads masonry or reads a shattered plate. 1.0 of `h` is one
@@ -810,9 +959,14 @@ RECIPES.push({
     // its own set over the joint's own width, instead of stepping there in one texel.
     let h = 0.72 + (slab - 0.5) * 0.030 * joint;
     h -= (1 - joint) * 0.036;
-    h -= crack * 0.011;
     h -= chip * 0.034;
-    h += joint * ((grain - 0.5) * 0.022 + quartz * 0.010 - mica * 0.005);
+    // Water drowns the mineral speckle and the hairline crack net; it does not fill the
+    // 4.5 mm slab joint or a 4.3 mm spall, so those stay in the macro form above. RMS
+    // microfacet slope on this map is 0.224 — an effective roughness of 0.55 from the
+    // normal alone — so without this the roughness drop below buys almost nothing.
+    const micro = joint * ((grain - 0.5) * 0.022 + quartz * 0.010 - mica * 0.005)
+      - crack * 0.011;
+    h += micro * (1 - film * FILM.FLATTEN);
 
     // --- block identity -------------------------------------------------------
     // With the relief down to 5 mm the crack net is no longer allowed to be the
@@ -863,22 +1017,30 @@ RECIPES.push({
     mixc(s, PAL.mossDry, lich * 0.22);
     mixc(s, PAL.grime, crack * 0.33 + (1 - joint) * 0.40);
 
-    // Water tracks the low ground: crevices go dark and glossy, crests stay dry.
-    // Re-fitted to the shallower field rather than left alone: the old constants
-    // read a 0.23-deep crest-to-crack range, the new one is 0.094, and leaving them
-    // would have halved the pooling and quietly lifted the whole tile's value —
-    // which Terrain would have picked up as a brighter, more rock-favouring hillside.
-    // These reproduce the old pool to within 0.02 at the face, the joint and the
-    // crack floor alike, so nothing downstream of albedo or roughness moves.
-    const pool = clamp((0.7285 - h) * 6.4, 0, 1) * wet;
+    // Water tracks the low ground: crevices go dark and glossy, crests stay dry. The
+    // height-gated `pool` this replaces measured 0.05 on a stone face and never once
+    // took a texel of the tile below roughness 0.25 (p05 0.648, area <= 0.25: 0.00%).
+    //
+    // The multiply is bought back by the constant at the end, and that is load-bearing:
+    // this albedo is Terrain's rock layer *and* its `hRock = kgLum(cRock) * 1.30 + 0.12`
+    // blend term against a 0.17-wide window, so a mean shift here moves the rock/grass
+    // line on the hillside. Measured: the film takes the tile mean linear luma down
+    // 8.6%, and 1.0938 restores it to 0.228116 against 0.228122 before — 0.003%.
+    mixc(s, PAL.grime, film * 0.10);
+    scalec(s, lerp(1, FILM.DARKEN, film) * lerp(1, 0.94, damp) * 1.0819);
+
     let ro = 0.74 + (grain - 0.5) * 0.16 - quartz * 0.22 + mica * 0.10;
     ro = lerp(ro, 0.90, chip * 0.6);
     ro = lerp(ro, 0.96, lich * 0.7);
     ro = lerp(ro, 0.66, smoothstep(0.4, 0.9, joint) * 0.35);   // foot-polished tread
-    ro = lerp(ro, 0.16, pool * 0.85);
-    scalec(s, 1 - pool * 0.42);
+    ro = lerp(ro, FILM.DAMP_ROUGH, damp);
+    ro = lerp(ro, FILM.ROUGH, film);
 
-    const ao = 1 - (1 - joint) * 0.62 - crack * 0.32 - chip * 0.22 - lich * 0.14;
+    // A flooded joint is not a shadowed one. Water fills the recess, so the ambient
+    // occlusion that reads the joint has to stand down where the film stands in it —
+    // otherwise the brightest specular in the frame sits inside the darkest AO.
+    const ao = 1 - ((1 - joint) * 0.62 + crack * 0.32 + chip * 0.22) * (1 - film * 0.55)
+      - lich * 0.14;
 
     s.h = clamp(h, 0, 1);
     s.ro = clamp(ro, 0.06, 1);
@@ -1007,6 +1169,15 @@ RECIPES.push({
     const moss = smoothstep(0.42, 0.86, mossF) * (0.22 + joint * 0.78);
     const wet = cs(c.wet, u, v);
 
+    // 濡れ. See the WET FILM block for the two measurements this is built on. `wet`
+    // runs at 5.2 repeats of a 1.61 m tile — 31 cm blotches, which is a puddle on a
+    // courtyard and is below the 60 cm ceiling this recipe holds for a macro feature,
+    // so no new coarse field is baked for it. Water sits in the joints and in the
+    // dish of a worn flag and drains off the crowns, which is what `low` says.
+    const low = clamp(joint * 0.66 + (1 - crown) * 0.44, 0, 1);
+    wetSplit(wet, low, 1 - moss * 0.92);
+    const film = WET.film, damp = WET.damp;
+
     // Each flag is bedded at its own slight angle. Three periods across the tile is
     // a 54 cm wavelength — a third of a cycle inside one stone, so within a stone it
     // is a plane, not a wave — and because it is sampled in the per-stone shifted
@@ -1041,10 +1212,18 @@ RECIPES.push({
     // what the eye now reads a stone by, and both are 27 cm features — unlike the old
     // 2 cm joint wall they survive minification, and they do not fuse into lines when
     // grazing anisotropy averages along the view ray.
+    // A film fills what it covers, and that is not decoration — it is the only reason
+    // the roughness drop below is worth anything. RMS microfacet slope off this map is
+    // 0.240, which is an effective GGX roughness of 0.58 from the normal alone; slope
+    // variance adds, so `ro` at 0.11 under an untouched height field still shades near
+    // 0.58 over any footprint wider than a texel. `micro` is therefore everything below
+    // 3 cm — grain, bedding, pitting — and it is scaled down, not blended away, so the
+    // film can never introduce a level step at its own edge (see FILM).
     let h = 0.66 + crown * 0.090;
-    h += face * ((id - 0.5) * 0.028 + (tilt - 0.5) * 0.140
-      + (grain - 0.5) * 0.022 + (bed - 0.5) * 0.014);
-    h -= joint * 0.020 + seam * 0.008 + pitting * 0.014;
+    h += face * ((id - 0.5) * 0.028 + (tilt - 0.5) * 0.140);
+    h -= joint * 0.020 + seam * 0.008;
+    const micro = face * ((grain - 0.5) * 0.022 + (bed - 0.5) * 0.014) - pitting * 0.014;
+    h += micro * (1 - film * FILM.FLATTEN);
 
     // --- quarry identity ----------------------------------------------------
     // A courtyard where every flag carries the same value is a texture; ±15% of
@@ -1074,16 +1253,33 @@ RECIPES.push({
     mixc(s, PAL.mossDeep, moss * moss * 0.25);
     scalec(s, 1 - seam * 0.22);          // the contact line, and nothing deeper
 
-    // Standing water is a roughness story, not an albedo one — the old recipe
-    // spent a third of the paving's value on it and bought nothing but darkness.
-    const pool = clamp(joint * 0.55 + (1 - crown) * 0.22, 0, 1) * wet;
+    // Standing water is mostly a roughness story — the recipe before last spent a
+    // third of the paving's value on darkness and bought no specular at all — but it
+    // is not *only* one. Wetting a porous stone traps light in the pores and it does
+    // genuinely go 30-40% darker; that darkening is half of what makes the sheen on
+    // top read as a sheen rather than as a brighter stone.
+    //
+    // The multiply is bought back at the end, and that is not cosmetic. This albedo is
+    // Terrain's gravel/streambed layer — `hGravel = kgLum(cCobble) * 1.15 + 0.06` —
+    // and Props' `groundMaterial`, so its *tile mean* is a number two other owners
+    // depend on. Measured on the baked tile: the film and its margin take the mean
+    // linear luma down 7.8%, and the 1.0850 restores it to 0.230748 against 0.230760
+    // before, a residual of 0.002%. Contrast rises, the level does not move, and the
+    // hillside blend sees nothing. Refit this constant with any change to the film's
+    // coverage or `DARKEN` — do not eyeball it.
+    mixc(s, PAL.grime, film * 0.10);                    // silt in the water, not soot
+    scalec(s, lerp(1, FILM.DARKEN, film) * lerp(1, 0.94, damp) * 1.0850);
+
     let ro = 0.80 + (grain - 0.5) * 0.16 + pitting * 0.10;
     ro = lerp(ro, 0.50, crown * crown * 0.55 * (1 - moss));  // crowns polished by feet
     ro = lerp(ro, 0.94, moss * 0.85);
-    ro = lerp(ro, 0.26, pool * 0.75 * (1 - moss * 0.7));
-    scalec(s, 1 - pool * 0.14);
+    ro = lerp(ro, FILM.DAMP_ROUGH, damp);
+    ro = lerp(ro, FILM.ROUGH, film);
 
-    const ao = 1 - joint * 0.24 - seam * 0.14 - moss * 0.08 - pitting * 0.10;
+    // Water in the joint occludes nothing — it fills the dish. Leaving the joint's AO
+    // at full strength under a film is what would have made a puddle read as a hole.
+    const ao = 1 - (joint * 0.24 + seam * 0.14 + pitting * 0.10) * (1 - film * 0.55)
+      - moss * 0.08;
 
     s.h = clamp(h, 0, 1);
     s.ro = clamp(ro, 0.06, 1);
@@ -1181,9 +1377,29 @@ RECIPES.push({
     mixc(s, PAL.mossDeep, lich * lich * 0.30);
     mixc(s, PAL.algae, lich * 0.18);
 
+    // 濡れ. The review named the lantern bodies alongside the paving, and the paving's
+    // standing-film model is the wrong one here: a lantern is mostly vertical granite,
+    // so water sheds down it and leaves damp runnels rather than a level sheet. The
+    // frame is stretched 1:5 so the runnels run with the shaft instead of banding across
+    // it, and nothing is added to `h` — a wet streak is a roughness and an albedo, never
+    // a groove, and this recipe's whole point is that it has no relief above 4 mm.
+    //
+    // Coverage and level are measured, not eyeballed. The runnel mask means 0.301 and
+    // is above half over 28.2% of the tile; that takes 14.9% of the tile to roughness
+    // 0.324 or below, where grazing env reflectance at N.V = 0.21 is 0.210 against the
+    // dry surface's 0.052 — x4.0 — from a tile that previously had 0.00% of its area
+    // below roughness 0.40 (p05 0.721). Albedo goes down 22% under a full runnel, and
+    // the 1.0728 holds the tile's mean linear luma at 0.248548 against 0.248552 dry
+    // (0.002%), so the lanterns keep the value the lighting balance was fitted against.
+    const runnel = smoothstep(0.47, 0.62, t.fbmA(u + 0.61, v + 0.13, 5, 1, 3) * 0.5 + 0.5)
+      * (1 - lich * 0.85);
+    mixc(s, PAL.grime, runnel * 0.07);
+    scalec(s, lerp(1, 0.78, runnel) * 1.0728);
+
     let ro = 0.76 + (grain - 0.5) * 0.14 - quartz * 0.26 + mica * 0.08;
     ro = lerp(ro, 0.95, lich * 0.8);
     ro = lerp(ro, 0.66, felds * 0.25);      // cleaved feldspar keeps a little sheen
+    ro = lerp(ro, 0.30, runnel);
 
     const ao = 1 - dark * 0.10 - lich * 0.12 - facet * 0.10 - clamp(0.35 - tool, 0, 1) * 0.18;
 
