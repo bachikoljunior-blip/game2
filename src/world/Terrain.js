@@ -411,25 +411,35 @@ const RIDGE_SPAN = 1600;
  * One entry per depth rank, far to near. `massifs` clusters of two to five peaks
  * with long empty cols between them — real ranges cluster, and the eye reads the
  * gaps as much as the peaks.
+ *
+ * `haze` is derived, not dialled. The band starts where the terrain stops, at
+ * VIEW_DISTANCE, so the nearest rank can never be less hazy than ground at 1800 m —
+ * and after round 5 gave the fog a bulk-air layer (Sky.js, kagApplyFog) that ground is
+ * 87% air: 78% from the air term and 39% from the mist deck, composited. The old
+ * constants were 0.74 / 0.51 / 0.30, authored against a fog that only ever reached 22%
+ * at any range. Measured on the round-6 hero frame that left the near rank standing at
+ * luma p50 180, saturation 0.08, detail 1.06 — dead-white geometric cones sitting *in
+ * front of* the air, above the haiden roofline, in the middle of the composition.
+ * The ordering far-to-near is kept; only the floor moved.
  */
 const RIDGE_LAYERS = [
   {
     seed: 0x2f1103, lift: 115, amp: 620, massifs: 4, groupLo: 0.46, groupHi: 1.00,
     baseR: 1.55, baseAmp: 0.30, detR: 8.5, detAmp: 0.060, gulR: 23.0, notch: 0.075,
     serR: 148.0, serM: 62.0,
-    presR: 0.75, presOff: 3.1, dirLo: 0.30, par: 0.000024, soft: 12.0, haze: 0.74,
+    presR: 0.75, presOff: 3.1, dirLo: 0.30, par: 0.000024, soft: 12.0, haze: 0.945,
   },
   {
     seed: 0x7a3d19, lift: 66, amp: 450, massifs: 5, groupLo: 0.40, groupHi: 0.98,
     baseR: 2.30, baseAmp: 0.24, detR: 12.5, detAmp: 0.068, gulR: 34.0, notch: 0.095,
     serR: 186.0, serM: 55.0,
-    presR: 0.95, presOff: 27.7, dirLo: 0.14, par: 0.000053, soft: 8.0, haze: 0.51,
+    presR: 0.95, presOff: 27.7, dirLo: 0.14, par: 0.000053, soft: 8.0, haze: 0.910,
   },
   {
     seed: 0x11c7e5, lift: 24, amp: 320, massifs: 6, groupLo: 0.34, groupHi: 0.94,
     baseR: 3.10, baseAmp: 0.20, detR: 17.0, detAmp: 0.076, gulR: 44.0, notch: 0.110,
     serR: 232.0, serM: 48.0,
-    presR: 1.30, presOff: 61.3, dirLo: 0.06, par: 0.000094, soft: 5.0, haze: 0.30,
+    presR: 1.30, presOff: 61.3, dirLo: 0.06, par: 0.000094, soft: 5.0, haze: 0.872,
   },
 ];
 

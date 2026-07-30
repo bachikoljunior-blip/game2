@@ -59,39 +59,72 @@ sample four times.
 
 ## Where this build actually stands
 
-Measured, not asserted. An independent art-direction critic reviewed the build in four
-rounds against a Ghost of Tsushima / SEKIRO bar, scoring 34 → 48 → 58 out of 100. It has
-not passed; the numbers below are what is verified and what is not.
+Measured, not asserted. Six review rounds against a Ghost of Tsushima / SEKIRO bar,
+scoring 34 → 48 → 58 out of 100 through round 3. **It has not passed.** Everything below
+is a number off the round-6 phone capture (`npm run shots -- --review --profile=phone`),
+not a judgement.
 
 **Verified good**
 
 | | measured |
 |---|---|
-| tonal range | true blacks (p0.1 = 0) and real highlights (p99.9 = 254 on the sun and torii frames) |
+| tonal range | true blacks on all five review framings (p0.1 = 0, 0, 0, 2, 0) |
+| highlights | p99.9 = 253 on `torii` and `sun`; 0.9% of the `sun` frame above 240 |
 | shader programs | zero linked dead — audited every capture |
 | page errors | zero |
+| phone triangles | **686,202** worst pose, against the 900,000 cap |
 | paving / granite joint walls | p95 24° and 23°, down from 56° and 60° |
-| massif surface detail | high-frequency 4.61, up from 1.44 |
 | foliage | zero detached leaf clusters; green-dominant pixels 6–9% |
 | PWA | installs and launches offline |
 | bundle | 425 KB gzip, zero external assets |
 
+Triangles came down from 1,138,406 (+26% over) in one change, and not by cutting detail:
+`Engine.auditDraws` showed the six largest holders were instanced sets whose LOD window
+ends 46 m from the camera being submitted in full from a plateau 220 m across — 184,688
+triangles for 97 cedar trunks, 139,040 for 869 bamboo plants. `Foliage._registerPack` now
+compacts each set against its own fade window, dropping only instances the vertex shader
+was already collapsing, so the rendered frame is unchanged by construction.
+
 **Over budget**
 
-| | measured | contract |
-|---|---|---|
-| phone draw calls | 156 | ≤ 140 |
-| phone triangles | 1,146,570 | ≤ 900,000 |
+| | measured | contract | owner |
+|---|---|---|---|
+| phone draw calls | 146 at the `torii` pose | ≤ 140 | `src/world/Level.js` — 74 of the 146 |
 
-The triangle count nearly doubled from 676 k across two rounds of detail work. Each
-addition was individually justified and every owner respected their own draw-call budget;
-nobody owned the total. `tools/capture.mjs` now asserts both caps on every phone capture so
-the next drift is named immediately.
+The capture rig used to sample this once, at whatever pose the last shot happened to
+leave behind; the spread is 99 calls at `valley` to 146 at `torii`, so that was asserting
+the cap against an arbitrary framing. It now samples every pose, asserts the worst, names
+it, and rolls the frame up by owning system.
 
-**Known open**
+**Known open, with the measurement that states them**
 
-- The `wide` framing is the last shot under the highlight gate (p99.9 = 225 against 235).
-- Round-4 review was stopped before its verdict; `shots/review-r*.json` holds the earlier ones.
+- **Aerial perspective converges above the sky.** Distant terrain hazes toward
+  `fogParams.color`, which at magic hour is authored 0xa9a8ad — brighter than the sky it
+  sits against. On the round-6 `wide` frame the massif lands at luma p50 161 while the sky
+  beside it is p50 145, so at full haze a mountain becomes a pale cut-out rather than
+  disappearing. Round 5's two-layer fog fixed the *amount* of air (massif p99 226 → 215,
+  saturation 0.233 → 0.136); the target colour is the remaining half.
+- **The mid-ground of `wide` and `valley` reads as a dark expanse.** Measured detail 2.59
+  against 9.19 for dressed ground at the same depth in the same frame, at p50 55. Round 6
+  attributed this to the terrain's far-ground reconstruction and to the canopy shell in
+  turn, and **both were wrong** — changes to either branch moved the region by nothing
+  measurable. The symptom is stated here without a mechanism on purpose (see
+  `tools/CRITIC.md`, "describe the symptom, do not diagnose the cause"). It has grain at
+  native resolution; it is too dark and too hazed, not untextured.
+- **`hero` is 2 luma under the highlight gate** — p99.9 = 233 against 235. It was passing
+  partly on the HUD's authored white ink, which the review set no longer contains. The
+  lanterns do reach 254; fewer than 0.1% of the frame clears 235.
+- **The far massif is low-contrast at every range.** detail 2.29, and the parallax ridge
+  band's near rank came back at detail 1.06 — dead-white geometric cones. Round 6 rederived
+  the band's three haze constants from the new fog law (they were authored against a fog
+  that only ever reached 22%); it changed nothing measurable on these five framings, so
+  the cones are something else and remain unidentified.
+- **`wide` is front-lit by construction** — its sun sits 123° off the view axis, so no
+  specular in frame reflects toward the viewer. It is exempt from the highlight gate for
+  that reason, recorded in `tools/capture.mjs`. Fixing it properly means moving
+  `WORLD.SUN_AZIMUTH_DEFAULT` off the valley or re-siting the shot.
+- The sakura canopy is a solid opaque mass with visible card edges at its silhouette, and
+  the bamboo band reads as a row of similar cards rather than a grove. Neither was touched.
 
 ## Performance
 

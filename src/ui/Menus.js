@@ -602,7 +602,10 @@ export class Menus {
       if (this._swallowPause <= 0) this.togglePause();
     }
 
-    this._pauseZoneVisible = this.mode === 'none' && this._title < 0 &&
+    // Menus shares the HUD's canvas, so it has to honour HUD.__hide as well — the round-5
+    // review set was captured with the overlay blanked and still carried the pause seal
+    // in the top-left corner of all five frames.
+    this._pauseZoneVisible = this.mode === 'none' && this._title < 0 && !hud?.hidden &&
       (this.ctx.input?.usingTouch === true || this.ctx.quality?.device?.isMobile === true);
 
     const open = this.mode === 'pause' || this.mode === 'settings';
