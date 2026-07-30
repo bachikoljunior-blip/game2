@@ -74,8 +74,19 @@ const CELL = 40;
  * Cell size for the merged shadow proxies. Deliberately coarser than `CELL`: the
  * colour pass splits by material and wants small cells to cull, the shadow pass
  * wants as few casters as the cascade frusta will tolerate.
+ *
+ * At 96 this produced four proxies for one shrine — measured on the round-7 `torii`
+ * pose at ten draw calls (three of them each in the colour pass and both cascades)
+ * for 220,055 submitted triangles. The whole built world spans about 80 m on X and
+ * 95 m on Z, so a grid that lands it in one cell submits 238,707 triangles in three
+ * calls: seven calls back for 18,652 triangles against a 900k budget carrying 637k.
+ *
+ * `SHADOW_ORIGIN` shifts the lattice so the shrine is not straddling `floor()`'s
+ * discontinuity at zero — without it, any cell size at all yields two columns and
+ * two rows, because the plateau is centred on the world origin by WORLD.
  */
-const SHADOW_CELL = 96;
+const SHADOW_CELL = 192;
+const SHADOW_ORIGIN = 96;
 
 // -------------------------------------------------------------- encounters
 
@@ -220,6 +231,7 @@ export class Level {
 
     await this._run(tasks, 0, 0.62);
 
+    this._bakeSmallInstances();
     this._collapseSmallBuckets();
 
     const mergeTasks = [];
@@ -313,10 +325,16 @@ export class Level {
    * Transform a build into world space and file every part into its bucket.
    * `matrix` maps the prop's local frame to world. Geometry is consumed unless
    * `clone` is set, so a prototype can be stamped more than once.
+   *
+   * `partsOnly` files the geometry and nothing else. It exists for
+   * `_bakeSmallInstances`, which re-files a prototype's build once per instance:
+   * the instanced path never emitted that build's colliders or light requests, so
+   * stamping them now would silently add a collider per copy and a light per copy.
    */
   _emit(build, matrix, opts = {}) {
     if (!build) return;
     const layer = opts.layer ?? 'static';
+    const partsOnly = !!opts.partsOnly;
     const clone = !!opts.clone;
     const tint = opts.tint;
     _v.setFromMatrixPosition(matrix);
@@ -336,6 +354,8 @@ export class Level {
       if (!list) { list = []; this._buckets.set(key, list); }
       list.push(g);
     }
+
+    if (partsOnly) return;
 
     for (const c of build.colliders) {
       const g = clone ? c.geometry.clone() : c.geometry;
@@ -1041,13 +1061,55 @@ export class Level {
   // =====================================================================
 
   /**
+   * An `InstancedMesh` is a draw call whether it carries three copies or three
+   * hundred, and it is a second and third one per shadow cascade if it casts.
+   * Nine of the fourteen prototypes here place eight instances or fewer — three
+   * crates, two rope coils, five jizō, a barrel in the service yard — and between
+   * them they were costing 27 draw calls at the round-7 `torii` pose for 6,800
+   * triangles. Stamped into the merged statics instead they cost none of their own:
+   * the triangles are identical (an instanced draw already submits count × tris),
+   * the cell bucket that receives them is already being drawn, and the per-cell
+   * shadow proxy absorbs their casting.
+   *
+   * The cut-off is deliberately low. A prototype that repeats twenty-four times —
+   * the stone lanterns, the ema boards, the cask wall — is exactly what instancing
+   * is for and is left alone.
+   */
+  _bakeSmallInstances() {
+    const MAX_INSTANCES = 8;
+    const MAX_TRIS = 3000;                  // total across every instance and part
+    let baked = 0, tris = 0;
+    for (const [key, proto] of [...this._protos]) {
+      const n = proto.entries?.length | 0;
+      if (!n || n > MAX_INSTANCES) continue;
+      let per = 0;
+      for (const p of proto.build.parts) per += (p.geometry.index ? p.geometry.index.count : 0) / 3;
+      if (per * n > MAX_TRIS) continue;
+      for (const e of proto.entries) {
+        this._emit(proto.build, e.m, { clone: true, tint: e.t || undefined, partsOnly: true });
+      }
+      this._protos.delete(key);
+      baked += proto.build.parts.length;
+      tris += per * n;
+    }
+    this.stats.bakedInstances = baked;
+    this.stats.bakedTriangles = Math.round(tris);
+  }
+
+  /**
    * Spatial cells only pay for themselves when there is enough geometry in them
    * to be worth culling. A material that totals a few hundred triangles across
    * the whole shrine — the gold plaques, the copper ridge caps — is cheaper as
    * one draw call than as four cullable ones.
    */
   _collapseSmallBuckets() {
-    const THRESHOLD = 4200;                 // triangles, per layer+material
+    // Raised from 4,200 once `_bakeSmallInstances` started feeding these buckets.
+    // The four materials between the old ceiling and this one — rope at 4,492
+    // triangles over three cells, cedarBeam at 9,476 over three, vermilion at
+    // 10,808 over two, bambooCulm at 9,540 over two — were paying ten draw calls
+    // to cull 34k triangles that are all inside the same 80 m shrine and almost
+    // always in frame together. §7 counts calls, and this trades the right one.
+    const THRESHOLD = 12000;                // triangles, per layer+material
     const totals = new Map();
     for (const [key, list] of this._buckets) {
       if (!list) continue;
@@ -1146,7 +1208,8 @@ export class Level {
       // A coarser grid than the colour cells: proxies exist to be few, and a
       // cascade frustum is tens of metres across, so splitting them at the
       // colour cell size just buys back the draw calls this is meant to remove.
-      const px = Math.floor(c.x / SHADOW_CELL), pz = Math.floor(c.z / SHADOW_CELL);
+      const px = Math.floor((c.x + SHADOW_ORIGIN) / SHADOW_CELL);
+      const pz = Math.floor((c.z + SHADOW_ORIGIN) / SHADOW_CELL);
       const key = `${px}|${pz}`;
       let list = byCell.get(key);
       if (!list) { list = []; byCell.set(key, list); }

@@ -1154,6 +1154,39 @@ export class Terrain {
           gravel *= 1 - pm * 0.72 * (1 - court);
         }
 
+        // --- macro ground variety, 13–26 m ---------------------------------
+        // The meadow classified as one thing across tens of hectares. Ray-marched
+        // against these very fields along the round-7 `valley` framing — 79 rays
+        // through the region the review calls "one uniform orange-brown surface",
+        // landing 17 to 79 m out — the splat came back grass 0.646±0.072 and dirt
+        // 0.327 against gravel 0.017±0.045, rock 0.009±0.026 and moss 0.001±0.005.
+        // Two surfaces whose textures agree to within a tint is a wash however good
+        // the shader over it is, and it was the same two surfaces everywhere.
+        //
+        // These are the patches a real hillside has at that scale: turf worn through
+        // to stony ground on the rises, damp moss collecting in the hollows and the
+        // drainage lines. Both are deliberately capped *below* the local grass weight
+        // so `surfaceAt`'s argmax never flips — Foliage refuses to plant on gravel or
+        // stone, and a classification change here would take the grass off with the
+        // colour and thin the very frame the review says is under-dressed.
+        {
+          const patch = noise.fbm2(x * 0.038 + 118.2, z * 0.038 - 77.4, 2);
+          const bald = clamp(smoothstep(0.06, 0.44,
+            patch + nb * 0.30 - Math.max(0, concave) * 0.55) * (1 - court), 0, 1);
+          const stony = bald * clamp(0.55 + 0.45 * nb2, 0, 1);
+          const hollow = clamp(Math.max(0, concave) * 0.85 +
+            smoothstep(0.34, 0.78, flow) * 0.55, 0, 1);
+          const damp = clamp(smoothstep(0.50, -0.10, patch) * hollow * 1.35, 0, 1)
+            * (1 - court);
+          // Thin the turf first, then cap against what is left: capping against the
+          // pre-thinned weight is how a patch quietly becomes the argmax.
+          grass *= 1 - stony * 0.30 - damp * 0.12;
+          const ceil = grass * 0.80;
+          gravel = Math.max(gravel, Math.min(stony * 0.80, ceil));
+          rock = Math.max(rock, Math.min(stony * 0.34, ceil * 0.45));
+          moss = Math.max(moss, Math.min(damp * 0.62, ceil * 0.72));
+        }
+
         // --- the approach and the paving ----------------------------------
         // `paving` is stone underfoot: the treads Props lays on the carved terraces
         // and the flagstone run Level lays from the stair head to the forecourt lip.
@@ -1735,6 +1768,8 @@ float kgFine;
 /** Shared per-fragment tile-breaking state, set once at the top of the surface pass. */
 vec2 kgWarp;
 float kgBlend;
+/** Outward tilt across a dressing stone, in world XZ. Zero where there is none. */
+vec2 kgDressN;
 
 float kgLum(vec3 c){ return dot(c, vec3(0.299, 0.587, 0.114)); }
 
@@ -1748,6 +1783,31 @@ vec3 kgSample(sampler2D t, vec2 uv){
 
 /** Rotate a world-plane coordinate. sc is (sin, cos), baked per layer. */
 vec2 kgRot(vec2 p, vec2 sc){ return vec2(p.x * sc.y - p.y * sc.x, p.x * sc.x + p.y * sc.y); }
+
+/**
+ * Jittered-grid cell noise: (distance to the nearest site in cell units, that site's
+ * id in 0..1). The id is derived from the winner's own jitter rather than a second
+ * hash, so the whole thing is nine hash22 calls and no more.
+ *
+ * This is here because a scatter of discrete objects is not a noise field: fbm can
+ * make ground vary, but it cannot put a stone somewhere and no stone next to it, and
+ * "no rocks, no roots, no fallen leaves" is a statement about objects.
+ */
+vec4 kgCell2(vec2 p){
+  vec2 ip = floor(p), fp = fract(p);
+  float best = 8.0;
+  vec2 win = vec2(0.0), off = vec2(0.0);
+  for (int j = -1; j <= 1; j++){
+    for (int i = -1; i <= 1; i++){
+      vec2 g = vec2(float(i), float(j));
+      vec2 o = hash22(ip + g);
+      vec2 r = g + o - fp;
+      float d = dot(r, r);
+      if (d < best){ best = d; win = o + g; off = -r; }
+    }
+  }
+  return vec4(sqrt(best), fract(win.x * 7.31 + win.y * 3.17 + 0.137), off);
+}
 
 /**
  * Tiled ground sample with the wrap seams broken.
@@ -1940,6 +2000,95 @@ void kgComputeSurface(){
   // The sandō is polished pale and smooth, and nothing grows on it.
   albedo = mix(albedo, albedo * vec3(1.16, 1.12, 1.06), wear * 0.75);
   rough = mix(rough, 0.52, wear * 0.55);
+
+  // --- ground dressing, 0.3–7 m --------------------------------------------
+  // The one band this ground had nothing in, and the reason a hostile eye reads it
+  // as "a flat wash with a stipple on it". Everything the library textures carry is
+  // authored at a tenth of a tile — moss cushions at 0.26 m, dirt clods at 0.28 m,
+  // its pebbles at 0.12 m — and has mipped to its own mean by about twenty metres.
+  // Everything *this* shader adds is 8–48 m: 'nB' at 12–48, 'gn' at 9–17, the
+  // weathering that rides on it. At the depth the establishing frames compose their
+  // mid-ground on, 8 m is already 90 px across, so the two families never meet.
+  //
+  // Measured on the round-7 set, luma RMS per spatial octave at 1/2/4/8/16/32/64 px:
+  // terrain at 27–34 m in 'valley' returns 2.89/1.92/1.44/0.92/0.67/0.84/1.40 — a
+  // stipple, a ramp, and nothing between them. Terrain at 26–31 m in 'wide' carrying
+  // stone and gravel instead of turf returns 4.09/4.07/6.59/8.91/10.22/10.17/6.79 on
+  // the same tier in the same frame under the same light. 0.6–8 m is exactly 4–64 px
+  // at that depth, and 0.3–7 m is what a stone, a litter drift and a damp hollow are.
+  //
+  // Nothing here is a fresh texture fetch: cRock and cCobble are already sampled
+  // unconditionally above, and this spends them where the splat gave them no weight.
+  kgDressN = vec2(0.0);
+#ifdef TERRAIN_STOCHASTIC
+  // Only on ground nobody maintains. A raked forecourt with boulders lying in it is
+  // a worse defect than the flat wash this is here to fix, and 'wGravel' is exactly
+  // what the swept ground is made of, so the gate is "turf, soil or moss".
+  float open = clamp(wGrass * 1.25 + wDirt * 0.95 + wMoss * 0.5, 0.0, 1.0);
+  // Off the far field by *pixel footprint* rather than by distance — a grazing face
+  // compresses metres into a pixel and distance does not know that. The near gate is
+  // deliberately early: a 2.6 m patch of dry turf does not compete with a 0.26 m moss
+  // cushion for the same pixels, so it has no reason to wait until the texture has
+  // mipped out before it starts.
+  float dress = smoothstep(2.5, 9.0, dist) * (1.0 - smoothstep(1.30, 3.10, kgFoot))
+              * open * (1.0 - wear * 0.55);
+  if (dress > 0.002) {
+    // 1. The mottle, 1.3–2.6 m. The only term here that fills area rather than
+    //    punctuating it, and therefore the one that actually moves a variance read.
+    //    Turf is patchy at this scale on any hillside — thin and sun-bleached over
+    //    the dry rises, thick and dark where it holds water — and both halves are
+    //    tinted, toward §5's ochre and its cool shade, because a value-only field
+    //    reads as dirt on the lens rather than as ground.
+    float mot = fbm2(P.xz * 0.385 + 71.6, 2);
+    float dry  = smoothstep(0.02, 0.40, mot);
+    float damp = smoothstep(-0.02, -0.40, mot);
+    albedo *= mix(vec3(1.0), vec3(1.30, 1.17, 0.86), dry * 0.58 * dress);
+    albedo *= mix(vec3(1.0), vec3(0.62, 0.68, 0.78), damp * 0.62 * dress);
+    rough = mix(rough, 0.97, dry * 0.4 * dress);
+    rough = mix(rough, 0.44, damp * 0.5 * dress);
+
+    // 2. Litter drifts, 2–8 m. Elongated along the prevailing bearing rather than
+    //    isotropic, which is the difference between fallen leaves and a noise field.
+    //    'uWindXZ' is the static bearing already on this material for the snow lee —
+    //    not the wind field, which WeatherSystem owns and which is the wrong clock
+    //    for a season of leaf fall.
+    vec2 wdir = normalize(uWindXZ + vec2(1e-4));
+    vec2 lp = vec2(dot(P.xz, wdir) * 0.15, dot(P.xz, vec2(-wdir.y, wdir.x)) * 0.58);
+    float lit = smoothstep(0.10, 0.44, fbm2(lp + 55.3, 2) + hollow * 0.40)
+              * clamp(wGrass * 1.4 + wDirt * 0.8, 0.0, 1.0);
+    albedo = mix(albedo, colGravel * vec3(1.18, 0.86, 0.47), lit * 0.60 * dress);
+    rough = mix(rough, 0.90, lit * 0.5 * dress);
+
+    // 3. Stones, on 2.0 m cells, about half of which carry one. These are the
+    //    punctuation: they cover little area but they are the only term that can
+    //    put values under the region's p1, which is what "no real darks" measured.
+    //    'seat' is the ring just outside each one and is its contact with the soil.
+    vec4 cel = kgCell2(P.xz * 0.50 + kgWarp * 0.4);
+    float has  = smoothstep(0.44, 0.54, cel.y);
+    float body = (1.0 - smoothstep(0.15, 0.34, cel.x)) * has;
+    float seat = smoothstep(0.50, 0.20, cel.x) * (1.0 - body) * has;
+    albedo = mix(albedo, colRock * 1.22, body * 0.86 * dress);
+    albedo *= 1.0 - seat * 0.52 * dress;
+    rough = mix(rough, 0.74, body * 0.7 * dress);
+    // The dome. Colour alone makes a disc, not a stone: at a 13 degree key it is the
+    // tilt across the top of the thing that splits it into a lit side and a shaded
+    // one, and that split is the whole of why it reads as an object. cel.zw is the
+    // fragment's offset from its own site, so this is the outward tilt for free.
+    kgDressN = clamp(cel.zw * (1.0 / 0.34), -1.0, 1.0) * body * 0.56 * dress;
+
+    // 4. Standing damp where water actually collects. Curvature is already on hand
+    //    from the per-pixel normal taps, so this costs no new samples.
+    float soak = clamp(hollow * 1.25 + wet * 0.5, 0.0, 1.0);
+    albedo *= mix(vec3(1.0), vec3(0.56, 0.61, 0.72), soak * 0.62 * dress);
+    rough = mix(rough, 0.34, soak * 0.6 * dress);
+  }
+#endif
+  // One octave under everything, an order of magnitude longer than any term above,
+  // so no crop of this ground can contain the same motif twice. 'nC' already runs at
+  // 161/81/40 m for the tree and snow lines and is computed unconditionally, so this
+  // is free; it is tinted rather than a grey gain because dry autumn ground varies in
+  // hue as the turf cover comes and goes, and a value-only field reads as vignetting.
+  albedo *= 1.0 + nC * vec3(0.22, 0.16, 0.09);
 
   // --- the far ground ------------------------------------------------------
   // Past ~100 m every tiled lookup has mipped down to its own average and the
@@ -2271,9 +2420,12 @@ void kgComputeSurface(){
   // face at 600 m read as rock rather than as tinted paper. Snow buries it like
   // everything else.
   vec2 fbv = kgFarBump * (1.0 - kgSnowCover * 0.72);
+  // The dressing stones ride in world XZ like the sastrugi do, and are buried by snow
+  // for the same reason: a sheet deep enough to hide the soil grain hides them too.
+  vec2 dsv = kgDressN * (1.0 - kgSnowCover * 0.85);
   kgShadingNormal = normalize(N + T * tn.x + B * tn.y +
                               dn3 * (gpv.x + fbv.x) + ac3 * (gpv.y + fbv.y) +
-                              vec3(kgSnowRipple.x, 0.0, kgSnowRipple.y));
+                              vec3(kgSnowRipple.x + dsv.x, 0.0, kgSnowRipple.y + dsv.y));
 }
 `;
   }
