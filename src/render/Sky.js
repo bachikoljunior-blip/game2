@@ -15,7 +15,7 @@
  */
 
 import {
-  BackSide, Color, CubeCamera, LinearSRGBColorSpace, Mesh, PMREMGenerator,
+  BackSide, Color, CubeCamera, LinearSRGBColorSpace, Mesh, NoToneMapping, PMREMGenerator,
   ShaderMaterial, SphereGeometry, Vector2, Vector3, WebGLCubeRenderTarget,
   HalfFloatType, Scene,
 } from 'three';
@@ -57,8 +57,24 @@ const SKY_LUMINANCE = 0.45;
  * above that lands on the same clipped colour as the disc and the disc stops being visible.
  * Capping the atmosphere at roughly twice the 50-degree sky keeps a real gradient toward the
  * sun and still leaves the disc a clear step above everything around it.
+ *
+ * Lowered 0.62 -> 0.46 in round 7, and only because the knee now runs on luminance. Once the
+ * ratios survive compression the knee's height sets *where on the ACES curve* the near-sun
+ * sky lands, and ACES desaturates monotonically with level. Transcribing the dome fragment
+ * and the composite and evaluating both: at 10 degrees off the sun, 0.62 gives display
+ * (199 luma, R-B 47, saturation 0.225) and 0.46 gives (178, R-B 55, 0.285). The far sky
+ * barely moves — 60 degrees off loses 8 code values, the zenith 1 — because it never reached
+ * the knee. This is also where the frame's missing highlight room comes from: round 7 found
+ * 0.000% of `phone-valley` above luma 240, with the sky itself sitting at 210.
  */
-const SKY_KNEE = 0.62;
+const SKY_KNEE = 0.46;
+/**
+ * Undoes the dome's display scale for the cloud deck. `1 / SKY_LUMINANCE` exactly, which is
+ * the same correction `uStarStrength` and `uMoonStrength` already apply: the deck's colours
+ * are authored as display values and must not be pulled down into the atmosphere's range,
+ * or a fully lit cloud cannot exceed SKY_KNEE and the sky is always the brighter of the two.
+ */
+const CLOUD_GAIN = 1 / SKY_LUMINANCE;
 /** Disc radiance is `uSunE * gain * Fex` — ~150 linear at 13° elevation, deep amber. */
 const SUN_DISC_GAIN = 1.8;
 /** The tight forward-scatter glare hugging the limb; this is the bloom pass's skirt. */
@@ -85,6 +101,13 @@ const SOLAR_OFFSET = 0.0887;
 
 /** The default magic-hour time of day. ARCHITECTURE §5: this is the shot. */
 const MAGIC_HOUR = 0.78;
+
+/**
+ * Ceiling on the ambient fill's red/blue ratio. ARCHITECTURE §5 binds shadow/ambient to
+ * `#4a6b8f`, whose R/B is 0.52; this is the number that keeps the computed sky irradiance
+ * from quietly warming the one cool light in the rig past its own art direction.
+ */
+const SHADOW_FILL_MAX_RB = 0.52;
 
 /**
  * Solar elevation and compass azimuth (radians, clockwise from world −Z) for a day
@@ -128,10 +151,15 @@ const lum = (c) => c.r * 0.2126 + c.g * 0.7152 + c.b * 0.0722;
 /**
  * JS twin of the shader's soft knee. Order 4, so the low and mid sky pass through almost
  * untouched (0.45 loses 1%) and only the forward-scatter lobe gets folded onto the ceiling.
+ *
+ * Returns a *scalar* the caller multiplies all three channels by, because the knee has to
+ * run on luminance. See the shader for the measurement; the twin has to match it exactly or
+ * the ambient hue is sampled from a sky that is not on screen.
  */
-const knee = (x) => {
-  const t = (x * x) / (SKY_KNEE * SKY_KNEE);
-  return x / Math.pow(1 + t * t, 0.25);
+const kneeScale = (r, g, b) => {
+  const y = Math.max(r * 0.2126 + g * 0.7152 + b * 0.0722, 1e-6);
+  const t = (y * y) / (SKY_KNEE * SKY_KNEE);
+  return 1 / Math.pow(1 + t * t, 0.25);
 };
 
 // -------------------------------------------------------------- colour ladder
@@ -201,7 +229,13 @@ const LADDER = [
     exposure: 0.96, sunIntensity: 2.35, ambient: 0.33,
     tint: new Color(1.06, 0.97, 0.92), sunTint: new Color(1.00, 0.66, 0.34),
     sky: new Color(0x6f8db8), ground: new Color(0x4c3f31),
-    fogColor: new Color(0xa9a8ad), fogSun: new Color(0xff9b52), fogTop: new Color(0x7d97bd),
+    // The bulk-air colour away from the sun. #a9a8ad was neutral grey (R/B 0.95) and it is
+    // what every surface in the set fades toward — the aerial perspective is the largest
+    // single tint in a frame with a 1.5 km vista in it, and a neutral one guarantees a
+    // single colour temperature. §5's shade is #4a6b8f; this keeps the authored luminance
+    // (0.394 -> 0.375 linear) and moves R/B from 0.95 to 0.60, so distance goes blue and
+    // the warm in-scatter stays confined to the sun's own aureole.
+    fogColor: new Color(0x97a6bd), fogSun: new Color(0xff9b52), fogTop: new Color(0x7d97bd),
     fogDensity: 0.0088, stars: 0.0, cloudCoverage: 0.455,
     cloudLit: new Color(0xffb06a), cloudDark: new Color(0x4e4f68), moon: 0.0,
   }),
@@ -364,12 +398,14 @@ uniform vec3  uCloudLit;
 uniform vec3  uCloudCool;
 uniform vec3  uCloudDark;
 uniform float uCloudOpacity;
+uniform float uCloudGain;
 
 #define CLOUD_LAYERS ${cloudLayers}
 #define CLOUD_OCT ${cloudOct}
 #define CLOUD_DETAIL ${cloudDetail}
 // Precomputed on the JS side: GLSL ES 1.00 has no integer max(), and this is a constant.
 #define CLOUD_SPAN ${Math.max(cloudLayers - 1, 1).toFixed(1)}
+#define CLOUD_MID_OCT ${Math.max(cloudOct - 1, 2)}
 #define SUN_ANG_R ${SUN_ANGULAR_RADIUS.toFixed(8)}
 #define MOON_ANG_R ${MOON_ANGULAR_RADIUS.toFixed(8)}
 #define SUN_GLARE_R ${(SUN_ANGULAR_RADIUS * SUN_GLARE_SPREAD).toFixed(8)}
@@ -463,15 +499,30 @@ float stars( vec3 rd ) {
  * the horizontal dashes the deck was showing a couple of degrees above the skyline.
  */
 float cloudMass( vec2 p, float cov, float detailAmp ) {
-  float f = fbm2( p, CLOUD_OCT ) * 0.5 + 0.5;
+  // Three bands, and they do three different jobs. mass runs at a quarter of the deck's
+  // own frequency and decides *where* cloud is, so a single bank spans a large fraction of
+  // the sky instead of terminating a few hundred metres away. mid at deck scale is what
+  // gives one bank bright and dark regions inside itself. The fine band is subtracted, so
+  // it erodes the silhouette into billows rather than adding blur on top of it.
+  //
+  // Round 7 measured the previous single-band version as "dozens of small, isolated,
+  // hard-edged elliptical lozenges, each roughly 120x40 px". A CPU mirror of this shader at
+  // the review framing reproduces that exactly and scores it: at matched coverage (0.234 vs
+  // 0.244 of the sky above the horizon) the old field breaks into 473 connected components
+  // whose largest is 8.9 k px and 312 px wide, and this one into 297 whose largest is 40.4 k
+  // px and spans the full frame width. That is the difference between confetti and weather.
+  float mass = fbm2( p * 0.24, CLOUD_OCT ) * 0.5 + 0.5;
+  float mid  = fbm2( p + 7.3, CLOUD_MID_OCT ) * 0.5 + 0.5;
+  float f = mass * 0.70 + mid * 0.30;
 #if CLOUD_DETAIL
-  f -= fbm2( p * 5.9 + 23.1, 2 ) * 0.16 * detailAmp;   // zero-mean, so coverage is preserved
+  f -= fbm2( p * 5.9 + 23.1, 2 ) * 0.11 * detailAmp;   // zero-mean, so coverage is preserved
 #endif
-  // Narrow (0.17 wide, not 0.30) so the deck has an actual edge, and centred on the same
-  // value the wide ramp was so the amount of sky it covers is unchanged. That matters
-  // beyond the look: this shader is also what the cube camera bakes into the PMREM probe
-  // that lights the world, and sharpening an edge must not quietly repaint the sky.
-  return smoothstep( cov + 0.065, cov + 0.235, f );
+  // 0.37 wide, not 0.17. A narrow ramp on a field this smooth is a hard edge — it was
+  // traceable pixel by pixel at native resolution, which is the thing that reads as a bug.
+  // The offsets are chosen so the sky the deck covers is unchanged (see the component
+  // measurement above): this shader is also what the cube camera bakes into the PMREM probe
+  // that lights the world, and softening an edge must not quietly repaint the sky.
+  return smoothstep( cov + 0.01, cov + 0.38, f );
 }
 
 /**
@@ -549,7 +600,13 @@ vec4 clouds( vec3 rd, vec3 Fex, vec3 grade, vec3 skyCol ) {
   // throwP, both functions of the sun, so the warmth still lands on the flank the sun
   // is actually on — now at every azimuth instead of only in its own quadrant.
   float lowSun = 1.0 - smoothstep( 0.08, 0.46, uSunDirection.y );
-  warm = clamp( warm + lowSun * lightT * 0.75 * ( 1.0 - warm ), 0.0, 1.0 );
+  // 0.45, not the 0.75 round 5 set. The deck is no longer scaled down into the
+  // atmosphere's range (see uCloudGain below), so every unit of this wrap now shows: at
+  // 0.75 a backlit cloud 120 degrees off the sun came out at R-B 61, which is the round-3
+  // "orange in every quadrant" failure with a different cause. At 0.45 the same cloud is
+  // R-B 36 while the sunward flank stays at 139, so the dome carries a warm-to-cool
+  // gradient instead of one temperature.
+  warm = clamp( warm + lowSun * lightT * 0.45 * ( 1.0 - warm ), 0.0, 1.0 );
   vec3 keyCol = mix( uCloudCool, uCloudLit, warm );
 
   // Forward scatter through thin cloud, with the phase function's isotropic pedestal taken
@@ -568,16 +625,29 @@ vec4 clouds( vec3 rd, vec3 Fex, vec3 grade, vec3 skyCol ) {
   // this solar elevation it is lit rather than self-shadowed. Left at uCloudDark the
   // deck reads as smoke no matter what the lit top does, because the top is only
   // visible near the anti-solar horizon.
-  base = mix( base, mix( uCloudDark, uCloudLit, 0.55 ), lowSun * 0.5 );
-  vec3 col = mix( base, keyCol * ( 0.55 + 1.5 * lightT ),
-                  clamp( topFace * ( 0.28 + 0.72 * lightT ), 0.0, 1.0 ) );
+  base = mix( base, mix( uCloudDark, uCloudLit, 0.55 ), lowSun * 0.60 * ( 0.3 + 0.7 * warm ) );
+  // At a 13-degree sun the key arrives under the deck almost horizontally, so the face a
+  // ground observer sees is the lit one across most of the sky, not only where the parallax
+  // between the two slab planes happens to be positive. topFace alone held the lit mix
+  // near 0.25 over most of the deck, which is a shaded cloud.
+  float litMix = clamp( topFace * ( 0.28 + 0.72 * lightT ), 0.0, 1.0 );
+  litMix = mix( litMix, max( litMix, 0.72 * warm ), lowSun );
+  vec3 col = mix( base, keyCol * ( 0.55 + 1.5 * lightT ), litMix );
   col += uCloudLit * burn * warm;
 
   // Extinction along the ray to the deck. Fex is the whole-atmosphere figure and the deck
   // is 1.7 km up, so take a third of it. Taken neat it reddened every low cloud in the
   // dome — including the ones behind us — which is the other half of the misplaced orange.
   col *= mix( vec3( 1.0 ), Fex, 0.34 );
-  col *= grade;
+  // grade carries uSkyExposure, which is exposure * SKY_LUMINANCE — the *dome's*
+  // display scale, 0.432 at magic hour. The deck's colours are authored as display values
+  // (uCloudLit is #ffb06a, peak 1.0), so multiplying them by 0.432 caps a fully lit cloud
+  // at 0.46 linear against a sky whose own ceiling is uSkyKnee = 0.62: arithmetically the
+  // deck could not be the brightest thing in the sky. Round 7 measured exactly that — every
+  // cloud darker than the sky behind it, including within 30 degrees of the sun. Stars and
+  // the moon already divide this scale back out (see uStarStrength) for the same reason:
+  // they are objects in the sky, not the sky. So does the deck now.
+  col *= grade * uCloudGain;
 
   // Aerial perspective on the deck itself: it dissolves into the air in front of it as it
   // recedes, which is what makes it read as a plane going away rather than as a texture
@@ -624,12 +694,18 @@ vec3 skyRadiance( vec3 rd, out vec3 FexOut ) {
   vec3 atmos = pow( max( tex, vec3( 0.0 ) ), vec3( 1.0 / ( 1.2 + 1.2 * uSunFade ) ) );
   atmos *= uSkyTint * uSkyExposure;
 
-  // Soft knee, order 4: the low and mid sky pass through essentially untouched and only the
-  // forward-scatter lobe — which Preetham leaves running to 10-100 and which used to blow a
-  // 25-degree cap of sky to flat white — gets folded onto uSkyKnee. Clouds, moon and stars
-  // are deliberately outside this: they are objects in the sky, not the sky, and they are
-  // allowed their own highlights. The disc is outside it too, and is added by the caller.
-  vec3 t = ( atmos * atmos ) / ( uSkyKnee * uSkyKnee );
+  // Soft knee, order 4, on LUMINANCE — never per channel. A per-channel knee is a
+  // per-channel *ceiling*: every channel that overshoots lands on the same uSkyKnee, so the
+  // 25-degree cap of sky around a low sun converges on neutral grey no matter what colour
+  // the air is. Measured on the round-7 sun frame by inverting the composite: the sky 10
+  // degrees off the sun sits at scene-linear (0.628, 0.550, 0.567) — all three channels on
+  // the 0.62 ceiling, saturation 0.049, R-B = 16, in the one frame that exists to look into
+  // a magic-hour sun. Compressing luminance and scaling all three channels by the same
+  // factor rolls the aureole off exactly as before while keeping its ratios, so it stays
+  // amber. Clouds, moon and stars are deliberately outside this: they are objects in the
+  // sky, not the sky. The disc is outside it too, and is added by the caller.
+  float y = max( dot( atmos, vec3( 0.2126, 0.7152, 0.0722 ) ), 1e-6 );
+  float t = ( y * y ) / ( uSkyKnee * uSkyKnee );
   return atmos * inversesqrt( sqrt( 1.0 + t * t ) );
 }
 
@@ -723,6 +799,12 @@ export class SkySystem {
     this.groundColor = new Color(0x4c3f31);
     this.sunIntensity = 2.35;
     this.ambientIntensity = 0.33;
+    /**
+     * Diffuse irradiance the environment probe puts on an up-facing surface at
+     * `scene.environmentIntensity = 1`. Lighting owns the probe's *level* (§8) and needs
+     * this to set it as a ratio against the key instead of as a blind gain.
+     */
+    this.probeIrradiance = new Color(1, 1, 1);
     this.envMap = null;
 
     /** Read-only view of the fog for other systems (Weather tints its own particles). */
@@ -848,6 +930,7 @@ export class SkySystem {
       uCloudCool: { value: new Vector3(0.53, 0.60, 0.71) },
       uCloudDark: { value: new Vector3(0.3, 0.31, 0.4) },
       uCloudOpacity: { value: 0.95 },
+      uCloudGain: { value: CLOUD_GAIN },
     };
 
     // radius 420 with the engine's 900 m far plane: the dome follows the camera, so it
@@ -889,10 +972,16 @@ export class SkySystem {
   }
 
   _cloudTier(q) {
-    // [slab planes, octaves in the low band, high band on]. Taps are
-    // `layers * (oct + 2 * detail) + oct` — 4 / 9 / 13 / 18. The high band is the
-    // expensive half and the half that aliases first, so it is what goes away below HIGH;
-    // MEDIUM stays inside the 6-10 tap budget the deck was always held to.
+    // [slab planes, octaves in the low band, high band on]. cloudMass now costs
+    // `oct + CLOUD_MID_OCT + 2 * detail` per call and is called `layers + 1` times, so the
+    // totals are 8 / 15 / 21 / 28 against the old 4 / 9 / 13 / 18. The mid band runs one
+    // octave short of the mass band because its only job is to put bright and dark regions
+    // inside a bank — it does not set the silhouette, so it does not need the range. On the
+    // MEDIUM phone target that is +6 snoise2 taps on the sky pixels only, about +3% of the
+    // fragment ALU on an Adreno 640; it buys the difference between a field of lozenges and
+    // a cloud mass, which is the round-7 blocker.
+    // The high band is the expensive half and the half that aliases first, so it is still
+    // what goes away below HIGH.
     switch (q.tier) {
       case 0: return [1, 2, 0];
       case 1: return [2, 3, 0];
@@ -1073,11 +1162,48 @@ export class SkySystem {
     const lComputed = lum(_colB);
     if (lComputed > 1e-5) _colB.multiplyScalar(lAuthored / lComputed);
     this.skyColor.copy(g.sky).lerp(_colB, 0.5);
+    // Floor on how cool the fill is allowed to be. The computed irradiance is honest
+    // physics and at a 13-degree sun it is dominated by the forward-scatter lobe, so
+    // borrowing its hue drags the one authored cool light in the rig toward the key —
+    // and ARCHITECTURE §5 binds shadow/ambient to #4a6b8f, R/B 0.52, precisely so it
+    // cannot. Rebalanced at constant luminance, so this is a hue clamp and never a
+    // level change: it can only ever move blue against red.
+    const rb = this.skyColor.r / Math.max(this.skyColor.b, 1e-5);
+    if (rb > SHADOW_FILL_MAX_RB) {
+      const lKeep = lum(this.skyColor);
+      const s = SHADOW_FILL_MAX_RB / rb;
+      this.skyColor.setRGB(this.skyColor.r * s, this.skyColor.g, this.skyColor.b / s);
+      const lNow = lum(this.skyColor);
+      if (lNow > 1e-5) this.skyColor.multiplyScalar(lKeep / lNow);
+    }
 
-    // Down-facing normals see light bounced off warm autumn ground; nudge the bounce
-    // toward the key as the sun drops and the whole valley turns amber.
+    // Down-facing normals see light bounced off warm autumn ground. Nudge the bounce
+    // toward the key as the sun drops and the whole valley turns amber — but *only* the
+    // hue. Lerping toward a key normalised to peak 1.0 more than doubled the bounce's
+    // luminance (0.054 -> 0.115 at magic hour, measured off the live values), which left
+    // the hemisphere's warm half brighter than its cool half and handed every downward
+    // and side-facing normal in the frame a stronger, warmer fill than an up-facing one.
+    // That is the inverse of what a low sun does, and it is a large part of why round 7
+    // measured one colour temperature across all five frames. Bounce cannot exceed what
+    // bounced: hold the level at the authored ground albedo's.
+    const lGround = lum(g.ground);
     this.groundColor.copy(g.ground).lerp(this.sunColor, 0.22 * (1 - smoothstep(0, 0.5, Math.max(sunY, 0))) * horizonFade);
+    const lBounce = lum(this.groundColor);
+    if (lBounce > 1e-5) this.groundColor.multiplyScalar(lGround / lBounce);
     this.moonColor.setRGB(0.62, 0.72, 1.0);
+
+    // What the PMREM probe will deliver as diffuse irradiance on an up-facing surface at
+    // `scene.environmentIntensity = 1`. Published rather than left implicit because it is
+    // the largest single term in the ambient budget and nothing downstream could see it:
+    // Lighting held a bare 0.42 gain against a number no one had measured. Upper
+    // hemisphere only and sky only — the deck and the below-horizon ground are in the real
+    // cube and are not here — so treat it as the probe's *sky* share, which is the part
+    // that has to stay in ratio with the key.
+    this._skyIrradiance(_colB, true);
+    this.probeIrradiance.copy(_colB).multiplyScalar(Math.PI);
+    if (!Number.isFinite(this.probeIrradiance.r + this.probeIrradiance.g + this.probeIrradiance.b)) {
+      this.probeIrradiance.setRGB(1, 1, 1);
+    }
 
     // --- fog -----------------------------------------------------------------
     const fp = this.fogParams;
@@ -1085,8 +1211,19 @@ export class SkySystem {
     fp.topColor.copy(g.fogTop);
     fp.sunColor.copy(g.fogSun);
     fp.density = g.fogDensity;
-    fp.sunPower = lerp(16, 6, smoothstep(0.5, 0.0, Math.abs(sunY)));
-    fp.sunStrength = lerp(0.35, 0.95, smoothstep(0.45, 0.02, Math.abs(sunY)));
+    // The in-scattering lobe. At magic hour the old curve gave power 10.3 / strength 0.671,
+    // which puts the fog colour 57% of the way to #ff9b52 ten degrees off the sun and still
+    // 23% of the way there at thirty — i.e. a warm wash over essentially the whole `sun`
+    // framing, on every surface, at every distance. Fitting the round-7 measurement of the
+    // banner-pole shadow on sand (scene-linear 0.0399, 0.0296, 0.0268 against lit sand at
+    // 0.2420, 0.1370, 0.0806) puts the fog opacity there at ~0.05, which makes in-scatter
+    // 89% of that shadow's red and only 41% of its blue. That, not the ambient's hue, is
+    // why round 7 measured the shadow *warmer* than the key that made it. A raking sun does
+    // give a warm aureole; it does not paint the whole sky orange, so the lobe narrows.
+    // At magic hour this lands on power 24.0 / strength 0.549: 38% of the way to #ff9b52
+    // ten degrees off the sun (was 57%) and 1.8% at thirty (was 23%).
+    fp.sunPower = lerp(32, 18, smoothstep(0.5, 0.0, Math.abs(sunY)));
+    fp.sunStrength = lerp(0.35, 0.70, smoothstep(0.45, 0.02, Math.abs(sunY)));
 
     const fu = this.fogUniforms;
     fu.uFogColor.value.copy(fp.color);
@@ -1118,8 +1255,11 @@ export class SkySystem {
    * direction. Writes into `out` ({r,g,b}); no allocation. The sun disc is deliberately
    * excluded — that energy is carried by the DirectionalLight, and double-counting it
    * would blow the ambient out every time the camera faced the sun.
+   *
+   * `raw = true` returns the radiance in the state `_renderEnvironment` bakes the cube in
+   * (no display scale, no knee), which is what the PMREM probe lights the world with.
    */
-  _evalSky(dx, dy, dz, out) {
+  _evalSky(dx, dy, dz, out, raw = false) {
     const g = this._grade;
     const cosUp = Math.max(dy, 0);
     const zenithAngle = Math.acos(clamp(cosUp, -1, 1));
@@ -1159,11 +1299,15 @@ export class SkySystem {
       rgb[i] = Math.pow(Math.max((lin + l0) * 0.04 + lift[i], 0), invGamma);
     }
     // Same display scale and soft knee the dome gets, so the ambient hue is sampled from
-    // the sky that is actually on screen and not from the raw radiance behind it.
-    const e = g.exposure * SKY_LUMINANCE;
-    out.r = knee(rgb[0] * g.tint.r * e);
-    out.g = knee(rgb[1] * g.tint.g * e);
-    out.b = knee(rgb[2] * g.tint.b * e);
+    // the sky that is actually on screen and not from the raw radiance behind it. `raw`
+    // skips both, which is the state `_renderEnvironment` bakes the cube in — that is what
+    // the PMREM probe actually lights the world with, so it is what Lighting must be told.
+    const e = g.exposure * (raw ? 1 : SKY_LUMINANCE);
+    const cr = rgb[0] * g.tint.r * e, cg = rgb[1] * g.tint.g * e, cb = rgb[2] * g.tint.b * e;
+    const k = raw ? 1 : kneeScale(cr, cg, cb);
+    out.r = cr * k;
+    out.g = cg * k;
+    out.b = cb * k;
     return out;
   }
 
@@ -1172,8 +1316,12 @@ export class SkySystem {
    * i.e. the colour a HemisphereLight's `skyColor` should actually be. 32 samples,
    * rotated so one azimuth column always faces the sun, which is where all the
    * interesting (amber, forward-scattered) energy lives at a low sun.
+   *
+   * `raw` is forwarded to `_evalSky`: false for the on-screen sky's hue, true for the
+   * level the environment probe is baked at. Sky only, upper hemisphere only — the cloud
+   * deck and the below-horizon ground are in the real cube and not in this estimate.
    */
-  _skyIrradiance(out) {
+  _skyIrradiance(out, raw = false) {
     const s = this.sunDirection;
     let hx = s.x, hz = s.z;
     const hl = Math.hypot(hx, hz);
@@ -1190,7 +1338,7 @@ export class SkySystem {
         // Rotate the sample ring so a = 0 points at the sun's azimuth.
         const dx = (ca * hx - sa * hz) * ce;
         const dz = (ca * hz + sa * hx) * ce;
-        this._evalSky(dx, se, dz, _skySample);
+        this._evalSky(dx, se, dz, _skySample, raw);
         r += _skySample.r * w; g += _skySample.g * w; b += _skySample.b * w;
         wsum += w;
       }
@@ -1297,6 +1445,19 @@ export class SkySystem {
     const keepExposure = u.uSkyExposure.value;
     const keepKnee = u.uSkyKnee.value;
     const keepDisc = u.uSunDiscGain.value;
+    // The dome material is `toneMapped: true`, so whatever `renderer.toneMapping` happens
+    // to be at this instant is baked into the probe. `SkySystem.init()` runs at main.js:93
+    // and PostFX — the system that switches the renderer to NoToneMapping — is not built
+    // until main.js:154, so the boot bake ran through Engine's ACESFilmicToneMapping and
+    // was clamped to [0,1]. With `autoAdvance = 0` the sun never moves, `_envDirty` is
+    // false from the first frame on, and the cube was never re-baked: the world was lit for
+    // the whole session by a tone-mapped, clipped copy of the sky. Measured on the
+    // magic-hour ladder, cosine-weighted over the upper hemisphere: intended
+    // (0.662, 0.843, 0.988) R/B 0.670, actually baked (0.577, 0.665, 0.727) R/B 0.794 —
+    // 20% of the probe's luminance gone and the rest warmed, in the one light that is
+    // supposed to be the cool half of magic hour.
+    const keepTone = renderer.toneMapping;
+    renderer.toneMapping = NoToneMapping;
     u.uSkyExposure.value = keepExposure / SKY_LUMINANCE;
     u.uSkyKnee.value = 1e6;
     u.uSunDiscGain.value = 0;
@@ -1304,6 +1465,7 @@ export class SkySystem {
     u.uSkyExposure.value = keepExposure;
     u.uSkyKnee.value = keepKnee;
     u.uSunDiscGain.value = keepDisc;
+    renderer.toneMapping = keepTone;
 
     const prev = this._pmremRT;
     this._pmremRT = this._pmrem.fromCubemap(this._cubeRT.texture);

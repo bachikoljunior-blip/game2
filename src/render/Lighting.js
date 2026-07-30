@@ -26,33 +26,59 @@ import {
 const DEG2RAD = MathUtils.DEG2RAD;
 
 /**
- * Gain on the image-based ambient probe (`Scene.environmentIntensity`), expressed as a
- * fraction of the hour's authored ambient level so the time-of-day ladder still drives it.
+ * The ambient budget, as **luminous irradiance on an up-facing surface**, expressed as a
+ * fraction of the hour's authored ambient level (`sky.ambientIntensity`). Not as a gain.
  *
- * three defaults `environmentIntensity` to 1.0, and until now nobody set it — the one
- * number in the whole rig that no one chose. Sky captures its PMREM *pre-knee and
- * pre-display-scale* (SkySystem._renderEnvironment), so at magic hour the probe alone
- * lands roughly 2.0 of diffuse irradiance on an up-facing surface, while a 13° key
- * delivers sin(13°) * 3.41 = 0.77. That is the whole "the sun is not reaching the
- * surface" bug: the key *is* reaching it, at full strength and the right colour, but the
- * sky bounce sitting on top of it is ~2.5x larger in red and ~25x larger in blue, so
- * flagstone integrates to neutral and a cast shadow that removes a fifth of the total
- * illumination is not visible at all. ARCHITECTURE §4 budgets the ambient at ~0.35
- * against a key of ~3.0; §8 puts light probes in this file, so this is where that ratio
- * is held. 0.42 * 0.33 ≈ 0.14 leaves the sky bounce clearly cool and clearly secondary
- * while keeping enough probe for wet stone and the blade to still mirror the sky.
+ * A gain is unverifiable, and that is how round 7 was lost. `environmentIntensity` was
+ * held at 0.42 * ambient against a probe whose delivered irradiance no one had measured;
+ * reading it back off the live grade it turns out to be 2.82 per unit intensity at magic
+ * hour, so the probe was carrying 0.28 of luminous irradiance against the hemisphere's
+ * 0.085 — 77% of the fill, at the sky's own physical R/B of 0.79 rather than the 0.45 the
+ * hemisphere carries on §5's authored `#4a6b8f` (0.52). The one light that is *supposed* to be
+ * the cool half
+ * of magic hour was contributing a quarter of the fill. Sky now publishes
+ * `sky.probeIrradiance`, so both terms are set to a stated number instead of a knob.
  *
- * Measured at the `torii` shot, magic hour, on the flagstone directly in front of camera
- * (fraction of pixels with R-B > 18, the critic's own test):
- *   probe 1.00 -> 0.00 %, mean (84, 84, 97)   blue, and removing the sun entirely only
- *                                              moves it to (65, 69, 81)
- *   probe 0.25 -> 8.5  %, mean (48, 41, 48)
- *   probe 0.15 -> 12.2 %, mean (43, 34, 40)   long torii shadow clearly readable
+ * The split: the probe supplies the bounce's *shape* (a sky-facing surface sees more of it,
+ * a wall less, and wet stone and the blade mirror it), the hemisphere supplies the authored
+ * colour. Round 7 measured R-B between +4 and +12 in the dark population of all five frames
+ * where §5 wants it deeply negative, so the authored term takes the larger share.
+ *
+ * At magic hour this is probe 0.55 * 0.33 = 0.182 and hemisphere 0.80 * 0.33 = 0.264 of
+ * luminous irradiance, total 0.446 against a key of 0.396 — the same order the round-7 rig
+ * had (0.368) but with the fill's R/B moved from 0.677 to 0.543, i.e. onto §5's 0.52.
+ *
+ * On ARCHITECTURE §4's "ambient/hemi ~0.35": that figure is an *intensity*, and it was
+ * written for a white hemisphere. Ours is #4a6b8f-family at 0.259 relative luminance, so
+ * the intensity these shares imply (~1.02) still delivers less luminous irradiance than a
+ * white hemisphere at 0.35 would. The budget §4 is protecting is the irradiance, and this
+ * is under it.
  */
-const ENV_AMBIENT_GAIN = 0.42;
+const PROBE_AMBIENT_SHARE = 0.55;
+const HEMI_AMBIENT_SHARE = 0.80;
+/**
+ * Ceilings on the two derived intensities. Both are `target / measured luminance`, and the
+ * denominators go to zero at midnight — nothing non-finite may reach a light uniform
+ * (ARCHITECTURE §5b), and a divide that is merely *large* blanks the frame just as well.
+ */
+const AMBIENT_INTENSITY_MAX = 3.0;
+/** The round-7 probe gain, kept verbatim for the sunless half of the ladder. */
+const NIGHT_PROBE_GAIN = 0.42;
+/** Rec.709 luminance. The two shares above are stated in it, so it has to be the same one. */
+const lum709 = (c) => c.r * 0.2126 + c.g * 0.7152 + c.b * 0.0722;
 
 /** Ceiling on cascades, and the fixed length of the `kagCascades` uniform array. */
 const MAX_CASCADES = 4;
+
+/**
+ * PCSS blocker search, in **metres of world**, not texels. It has to be near the scale of
+ * the thing casting the contact — a stone lantern shaft is ~0.35 m — because the search is
+ * what decides whether a fragment gets a shadow at all: `kagGetShadow` returns fully lit
+ * when no tap finds a blocker. See `_computeSplits` for the measurement that set it.
+ */
+const PCSS_SEARCH_METRES = 0.18;
+/** Ceiling on the contact-hardened penumbra, also in metres of world. */
+const PCSS_PENUMBRA_MAX_METRES = 0.26;
 
 /**
  * Hardware point-light slots reserved for *standing* lights (lanterns, braziers,
@@ -327,8 +353,16 @@ export class LightingSystem {
 
     this.sunDirection = new Vector3(0, 1, 0);
     this.shadowsActive = true;
-    /** Live handle on the ambient probe's share of the light budget; see ENV_AMBIENT_GAIN. */
-    this.envAmbientGain = ENV_AMBIENT_GAIN;
+    /** Live handles on the two halves of the ambient budget; see PROBE_AMBIENT_SHARE. */
+    this.probeAmbientShare = PROBE_AMBIENT_SHARE;
+    this.hemiAmbientShare = HEMI_AMBIENT_SHARE;
+    /**
+     * Diagnostics, written every frame: what the two ambient terms are actually putting on
+     * an up-facing surface, in luminous irradiance, next to the key. Read these rather than
+     * the intensities — an intensity is meaningless without the colour it multiplies, which
+     * is exactly the mistake that let a probe carry three quarters of the fill unnoticed.
+     */
+    this.ambientReport = { key: 0, probe: 0, hemi: 0 };
 
     this._splits = null;
     this._sphereZ = null;
@@ -582,14 +616,28 @@ export class LightingSystem {
   // ------------------------------------------------------------------ cascades
 
   /**
-   * Practical (PSSM) split scheme: lambda 0.6 between the logarithmic and uniform
+   * Practical (PSSM) split scheme: lambda between the logarithmic and uniform
    * distributions. Logarithmic alone wastes the far cascades on a 0.12 m near plane.
+   *
+   * 0.78, not the 0.6 it was. Evaluated for the phone review framing (MEDIUM: 2 cascades,
+   * 1536 map, 70 m; 2532x1170 so aspect 2.164) the old lambda put the first split at 19.0 m
+   * and gave cascade 0 a bounding sphere of radius 28.3 m — a 56.7 m ortho box, 3.69 cm per
+   * texel, and a 5.90 cm normal bias, which is 6 cm of the base of every prop pushed out
+   * from under its own shadow before the map is ever sampled. At 0.78 the split is 14.2 m,
+   * the sphere 21.2 m, the texel 2.76 cm and the bias 4.41 cm.
+   *
+   * The trade is explicit: the sharp band shortens from 19 m to 14 m, so props between those
+   * two ranges drop to the far cascade. It is priced against round 7's finding, which is
+   * about the *foreground* — "the two large stone lanterns", 4-8 m out — and about the near
+   * cascade's job under ARCHITECTURE §5.2. It costs nothing on the far cascade, which is the
+   * surprising part: that sphere's radius is set by `rFar`, which depends only on the outer
+   * split. Measured before and after, the far cascade moves 102.57 m -> 102.97 m.
    */
   _computeSplits(camera) {
     const n = this.cascadeCount;
     const near = camera.near;
     const far = Math.min(camera.far, this.shadowDistance);
-    const lambda = 0.6;
+    const lambda = 0.78;
     const s = this._splits;
 
     s[0] = near;
@@ -636,8 +684,21 @@ export class LightingSystem {
     const depthRange = 2 * r0 + this._backoff * 2;
     const spread = 0.055;                       // artistic sun size, ~3° not 0.53°
     this._u.kagPcssScale.value = depthRange * spread / (2 * r0);
-    this._u.kagPcssSearch.value = MathUtils.clamp(2.5 / this.shadowMapSize * 4.0, 0.002, 0.02);
-    this._u.kagPcssMax.value = MathUtils.clamp(14.0 / this.shadowMapSize, 0.004, 0.02);
+    // Both of these were expressed in texels, which means they were expressed in nothing:
+    // a texel is a different world size in every quality tier and at every aspect ratio.
+    // On the phone review framing `2.5 / 1536 * 4` came out as a **36.9 cm** blocker-search
+    // disk, sampled with eight Vogel taps whose radii are 0.13 .. 0.39 m — so for a stone
+    // lantern whose shaft is about 35 cm across, at most one or two taps can land on the
+    // caster, and when none do `kagGetShadow` takes the `found < 0.5` early-out and returns
+    // *fully lit* without running the PCF at all. That is the shape of round 7's finding
+    // exactly: a long thin banner-pole shadow 20 m out survives (its blocker is nowhere near
+    // its receiver, so the wide search finds it), while the tight contact under a 2.5 m
+    // lantern in the same build does not exist. Stating both in metres of world and dividing
+    // by the cascade's own ortho width makes them mean the same thing on every device.
+    this._u.kagPcssSearch.value = MathUtils.clamp(
+      PCSS_SEARCH_METRES / (2 * r0), 2.0 / this.shadowMapSize, 0.02);
+    this._u.kagPcssMax.value = MathUtils.clamp(
+      PCSS_PENUMBRA_MAX_METRES / (2 * r0), 4.0 / this.shadowMapSize, 0.02);
   }
 
   /**
@@ -1053,12 +1114,42 @@ export class LightingSystem {
       const ambient = sky.ambientIntensity !== undefined ? sky.ambientIntensity : 0.35;
       this.hemi.color.copy(sky.skyColor);
       this.hemi.groundColor.copy(sky.groundColor);
-      this.hemi.intensity = ambient;
 
-      // The probe supplies the sky bounce's *shape*; its level is a key/fill decision
-      // and therefore ours. See ENV_AMBIENT_GAIN — left at three's default of 1.0 this
-      // single line is worth more irradiance than the sun.
-      this.ctx.scene.environmentIntensity = ambient * this.envAmbientGain;
+      // Both terms are solved for a *stated irradiance*, not dialled. `hemi.intensity`
+      // multiplies a colour whose luminance swings 12x across the ladder, so holding the
+      // intensity fixed does not hold the fill fixed — it is why the cool half of the rig
+      // silently shrank to a quarter of the ambient at exactly the hour §5 cares about.
+      const skyLum = lum709(this.hemi.color);
+      const solvedHemi = skyLum > 1e-4
+        ? MathUtils.clamp(this.hemiAmbientShare * ambient / skyLum, 0, AMBIENT_INTENSITY_MAX) : 0;
+
+      // The probe supplies the sky bounce's *shape*; its level is a key/fill decision and
+      // therefore ours (§8). `sky.probeIrradiance` is what one unit of environmentIntensity
+      // actually lands on an up-facing surface — 2.82 at magic hour, so three's default of
+      // 1.0 would have been worth seven times the key.
+      const probeIrr = sky.probeIrradiance;
+      const probeLum = probeIrr ? lum709(probeIrr) : 0;
+      const probeOk = Number.isFinite(probeLum) && probeLum > 1e-4;
+      const solvedProbe = probeOk
+        ? MathUtils.clamp(this.probeAmbientShare * ambient / probeLum, 0, AMBIENT_INTENSITY_MAX) : 0;
+
+      // A share of the *key* only means something while there is a key. Below the horizon
+      // both solvers divide by a night sky's luminance — 0.021 at midnight against magic
+      // hour's 0.259 — and run straight into the clamp, which would silently make the night
+      // ambient fifteen times brighter than the ladder authored it. So cross-fade to the
+      // ladder's own numbers as the sun sets: at sunY <= 0 this block is byte-identical to
+      // what round 7 shipped, and the whole change lives in daylight where it was measured.
+      const dayW = MathUtils.clamp(this.sunDirection.y / 0.06, 0, 1);
+      this.hemi.intensity = MathUtils.lerp(ambient, solvedHemi, dayW);
+      // A Sky that does not publish probeIrradiance keeps the round-7 gain outright, rather
+      // than solving against a zero and silently switching the probe off in daylight.
+      this.ctx.scene.environmentIntensity =
+        MathUtils.lerp(ambient * NIGHT_PROBE_GAIN, solvedProbe, probeOk ? dayW : 0);
+
+      const r = this.ambientReport;
+      r.key = lum709(_col) * intensity * Math.max(this.sunDirection.y, 0);
+      r.hemi = this.hemi.intensity * skyLum;
+      r.probe = this.ctx.scene.environmentIntensity * probeLum;
 
       // Cool the rim toward the sky bounce so it always reads as the opposite of key.
       _col2.setRGB(0.55, 0.7, 1.0);
