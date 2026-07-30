@@ -17,6 +17,10 @@ every texture, mesh, animation and sound is synthesised at boot. `ARCHITECTURE.m
 binding contract that lets independent agents work on it in parallel; read §5 (art
 direction), §7 (perf budget) and §8 (file ownership) before dispatching anything.
 
+> **Last completed round: 5.** The next one is round 6 — use `--tag=r6`,
+> `shots/review-r6.json`, `--round=6`. Round 5's work is on branch `claude/round-q78i6x`
+> (11 commits, pushed); start from there or from wherever it has since been merged.
+
 An independent critic has scored it 34 → 48 → 58 → (round 4 unfiled) → 58 out of 100
 against a *Ghost of Tsushima* / *SEKIRO* bar. It has not passed. Round 5 filed FAIL with
 three blockers, repaired all three and verified them.
@@ -51,8 +55,14 @@ node tools/dispatch.mjs --round=N                 # 4. who to spawn
 #                                                   5. spawn exactly those, then verify
 ```
 
-Substitute the real round number for `N` everywhere. Check `shots/` for the highest
-existing `review-r*.json` and add one.
+Substitute the real round number for `N` everywhere.
+
+**The last completed round is recorded at the top of this file — the next one is that plus
+one.** Do not derive it from `shots/`: that directory is gitignored, so in a fresh clone it
+is empty and the highest `review-r*.json` is none at all. Round 6 would be filed as round 1
+over the top of nothing, and `dispatch.mjs --round=1` would then read a review that does not
+exist. Bump the number in this file's header as part of closing the round, in the same commit
+that records the measurements.
 
 ### 1. Capture
 
@@ -84,6 +94,17 @@ Before going further, read `shots/report-rN.json` and check three things:
 **The measurement apparatus has broken four times on this project, and every time it drove
 a correct critique into a wrong fix.** Checking it costs a minute. Skipping it costs a
 round, which is about 2M tokens.
+
+Two things round 5 hit, both now handled but worth recognising:
+
+- **A frame can miss its screenshot allowance without the run failing.** `desktop-hero`
+  timed out at 420 s twice — the first frame after boot pays SwiftShader's lazy pipeline
+  compile on top of its own render. The set then reports `REVIEW SET INCOMPLETE` and the
+  other four frames are fine, so it reads like a partial success. Retry that profile with
+  `--shot-timeout=900000`.
+- **A per-profile retry used to erase the other profile's record.** `report-rN.json` now
+  merges, so `--profile=desktop` keeps the phone numbers. It did not in round 5, and the
+  phone baseline the whole round was measured against was lost mid-round.
 
 ### 2. Contact sheet
 
@@ -172,7 +193,8 @@ between agents. Paste it; do not paraphrase it.
 
 ## When the round is done
 
-Commit on `claude/aaa-fps-threejs-ddcaix`, push, and report:
+Commit on whatever branch the session was given, push it, bump the round number in this
+file's header, and report:
 
 - the verdict and score, and the delta from last round
 - which teams were spawned and which were gated out
