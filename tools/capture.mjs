@@ -10,11 +10,13 @@
  *   node tools/capture.mjs                      # default set
  *   node tools/capture.mjs --profile=phone      # one profile
  *   node tools/capture.mjs --shots=hero,combat  # one beat
+ *   node tools/capture.mjs --review --diff      # review set, skipping unchanged shots
  */
 
 import { chromium, devices } from 'playwright';
 import { measureLuma, HUD_MASKS } from './luma.mjs';
-import { mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
+import { plan as diffPlan, record as recordShot } from './manifest.mjs';
+import { mkdirSync, writeFileSync, rmSync, existsSync, copyFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'node:http';
@@ -103,6 +105,13 @@ const SHOTS = {
 };
 
 /**
+ * `--review` is the set the art critic judges. It has to be captured in one pass from
+ * one build: round 2 was handed three shots from one build and one from the next, and
+ * the reviewer nearly filed an already-fixed bug as a regression off the stale frame.
+ */
+const REVIEW_SET = ['hero', 'wide', 'torii', 'valley', 'sun'];
+
+/**
  * SwiftShader renders on one thread and saturates it, so two capture runs do not take
  * twice as long — they starve each other. A boot that normally takes 200 s has been
  * measured at 639 s under contention, past the point where it times out and produces
@@ -141,7 +150,19 @@ async function main() {
     console.error('dist/ is missing — run `npm run build` first.');
     process.exit(2);
   }
-  const releaseLock = await acquireLock();
+  // Resolve `--diff` before taking the lock. A run in which every shot is carried
+  // forward never launches a browser, so it has nothing to serialise against — and
+  // queueing it behind a live capture would make the cheap path wait two to five
+  // minutes for permission to do nothing.
+  const wantProfilesEarly = argv.profile ? String(argv.profile).split(',') : ['phone', 'desktop'];
+  const wantShotsEarly = argv.review
+    ? REVIEW_SET
+    : argv.shots ? String(argv.shots).split(',') : Object.keys(SHOTS);
+  const needsBrowser = !argv.diff || wantProfilesEarly
+    .filter((p) => PROFILES[p])
+    .some((p) => diffPlan(p, wantShotsEarly).stale.length > 0);
+
+  const releaseLock = needsBrowser ? await acquireLock() : () => {};
   process.on('exit', releaseLock);
   process.on('SIGINT', () => { releaseLock(); process.exit(130); });
   process.on('SIGTERM', () => { releaseLock(); process.exit(143); });
@@ -150,14 +171,8 @@ async function main() {
   const server = await serve(DIST, port);
   const base = `http://127.0.0.1:${port}/index.html`;
 
-  const wantProfiles = argv.profile ? String(argv.profile).split(',') : ['phone', 'desktop'];
-  // `--review` is the set the art critic judges. It has to be captured in one pass from
-  // one build: round 2 was handed three shots from one build and one from the next, and
-  // the reviewer nearly filed an already-fixed bug as a regression off the stale frame.
-  const REVIEW_SET = ['hero', 'wide', 'torii', 'valley', 'sun'];
-  const wantShots = argv.review
-    ? REVIEW_SET
-    : argv.shots ? String(argv.shots).split(',') : Object.keys(SHOTS);
+  const wantProfiles = wantProfilesEarly;
+  const wantShots = wantShotsEarly;
   const tag = argv.tag ? `-${argv.tag}` : '';
 
   mkdirSync(OUT, { recursive: true });
@@ -174,6 +189,48 @@ async function main() {
   for (const pname of wantProfiles) {
     const prof = PROFILES[pname];
     if (!prof) { console.warn(`unknown profile ${pname}`); continue; }
+
+    // `--diff` carries an unchanged shot forward from the previous round rather than
+    // paying another SwiftShader boot for a byte-identical frame. The copy is what
+    // makes it safe to do: downstream (the histogram pass, the review-set completeness
+    // check, the contact sheet) all key off `shots`, and every one of them keeps
+    // working on a carried file without knowing it was carried.
+    const shotPlan = argv.diff ? diffPlan(pname, wantShots) : null;
+    const carried = {};
+    let takeShots = wantShots;
+    if (shotPlan) {
+      takeShots = shotPlan.stale.map((s) => s.shot);
+      for (const f of shotPlan.fresh) {
+        const dest = join(OUT, `${pname}-${f.shot}${tag}.png`);
+        try {
+          if (resolve(f.from) !== resolve(dest)) copyFileSync(f.from, dest);
+          carried[f.shot] = dest;
+        } catch (e) {
+          // Carrying it failed, so take it. Never let a copy error silently drop a
+          // frame out of a review set.
+          takeShots = [...takeShots, f.shot];
+          console.warn(`[${pname}] could not carry ${f.shot} forward (${e.message}); recapturing`);
+        }
+      }
+      console.log(`[${pname}] --diff: capturing ${takeShots.join(', ') || '(none)'}; ` +
+        `carried ${Object.keys(carried).join(', ') || '(none)'}`);
+    }
+
+    // Nothing to take means nothing to boot — this is where the saving actually lands.
+    if (shotPlan && takeShots.length === 0) {
+      const histograms = {};
+      for (const [sname, file] of Object.entries(carried)) {
+        try { histograms[sname] = measureLuma(file, HUD_MASKS); } catch { /* reported below */ }
+      }
+      report.profiles[pname] = {
+        booted: true, carriedOnly: true, stats: null, histograms,
+        errors: ['all shots carried forward from the previous round; no browser was booted'],
+        shots: carried,
+      };
+      console.log(`[${pname}] all ${Object.keys(carried).length} shots unchanged — skipped`);
+      continue;
+    }
+
     const context = await browser.newContext({
       viewport: prof.viewport, deviceScaleFactor: prof.deviceScaleFactor,
       isMobile: prof.isMobile, hasTouch: prof.hasTouch,
@@ -216,7 +273,7 @@ async function main() {
     }
     console.log(`[${pname}] boot ${booted ? 'ok' : 'FAILED'} in ${((Date.now() - bootStarted) / 1000).toFixed(1)}s`);
 
-    const shots = {};
+    const shots = { ...carried };
     const histograms = {};
     if (booted) {
       // The opening title card runs a full-screen ink wash over the first few seconds.
@@ -229,7 +286,7 @@ async function main() {
         k?.weather?.setPreset?.('petals', true);
       }).catch(() => {});
       await page.waitForTimeout(6000);
-      for (const sname of wantShots) {
+      for (const sname of takeShots) {
         const shot = SHOTS[sname];
         if (!shot) continue;
         try {
@@ -244,6 +301,9 @@ async function main() {
         try {
           await page.screenshot({ path: file, type: 'png', timeout: 420000 });
           shots[sname] = file;
+          // Stamp the manifest per shot rather than once at the end: a run that dies
+          // on shot four should still let the next round carry shots one to three.
+          recordShot(pname, sname, file, argv.tag || null);
         } catch (e) { logs.push(`screenshot ${sname}: ${e.message}`); }
       }
     } else {
@@ -345,7 +405,10 @@ async function main() {
       }
     }
 
-    report.profiles[pname] = { booted, stats, histograms, errors: logs.slice(0, 40), shots };
+    report.profiles[pname] = {
+      booted, stats, histograms, errors: logs.slice(0, 40), shots,
+      carriedForward: Object.keys(carried),
+    };
     console.log(`[${pname}] booted=${booted}`, stats ? JSON.stringify(stats) : '(no stats)');
     if (logs.length) console.log(`[${pname}] ${logs.length} console problems; first: ${logs[0]}`);
 

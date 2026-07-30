@@ -130,6 +130,14 @@ is your file."* So your `owner` field must name **exactly one file path** that e
 your `problem` and `fix` fields must be complete enough to act on without any surrounding
 context — assume the owner sees nothing but your JSON entry and their own source.
 
+`tools/dispatch.mjs` now reads this file to decide which agents get spawned at all, and it
+spawns nobody for a system you did not name. So `owner` must be a real path from the
+ownership table in ARCHITECTURE §8 — repo-relative, e.g. `src/render/PostFX.js`. A path
+that does not resolve is printed under **UNROUTED** for a human to place by hand; it is
+never dropped, but it does stall that finding for a round. If you genuinely cannot tell
+which system owns a symptom, say so in `problem` and name your best guess anyway — a
+misroute gets bounced back in minutes, and that is much cheaper than a blank.
+
 Keep `hypothesis` separate and keep labelling it. That rule earned its place: across three
 rounds your symptom calls have been reliable and your mechanism guesses have not, and the
 labelling is what lets an owner disprove one in minutes instead of rebuilding around it.

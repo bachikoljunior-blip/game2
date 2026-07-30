@@ -93,6 +93,9 @@ the next drift is named immediately.
 - The `wide` framing is the last shot under the highlight gate (p99.9 = 225 against 235).
 - Round-4 review was stopped before its verdict; `shots/review-r*.json` holds the earlier ones.
 
+To run the next round, see [`ROUND.md`](./ROUND.md) — it is self-contained, and it gates
+the repair fan-out on what the critic actually found rather than spawning every owner.
+
 ## Performance
 
 The pass/fail line is **60 fps on a mid-range Android at the MEDIUM tier**. The engine
