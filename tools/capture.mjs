@@ -424,8 +424,25 @@ async function main() {
   await browser.close();
   server.close();
   releaseLock();
-  writeFileSync(join(OUT, `report${tag}.json`), JSON.stringify(report, null, 2));
-  console.log(`\nwrote ${OUT}/report${tag}.json`);
+  // Merge into any existing report for this tag rather than replacing it. A run scoped to
+  // one profile — `--profile=desktop` to retry a frame that timed out — otherwise silently
+  // deletes the other profile's whole record, stats and histograms included. That happened
+  // in round 5: a desktop-only retry erased the phone baseline the round was measured
+  // against, and it was only noticed because the comparison had already been read once.
+  // The `at` stamp is taken from this run, so a merged file dates from its newest write.
+  const reportFile = join(OUT, `report${tag}.json`);
+  let merged = report;
+  if (existsSync(reportFile)) {
+    try {
+      const prev = JSON.parse(readFileSync(reportFile, 'utf8'));
+      merged = { ...prev, ...report, profiles: { ...(prev.profiles || {}), ...report.profiles } };
+    } catch {
+      // An unreadable previous report is not a reason to lose this run's numbers.
+    }
+  }
+  writeFileSync(reportFile, JSON.stringify(merged, null, 2));
+  const kept = Object.keys(merged.profiles).filter((p) => !(p in report.profiles));
+  console.log(`\nwrote ${reportFile}${kept.length ? ` (carried ${kept.join(', ')} from the previous run)` : ''}`);
 
   const anyFailed = Object.values(report.profiles).some((p) => !p.booted);
   process.exit(anyFailed ? 1 : 0);
