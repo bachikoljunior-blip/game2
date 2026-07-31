@@ -144,6 +144,10 @@ const AZIMUTH_OFFSET = WORLD.SUN_AZIMUTH_DEFAULT * DEG - solarAzimuthRaw(MAGIC_H
 const _colA = new Color();
 const _colB = new Color();
 const _colCool = new Color();
+const _colC = new Color();
+const _colD = new Color();
+const _colE = new Color();
+const _colF = new Color();
 const _irr = [0, 0, 0];
 const _skySample = { r: 0, g: 0, b: 0 };
 /** Rec.709 luminance — used to re-hue the ambient without changing its level. */
@@ -290,6 +294,8 @@ varying vec3 vKagWorldPos;
 uniform vec3  uFogColor;
 uniform vec3  uFogTopColor;
 uniform vec3  uFogSunColor;
+uniform vec3  uFogSunHaze;
+uniform vec2  uFogHaze;
 uniform vec3  uFogSunDir;
 uniform float uFogDensity;
 uniform float uFogHeightFalloff;
@@ -338,11 +344,23 @@ vec3 kagApplyFog( vec3 color, vec3 worldPos, vec3 camPos ) {
   f = clamp( f, 0.0, 1.0 ) * uFogMaxOpacity;
   if ( f <= 0.0005 ) return color;
 
+  // The bulk air is the sky's own radiance, and the sky is not one colour: the horizon
+  // brightens and warms toward the sun across *tens* of degrees, which the narrow aureole
+  // lobe below cannot carry. A single uFogColor therefore has to be wrong in every
+  // direction at once — measured on the round-8 wide frame it was R/B 0.608 against a
+  // dome whose horizon ring runs 1.01 anti-sunward to 1.96 sunward, so the far ridge came
+  // out at R-B -23 against a sky at -27 and 5.9 luma *brighter* than it: a pale cut-out.
+  // uFogSunHaze is the same dome sampled on the sun's azimuth and uFogHaze.x is fitted
+  // per frame so this interpolation passes through the dome's own 90-degree value.
+  float csFull = dot( rd, uFogSunDir );
+  float az = clamp( pow( csFull * 0.5 + 0.5, uFogHaze.x ) * uFogHaze.y, 0.0, 1.0 );
+  vec3 horizonCol = mix( uFogColor, uFogSunHaze, az );
+
   // Looking up we see the clean upper air; looking along the ground we see the valley.
-  vec3 fogCol = mix( uFogColor, uFogTopColor, smoothstep( 0.02, 0.55, rd.y ) );
+  vec3 fogCol = mix( horizonCol, uFogTopColor, smoothstep( 0.02, 0.55, rd.y ) );
 
   // In-scattering: Henyey-Greenstein-ish forward lobe toward the sun.
-  float cs = max( dot( rd, uFogSunDir ), 0.0 );
+  float cs = max( csFull, 0.0 );
   float mie = pow( cs, uFogSunPower );
   fogCol = mix( fogCol, uFogSunColor, clamp( mie * uFogSunStrength, 0.0, 1.0 ) );
 
@@ -812,6 +830,14 @@ export class SkySystem {
       color: new Color(0xa9a8ad),
       topColor: new Color(0x7d97bd),
       sunColor: new Color(0xff9b52),
+      /**
+       * The horizon ring on the sun's own azimuth, and the (power, strength) that carry
+       * the air from `color` to it across azimuth. Both are derived from the dome every
+       * time the grade moves — see `_applyGrade` — never authored.
+       */
+      sunHaze: new Color(0x97a6bd),
+      hazePower: 1.85,
+      hazeStrength: 1.0,
       density: 0.0088,
       heightFalloff: 26,
       // ARCHITECTURE §9: world Y is absolute metres above sea level. The mist deck sits
@@ -837,6 +863,8 @@ export class SkySystem {
       uFogColor: { value: new Color(0xa9a8ad) },
       uFogTopColor: { value: new Color(0x7d97bd) },
       uFogSunColor: { value: new Color(0xff9b52) },
+      uFogSunHaze: { value: new Color(0x97a6bd) },
+      uFogHaze: { value: new Vector2(1.85, 1.0) },
       uFogSunDir: { value: new Vector3(0, 0.2, -1) },
       uFogDensity: { value: 0.0088 },
       uFogHeightFalloff: { value: 26 },
@@ -1207,10 +1235,32 @@ export class SkySystem {
 
     // --- fog -----------------------------------------------------------------
     const fp = this.fogParams;
-    fp.color.copy(g.fogColor);
-    fp.topColor.copy(g.fogTop);
     fp.sunColor.copy(g.fogSun);
     fp.density = g.fogDensity;
+    // Aerial perspective is whatever the dome renders behind it, so take it from the dome
+    // rather than from three authored constants beside it. `kagApplyFog` runs immediately
+    // before <tonemapping_fragment>, which is exactly where the dome's own fragment sits,
+    // so `_evalSky(..., raw = false)` is the value a fully-fogged surface has to converge
+    // on: at f = 1 the surface becomes the sky it is silhouetted against, by construction.
+    // Measured on round 8's `wide`, the authored pair could not do that in any direction —
+    // horizon R/B 0.608 against the dome's 1.01 (anti-sun) .. 1.96 (sunward), which is why
+    // the far ridge read R-B -23 against a sky at -27 while sitting 5.9 luma *above* it,
+    // and why the establishing frame came out a cold neutral at whole-frame R-B -0.9.
+    // Below the ridge line the ladder's authored night fog takes over: the dome's radiance
+    // there is ~1% of magic hour's, which would take the valley mist to black.
+    const airW = smoothstep(-0.02, 0.10, sunY);
+    fp.color.copy(g.fogColor).lerp(this._airColor(_colC, 1, Math.PI), airW);
+    fp.topColor.copy(g.fogTop).lerp(this._airColor(_colD, 33, null), airW);
+    fp.sunHaze.copy(g.fogColor).lerp(this._airColor(_colE, 1, 0), airW);
+    // Fit the azimuthal blend to the dome's own 90-degree horizon instead of picking a
+    // falloff: solve pow(0.5, p) = t, where t is where that sample sits between the two
+    // ends. Luminance, because the two ends differ in level as well as in hue.
+    this._airColor(_colF, 1, Math.PI * 0.5);
+    const lAnti = lum(_colC), lSun = lum(_colE), lSide = lum(_colF);
+    const t = clamp((lSide - lAnti) / (lSun - lAnti || 1e-6), 0.03, 0.97);
+    const hazeP = clamp(Math.log(t) / Math.LN2 * -1, 0.5, 6);
+    fp.hazePower = Number.isFinite(hazeP) ? hazeP : 1.85;
+    fp.hazeStrength = 1.0;
     // The in-scattering lobe. At magic hour the old curve gave power 10.3 / strength 0.671,
     // which puts the fog colour 57% of the way to #ff9b52 ten degrees off the sun and still
     // 23% of the way there at thirty — i.e. a warm wash over essentially the whole `sun`
@@ -1229,6 +1279,8 @@ export class SkySystem {
     fu.uFogColor.value.copy(fp.color);
     fu.uFogTopColor.value.copy(fp.topColor);
     fu.uFogSunColor.value.copy(fp.sunColor);
+    fu.uFogSunHaze.value.copy(fp.sunHaze);
+    fu.uFogHaze.value.set(fp.hazePower, fp.hazeStrength);
     fu.uFogSunDir.value.copy(this.sunDirection);
     fu.uFogDensity.value = fp.density;
     fu.uFogHeightFalloff.value = fp.heightFalloff;
@@ -1347,6 +1399,38 @@ export class SkySystem {
     return out;
   }
 
+  /**
+   * The dome's own radiance on a ring of constant elevation, in the state the dome
+   * fragment leaves it (display scale and knee applied, no tone mapping) — i.e. the
+   * colour `kagApplyFog` has to converge on.
+   *
+   * `azOffset` is measured from the sun's azimuth: 0 sunward, PI anti-sunward, `null`
+   * for the azimuthal mean. Nothing non-finite may leave here (ARCHITECTURE §5b) — a
+   * NaN in a fog uniform paints every fogged material in the frame, which is most of
+   * them, and three uploads it without complaint.
+   */
+  _airColor(out, elevDeg, azOffset) {
+    const s = this.sunDirection;
+    let hx = s.x, hz = s.z;
+    const hl = Math.hypot(hx, hz);
+    if (hl > 1e-5) { hx /= hl; hz /= hl; } else { hx = 0; hz = -1; }
+
+    const e = elevDeg * DEG;
+    const se = Math.sin(e), ce = Math.cos(e);
+    const n = azOffset === null ? 24 : 1;
+    let r = 0, g = 0, b = 0;
+    for (let i = 0; i < n; i++) {
+      const ang = azOffset === null ? (i * 2 * Math.PI / n) : azOffset;
+      const ca = Math.cos(ang), sa = Math.sin(ang);
+      this._evalSky((ca * hx - sa * hz) * ce, se, (ca * hz + sa * hx) * ce, _skySample);
+      r += _skySample.r; g += _skySample.g; b += _skySample.b;
+    }
+    r /= n; g /= n; b /= n;
+    if (!Number.isFinite(r + g + b)) return out.setRGB(0.3, 0.3, 0.3);
+    out.setRGB(Math.max(r, 0), Math.max(g, 0), Math.max(b, 0));
+    return out;
+  }
+
   /** Atmospheric extinction along the ray to the sun, normalised to a Color. */
   _sunTransmittance(out) {
     const sunY = clamp(this.sunDirection.y, -1, 1);
@@ -1410,8 +1494,8 @@ export class SkySystem {
         }
         shader.fragmentShader = fs;
       }
-    }, 'kagfog1');
-    chainCacheKey(material, 'kagfog1');
+    }, 'kagfog2');
+    chainCacheKey(material, 'kagfog2');
     material.needsUpdate = true;
     return material;
   }
