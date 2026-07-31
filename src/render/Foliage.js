@@ -1191,6 +1191,145 @@ function feather(canvas, { inner = 0.46, power = 1.35, keepBottom = false } = {}
 }
 
 /**
+ * Morphological CLOSE on the alpha channel: dilate by `r`, then erode by `r`.
+ *
+ * This is aimed at exactly one failure, and it is the one the review keeps photographing
+ * above the canopy line: a cutout sheet whose content is *nearly* connected breaks into
+ * detached specks when it is minified. A blade tip joined to the leaf mass by a two-texel
+ * stem is one object at mip 0 and two objects at mip 3, because the stem's coverage
+ * averages below `alphaTest` two levels before the tip's does. What reaches the frame is a
+ * mass with a scatter of unattached fragments hanging over it — measured on
+ * `phone-valley-r8`, the flagged dashes sit a median 6 px from the solid canopy mass
+ * (p90 18 px), i.e. in the fringe zone rather than in open sky.
+ *
+ * A close is the right operator because it is *silhouette-preserving by construction*:
+ * dilate-then-erode can only fill gaps narrower than 2r and can never push the outer
+ * boundary of a region outward at all. It costs nothing at runtime — this runs once, at
+ * boot, on the canvas. It does not touch RGB, so `dilateAlpha` still has the same work to
+ * do afterwards and the cutout's colour behaviour is unchanged.
+ *
+ * `r` must stay well under any deliberate dead space in the sheet: `PLANT_UV` leaves 0.106
+ * of the sheet width (27 texels at px = 256) between the bark strip and the leaf spray, and
+ * `paintBambooClump`'s side ramp leaves 14% of a cell width (18 texels) at every atlas seam.
+ * At r = 2 neither can be bridged.
+ */
+function closeAlpha(canvas, r = 2) {
+  if (r < 1) return canvas;
+  const g = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const img = g.getImageData(0, 0, w, h);
+  const d = img.data;
+  const a = new Uint8Array(w * h);
+  const t = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) a[i] = d[i * 4 + 3];
+  const sweep = (src, dst, pick) => {
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        let v = src[y * w + x];
+        for (let o = -r; o <= r; o++) {
+          const xx = x + o < 0 ? 0 : x + o >= w ? w - 1 : x + o;
+          v = pick(v, src[y * w + xx]);
+        }
+        dst[y * w + x] = v;
+      }
+    }
+    for (let x = 0; x < w; x++) {
+      for (let y = 0; y < h; y++) {
+        let v = dst[y * w + x];
+        for (let o = -r; o <= r; o++) {
+          const yy = y + o < 0 ? 0 : y + o >= h ? h - 1 : y + o;
+          v = pick(v, dst[yy * w + x]);
+        }
+        src[y * w + x] = v;
+      }
+    }
+  };
+  const mx = (p, q) => (q > p ? q : p);
+  const mn = (p, q) => (q < p ? q : p);
+  sweep(a, t, mx);   // dilate — result lands back in `a`
+  sweep(a, t, mn);   // erode
+  for (let i = 0; i < w * h; i++) d[i * 4 + 3] = a[i];
+  g.putImageData(img, 0, 0);
+  return canvas;
+}
+
+/**
+ * An *organic* alpha boundary, for the one card whose silhouette is read directly.
+ *
+ * `feather()` is the right tool for a card that only ever appears inside a mass: its
+ * cut contour is `box * 0.55 + rad * 0.45`, and that box term is deliberate — it kills
+ * the corners fastest. But the contour it leaves is a rounded rectangle. Solved
+ * numerically on the blossom card's own parameters (inner 0.50, power 1.05, floret alpha
+ * 0.95 against alphaTest 0.36) that contour holds |ny| constant to within 0.01 over 22.3%
+ * of the card width, at |ny| = 0.769 — a flat top edge nearly a quarter of the card wide,
+ * and the same on all four sides. Its radius varies only 16.1% between the flats and the
+ * corners, and it carries no concavity deeper than 15% of its own maximum anywhere. The
+ * sacred tree's crown is built from these cards, so its outermost ones contribute straight
+ * horizontal and vertical segments to the tree's silhouette and nothing else: exactly the
+ * "visible rectangular card boundaries" note, and half of why the crown reads as one
+ * convex blob.
+ *
+ * The replacement measures, on the same solver and the same `makeRandom`: longest straight
+ * run 10.0% of the card width against 22.3%, radius 0.447 to 0.940 — a 52.4% depth against
+ * feather's 16.1% — and THREE concavities reaching below 70% of the maximum radius, against
+ * feather's none. Three is the review's own number for what the crown's silhouette has to
+ * show. The bites are narrow on purpose: the enclosed area is 89.3% of feather's, so the
+ * crown buys those notches for 11% of its cover rather than by being thinned out.
+ *
+ * `base` and `biteDepth` are not free. `paintBlossom` caps its twig armature at 0.37 in
+ * these units precisely because the minimum radius here is 0.447; move either and re-check
+ * that margin, or the twigs come back out through the silhouette.
+ *
+ * So the blossom card gets a boundary authored as a function of angle instead: three
+ * lobes with two harmonics on top, and a small number of deep *bites* that take the
+ * radius well inside the painted content. The bites are the point — they are what puts
+ * concavities (sky gaps) into the silhouette of a crown built from these cards, rather
+ * than another convex blob. `rMax` is capped below 1 so the alpha still reaches zero
+ * before the quad border and the card can never show its own rectangle.
+ */
+function lobeMask(canvas, {
+  lobes = 3, base = 0.86, amp = 0.12, softness = 0.30,
+  bites = 3, biteDepth = 0.34, biteWidth = 0.34, rMax = 0.94, seed = 0x51A7,
+} = {}) {
+  const rnd = makeRandom(seed);
+  const p1 = rnd() * Math.PI * 2, p2 = rnd() * Math.PI * 2, p3 = rnd() * Math.PI * 2;
+  const biteAt = [];
+  for (let i = 0; i < bites; i++) biteAt.push(((i + rnd() * 0.7) / bites) * Math.PI * 2);
+  // Exported so the outline can be measured without rasterising a canvas.
+  const radiusAt = (th) => {
+    let r = base * (1
+      + amp * Math.cos(lobes * th + p1)
+      + amp * 0.55 * Math.cos((lobes + 2) * th + p2)
+      + amp * 0.35 * Math.cos((lobes * 2 + 1) * th + p3));
+    for (let i = 0; i < biteAt.length; i++) {
+      let dth = th - biteAt[i];
+      dth = Math.atan2(Math.sin(dth), Math.cos(dth));
+      r -= base * biteDepth * Math.exp(-(dth * dth) / (biteWidth * biteWidth));
+    }
+    return Math.min(r, rMax);
+  };
+  lobeMask.lastRadiusAt = radiusAt;
+
+  const g = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const img = g.getImageData(0, 0, w, h);
+  const d = img.data;
+  for (let y = 0; y < h; y++) {
+    const ny = ((y + 0.5) / h) * 2 - 1;
+    for (let x = 0; x < w; x++) {
+      const nx = ((x + 0.5) / w) * 2 - 1;
+      const rad = Math.hypot(nx, ny);
+      const R = radiusAt(Math.atan2(ny, nx));
+      const a = 1 - smoothstep(R * (1 - softness), R, rad);
+      const i = (y * w + x) * 4 + 3;
+      d[i] = d[i] * a;
+    }
+  }
+  g.putImageData(img, 0, 0);
+  return canvas;
+}
+
+/**
  * Bleed the nearest opaque colour outward into every transparent texel.
  *
  * This is the fix for "isolated dark sprites in the sky" and "black speckles inside the
@@ -1848,15 +1987,30 @@ function paintBlossom(size) {
   const cx = size * 0.5, cy = size * 0.5;
 
   // Twig armature first, so blossom sits on it rather than floating in front of it.
-  g.strokeStyle = 'rgba(78,60,52,0.8)';
+  //
+  // Confined to the core, and that is the whole point. These used to run to 0.40 of the
+  // canvas — 0.80 in the half-card units `lobeMask` works in — against an alpha cut that
+  // sits between 0.418 and 0.897, so on every card the outer third of a twig was drawn
+  // *at or past* the blossom's own outline: a hard, straight, unlit dark line leaving the
+  // pink mass at a random angle, times six per card, times every card in the crown. That
+  // is the review's "hard straight dark spikes radiating out of the blossom mass ... which
+  // at a glance reads as pine needles stuck into a pink cloud", and it is authored here
+  // rather than in the tree's branch mesh.
+  //
+  // Origin offset 0.03 and reach 0.155 put the far end of the longest twig at 0.37 in
+  // half-card units, strictly inside the 0.447 minimum of the mask — so no twig texel can
+  // reach the silhouette from any direction, at any bite angle. The armature still reads:
+  // it is what the florets are hung on, and it is visible *through* the mass, which is the
+  // "branch structure reading through" the review asks for.
+  g.strokeStyle = 'rgba(78,60,52,0.72)';
   g.lineCap = 'round';
   for (let i = 0; i < 6; i++) {
     const a = (i / 6) * Math.PI * 2 + rnd() * 0.7;
     g.lineWidth = Math.max(1, size * (0.013 - i * 0.0012));
     g.beginPath();
-    g.moveTo(cx, cy + size * 0.06);
-    g.quadraticCurveTo(cx + Math.cos(a) * size * 0.18, cy + Math.sin(a) * size * 0.18,
-      cx + Math.cos(a) * size * 0.40, cy + Math.sin(a) * size * 0.40);
+    g.moveTo(cx, cy + size * 0.03);
+    g.quadraticCurveTo(cx + Math.cos(a) * size * 0.08, cy + Math.sin(a) * size * 0.08,
+      cx + Math.cos(a) * size * 0.155, cy + Math.sin(a) * size * 0.155);
     g.stroke();
   }
 
@@ -1874,13 +2028,27 @@ function paintBlossom(size) {
   // smoothly outward and the silhouette dissolves into individual flowers at the rim.
   // That falloff *is* the cluster's internal structure — the previous card had nine
   // scattered blobs and then a feather pass cutting a ragged hole out of the result.
+  //
+  // Three sub-clumps rather than one radial mass. A single radially-graded disc of florets
+  // has a convex outline by construction, and a crown built out of convex cards is the
+  // "pink cauliflower" — no amount of card count adds a concavity that none of the cards
+  // has. Hanging the florets off three centres puts real gaps between the lobes, so the
+  // card's own silhouette has notches in it and a crown of them can show sky between
+  // clumps. It is also what a cherry actually does: blossom comes in bunches on spurs.
+  const clumps = [];
+  for (let i = 0; i < 3; i++) {
+    const ca = ((i + rnd() * 0.55) / 3) * Math.PI * 2;
+    const cr = size * (0.10 + rnd() * 0.06);
+    clumps.push([cx + Math.cos(ca) * cr, cy + Math.sin(ca) * cr]);
+  }
   const florets = 72;
   for (let f = 0; f < florets; f++) {
-    const t = Math.pow(rnd(), 0.70);              // 0 at the core, 1 at the rim
+    const t = Math.pow(rnd(), 0.70);              // 0 at the clump core, 1 at its rim
     const a = rnd() * Math.PI * 2;
-    const rad = t * size * 0.40;
-    const px = cx + Math.cos(a) * rad;
-    const py = cy + Math.sin(a) * rad;
+    const rad = t * size * 0.215;
+    const home = clumps[(rnd() * clumps.length) | 0];
+    const px = home[0] + Math.cos(a) * rad;
+    const py = home[1] + Math.sin(a) * rad;
     // Radius spread widened from 1.9:1 to 3.4:1, with a heavy tail toward the small end.
     // 72 rosettes cut to within 20% of one radius is what the review measured as "one
     // repeating ~12 px pink circle motif ... bubble wrap": a repeated motif reads as a
@@ -2636,15 +2804,24 @@ export class FoliageSystem {
       clump: T(D(feather(paintGrassClump(px, palette), rooted))),
       // Culm bark and leaf spray on ONE sheet, because the near plant is one mesh — see
       // buildBambooPlantGeometry for why that is not negotiable.
-      bambooPlant: T(D(paintBambooPlant(px))),
+      // `closeAlpha` before `dilateAlpha`, on both bamboo sheets and on nothing else:
+      // these two are the only cutouts in the build that are read at 100-300 m, where the
+      // mip footprint is wide enough to disconnect a blade from the spray holding it. See
+      // closeAlpha for the measurement of where the review's floating dashes actually sit.
+      bambooPlant: T(D(closeAlpha(paintBambooPlant(px), 2))),
       // The mid-ground impostor: four archetypes in 2x2, each painted in a 1:2 frame so a
       // 12 m culm never has to stretch a square texture. Its own feathering is per cell
       // and side-only, so `feather()` must not run over the whole atlas.
-      bambooCard: T(D(paintBambooCard(px >> 1, px))),
+      bambooCard: T(D(closeAlpha(paintBambooCard(px >> 1, px), 2))),
       // The blossom card is also alpha-softened: it is the one sheet drawn as filled
       // beziers rather than strokes, so it is the one whose alpha steps 0 -> 250 across a
       // single texel at every petal edge.
-      blossom: T(D(softenAlpha(feather(paintBlossom(px), { inner: 0.50, power: 1.05 }), 1))),
+      // NOT `feather()`. Its cut contour is `box * 0.55 + rad * 0.45`, which on this card's
+      // own parameters holds the top edge flat to within 0.01 for 22.3% of the card width —
+      // a straight horizontal segment contributed to the sacred tree's silhouette by every
+      // outermost card in the crown, i.e. the "visible rectangular card boundaries" note.
+      // `lobeMask` replaces it with an angular outline that is concave in three places.
+      blossom: T(D(softenAlpha(lobeMask(paintBlossom(px)), 1))),
       momiji: T(D(softenAlpha(feather(paintMomiji(px), { inner: 0.40, power: 1.4 }), 1))),
       cedar: T(D(feather(paintCedarSpray(px), { inner: 0.42, power: 1.3 }))),
       // Four shrub silhouettes, 2x2. A hillside carrying one repeated stamp reads as a
