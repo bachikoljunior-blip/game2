@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-31T22:03:35Z",
+  "updatedAt": "2026-07-31T22:32:22Z",
   "nodes": [
     {
       "id": "PROJECT",
       "title": "Bring KAGEROU to its established completion bar",
       "parent": null,
-      "children": ["FOUNDATION", "ROUNDS10_12", "RELEASE", "NEXT", "ROUNDS13_14", "RELEASE13_14"],
+      "children": ["FOUNDATION", "ROUNDS10_12", "RELEASE", "NEXT", "ROUNDS13_14", "RELEASE13_14", "NEXT15"],
       "dependencies": [],
       "status": "active",
       "priority": 100,
-      "reason": "The latest user objective is exactly two additional rounds, 13 and 14, followed by remote integration and publication."
+      "reason": "The exact Rounds 13–14 objective and publication are complete; the overall visual bar remains open but no further product round is authorized."
     },
     {
       "id": "FOUNDATION",
@@ -167,7 +167,7 @@
       "parent": "PROJECT",
       "children": ["REMOTE-PUBLISH-2"],
       "dependencies": ["R14-ROUND"],
-      "status": "active",
+      "status": "verified",
       "priority": 90
     },
     {
@@ -176,9 +176,20 @@
       "parent": "RELEASE13_14",
       "children": [],
       "dependencies": ["R14-ROUND"],
-      "status": "active",
+      "status": "verified",
       "priority": 90,
-      "criteria": ["REMOTE-002"]
+      "criteria": ["REMOTE-002"],
+      "reason": "PR #6 merged at 4a3eff7 and the public browser loaded current index-D_EFhYS4.js with ready/running true and zero recorded errors."
+    },
+    {
+      "id": "NEXT15",
+      "title": "Future Round 15 or other product work",
+      "parent": "PROJECT",
+      "children": [],
+      "dependencies": ["REMOTE-PUBLISH-2"],
+      "status": "deferred",
+      "priority": 0,
+      "reason": "Rounds 13 and 14 are complete. Await a new user instruction rather than inferring Round 15 from the active logical session."
     }
   ]
 }

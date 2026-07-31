@@ -13,7 +13,8 @@ Play the verified production build on
 [GitHub Pages](https://bachikoljunior-blip.github.io/game2/). The checked-in Pages artifact
 contains the measured Rounds 13–14 checkpoint; this is a runnable incremental checkpoint,
 not a claim that the overall visual gate passes. Remote and browser verification state is
-recorded in `AI_DEVELOPMENT/PROJECT_STATE.yaml`.
+recorded in `AI_DEVELOPMENT/PROJECT_STATE.yaml`; payload merge `4a3eff7` loaded current
+`index-D_EFhYS4.js` with ready/running true and zero recorded browser/network errors.
 
 ```bash
 npm install
