@@ -6,22 +6,46 @@ session needs to continue has to be in the repo. Read this, then `README.md`
 ("Where this build actually stands") for the current measured numbers, then
 `tools/CRITIC.md` for the standing bar.
 
-Update this file at the end of every round. It is the only thing that carries state.
+Update this file after every meaningful art-round iteration. It is the only detailed
+art-direction state record; project-wide session, plan and criterion pointers live under
+`AI_DEVELOPMENT/` and must not duplicate the measurements below.
 
 ---
 
 ## Where the work is
 
-- Branch: **`main`**. Commit and push there unless a human names something else.
+- Logical session: **active** (`2026-07-31-game2-continuation`). It ends only when the user
+  explicitly says so.
+- Working branch: **`codex/persistent-protocol-round10`**, created from
+  `origin/claude/kagerou-round9-measurement-inj5qq` at **`6c4c093`**. Persistent
+  cross-session authorization is active to push verified checkpoints, integrate them into
+  `main`, and publish GitHub Pages without asking again. Paid, destructive, credential, and
+  account actions remain outside that authorization.
+- **Rounds 10, 11, and 12 are complete; Round 13 has not started.** The coherent `r12v1`
+  checkpoint is complete, but integrated Round 9 product acceptance is not.
+  `r9v1` proved that
+  the six Round 9 fixes did not meet their integrated predictions. Round 10 rejected the
+  shadow-erasure and toe candidates and fixed the vacuous edge verifier. Round 11 fixed the
+  lantern receiver: the hero near/far ground ratio moved **1.121 → 2.394**, one horizontal
+  additive pool now exists per lantern, and the black staircase-shaped band disappeared.
+- Round 12 passes its targeted checkpoints: hero p99.9 **236**, torii **251**, all five
+  black gates, 119 calls, 767,124 triangles, lantern A/B at **99.336%** positive / **+22.53**
+  mean luma / **2.206** tail-core coverage. The final independent five-frame review confirms
+  the staircase removal and lantern/tone gains but returns **FAIL overall**: fill, sky,
+  mountains, foliage, layout, and sun framing remain below the premium bar.
+- Exact next action: publish this honestly labelled incremental checkpoint, record the remote
+  refs and public URL, then stop without activating Round 13.
+- Verified local implementation checkpoint: **`f5962b6`**; rollback base: **`6c4c093`**.
 - Round 8 is six commits: `bc96c3c` (critique), `e9b9717` (postfx), `4a310ed` (foliage),
   `1be775a` (world), `55693b9` (sky), `26bf937` (postfx, gate repair). Round 8 was run on
   `claude/kagerou-round-8-start-jk5lox` because the session operator named that branch, and
   merged to `main` at the end. **Round 7 had to be merged by round 8's session** — it had
-  been left on its own branch, and `main` was two rounds stale. If you are handed a branch
-  name, merge it when the round closes.
+  been left on its own branch, and `main` was two rounds stale. The standing remote
+  authorization prevents that stale-default-branch failure from recurring.
 - Rounds 1–3 scored 34 → 48 → 58. Round 4 was stopped before its verdict. Rounds 5–6 were
   unscored (run as measure-fix-verify). Round 7 scored **44**, round 8 **46**.
-  **The build has not passed.**
+  Round 9's pre-fix critic scored **47**. The `r12v1` reviewer returned a qualitative overall
+  FAIL with finding-specific measurements, not a comparable numeric score; do not invent one.
 - **The 58 → 44 → 46 sequence is not a trend line.** Those scores come from different critic
   instances against a review set that has since had the HUD blanked (which removed the
   authored white ink the highlight gate used to pass on). Treat each as that round's
@@ -39,6 +63,14 @@ node tools/contact-sheet.mjs --tag=rN
 node tools/dispatch.mjs --round=N
 ```
 
+For a release-candidate set, omit `--diff`, then run:
+
+```bash
+node tools/gate-capture-report.mjs --tag=rN --profile=phone
+node tools/verify-r9.mjs --tag=rN
+node tools/verify-lantern-spill.mjs --tag=<stopped-A/B-tag>
+```
+
 Facts about the rig that have cost real time:
 
 - **Boot is ~35 s on phone/MEDIUM but ~200 s on desktop/ULTRA**, and each 1920×1080
@@ -53,7 +85,8 @@ Facts about the rig that have cost real time:
   the `hud` shot — do not reintroduce them elsewhere or you throw away 8% of the world.
 - `--diff` carries unchanged shots forward. **It reads `tools/manifest.mjs`'s last stamp**,
   so after a mid-round re-shoot under a new tag the next `--diff` carries from *that* tag.
-  Round 8 ended on tag `r8w`; a round-9 `--diff` run will diff against it.
+  This continuation is a fresh clone: ignored Round 8/9 PNGs and manifest history are absent,
+  so `r9v1` must be a full capture rather than relying on differential carry-forward.
 
 ## Judge the frames yourself, at native resolution
 
@@ -134,7 +167,8 @@ sun's UV and collects the disc as its last tap.
 ## Open items, each with the measurement that states it
 
 Ordered by what a hostile art director would hit first. Numbers are the round-8 verification
-capture (`r8w`) unless stated.
+capture (`r8w`) unless stated. Round 9 attempted several of these and added new findings;
+the current source-level predictions are not replacements for measured post-fix values.
 
 1. **There is no instanced ground cover in the basin at all.** `grassRadius` is **34 m** at
    MEDIUM; the `valley` measurement box spans **15–90 m** and `wide`'s plain sits entirely at

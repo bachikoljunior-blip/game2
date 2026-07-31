@@ -2295,6 +2295,13 @@ void kgComputeSurface(){
     // budget rather than sharing the striation's: the soft knee above exists to stop
     // the *striation* tipping a whole face into the sky term, and pushing a second
     // field through it would only trade one for the other.
+    // The 1.15-2.70 window is *not* the reason the far range is flat, whatever three
+    // rounds of notes have said. Ray-marching the 'torii' pose and taking the pixel
+    // footprint off neighbouring rays puts the median at 1.82 m on the peaks the review
+    // measures, where this evaluates to 0.60, not the 0.06 the standing note claims —
+    // 0.06 needs 2.5 m, which only the deepest tail of that range reaches. Ablating
+    // this term entirely moves the modelled relative detail in the critic's box from
+    // 0.211 to 0.203, i.e. it is worth 4%. Leave it where it is and spend elsewhere.
     float fineAmp = (1.0 - smoothstep(1.15, 2.70, kgFoot)) * mix(0.55, 1.0, amp)
                   * smoothstep(0.02, 0.30, farDetail);
     vec3 g3 = texture2D(tDetailN, vec2(along * 0.0610, across * 0.1640) + 0.67).xyz * 2.0 - 1.0;
@@ -2335,27 +2342,57 @@ void kgComputeSurface(){
     far *= 0.82 + 0.28 * (nC * 0.5 + 0.5);
     far *= 1.0 - groove * 0.38;
 
-    // Rubble and bedding, at the scale a pixel can actually see. Everything above
-    // this line works at 95 m and 320 m — 190 px and 640 px on the ridge in shot —
-    // and past ~100 m the tiled lookups have all mipped to their own mean, so once
-    // 'far' takes 88% of the albedo there is by construction nothing left in this
-    // surface finer than a fifth of the frame. These two run at ~8 m and ~3 m, which
-    // is 16 px and 6 px at 600 m, and they carry the variance a 9x9 read is looking
-    // for. Both ride the same pixel-footprint gate as the fine normal, so they leave
-    // together before either can alias.
-    // The two fixed bands this used to carry ran at 7.8 m and 2.9 m and were gated by
-    // 'kgFine' = 1 - smoothstep(1.15, 2.70, kgFoot). On the distant range one buffer
-    // pixel is 1.6–2.5 m of rock, so kgFine is about 0.06 there and both bands were
-    // off — which is the whole of why that range measured detail 1.28 against 0.69
-    // for the sky it sits against. A fixed wavelength cannot be right at 600 m and at
-    // 1.5 km at once; the locked band is right at both by construction.
-    // The coefficient looks large and is not: two octaves of fbm land an RMS near a
-    // quarter of their nominal range, so this is about ±0.4 in practice — a rock face
-    // varying by half a stop over a few pixels, which is less than a real one does.
-    // The coarse bedding stays on its own fixed scale, where it belongs.
+    // Rubble and bedding. Everything above this line works at 95 m and 320 m — 190 px
+    // and 640 px on the ridge in shot — and past ~100 m the tiled lookups have all
+    // mipped to their own mean, so once 'far' takes 88% of the albedo there is by
+    // construction nothing left in this surface finer than a fifth of the frame.
+    // The coarse bedding stays on its own fixed 7.8 m scale, where it belongs: it is
+    // 16 px at 600 m, which is the right size for the massif in 'wide' and too fine to
+    // matter at 1.5 km. Everything that has to work at *both* ranges is locked to the
+    // pixel below instead, because a fixed wavelength cannot be right at both.
     float rk1 = fbm2(P.xz * 0.128 + 61.7, 2);
     far *= 1.0 + rk1 * 0.95 * kgFine * (1.0 - veg * 0.5);
-    far *= 1.0 + kgLodBand * 1.60 * (1.0 - veg * 0.5);
+
+    // How coarse this pixel is in world terms, as a ramp rather than a gate. The
+    // 600 m ridge in 'wide' sits at 0.55-0.75 m of rock per buffer pixel and already
+    // measures detail 3.85-6.01; the 1.0-2.3 km range in 'torii' sits at 1.8 m and
+    // measured 2.02. Everything below rides this ramp, so the far range gets the extra
+    // amplitude and the mid-distance massif — which does not need it — is untouched.
+    float farRamp = smoothstep(0.80, 1.90, kgFoot);
+
+    // In-box value structure. Everything that varies at the scale of a 70x40 probe box
+    // (130 m of rock at this range) is what lumaSpread reads, and above this line the
+    // only such term is a fixed ±22% on nB. One more stop of the 160 m field, far only.
+    // Written in stops so it cannot drive the albedo negative, and debiased: for a
+    // symmetric band E[2^(g*b)] = 2^(0.3466*g^2*var) > 1, so a raw exponential gain
+    // *brightens* the range as a side effect of texturing it. Measured var over the far
+    // range is 0.0949 for nC and 0.0848 for kgLodBand.
+    // 'kgFoot' is honest about grazing ground as well as distant ground, and the two
+    // want different answers: a bare rock face at 1.5 km needs the amplitude, the
+    // cedar mantle and the valley floor seen at 2° do not — a stop of value swing on
+    // forest reads as blotching, not as relief. Hence the veg factor, which the locked
+    // band below already carries at half weight for the same reason.
+    float gN = 0.80 * farRamp * (1.0 - veg * 0.6);
+    far *= exp2(nC * gN - 0.0329 * gN * gN);
+
+    // The pixel-locked band, now in stops and with roughly twice the amplitude out
+    // where the pixel is coarse. This band supplies 59% of the far range's whole
+    // pixel-scale variance (ablation: removing it takes the modelled relative detail
+    // in the torii peak box from 0.211 to 0.087), so it is the term worth spending on.
+    float lodStops = 2.31 * (1.0 + 1.30 * farRamp) * (1.0 - veg * 0.5);
+    far *= exp2(kgLodBand * lodStops - 0.0294 * lodStops * lodStops);
+
+    // Slope aspect. A range this size has a dry sun-facing flank and a damp shaded one
+    // — sparser cover, oxidised scree and sun-bleached rock against moss, held moisture
+    // and old snow — and that is a property of the *ground*, not of the light. It has
+    // to be in the albedo because the air takes it out of the lighting: at 1.5 km the
+    // aerial term replaces 56% of the pixel with 'mix(vec3(kgLum), uSkyTint, 0.7)',
+    // which is chromatically flat by construction, so barely a third of any lit/shaded
+    // colour split survives to the eye. Keyed on the landform normal for the same
+    // reason the snow terminator is: the flank has to turn where the ridge turns.
+    float aspect = clamp(dot(kgLandN.xz, uSunDir.xz) / max(lFallW, 1e-4), -1.0, 1.0)
+                 * smoothstep(0.10, 0.42, lFallW) * farRamp;
+    far *= vec3(1.0 + aspect * 0.30, 1.0 + aspect * 0.06, 1.0 - aspect * 0.26);
 
     albedo = mix(albedo, far, wild2 * 0.88);
     rough = mix(rough, mix(0.88, 0.96, veg), wild2 * 0.8);
@@ -2485,7 +2522,12 @@ void kgComputeSurface(){
       // the locked band is four pixels wide wherever the sheet is seen from.
       float grit = kgLodBand * 0.5 + 0.5;
       float s3 = fbm2(P.xz * 0.0630 + 13.9, 2);
-      float through = clamp(0.30 + 0.44 * bare + 0.34 * grit, 0.0, 1.0);
+      // Same mean coverage, twice the range. 0.30 + 0.44*bare + 0.34*grit spans
+      // 0.30-1.00 about a mean of 0.69: the sheet is never thin enough for the rock to
+      // read through it, and 'rock standing through snow' is the whole reason this term
+      // exists. 0.14/0.58/0.56 keeps the mean at 0.71 and spans 0.14-1.00, so the bare
+      // patches are bare and the buried ones are buried.
+      float through = clamp(0.14 + 0.58 * bare + 0.56 * grit, 0.0, 1.0);
       // Interior only. Near the rim 'blanket' is small and the sheet stays smooth, so
       // the boundary keeps the width the coarse mask gave it; the fine bands come up
       // as the field deepens. Letting them reach the rim would re-sharpen the edge
@@ -2505,7 +2547,13 @@ void kgComputeSurface(){
       vec3 snowCol = mix(vec3(0.244, 0.338, 0.508), vec3(0.902, 0.922, 0.962), sunF);
       // Drift shading. Wind-packed crests catch the light, the troughs between them
       // stay blue; this and the partial coverage are the interior variance.
-      snowCol *= 0.80 + 0.26 * (s2 * 0.5 + 0.5) + 0.14 * (s3 * 0.5 + 0.5);
+      // The snow interior had nothing in it finer than s3's 16 m — 9 px at the range
+      // the range is seen from — at ±3.5%, so a sampled patch of sheet came back as a
+      // flat fill however much structure the rock under it had. 'kgLodBand' is the one
+      // band that is the right size wherever the sheet is seen from; wind-packed snow
+      // varies by more than this over a few metres.
+      snowCol *= 0.80 + 0.26 * (s2 * 0.5 + 0.5) + 0.14 * (s3 * 0.5 + 0.5)
+               + 0.34 * kgLodBand;
       albedo = mix(albedo, snowCol, sheet * 0.95);
       rough = mix(rough, mix(0.74, 0.38, sheet), sheet * 0.85);
       kgSnowCover = sheet;
@@ -2534,7 +2582,8 @@ void kgComputeSurface(){
       // albedo of a lambert lobe could only ever move it by tenths.
       kgSnowLit = sheet * sunF * (0.55 + 0.45 * clamp(sunL, 0.0, 1.0)) * 2.55
                 * clamp(0.72 + 0.56 * (s2 * 0.5 + 0.5)
-                        - 0.34 * grit - 0.16 * bare * fine, 0.10, 1.55);
+                        - 0.34 * grit - 0.16 * bare * fine
+                        + 0.75 * kgLodBand * fine, 0.10, 1.55);
     }
   }
 

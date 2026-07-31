@@ -7,6 +7,11 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 5173",
     "build": "vite build",
+    "validate:project": "node tools/validate-project-state.mjs",
+    "check": "npm run validate:project && npm run build",
+    "gate:capture": "node tools/gate-capture-report.mjs",
+    "verify:r9": "node tools/verify-r9.mjs",
+    "verify:lantern-spill": "node tools/verify-lantern-spill.mjs",
     "preview": "vite preview --host 0.0.0.0 --port 4173",
     "capture": "node tools/capture.mjs",
     "shots": "vite build && node tools/capture.mjs",

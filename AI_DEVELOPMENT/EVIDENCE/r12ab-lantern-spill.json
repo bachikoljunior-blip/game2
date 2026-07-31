@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "criterion": "R9-LANTERN-SPILL-001",
+  "tag": "r12ab",
+  "generatedAt": "2026-07-31T15:18:52.924Z",
+  "revision": {
+    "sha": "6c4c0933240684ccb25907425d7507826edcc3fa",
+    "branch": "codex/persistent-protocol-round10",
+    "dirty": true
+  },
+  "build": {
+    "fingerprint": "2ed3080cb67cb25e2962dd03dbf01ca68c34ffa0896c8c233c2276f8d224030f"
+  },
+  "command": "node tools/verify-lantern-spill.mjs --tag=r12ab",
+  "sourcePair": {
+    "on": "/workspace/scratch/14d1fa52e227/game2/shots/phone-hero-r12ab.png",
+    "off": "/workspace/scratch/14d1fa52e227/game2/shots/phone-hero-r12ab-without-lantern-pool-__glowPool.png"
+  },
+  "checks": [
+    {
+      "id": "instance-surface-contract",
+      "pass": true,
+      "metrics": {
+        "count": 24,
+        "matchesLanternCount": true,
+        "minTerrainClearance": 0.012,
+        "maxTerrainClearance": 0.1598,
+        "maxTilt": 0,
+        "localNormalY": 1,
+        "blending": 2,
+        "opacity": 0.38,
+        "depthWrite": false
+      },
+      "expected": "One upward-facing, horizontal additive pool per lantern, 10-180 mm above terrain/slab reference."
+    },
+    {
+      "id": "visible-warm-receiver-contribution",
+      "pass": true,
+      "metrics": {
+        "deltaThreshold": 4,
+        "strongDeltaThreshold": 32,
+        "changedPixels": 125205,
+        "changedCoverage": 0.04226,
+        "strongPixels": 56769,
+        "strongCoverage": 0.01916,
+        "tailToCoreCoverage": 2.206,
+        "positiveShare": 0.99336,
+        "negativeShare": 0.00664,
+        "meanLumaDelta": 22.53,
+        "onOffLumaRatio": 1.632,
+        "meanDeltaRGB": [
+          38.44,
+          19.18,
+          8.83
+        ],
+        "changedBounds": {
+          "minX": 241,
+          "minY": 723,
+          "maxX": 2531,
+          "maxY": 1169,
+          "minYRatio": 0.618
+        }
+      },
+      "expected": "The stopped-frame A/B adds a warm lower-frame pool with a measurable core and broad soft tail, without a dark card or unrelated upper-frame change."
+    }
+  ],
+  "pass": true,
+  "limitation": "This verifies the baked ground receiver only. R9-LANTERN-001 still separately requires post illumination and a readable 1-2 m falloff."
+}

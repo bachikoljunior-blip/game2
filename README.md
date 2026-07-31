@@ -62,22 +62,27 @@ sample four times.
 > Picking the work up in a new session? [`HANDOFF.md`](./HANDOFF.md) carries the state
 > the container does not — `shots/` is gitignored and the review images do not survive.
 
-Measured, not asserted. Eight review rounds against a Ghost of Tsushima / SEKIRO bar.
-**It has not passed** — round 8 filed FAIL at 46/100 with 4 blockers. Everything below is a
-number off the round-8 verification capture (`npm run review -- --tag=r8w`), not a judgement.
+Measured, not asserted. The coherent phone/MEDIUM `r12v1` checkpoint is captured and gated.
+Round 10 hardened the evidence and rejected harmful shadow/tone candidates; Round 11/12 made
+the stone-lantern receiver visible, additive, and softly varied. Its fixed hero near/far
+ground ratio moved **1.121 → 2.394**, and an independent source-blind lantern review passed.
+The final five-frame source-blind review still returns **FAIL overall** on fill, sky,
+mountains, foliage, authored layout, and sun framing; valley verification is also blocked by
+stale camera-era probes. Rounds 10–12 are complete, and Round 13 has not started. See
+`HANDOFF.md` and `AI_DEVELOPMENT/EVIDENCE/r12-final.md` for the exact checkpoint.
 
 > The 58 (round 3) → 44 (round 7) → 46 (round 8) scores are **not** a single trend line:
 > they come from different critic instances, and the review set has since had the HUD
 > blanked, which removed the authored white ink the highlight gate used to pass on.
 
-**Verified good**
+**Latest coherent measured checkpoint (`r12v1`; not a full visual PASS)**
 
 | | measured |
 |---|---|
-| phone draw calls | **118** worst pose (`torii`), against the 140 cap |
-| phone triangles | **746,508** worst pose (`wide`), against the 900,000 cap |
-| tonal range | true blacks on all five review framings (p0.1 = 0, 3, 0, 0, 0) |
-| highlights | all five clear the 235 gate (p99.9 = **237**, 214, 253, 227, 254) |
+| phone draw calls | **119** worst pose (`torii`), against the 140 cap |
+| phone triangles | **767,124** worst pose (`wide`), against the 900,000 cap |
+| tonal range | true blacks on all five review framings (p0.1 = 0, 12, 0, 0, 6) |
+| highlights | eligible `hero` **236** and `torii` **251**, both above the strict >235 gate |
 | shader programs | zero linked dead — 117 linked, audited every capture |
 | page errors | zero |
 | set colour coherence | frame-to-frame R−B spread **64.1 → 43.2** |
@@ -85,7 +90,7 @@ number off the round-8 verification capture (`npm run review -- --tag=r8w`), not
 | valley ground detail | **7.57 → 10.3**, against dressed ground's 9.19 |
 | near-sun sky chroma | saturation **0.049 → 0.28**, R−B **16.4 → 57.8** |
 | PWA | installs and launches offline |
-| bundle | 310 KB gzip main chunk, zero external assets |
+| bundle | 314.45 KB gzip main chunk, zero external assets |
 
 **Solved in round 8: three symptoms that were not what they looked like**
 

@@ -69,6 +69,27 @@ const SKY_LUMINANCE = 0.45;
  */
 const SKY_KNEE = 0.46;
 /**
+ * The same ceiling, for sky that is nowhere near the sun.
+ *
+ * `SKY_KNEE` is a ceiling fitted on the forward-scatter cap — every measurement that set it
+ * was taken 10° off the disc — but it was applied to the whole dome, and at magic hour the
+ * far sky is not below it. Measured on the round-9 grade with the JS twin: the pre-knee
+ * luminance down `hero`'s x = 2400 column (19.3° → 7.8° of elevation, 52° from the sun) runs
+ * **0.459 → 0.510**, i.e. the ceiling sits *below the median of sky the aureole never
+ * reaches*. It therefore takes 16–21% off the level and, because the compression grows with
+ * level, **56% off the gradient** — the column's own 11.2% vertical span arrives as 4.9%,
+ * which is the "flat neutral grey card" the critic measured (frame: 5.8%).
+ *
+ * 1.10 is above anything the atmosphere produces out there (0.51 peak), so past ~53° from
+ * the sun the knee is inert and the sky keeps its own shape. Inside ~22° the tuned 0.46
+ * still applies unchanged, so round 7's aureole hue and the sun disc's headroom are
+ * untouched by construction, not by luck.
+ */
+const SKY_KNEE_FAR = 1.10;
+/** Blend band for the two ceilings, in cos(angle to the sun): 0.93 ≈ 21.6°, 0.60 ≈ 53.1°. */
+const KNEE_NEAR_COS = 0.93;
+const KNEE_FAR_COS = 0.60;
+/**
  * Undoes the dome's display scale for the cloud deck. `1 / SKY_LUMINANCE` exactly, which is
  * the same correction `uStarStrength` and `uMoonStrength` already apply: the deck's colours
  * are authored as display values and must not be pulled down into the atmosphere's range,
@@ -160,9 +181,11 @@ const lum = (c) => c.r * 0.2126 + c.g * 0.7152 + c.b * 0.0722;
  * run on luminance. See the shader for the measurement; the twin has to match it exactly or
  * the ambient hue is sampled from a sky that is not on screen.
  */
-const kneeScale = (r, g, b) => {
+const kneeScale = (r, g, b, cosTheta = 1) => {
+  const ceil = lerp(SKY_KNEE_FAR, SKY_KNEE,
+    smoothstep(KNEE_FAR_COS, KNEE_NEAR_COS, cosTheta));
   const y = Math.max(r * 0.2126 + g * 0.7152 + b * 0.0722, 1e-6);
-  const t = (y * y) / (SKY_KNEE * SKY_KNEE);
+  const t = (y * y) / (ceil * ceil);
   return 1 / Math.pow(1 + t * t, 0.25);
 };
 
@@ -402,6 +425,7 @@ uniform vec3  uGroundColor;
 uniform float uStarStrength;
 uniform float uMoonStrength;
 uniform float uSkyKnee;
+uniform float uSkyKneeFar;
 uniform float uSunDiscGain;
 uniform float uSunGlareGain;
 uniform float uTime;
@@ -722,8 +746,15 @@ vec3 skyRadiance( vec3 rd, out vec3 FexOut ) {
   // factor rolls the aureole off exactly as before while keeping its ratios, so it stays
   // amber. Clouds, moon and stars are deliberately outside this: they are objects in the
   // sky, not the sky. The disc is outside it too, and is added by the caller.
+  //
+  // The ceiling itself is a function of the angle to the sun. Every number that set
+  // uSkyKnee was measured 10 degrees off the disc, but it was applied to the whole dome,
+  // and at magic hour the anti-solar sky is not under it: pre-knee luminance out there runs
+  // 0.459..0.510 against a 0.46 ceiling, so a roll-off meant for the aureole was eating 56%
+  // of the far sky's own vertical gradient. Released past ~53 degrees, unchanged inside ~22.
+  float kneeCeil = mix( uSkyKneeFar, uSkyKnee, smoothstep( ${KNEE_FAR_COS.toFixed(2)}, ${KNEE_NEAR_COS.toFixed(2)}, cosTheta ) );
   float y = max( dot( atmos, vec3( 0.2126, 0.7152, 0.0722 ) ), 1e-6 );
-  float t = ( y * y ) / ( uSkyKnee * uSkyKnee );
+  float t = ( y * y ) / ( kneeCeil * kneeCeil );
   return atmos * inversesqrt( sqrt( 1.0 + t * t ) );
 }
 
@@ -945,6 +976,7 @@ export class SkySystem {
       uStarStrength: { value: 0 },
       uMoonStrength: { value: 0 },
       uSkyKnee: { value: SKY_KNEE },
+      uSkyKneeFar: { value: SKY_KNEE_FAR },
       uSunDiscGain: { value: SUN_DISC_GAIN },
       uSunGlareGain: { value: SUN_GLARE_GAIN },
       uTime: { value: 0 },
@@ -1356,7 +1388,9 @@ export class SkySystem {
     // the PMREM probe actually lights the world with, so it is what Lighting must be told.
     const e = g.exposure * (raw ? 1 : SKY_LUMINANCE);
     const cr = rgb[0] * g.tint.r * e, cg = rgb[1] * g.tint.g * e, cb = rgb[2] * g.tint.b * e;
-    const k = raw ? 1 : kneeScale(cr, cg, cb);
+    // cosTheta, because the ceiling is angle-dependent — the twin has to carry that too or
+    // the fog target and the ambient hue are sampled from a sky that is not on screen.
+    const k = raw ? 1 : kneeScale(cr, cg, cb, cosTheta);
     out.r = cr * k;
     out.g = cg * k;
     out.b = cb * k;

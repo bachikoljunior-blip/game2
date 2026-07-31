@@ -1,11 +1,14 @@
 # Running one review round
 
-This file is the operational brief for one round. `CLAUDE.md` is the standing brief and
-takes precedence; read `HANDOFF.md` for where the build currently is.
+This file is the operational brief for one art-direction round. The authority order starts
+with `PROJECT_OPERATING_PROTOCOL.md`; `CLAUDE.md` is the standing KAGEROU brief and
+`HANDOFF.md` carries the current round state.
 
-**One round is the unit of work. Report at the end of every round**, then continue to the
-next one unless the critic has passed the build or a human has said stop. Invoking `/round`
-runs a single round.
+**One round is the unit of visual measurement and reporting, not a logical-session
+boundary.** Invoking `/round` runs one art round. A general continuation request follows the
+project active frontier and may close the current round, repair it, or work elsewhere when
+evidence ranks that higher. The logical session stays active until the user explicitly ends
+it.
 
 The report between rounds is not ceremony. The expensive failure mode here was never a bad
 round — it was three rounds built on a premise nobody re-checked, twice because the
@@ -20,13 +23,15 @@ every texture, mesh, animation and sound is synthesised at boot. `ARCHITECTURE.m
 binding contract that lets independent agents work on it in parallel; read §5 (art
 direction), §7 (perf budget) and §8 (file ownership) before dispatching anything.
 
-> **Last completed round: 8.** The next one is round 9 — use `--tag=r9`,
-> `shots/review-r9.json`, `--round=9`. Round 8 is six commits on `main`
-> (`bc96c3c`, `e9b9717`, `4a310ed`, `1be775a`, `55693b9`, `26bf937`).
+> **Last completed round: 12. Active round: none.** The user authorized exactly Rounds
+> 10–12 in this run. The coherent `r12v1` checkpoint verifies the apparatus, budgets, tone,
+> and lantern repair but remains an overall visual FAIL. Publish the incremental checkpoint,
+> then stop; do not activate Round 13.
 
 An independent critic has scored it 34 → 48 → 58 → (round 4 unfiled) → (5 and 6 unscored)
-→ 44 → **46** out of 100 against a *Ghost of Tsushima* / *SEKIRO* bar. It has not passed.
-Round 8 filed FAIL with four blockers, dispatched five of the fourteen owners, and
+→ 44 → **46** → **47 pre-fix in round 9** out of 100 against a *Ghost of Tsushima* /
+*SEKIRO* bar. It has not passed. Round 8 filed FAIL with four blockers, dispatched five of
+the fourteen owners, and
 **disproved two of the four blockers' attributions** — the shadows the critic said were
 missing are present and measurable, and the fringe it read as lens dispersion was two
 channels of antialiasing being discarded.
@@ -34,14 +39,24 @@ channels of antialiasing being discarded.
 The score gap from round 3's 58 is not a regression measurement — different critic
 instances, four rounds apart, against a review set that has since had the HUD blanked.
 
-Met at the end of round 8:
+Latest coherent measurements (`r12v1`):
 
 | | measured | contract |
 |---|---|---|
-| phone draw calls | **118** worst pose | ≤ 140 ✓ |
-| phone triangles | **746,508** worst pose | ≤ 900,000 ✓ |
-| black gate, all five | p0.1 = 0, 3, 0, 0, 0 | < 15 ✓ |
-| white gate, all five | p99.9 = 237, 214, 253, 227, 254 | > 235 ✓ |
+| phone draw calls | **119** worst pose | ≤ 140 ✓ |
+| phone triangles | **767,124** worst pose | ≤ 900,000 ✓ |
+| black gate, all five | p0.1 = 0, 12, 0, 0, 6 | < 15 ✓ |
+| white gate, eligible shots | hero 236 ✓, torii 251 ✓ | > 235 |
+
+The lantern near/far ratio is **2.394** and its stopped-frame A/B passes; a source-blind
+lantern review also passes. The full finding verifier still fails fill, shadow edge, sky,
+sakura hue, and far range, while valley remains blocked by stale semantic probes.
+
+`tools/capture.mjs` applies the white gate only to shots that contain a sufficiently large
+authored highlight population (`hero`, `torii`, and the non-review `combat`/`closeup`
+poses). `wide` is front-lit by construction; `valley` and `sun` are composition/effect
+poses, not part of this percentile gate. Their p99.9 values remain evidence, not pass/fail
+inputs.
 
 Still open, measured at the end of round 8 — `HANDOFF.md` carries the reasoning and the
 full list of what rounds 7 and 8 disproved:
@@ -58,7 +73,7 @@ full list of what rounds 7 and 8 disproved:
 ## The round, in five steps
 
 ```bash
-npm ci                                            # first session only
+npm ci --cache /tmp/game2-npm-cache              # first Work checkout in this environment
 npm run build
 node tools/capture.mjs --review --diff --profile=phone --tag=rN   # 1. photograph
 node tools/contact-sheet.mjs --tag=rN             # 2. tile for the critic
@@ -67,19 +82,17 @@ node tools/dispatch.mjs --round=N                 # 4. who to spawn
 #                                                   5. spawn exactly those, then verify
 ```
 
-Substitute the real round number for `N` everywhere; `HANDOFF.md` records the last one.
+Substitute the active round identifier from `HANDOFF.md`; never infer it from ignored PNGs.
 
 **Capture phone first.** It is the pass/fail profile, and it boots in ~35 s against
 desktop/ULTRA's ~200 s with minutes per 1920x1080 screenshot — a combined
 `--profile=phone,desktop --review` run has failed to finish inside a usable window. Add
 desktop only when you specifically want to judge the showcase tier.
 
-**The last completed round is recorded at the top of this file — the next one is that plus
-one.** Do not derive it from `shots/`: that directory is gitignored, so in a fresh clone it
-is empty and the highest `review-r*.json` is none at all. Round 6 would be filed as round 1
-over the top of nothing, and `dispatch.mjs --round=1` would then read a review that does not
-exist. Bump the number in this file's header as part of closing the round, in the same commit
-that records the measurements.
+**The active round and exact phase are recorded in `HANDOFF.md`.** Do not derive them from
+`shots/`: most of that directory is gitignored, and a repair branch can contain a tracked
+critic verdict without its post-fix images. Update `HANDOFF.md` atomically when a round
+closes; this generic procedure must not become a second mutable round-state source.
 
 ### 1. Capture
 
@@ -172,10 +185,10 @@ what the role actually does — not by what we can get away with.
 
 | role | model | effort | why |
 |---|---|---|---|
-| art critic | opus | high | the judgement everything else is downstream of |
-| owner / fix agent | opus | high | see below |
-| verification, budget checks, histograms | haiku | low | one right answer, independently checkable |
-| collation, README tables, file moves | haiku | low | mechanical |
+| art critic | highest available perceptual/reasoning capability | full | the judgement everything else is downstream of |
+| owner / diagnosis and repair | highest available reasoning/coding capability | full | silent shader/runtime defects require deep diagnosis |
+| verification, budget checks, histograms | deterministic tools first; capable verifier | economical | one checkable right answer |
+| collation, README tables, file moves | deterministic tools first | economical | mechanical |
 
 **Owners stay at the top tier, and this is not caution — it is the measured shape of this
 codebase.** Every defect that mattered here was *silent*: no exception, no log, plausible
@@ -216,21 +229,24 @@ between agents. Paste it; do not paraphrase it.
 
 ## When the round is done
 
-Update `HANDOFF.md` (round number, verdict, the open list, anything this round disproved)
-and the measured tables in `README.md`. Commit those together with `shots/review-rN.json`
-— that one is deliberately not gitignored — push to `main`, and only then report:
+Update `HANDOFF.md` (round number, verdict, the open list, anything this round disproved),
+the measured tables in `README.md`, and the project-wide criteria/evidence pointers. Commit
+those locally together with `shots/review-rN.json` — that one is deliberately not
+gitignored — and report truthfully. Push, merge, deployment, and publication require a
+separate explicit user instruction.
 
 - the verdict and score, and the delta from last round
 - which teams were spawned and which were gated out
 - the measured numbers against §7 — draw calls, triangles, the histogram gates
 - what is still open
 
-Then start the next round, unless the critic passed or you have been told to stop. If the
-score did not move, say so and say what you think is actually blocking it — three rounds of
-polish on the wrong premise is the failure this loop exists to prevent.
+Then select the highest-value ready task from the project frontier. A critic PASS closes the
+visual-review branch only; project completion still requires every applicable product-level
+gate. If the score did not move, say so and identify the evidence-backed blocker — three
+rounds of polish on the wrong premise is the failure this loop exists to prevent.
 
-Finally, end your reply with the handoff prompt block described in `CLAUDE.md`, so the next
-session can be started by pasting one thing.
+Persist the exact continuation point after the round. Do not mark or archive the logical
+session as ended unless the user explicitly says it is finished.
 
 Expected cost for one round under this setup: roughly 2.5–3M tokens (about $9–12 at Opus 5
 rates), against 6–7M for the same round run ungated.

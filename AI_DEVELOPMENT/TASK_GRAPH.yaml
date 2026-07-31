@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "tasks": [
+    {"id": "FND-001", "dependsOn": [], "unblocks": ["R9-VERIFY-001"], "status": "verified"},
+    {"id": "R9-VERIFY-001", "dependsOn": ["FND-001"], "unblocks": ["R10-AUDIT"], "status": "verified"},
+    {"id": "R10-AUDIT", "dependsOn": ["R9-VERIFY-001"], "unblocks": ["R11-LANTERN"], "status": "verified"},
+    {"id": "R11-LANTERN", "dependsOn": ["R10-AUDIT"], "unblocks": ["R12-VERIFY"], "status": "verified"},
+    {"id": "R12-VERIFY", "dependsOn": ["R11-LANTERN"], "unblocks": ["R12-REVIEW"], "status": "verified"},
+    {"id": "R12-REVIEW", "dependsOn": ["R12-VERIFY"], "unblocks": ["REMOTE-PUBLISH", "NEXT"], "status": "verified"},
+    {"id": "REMOTE-PUBLISH", "dependsOn": ["R12-VERIFY", "R12-REVIEW"], "unblocks": [], "status": "active"},
+    {"id": "NEXT", "dependsOn": ["R12-REVIEW"], "unblocks": [], "status": "deferred"}
+  ]
+}

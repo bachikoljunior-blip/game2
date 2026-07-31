@@ -54,7 +54,7 @@ function encodePNG(width, height, rgb) {
   ]);
 }
 
-function region(img, spec) {
+export function region(img, spec) {
   const [fx, fy, fw, fh] = spec.split(',').map(Number);
   const x0 = Math.max(0, Math.round(fx * img.width));
   const y0 = Math.max(0, Math.round(fy * img.height));
@@ -63,7 +63,7 @@ function region(img, spec) {
   return { x0, y0, w, h };
 }
 
-function cut(img, r) {
+export function cut(img, r) {
   const out = Buffer.alloc(r.w * r.h * 3);
   for (let y = 0; y < r.h; y++) {
     for (let x = 0; x < r.w; x++) {
@@ -80,7 +80,7 @@ function cut(img, r) {
  * the spread of luma inside it and how much high-frequency energy the surface has.
  * `detail` is mean |Laplacian|, the same read used to score the massif in round 4.
  */
-function stats(img, r) {
+export function stats(img, r) {
   const px = cut(img, r);
   const lum = new Float64Array(r.w * r.h);
   let rs = 0, gs = 0, bs = 0, satSum = 0;
@@ -112,16 +112,18 @@ function stats(img, r) {
   };
 }
 
-const [cmd, file, spec, out] = process.argv.slice(2);
-if (!cmd || !file || !spec) {
-  console.error('usage: probe.mjs crop|stats <png> x,y,w,h [out.png]');
-  process.exit(2);
-}
-const img = decodePNG(readFileSync(file));
-const r = region(img, spec);
-if (cmd === 'crop') {
-  writeFileSync(out || 'crop.png', encodePNG(r.w, r.h, cut(img, r)));
-  console.log(`${out || 'crop.png'} ${r.w}x${r.h} from ${r.x0},${r.y0}`);
-} else {
-  console.log(JSON.stringify(stats(img, r)));
+if (import.meta.url === `file://${process.argv[1]}`) {
+  const [cmd, file, spec, out] = process.argv.slice(2);
+  if (!cmd || !file || !spec) {
+    console.error('usage: probe.mjs crop|stats <png> x,y,w,h [out.png]');
+    process.exit(2);
+  }
+  const img = decodePNG(readFileSync(file));
+  const r = region(img, spec);
+  if (cmd === 'crop') {
+    writeFileSync(out || 'crop.png', encodePNG(r.w, r.h, cut(img, r)));
+    console.log(`${out || 'crop.png'} ${r.w}x${r.h} from ${r.x0},${r.y0}`);
+  } else {
+    console.log(JSON.stringify(stats(img, r)));
+  }
 }

@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-07-31T15:14:06Z",
+  "nodes": [
+    {
+      "id": "PROJECT",
+      "title": "Bring KAGEROU to its established completion bar",
+      "parent": null,
+      "children": ["FOUNDATION", "ROUNDS10_12", "RELEASE", "NEXT"],
+      "dependencies": [],
+      "status": "active",
+      "priority": 100,
+      "reason": "The current user objective is exactly three completed rounds followed by remote integration and publication."
+    },
+    {
+      "id": "FOUNDATION",
+      "title": "Persistent, testable project operating foundation",
+      "parent": "PROJECT",
+      "children": ["FND-001", "FND-002"],
+      "dependencies": [],
+      "status": "verified",
+      "priority": 100
+    },
+    {
+      "id": "FND-001",
+      "title": "Install and validate the persistent control plane",
+      "parent": "FOUNDATION",
+      "children": [],
+      "dependencies": [],
+      "status": "verified",
+      "priority": 100,
+      "criteria": ["PROTOCOL-001"]
+    },
+    {
+      "id": "FND-002",
+      "title": "Restrict checkpoint hooks to development and capture surfaces",
+      "parent": "FOUNDATION",
+      "children": [],
+      "dependencies": ["FND-001"],
+      "status": "deferred",
+      "priority": 45,
+      "reason": "Not required for the user-authorized three-round incremental checkpoint."
+    },
+    {
+      "id": "ROUNDS10_12",
+      "title": "Execute exactly Rounds 10, 11, and 12",
+      "parent": "PROJECT",
+      "children": ["R9-VERIFY-001", "R10-AUDIT", "R11-LANTERN", "R12-VERIFY", "R12-REVIEW"],
+      "dependencies": ["FND-001"],
+      "status": "verified",
+      "priority": 100
+    },
+    {
+      "id": "R9-VERIFY-001",
+      "title": "Establish the integrated Round 9 baseline",
+      "parent": "ROUNDS10_12",
+      "children": [],
+      "dependencies": ["FND-001"],
+      "status": "verified",
+      "priority": 100,
+      "criteria": ["R9-APPARATUS-001", "R9-PERF-001", "R9-TONE-001"]
+    },
+    {
+      "id": "R10-AUDIT",
+      "title": "Reject destructive shadow/tone candidates and harden verification",
+      "parent": "ROUNDS10_12",
+      "children": [],
+      "dependencies": ["R9-VERIFY-001"],
+      "status": "verified",
+      "priority": 98,
+      "criteria": ["R9-SHADOW-EDGE-001"]
+    },
+    {
+      "id": "R11-LANTERN",
+      "title": "Restore visible, horizontal, additive lantern receiver light",
+      "parent": "ROUNDS10_12",
+      "children": [],
+      "dependencies": ["R10-AUDIT"],
+      "status": "verified",
+      "priority": 97,
+      "criteria": ["R9-LANTERN-001", "R9-LANTERN-SPILL-001"]
+    },
+    {
+      "id": "R12-VERIFY",
+      "title": "Restore the hero highlight population and verify one coherent final set",
+      "parent": "ROUNDS10_12",
+      "children": [],
+      "dependencies": ["R11-LANTERN"],
+      "status": "verified",
+      "priority": 100,
+      "criteria": ["BUILD-001", "R9-APPARATUS-001", "R9-PERF-001", "R9-TONE-001"]
+    },
+    {
+      "id": "R12-REVIEW",
+      "title": "Run a source-blind final review and record remaining blockers",
+      "parent": "ROUNDS10_12",
+      "children": [],
+      "dependencies": ["R12-VERIFY"],
+      "status": "verified",
+      "priority": 95,
+      "criteria": ["R9-REVIEW-001"],
+      "reason": "The review task completed; its product verdict remains FAIL and the criterion stays blocked."
+    },
+    {
+      "id": "RELEASE",
+      "title": "Publish the verified Round 12 incremental checkpoint",
+      "parent": "PROJECT",
+      "children": ["REMOTE-PUBLISH"],
+      "dependencies": ["R12-VERIFY", "R12-REVIEW"],
+      "status": "active",
+      "priority": 90
+    },
+    {
+      "id": "REMOTE-PUBLISH",
+      "title": "Push, integrate into main, and verify GitHub Pages",
+      "parent": "RELEASE",
+      "children": [],
+      "dependencies": ["R12-VERIFY", "R12-REVIEW"],
+      "status": "active",
+      "priority": 90,
+      "criteria": ["REMOTE-001"]
+    },
+    {
+      "id": "NEXT",
+      "title": "Round 13 and later product work",
+      "parent": "PROJECT",
+      "children": [],
+      "dependencies": ["R12-REVIEW"],
+      "status": "deferred",
+      "priority": 0,
+      "reason": "The user explicitly limited this run to three rounds; do not activate Round 13."
+    }
+  ]
+}

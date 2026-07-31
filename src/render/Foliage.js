@@ -2018,9 +2018,12 @@ function paintBlossom(size) {
   // only survives where a floret has already laid alpha over it, so it fills the pinholes
   // between overlapping flowers without ever becoming a pink disc with a hard rim.
   const halo = g.createRadialGradient(cx, cy, 0, cx, cy, size * 0.46);
-  halo.addColorStop(0, 'rgba(254,208,190,0.30)');
-  halo.addColorStop(0.55, 'rgba(246,184,166,0.22)');
-  halo.addColorStop(1, 'rgba(232,156,144,0.0)');
+  // Widened along R-G with the floret stops below, and for the same reason: this underlay
+  // fills the pinholes between overlapping flowers, so its hue is a real fraction of the
+  // card's mean and an orange one drags the mass back to brick whatever the petals do.
+  halo.addColorStop(0, 'rgba(254,196,214,0.30)');
+  halo.addColorStop(0.55, 'rgba(246,168,196,0.22)');
+  halo.addColorStop(1, 'rgba(232,142,168,0.0)');
   g.fillStyle = halo;
   g.beginPath(); g.arc(cx, cy, size * 0.46, 0, Math.PI * 2); g.fill();
 
@@ -2059,19 +2062,32 @@ function paintBlossom(size) {
     // stays blush instead of being dragged grey the way a third of them did.
     const spent = rnd() < 0.16;
     const k = 0.90 + rnd() * 0.16;
-    // G ABOVE B, always. The previous card carried B over G by 12-32 on every stop, on the
-    // argument that the cool sky bounce needs blue in the albedo to survive the amber key.
-    // It survives far too well: the crown is lit mostly by ambient plus Props' blossom
-    // translucency floor, both blue-weighted, and the review measured the canopy core at
-    // (137.1, 94.4, 107.8) — B over G by 13, a violet-grey. The target is R > G > B with
-    // R-B >= 40, so the albedo has to be the thing that carries the warmth: every stop
-    // below now runs G above B by 6-16 while keeping the blush in the throat.
-    const edge = spent ? `rgba(${(247 * k) | 0},${(234 * k) | 0},${(220 * k) | 0},0.95)`
-      : `rgba(${(255 * k) | 0},${(230 * k) | 0},${(216 * k) | 0},0.98)`;
-    const mid = spent ? `rgba(${(239 * k) | 0},${(214 * k) | 0},${(200 * k) | 0},0.94)`
-      : `rgba(${(251 * k) | 0},${(194 * k) | 0},${(182 * k) | 0},0.97)`;
-    const throat = spent ? `rgba(${(217 * k) | 0},${(186 * k) | 0},${(172 * k) | 0},0.92)`
-      : `rgba(${(236 * k) | 0},${(154 * k) | 0},${(146 * k) | 0},0.95)`;
+    // The axis this card kept being retuned along was the wrong one, and both ends of it
+    // have now been measured in frame.
+    //
+    // Round 7's stops ran B over G by 12-32 and the crown measured (137.1, 94.4, 107.8) —
+    // B/R 0.786, which is *exactly* the >= 0.78 a later review asked for, and it was still
+    // called a violet-grey. Round 8 answered by putting G above B by 6-16, and the crown
+    // measured (84.8, 50.0, 48.3) at the lit cluster — B/R 0.570, which the next review
+    // called brick. Neither reading is about blue. Round 7's card had R-G of only 42.7 on
+    // a 137 red; round 8's has 34.8 on an 84.8 red. Both are *low chroma*, and a low-chroma
+    // pale carries whatever hue the illuminant hands it: grey-violet under the fill, brick
+    // under a B/R-0.134 key.
+    //
+    // So the axis is R-G, not G-B. Every stop below widens R-G (throat 82 -> 100, mid 57 ->
+    // 72, edge 25 -> 39) and puts B back above G by 16-36, which is where sakura actually
+    // sits — #ffb7c5 is B over G by 14 on a 72-wide R-G. Mean albedo over the floret area
+    // moves (246.7, 199.4, 187.3) -> (244.7, 184.2, 205.6): B/R 0.759 -> 0.840, R-G 47.3 ->
+    // 60.5. Reaching the review's own 0.78 target in frame would need a mean albedo B/R of
+    // 0.96 *after* the 0.927 the sacred tree's own 0xf6e2e4 multiplier costs, i.e. B >= R in
+    // the paint — lilac, not blossom. That last stretch is not available from albedo; see
+    // the shading measurement in the round-9 foliage report.
+    const edge = spent ? `rgba(${(243 * k) | 0},${(228 * k) | 0},${(226 * k) | 0},0.95)`
+      : `rgba(${(255 * k) | 0},${(216 * k) | 0},${(232 * k) | 0},0.98)`;
+    const mid = spent ? `rgba(${(233 * k) | 0},${(208 * k) | 0},${(208 * k) | 0},0.94)`
+      : `rgba(${(250 * k) | 0},${(178 * k) | 0},${(205 * k) | 0},0.97)`;
+    const throat = spent ? `rgba(${(212 * k) | 0},${(178 * k) | 0},${(182 * k) | 0},0.92)`
+      : `rgba(${(232 * k) | 0},${(132 * k) | 0},${(168 * k) | 0},0.95)`;
     g.save();
     g.translate(px, py);
     // Only a third of the florets are drawn face-on with a full stamen boss. The rest are
@@ -2498,6 +2514,13 @@ const RANGE = {
   treeCardOnly: [38, 260],     // MEDIUM and below: mesh LOD straight to impostor
   undergrowth: [0, 30],
   groundCard: [0, 26],
+  // The basin beyond the grass ring. `grassRadius` is 34 m at MEDIUM and the ring follows
+  // the camera, so `wide`'s plain (55-82 m from its eye) and `valley`'s measurement box
+  // (15-90 m) sit entirely outside it and were bare ground in every review from round 4 on.
+  // Round 8 raised the ground *shading* past target in both (valley detail 7.57 -> 10.3,
+  // wide mid-ground 4.78 -> 6.12) and the frames were still called a uniform plane, which
+  // is the expected outcome: shading cannot put a plant where none is instanced.
+  farCover: [28, 118],
 };
 
 const AUTUMN_A = new Color(0x4e6b3c);
@@ -2613,6 +2636,7 @@ export class FoliageSystem {
     this._grass = null;
     this._bamboo = null;
     this._undergrowth = null;
+    this._farCover = null;
     this._impostors = null;
     this.groundDetail = null;
 
@@ -2655,6 +2679,7 @@ export class FoliageSystem {
     await step('planting the grove', () => this._scatterTrees(q));
     await step('seeding undergrowth', () => this._buildUndergrowth(q));
     await step('scattering leaves', () => this._buildGroundCards(q));
+    await step('dressing the basin', () => this._buildFarCover(q));
     await step('hanging the canopy', () => this._buildCanopy(q));
     await step('sowing the meadow', () => this._primeGrass());
 
@@ -3866,13 +3891,13 @@ export class FoliageSystem {
       const woodOpts = {
         name: `${def.key}-wood`, mode: 0, map: null, color: spec.wood,
         bendExp: 2.4, bendGain: 0.55, flutter: 0.20, side: FrontSide,
-        fadeFar: fadeOut(RANGE.treeMesh), size: [1, 1],
+        fadeFar: fadeOut(RANGE.treeMesh), size: [1, 1], sink: true,
         sss: 0.10, sssColor: 0x8a6a4a, tipGlow: 0.10, baseAO: 0.30, grain: 0.22,
       };
       const leafOpts = {
         name: `${def.key}-leaf`, mode: 0, map: def.tex, color: 0xffffff,
         bendExp: 2.4, bendGain: 0.60, flutter: 1.35, alphaTest: 0.36,
-        fadeFar: fadeOut(RANGE.treeMesh), size: [1, 1],
+        fadeFar: fadeOut(RANGE.treeMesh), size: [1, 1], sink: true,
         sss: def.sss, sssColor: def.tint, tipGlow: 0.20, baseAO: 0.18, grain: 0.15,
       };
       const woodMat = this._makeMaterial(woodOpts);
@@ -4045,6 +4070,7 @@ uniform vec3 uCamPos;
 uniform vec2 uFadeNear;
 uniform vec2 uFadeFar;
 uniform vec2 uAtlas;
+uniform vec2 uSink;
 
 varying float vKagFade;
 varying vec3  vKagTint;
@@ -4066,6 +4092,14 @@ ${WIND_GLSL}
   float len = length( toCam );
   toCam = len > 1e-4 ? toCam / len : vec3( 0.0, 0.0, 1.0 );
   vec3 right = vec3( toCam.z, 0.0, -toCam.x );
+
+  // Impostors draw from 38 m out, which is the far half of the clipmap sink range, so a
+  // tree that has just handed off from its mesh LOD would otherwise step back up onto the
+  // heightfield while the ground under it is still being drawn as a chord. aFoliageC.w is
+  // the atlas row here, so the deficit rides in aFoliageB.z, which this shader had left
+  // unread. Same smoothstep as KAG_SINK; horizontal len against the mesh path's 3-D
+  // distance differs by under 0.1 m at the 38-46 m handoff, where the ramp is at 0.006.
+  base.y -= aFoliageB.z * smoothstep( uSink.x, uSink.y, len );
 
   float fade = smoothstep( uFadeNear.x, uFadeNear.y, len ) * ( 1.0 - smoothstep( uFadeFar.x, uFadeFar.y, len ) );
   // Per-tree dissolve rather than a screen-door dither: nothing downstream resolves a
@@ -4166,8 +4200,7 @@ ${WIND_GLSL}
         const x = Math.cos(ang) * r * (1 - cfg.weight) + cfg.ax * r * cfg.weight + (rnd() - 0.5) * r * 0.7;
         const z = Math.sin(ang) * r * (1 - cfg.weight) + cfg.az * r * cfg.weight + (rnd() - 0.5) * r * 0.7;
 
-        const y = this._heightAt(x, z);
-        if (y < WORLD.WATER_LEVEL + 1.2) continue;
+        if (this._heightAt(x, z) < WORLD.WATER_LEVEL + 1.2) continue;
         if (plateauMask(x, z) > 0.5) continue;             // keep the courtyard clear
         if (this._slopeAt(x, z) > 0.66) continue;
         const surf = this._surfaceAt(x, z);
@@ -4175,6 +4208,10 @@ ${WIND_GLSL}
         const clump = clamp(noise.fbm2(x * 0.018 + item.key.length, z * 0.018, 3) * 0.5 + 0.5, 0, 1);
         if (rnd() > 0.2 + clump * 0.95) continue;
 
+        // Last, so the placement audit in _plantY counts trees that were actually planted.
+        // Trees used to plant through _heightAt, which is the heightfield rather than the
+        // chord the clipmap draws — the defect round 7 fixed for bamboo, still live here.
+        const y = this._plantY(x, z, _plant);
         const h = cfg.hMin + rnd() * (cfg.hMax - cfg.hMin);
         const o = n * 4;
         a[o] = x; a[o + 1] = y; a[o + 2] = z; a[o + 3] = rnd() * Math.PI * 2;
@@ -4184,7 +4221,14 @@ ${WIND_GLSL}
         b[o + 3] = rnd();
         const v = 0.86 + rnd() * 0.28;
         c[o] = v; c[o + 1] = v * (0.96 + rnd() * 0.08); c[o + 2] = v * (0.94 + rnd() * 0.10);
-        c[o + 3] = item.atlasRow !== undefined ? item.atlasRow : 0;
+        // aFoliageC.w is the clipmap chord deficit here, not an atlas row. The standing
+        // note that trees could not take KAG_SINK because "trees and impostors already
+        // spend that slot on their atlas row" is only true of the impostor shader: the
+        // shared foliage vertex path reads its atlas cell from `floor(aFoliageB.w)`, and
+        // neither tree material declares an atlas at all, so the slot was free and being
+        // written with a value nothing reads. The impostor buffer below builds its own `c`
+        // and still carries the row.
+        c[o + 3] = _plant.sag;
         n++;
 
         // Publish crowns for Weather. Petals fall from sakura, leaves from momiji.
@@ -4240,7 +4284,9 @@ ${WIND_GLSL}
           a[d] = src.a[o]; a[d + 1] = src.a[o + 1]; a[d + 2] = src.a[o + 2]; a[d + 3] = src.a[o + 3];
           b[d] = half * 2;              // card world size
           b[d + 1] = h * 0.5;           // card centre height above the base
-          b[d + 2] = 2.4; b[d + 3] = src.b[o + 3];
+          // z carries the chord deficit the mesh path keeps in aFoliageC.w — see the
+          // impostor vertex body. It held an unread 2.4 before.
+          b[d + 2] = src.c[o + 3]; b[d + 3] = src.b[o + 3];
           c[d] = src.c[o]; c[d + 1] = src.c[o + 1]; c[d + 2] = src.c[o + 2];
           c[d + 3] = item.atlasRow !== undefined ? item.atlasRow : 0;
           k++;
@@ -4430,6 +4476,125 @@ ${WIND_GLSL}
     this._fill(mesh, a, b, c, n, 1);
     this._registerPack(mesh, a, b, c, n, mat, 1);
     this._groundCards = { mesh, mat };
+  }
+
+  /**
+   * Dry basin cover, 28-118 m. One draw call, one static scatter, no tiles.
+   *
+   * This is the part of the bare-ground blocker the grass ring structurally cannot reach.
+   * The ring is camera-centred and 34 m across at MEDIUM, and widening it is not affordable:
+   * it is a 7x7 tile grid whose LOD is a function of `radius`, so covering 110 m means a
+   * 21x21 grid — 441 tiles against 49, refilled two to eight a frame after every shift.
+   * A world-anchored batch costs one draw call and a triangle count fixed at build time,
+   * because the mesh capacity is the number of instances the scatter actually placed.
+   *
+   * Budget, at MEDIUM: `target` is 6,760, geometry is `buildCrossCard(2)` = 4 triangles,
+   * so the hard ceiling is 27,040 submitted triangles — 3.0% of the 900 k contract and 18%
+   * of the 153 k `wide` had spare — plus one draw call against a 118/140 worst pose.
+   * `_packOne` culls to the fade window, so the frame cost is below that ceiling, never
+   * above it.
+   *
+   * Its site rule is `_siteWeight`'s, relaxed by `1 - plateauMask` and only there. Inside
+   * the shrine grounds gravel and stone stay a hard zero, which is what keeps the courtyard
+   * swept and is the single source of truth this file already uses for "is this swept
+   * ground"; out past the rim the same classification would leave the whole scree basin
+   * bare, and dry tussock plainly does grow on scree. Note what this means for `wide`: its
+   * plain is 6-50 m from the world origin, i.e. inside PLATEAU_RADIUS, so wherever the
+   * splat calls that ground gravel this layer will correctly refuse it. Dressing the
+   * courtyard is `Props.js`'s finding, not this one.
+   */
+  _buildFarCover(q) {
+    const density = q.grassDensity || 0;
+    if (density <= 0) { this._farCover = null; return; }
+
+    const near = RANGE.farCover[0];
+    const far = RANGE.farCover[1];
+    const geo = buildCrossCard(2, 1.0, false, 1.0);
+    this._geometries.push(geo);
+
+    const opts = {
+      name: 'far-cover', mode: 0, map: this.tex.clump, color: 0xffffff,
+      // Read at 30-120 m, which is beyond where any per-blade detail survives minification;
+      // `broad` is what keeps value inside the silhouette once the fine grain has mipped
+      // away, exactly as on grass LOD2, whose alphaTest this shares for the same reason.
+      bendExp: 2.0, bendGain: 0.50, flutter: 0.45, alphaTest: 0.34,
+      fadeNear: [near, near * 1.30], fadeFar: [far * 0.86, far],
+      size: [1, 1], sink: true,
+      sss: 1.0, sssColor: 0xc2d884, sssFloor: 0.50,
+      tipGlow: 0.18, baseAO: 0.36, grain: 0.16, broad: 0.22,
+    };
+    const mat = this._makeMaterial(opts);
+
+    const target = Math.round(6500 * clamp(0.6 + density * 0.8, 0.6, 1.5));
+    const a = new Float32Array(target * 4);
+    const b = new Float32Array(target * 4);
+    const c = new Float32Array(target * 4);
+    const rnd = makeRandom(0xC0FFEE);
+    const col = _colScratch;
+    let n = 0;
+
+    // Scattered over a 150 m disc, not the 118 m fade range: `valley` looks away from the
+    // origin from 46.7 m out, so the far end of its own measurement box lands at 133 m of
+    // world radius. The fade window, which is camera-relative, is what bounds the cost.
+    const scatterR = 150;
+    for (let i = 0; i < target * 5 && n < target; i++) {
+      // Uniform over the disc, so density per square metre is flat rather than piling the
+      // whole population against the centre where the grass ring already sits.
+      const ang = rnd() * Math.PI * 2;
+      const r = Math.sqrt(rnd()) * scatterR;
+      const x = Math.cos(ang) * r, z = Math.sin(ang) * r;
+
+      // Cheapest rejections first — a noise lookup before any terrain query, which is the
+      // same ordering _generateGrassTile uses.
+      const clump = clamp(noise.fbm2(x * 0.043 + 12.7, z * 0.043 - 5.1, 3) * 0.5 + 0.5, 0, 1);
+      if (rnd() > 0.20 + Math.pow(clump, 1.5) * 0.92) continue;
+      if (this._slopeAt(x, z) > 0.62) continue;
+
+      const h0 = this._heightAt(x, z);
+      if (!(h0 >= WORLD.WATER_LEVEL + 0.4)) continue;   // rejecting form: false for NaN
+      const surf = this._surfaceAt(x, z);
+      // 0 on the swept plateau, 1 out in the basin. Only the mineral surfaces are relaxed.
+      const off = 1 - plateauMask(x, z);
+      let w;
+      switch (surf) {
+        case 'water': case 'path': case 'wood': w = 0; break;
+        case 'rock': w = 0.08 * off; break;
+        case 'stone': w = 0.18 * off; break;
+        case 'gravel': case 'sand': w = 0.50 * off; break;
+        case 'dirt': w = 0.85; break;
+        default: w = 1.0;
+      }
+      if (w <= 0.02 || rnd() > w) continue;
+
+      const y = this._plantY(x, z, _plant);
+
+      // Same autumn drift field as the near grass, at the same frequencies, so the two
+      // layers agree on where the basin is dry and where it is still mossy. A second
+      // palette here would read as a colour seam at the ring's edge.
+      const dry = clamp(noise.fbm2(x * 0.021 + 41.3, z * 0.021 - 17.7, 3) * 0.5 + 0.5, 0, 1);
+      const burn = clamp(noise.fbm2(x * 0.055 - 7.1, z * 0.055 + 3.9, 2) * 0.5 + 0.5, 0, 1);
+      col.copy(AUTUMN_A).lerp(AUTUMN_B, Math.pow(dry, 1.15));
+      col.lerp(AUTUMN_C, Math.pow(burn, 2.2) * dry * 0.9);
+      const shade = 0.86 + rnd() * 0.40;
+
+      const o = n * 4;
+      a[o] = x; a[o + 1] = y; a[o + 2] = z; a[o + 3] = rnd() * Math.PI * 2;
+      // Tussock scale: tall enough to break the ground plane at a 6-10 degree grazing
+      // angle, short enough that it never silhouettes against the far ridge.
+      b[o] = 0.55 + rnd() * 0.75;                       // height, metres
+      b[o + 1] = 1.05 + rnd() * 1.30;                   // width, metres
+      b[o + 2] = 0.55 + rnd() * 0.45;                   // limp, like grass
+      b[o + 3] = rnd();
+      c[o] = col.r * shade; c[o + 1] = col.g * shade; c[o + 2] = col.b * shade;
+      c[o + 3] = _plant.sag;
+      n++;
+    }
+
+    const mesh = this._makeBatchMesh(geo, mat, null, Math.max(1, n), false);
+    mesh.name = 'far-cover';
+    this._fill(mesh, a, b, c, n, 2);
+    this._registerPack(mesh, a, b, c, n, mat, 2);
+    this._farCover = { mesh, mat, count: n };
   }
 
   /**
@@ -4825,6 +4990,14 @@ vCanopyG = cg;
       const r = RANGE.groundCard[1];
       this._groundCards.mat.userData.kag.uFadeFar.value.set(r * 0.82, r);
     }
+    if (this._farCover) {
+      // The near edge tracks the ring it hands off from, so a tier that shrinks the ring
+      // does not open a bare annulus between the two layers.
+      const k = this._farCover.mat.userData.kag;
+      const near = Math.min(RANGE.farCover[0], Math.max(16, radius * 0.82));
+      k.uFadeNear.value.set(near, near * 1.30);
+      k.uFadeFar.value.set(RANGE.farCover[1] * 0.86, RANGE.farCover[1]);
+    }
     if (this._canopy) this._canopy.mesh.visible = q.tier > 0;
 
     this._recomputeDrawEstimate();
@@ -4859,6 +5032,7 @@ vCanopyG = cg;
     this._bambooAssets = null;
     this._undergrowth = null;
     this._groundCards = null;
+    this._farCover = null;
     this._impostors = null;
     this._canopy = null;
     this.groundDetail = null;
