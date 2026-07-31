@@ -21,7 +21,10 @@ art-direction state record; project-wide session, plan and criterion pointers li
   cross-session authorization is active to push verified checkpoints, integrate them into
   `main`, and publish GitHub Pages without asking again. Paid, destructive, credential, and
   account actions remain outside that authorization.
-- **Rounds 10–14 are complete; no product round is active.** Round 14 opened at
+- **Round 15 is ACTIVE** (phase: capture, tag `r15`), authorized by an explicit user
+  instruction on 2026-07-31 ("1ラウンド行ってください"). Working branch
+  **`claude/1-round-execution-r6rdfs`**, created from published `main` at **`8e72e01`**.
+- **Rounds 10–14 are complete.** Round 14 opened at
   source-blind **44/100** with one blocker and two majors and closed on coherent
   `r14final` at **50/100** with one blocker and two majors. The exact sun-glare region moved
   **38.112% → 11.330%** over 90% luma and disappeared from the final review. Detached
