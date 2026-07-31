@@ -10,9 +10,10 @@ assets** — every texture, mesh, animation and sound is synthesised in code at 
 ## Run it
 
 Play the verified production build on
-[GitHub Pages](https://bachikoljunior-blip.github.io/game2/). It contains the published
-Rounds 10–12 checkpoint from `main` at `025a079428e4374e8d8fc6912b1f858673228252`;
-this is a runnable incremental checkpoint, not a claim that the overall visual gate passes.
+[GitHub Pages](https://bachikoljunior-blip.github.io/game2/). The checked-in Pages artifact
+contains the measured Rounds 13–14 checkpoint; this is a runnable incremental checkpoint,
+not a claim that the overall visual gate passes. Remote and browser verification state is
+recorded in `AI_DEVELOPMENT/PROJECT_STATE.yaml`.
 
 ```bash
 npm install
@@ -67,14 +68,17 @@ sample four times.
 > Picking the work up in a new session? [`HANDOFF.md`](./HANDOFF.md) carries the state
 > the container does not — `shots/` is gitignored and the review images do not survive.
 
-Measured, not asserted. The coherent phone/MEDIUM `r12v1` checkpoint is captured and gated.
+Measured, not asserted. The coherent phone/MEDIUM `r14final` checkpoint is captured and gated.
 Round 10 hardened the evidence and rejected harmful shadow/tone candidates; Round 11/12 made
 the stone-lantern receiver visible, additive, and softly varied. Its fixed hero near/far
 ground ratio moved **1.121 → 2.394**, and an independent source-blind lantern review passed.
-The final five-frame source-blind review still returns **FAIL overall** on fill, sky,
-mountains, foliage, authored layout, and sun framing; valley verification is also blocked by
-stale camera-era probes. Rounds 10–12 are complete, and Round 13 has not started. See
-`HANDOFF.md` and `AI_DEVELOPMENT/EVIDENCE/r12-final.md` for the exact checkpoint.
+Round 13's source-blind score moved **36 to 43**, with blockers reduced from two to one.
+Round 14 moved **44 to 50** and eliminated the broad sun-glare major finding: the critic's
+fixed region fell from **38.112% to 11.330%** of pixels over 90% luma. Detached bamboo
+skyline fragments remain blocking; terrain scale and sparse courtyard storytelling remain
+major findings. Valley verification is also blocked by stale camera-era probes. The two
+authorized rounds are complete and Round 15 is not active. See `HANDOFF.md` and
+`AI_DEVELOPMENT/EVIDENCE/r14-final.md`.
 The public Pages surface was separately verified in a real browser: it booted the relative
 hashed production modules and reached the running engine with zero page, console, request,
 or HTTP failures.
@@ -83,14 +87,14 @@ or HTTP failures.
 > they come from different critic instances, and the review set has since had the HUD
 > blanked, which removed the authored white ink the highlight gate used to pass on.
 
-**Latest coherent measured checkpoint (`r12v1`; not a full visual PASS)**
+**Latest coherent measured checkpoint (`r14final`; not a full visual PASS)**
 
 | | measured |
 |---|---|
 | phone draw calls | **119** worst pose (`torii`), against the 140 cap |
-| phone triangles | **767,124** worst pose (`wide`), against the 900,000 cap |
-| tonal range | true blacks on all five review framings (p0.1 = 0, 12, 0, 0, 6) |
-| highlights | eligible `hero` **236** and `torii` **251**, both above the strict >235 gate |
+| phone triangles | **776,373** worst pose (`wide`), against the 900,000 cap |
+| tonal range | true blacks on all five review framings (p0.1 = 0, 12, 0, 1, 6) |
+| highlights | eligible `hero` **236** and `torii` **250**, both above the strict >235 gate |
 | shader programs | zero linked dead — 117 linked, audited every capture |
 | page errors | zero |
 | set colour coherence | frame-to-frame R−B spread **64.1 → 43.2** |
@@ -98,7 +102,8 @@ or HTTP failures.
 | valley ground detail | **7.57 → 10.3**, against dressed ground's 9.19 |
 | near-sun sky chroma | saturation **0.049 → 0.28**, R−B **16.4 → 57.8** |
 | PWA | installs and launches offline |
-| bundle | 314.45 KB gzip main chunk, zero external assets |
+| sun glare | fixed 700x700 region over 90% luma **38.112% → 11.330%** (target <15%) |
+| bundle | 314.83 KB gzip main chunk, zero external assets |
 
 **Solved in round 8: three symptoms that were not what they looked like**
 

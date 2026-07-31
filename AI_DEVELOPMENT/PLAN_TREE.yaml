@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-31T15:56:54Z",
+  "updatedAt": "2026-07-31T22:03:35Z",
   "nodes": [
     {
       "id": "PROJECT",
       "title": "Bring KAGEROU to its established completion bar",
       "parent": null,
-      "children": ["FOUNDATION", "ROUNDS10_12", "RELEASE", "NEXT"],
+      "children": ["FOUNDATION", "ROUNDS10_12", "RELEASE", "NEXT", "ROUNDS13_14", "RELEASE13_14"],
       "dependencies": [],
       "status": "active",
       "priority": 100,
-      "reason": "The current user objective is exactly three completed rounds followed by remote integration and publication."
+      "reason": "The latest user objective is exactly two additional rounds, 13 and 14, followed by remote integration and publication."
     },
     {
       "id": "FOUNDATION",
@@ -126,9 +126,59 @@
       "parent": "PROJECT",
       "children": [],
       "dependencies": ["R12-REVIEW"],
-      "status": "deferred",
+      "status": "superseded",
       "priority": 0,
-      "reason": "The user explicitly limited this run to three rounds; do not activate Round 13."
+      "reason": "Superseded when the user explicitly authorized two additional rounds."
+    },
+    {
+      "id": "ROUNDS13_14",
+      "title": "Execute exactly Rounds 13 and 14",
+      "parent": "PROJECT",
+      "children": ["R13-ROUND", "R14-ROUND"],
+      "dependencies": ["R12-REVIEW"],
+      "status": "verified",
+      "priority": 100,
+      "reason": "Rounds 13 and 14 both completed their coherent capture, hostile review, bounded repair, and post-fix verification loops."
+    },
+    {
+      "id": "R13-ROUND",
+      "title": "Capture, critique, repair, and verify Round 13",
+      "parent": "ROUNDS13_14",
+      "children": [],
+      "dependencies": ["R12-REVIEW"],
+      "status": "verified",
+      "priority": 100,
+      "criteria": ["R13-ROUND-001"]
+    },
+    {
+      "id": "R14-ROUND",
+      "title": "Capture, critique, repair, and verify Round 14",
+      "parent": "ROUNDS13_14",
+      "children": [],
+      "dependencies": ["R13-ROUND"],
+      "status": "verified",
+      "priority": 99,
+      "criteria": ["R14-ROUND-001"],
+      "reason": "Coherent r14final passed apparatus, tone, and budget gates; final hostile score improved 44 to 50 while retaining an overall FAIL."
+    },
+    {
+      "id": "RELEASE13_14",
+      "title": "Publish the verified Rounds 13–14 incremental checkpoint",
+      "parent": "PROJECT",
+      "children": ["REMOTE-PUBLISH-2"],
+      "dependencies": ["R14-ROUND"],
+      "status": "active",
+      "priority": 90
+    },
+    {
+      "id": "REMOTE-PUBLISH-2",
+      "title": "Push, integrate into main, and verify GitHub Pages after Round 14",
+      "parent": "RELEASE13_14",
+      "children": [],
+      "dependencies": ["R14-ROUND"],
+      "status": "active",
+      "priority": 90,
+      "criteria": ["REMOTE-002"]
     }
   ]
 }

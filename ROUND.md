@@ -23,10 +23,11 @@ every texture, mesh, animation and sound is synthesised at boot. `ARCHITECTURE.m
 binding contract that lets independent agents work on it in parallel; read §5 (art
 direction), §7 (perf budget) and §8 (file ownership) before dispatching anything.
 
-> **Last completed round: 12. Active round: none.** The user authorized exactly Rounds
-> 10–12 in this run. The coherent `r12v1` checkpoint verifies the apparatus, budgets, tone,
-> and lantern repair but remains an overall visual FAIL. Publish the incremental checkpoint,
-> then stop; do not activate Round 13.
+> **Last completed round: 14. Active round: none.** Round 14 closed on coherent
+> `r14final`: apparatus and budgets passed, source-blind score improved 44 to 50, and the
+> broad sun-glare major finding cleared. One detached-bamboo blocker plus terrain-scale and
+> courtyard-dressing majors remain. Publish this verified checkpoint, then stop; do not
+> activate Round 15 without a new user instruction.
 
 An independent critic has scored it 34 → 48 → 58 → (round 4 unfiled) → (5 and 6 unscored)
 → 44 → **46** → **47 pre-fix in round 9** out of 100 against a *Ghost of Tsushima* /
@@ -39,14 +40,14 @@ channels of antialiasing being discarded.
 The score gap from round 3's 58 is not a regression measurement — different critic
 instances, four rounds apart, against a review set that has since had the HUD blanked.
 
-Latest coherent measurements (`r12v1`):
+Latest coherent measurements (`r14final`):
 
 | | measured | contract |
 |---|---|---|
 | phone draw calls | **119** worst pose | ≤ 140 ✓ |
-| phone triangles | **767,124** worst pose | ≤ 900,000 ✓ |
-| black gate, all five | p0.1 = 0, 12, 0, 0, 6 | < 15 ✓ |
-| white gate, eligible shots | hero 236 ✓, torii 251 ✓ | > 235 |
+| phone triangles | **776,373** worst pose | ≤ 900,000 ✓ |
+| black gate, all five | p0.1 = 0, 12, 0, 1, 6 | < 15 ✓ |
+| white gate, eligible shots | hero 236 ✓, torii 250 ✓ | > 235 |
 
 The lantern near/far ratio is **2.394** and its stopped-frame A/B passes; a source-blind
 lantern review also passes. The full finding verifier still fails fill, shadow edge, sky,

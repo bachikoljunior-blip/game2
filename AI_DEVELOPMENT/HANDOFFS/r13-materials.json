@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "taskId": "R13-ROUND",
+  "producer": "project-director",
+  "consumer": "materials-specialist",
+  "objective": "Differentiate the dominant shrine materials at native phone resolution without weakening tonal, fill, bundle, or performance gates.",
+  "allowedScope": ["src/render/Materials.js"],
+  "prohibitedChanges": ["Do not edit prop geometry, lighting, post-processing, exposure, or capture gates.", "Do not compensate for eaten cool fill by raising Lighting.js."],
+  "inputs": ["shots/review-r13.json", "shots/phone-hero-r13base.png", "shots/phone-torii-r13base.png", "HANDOFF.md material/fill open-item and disproof sections"],
+  "outputs": ["Evidence-backed Materials.js repair", "Falsifiable prediction tied to exact native regions", "Coordinator-ready change summary"],
+  "affectedInterfaces": ["MaterialLibrary generated texture/shader response", "Bundle and texture budgets"],
+  "dependencies": ["R9-APPARATUS-001", "R9-TONE-001"],
+  "invariants": ["No external assets", "Texture memory <=48 MB", "Bundle <=1.6 MB gzip", "Preserve authored material identities", "Nothing non-finite crosses a system boundary"],
+  "assumptions": ["A bounded shader/texture response change can improve at least one dominant material distinction without geometry edits."],
+  "unresolvedQuestions": ["Which shared response is making timber, stone, rope, and paper converge visually?"],
+  "acceptanceCriteria": ["R13-ROUND-001", "R9-FILL-001", "R9-TONE-001"],
+  "testsRequired": ["Source-level diagnosis before edit", "npm run build", "Coordinator-owned coherent phone/MEDIUM recapture and native review"],
+  "risks": ["Global material changes can move histogram gates", "Extra octave work can raise fragment cost", "Paper/lantern edits may clip highlights or undermine the verified local emissive source"],
+  "rollback": "Restore src/render/Materials.js from f50a274c29948a164e65136ffaa1fd4d27c06c4b.",
+  "status": "verified"
+}

@@ -34,6 +34,8 @@
 
 ## Current actionable objective
 
-Finish exactly Rounds 10–12: preserve the verified `r12v1` checkpoint, record the independent
-overall FAIL without weakening any open criterion, push and integrate the checkpoint into
-`main`, verify the public GitHub Pages surface, then stop without beginning Round 13.
+Execute exactly Rounds 13 and 14 from published `main` `51f1807`. Each round must use a
+coherent phone/MEDIUM capture, verified apparatus, source-blind hostile review, the smallest
+evidence-backed repair set, and a post-fix remeasurement. After Round 14, persist both
+iterations, push and integrate the checkpoint into `main`, verify the public GitHub Pages
+surface, and stop without beginning Round 15.

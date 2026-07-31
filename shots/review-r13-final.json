@@ -1,0 +1,47 @@
+{
+  "verdict": "FAIL",
+  "blindComparison": "A stranger picks the reference title because its forest horizon resolves as a stable organic silhouette, while KAGEROU's most exposed skyline still breaks into conspicuous detached horizontal fragments.",
+  "score": 43,
+  "findings": [
+    {
+      "severity": "blocker",
+      "shot": "phone-valley, phone-sun, phone-wide",
+      "problem": "The bamboo mass is denser than before, but its skyline still sheds hundreds of detached dark and magenta horizontal bars into the sky. In phone-valley the debris spans nearly the full width from about x=0-2450, y=80-280, with especially obvious dotted rows around the isolated tall trunks; shorter broken bars remain visible above the forest in phone-sun and phone-wide.",
+      "why": "This is a high-contrast silhouette failure covering the horizon of three showcase frames. The eye reads the floating marks as corrupt image fragments rather than leaves, so the environment cannot survive a store-page comparison regardless of improvements beneath that edge.",
+      "owner": "src/render/Foliage.js",
+      "fix": "At 2532x1170, remove every detached skyline bar and dotted row in all three named shots. The distant bamboo must resolve into continuous crown masses with a small number of intentional trunk and branch breakouts; no isolated fragment should remain visible against open sky when the frame is viewed at native resolution or reduced to the contact sheet."
+    },
+    {
+      "severity": "major",
+      "shot": "phone-wide, phone-valley",
+      "problem": "The mountain chain now has clearer large planes and the far-right ridges lift with distance, but the ground still fills the lower half of phone-wide with uniformly repeated dark ripples and identical low clumps. Phone-valley repeats the same tight corrugated pattern from the foreground fence to the forest, while the nearest mountain faces retain busy, evenly distributed embossed noise.",
+      "why": "The improved ridge separation does not restore believable scale because the dominant ground texture has no broad wet, dry, worn, planted, or eroded zones. The landscape remains a procedural carpet beneath a backdrop rather than terrain with kilometer-scale structure.",
+      "owner": "src/world/Terrain.js",
+      "fix": "Break the lower half of phone-wide into broad irregular value and material zones at least tens of metres across, with the gate route visibly worn and adjacent field areas differentiated by drainage or vegetation. Suppress the repeating ripple cadence before the mid-ground, and reduce fine mountain-face contrast so only large erosion planes survive beyond the forest line."
+    },
+    {
+      "severity": "major",
+      "shot": "phone-sun",
+      "problem": "The backlit gate view loses a large central region to near-white glare: sky, distant gate, fence, and ground separation collapse from roughly x=1120-1660 through most of the middle height. The upper lantern also clips to a flat white core, while the foreground post becomes an oversized featureless orange slab.",
+      "why": "The frame has a dramatic light direction but not controlled exposure. A reference golden-hour shot keeps a readable warm gradient and silhouettes around the sun; this one erases spatial information at the focal point and turns the key prop into a blank obstruction.",
+      "owner": "src/render/PostFX.js",
+      "fix": "Compress the white core so the sun remains a compact source surrounded by a warm radial gradient, with the distant gate, fence, and pavement still separable through the glow. Retain paper folds and framing in the upper lantern, and preserve visible colour and surface variation across the foreground post instead of allowing either highlight to flatten into a featureless block."
+    },
+    {
+      "severity": "major",
+      "shot": "phone-torii, phone-hero",
+      "problem": "The close hero assets still share a coarse sprayed-noise finish and simplified toy-like construction. The gate reads as uniformly pocked red tubes, stone lanterns as soft brown casts, lantern panels as yellow-white cutouts, and the blossom crown as stacked chunky slabs rather than petal masses.",
+      "why": "Wood, stone, paper, fiber, and foliage still fail to separate as materials at the exact distance chosen to showcase them. The shared noisy response makes the shrine look like a modular prototype rather than weathered sacred architecture.",
+      "owner": "src/render/Materials.js",
+      "fix": "Make each hero surface distinct at native resolution: longitudinal grain and edge-localized wear on vermilion wood, crisp mineral breakup on stone, visible braided rope fibers, translucent lantern paper that retains its dark frame, and fine petal-edge breakup within larger blossom clusters. Remove the same coarse speckle response from materials that should not share it."
+    },
+    {
+      "severity": "major",
+      "shot": "phone-wide, phone-valley",
+      "problem": "A sign and offering cluster now occupy the lower-left of phone-wide, but the shrine remains a small symmetrical kit centered in a vast, mostly undifferentiated field. The new objects sit as an isolated corner garnish rather than framing the route, and phone-valley still consists of a straight fence, one thin grass clump, empty patterned ground, and a flat forest wall.",
+      "why": "The added dressing does not create a convincing foreground-to-background story or evidence of ritual use, weather, and traffic. Both views still read as an editor overview of placed props, far below the density and compositional control of the reference titles.",
+      "owner": "src/world/Level.js",
+      "fix": "Use the existing gate route as the compositional spine: bring a substantial foreground anchor across a frame edge, cluster offerings and banners around the route rather than in an isolated corner, and create asymmetric bands of wear, drainage, grass, and human activity that tighten toward the shrine. Recompose phone-valley with a readable mid-ground subject instead of an empty fence-to-forest strip."
+    }
+  ]
+}

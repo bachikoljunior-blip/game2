@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "taskId": "R13-ROUND",
+  "producer": "project-director",
+  "consumer": "foliage-specialist",
+  "objective": "Remove the detached bamboo skyline bars and flecks identified in the source-blind Round 13 review while preserving a stable botanical silhouette and phone budgets.",
+  "allowedScope": ["src/render/Foliage.js"],
+  "prohibitedChanges": ["Do not edit terrain, sky, post-processing, capture tools, or review evidence.", "Do not hide the symptom with global blur, fog, or exposure changes."],
+  "inputs": ["shots/review-r13.json", "shots/phone-valley-r13base.png", "shots/phone-sun-r13base.png", "shots/phone-torii-r13base.png", "HANDOFF.md open-item and disproof sections"],
+  "outputs": ["Evidence-backed Foliage.js repair", "Falsifiable prediction and focused static/runtime checks", "Coordinator-ready change summary"],
+  "affectedInterfaces": ["FoliageSystem generated bamboo geometry and materials", "MEDIUM submitted-triangle budget"],
+  "dependencies": ["R9-APPARATUS-001", "R9-PERF-001"],
+  "invariants": ["Use the shared wind field", "No per-frame allocation", "No external assets", "Do not exceed 140 draw calls or 900000 submitted triangles", "Nothing non-finite crosses a system boundary"],
+  "assumptions": ["The visible detached components belong to foliage-generated bamboo/crown geometry until disproved by a same-frame ablation or source mapping."],
+  "unresolvedQuestions": ["Which foliage layer actually produces the detached native-resolution components?"],
+  "acceptanceCriteria": ["R13-ROUND-001", "R9-PERF-001"],
+  "testsRequired": ["Targeted source/runtime diagnosis before edit", "npm run build", "Coordinator-owned coherent phone/MEDIUM recapture and native review"],
+  "risks": ["Reducing cards can expose an empty skyline", "Adding crown mass can raise triangles or overdraw", "The critic previously misattributed sky-adjacent specks, so the producer must be proved before editing"],
+  "rollback": "Restore src/render/Foliage.js from f50a274c29948a164e65136ffaa1fd4d27c06c4b.",
+  "status": "verified"
+}

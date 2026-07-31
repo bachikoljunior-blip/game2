@@ -16,12 +16,20 @@ art-direction state record; project-wide session, plan and criterion pointers li
 
 - Logical session: **active** (`2026-07-31-game2-continuation`). It ends only when the user
   explicitly says so.
-- Working branch: **`codex/persistent-protocol-round10`**, created from
-  `origin/claude/kagerou-round9-measurement-inj5qq` at **`6c4c093`**. Persistent
+- Working branch: **`agent/rounds-13-14`**, created from published `main` at
+  **`51f1807`**. Persistent
   cross-session authorization is active to push verified checkpoints, integrate them into
   `main`, and publish GitHub Pages without asking again. Paid, destructive, credential, and
   account actions remain outside that authorization.
-- **Rounds 10, 11, and 12 are complete; Round 13 has not started.** The coherent `r12v1`
+- **Rounds 10–14 are complete; no product round is active.** Round 14 opened at
+  source-blind **44/100** with one blocker and two majors and closed on coherent
+  `r14final` at **50/100** with one blocker and two majors. The exact sun-glare region moved
+  **38.112% → 11.330%** over 90% luma and disappeared from the final review. Detached
+  bamboo skyline fragments remain blocking; terrain scale and sparse courtyard dressing
+  remain major findings. The foliage collar and terrain range gates produced bounded partial
+  moves, while a follow-up leaf-angle hypothesis failed and was explicitly reverted. Round
+  15 must not start without a new user request. Round 13 had opened at **36/100** with two
+  blockers and closed on `r13v2` at **43/100** with one blocker. The coherent `r12v1`
   checkpoint is complete, but integrated Round 9 product acceptance is not.
   `r9v1` proved that
   the six Round 9 fixes did not meet their integrated predictions. Round 10 rejected the
@@ -43,10 +51,11 @@ art-direction state record; project-wide session, plan and criterion pointers li
   `/docs/` build, reaches ready/running, and has zero page, console, request, or HTTP errors.
   The initial HTTP-200 development entry and two speculative-module variants were rejected
   before this state was accepted.
-- Exact next action: **await a future user instruction**. There is no active art round; do
-  not start or infer Round 13 from the still-active logical-session flag.
-- Verified local publication implementation checkpoint: **`5fb4c3c`**; rollback base:
-  **`6c4c093`**.
+- Exact next action: build the Pages artifact from coherent `r14final`, push
+  `agent/rounds-13-14`, merge it into `main`, and verify the public root/runtime; then await
+  user direction without activating Round 15.
+- Current rollback point: **`5428d16`**; branch base: **`51f1807`**. Previous verified publication
+  implementation checkpoint: **`5fb4c3c`**.
 - Round 8 is six commits: `bc96c3c` (critique), `e9b9717` (postfx), `4a310ed` (foliage),
   `1be775a` (world), `55693b9` (sky), `26bf937` (postfx, gate repair). Round 8 was run on
   `claude/kagerou-round-8-start-jk5lox` because the session operator named that branch, and

@@ -2031,9 +2031,29 @@ void kgComputeSurface(){
   albedo *= mix(1.0, 0.76, weather * 0.65);
   rough = mix(rough, 0.96, weather * 0.30);
 
-  // The sandō is polished pale and smooth, and nothing grows on it.
-  albedo = mix(albedo, albedo * vec3(1.16, 1.12, 1.06), wear * 0.75);
-  rough = mix(rough, 0.52, wear * 0.55);
+  // Three spatial tiers, all in world space so they stay fixed under the camera.
+  // The broad field is continuous rather than thresholded: it reads as drainage and
+  // soil history, not procedural islands. Keep it off the maintained route so that
+  // the route-scale term remains the one unbroken line through the composition.
+  float broadZone = nB * 0.78 + nC * 0.22;
+  float broadOpen = core * smoothstep(12.0, 30.0, dist) * (1.0 - wear * 0.62);
+  albedo *= 1.0 + broadZone * vec3(0.24, 0.16, 0.07) * broadOpen;
+
+  // The sandō is polished in irregular 6.9 m reaches rather than as one uniform
+  // stripe. One simplex term is enough: the baked wear mask already supplies the
+  // authored route, and this only breaks its value at the scale of foot traffic.
+  float routeZone = wear;
+  if (wear > 0.002) {
+    float routeBreak = snoise2(P.xz * 0.145 + vec2(19.7, -43.1));
+    routeZone *= 0.68 + 0.32 * smoothstep(-0.34, 0.34, routeBreak);
+  }
+  albedo = mix(albedo, albedo * vec3(1.24, 1.18, 1.08), routeZone * 0.78);
+  rough = mix(rough, 0.58, routeZone * 0.58);
+
+  // Fine relief belongs to the camera-side third of the approach. Previously both
+  // the dressing normal and the library detail normal survived to the shrine, so a
+  // metre-scale groove kept the same prominence across roughly sixty metres.
+  float kgNearGrain = 1.0 - smoothstep(34.0, 78.0, dist);
 
   // --- ground dressing, 0.3–7 m --------------------------------------------
   // The one band this ground had nothing in, and the reason a hostile eye reads it
@@ -2064,7 +2084,8 @@ void kgComputeSurface(){
   // deliberately early: a 2.6 m patch of dry turf does not compete with a 0.26 m moss
   // cushion for the same pixels, so it has no reason to wait until the texture has
   // mipped out before it starts.
-  float dress = smoothstep(2.5, 9.0, dist) * (1.0 - smoothstep(1.30, 3.10, kgFoot))
+  float dress = smoothstep(2.5, 9.0, dist) * kgNearGrain
+              * (1.0 - smoothstep(1.30, 3.10, kgFoot))
               * open * (1.0 - wear * 0.55);
   if (dress > 0.002) {
     // What one pixel is worth here, and why the octaves below are switched on the
@@ -2261,6 +2282,10 @@ void kgComputeSurface(){
   kgFarBump = vec2(0.0);
   kgFine = 0.0;
   kgLodBand = 0.0;
+  // One hierarchy ramp shared by rock and snow. The locked band is useful once a
+  // pixel covers metres of the deep range, but at the establishing-shot massif it
+  // was resolving at the same prominence as foreground grain and miniaturising it.
+  float kgScaleRamp = smoothstep(0.80, 1.90, kgFoot);
   {
     // Striation runs down the fall line, so the sampling frame is stretched along
     // it: features come out as gullies and ribs, not as a blanket of noise.
@@ -2295,14 +2320,10 @@ void kgComputeSurface(){
     // budget rather than sharing the striation's: the soft knee above exists to stop
     // the *striation* tipping a whole face into the sky term, and pushing a second
     // field through it would only trade one for the other.
-    // The 1.15-2.70 window is *not* the reason the far range is flat, whatever three
-    // rounds of notes have said. Ray-marching the 'torii' pose and taking the pixel
-    // footprint off neighbouring rays puts the median at 1.82 m on the peaks the review
-    // measures, where this evaluates to 0.60, not the 0.06 the standing note claims —
-    // 0.06 needs 2.5 m, which only the deepest tail of that range reaches. Ablating
-    // this term entirely moves the modelled relative detail in the critic's box from
-    // 0.211 to 0.203, i.e. it is worth 4%. Leave it where it is and spend elsewhere.
-    float fineAmp = (1.0 - smoothstep(1.15, 2.70, kgFoot)) * mix(0.55, 1.0, amp)
+    // This fixed six-metre band belongs to ground close enough to resolve it as rock.
+    // Past roughly one metre per pixel the locked band below takes over; keeping both
+    // at full strength made the 600 m face carry the same wrinkle scale as the apron.
+    float fineAmp = (1.0 - smoothstep(0.35, 1.25, kgFoot)) * mix(0.55, 1.0, amp)
                   * smoothstep(0.02, 0.30, farDetail);
     vec3 g3 = texture2D(tDetailN, vec2(along * 0.0610, across * 0.1640) + 0.67).xyz * 2.0 - 1.0;
     kgFarBump = clamp(g3.xy * 1.50 * fineAmp, -0.40, 0.40);
@@ -2319,7 +2340,8 @@ void kgComputeSurface(){
       float lodI = floor(lodM);
       float frqA = exp2(-lodI);
       kgLodBand = mix(fbm2(P.xz * frqA + 61.7, 2),
-                      fbm2(P.xz * (frqA * 0.5) + 61.7, 2), lodM - lodI);
+                      fbm2(P.xz * (frqA * 0.5) + 61.7, 2), lodM - lodI)
+                    * mix(0.24, 1.0, kgScaleRamp);
     }
   }
   if (wild2 > 0.002) {
@@ -2358,7 +2380,7 @@ void kgComputeSurface(){
     // measures detail 3.85-6.01; the 1.0-2.3 km range in 'torii' sits at 1.8 m and
     // measured 2.02. Everything below rides this ramp, so the far range gets the extra
     // amplitude and the mid-distance massif — which does not need it — is untouched.
-    float farRamp = smoothstep(0.80, 1.90, kgFoot);
+    float farRamp = kgScaleRamp;
 
     // In-box value structure. Everything that varies at the scale of a 70x40 probe box
     // (130 m of rock at this range) is what lumaSpread reads, and above this line the
@@ -2397,13 +2419,10 @@ void kgComputeSurface(){
     albedo = mix(albedo, far, wild2 * 0.88);
     rough = mix(rough, mix(0.88, 0.96, veg), wild2 * 0.8);
   }
-  // Inside the core the layer identity is right and only the variance is missing, so
-  // this modulates what the splat already chose instead of replacing it. Its own ramp,
-  // starting at 55 m rather than 90: the apron the establishing shot looks across
-  // begins at the plateau edge, and the massif ramp is authored for a 1.5 km face.
-  // Aliasing is held off by the pixel-footprint gate, not by the distance ramp — the
-  // same gate the massif's rubble rides, so both bands leave before either can fizz.
-  float coreFar = core * smoothstep(55.0, 240.0, dist);
+  // Preserve the old core reconstruction only where it overlaps the near envelope.
+  // Letting it grow all the way to 240 m recreated 2.9/7.8 m grain immediately after
+  // the dressing above faded, which made the cadence continuous instead of zoned.
+  float coreFar = core * smoothstep(55.0, 240.0, dist) * kgNearGrain;
   if (coreFar > 0.002) {
     float grit = 1.0 - smoothstep(1.15, 2.70, kgFoot);
     float rk1c = fbm2(P.xz * 0.128 + 61.7, 2);
@@ -2601,7 +2620,7 @@ void kgComputeSurface(){
   vec3 T = (abs(N.x) > 0.99) ? normalize(vec3(0.0, 0.0, 1.0) - N * N.z)
                              : normalize(vec3(1.0, 0.0, 0.0) - N * N.x);
   vec3 B = cross(N, T);
-  float dFade = 1.0 - smoothstep(28.0, 150.0, dist);
+  float dFade = kgNearGrain;
   vec3 t1 = texture2D(tDetailN, kgRot(P.xz + kgWarp, vec2(0.3746, 0.9272)) * 0.6).xyz * 2.0 - 1.0;
   // Snow buries the soil grain and the striation both; a snowfield that still carries
   // the rock's own relief reads as a paint layer over it rather than as a depth of

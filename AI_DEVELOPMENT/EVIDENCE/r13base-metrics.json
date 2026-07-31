@@ -1,0 +1,414 @@
+{
+  "schemaVersion": 1,
+  "round": 9,
+  "tag": "r13base",
+  "generatedAt": "2026-07-31T20:22:22.221Z",
+  "checks": [
+    {
+      "criterion": "R9-FILL-001",
+      "pass": false,
+      "metrics": {
+        "shadow": {
+          "box": "1400,1010 100x40",
+          "meanRGB": [
+            31.3,
+            17,
+            11.9
+          ],
+          "saturation": 0.558,
+          "luma": {
+            "p1": 0.6,
+            "p50": 13,
+            "p99": 67.1
+          },
+          "lumaSpread": 66.4,
+          "detail": 3.63
+        },
+        "lit": {
+          "box": "1150,830 120x50",
+          "meanRGB": [
+            75.1,
+            57.1,
+            47.2
+          ],
+          "saturation": 0.359,
+          "luma": {
+            "p1": 31.9,
+            "p50": 58.9,
+            "p99": 97.5
+          },
+          "lumaSpread": 65.6,
+          "detail": 8.95
+        },
+        "shadowMeanLuma": 19.67,
+        "litMeanLuma": 60.21,
+        "blueRed": 0.38,
+        "valueRatio": 0.327
+      }
+    },
+    {
+      "criterion": "R9-SHADOW-EDGE-001",
+      "pass": false,
+      "metrics": {
+        "edges": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "foundRows": 0,
+        "longestRepeat": 1,
+        "maxJump": 0,
+        "transitionPixels": 17
+      },
+      "limitation": "Contact-versus-far penumbra comparison still requires native visual inspection."
+    },
+    {
+      "criterion": "R9-SKY-001",
+      "pass": false,
+      "metrics": {
+        "sky": {
+          "box": "2000,80 300x150",
+          "meanRGB": [
+            162.6,
+            170.6,
+            170.1
+          ],
+          "saturation": 0.048,
+          "luma": {
+            "p1": 160.5,
+            "p50": 168.2,
+            "p99": 179.7
+          },
+          "lumaSpread": 19.2,
+          "detail": 0.55
+        },
+        "secondCloudBox": {
+          "box": "1850,30 300x150",
+          "meanRGB": [
+            126.9,
+            154,
+            167.5
+          ],
+          "saturation": 0.242,
+          "luma": {
+            "p1": 145.9,
+            "p50": 149.2,
+            "p99": 152.3
+          },
+          "lumaSpread": 6.4,
+          "detail": 0.69
+        },
+        "column": {
+          "lumaSpan": 22.21,
+          "top": [
+            161,
+            168,
+            168
+          ],
+          "horizon": [
+            176,
+            179,
+            172
+          ],
+          "coolTop": true,
+          "warmHorizon": true
+        }
+      }
+    },
+    {
+      "criterion": "R9-VALLEY-001",
+      "pass": null,
+      "metrics": {
+        "boxes": [
+          {
+            "box": "200,250 300x150",
+            "meanRGB": [
+              128.2,
+              112.2,
+              63.4
+            ],
+            "saturation": 0.504,
+            "luma": {
+              "p1": 82.6,
+              "p50": 111.2,
+              "p99": 145.2
+            },
+            "lumaSpread": 62.6,
+            "detail": 4.37
+          },
+          {
+            "box": "1200,300 300x150",
+            "meanRGB": [
+              174.8,
+              140.5,
+              74.2
+            ],
+            "saturation": 0.576,
+            "luma": {
+              "p1": 108.5,
+              "p50": 143.9,
+              "p99": 175
+            },
+            "lumaSpread": 66.5,
+            "detail": 5.67
+          },
+          {
+            "box": "2100,350 300x150",
+            "meanRGB": [
+              82.8,
+              72.4,
+              46.6
+            ],
+            "saturation": 0.441,
+            "luma": {
+              "p1": 49.3,
+              "p50": 72.4,
+              "p99": 98.8
+            },
+            "lumaSpread": 49.5,
+            "detail": 5.53
+          },
+          {
+            "box": "300,800 300x150",
+            "meanRGB": [
+              90.1,
+              54.8,
+              28.3
+            ],
+            "saturation": 0.663,
+            "luma": {
+              "p1": 4.9,
+              "p50": 59.4,
+              "p99": 128.2
+            },
+            "lumaSpread": 123.4,
+            "detail": 9.75
+          },
+          {
+            "box": "1900,900 300x150",
+            "meanRGB": [
+              48.5,
+              32.9,
+              27.5
+            ],
+            "saturation": 0.449,
+            "luma": {
+              "p1": 1.2,
+              "p50": 33.9,
+              "p99": 89.2
+            },
+            "lumaSpread": 88,
+            "detail": 6.28
+          },
+          {
+            "box": "1100,1050 300x120",
+            "meanRGB": [
+              44.1,
+              33.3,
+              28.1
+            ],
+            "saturation": 0.301,
+            "luma": {
+              "p1": 8.6,
+              "p50": 31.5,
+              "p99": 83.5
+            },
+            "lumaSpread": 74.9,
+            "detail": 6.32
+          }
+        ],
+        "hues": [
+          45.2,
+          39.5,
+          42.8,
+          25.7,
+          15.4,
+          19.5
+        ],
+        "hueSpread": 29.8,
+        "whole": {
+          "box": "0,0 2532x1170",
+          "meanRGB": [
+            114,
+            92.3,
+            65.6
+          ],
+          "saturation": 0.452,
+          "luma": {
+            "p1": 1.1,
+            "p50": 83.5,
+            "p99": 232.7
+          },
+          "lumaSpread": 231.7,
+          "detail": 6.44
+        }
+      },
+      "limitation": "BLOCKED: these six fixed boxes predate the Round 9 valley position/target/FOV change and no longer sample the named semantic regions. Preserve the values as history; do not use them to accept or reject the reframed valley."
+    },
+    {
+      "criterion": "R9-SAKURA-001-HUE",
+      "pass": false,
+      "metrics": {
+        "hero": {
+          "box": "420,165 40x30",
+          "meanRGB": [
+            102.4,
+            64.2,
+            78.3
+          ],
+          "saturation": 0.383,
+          "luma": {
+            "p1": 37.4,
+            "p50": 75.1,
+            "p99": 115.1
+          },
+          "lumaSpread": 77.8,
+          "detail": 8.1
+        },
+        "wide": {
+          "box": "950,460 200x110",
+          "meanRGB": [
+            179,
+            127.2,
+            115.4
+          ],
+          "saturation": 0.342,
+          "luma": {
+            "p1": 62.5,
+            "p50": 135.1,
+            "p99": 192
+          },
+          "lumaSpread": 129.5,
+          "detail": 12.02
+        },
+        "heroBlueRed": 0.765,
+        "wideBlueRed": 0.645
+      },
+      "limitation": "Facet width and alpha falloff require a native crop/manual or dedicated edge-segmentation check."
+    },
+    {
+      "criterion": "R9-FAR-RANGE-001-PARTIAL",
+      "pass": false,
+      "metrics": {
+        "mountain": {
+          "box": "2030,700 70x40",
+          "meanRGB": [
+            173.4,
+            166.1,
+            157.5
+          ],
+          "saturation": 0.096,
+          "luma": {
+            "p1": 155.7,
+            "p50": 164.3,
+            "p99": 186.7
+          },
+          "lumaSpread": 31,
+          "detail": 2.3
+        }
+      },
+      "limitation": "Matched-flank hue split and silhouette congruence remain separate checks."
+    },
+    {
+      "criterion": "R9-LANTERN-001",
+      "pass": true,
+      "metrics": {
+        "core": {
+          "luma": 244.51,
+          "rgb": [
+            253,
+            248,
+            185
+          ],
+          "x": 1606,
+          "y": 781,
+          "saturation": 0.269
+        },
+        "nearGround": {
+          "box": "1560,1090 90x40",
+          "meanRGB": [
+            140.8,
+            83.3,
+            47.4
+          ],
+          "saturation": 0.662,
+          "luma": {
+            "p1": 53.5,
+            "p50": 93.4,
+            "p99": 127.1
+          },
+          "lumaSpread": 73.6,
+          "detail": 9.02
+        },
+        "farGround": {
+          "box": "1900,1090 90x40",
+          "meanRGB": [
+            47.7,
+            36.8,
+            33.1
+          ],
+          "saturation": 0.304,
+          "luma": {
+            "p1": 15.3,
+            "p50": 37.2,
+            "p99": 89.8
+          },
+          "lumaSpread": 74.5,
+          "detail": 9.34
+        },
+        "groundRatio": 2.392
+      },
+      "limitation": "Post gradient/falloff still requires the native crop."
+    }
+  ],
+  "summary": {
+    "passed": [
+      "R9-LANTERN-001"
+    ],
+    "failed": [
+      "R9-FILL-001",
+      "R9-SHADOW-EDGE-001",
+      "R9-SKY-001",
+      "R9-SAKURA-001-HUE",
+      "R9-FAR-RANGE-001-PARTIAL"
+    ],
+    "blocked": [
+      "R9-VALLEY-001"
+    ],
+    "manualStillRequired": [
+      "R9-SAKURA-001 form",
+      "R9-FAR-RANGE-001 flank/silhouette",
+      "R9-DRESSING-001",
+      "R9-CINEMATIC-001",
+      "contact-versus-far shadow softness"
+    ]
+  }
+}

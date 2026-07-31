@@ -118,3 +118,28 @@ Detailed visual hypotheses disproved in prior rounds remain authoritative in
   conditionally import the entry; make `npm run build:pages` regenerate the checked-in build.
 - Reusable rule: verify the entry module and user-surface boot; an HTTP status alone is not
   publication evidence.
+
+## F-013 — A bounded emissive detail still consumed the white-gate margin
+
+- Observed: Round 13 coherent `r13v1`.
+- The paper lattice kept its open-paper peak at 1.0, but a 0.68 frame floor removed enough
+  high-luma pixels for hero p99.9 to fall from 237 to exactly 235.
+- Recovery: raise only the lattice floor to 0.80, verify hero alone at 236, then repeat a
+  full coherent set; r13v2 passed at 236 without moving global tone.
+- Reusable rule: preserving a peak value does not preserve a percentile population. Measure
+  the actual frame gate after any authored detail cuts into a major highlight source.
+
+## F-014 — Two plausible Round 14 producer hypotheses failed native-frame predictions
+
+- Observed: Round 14 `r14v1` and targeted `r14f2`.
+- Removing far-card node collars reduced valley detached components only 486 to 433 and
+  wide components 36 to 32, far below the predicted 75% reduction. Collars were a minor
+  contributor, not the dominant skyline producer.
+- Tightening the remaining spray-leaf angle then changed valley components 433 to 445 and
+  wide 32 to 33. The candidate was rejected and reverted rather than being hidden behind a
+  favorable source-level explanation.
+- Terrain distance gating preserved near detail but reduced whole-box far Laplacian energy
+  only 11%, not the predicted half, and did not create measurable broad-zone separation.
+- Reusable rule: source arithmetic is a hypothesis until the final composite confirms it;
+  retain bounded partial gains only when they do not regress established gates, and revert
+  follow-up candidates that fail their own saved-image prediction.

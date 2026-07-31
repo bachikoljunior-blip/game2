@@ -577,8 +577,10 @@ RECIPES.push({
     };
   },
   shade(u, v, s, c, t) {
-    // Posts are vertical: substrate grain varies fast across u.
-    const grain = t.fbmA(u, v, 56, 5, 3);
+    // The lacquer follows the cedar below it: fast variation across the member,
+    // slow variation down its length. Keep this centred so strengthening the
+    // directional read does not move the tile's mean value.
+    const grain = t.fbmA(u, v, 56, 5, 3) * 0.5 + 0.5;
     const craze = t.worleyA(u, v, c.hf >> 1, c.hf >> 1, 1.0);
     const crackLine = 1 - smoothstep(0.0, 0.040, craze.f2 - craze.f1);
     const micro = t.fbmA(u, v, c.hf, c.hf, 2) * 0.5 + 0.5;
@@ -589,27 +591,28 @@ RECIPES.push({
     const sun = cs(c.sun, u, v);
     const dust = cs(c.dust, u, v);
 
-    let h = 0.74 + grain * 0.012 * (1 - chip) + (micro - 0.5) * 0.012;
-    h -= crackLine * 0.020 * (0.4 + sun);
-    h -= chip * 0.055;
-    h += rim * 0.022;
+    let h = 0.74 + (grain - 0.5) * 0.024 * (1 - chip) + (micro - 0.5) * 0.004;
+    h -= crackLine * 0.007 * (0.4 + sun);
+    h -= chip * 0.040;
+    h += rim * 0.015;
 
     // Colour: never a flat tint — the film thins on the sunward side and the
     // shaded side keeps the deep oxblood of thick urushi.
     setc(s, PAL.vermilion);
     mixc(s, PAL.vermDeep, clamp(0.55 - sun * 0.9, 0, 1));
     mixc(s, PAL.vermHot, clamp(sun * 0.85 - 0.15, 0, 1) * 0.75);
-    tint(s, 0.030, -0.010, -0.008, grain * 1.2 + (micro - 0.5) * 0.8);
-    mixc(s, PAL.vermAged, vband(v, 0.38) * 0.35 + crackLine * 0.30);
+    tint(s, 0.030, -0.010, -0.008, (grain - 0.5) * 1.8 + (micro - 0.5) * 0.25);
+    scalec(s, 1 + (grain - 0.5) * 0.18 * (1 - chip));
+    mixc(s, PAL.vermAged, vband(v, 0.38) * 0.35 + crackLine * 0.10);
     mixc(s, PAL.cedar, chip * 0.92);
-    mixc(s, PAL.cedarHeart, chip * (grain * 0.5 + 0.25));
+    mixc(s, PAL.cedarHeart, chip * (grain * 0.5 + 0.15));
     mixc(s, PAL.grime, dust * 0.18 * (1 - sun * 0.6) + vband(v, 0.24) * 0.22);
 
     // Lacquer is the glossiest thing in the scene until it crazes or chips.
-    let ro = 0.13 + crackLine * 0.32 + (1 - sun) * 0.06 + dust * 0.10;
+    let ro = 0.13 + crackLine * 0.18 + (1 - sun) * 0.06 + dust * 0.10;
     ro = lerp(ro, 0.82, chip);
     ro = lerp(ro, 0.55, rim * 0.6);
-    const ao = 1 - crackLine * 0.16 - chip * 0.28 - rim * 0.10;
+    const ao = 1 - crackLine * 0.05 - chip * 0.20 - rim * 0.06;
 
     s.h = clamp(h, 0, 1);
     s.ro = clamp(ro, 0.06, 1);
@@ -1151,8 +1154,8 @@ RECIPES.push({
 
     const grain = t.fbmA(u, v, c.hf >> 2, c.hf >> 2, 3) * 0.5 + 0.5;
     // Chisel work. A dressed lantern shaft carries the nomi's traces as shallow
-    // parallel striae, so the frame is stretched 1:4 — and it is 3 mm deep, because
-    // tooling that reads as relief at a distance reads as corrugation up close.
+    // parallel striae, so the frame is stretched 1:4; the depth stays near a
+    // millimetre because tooling that reads as relief at a distance corrugates up close.
     const tool = t.ridgedA(u + 0.31, v + 0.47, c.hf >> 3, c.hf >> 1, 2);
 
     const age = cs(c.age, u, v);
@@ -1164,12 +1167,15 @@ RECIPES.push({
     // Relief budget: this tile lands on 0.5–1.5 m of prop, so 1.0 of `h` is at most
     // ~19 cm of relief (tile/8). Everything here is under 4 mm, and no term forms a
     // continuous line — which is the whole difference from the recipe it replaces.
+    // The mineral identity belongs primarily in colour and roughness. Keeping its
+    // relief shallow prevents a dressed lantern from becoming the same embossed
+    // noise as rope and lacquer under the low key light.
     let h = 0.62;
-    h += (grain - 0.5) * 0.030;
-    h += felds * 0.016 - dark * 0.014;
-    h += quartz * 0.012 - mica * 0.010;
-    h += (tool - 0.35) * 0.020;
-    h -= facet * 0.008 + lich * 0.006;
+    h += (grain - 0.5) * 0.014;
+    h += felds * 0.008 - dark * 0.007;
+    h += quartz * 0.006 - mica * 0.005;
+    h += (tool - 0.35) * 0.010;
+    h -= facet * 0.004 + lich * 0.004;
 
     setc(s, PAL.stone);
     mixc(s, PAL.stoneWarm, clamp(grain - 0.42, 0, 1) * 1.7 * 0.60);
@@ -1187,9 +1193,9 @@ RECIPES.push({
     mixc(s, PAL.mossDeep, lich * lich * 0.30);
     mixc(s, PAL.algae, lich * 0.18);
 
-    let ro = 0.76 + (grain - 0.5) * 0.14 - quartz * 0.26 + mica * 0.08;
+    let ro = 0.76 + (grain - 0.5) * 0.14 - quartz * 0.38 + mica * 0.08;
     ro = lerp(ro, 0.95, lich * 0.8);
-    ro = lerp(ro, 0.66, felds * 0.25);      // cleaved feldspar keeps a little sheen
+    ro = lerp(ro, 0.50, felds * 0.38);      // cleaved feldspar carries the hard read
 
     const ao = 1 - dark * 0.10 - lich * 0.12 - facet * 0.10 - clamp(0.35 - tool, 0, 1) * 0.18;
 
@@ -1198,9 +1204,7 @@ RECIPES.push({
     s.ao = clamp(ao, 0.58, 1);
     s.me = 0;
   },
-  // ns above the paving's because none of this relief forms a line: the speckle is
-  // isolated crystals, so a strong normal buys grain rather than a web of walls.
-  mat(maps) { return pbr(maps, { ns: 1.45, ao: 1.05 }); },
+  mat(maps) { return pbr(maps, { ns: 1.20, ao: 0.85 }); },
 });
 
 // ------------------------------------------------------------------ 土 dirt
@@ -1496,18 +1500,25 @@ RECIPES.push({
    * 2200 K and a 2200 K blackbody has almost no blue, while #ffd9a8 is a 4600 K
    * source, which is why it reads as paper-white rather than as a lamp.
    *
-   * GREEN 0.88, and no lattice term. Both are bounded on purpose: `hero` holds its
+   * GREEN 0.88. The paper's open area stays at a multiplier of 1.0, preserving the
+   * verified highlight peak; only the already-authored kumiko bands are allowed to
+   * fall below it. This is bounded on purpose: `hero` holds its
    * `p99.9 > 235` gate on 4,550 pixels against the 2,963 the percentile needs, and
    * 2,286 of those 4,550 are lantern cores. Re-thresholding the frame shows the
    * cores may lose 13 code values before the gate fails (3,463 px at 10, 2,938 at
-   * 15). A kumiko bar on the emissive would have cut a core by up to 40% with no
-   * way to predict which texel it landed on, so the grid stays in the albedo and
-   * the AO where it already is, and the only variation here is the sheet's own
-   * fibre at +/-5%.
+   * 15). The first 0.68 candidate made the grid visible but reduced the integrated
+   * hero frame to p99.9=235. Bottoming at 0.80 retains a paper/frame step while
+   * restoring margin at the authored emissive source instead of moving global tone.
    */
   emis(u, v, s, e) {
     const grain = clamp(1 + (s.r - PAL.washi[0]) * 0.45, 0.90, 1);
-    e.r = grain; e.g = grain * 0.88; e.b = grain * 0.10;
+    const gu = u * 4, gv = v * 3;
+    const fu = gu - Math.floor(gu), fv = gv - Math.floor(gv);
+    const barU = 1 - smoothstep(0.020, 0.055, Math.min(fu, 1 - fu));
+    const barV = 1 - smoothstep(0.026, 0.070, Math.min(fv, 1 - fv));
+    const lattice = clamp(barU + barV - barU * barV, 0, 1);
+    const frame = 1 - lattice * 0.20;
+    e.r = grain * frame; e.g = grain * frame * 0.88; e.b = grain * frame * 0.10;
   },
   mat(maps) {
     // Transmission is a second render pass; only HIGH+ pays for it. applyQuality
@@ -1636,8 +1647,10 @@ RECIPES.push({
     const age = cs(c.age, u, v);
     const dust = cs(c.dust, u, v);
 
-    let h = 0.34 + strandProf * 0.40 + sub * 0.10 - groove * 0.20;
-    h += (fibre - 0.5) * 0.05 + whisker * 0.05;
+    // The sweep profile already carries the three-lobed bulk twist in silhouette;
+    // the map only needs enough relief to separate stalks at grazing light.
+    let h = 0.46 + strandProf * 0.15 + sub * 0.035 - groove * 0.065;
+    h += (fibre - 0.5) * 0.018 + whisker * 0.016;
 
     setc(s, PAL.straw);
     mixc(s, PAL.strawDim, clamp(0.6 - stalkId, 0, 1) * 0.55 + groove * 0.35);
@@ -1649,14 +1662,14 @@ RECIPES.push({
     let ro = 0.84 - (fibre - 0.5) * 0.12 + groove * 0.08;
     ro = lerp(ro, 0.62, strandProf * strandProf * 0.30);      // handled crests
     ro = lerp(ro, 0.95, whisker * 0.6);
-    const ao = 1 - groove * 0.62 - (1 - strandProf) * 0.22 - whisker * 0.10;
+    const ao = 1 - groove * 0.36 - (1 - strandProf) * 0.12 - whisker * 0.05;
 
     s.h = clamp(h, 0, 1);
     s.ro = clamp(ro, 0.25, 1);
     s.ao = clamp(ao, 0.18, 1);
     s.me = 0;
   },
-  mat(maps) { return pbr(maps, { ns: 1.8, ao: 1.15 }); },
+  mat(maps) { return pbr(maps, { ns: 0.65, ao: 0.72 }); },
 });
 
 // ------------------------------------------------------------------ 樹皮 bark

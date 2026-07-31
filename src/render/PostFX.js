@@ -971,6 +971,8 @@ uniform vec3 uBloomTint;
 uniform sampler2D tGod;
 uniform float uGodStrength;
 uniform vec3 uGodTint;
+uniform vec2 uSunUv;
+uniform float uSunGlare;
 #endif
 #ifdef USE_DOF
 uniform sampler2D tDof;
@@ -1295,6 +1297,23 @@ void main() {
     // highlights, or the sky turns into television snow.
     float w = mix(1.5, 0.18, smoothstep(0.0, 0.72, l));
     color += g * uGrain * w;
+  }
+#endif
+
+#ifdef USE_GODRAYS
+  {
+    // The radial pass necessarily adds a common sky term as well as occlusion
+    // contrast: at MEDIUM its 24-tap kernel reinjects a constant emitter 1.61x before
+    // gain. Contain only the resulting display-referred aureole. The true disc and its
+    // bloom remain untouched inside 26 px at the review resolution, and every framing
+    // with the sun off-screen is an exact identity through uSunGlare = 0.
+    vec2 sd = (vUv - uSunUv) * vec2(uAspect, 1.0);
+    float sr = length(sd);
+    float aureole = smoothstep(0.022, 0.038, sr) * (1.0 - smoothstep(0.28, 0.38, sr));
+    float y = luma(color);
+    float contain = 0.23 * uSunGlare * aureole * smoothstep(0.70, 0.90, y);
+    float glareScale = 1.0 - contain * max(y - 0.68, 0.0) / max(y, 1e-4);
+    color *= glareScale;
   }
 #endif
 
@@ -2164,6 +2183,8 @@ export class PostFX {
       // left as it approaches white. The halo has to be tinted here or it is white.
       uBloomTint: { value: new Color(1.0, 0.694, 0.391) },
       uGodStrength: { value: 0 },
+      uSunUv: { value: new Vector2(0.5, 0.5) },
+      uSunGlare: { value: 0 },
       // Near-neutral, because the source already carries the colour and a second tint
       // multiplies it in twice.
       //
@@ -3258,6 +3279,8 @@ export class PostFX {
     if (this._godRays && this.rtGodB) {
       u.tGod.value = this.rtGodB.texture;
       u.uGodStrength.value = this.godRayStrength * this._sunScreenStrength;
+      u.uSunUv.value.copy(this._sunUv);
+      u.uSunGlare.value = this._sunScreenStrength;
     }
     if (this._dof && this.rtDofB) {
       u.tDof.value = this.rtDofB.texture;

@@ -1,0 +1,31 @@
+{
+  "verdict": "FAIL",
+  "blindComparison": "A stranger picks Ghost of Tsushima or SEKIRO because their vegetation resolves as continuous, layered natural silhouettes, while this scene's bamboo breaks into vertical spikes and hundreds of detached dark dashes against the sky.",
+  "score": 44,
+  "findings": [
+    {
+      "severity": "blocker",
+      "shot": "phone-valley-r14base.png",
+      "problem": "Across roughly y=125-345, the skyline is littered with hundreds of detached 2-18 px dark horizontal dashes, while trees above the canopy terminate as thin poles with repeated cross-shaped clumps; the same breakup is visible on the right horizon of phone-wide-r14base.png and behind the shrine in the hero and torii shots.",
+      "why": "These marks read as rendering debris rather than vegetation, destroying the skyline and making every exterior frame unshippable before lighting or composition can be judged at the reference bar.",
+      "owner": "src/render/Foliage.js",
+      "fix": "At 100% zoom, make every sky/foliage boundary contiguous: there must be zero detached dark dashes in open sky, and the bamboo must resolve into overlapping stalk-and-leaf masses with at least three clearly separated depth/value bands instead of repeated symbol-like tufts."
+    },
+    {
+      "severity": "major",
+      "shot": "phone-sun-r14base.png",
+      "problem": "The central backlight floods x=1100-1799, y=120-819: 38.1% of that 700x700 region is above 90% luma, swallowing the inner torii edges, lantern shades, horizon, and stone reflections into one flat cream-gold veil.",
+      "why": "A reference-grade backlit courtyard keeps a compact hot source and readable silhouettes; this broad exposure wash erases spatial hierarchy and looks like an indiscriminate glow filter.",
+      "owner": "src/render/PostFX.js",
+      "fix": "Keep a compact white sun core, but bring the same measured region below 15% of pixels over 90% luma; recover continuous dark edges on both inner torii posts and visible paper segmentation in every lantern outside a tight halo no wider than about 30 px."
+    },
+    {
+      "severity": "major",
+      "shot": "phone-wide-r14base.png",
+      "problem": "Nearly the entire lower 560 px is one uninterrupted brown-silver field of equally strong fine grooves and dark clumps from foreground to shrine, with no broad path, soil, or vegetation masses to establish scale; the terrain reads like a repeated noisy sheet.",
+      "why": "Tsushima's fields and Sekiro's approaches use large, mid, and fine forms to lead the eye and show distance; uniform high-frequency texture makes this 1.8 km view feel miniature and synthetic.",
+      "owner": "src/world/Terrain.js",
+      "fix": "Make the wide frame read in three scales: broad 20-50 m value and colour zones, 2-8 m path/erosion patches that form an unmistakable approach to the shrine, and fine grain confined to the near foreground; halve the distant groove/specular contrast so the compound, not terrain noise, survives at thumbnail size."
+    }
+  ]
+}
