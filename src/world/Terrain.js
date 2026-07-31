@@ -676,6 +676,26 @@ export class Terrain {
       h += (noise.ridged2(x * 0.0235 - 44.1, z * 0.0235 + 63.8, 1) - 0.44) * 11 * spurT;
     }
 
+    // What the clipmap can still carry past 600 m, and nothing finer.
+    //
+    // The two terms above run at 78 m and 43 m. That is the right size for the ridge
+    // the establishing shot looks across at 400 m, and it is destroyed out where the
+    // shot's *distant* range stands: rings 4 and 5 place a vertex every 32 m and 64 m,
+    // so a 43 m feature is below the lattice and a 78 m one survives at half
+    // amplitude. What reaches the silhouette at 1.0–1.5 km is therefore only the
+    // 600 m-and-coarser shape — one smooth arc per massif, sampled at 32 m, which
+    // draws exactly the row of isoceles triangles with dead-straight flanks the round-8
+    // review measured (box 1760,287 detail 1.28 against 0.69 for the sky beside it).
+    //
+    // 160 m is five outer-ring quads: coarse enough to survive the lattice intact,
+    // fine enough that one notch is ~20 px of broken edge at that range. Ridged, so
+    // what it puts on the crest is a col rather than a bump.
+    const farT = smootherstep(620, 1350, Math.max(Math.abs(x), Math.abs(z))) * nwT;
+    if (farT > 0.001) {
+      h += (noise.ridged2(x * 0.0062 + 12.9, z * 0.0062 - 88.1, 2) - 0.42) * 62 * farT;
+      h += (noise.ridged2(x * 0.0031 - 51.6, z * 0.0031 + 27.4, 2) - 0.42) * 48 * farT;
+    }
+
     // Mid-scale relief, then a domain-warped detail octave. The warp is what stops
     // the whole field reading as one noise function stretched over a hill.
     h += noise.fbm2(x * 0.0055 + 4.1, z * 0.0055 - 7.9, 4) * 14;
@@ -1764,6 +1784,20 @@ float kgSnowLit;
 /** Fine far-ground relief, in the fall-line frame, and how much of it resolves. */
 vec2 kgFarBump;
 float kgFine;
+/**
+ * One detail band whose wavelength is locked to the pixel rather than to the world:
+ * always about four drawing-buffer pixels across, wherever the fragment is. Roughly
+ * zero-mean, practical range about ±0.45.
+ *
+ * Every fixed-wavelength band in this shader has the same problem in the opposite
+ * direction — 3 m of rubble is the right size at 600 m and a quarter of a pixel at
+ * 1.5 km — so each of them is switched off by a footprint gate before it can alias,
+ * and the far range is left with nothing at all. The review measured that directly:
+ * the distant peaks came back at detail 1.28 against 0.69 for the empty sky beside
+ * them. This band is alias-free by construction because it is never finer than four
+ * pixels, so it needs no gate and never leaves.
+ */
+float kgLodBand;
 
 /** Shared per-fragment tile-breaking state, set once at the top of the surface pass. */
 vec2 kgWarp;
@@ -2033,19 +2067,91 @@ void kgComputeSurface(){
   float dress = smoothstep(2.5, 9.0, dist) * (1.0 - smoothstep(1.30, 3.10, kgFoot))
               * open * (1.0 - wear * 0.55);
   if (dress > 0.002) {
+    // What one pixel is worth here, and why the octaves below are switched on the
+    // way they are. The phone profile renders 1350x624 and the review PNG is a
+    // 1.876x upscale of it, so on the two landscape framings one *drawing-buffer*
+    // pixel covers 0.06 m at the near edge of the basin floor and 0.85 m at the far
+    // edge — the grazing incidence, not the distance, is what sets that. A term
+    // authored finer than about 1.5x kgFoot is therefore not detail: it lands under
+    // a pixel, the upscale averages it straight back to the mean it came from, and
+    // it costs a shimmer in motion for nothing. Each band below carries its own
+    // footprint gate rather than a distance gate for exactly that reason.
+    float fFine = 1.0 - smoothstep(0.26, 0.62, kgFoot);   // the 0.55 m band
+    float fMid  = 1.0 - smoothstep(0.62, 1.45, kgFoot);   // the 1.3 m band
+
     // 1. The mottle, 1.3–2.6 m. The only term here that fills area rather than
     //    punctuating it, and therefore the one that actually moves a variance read.
     //    Turf is patchy at this scale on any hillside — thin and sun-bleached over
     //    the dry rises, thick and dark where it holds water — and both halves are
     //    tinted, toward §5's ochre and its cool shade, because a value-only field
     //    reads as dirt on the lens rather than as ground.
+    //
+    //    The warm half is deliberately weaker than the cool half now. Screen
+    //    saturation as the review measures it is (max-min)/max on 8-bit sRGB, which
+    //    for warm-lit ground is exactly (R-B)/R: G does not enter it at all. A tint
+    //    of (1.30, 1.17, 0.86) multiplies B/R by 0.78 wherever it lands, so the
+    //    round-7 mottle was *raising* the basin's 0.711 saturation over half its own
+    //    area while it was adding the variance it was added for.
     float mot = fbm2(P.xz * 0.385 + 71.6, 2);
     float dry  = smoothstep(0.02, 0.40, mot);
     float damp = smoothstep(-0.02, -0.40, mot);
-    albedo *= mix(vec3(1.0), vec3(1.30, 1.17, 0.86), dry * 0.58 * dress);
-    albedo *= mix(vec3(1.0), vec3(0.62, 0.68, 0.78), damp * 0.62 * dress);
+    albedo *= mix(vec3(1.0), vec3(1.16, 1.10, 1.00), dry * 0.62 * dress);
+    albedo *= mix(vec3(1.0), vec3(0.60, 0.70, 0.90), damp * 0.80 * dress);
     rough = mix(rough, 0.97, dry * 0.4 * dress);
     rough = mix(rough, 0.44, damp * 0.5 * dress);
+
+    // 1b. Cover, 0.55–1.3 m — the band that actually carries the detail number, and
+    //     the one nothing occupied. Everything above runs at 2.6 m and coarser; at
+    //     the 15–85 m depths the two landscape framings compose their floor on, 2.6 m
+    //     is 8–80 px, which is a wash. The library ground textures are authored at
+    //     0.07–0.3 m and have mipped to their own mean by ~20 m. 0.55–1.3 m is 1–20
+    //     buffer pixels here — the octave the round-7 per-octave RMS read found empty
+    //     (1.44/0.92/0.67 at 4/8/16 px against 6.59/8.91/10.22 for dressed ground in
+    //     the same frame).
+    //
+    //     Two scales because one is a hum: the coarse field decides where cover is
+    //     and the fine one breaks it into clumps inside that. Both are hue breaks as
+    //     well as value breaks — standing dry straw on the rises, held turf in the
+    //     hollows — because the basin's defect is that it is one hue as much as that
+    //     it is one frequency.
+    float cvC = fbm2(P.xz * 0.78 + 13.9, 2);
+    // Expanded rather than called as fbm2(fp0, 2) — identical value, but it leaves
+    // the base octave in hand for the gradient below, which would otherwise cost a
+    // whole second fbm.
+    vec2 fp0 = P.xz * 1.85 - 47.1;
+    float f0 = snoise2(fp0);
+    float cvF = (f0 + 0.5 * snoise2(fp0 * 2.02)) * (1.0 / 1.5);
+    float tuft = cvC * fMid + cvF * 0.90 * fFine;
+    // Cover comes and goes in 12–48 m stretches rather than evenly. This is the term
+    // that gives the establishing shot's plain any large-scale structure at all: the
+    // review measured its left and right halves at luma p50 33.4 and 38.6, five units
+    // apart over 1600 px of ground, which is what "no undulation, no paths, uniform
+    // speckle" is as a number. 'nB' is computed unconditionally above for the splat
+    // fallback, so this is free.
+    float veg = clamp(wGrass * 1.7 + wMoss * 1.5 + wDirt * 0.62, 0.0, 1.0)
+              * (0.45 + 0.75 * smoothstep(-0.32, 0.30, nB));
+    // Held turf reads cool as well as green: it sits in its own shade and takes the
+    // sky bounce of §5, not the key. That is also the only half of this that can move
+    // the saturation read, per the note on the mottle above.
+    vec3 cTurf = mix(mix(colGrass, colMoss, 0.5), vec3(0.10, 0.13, 0.15), 0.72);
+    vec3 cStraw = colDirt * vec3(1.10, 1.02, 0.90) + vec3(0.045, 0.042, 0.030);
+    // Narrow windows on purpose. Evaluated offline on this shot's own pixel grid,
+    // widening the two windows from ±0.44 to ±0.25 and the mix weights from
+    // 0.58/0.72 to 0.80/0.92 is what takes the basin's albedo-domain mean |Laplacian|
+    // from 10.3 to 19 at drawing-buffer resolution; a gentle field of the same
+    // wavelength reads as a wash however much hue is in it.
+    float up = smoothstep(0.05, 0.25, tuft) * veg * dress;
+    float dn = smoothstep(-0.05, -0.25, tuft) * veg * dress;
+    albedo = mix(albedo, cStraw, up * 0.80);
+    albedo = mix(albedo, cTurf,  dn * 0.92);
+    rough = mix(rough, 0.96, up * 0.45);
+    rough = mix(rough, 0.78, dn * 0.40);
+    // The clump's own relief. Same trick as the stone dome below: a colour patch is
+    // a stain, a colour patch with a tilt across it is a thing standing on the
+    // ground. Two forward differences on the base octave — a real gradient, and the
+    // only reason the expansion above exists.
+    kgDressN = vec2(snoise2(fp0 + vec2(0.42, 0.0)) - f0,
+                    snoise2(fp0 + vec2(0.0, 0.42)) - f0) * (up * 0.70 + dn) * 0.42 * fFine;
 
     // 2. Litter drifts, 2–8 m. Elongated along the prevailing bearing rather than
     //    isotropic, which is the difference between fallen leaves and a noise field.
@@ -2063,18 +2169,39 @@ void kgComputeSurface(){
     //    punctuation: they cover little area but they are the only term that can
     //    put values under the region's p1, which is what "no real darks" measured.
     //    'seat' is the ring just outside each one and is its contact with the soil.
+    //
+    //    Every site used to be drawn as the *same* object: one fixed radius, one
+    //    circular profile, one tint of colRock * 1.22, which on warm-lit basin dirt
+    //    is a pale disc. Round 8's review measured the result exactly — "one repeated
+    //    pale ellipse tiled a few hundred times", and a repeated motif announces the
+    //    scatter far louder than an empty field does. The cell field already hands
+    //    back a per-site id and the fragment's own offset from its site, so radius,
+    //    aspect, bearing and tone all come off that for a handful of ALU and no extra
+    //    hash: no two neighbouring stones share a silhouette or a value.
     vec4 cel = kgCell2(P.xz * 0.50 + kgWarp * 0.4);
-    float has  = smoothstep(0.44, 0.54, cel.y);
-    float body = (1.0 - smoothstep(0.15, 0.34, cel.x)) * has;
-    float seat = smoothstep(0.50, 0.20, cel.x) * (1.0 - body) * has;
-    albedo = mix(albedo, colRock * 1.22, body * 0.86 * dress);
-    albedo *= 1.0 - seat * 0.52 * dress;
+    float sid = cel.y;
+    float has = smoothstep(0.42, 0.52, sid);
+    float sang = sid * 6.28318;
+    vec2 saxis = vec2(sin(sang), cos(sang));
+    float sasp = mix(0.55, 1.55, fract(sid * 17.31));
+    vec2 sq = kgRot(cel.zw, saxis);
+    float sd = length(vec2(sq.x / sasp, sq.y * sasp));
+    float srad = mix(0.115, 0.335, fract(sid * 5.77));
+    float body = (1.0 - smoothstep(srad * 0.52, srad, sd)) * has;
+    float seat = smoothstep(srad * 1.75, srad * 0.80, sd) * (1.0 - body) * has;
+    // Pale granite, weathered grey, half-buried dark, and one in three carrying moss
+    // on its north face — the four things a hillside stone actually is.
+    float stone = fract(sid * 3.13);
+    vec3 sCol = mix(colRock * 0.40, colRock * 1.28, stone * stone * (3.0 - 2.0 * stone));
+    sCol = mix(sCol, colMoss * 0.86, smoothstep(0.58, 0.96, fract(sid * 9.41)) * 0.75);
+    albedo = mix(albedo, sCol, body * 0.90 * dress);
+    albedo *= 1.0 - seat * 0.55 * dress;
     rough = mix(rough, 0.74, body * 0.7 * dress);
     // The dome. Colour alone makes a disc, not a stone: at a 13 degree key it is the
     // tilt across the top of the thing that splits it into a lit side and a shaded
     // one, and that split is the whole of why it reads as an object. cel.zw is the
     // fragment's offset from its own site, so this is the outward tilt for free.
-    kgDressN = clamp(cel.zw * (1.0 / 0.34), -1.0, 1.0) * body * 0.56 * dress;
+    kgDressN += clamp(cel.zw * (1.0 / max(srad, 0.06)) * 0.34, -1.0, 1.0) * body * 0.58 * dress;
 
     // 4. Standing damp where water actually collects. Curvature is already on hand
     //    from the per-pixel normal taps, so this costs no new samples.
@@ -2133,6 +2260,7 @@ void kgComputeSurface(){
   float groove = 0.0;
   kgFarBump = vec2(0.0);
   kgFine = 0.0;
+  kgLodBand = 0.0;
   {
     // Striation runs down the fall line, so the sampling frame is stretched along
     // it: features come out as gullies and ribs, not as a blanket of noise.
@@ -2172,6 +2300,20 @@ void kgComputeSurface(){
     vec3 g3 = texture2D(tDetailN, vec2(along * 0.0610, across * 0.1640) + 0.67).xyz * 2.0 - 1.0;
     kgFarBump = clamp(g3.xy * 1.50 * fineAmp, -0.40, 0.40);
     kgFine = fineAmp;
+
+    // The footprint-locked band. Quantised to powers of two so it does not swim as
+    // the camera moves, and crossfaded to the next octave as the pixel grows — both
+    // taps share one offset, which is what makes the crossfade exactly continuous
+    // across an octave boundary (at f = 1 the fine tap has already become the coarse
+    // tap of the next step). Two fbm2 calls, the same cost as the two fixed bands it
+    // replaces below — and behind the same gate, so near ground pays nothing for it.
+    if (farDetail > 0.002 || hPix > 900.0) {
+      float lodM = log2(max(kgFoot, 0.02) * 4.0);
+      float lodI = floor(lodM);
+      float frqA = exp2(-lodI);
+      kgLodBand = mix(fbm2(P.xz * frqA + 61.7, 2),
+                      fbm2(P.xz * (frqA * 0.5) + 61.7, 2), lodM - lodI);
+    }
   }
   if (wild2 > 0.002) {
     // Cedar mantle low, bare rock and scree above it, and the line between them
@@ -2201,14 +2343,19 @@ void kgComputeSurface(){
     // is 16 px and 6 px at 600 m, and they carry the variance a 9x9 read is looking
     // for. Both ride the same pixel-footprint gate as the fine normal, so they leave
     // together before either can alias.
+    // The two fixed bands this used to carry ran at 7.8 m and 2.9 m and were gated by
+    // 'kgFine' = 1 - smoothstep(1.15, 2.70, kgFoot). On the distant range one buffer
+    // pixel is 1.6–2.5 m of rock, so kgFine is about 0.06 there and both bands were
+    // off — which is the whole of why that range measured detail 1.28 against 0.69
+    // for the sky it sits against. A fixed wavelength cannot be right at 600 m and at
+    // 1.5 km at once; the locked band is right at both by construction.
+    // The coefficient looks large and is not: two octaves of fbm land an RMS near a
+    // quarter of their nominal range, so this is about ±0.4 in practice — a rock face
+    // varying by half a stop over a few pixels, which is less than a real one does.
+    // The coarse bedding stays on its own fixed scale, where it belongs.
     float rk1 = fbm2(P.xz * 0.128 + 61.7, 2);
-    float rk2 = fbm2(P.xz * 0.345 - 14.9, 2);
-    // The coefficients look large and are not: two octaves of fbm land an RMS near a
-    // quarter of their nominal range, so these are about ±0.24 in practice — a rock
-    // face varying by a third of a stop over a few metres, which is less than a real
-    // one does. Both bands are weighted equally because the finer of the two is the
-    // one that lands inside a 9x9 window at this range; the coarser reads as bedding.
-    far *= 1.0 + (rk1 * 0.95 + rk2 * 0.95) * kgFine * (1.0 - veg * 0.5);
+    far *= 1.0 + rk1 * 0.95 * kgFine * (1.0 - veg * 0.5);
+    far *= 1.0 + kgLodBand * 1.60 * (1.0 - veg * 0.5);
 
     albedo = mix(albedo, far, wild2 * 0.88);
     rough = mix(rough, mix(0.88, 0.96, veg), wild2 * 0.8);
@@ -2333,7 +2480,10 @@ void kgComputeSurface(){
       // coarser than the patch you sample cannot vary within it by construction.
       // 35 m is ~38 px at this range and its finest octave ~19 px, so neither can fizz.
       float bare = fbm2(P.xz * 0.0560 + 3.7, 2) * 0.5 + 0.5;
-      float grit = fbm2(P.xz * 0.1800 - 21.4, 2) * 0.5 + 0.5;
+      // Was a fixed 5.6 m band. On the range in the establishing shot that is under
+      // two pixels, so the interior it was added to break came back flat anyway;
+      // the locked band is four pixels wide wherever the sheet is seen from.
+      float grit = kgLodBand * 0.5 + 0.5;
       float s3 = fbm2(P.xz * 0.0630 + 13.9, 2);
       float through = clamp(0.30 + 0.44 * bare + 0.34 * grit, 0.0, 1.0);
       // Interior only. Near the rim 'blanket' is small and the sheet stays smooth, so
@@ -2384,7 +2534,7 @@ void kgComputeSurface(){
       // albedo of a lambert lobe could only ever move it by tenths.
       kgSnowLit = sheet * sunF * (0.55 + 0.45 * clamp(sunL, 0.0, 1.0)) * 2.55
                 * clamp(0.72 + 0.56 * (s2 * 0.5 + 0.5)
-                        - (0.30 * grit + 0.16 * bare) * fine, 0.10, 1.55);
+                        - 0.34 * grit - 0.16 * bare * fine, 0.10, 1.55);
     }
   }
 

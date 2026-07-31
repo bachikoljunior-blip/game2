@@ -828,17 +828,26 @@ export class Level {
       const k = 0.9 + this.rnd() * 0.2;
       p.place(_m, [k, k, k]);
     };
+    // Cleared off the lanterns. A nobori is a 0.62 x 2.5 m sheet hung from a
+    // crossarm at 3.5 m and it swings with the wind field, so it needs more than a
+    // prop's own radius of clearance from anything with a roof on it. It did not
+    // have it: the gate lanterns sit at |x| = span/2 + 1.25, z = t.z + 1.1 and stand
+    // 2.3 m to a kasa that overhangs its shaft by a good half metre, and the banner
+    // pole was 0.65 m outboard and 1.5 m forward of that with its cloth swinging into
+    // the gap — which is the intersection round 8 found in 'torii'. The arena pair
+    // was worse: 0.30 m in x and 0.60 m in z from the corner lanterns. 1.30 m and
+    // 1.15 m of clearance at the gates, 1.50 m and 1.30 m at the arena.
     let alt = false;
     for (const t of LAYOUT.torii) {
       for (const sx of [-1, 1]) {
-        place(sx * (t.span * 0.5 + 1.9), t.z - 0.4, sx > 0 ? -Math.PI / 2 : Math.PI / 2, alt);
+        place(sx * (t.span * 0.5 + 2.55), t.z - 1.15, sx > 0 ? -Math.PI / 2 : Math.PI / 2, alt);
       }
       alt = !alt;
     }
     const a = LAYOUT.arena;
     for (const sx of [-1, 1]) {
-      place(sx * (a.hx - 1.2), a.z + a.hz - 0.6, sx > 0 ? -Math.PI / 2 : Math.PI / 2, true);
-      place(sx * (a.hx - 1.2), a.z - a.hz + 1.4, sx > 0 ? -Math.PI / 2 : Math.PI / 2, false);
+      place(sx * (a.hx - 2.4), a.z + a.hz - 0.6, sx > 0 ? -Math.PI / 2 : Math.PI / 2, true);
+      place(sx * (a.hx - 2.4), a.z - a.hz + 2.7, sx > 0 ? -Math.PI / 2 : Math.PI / 2, false);
     }
   }
 

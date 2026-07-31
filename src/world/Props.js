@@ -1192,7 +1192,17 @@ export class PropFactory {
     // Only as a *multiplier*. Without a roughness map the 2.6 would clamp to a
     // dead matte, which is the opposite failure.
     m.roughness = m.roughnessMap ? 2.6 : Math.min(1, (m.roughness || 0.48) * 1.5);
-    m.envMapIntensity = 1.35;
+    // No envMapIntensity here, and none anywhere else in this file, however much a
+    // per-material cool bounce is wanted. three r180 WebGLRenderer.setProgram:
+    //   if (material.isMeshStandardMaterial && material.envMap === null &&
+    //       scene.environment !== null) m_uniforms.envMapIntensity.value =
+    //       scene.environmentIntensity;
+    // Sky.js sets scene.environment and Lighting.js solves scene.environmentIntensity
+    // every frame, and nothing in this file ever assigns material.envMap — so all
+    // three conditions hold for every material here and the authored value is
+    // overwritten before it is ever uploaded. Four of them (1.35, 2.4, 1.9, 2.6) sat
+    // in this file across several rounds doing nothing at all. The levers that do
+    // survive on a Props material are color, roughness, metalness and emissive.
     if (m.normalScale) m.normalScale.set(2.15, 2.15);
     m.aoMapIntensity = 1.25;
     if (m.color) m.color.setRGB(0.78, 0.95, 2.05);
@@ -1361,7 +1371,8 @@ export class PropFactory {
     const m = this._libMaterial('gold', 1) || new MeshStandardMaterial({ color: 0xc9a227 });
     m.metalness = 1.0;
     m.roughness = 0.16;
-    m.envMapIntensity = 2.4;
+    // No envMapIntensity — three overwrites it from scene.environmentIntensity for
+    // any MeshStandardMaterial with envMap === null. See _weatherUrushi.
     m.vertexColors = true;
     m.name = 'prop:goldPolished';
     this.ctx?.sky?.applyFog?.(m);
@@ -1410,14 +1421,37 @@ export class PropFactory {
       if (prevCompile) prevCompile.call(m, shader, renderer);
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <emissivemap_fragment>',
-        '#include <emissivemap_fragment>\n  totalEmissiveRadiance += diffuseColor.rgb * vec3(0.155, 0.200, 0.268);',
+        `#include <emissivemap_fragment>
+  // ...but a *flat* floor is a fill light with no direction in it, and a canopy is
+  // read almost entirely by the value break between its sunlit crown and its shaded
+  // underside. Round 8 measured that break at 0.86 — the underside was fractionally
+  // *brighter* than the top — where a backlit canopy needs about 3:1, and this term
+  // was why: the same vec3 was added to every fragment of the crown and of the
+  // underside alike, and at 0.155/0.200/0.268 it is a large fraction of what a shaded
+  // petal returns at all.
+  //
+  // Sky bounce is not isotropic. A petal facing up sees the whole dome; one facing
+  // down sees the ground, which at magic hour is dim ochre. 'normal' here is already
+  // flipped for back faces by <normal_fragment_begin> (this material is DoubleSide),
+  // so the sign is honest for both sides of a card. viewMatrix's upper 3x3 is
+  // orthonormal, so its transpose is its inverse and this costs three dots.
+  //
+  // Levels: crown 0.202/0.238/0.276 (luma 0.233), underside 0.052/0.070/0.100
+  // (luma 0.068) — a 3.42:1 emissive-floor ratio against the flat term's 1.00:1,
+  // with the crown left slightly brighter than before rather than darker. The
+  // underside stays the more strongly blue-weighted of the two (B/R 1.92 against
+  // the crown's 1.37) because what reaches it *is* the cool bounce of §5.
+  vec3 kgUpN = normalize(normal * mat3(viewMatrix));
+  float kgSkyView = 0.5 + 0.5 * kgUpN.y;
+  totalEmissiveRadiance += diffuseColor.rgb *
+    (vec3(0.052, 0.070, 0.100) + vec3(0.150, 0.168, 0.176) * kgSkyView * kgSkyView);`,
       );
     };
     this._installWind(m);
     // `_installWind` stamps its own cache key, which other cloth materials share.
     // This one's shader differs, so it needs a key of its own or three can hand
     // it a program compiled for a material without the translucency patch.
-    m.customProgramCacheKey = () => 'kagBlossom1';
+    m.customProgramCacheKey = () => 'kagBlossom2';
     this.ctx?.sky?.applyFog?.(m);
     this._blossom = m;
     this.disposables.push(m);
@@ -1481,7 +1515,8 @@ export class PropFactory {
     const m = this._libMaterial('stone', 1.6) || new MeshStandardMaterial({ color: 0x8b8778 });
     m.roughness = 0.17;
     m.metalness = 0.03;
-    m.envMapIntensity = 1.9;
+    // No envMapIntensity — three overwrites it from scene.environmentIntensity for
+    // any MeshStandardMaterial with envMap === null. See _weatherUrushi.
     m.vertexColors = true;
     m.name = 'prop:wetStone';
     // Wet stone is darker than dry stone; the brightness comes from the specular.
@@ -1503,7 +1538,6 @@ export class PropFactory {
       color: 0x6f8f99, roughness: 0.035, metalness: 0.05,
       emissive: new Color(EMISSIVE.water.color),
       emissiveIntensity: EMISSIVE.water.intensity,
-      envMapIntensity: 2.6,
       transparent: true, opacity: 0.72, vertexColors: true, depthWrite: false,
     });
     m.name = 'prop:water';
@@ -2109,20 +2143,33 @@ export class PropFactory {
     const rnd = makeRandom(opts.seed ?? 31);
     const b = PropFactory.build();
 
-    const N = 26;
+    // 34 rather than 26: the belly has to carry lumps now, and a lump needs three
+    // stations to exist. ~220 extra triangles on the two gates that carry a rope.
+    const N = 34;
     const samples = [];
+    const sd = (opts.seed ?? 31) * 0.017;
     for (let i = 0; i <= N; i++) {
       const t = i / N;
       const u = t * 2 - 1;
       // cosh-ish belly; the ends are pulled up hard so it looks tied, not draped.
       const y = -sag * (1 - u * u) * (1 - 0.22 * u * u);
-      const r = lerp(rEnd, rMid, Math.pow(1 - Math.abs(u), 0.55));
+      // Rice straw is bound in handfuls and the plait tightens and slackens along
+      // the span. A constant radius and a linear roll is a machine extrusion, and
+      // round 8 measured exactly that: "perfectly regular chevron ribbing at
+      // constant pitch along the entire span". Both are now modulated.
+      //
+      // The roll's derivative stays positive — 0.11 * 2.6 * |n'| is under 0.6
+      // against the linear term's 1.0 — so the plait never reverses, which would
+      // read as a fault in the rope rather than as a change of pitch.
+      const lump = 1 + noise.noise2(t * 6.7 + sd, 1.9) * 0.17
+                     + noise.noise2(t * 15.3 - sd, 4.4) * 0.055;
+      const r = lerp(rEnd, rMid, Math.pow(1 - Math.abs(u), 0.55)) * lump;
       samples.push({
         x: u * span * 0.5,
-        y,
-        z: noise.noise2(t * 4.1, 0.3) * 0.012,
-        sx: r * 2, sy: r * 2,
-        roll: t * Math.PI * 2.4,             // the twist of the plait
+        y: y + noise.noise2(t * 5.3 + sd, 7.1) * rMid * 0.10,
+        z: noise.noise2(t * 4.1, 0.3) * 0.012 + noise.noise2(t * 9.1 + sd, 2.2) * rMid * 0.09,
+        sx: r * 2, sy: r * 2 * (0.94 + noise.noise2(t * 8.1, 5.5) * 0.10),
+        roll: Math.PI * 2.4 * (t + 0.11 * noise.noise2(t * 2.6 + sd, 3.3)),
         ao: lerp(0.78, 1.0, 1 - Math.abs(u) * 0.5),
       });
     }
@@ -2130,30 +2177,55 @@ export class PropFactory {
     bakeAO(rope, { ground: 0, cavity: 0.34, down: 0.3, floor: 0.34 });
     PropFactory.add(b, rope, 'rope');
 
+    // Stray fibre. The rope's outline is otherwise a clean mathematical envelope,
+    // and a straw rope's is not — it sheds. Six wisps, ~150 triangles, and they are
+    // the only thing here that breaks the silhouette rather than the shading.
+    for (let i = 0; i < 6; i++) {
+      const t = 0.12 + rnd() * 0.76;
+      const u = t * 2 - 1;
+      const bx = u * span * 0.5;
+      const by = -sag * (1 - u * u) * (1 - 0.22 * u * u) - rMid * 0.55;
+      const ang = rnd() * Math.PI * 2;
+      const len = rMid * (0.9 + rnd() * 1.5);
+      PropFactory.add(b, sweepProfile([
+        { x: bx, y: by + rMid * 0.3, z: 0, sx: 0.016, sy: 0.016, ao: 0.55 },
+        { x: bx + Math.cos(ang) * len * 0.5, y: by - len * 0.45, z: Math.sin(ang) * len * 0.5, sx: 0.010, sy: 0.010, ao: 0.8 },
+        { x: bx + Math.cos(ang) * len, y: by - len, z: Math.sin(ang) * len * 0.9, sx: 0.004, sy: 0.004, ao: 1.0 },
+      ], circleProfile(4), { smooth: true, uvScale: 3 }), 'rope');
+    }
+
     // 紙垂 shide — folded paper zigzags, and the straw tassels between them.
     for (let i = 0; i < shideCount; i++) {
       const t = (i + 0.5) / shideCount;
       const u = t * 2 - 1;
       const x = u * span * 0.42;
       const y = -sag * (1 - u * u) * (1 - 0.22 * u * u) - rMid * 0.8;
-      const g = this._shide(0.13 + rnd() * 0.03, 0.40 + rnd() * 0.14, rnd);
-      g.translate(x, y, 0.02);
+      // Sized off the rope, not absolute. The great gate's rope is 0.31 m thick and
+      // its shide were 0.13 m wide and 0.4 m long — a twelfth of the gate's span,
+      // hung dead flat against a rope four times their width, which is why the
+      // review reported "no shide" on a prop that has had five of them all along.
+      // A real shide hangs roughly three rope-diameters and is about as wide as the
+      // rope is thick.
+      const sw = rMid * (0.82 + rnd() * 0.22);
+      const sh = rMid * (2.7 + rnd() * 1.0);
+      const g = this._shide(sw, sh, rnd);
+      g.translate(x, y, rMid * 0.55);
       // Paper shide: limp, hanging free below the rope.
-      bakeFlutter(g, 0.55, (px, py) => clamp((y - py) / 0.45, 0, 1));
+      bakeFlutter(g, 0.55, (px, py) => clamp((y - py) / Math.max(0.12, sh), 0, 1));
       PropFactory.add(b, g, 'paper');
 
       if (i < shideCount - 1) {
         const tx = lerp(u, ((i + 1.5) / shideCount) * 2 - 1, 0.5) * span * 0.42;
         const ty = -sag * (1 - (tx / (span * 0.5)) ** 2) - rMid * 0.7;
         const tas = sweepProfile([
-          { x: tx, y: ty, z: 0, sx: 0.075, sy: 0.075, ao: 0.6 },
-          { x: tx + (rnd() - 0.5) * 0.03, y: ty - 0.20 - rnd() * 0.1, z: 0, sx: 0.03, sy: 0.03, ao: 0.95 },
+          { x: tx, y: ty, z: 0, sx: rMid * 0.42, sy: rMid * 0.42, ao: 0.6 },
+          { x: tx + (rnd() - 0.5) * rMid * 0.2, y: ty - rMid * (1.1 + rnd() * 0.6), z: 0, sx: rMid * 0.16, sy: rMid * 0.16, ao: 0.95 },
         ], circleProfile(6), { smooth: true, uvScale: 2 });
         PropFactory.add(b, tas, 'rope');
       }
     }
 
-    b.bounds = { r: span * 0.5, h: sag + 0.6 };
+    b.bounds = { r: span * 0.5, h: sag + rMid * 4.2 + 0.4 };
     return b;
   }
 
@@ -3853,18 +3925,54 @@ export class PropFactory {
 
     // Banner: hung from the arm and tied along the pole, so the free corner is
     // the far bottom one.
-    const NX = 5, NY = 8;
+    // Was 5x8 with a 12 mm ripple, one flat vertex-colour ramp and nothing else.
+    // Round 8: "a single near-uniform dark rectangle with faint noise, no lettering,
+    // no hem, no fold, no wind curl, and no lit face despite a clear key light from
+    // frame-left". A plane 12 mm off flat has exactly one normal in it, so whether
+    // any of it takes the key is decided entirely by the bearing it was planted on —
+    // and at this hour three of the four bearings lose. 11x22 costs 968 triangles
+    // against 320 and is what lets the cloth have a shape at all.
+    const NX = 11, NY = 22;
     const verts = [], uvs = [], cols = [], idx = [], fl = [];
     const y0 = poleH - 0.10, y1 = y0 - bh;
+    // Kanji column: three glyph blocks down the middle third, drawn into the vertex
+    // colour because the cloth material is shared and its map is not ours (§8). Each
+    // block is a 5x5 on/off stamp — not lettering that reads at a metre, but at the
+    // 350 px this banner occupies in 'torii' it is the difference between printed
+    // cloth and a blank rectangle.
+    const GLYPH = [0x1f, 0x04, 0x1f, 0x04, 0x1f, 0x0e, 0x11, 0x1f, 0x11, 0x11, 0x1f, 0x08, 0x1f, 0x02, 0x1f];
+    const inkAt = (u, v) => {
+      const gv = (v - 0.10) / 0.76;
+      if (gv < 0 || gv >= 1) return 0;
+      const g = Math.min(2, (gv * 3) | 0);
+      const ry = ((gv * 3 - g) * 5) | 0;
+      const gu = (u - 0.30) / 0.40;
+      if (gu < 0 || gu >= 1) return 0;
+      const rx = (gu * 5) | 0;
+      return (GLYPH[g * 5 + ry] >> (4 - rx)) & 1;
+    };
     for (let j = 0; j <= NY; j++) {
       for (let i = 0; i <= NX; i++) {
         const u = i / NX, v = j / NY;
         const x = lerp(0.07, bw + 0.07, u);
         const y = lerp(y0, y1, v);
-        verts.push(x, y, Math.sin(u * 3.1) * 0.012);
+        // The rest curl. Cloth hung from one edge and tied along another does not
+        // hang flat: it takes an S down its free edge, and the S deepens toward the
+        // bottom where nothing holds it. Amplitude scales with the free-edge
+        // distance 'u', so the tied edge stays on the pole. 0.16 * bw of relief
+        // gives the surface normals a ±38 degree spread about the plane, so some
+        // band of it faces the key from any bearing the banner is planted on.
+        const curl = Math.sin(v * 4.3 + u * 1.7) * 0.16 * bw * u * (0.35 + 0.65 * v)
+                   + Math.sin(u * 5.9 + v * 2.2) * 0.045 * bw * u;
+        verts.push(x, y, curl);
         uvs.push(u, v);
-        const k = lerp(0.82, 1.0, 1 - v * 0.4);
-        cols.push(k, k, k);
+        // Hem: a stitched double border, darker and slightly warm, one cell wide.
+        const hem = (i === 0 || i === NX || j === 0 || j === NY) ? 1
+                  : (i === 1 || i === NX - 1 || j === 1 || j === NY - 1) ? 0.55 : 0;
+        const ink = inkAt(u, v);
+        let k = lerp(0.82, 1.0, 1 - v * 0.4);
+        k *= 1 - hem * 0.34;
+        cols.push(k * (1 - ink * 0.80), k * (1 - ink * 0.86), k * (1 - ink * 0.88));
         // Anchored along the pole edge and the top rail.
         fl.push(clamp(Math.max(u, v * 0.25) * (0.35 + v * 0.65), 0, 1), 0.9);
       }
