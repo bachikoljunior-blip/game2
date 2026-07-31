@@ -278,6 +278,12 @@ function cs(field, u, v) {
 /** Scratch surface record — one per pixel, never allocated inside the loop. */
 const S = { r: 0, g: 0, b: 0, a: 1, h: 0.5, ro: 0.7, ao: 1, me: 0 };
 
+/**
+ * Scratch emissive record, for the recipes that also author a transmission map.
+ * Same reason as `S`: one per pixel, never allocated inside the loop.
+ */
+const E = { r: 1, g: 1, b: 1 };
+
 function setc(s, c) { s.r = c[0]; s.g = c[1]; s.b = c[2]; }
 function mixc(s, c, t) {
   if (t <= 0) return;
@@ -1471,11 +1477,46 @@ RECIPES.push({
     s.ao = clamp(ao, 0.45, 1);
     s.me = 0;
   },
+  /**
+   * 火袋 what a flame looks like *through* washi, as a linear multiplier on
+   * whatever emissive the consumer sets. Props authors the lantern's emissive as
+   * `#ffd9a8 x 2.6` with no map at all, and measured on `phone-hero-r9.png` the
+   * panel core at (1620,800) comes out 251,249,242 — saturation 0.036, an
+   * achromatic white card. Two measurements set the numbers here.
+   *
+   * BLUE 0.10. Simulating the composite chain (exposure -> saturation -> ACES ->
+   * sRGB -> lift/contrast -> filmic shoulder) against that pixel reproduces it at
+   * an effective 3x the authored radiance, and at that level the ACES shoulder has
+   * all three channels inside 10 code values of each other. Chroma can only come
+   * back by pulling a channel out of the shoulder, and blue is the only one that
+   * is affordable: Rec709 weights it at 7.2% of luma against green's 71.5%, so
+   * blue 1.0 -> 0.10 costs the core 3.5 code values of luma at that level (9.7 at
+   * the pessimistic end of the calibration band) and takes its saturation from
+   * 0.032 to 0.203. It is also the physically right direction — a wick burns near
+   * 2200 K and a 2200 K blackbody has almost no blue, while #ffd9a8 is a 4600 K
+   * source, which is why it reads as paper-white rather than as a lamp.
+   *
+   * GREEN 0.88, and no lattice term. Both are bounded on purpose: `hero` holds its
+   * `p99.9 > 235` gate on 4,550 pixels against the 2,963 the percentile needs, and
+   * 2,286 of those 4,550 are lantern cores. Re-thresholding the frame shows the
+   * cores may lose 13 code values before the gate fails (3,463 px at 10, 2,938 at
+   * 15). A kumiko bar on the emissive would have cut a core by up to 40% with no
+   * way to predict which texel it landed on, so the grid stays in the albedo and
+   * the AO where it already is, and the only variation here is the sheet's own
+   * fibre at +/-5%.
+   */
+  emis(u, v, s, e) {
+    const grain = clamp(1 + (s.r - PAL.washi[0]) * 0.45, 0.90, 1);
+    e.r = grain; e.g = grain * 0.88; e.b = grain * 0.10;
+  },
   mat(maps) {
     // Transmission is a second render pass; only HIGH+ pays for it. applyQuality
     // swaps it for straight opacity below that, which still reads translucent
     // against the sky because shoji are lit from behind almost everywhere.
     const m = pbrPhys(maps, { ns: 0.55, side: DoubleSide, envInt: 0.8 });
+    // Harmless on an unlit shoji — three multiplies this into an emissive that is
+    // black there — and the whole of the lantern's colour once Props lights one.
+    if (maps.emissive) m.emissiveMap = maps.emissive;
     m.transmission = 0;
     m.thickness = 0.02;
     m.ior = 1.15;
@@ -2426,14 +2467,20 @@ export class MaterialLibrary {
     const albedo = rec.normalOnly ? null : new Uint8ClampedArray(n * 4);
     const orm = rec.normalOnly ? null : new Uint8ClampedArray(n * 4);
     const height = new Float32Array(n);
+    // Optional fourth channel set: a per-texel *transmission* multiplier for the
+    // materials that are lit from behind. It is written in linear (the texture is
+    // tagged NoColorSpace below), because what it multiplies — three's
+    // `totalEmissiveRadiance` — is already radiance, not a colour to be decoded.
+    const emis = rec.emis ? new Uint8ClampedArray(n * 4) : null;
 
     for (let y = 0; y < res; y++) {
       const v = (y + 0.5) / res;
       const row = y * res;
       for (let x = 0; x < res; x++) {
+        const u = (x + 0.5) / res;
         S.r = 0.5; S.g = 0.5; S.b = 0.5; S.a = 1;
         S.h = 0.5; S.ro = 0.7; S.ao = 1; S.me = 0;
-        shade((x + 0.5) / res, v, S, c, t);
+        shade(u, v, S, c, t);
         const i = row + x;
         height[i] = S.h;
         if (albedo) {
@@ -2442,6 +2489,13 @@ export class MaterialLibrary {
           albedo[o + 2] = S.b * 255; albedo[o + 3] = S.a * 255;
           orm[o] = S.ao * 255; orm[o + 1] = S.ro * 255;
           orm[o + 2] = S.me * 255; orm[o + 3] = S.h * 255;   // A = height (parallax)
+        }
+        if (emis) {
+          E.r = 1; E.g = 1; E.b = 1;
+          rec.emis(u, v, S, E, c, t);
+          const o = i * 4;
+          emis[o] = E.r * 255; emis[o + 1] = E.g * 255;
+          emis[o + 2] = E.b * 255; emis[o + 3] = 255;
         }
       }
       if (nowMs() - B.t > CHUNK_MS) { yield; B.t = nowMs(); }
@@ -2479,6 +2533,7 @@ export class MaterialLibrary {
     const maps = {};
     const slots = rec.normalOnly ? [['normal', normal, false]]
       : [['albedo', albedo, true], ['normal', normal, false], ['orm', orm, false]];
+    if (emis) slots.push(['emissive', emis, false]);
 
     for (let i = 0; i < slots.length; i++) {
       const [name, buf, srgb] = slots[i];
