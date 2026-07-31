@@ -20,37 +20,38 @@ every texture, mesh, animation and sound is synthesised at boot. `ARCHITECTURE.m
 binding contract that lets independent agents work on it in parallel; read §5 (art
 direction), §7 (perf budget) and §8 (file ownership) before dispatching anything.
 
-> **Last completed round: 7.** The next one is round 8 — use `--tag=r8`,
-> `shots/review-r8.json`, `--round=8`. Round 7's work is four owner commits on
-> `claude/kagerou-round-7-review-1tk2pn` (`60275bf`, `48af465`, `4f8c9c7`, `64fd0ba`);
-> **merge that branch to `main` before starting**, or round 8 will be built on round 6.
+> **Last completed round: 8.** The next one is round 9 — use `--tag=r9`,
+> `shots/review-r9.json`, `--round=9`. Round 8 is six commits on `main`
+> (`bc96c3c`, `e9b9717`, `4a310ed`, `1be775a`, `55693b9`, `26bf937`).
 
 An independent critic has scored it 34 → 48 → 58 → (round 4 unfiled) → (5 and 6 unscored)
-→ **44** out of 100 against a *Ghost of Tsushima* / *SEKIRO* bar. It has not passed. Round 7
-filed FAIL with four blockers, dispatched four of the fourteen owners, and closed both
-standing contract breaches.
+→ 44 → **46** out of 100 against a *Ghost of Tsushima* / *SEKIRO* bar. It has not passed.
+Round 8 filed FAIL with four blockers, dispatched five of the fourteen owners, and
+**disproved two of the four blockers' attributions** — the shadows the critic said were
+missing are present and measurable, and the fringe it read as lens dispersion was two
+channels of antialiasing being discarded.
 
 The score gap from round 3's 58 is not a regression measurement — different critic
 instances, four rounds apart, against a review set that has since had the HUD blanked.
 
-Met at the end of round 7:
+Met at the end of round 8:
 
 | | measured | contract |
 |---|---|---|
-| phone draw calls | **117** worst pose | ≤ 140 ✓ |
-| phone triangles | **735,886** worst pose | ≤ 900,000 ✓ |
-| black gate, all five | p0.1 = 0, 5, 0, 0, 0 | < 15 ✓ |
-| white gate, all five | p99.9 = 236, 213, 253, 224, 254 | > 235 ✓ |
+| phone draw calls | **118** worst pose | ≤ 140 ✓ |
+| phone triangles | **746,508** worst pose | ≤ 900,000 ✓ |
+| black gate, all five | p0.1 = 0, 3, 0, 0, 0 | < 15 ✓ |
+| white gate, all five | p99.9 = 237, 214, 253, 227, 254 | > 235 ✓ |
 
-Still open, measured at the end of round 7 — `HANDOFF.md` carries the reasoning and the full
-list of what round 7 disproved:
+Still open, measured at the end of round 8 — `HANDOFF.md` carries the reasoning and the
+full list of what rounds 7 and 8 disproved:
 
 | | measured | owner |
 |---|---|---|
-| god rays overwrite the shadow-cooling where they are live | dark-population R−B rose on `valley`/`sun`, fell on the three frames with no god-ray term | `PostFX.js` |
-| contact shadows missing under props | ground under a stone lantern is a local *maximum*, 4.5× open ground | `Lighting.js` |
-| mid-ground short of dressed ground | `detail` 4.79 against 9.19 at the same depth | `Terrain.js` |
-| aerial perspective converges above the sky | massif reads as a pale cut-out; not re-filed by round 7's blind critic | `Sky.js` |
+| no instanced ground cover in the basin | `grassRadius` 34 m against regions at 15–90 m | `Foliage.js` |
+| the cool fill is eaten before the pixel | fitted illuminant B/R 0.141 = the key's own | `Materials.js` |
+| far range under-textured | detail 1.68 against a ≥ 3.0 target | `Terrain.js` |
+| valley saturation | 0.609 against 0.55; not reachable from albedo | `Lighting.js` |
 
 ---
 

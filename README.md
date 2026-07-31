@@ -62,58 +62,65 @@ sample four times.
 > Picking the work up in a new session? [`HANDOFF.md`](./HANDOFF.md) carries the state
 > the container does not — `shots/` is gitignored and the review images do not survive.
 
-Measured, not asserted. Seven review rounds against a Ghost of Tsushima / SEKIRO bar.
-**It has not passed** — round 7 filed FAIL at 44/100 with 4 blockers. Everything below is a
-number off the round-7 verification capture (`npm run review -- --tag=r7v`), not a judgement.
+Measured, not asserted. Eight review rounds against a Ghost of Tsushima / SEKIRO bar.
+**It has not passed** — round 8 filed FAIL at 46/100 with 4 blockers. Everything below is a
+number off the round-8 verification capture (`npm run review -- --tag=r8w`), not a judgement.
 
-> The 58 (round 3) → 44 (round 7) score gap is **not** a regression measurement: different
-> critic instances, four rounds apart, and the review set has since had the HUD blanked,
-> which removed the authored white ink the highlight gate used to pass on.
+> The 58 (round 3) → 44 (round 7) → 46 (round 8) scores are **not** a single trend line:
+> they come from different critic instances, and the review set has since had the HUD
+> blanked, which removed the authored white ink the highlight gate used to pass on.
 
 **Verified good**
 
 | | measured |
 |---|---|
-| phone draw calls | **117** worst pose (`torii`), against the 140 cap — met for the first time |
-| phone triangles | **735,886** worst pose (`wide`), against the 900,000 cap |
-| tonal range | true blacks on all five review framings (p0.1 = 0, 5, 0, 0, 0) |
-| highlights | **all five framings now clear the 235 gate** (p99.9 = 236, 213, 253, 224, 254) |
-| shader programs | zero linked dead — 115 linked, audited every capture |
+| phone draw calls | **118** worst pose (`torii`), against the 140 cap |
+| phone triangles | **746,508** worst pose (`wide`), against the 900,000 cap |
+| tonal range | true blacks on all five review framings (p0.1 = 0, 3, 0, 0, 0) |
+| highlights | all five clear the 235 gate (p99.9 = **237**, 214, 253, 227, 254) |
+| shader programs | zero linked dead — 117 linked, audited every capture |
 | page errors | zero |
+| set colour coherence | frame-to-frame R−B spread **64.1 → 43.2** |
+| aerial perspective | far range now reads **7.9 luma** below the sky above it, from 0.2 |
+| valley ground detail | **7.57 → 10.3**, against dressed ground's 9.19 |
 | near-sun sky chroma | saturation **0.049 → 0.28**, R−B **16.4 → 57.8** |
-| paving / granite joint walls | p95 24° and 23°, down from 56° and 60° |
 | PWA | installs and launches offline |
-| bundle | 304 KB gzip main chunk, zero external assets |
+| bundle | 310 KB gzip main chunk, zero external assets |
 
-Round 7 closed the two contract breaches that had been open longest. Draw calls came down
-146 → 117 by baking 13 instanced meshes with ≤ 8 copies into the merged statics, merging
-four shadow proxies into one, and raising the small-bucket collapse threshold 4200 → 12000 —
-Level's own share went 74 calls → ≤ 56 across 60 → 40 objects. The `hero` highlight gate
-closed on a bloom widening (strength 0.105 → 0.40, radius 1.35 → 1.75) taken as an art call
-about halation on emitters, with the black gate re-checked on all five framings rather than
-just the percentile being moved.
+**Solved in round 8: three symptoms that were not what they looked like**
 
-**Solved in round 7: what draws the dark mid-ground**
+Round 8's most valuable output was disproof. Of the critic's four blockers, **two described
+real pixels but misattributed them**, and finding that out cost less than acting on them
+would have.
 
-Two rounds and two disproved hypotheses had left this unowned. It was settled with a
-prediction rather than a debug boot — *if the region moves when only the terrain dressing
-changes, terrain draws it* — and it moved, `detail` **2.60 → 4.79**. Ray-marching the pose
-independently confirms it: 79 rays land 17–79 m out on the plateau, in a splat that is
-grass 0.646 ± 0.072 / dirt 0.327, where the far-ground reconstruction is ≈ 0. The hole was
-**spatial, not tonal**: the library ground textures are authored at 0.07–0.3 m and have
-mipped to their mean by ~20 m, while every term `Terrain.js` added was 8–48 m. Nothing at
-all occupied 0.3–7 m, which is 4–64 px at that depth.
+*The missing cast shadows were never missing.* Ablating the shadow term at runtime and
+diffing shows 45% of `torii`'s near ground band is cast shadow, p50 **43.0 lit against 19.9
+shadowed** — a factor of 2.16, which is exactly what the critic's own fix asked for. At the
+13° sun elevation the build runs, a shadow lands 4.33× the caster's height downsun, so a 6 m
+torii post throws 26 m: the probe boxes were beside the post, ~26 m short of the shadow.
+The `kagGetShadow` early-out was cleared too — disabling PCSS entirely moves the frame less
+than its own noise floor.
+
+*The green/magenta edge fringe was not lens dispersion.* The chromatic-aberration block
+assigned `color.r` and `color.b` from raw texture fetches, discarding the antialiased result
+for two of three channels. Red and blue were never antialiased, which is why the fringe was
+green-only and full-strength on the optical axis where a radial term is zero.
+
+*The far range is macro heightfield, not the parallax ridge band* — which finally explains
+why round 6's ridge-band retune measured as a no-op. Its detail bands are gated by a
+footprint term that evaluates to 0.06 at 1.6–2.5 m of rock per pixel, switching them off
+exactly where the review measured detail 1.28.
 
 **Open, with the measurement that states it**
 
 | | measured | owner |
 |---|---|---|
-| god rays overwrite the shadow-cooling on the two frames that carry them | dark-population R−B fell on hero/wide/torii (0 god-ray term) and **rose** on valley/sun (0.97 and 1.00) | `src/render/PostFX.js` |
-| contact shadows missing under props | flagstone under a 2.5 m stone lantern is a **local maximum**, 4.5× open ground 210 px away | `src/render/Lighting.js` |
-| mid-ground still short of dressed ground | `detail` 4.79 against 9.19 at the same depth in the same frame | `src/world/Terrain.js` |
-| aerial perspective converges above the sky | massif still reads as a pale cut-out on `wide`/`torii`; not re-filed by round 7's blind critic | `src/render/Sky.js` |
-| sakura canopy value break | top:underside **0.86** where a backlit canopy needs ~3:1; hue was fixed (R−B 29.2 → 40.0), value was not | `src/world/Props.js` |
-| bamboo band on `wide` | green-dominant 13.55% → 17.25%, short of the 21% target | `src/render/Foliage.js` |
+| no instanced ground cover in the basin at all | `grassRadius` is **34 m**; the valley box spans 15–90 m and `wide`'s plain sits at 55–82 m | `src/render/Foliage.js` |
+| the cool fill is eaten before it reaches the pixel | rig delivers fill 0.446 against key 0.396, but the fitted illuminant is B/R **0.141** — the key's own 0.134, i.e. the ground is lit nearly neat | `src/render/Materials.js` |
+| far range still under-textured | detail **1.28 → 1.68** against a ≥ 3.0 target | `src/world/Terrain.js` |
+| valley saturation | **0.609**, against a 0.55 target; unreachable from terrain — an achromatic albedo still measures 0.593 under this illuminant | `src/render/Lighting.js` |
+| god-ray warm cast damped but not gone | `sun` shadow probe R/B **14.75 → 8.85**, against a ≤ 7.0 target | `src/render/PostFX.js` |
+| sakura canopy emits less than it did | the directional emissive floor cost 301 of `hero`'s highlight pixels — an art question, now decoupled from the gate | `src/world/Props.js` |
 
 `HANDOFF.md` carries the full open list, everything round 7 disproved, and the six leads
 owners found outside their own files and handed over rather than edited.

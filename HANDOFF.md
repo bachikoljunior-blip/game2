@@ -13,294 +13,280 @@ Update this file at the end of every round. It is the only thing that carries st
 ## Where the work is
 
 - Branch: **`main`**. Commit and push there unless a human names something else.
-  This branch's history came from `claude/2-rounds-only-9uukb7` and was merged to `main`
-  because a new session starts from the default branch — work parked on a feature branch is
-  invisible to the next session no matter how well it is documented. Two sessions branched
-  from stale points and lost the brief entirely before this was fixed, and each spent a
-  round solving the same triangle-count problem. `claude/round-q78i6x` is that other line,
-  still on the remote and not merged; see the note at the end of this file.
-- Last three rounds: `f0543b2` (round 5), `16f21e4` (round 6), round 7 = four owner commits
-  `60275bf` (foliage), `48af465` (world), `4f8c9c7` (sky), `64fd0ba` (postfx).
-- **Round 7 was run on branch `claude/kagerou-round-7-review-1tk2pn`, not `main`, because the
-  session operator named that branch.** It is pushed. **Merge it to `main`** — everything in
-  `CLAUDE.md` about work parked on a feature branch being invisible to the next session
-  applies to it.
-- Rounds 1–3 scored 34 → 48 → 58 out of 100 against a Ghost of Tsushima / SEKIRO bar.
-  Round 4 was stopped before its verdict. Rounds 5–6 were not scored — they were run
-  as measure-fix-verify rather than as a scored critique. Round 7 scored **44**.
+- Round 8 is six commits: `bc96c3c` (critique), `e9b9717` (postfx), `4a310ed` (foliage),
+  `1be775a` (world), `55693b9` (sky), `26bf937` (postfx, gate repair). Round 8 was run on
+  `claude/kagerou-round-8-start-jk5lox` because the session operator named that branch, and
+  merged to `main` at the end. **Round 7 had to be merged by round 8's session** — it had
+  been left on its own branch, and `main` was two rounds stale. If you are handed a branch
+  name, merge it when the round closes.
+- Rounds 1–3 scored 34 → 48 → 58. Round 4 was stopped before its verdict. Rounds 5–6 were
+  unscored (run as measure-fix-verify). Round 7 scored **44**, round 8 **46**.
   **The build has not passed.**
-- **The 58 → 44 drop is not a regression measurement.** Round 3's 58 and round 7's 44 come
-  from two different critic instances, four rounds and two unscored rounds apart, against a
-  review set that has since had the HUD blanked (which removed the authored white ink the
-  highlight gate used to pass on). Treat 44 as round 7's baseline, not as evidence that
-  rounds 5–6 made the build worse.
+- **The 58 → 44 → 46 sequence is not a trend line.** Those scores come from different critic
+  instances against a review set that has since had the HUD blanked (which removed the
+  authored white ink the highlight gate used to pass on). Treat each as that round's
+  baseline, not as evidence about the previous one.
 
 ## How to run a round
 
+`ROUND.md` is the operational brief and carries the round number. In short:
+
 ```bash
-npm install
 npm run build
-node tools/capture.mjs --review --profile=phone --tag=rN     # the five review framings
-node tools/probe.mjs stats shots/phone-wide-rN.png 0.05,0.50,0.22,0.16
-node tools/probe.mjs crop  shots/phone-wide-rN.png 0.05,0.50,0.22,0.16 /tmp/c.png
+node tools/capture.mjs --review --diff --profile=phone --tag=rN
+node tools/contact-sheet.mjs --tag=rN
+# critic (opus/high) -> shots/review-rN.json
+node tools/dispatch.mjs --round=N
 ```
 
-Facts about the rig that cost this session real time:
+Facts about the rig that have cost real time:
 
 - **Boot is ~35 s on phone/MEDIUM but ~200 s on desktop/ULTRA**, and each 1920×1080
-  ULTRA screenshot took minutes under SwiftShader. A full `--profile=phone,desktop
-  --review` run did not finish inside a reasonable window. Capture phone first; add
-  desktop only when you specifically want to judge the showcase tier.
+  ULTRA screenshot took minutes under SwiftShader. Capture phone first; add desktop only
+  when you specifically want to judge the showcase tier.
 - `shots/.capture.lock` serialises runs. If a run is killed the lock survives — `rm -f
   shots/.capture.lock` before the next one.
-- **Never `npm run build` while a capture is running.** It rewrites `dist/` out from
-  under the server. It did not break anything this session, but only by luck.
+- **Never `npm run build` while a capture is running.** It rewrites `dist/` under the server.
 - The report is written at the *end* of the run. Kill the run and you lose the console
   error list and histograms even though the PNGs are on disk.
-- The review set is captured with the HUD blanked (`HUD.__hide`, and `Menus` honours it
-  too). The `hud` shot still draws it. `luma.mjs`'s `HUD_MASKS` are therefore applied
-  only to the `hud` shot now — do not reintroduce them elsewhere or you throw away 8%
-  of the world, including the darkest corner the black gate reads.
+- The review set is captured with the HUD blanked. `luma.mjs`'s `HUD_MASKS` apply only to
+  the `hud` shot — do not reintroduce them elsewhere or you throw away 8% of the world.
+- `--diff` carries unchanged shots forward. **It reads `tools/manifest.mjs`'s last stamp**,
+  so after a mid-round re-shoot under a new tag the next `--diff` carries from *that* tag.
+  Round 8 ended on tag `r8w`; a round-9 `--diff` run will diff against it.
 
 ## Judge the frames yourself, at native resolution
 
 The images are 2532×1170. Anything read off a whole-frame view has been downscaled by
-about 1.3× and **you will misread it**. This session nearly filed "no cast shadows
-anywhere" as a blocker off a downscaled view; the `sun` frame plainly has them. It also
-called a field of black ellipses "lantern shadows" when they were grass LOD2 cards
-casting into the shadow map.
+about 1.3× and **you will misread it**. Crop with `tools/probe.mjs crop` and look. Quote
+numbers: `detail` is mean |Laplacian|, `lumaSpread` and `saturation` are the other two that
+have been load-bearing.
 
-Crop with `tools/probe.mjs crop` and look. Quote numbers: `detail` is mean |Laplacian|
-and is what "flat putty" actually means; `lumaSpread` and `saturation` are the other two
-that have been load-bearing.
+This is not a stylistic preference. It has now produced three filed-and-wrong findings:
+"no cast shadows anywhere" against a frame that plainly has them, a field of grass LOD2
+cards called "lantern shadows", and round 8's blocker below.
+
+## What round 8 disproved — do not re-test these
+
+Round 8's most valuable output was disproof. **Two of the critic's four blockers described
+real pixels but misattributed them**, and one of the two had been an open item for three
+rounds.
+
+- **"No object casts a shadow onto the ground in any daylight framing": WRONG, three ways.**
+  (i) Ablation — forcing `kagShadowFade` negative collapses the shadow term without a
+  recompile; diffing shows **45% of `torii`'s near ground band is cast shadow**, p50 **43.0
+  lit against 19.9 shadowed, a factor of 2.16**, which is exactly the factor the critic's own
+  `fix` field asked for. On `wide`, 72,239 px of the lower band, p50 42.2 against 23.1.
+  (ii) Native crops of the r8 frames show the post-and-crossbeam cross shadow on the sand and
+  lantern, plinth and pole shadows under the torii. (iii) At the 13° sun elevation the build
+  runs, a shadow lands **4.33× the caster's height downsun** — a 6 m post throws 26 m, and the
+  critic's probe boxes sit beside the post, ~26 m short of the shadow they were looking for.
+  That same arithmetic disposes of the separate "dark ovals with no caster above them"
+  finding: detached-looking ground shadows are the *correct* output at this elevation.
+- **The `kagGetShadow` `found < 0.5` early-out is innocent.** Live readback puts the PCSS
+  search at **0.180 m**, not the 36.9 cm in the standing note — that figure described the
+  pre-round-7 code state. Any receiver inside a shadow bar has the caster's depth in its own
+  texel, so the early-out can only touch a sub-0.18 m penumbra fringe. Disabling PCSS
+  entirely moves the frame 8.74% darker against its own 9.08% brighter noise floor, i.e.
+  indistinguishable from noise.
+- **The edge fringe is not lens dispersion and not radius-dependent.** The chromatic offset
+  is correctly radial; mean fringe by radial fifth is **flat and largest on axis**
+  (6.55/7.10/6.36/5.77/5.01). CAS weights the wrong channel by an order of magnitude, and
+  FXAA cannot reach the measured G/R ratio because its output is a convex combination of its
+  neighbours. **Confirmed cause instead:** `USE_CHROMATIC` assigned `color.r`/`color.b` from
+  raw texture fetches, discarding `resolveAA()` for two of three channels.
+- **The far range in `wide` is macro heightfield, not the parallax ridge band.** Ray-marching
+  the pose puts the critic's box on terrain at **1000–1080 m, surface 940–1055 m ASL**,
+  corroborated independently by the snow line landing exactly there. The ridge band is a
+  5000 m cylinder. **This is finally why round 6's ridge-band haze retune measured as a
+  no-op** — it was retuning something that does not draw those pixels.
+- **The `wide` ridgeline silhouette is not the defect.** Measured as the 32 m clipmap lattice
+  actually samples it, the longest straight run over the critic's full span is **72 px** and
+  over the far half **42 px** — already inside the critic's own "no straight segment longer
+  than 60 px" target, with 2nd-difference RMS 0.97 px.
+- **The magenta sky dashes are not degenerate billboards and are not "floating in clear
+  sky".** 112 components have a height histogram of `{1:35, 2:65, 3:10, 4:2}` and a **median
+  aspect of 1:1** — specks, not slivers of a collapsed quad. BFS to the nearest solid canopy
+  mass has a median of **6 px** (valley) and 8 px (sun); the critic's "60+ px above the
+  canopy" is the extreme tail. A luma-only detector, immune to the chromatic fix, finds
+  **2/2/0/0/0** genuinely detached specks.
+- **Weather particles are not the dashes.** The chroma-based speck population is
+  framing-independent at 396–612 across all five frames, which fits a camera-boxed particle
+  field — but the luma test kills it.
+- **`valley` saturation cannot be fixed from `Terrain.js`.** Fitting the illuminant from the
+  frame's own mean gives **R:G:B = 0.935 : 0.375 : 0.132**. Under that illuminant a
+  *perfectly achromatic* ground albedo still measures sRGB saturation **0.593–0.609** against
+  a 0.55 target. Note sat = (R−B)/R here, so green content cannot move it at all — only blue.
+- **`envMapIntensity` in `Props.js` was dead, confirmed at source.**
+  `three.module.js:17343` overwrites it from `scene.environmentIntensity` for any
+  `MeshStandardMaterial` with a null `envMap` while `scene.environment` is set. All four
+  authored values (1.35–2.6) were overwritten before upload. Removed.
+
+Also disproved in round 7 and still not worth re-testing: cascade coverage as the cause of
+missing contact shadows; the lanterns being absent from the caster set; the `#4a6b8f` fill
+being delivered at 0.09 against an authored 0.35 (the *level* was right, the *share* was
+wrong); a regular stipple pitch (2-D autocorrelation has no peak above r = 0.08 at any lag
+from 3 to 60 px); the near mesh plants being the floating culms; and `PostFX.js`'s own
+authored god-ray gain derivation, which claimed an upright removes ~22% of the disc term
+when it removes none — `delta = (vUv − sunUv)/N`, so every pixel's march terminates at the
+sun's UV and collects the disc as its last tap.
 
 ## Open items, each with the measurement that states it
 
-Ordered by what a hostile art director would hit first. Numbers are round-7 verification
-(`r7v`) unless stated.
+Ordered by what a hostile art director would hit first. Numbers are the round-8 verification
+capture (`r8w`) unless stated.
 
-1. **The god-ray pass is overwriting the shadow-cooling fix on exactly the two frames that
-   carry it.** This is the round-7 regression and it is fully attributed, not a guess.
-   Dark-population (p05–15 of the lower 45% of frame) **R−B**, before → after round 7:
+1. **There is no instanced ground cover in the basin at all.** `grassRadius` is **34 m** at
+   MEDIUM; the `valley` measurement box spans **15–90 m** and `wide`'s plain sits entirely at
+   **55–82 m**. Terrain shading can raise `detail` — round 8 took valley **7.57 → 10.3** and
+   wide's mid-ground **4.78 → 6.12**, both past target — but it cannot put grass where none
+   is instanced. This is the dominant remaining part of the bare-ground blocker and it is
+   **not** in `Terrain.js`. Owner: `src/render/Foliage.js`.
 
-   | frame | R−B | god-ray term |
-   |---|---|---|
-   | hero | 3.9 → **2.9** ✓ | 0 |
-   | wide | 11.8 → **3.7** ✓ | 0 |
-   | torii | 5.9 → **5.5** ✓ | 0 |
-   | valley | 10.8 → **16.6** ✗ | 0.97 |
-   | sun | 12.2 → **29.4** ✗ | 1.00 |
+2. **The cool fill is eaten between the rig and the pixel.** This is the round's most
+   consequential unfixed finding and two independent agents reached it. The rig delivers fill
+   0.446 against key 0.396 (53% of the illuminant) and a term ablation confirms the fill
+   itself *is* cool and *is* arriving — fill-only on `torii`'s ground band measures meanRGB
+   **13.0, 16.0, 17.0**, R−B −3.9. Yet the illuminant fitted from `valley`'s own pixels is
+   B/R **0.141**, which is `sunColor`'s own B/R of 0.134 — **the ground is lit by the key
+   nearly neat**. Roughly a tenth of the budgeted fill survives. The two multiplications that
+   scale `indirectDiffuse` and *not* the key are `Materials.js:2237` (triplanar AO,
+   `aoMapIntensity` to 1.25) and `PostFX.js:397` (SSAO at `uAoStrength · indirect`, → the
+   full 0.85 as luma → 0). **Do not raise the fill in `Lighting.js` to compensate** — two
+   successive `sky` agents declined for the same reason and both were right; it would be
+   paying twice for something eaten downstream. This is also where `valley`'s saturation has
+   to come from (item 4). Owner: `src/render/Materials.js`, with `PostFX.js` second.
 
-   The three that improved are precisely the three where `PostFX` measured
-   `_sunScreenStrength = 0`; the two that got worse are precisely the two where it is live.
-   On `sun` the tight-shadow probe `0.360,0.9125,0.030,0.005` went **R/B 3.71 → 14.60**
-   against a predicted ≤ 1.3. `postfx` raised `godRayStrength` 0.18 → **1.25** and overshot
-   its own falsifiable targets by 60–100% (post luma at the sun's height: predicted 90,
-   measured **146.4**; predicted 48, measured **71.7**).
-   **Do not simply revert it** — the same commit delivered the lantern halation and the
-   `hero` highlight gate, both of which passed. Damp the god-ray gain back toward the
-   numbers `postfx` itself predicted and re-measure the R−B table above.
-   Owner: `src/render/PostFX.js`. Round 8's critic should judge the veil blind first — it
-   may read as magic-hour haze rather than as a wash, and that judgement is not the
-   coordinator's to make.
+3. **The far range is still under-textured.** detail **1.28 → 1.68** against the ≥ 3.0 the
+   owner predicted — a real move, well short of target. The mechanism is known and recorded:
+   every far band is gated by `kgFine = 1 − smoothstep(1.15, 2.70, kgFoot)`, which evaluates
+   to ~0.06 at 1.6–2.5 m of rock per drawing-buffer pixel. Round 8 added one footprint-locked
+   band (`kgLodBand`); it needs more. Owner: `src/world/Terrain.js`.
 
-2. **~~The mid-ground dark expanse is unidentified.~~ SOLVED in round 7 — terrain draws it.**
-   Two rounds and two disproved hypotheses went into this. `world` settled it with a
-   prediction rather than a debug boot: *if `wide` region `0.05,0.50,0.22,0.16` moves when
-   only the terrain dressing changes, terrain draws those pixels.* It moved
-   **detail 2.60 → 4.79**. Ray-marching the pose independently confirms it: 79 rays land
-   17–79 m out on the plateau at y=812, splat grass 0.646 ± 0.072 / dirt 0.327, where
-   `coreFar = smoothstep(55,240,dist)` ≈ 0 and `wild2` is exactly 0 — which *explains* why
-   both earlier hypotheses were no-ops rather than merely repeating that they were.
-   The hole was **spatial, not tonal**: per-octave luma RMS at 1–64 px was
-   `2.89/1.92/1.44/0.92/0.67/0.84/1.40` against `4.09/4.07/6.59/8.91/10.22/10.17/6.79` for
-   dressed ground at the same depth in the same frame. Library ground textures are authored
-   at 0.07–0.3 m and mip to their mean by ~20 m; every term `Terrain.js` added was 8–48 m.
-   Nothing occupied 0.3–7 m. Still short of the target (`detail` 4.79 against dressed
-   ground's 9.19) — this is now ordinary tuning with a known owner.
+4. **`valley` saturation 0.609 against a 0.55 target.** Not reachable from albedo — see the
+   disproof above. Only blue moves it, and the blue is being eaten by item 2. Owner:
+   `src/render/Lighting.js`, but do not act before item 2.
 
-3. **~~Phone draw calls over cap.~~ MET in round 7.** 146 → **117** worst pose (`torii`),
-   against the 140 cap, by baking 13 instanced meshes with ≤ 8 copies into the merged
-   statics, merging four shadow proxies to one, and raising `_collapseSmallBuckets` 4200 →
-   12000. Triangles 686,202 → **735,886** against 900,000. **§7 is fully met for the first
-   time.** Do not let a later round quietly spend this back.
+5. **The god-ray warm cast is damped, not gone.** `sun` shadow probe R/B **14.75 → 8.85**
+   against a ≤ 7.0 prediction. Whole-frame R−B on `valley` is 57.1 and `sun` 39.8. Round 8
+   found the real driver was not the gain but the **tint**: round 7 set `uGodTint` to
+   (1.0, 0.52, 0.26) in the same commit that raised the gain, and deposited R−B scales as
+   `gain × (tintR − tintB)` — a **73× rise in colour against 4× in luminance**, which is why
+   it read as a warm cast rather than a brightening. Now gain 0.80, tint (1.0, 0.94, 0.88).
+   Owner: `src/render/PostFX.js`.
 
-4. **~~`hero` under the highlight gate.~~ CLOSED in round 7.** p99.9 **233 → 236** against
-   the 235 gate. All five framings now pass both the black and the white gate
-   (p0.1 = 0/5/0/0/0, p99.9 = 236/213/253/224/254). `wide` p0.1 rose 1 → 5; still passing,
-   but it is the one gate number that moved the wrong way — watch it.
+6. **The sakura canopy now emits less than it did.** Round 8 made the blossom emissive floor
+   directional (crown luma 0.233, underside 0.068, ratio **3.42:1** against a flat 1.00:1),
+   which was the right fix for the value break — but it cost **301 of `hero`'s highlight
+   pixels**, the largest single contributor to the gate regression below. That is an art
+   question about how much a backlit canopy should emit, now decoupled from the contract
+   check. Owner: `src/world/Props.js`.
 
-5. **Aerial perspective still converges above the sky.** `wide` and `torii` still show the
-   massif as a pale cut-out. **Round 7's critic did not file this** — it is judged blind and
-   files only what it sees, and it spent its blockers elsewhere. It is recorded here because
-   it is measured, not because it was re-filed. Round 5 fixed the *amount* of air; the
-   target colour is the other half. `sky` cooled the magic-hour fog base `#a9a8ad` →
-   `#97a6bd` at constant luminance in round 7, which is a partial step. Note `uFogColor`
-   also tints valley mist and Weather particles, so a blind global dim is not safe —
-   deriving it from the dome's own horizon radiance is the honest fix.
-   Owner: `src/render/Sky.js`.
+7. **Trees float over the clipmap chord.** `_scatterTrees` plants through `_heightAt`, not
+   `_plantY`, and neither tree material declares `sink` — the exact defect round 7 fixed for
+   bamboo, still live for trees. Found by the foliage owner and flagged rather than changed
+   blind. Unmeasured. Owner: `src/render/Foliage.js`.
 
-6. **The far massif is low-contrast at every range** (detail 2.29), and the parallax
-   ridge band's near rank measured detail **1.06** — dead-white geometric cones above the
-   haiden roofline in `hero`. Round 6 rederived the band's three haze constants from the
-   new fog law; **it changed nothing measurable, so the cones are not the ridge band.**
-   Unidentified.
+8. **`wide` is front-lit by construction** — sun 123° off the view axis, so no specular in
+   frame reflects toward the viewer. It is exempt from the highlight gate for that reason,
+   recorded in `tools/capture.mjs`. A real fix means moving `WORLD.SUN_AZIMUTH_DEFAULT` or
+   re-siting the shot, and that reaches every framing and five rounds of lighting tuning. Do
+   not attempt it in the same round as tonal work.
 
-7. **`wide` is front-lit by construction** — sun 123° off the view axis, so no specular
-   in frame reflects toward the viewer. It is exempt from the highlight gate for that
-   reason, recorded in `tools/capture.mjs`. A real fix means moving
-   `WORLD.SUN_AZIMUTH_DEFAULT` off the valley or re-siting the shot, and that reaches
-   every framing and four rounds of lighting tuning. Do not attempt it in the same round
-   as tonal work.
+9. **The world has almost no environment reflection.** `scene.environmentIntensity` reads
+   **0.0643** live (probe luminance 2.823 → 0.182 irradiance, exactly as designed). It also
+   scales specular IBL. A look cost, but not something to change blind while the diffuse half
+   is being eaten by item 2.
 
-8. **Contact shadows are still missing under props**, and the cascade is *not* the reason.
-   The critic's own measurement stands: on `torii`, flagstone under a 2.5 m stone lantern
-   is a **local maximum** — 4.5× brighter than open ground 210 px away. Two mechanism
-   guesses are now disproved (see below). The live suspect, unverified, is
-   `kagGetShadow`'s `found < 0.5` early-out over a **36.9 cm** blocker disk sampled with 8
-   taps: a 0.35 m lantern shaft can return zero blockers and be shaded fully lit.
-   Owner: `src/render/Lighting.js`.
+10. **1.25% of macro heightfield cells exceed `HEIGHT_MAX = 1200` and clamp flat at 1199 m.**
+   Pre-existing and not made worse by round 8 (1.25% → 1.17%). Worth a look if flat summits
+   ever show. Unowned.
 
-9. **The bamboo band still under-reads on `wide`.** `foliage` predicted green-dominant
-   pixels in `wide 0.00,0.20,0.30,0.25` would pass 21%; measured **13.55 → 17.25**. Right
-   direction, short of target. On `valley 0.30,0.20,0.16,0.22` the same metric went
-   **3.02% → 0.00%** and warm pixels 91% → 100% — that region is now entirely washed by the
-   god-ray veil of item 1, so it cannot be read as a foliage result until item 1 is damped.
+11. **`Cinematic.js`'s `SHOTS.sun` pose is wrong about its own framing.** Its comment claims
+   the sun "sits in the open bay at ~3.2 m"; it actually lands dead centre behind the
+   shimenawa's tassel (the disc's UV is 0.500,0.500 and that pixel is rope at RGB 114,86,30),
+   so the ~150-linear disc never enters the depth-masked emitter. "No sun disc in frame" is a
+   **pose** fault, not a renderer fault. A ~1.2° nudge of the target recovers it. Carried
+   from round 7, still unactioned. Owner: `src/core/Cinematic.js`.
 
-10. **The sakura canopy's value break.** `foliage` fixed the *hue* (canopy core R−B
-   29.2 → **40.0**, hitting its target — the violet was albedo, not grade: solving
-   measured ÷ albedo per channel gave an almost exactly neutral light vector
-   0.2788/0.2767/0.2784). The *value* break is unfixed and is **not foliage's file**: the
-   `hero` canopy is `level:static:0,0:__blossom`, i.e. Props' sacred tree, and
-   `src/world/Props.js:1413` adds `totalEmissiveRadiance += diffuseColor.rgb *
-   vec3(0.155,0.200,0.268)` — a flat, blue-weighted (B/R 1.73) floor applied equally to
-   crown and underside, which is why top:underside measures 0.86 rather than the 3:1 a
-   backlit canopy needs. Owner: `src/world/Props.js`.
+12. **`Terrain.js`'s displacement-aware blend runs on ~10% of its designed range**, and
+   round 8 measured *why* fixing it would not help the blocker: at 15–90 m the library
+   textures have mipped to their mean, so the `kgLum()` micro-heights are constants and
+   interlocking is impossible at any window width. It only affects ground inside ~20 m.
+   Deliberately deferred. Owner: `src/world/Terrain.js`.
 
-## Found in round 7, routed but not acted on
+## The gate regression, and the lesson in it
 
-Each was found by an owner working outside its own file and handed over rather than edited.
-None is verified beyond the reading that produced it.
+`hero`'s white gate (p99.9 > 235) failed on the first verification capture at exactly 235,
+down from round 7's 236. Bisecting by rebuilding each revision and counting pixels above
+luma 235 (the gate needs 2,962 of 2,962,440):
 
-- `src/world/Props.js:1195/1364/1484/1506` set `envMapIntensity` 1.35–2.6. Three.js
-  overwrites this from `scene.environmentIntensity` for any `MeshStandardMaterial` with
-  `envMap === null` while `scene.environment` is set, so the file's authored cool bounce is
-  not reaching the frame. Owner: `world`.
-- `src/render/Materials.js:2237` multiplies `reflectedLight.indirectDiffuse` by a triplanar
-  AO with `aoMapIntensity` up to 1.25 — it scales the fill and not the key. Owner:
-  `materials`.
-- `src/render/PostFX.js:397` composites SSAO at `uAoStrength · indirect` where
-  `indirect → 1` as luma → 0, so shadowed pixels take the full 0.85. Owner: `postfx`.
-  Together with the item above, roughly 75% of the fill appears to be eaten downstream:
-  `sky` measured the rig delivering fill 0.446 against key 0.396 while the pixels show ~5:1.
-  `sky` deliberately did **not** raise the fill to compensate, which was the right call.
-- `src/core/Cinematic.js`: `SHOTS.sun`'s comment claims the sun "sits in the open bay at
-  ~3.2 m"; it actually lands dead centre behind the shimenawa's tassel (the disc's UV is
-  0.500,0.500 and that pixel is rope at RGB 114,86,30), so the ~150-linear disc never enters
-  the depth-masked emitter. "No sun disc in frame" is a **pose** fault, not a renderer
-  fault. A ~1.2° nudge of the target recovers it. Owner: `core`.
-- `src/world/Terrain.js`'s displacement-aware blend feeds `kgLum()` of the *linear* albedo
-  into a 0.17-wide window at `HI = 0.62`. Moss's linear luma is 0.04–0.22 and earth's
-  0.02–0.19, so for a grass+dirt pair `b1` pins at exactly 0.17 and `b0` never clears ~0.07
-  — the interlocking its comment describes cannot occur for any pair of dark layers. It is
-  running on ~10% of its designed range. Owner: `world`.
-- `src/world/Terrain.js` cost is unmeasured: round 7 added 3 fbm octaves and 9 `hash22` per
-  terrain fragment at tier ≥ 1. If phone ms regresses, the cheapest cut is the `kgCell2`
-  stone scatter.
+| tree | px > 235 | p99.9 |
+|---|---|---|
+| r8 baseline | 3,073 | 236 PASS |
+| + PostFX only | 2,939 | 235 FAIL |
+| full round 8 | 2,627 | 235 FAIL |
 
-## Disproved in round 7 — do not re-test these
+**No single owner caused it and no single revert fixes it.** The four changes cost 301
+(Props' directional emissive), 198 (PostFX's AA fix), 73 (Sky's derived fog) and 60
+(Foliage's rebuilt mask) — off a cushion of **3.7%**. The frame legitimately lost ~15% of its
+highlight population to four changes we wanted.
 
-Ruling a cause out is a result. Each of these cost an owner real time; re-testing them costs
-it again.
+Two things worth carrying forward:
 
-- **The critic's cascade-coverage hypothesis for the missing contact shadows: wrong.**
-  Cascade 0 covers view depth −6.1 → 36.3 m with a 42.4 m ortho box centred on the camera.
-  The fit is camera-relative and rotation-invariant, so no height or pitch can drop a 4–8 m
-  prop out of it.
-- **The 24 stone lanterns are in the caster set.** The rig's own rollup shows
-  `lantern:__lanternStone` at the `torii` pose as 3 calls / 121,824 tris = 40,608 × 3, i.e.
-  colour plus both cascades. The shadows are being lost **after** rasterisation, not before.
-- **`claude/round-q78i6x`'s lead "the `#4a6b8f` cool fill is delivered at 0.09 against its
-  authored 0.35" does not describe this code state.** The hemisphere was at its authored
-  level with R/B 0.446. The *level* was right; the *share* was wrong — probe 0.283 / hemi
-  0.085, with 77% of the fill arriving at R/B 0.79.
-- **"The stipple repeats at a regular pitch": wrong.** 2-D autocorrelation of high-passed
-  luma over `valley 0.22,0.42,0.16,0.13` at native resolution has no peak above r = 0.08 at
-  any lag from 3 to 60 px (best r = 0.079 at 7 px, which is the blob size). It is uniform
-  grain with no macro content, not a tiling period. Chasing a tile-break would be a no-op.
-- **"The floating bamboo culms are the near mesh plants": wrong.** 0 of 35 in-frustum near
-  plants at `valley` had a > 0.5 m chord deficit; all 1,053 floaters were mid-ground cards.
-- **`PostFX.js`'s own authored god-ray gain derivation was wrong.** It claimed an upright
-  crossing the ray removes ~22% of a 120-clamped disc term. It removes none: `delta =
-  (vUv − sunUv)/N`, so *every* pixel's march terminates at the sun's UV and collects the
-  disc as its last tap. The disc is common-mode; wedges come only from the sky field being
-  cut. That is why the pass produced a symmetric veil rather than shafts.
-- **"The god-ray pass contributes nothing": wrong.** It was depositing 0.09–0.33 linear
-  before round 7. It ran; it had no legible structure. It is **exactly 0** on
-  hero/torii/wide (sun behind the camera plane), so god rays explain nothing seen there.
-
-**Confirmed** (it had been a labelled hypothesis): the per-channel tone knee in `Sky.js` was
-converging all three channels to neutral. Two agents reached it independently — `sky` by
-inverting the composite (scene-linear 0.628/0.550/0.567, all three pinned on the 0.62 knee),
-`postfx` by reading the shader — and it matches what `claude/round-q78i6x` recorded. Fixed by
-moving the knee from per-channel to luminance; near-sun sky R−B **16.4 → 57.8**, saturation
-0.049 → 0.28.
-
-## The apparatus broke again in round 7 — this is the sixth time
-
-`tools/verify-r7.mjs`, written this round to check the owners' predictions mechanically,
-indexed the decoded frames with a hard-coded 4-byte stride. The captures are **3-channel
-RGB**, and `decodePNG` returns the stride in `channels`. The wrong stride walked the buffer
-at the wrong offset and produced *plausible-looking* numbers — `detail` 38.91 where
-`probe.mjs` says 2.58, an R−B of −0.11 on a region whose mean RGB is 199.9/193.4/183.5, and
-NaN/Infinity where it ran off the end. Nothing threw.
-
-It was caught only by cross-checking one region against `probe.mjs` before trusting the
-table. **Do that every time you write a new measurement tool here**: run one region through
-the existing tool and require the two to agree to the digit. After the fix the two agree
-exactly (2.58 = 2.58).
+- **A margin of 3.7% on a contract gate is not a pass, it is a coincidence.** It is now 52%,
+  by `filmicShoulder` 1.14 → 1.20 — a change that cannot touch the black end, because
+  `filmicToeShoulder` pins both exponents at `uFilmicPivot` so nothing at or below code 112
+  moves by construction. Watch this number rather than the boolean.
+- **The owner's own bound on its change was wrong twice**, and it recorded both: structurally,
+  it bounded the percentile at 235.6 while the gate is `> 235` on an **integer bucket**, so
+  the bound permitted the outcome it existed to exclude; numerically, it bounded only FXAA's
+  edge-gated pixels, but routing red and blue through the resolve also sends them through
+  **CAS, which runs on every pixel**. Bound the metric the gate actually tests, at the
+  precision it actually tests it.
 
 ## Rules this loop keeps learning the hard way
 
 - `tools/CRITIC.md`'s central rule applies to whoever is fixing, not just whoever is
   reviewing: **a finding right about the symptom and silent about the cause is worth more
-  than one that guesses the mechanism.** Round 5 shipped a fix built on a wrong
-  diagnosis; round 6 measured it as a no-op and reverted it. That is the correct
-  outcome, and it is cheaper if the diagnosis is proved before the fix is written.
-- Verify a change by measuring the same region before and after. Byte-identical numbers
-  mean the branch you edited does not draw those pixels — not that the change was subtle.
-- The performance contract counts *submitted* triangles. An instance the vertex shader
-  collapses costs no fill but costs vertex fetch, the wind shader, and primitive
-  assembly, and those are real on the target device. `Engine.auditDraws` reports it per
+  than one that guesses the mechanism.** Round 8 is the strongest evidence yet — two of four
+  blockers were real symptoms with wrong causes, and both would have produced wasted or
+  harmful fixes if acted on directly.
+- **Ablation beats inspection.** Every one of round 8's disproofs came from removing a term
+  and diffing, not from reading the code and reasoning about it. Configuration that looks
+  correct is not evidence.
+- Verify a change by measuring the same region before and after. Byte-identical numbers mean
+  the branch you edited does not draw those pixels — not that the change was subtle.
+- **State a falsifiable prediction before the fix, then measure it.** Round 8's owners did,
+  and it is how two shortfalls (far-range detail 1.68 against ≥ 3.0, god-ray probe 8.85
+  against ≤ 7.0) got recorded as shortfalls instead of reported as successes.
+- **When two owners change the same frame, their predictions stop being separable.** Round 8
+  could not evaluate postfx's dark-population R−B targets because sky's fog change moved the
+  same metric on the same pixels. Predict on a metric your own change is the only plausible
+  mover of, or say plainly that the number is contaminated.
+- The performance contract counts *submitted* triangles. `Engine.auditDraws` reports it per
   object; `capture.mjs` rolls it up by owning system whenever a cap is missed.
-- Budgets are frustum-dependent. The rig samples every pose and asserts the worst, and
-  names it. Do not go back to sampling once at the end of a run.
+- Budgets are frustum-dependent. The rig samples every pose and asserts the worst.
+
+## The apparatus held in round 8 — the first round in a while
+
+No apparatus break this round, and it was not luck: three owners independently wrote offline
+evaluators and **all three validated against `tools/probe.mjs` on an identical region before
+trusting a number**. `world`'s ray-marched terrain simulator reproduces
+`probe.mjs stats shots/phone-valley-r8.png 0.10,0.35,0.45,0.25` to the digit; `foliage`'s
+speck detector likewise; `sky`'s diff decoder likewise. One owner caught itself mid-round
+using an xorshift replica where the repo uses `mulberry32` and re-ran every figure.
+
+Keep doing this. The rule stands: **run one region through `probe.mjs` first and require
+agreement to the digit.** Six apparatus breaks, every one of which turned a correct critique
+into a wrong fix.
 
 ---
 
 ## The other line: `claude/round-q78i6x`
 
-Not merged. It is a parallel round 5 run from a different base, and it is worth reading
-before repeating anything it already did — it reached several results independently:
-
-- Phone budget met on its own line: 628,216 triangles and 117 draw calls, by the same
-  insight recorded above (`renderer.info.render.triangles` counts *submitted* geometry, so
-  instances the vertex shader collapses still land in the count). It re-packed each layer's
-  survivors to the front of its buffer, which *raised* near-field density while cutting the
-  count — the phone valley framing went 61 → 715 bamboo instances.
-- Sky chroma: saturation 0.052 → 0.342 on the `sun` frame. A per-channel tone knee had been
-  converging all three channels to neutral.
-- Shadow-side colour: dark-population R−B +12 → −36. §5's authored `#4a6b8f` cool fill was
-  being delivered at 0.09 irradiance against its authored 0.35.
-- Aerial perspective: far massif 3.70× → 1.09× the airlight luminance. This is the same
-  defect listed as open item 1 above, approached from the other side.
-- Wet stone: 16.4% of paving below roughness 0.25, from 0.00%.
-
-It also carries a round kit this branch does not have: `tools/dispatch.mjs` (spawn only the
-owners the critic named), `tools/manifest.mjs` plus `capture.mjs --diff` (carry unchanged
-shots forward instead of re-photographing them), `tools/AGENT-PREAMBLE.md` (a byte-identical
-cacheable prompt prefix) and `ROUND.md`.
-
-Merging it is a real conflict-resolution job — both lines edited `Foliage.js`, `Terrain.js`,
-`Sky.js`, `capture.mjs`, `HUD.js` and `Menus.js` — so it is a decision for a human, not
-something to attempt mid-round. Ask before starting it.
+Not merged. A parallel round-5 run from a different base. Its round kit (`dispatch.mjs`,
+`manifest.mjs`, `capture.mjs --diff`, `AGENT-PREAMBLE.md`, `ROUND.md`) has since been brought
+onto `main` and is in use. Its remaining unmerged content is art-direction work that
+overlaps `Foliage.js`, `Terrain.js`, `Sky.js`, `capture.mjs`, `HUD.js` and `Menus.js`.
+Merging it is a real conflict-resolution job and a decision for a human. Ask before starting.
