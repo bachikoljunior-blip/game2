@@ -107,3 +107,13 @@ Detailed visual hypotheses disproved in prior rounds remain authoritative in
 - Recovery: retain deterministic A/B for contribution, add a tail-versus-core shape gate,
   and require native source-blind review before promotion.
 - Reusable rule: an ablation proves causality, not visual quality.
+
+## F-012 — A Pages HTTP 200 did not mean the game was published
+
+- Observed: after PR #1 merged, GitHub Pages served the repository's development
+  `index.html` from `main`/root. The page returned HTTP 200, but its absolute
+  `/src/main.js` request returned 404, so the game could not boot.
+- Recovery: retain the Vite development entry, route the GitHub project page to a checked-in
+  `docs/` production build, and make `npm run build:pages` regenerate that directory.
+- Reusable rule: verify the entry module and user-surface boot; an HTTP status alone is not
+  publication evidence.

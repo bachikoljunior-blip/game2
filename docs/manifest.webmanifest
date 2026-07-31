@@ -1,0 +1,19 @@
+{
+  "name": "KAGEROU 陽炎",
+  "short_name": "KAGEROU",
+  "description": "A mountain-shrine samurai action game. Draw, parry, cut.",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#05050a",
+  "theme_color": "#0a0a0c",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
