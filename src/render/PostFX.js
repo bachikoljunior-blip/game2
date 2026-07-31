@@ -1063,9 +1063,10 @@ vec3 fetch(vec2 uv) { return texture2D(tColor, uv).rgb; }
  * One 3x3 neighbourhood, two jobs. FXAA (console variant) only pays for its four
  * corner taps on pixels that actually fail the edge test, and CAS reuses the cross.
  */
-vec3 resolveAA(vec2 uv) {
+vec3 resolveAA(vec2 uv, out vec3 rawCenter) {
 #if defined(USE_CAS) || defined(USE_FXAA)
   vec3 m = fetch(uv);
+  rawCenter = m;
   vec3 n = fetch(uv + vec2(0.0, uTexel.y));
   vec3 s = fetch(uv - vec2(0.0, uTexel.y));
   vec3 e = fetch(uv + vec2(uTexel.x, 0.0));
@@ -1115,7 +1116,8 @@ vec3 resolveAA(vec2 uv) {
   #endif
   return outc;
 #else
-  return fetch(uv);
+  rawCenter = fetch(uv);
+  return rawCenter;
 #endif
 }
 
@@ -1139,7 +1141,8 @@ void main() {
     uv += (lens.rg - 0.5) * 2.0 * (uRainLens * lens.a * uRainRefract);
   }
 
-  vec3 color = resolveAA(uv);
+  vec3 rawCenter;
+  vec3 color = resolveAA(uv, rawCenter);
 
   // ---- radial blur (parry burst / slow motion) -----------------------------
   if (uRadial > 0.0015) {
@@ -1157,8 +1160,20 @@ void main() {
   {
     float r2 = dot(fromCenter, fromCenter);
     vec2 off = fromCenter * r2 * uChromatic;
-    color.r = fetch(uv + off).r;
-    color.b = fetch(uv - off).b;
+    // Dispersion is a *displacement*, so it has to be applied as a delta on top of the
+    // resolved colour. Assigning color.r = fetch(uv + off).r instead — which is what
+    // this did — silently discarded resolveAA's red and blue and replaced them with raw,
+    // un-antialiased, un-sharpened samples. Green kept the FXAA/CAS result, so every
+    // high-contrast silhouette in the frame carried a green/magenta band: green where
+    // the filtered channel bled into the dark side, magenta where it was missing on the
+    // bright side. It had no radial falloff at all, because at r = 0 the two fetches
+    // land on the same texel and the fringe is entirely the AA that green has and red
+    // and blue do not. Measured on phone-hero-r8, |Cg| departure on strong luma edges
+    // was 6.55 in the innermost radial fifth against 5.01 in the outermost — flat, where
+    // real lateral CA goes as r^3. As a delta the term is exactly zero at the optical
+    // axis, sub-pixel everywhere else, and all three channels keep their antialiasing.
+    color.r += fetch(uv + off).r - rawCenter.r;
+    color.b += fetch(uv - off).b - rawCenter.b;
   }
 #endif
 
@@ -1356,7 +1371,13 @@ export class PostFX {
     // buffer at these values moves the frame's darkest 0.1% from 1.2 code values to
     // 0.8 — *down*, because density and decay both cut the far field the old settings
     // spread across the whole frame.
-    this.godRayStrength = 1.25;
+    //
+    // That derivation predicted a shaft at ~90 display luma and got 146.4, and a second
+    // probe predicted 48 and got 71.7 — 63% and 49% over. Dividing the gain by the mean
+    // 1.56 overshoot is what puts the pass back on the number it was sized for, and the
+    // rest of the warm veil the round-8 critic filed comes from `uGodTint`, not from
+    // here (see below). 1.25 -> 0.80.
+    this.godRayStrength = 0.80;
     this.aoStrength = 0.85;
     this.aoRadius = 0.65;
     this.saturation = 1.06;
@@ -1377,7 +1398,11 @@ export class PostFX {
     this.vignette = 0.42;
     this.grain = 0.028;
     this.sharpen = 0.55;
-    this.chromatic = 0.0022;
+    // Peak lateral displacement is `0.25 * chromatic` in UV, i.e. `0.25 * chromatic * W`
+    // pixels at the extreme corner. 0.0022 put that at 1.39 px on a 2532-wide frame,
+    // which is a visible split rather than dispersion; this keeps the corner under one
+    // pixel and the optical axis at exactly zero.
+    this.chromatic = 0.0015;
     this.lutStrength = 0.85;
     this.shutterAngle = 180;
     this.focusDistance = 6.0;
@@ -2057,14 +2082,30 @@ export class PostFX {
       // left as it approaches white. The halo has to be tinted here or it is white.
       uBloomTint: { value: new Color(1.0, 0.694, 0.391) },
       uGodStrength: { value: 0 },
-      // Warm, because the source is not. Sky.js's order-4 knee folds *every channel*
-      // onto uSkyKnee (0.62), so the sky within a few degrees of the sun converges on
-      // neutral — measured saturation 0.049 on `phone-sun-r7`, R-B of 16. A pass that
-      // faithfully carries that radiance therefore throws grey shafts. Scattered
-      // sunlight at 13 degrees of elevation is between §5's #ffd9a8 and its #ff9b52;
-      // this is that, and it is a stand-in until the dome stops neutralising its own
-      // aureole.
-      uGodTint: { value: new Color(1.0, 0.52, 0.26) },
+      // Near-neutral, because the source already carries the colour and a second tint
+      // multiplies it in twice.
+      //
+      // (1.0, 0.52, 0.26) was authored in round 7 as compensation for a *neutral* source:
+      // Sky.js's order-4 knee folded every channel onto uSkyKnee, leaving the sky within
+      // a few degrees of the sun at saturation 0.049, so a faithful pass threw grey
+      // shafts. Sky.js fixed that knee in the same round. Measured on the sky immediately
+      // beside the sun in phone-sun-r8 (1393,515 152x47): saturation 0.299, meanRGB
+      // 251/226/176. The premise is gone, and the emission this pass marches
+      // (`emit = src * ...` in FRAG_GOD_OCCLUSION) is that radiance, already warm.
+      //
+      // Applying the tint anyway is what produced the veil the round-8 critic filed
+      // blind as "two different times of day". The R-B the pass deposits scales as
+      // gain * (tintR - tintB): 0.18 * 0.07 = 0.013 before round 7, 1.25 * 0.74 = 0.925
+      // after — a 73x rise in the *colour* deposit against a ~4x rise in the luminous
+      // one, which is why the regression showed up as R-B and not as luma. Attribution
+      // was exact: dark-population R-B rose only on `valley` and `sun`, the two framings
+      // where _sunScreenStrength is non-zero.
+      //
+      // 0.80 * (1.0 - 0.88) = 0.096 cuts that deposit 9.6x while
+      // 0.80 * luma(tint) = 0.759 against the old 1.25 * 0.603 = 0.754 leaves the shaft's
+      // *luminance* untouched to within 1% — so the contre-jour the critic praised and
+      // the p99.9 white gate both survive, and only the cast goes.
+      uGodTint: { value: new Color(1.0, 0.94, 0.88) },
       uDofBlend: { value: this.dofBlend },
       uLutMix: { value: 0 },
       uLutStrength: { value: this.lutStrength },
