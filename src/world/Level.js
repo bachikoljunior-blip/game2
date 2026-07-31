@@ -141,6 +141,7 @@ export const ENCOUNTERS = [
 const _v = new Vector3();
 const _v2 = new Vector3();
 const _m = new Matrix4();
+const _m2 = new Matrix4();
 
 // ============================================================== Level
 
@@ -770,11 +771,27 @@ export class Level {
     const fireY = build.anchors.fire ? build.anchors.fire[1] : 1.6;
     const fireLight = build.lights[0];
     const proto = this._proto('lantern', () => build);
+    // A private stream for the lean and the weathering. `this.rnd` is shared and every
+    // prop placed after this one indexes off it, so taking extra numbers out of it here
+    // would reshuffle the whole forecourt; a local stream buys the variation for free
+    // and keeps this function's draw count on the shared stream exactly where it was.
+    const vary = makeRandom(0x10ee5a17);
     const place = (x, z, s) => {
       const y = this.groundY(x, z);
+      // A third of them have settled. Two to five degrees is what a granite tōrō does
+      // over a century on soft ground — enough to read as an object with a history at
+      // contact-sheet size, small enough that it never looks knocked over. Sinking it
+      // by half its base half-width times the lean keeps the low corner in the dirt
+      // instead of hanging the plinth off one edge.
+      const lean = vary() < 0.34 ? 0.035 + vary() * 0.055 : 0.0;
+      const leanDir = vary() * Math.PI * 2;
       _m.makeRotationY(this.rnd() * Math.PI * 2);
+      if (lean > 0) {
+        _m2.makeRotationAxis(_v2.set(Math.cos(leanDir), 0, Math.sin(leanDir)), lean);
+        _m.premultiply(_m2);
+      }
       _m.scale(_v.set(s, s, s));
-      _m.setPosition(x, y - 0.04, z);
+      _m.setPosition(x, y - 0.04 - lean * 0.45 * s, z);
       // Quarry variation is a *value* shift, not a warm one. The old tint took
       // up to 6% off blue on every single lantern and never added any back, so
       // twenty-six of them leaned the same way at once — under an amber key that
@@ -788,7 +805,14 @@ export class Level {
       const k = 0.88 + this.rnd() * 0.24;
       const warm = (this.rnd() - 0.5) * 0.075;
       const val = 0.985 + this.rnd() * 0.03;
-      proto.place(_m, [k * (1 + warm), k * val, k * (1 - warm)]);
+      // One in four is under moss and lichen on its north face and has not been
+      // scrubbed in a generation. A quarry shift of ±12% is a difference you can only
+      // find by measuring; this one is visible at contact-sheet size, which is the
+      // whole complaint — twenty-six stones weathered identically read as one stone
+      // stamped twenty-six times. Off the private stream, so no draw count moves.
+      const moss = vary() < 0.26 ? 1.0 : 0.0;
+      const wr = 1.0 - moss * 0.30, wg = 1.0 - moss * 0.19, wb = 1.0 - moss * 0.34;
+      proto.place(_m, [k * (1 + warm) * wr, k * val * wg, k * (1 - warm) * wb]);
       // Instanced props never pass through `_emit`, so hoist their flame here.
       if (fireLight) {
         this._lightRequests.push({
@@ -804,9 +828,27 @@ export class Level {
     for (const t of LAYOUT.torii) {
       for (const sx of [-1, 1]) place(sx * (t.span * 0.5 + 1.25), t.z + 1.1, 1.12 + this.rnd() * 0.1);
     }
-    // Paired down the approach, then scattered round the forecourt.
-    for (let z = 40; z <= 70; z += 6.2) {
-      for (const sx of [-1, 1]) place(sx * 5.4, z + (this.rnd() - 0.5) * 0.8, 0.92 + this.rnd() * 0.16);
+    // Down the approach. It used to be `z += 6.2` with ±0.4 m of jitter — a constant
+    // pitch to within ±6.5%, the two sides in lockstep, every post the same height to
+    // within ±8%. A sandō is not surveyed: posts go where a donor paid for one and
+    // where the ground will take one, so the gaps run 4.0–8.6 m (measured: ±28.7% and
+    // ±31.2% about each side's own mean) and the two sides do not line up with each
+    // other. The pitch comes off the private stream; the two shared draws per lantern
+    // stay exactly where they were, one now spending itself on an outward lateral
+    // offset instead of on the pitch and the other on a wider height range — 0.80–1.24
+    // against 0.92–1.08, so ±22% of height instead of ±8%. Outward only, because inward
+    // is where the gate lanterns and the nobori already are, and the closest pair in
+    // the old layout was 1.05 m: this cannot shorten it.
+    const rowZ = [0, 1].map(() => {
+      let z = 39.2 + vary() * 1.6;
+      const out = [];
+      for (let i = 0; i < 5; i++) { out.push(Math.min(z, 69.4)); z += 4.0 + vary() * 4.6; }
+      return out;
+    });
+    for (let i = 0; i < 5; i++) {
+      for (let si = 0; si < 2; si++) {
+        place((si ? 1 : -1) * (5.4 + this.rnd() * 0.9), rowZ[si][i], 0.80 + this.rnd() * 0.44);
+      }
     }
     const a = LAYOUT.arena;
     for (const [x, z] of [

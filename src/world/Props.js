@@ -1441,17 +1441,26 @@ export class PropFactory {
   // with the crown left slightly brighter than before rather than darker. The
   // underside stays the more strongly blue-weighted of the two (B/R 1.92 against
   // the crown's 1.37) because what reaches it *is* the cool bounce of §5.
+  // The falloff between those two ends was squared, and there is no reason for it to
+  // be. The cosine-weighted fraction of the dome a plane of normal n can see is exactly
+  // (1 + n.y) / 2 — linear. Squaring it holds the two endpoints and pulls everything
+  // between them down: over the sphere E[sv^2] = 1/3 against E[sv] = 1/2, so the mean
+  // emissive floor across a tumbled canopy came out a third lower than the flat term it
+  // replaced (luma 0.123 against 0.195), which is the standing "the canopy emits less
+  // than it did". Linear puts that back at the angles that were wrong — an edge-on card
+  // goes 0.110 -> 0.151 luma, the sphere mean 0.123 -> 0.151, +22.3% — and leaves the
+  // crown (0.233), the underside (0.068) and the 3.42:1 break they make byte-identical.
   vec3 kgUpN = normalize(normal * mat3(viewMatrix));
   float kgSkyView = 0.5 + 0.5 * kgUpN.y;
   totalEmissiveRadiance += diffuseColor.rgb *
-    (vec3(0.052, 0.070, 0.100) + vec3(0.150, 0.168, 0.176) * kgSkyView * kgSkyView);`,
+    (vec3(0.052, 0.070, 0.100) + vec3(0.150, 0.168, 0.176) * kgSkyView);`,
       );
     };
     this._installWind(m);
     // `_installWind` stamps its own cache key, which other cloth materials share.
     // This one's shader differs, so it needs a key of its own or three can hand
     // it a program compiled for a material without the translucency patch.
-    m.customProgramCacheKey = () => 'kagBlossom2';
+    m.customProgramCacheKey = () => 'kagBlossom3';
     this.ctx?.sky?.applyFog?.(m);
     this._blossom = m;
     this.disposables.push(m);
