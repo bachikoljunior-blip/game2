@@ -94,6 +94,10 @@
 
   <div id="fatal"></div>
 
-  <script type="module" src="./src/main.js"></script>
+  <script type="module">
+    if (!location.hostname.endsWith('.github.io') || /\/docs(?:\/|$)/.test(location.pathname)) {
+      import('./src/main.js');
+    }
+  </script>
 </body>
 </html>

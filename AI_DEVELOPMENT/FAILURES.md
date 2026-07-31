@@ -113,8 +113,8 @@ Detailed visual hypotheses disproved in prior rounds remain authoritative in
 - Observed: after PR #1 merged, GitHub Pages served the repository's development
   `index.html` from `main`/root. The page returned HTTP 200, but its absolute
   `/src/main.js` request returned 404, so the game could not boot.
-- Recovery: retain the Vite development entry, make its module path repository-relative so
-  speculative preload cannot escape the project path, route the GitHub project page to a
-  checked-in `docs/` production build, and make `npm run build:pages` regenerate it.
+- Recovery: retain the Vite development entry but remove its static `src` attribute, so the
+  GitHub root redirects without speculative module I/O while local development and `docs/`
+  conditionally import the entry; make `npm run build:pages` regenerate the checked-in build.
 - Reusable rule: verify the entry module and user-surface boot; an HTTP status alone is not
   publication evidence.
