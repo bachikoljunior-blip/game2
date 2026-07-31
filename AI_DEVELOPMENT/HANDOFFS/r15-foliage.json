@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "taskId": "R15-FOLIAGE",
+  "producer": "foliage-specialist",
+  "consumer": "project-director",
+  "objective": "Round 15: settle the attribution of the floating skyline dashes, give the mid-ground bamboo card a canopy instead of bare culms, and pull the sakura back into the palette — all three findings the critic assigned to src/render/Foliage.js.",
+  "allowedScope": [
+    "src/render/Foliage.js",
+    "AI_DEVELOPMENT/HANDOFFS/r15-foliage.json"
+  ],
+  "prohibitedChanges": [
+    "Did not run npm run build or tools/capture.mjs --review; the coordinator owns the integrated verification capture.",
+    "Did not edit src/fx/Weather.js even though the critic's labelled hypothesis pointed there — it was tested at runtime and cleared.",
+    "Did not raise the bamboo card instance count; the review frames' triangle headroom was 123,627 and this owner was named the round's main budget risk."
+  ],
+  "inputs": [
+    "shots/review-r15.json findings 1, 2 and 3 (owner src/render/Foliage.js)",
+    "shots/phone-{hero,wide,torii,valley,sun}-r15.png at native 2532x1170",
+    "runtime ablation A: shots/abl-a-{0-base,1-noweather,2-nocards,3-nocanopy,4-noplants}.png",
+    "runtime ablation B: shots/abl-b-{0-base,1-allcell2,2-allcell0}.png and shots/abl-tex-card.png",
+    "HANDOFF.md open items 1 and 7, and the round-8 disproof list"
+  ],
+  "outputs": [
+    "Attribution result for the skyline dashes: they are the bamboo impostor atlas's horizontal cell seam, not Weather, and not the leaf art.",
+    "Foliage.js: bamboo card atlas repacked 2x2 -> 4x1; clump art rebalanced from culm-dominant to canopy-dominant; sakura impostor chroma pull and a per-material warm inner-bounce term.",
+    "Two acceptance criteria shown to be unreachable as written, with the measured floor for each."
+  ],
+  "affectedInterfaces": [
+    "bamboo card material atlas grid (2x2 -> 4x1); the program cache key changes with it via atlasKey()",
+    "new opt-in per-material uniform uWarmFill in the foliage fragment path, zero on every material that does not set it",
+    "new per-material uniform uChroma on the tree impostor material",
+    "sakura and momiji leaf geometry doubles (crossed cards); cedar untouched"
+  ],
+  "dependencies": [
+    "R9-APPARATUS-001",
+    "R9-PERF-001",
+    "R13-ROUND-001"
+  ],
+  "invariants": [
+    "Wind still comes only from WeatherSystem via WIND_GLSL and shared uniform objects",
+    "No per-frame allocation added; every change is boot-time canvas work or a constant uniform",
+    "No external assets",
+    "Draw calls unchanged at 18 foliage / 85 total at the valley pose; submitted triangles +1,620 measured",
+    "Nothing non-finite crosses a system boundary"
+  ],
+  "assumptions": [
+    "The sky owner's global ambient/fill and haze change lands in the same frames, so every colour target on a hazed mid-ground surface is contaminated and only the direction of the move is this owner's to predict.",
+    "The bamboo card texture is 512x1024 at MEDIUM (measured by readback), i.e. cells are 256x512."
+  ],
+  "unresolvedQuestions": [
+    "Finding 2's target (dash box 51,94,405x117 must reach luma p1 >= 190 and detail <= 1.2) is unreachable: with the entire bamboo card mesh hidden the same box still measures p1 88.3 / detail 2.15, because it contains near bamboo geometry at its left edge and sakura at its lower right. The achievable floor is the cards-off control, and the reachable criterion is detail <= 2.8 with no dash population visible at native resolution.",
+    "Finding 3's target (d), a visible trunk under the sakura in phone-wide, is not a Foliage defect: the crop (900,520,340x200) shows the tree's base occluded by the honden roof and the vermilion torii. The impostor bake does include the trunk — frameRel puts the card's lower edge at 0.023 of tree height — so the trunk draws wherever a sakura is not behind architecture. Re-siting that tree is Level.js's call, not this file's.",
+    "Finding 1's target (a) asks the valley box to invert to G > R by >= 12. The illuminant caps this: GREEN_RATIO's key is (1.0, 0.412, 0.134), so only an albedo above g/r 2.43 can be green-dominant when lit, and the pale culm that makes the band read as bamboo cannot be that green. This round moves the ratio with leaf area and with the transmission path; whether it crosses zero depends on the sky owner's haze.",
+    "The fern atlas (paintFernAtlas, atlas [2,2] at line ~4534) has the same 2x2 horizontal seam the bamboo card just lost, and its cells also carry content at the cell's bottom edge (the frond base is drawn at translate(..., half)). It was NOT changed: undergrowth is read at 0-30 m where the sampled mip is near level 0, so the bleed is a one-texel stem rather than the 86.7%-opaque skirt row measured on the bamboo sheet, and nothing in review-r15 measures it. Check it before assuming it is clean."
+  ],
+  "acceptanceCriteria": [
+    "R15-ROUND-001",
+    "R9-PERF-001"
+  ],
+  "testsRequired": [
+    "Coordinator-owned integrated build and phone/MEDIUM review recapture",
+    "Native-resolution re-probe of shots/phone-valley: box (51,94,405x117) detail must fall from 5.95 toward the 2.15-2.71 cards-off/row-1 control, box (253,187,506x117) detail must rise from 5.97",
+    "Native-resolution re-probe of shots/phone-hero box (354,117,253x117) for mean G > mean B",
+    "Native-resolution re-probe of shots/phone-wide box (924,468,152x70) for saturation 0.22-0.28 with luma p50 within +/-15 of 144.4",
+    "Worst-pose draw-call and submitted-triangle assertion against 140 / 900,000"
+  ],
+  "risks": [
+    "The denser bamboo crown could over-close the card and lose the pale-culm cue that says bamboo rather than shrub; two front culms are re-stroked with an alpha ramp to keep stems crossing the mass.",
+    "uWarmFill lifts the shadowed sakura by roughly +20 luma on the away-facing clusters, which flattens the crown's modelling if the sky owner also raises fill.",
+    "The impostor chroma pull at 0.72 also desaturates cedar and momiji impostors; that is a deliberate global mute of the distant grove and could read as washed out if the postfx owner also lowers contrast.",
+    "Boot cost: paintBambooClump now runs two spray passes over more attachment bands, roughly 3.4x the canvas path operations for that sheet."
+  ],
+  "rollback": "Restore src/render/Foliage.js from f013950 (the Round 15 branch point on claude/1-round-execution-r6rdfs).",
+  "status": "awaiting_verification"
+}

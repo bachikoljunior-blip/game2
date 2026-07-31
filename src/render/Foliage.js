@@ -529,6 +529,7 @@ uniform float uBaseAO;
 uniform float uGrain;
 uniform float uBroad;
 uniform float uTintAmount;
+uniform vec3  uWarmFill;
 
 varying float vKagFade;
 varying float vKagT;
@@ -638,6 +639,18 @@ const FRAGMENT_SSS = /* glsl */`
   // flat saturated fill that no amount of texture work can be seen through.
   vec3 glow = min( through * trans, vec3( 0.85 ) );
   outgoingLight += glow + diffuseColor.rgb * uSunColor * wrap * 0.14 * lit;
+
+  // Inter-reflection inside a dense crown, opt-in per material and zero everywhere it is
+  // not set. Every light path above is either the amber key or the scene's cool sky bounce,
+  // so a cluster of cards facing away from the sun is lit by #4a6b8f and nothing else — and
+  // on the sakura, whose albedo is authored with B over G by 16-36 to keep it out of brick,
+  // that lands as cold purple: round 15 measured the hero crown's shadowed clusters at
+  // meanRGB 135.8, 82.6, 91.3, i.e. B above G by 8.7. A real blossom mass is not lit only
+  // from outside; light that entered the lit face scatters through the mass and comes back
+  // out of the shaded one carrying the key's warmth. This is that term, gated on the same
+  // wrap factor the direct lighting uses so it can only ever add where the sun does not
+  // reach.
+  outgoingLight += diffuseColor.rgb * uWarmFill * ( 1.0 - wrap );
 }
 `;
 
@@ -942,15 +955,19 @@ const TREE_SPECIES = {
     radiusRatio: 0.66, upBias: 0.10, gravity: -0.055, wobble: 0.14, trunkFrac: 0.30,
     // leafFrom 3 + 3 per tip keeps the crown at ~4x overdraw instead of 15x. Past 6x the
     // alpha holes of neighbouring cards fill each other in and the crown fuses solid.
-    phyllotaxis: 2.39996, leavesPerTip: 3, leafSize: 1.05, leafSpread: 0.62,
-    leafFrom: 3, wood: 0x4a3a33, foliage: 0xf6e2e4,
+    // leafSize down from 1.05 and spread up from 0.62: the crown was a solid convex mass
+    // with no branch visible inside it, and the cross-card above hands back the coverage
+    // that shrinking the cluster costs. The review wants twig structure reading *through*
+    // the blossom, which needs daylight between clusters, not more cards.
+    phyllotaxis: 2.39996, leavesPerTip: 3, leafSize: 0.96, leafSpread: 0.70,
+    leafFrom: 3, wood: 0x4a3a33, foliage: 0xf6e2e4, crossLeaf: true,
   },
   momiji: {
     height: 4.6, trunkRadius: 0.145, depth: 4, segs: 4, sides: 5,
     children: [3, 3, 2, 2], split: 0.80, splitJitter: 0.30, lengthRatio: 0.70,
     radiusRatio: 0.63, upBias: 0.04, gravity: -0.075, wobble: 0.18, trunkFrac: 0.24,
     phyllotaxis: 2.39996, leavesPerTip: 3, leafSize: 0.88, leafSpread: 0.54,
-    leafFrom: 3, wood: 0x4d4038, foliage: 0xb02418,
+    leafFrom: 3, wood: 0x4d4038, foliage: 0xb02418, crossLeaf: true,
   },
   cedar: {
     height: 13.5, trunkRadius: 0.32, depth: 2, segs: 7, sides: 6,
@@ -998,6 +1015,22 @@ function buildTree(spec, seed) {
       const u = [-sa * size * 0.30, size * 0.42, ca * size * 0.30];
       const n = nrm3([ox * 0.5, 0.9, oz * 0.5]);
       leaf.card(c, r, u, n, 0, 0, 1, 1, 1.0, rnd());
+      // A SECOND plane at ninety degrees. One quad per cluster is invisible edge-on, and
+      // "edge-on" is not an edge case in a crown of 200 of them scattered over every
+      // azimuth — round 15 measured the hero sakura as "chunky flat blossom slabs ... and
+      // long thin horizontal slivers (cards seen near edge-on)". Those slivers are single
+      // quads at grazing incidence and no amount of texture work removes them. Crossing the
+      // card guarantees a plane within 45 degrees of facing from any direction, which is
+      // also what stops the crown flickering between slab and sliver as the camera orbits.
+      // Cost is one quad per cluster on a mesh LOD that ends at 46 m: 486 -> 972 triangles
+      // per sakura instance, against a 900 k contract and a handful of instances in range.
+      // Opt-in per species. Cedar is the one with 97 instances and it carries needle
+      // sprays whose silhouette survives edge-on, so it keeps the single quad and the
+      // triangle ceiling stays where the budget was measured.
+      if (spec.crossLeaf) {
+        const r2 = [-sa * size * 0.5, tilt * size * 0.12, ca * size * 0.5];
+        leaf.card(c, r2, u, nrm3([oz * 0.5, 0.9, -ox * 0.5]), 0, 0, 1, 1, 1.0, rnd());
+      }
       crownY += c[1]; crownN++;
       crownW = Math.max(crownW, Math.hypot(c[0], c[2]));
       if (c[1] > maxY) maxY = c[1];
@@ -1529,13 +1562,13 @@ function drawDroopLeaf(g, len, wid, colA, colB, droop) {
  * above the 0.14 alpha cutoff through mip 4 and every blade overlaps that armature, so the
  * cluster can simplify into one crown shape instead of breaking into independent flecks.
  */
-function drawBambooCardSpray(g, len, colA, colB, droop, leafCount, anchorWidth, rnd) {
+function drawBambooCardSpray(g, len, colA, colB, droop, leafCount, anchorWidth, rnd, widthGain = 1) {
   const bx = len * 0.58;
   const by = len * droop * 0.28;
   g.strokeStyle = colA;
   g.lineCap = 'round';
   g.lineJoin = 'round';
-  g.lineWidth = anchorWidth;
+  g.lineWidth = anchorWidth * widthGain;
   g.beginPath();
   g.moveTo(0, 0);
   g.quadraticCurveTo(bx * 0.48, by * 0.18, bx, by);
@@ -1550,7 +1583,7 @@ function drawBambooCardSpray(g, len, colA, colB, droop, leafCount, anchorWidth, 
     const side = (i & 1) ? -1 : 1;
     const a = side * (0.24 + rnd() * 0.34) + (rnd() - 0.5) * 0.12;
     const l = len * (0.34 + rnd() * 0.22) * (1.0 - t * 0.18);
-    const w = l * (0.14 + rnd() * 0.035);
+    const w = l * (0.14 + rnd() * 0.035) * widthGain;
     g.save();
     g.translate(x, y);
     g.rotate(a);
@@ -1582,15 +1615,32 @@ function drawBambooCardSpray(g, len, colA, colB, droop, leafCount, anchorWidth, 
  * of `b` cell-widths is `atan(0.62 b)` off vertical — 0.13 is 4.6 degrees and is the most
  * any archetype now carries. The rest of the motion is bend, from the wind shader.
  */
+/**
+ * `sprayLen` is up 1.7x and `leafFrom` is down across the board, and both are answering a
+ * measurement rather than a taste. At the band's working size a card is roughly 43 px wide
+ * and 72 px tall in a phone review frame, drawn from a 128x256 cell — so the old
+ * `sprayLen 0.082` put a whole leaf cluster inside 6 screen pixels and an individual blade
+ * inside 2 px by 0.4 px. A 0.4 px blade does not minify, it *averages*: its alpha falls
+ * under the 0.14 cutoff two mip levels before the culm's does, so what reaches the frame is
+ * the culm and nothing else. The culm strokes were already sized to survive that
+ * (`wid` 3.4-5.6% of cell width, i.e. 1.5-2.4 px) — which is why round 15 measured a field
+ * of "blunt yellow-olive stubs" and no canopy anywhere in the mass.
+ *
+ * Everything that has to read at range therefore has to be authored at range's scale. A
+ * spray is now 12-16 px on screen with 2-4 px blades, and `drawBambooCardSpray` is run
+ * twice per node — once wide as a connected mass, once narrow for the blade structure over
+ * it — so the cluster still has a leaf outline at arm's length and still has *alpha* at
+ * 200 m. Cost is canvas time at boot; the card stays four triangles.
+ */
 const BAMBOO_ARCHETYPES = [
   /** 0 — young grove: visible leaders, with crown mass below every leader tip. */
-  { culms: 11, hMin: 0.68, hMax: 0.94, bow: 0.03, leafFrom: 0.56, sprays: 5, sprayLen: 0.078, spread: 0.32, hScale: 1.14 },
+  { culms: 11, hMin: 0.68, hMax: 0.94, bow: 0.03, leafFrom: 0.44, sprays: 6, sprayLen: 0.132, spread: 0.34, hScale: 1.14 },
   /** 1 — mature stand: the default read; heavy sprays over the top half. */
-  { culms: 14, hMin: 0.52, hMax: 0.91, bow: 0.06, leafFrom: 0.46, sprays: 6, sprayLen: 0.082, spread: 0.40, hScale: 1.00 },
+  { culms: 14, hMin: 0.52, hMax: 0.91, bow: 0.06, leafFrom: 0.36, sprays: 7, sprayLen: 0.140, spread: 0.42, hScale: 1.00 },
   /** 2 — edge clump: culms leaning off the slope, long weeping sprays below horizontal. */
-  { culms: 10, hMin: 0.52, hMax: 0.86, bow: 0.08, leafFrom: 0.38, sprays: 6, sprayLen: 0.088, spread: 0.36, hScale: 0.92 },
+  { culms: 10, hMin: 0.52, hMax: 0.86, bow: 0.08, leafFrom: 0.30, sprays: 7, sprayLen: 0.150, spread: 0.38, hScale: 0.92 },
   /** 3 — understorey: short, bushy, sprays right down to the ground. */
-  { culms: 13, hMin: 0.30, hMax: 0.62, bow: 0.07, leafFrom: 0.22, sprays: 7, sprayLen: 0.076, spread: 0.44, hScale: 0.72 },
+  { culms: 13, hMin: 0.30, hMax: 0.62, bow: 0.07, leafFrom: 0.16, sprays: 8, sprayLen: 0.128, spread: 0.46, hScale: 0.72 },
 ];
 
 /**
@@ -1616,11 +1666,12 @@ function paintBambooClump(w, h, spec, seed) {
       x: w * (0.5 + (rnd() - 0.5) * spec.spread * 1.7),
       len: h * (spec.hMin + rnd() * (spec.hMax - spec.hMin)),
       bow: (rnd() - 0.5) * 2 * spec.bow + (spec.bow > 0.25 ? spec.bow * 0.7 : 0),
-      // A clump card is 20-40 px tall where the band is actually read, so a culm at 2% of
-      // the cell width is a sub-pixel line that mipmaps straight out of the silhouette.
-      // The culm is the *only* thing that says bamboo rather than shrub, so it is drawn
-      // wider than scale strictly wants — at this distance the alternative is not a
-      // thinner culm, it is no culm.
+      // Width at the ROOT. A clump card is 20-40 px tall where the band is actually read,
+      // so a culm at 2% of the cell width is a sub-pixel line that mipmaps straight out of
+      // the silhouette; the culm is the only thing that says bamboo rather than shrub, so
+      // the base is drawn wider than scale strictly wants. `strokeCulm` tapers from here to
+      // 42% at the tip, so the readable lower stem is unchanged and the part that stands
+      // against sky — which round 15 called a blunt stub — is the part that narrows.
       wid: w * (0.034 + rnd() * 0.022),
       // Far culms sit back in the haze; near ones catch the light. The old 0.62 floor put
       // the back half of every clump at 62% value before the sun even touched it, which is
@@ -1647,70 +1698,123 @@ function paintBambooClump(w, h, spec, seed) {
   // the culm behind them is depth-occluded, so thousands of crossed cards turn them into
   // detached 2-18 px skyline dashes. Near bamboo still carries explicit node geometry;
   // here the pale culm, vertical rim and attached crown are the readable bamboo cues.
+  // `nI` runs to `sprayBands` inclusive below, so a cluster lands at t = 1.0 — on the tip.
+  // It used to stop at 8/9, leaving the top eleven per cent of every culm a bare pale
+  // stroke ending in its own round cap. That is the "flat cut-off tops, no taper, no leaf
+  // canopy" the review filed: the tallest thing in the clump, standing against sky, with
+  // nothing on it.
   const sprayBands = 9;
-  const strokeCulm = (cu, alpha) => {
+  // The culm is a TAPERED polygon, not a constant-width stroke.
+  //
+  // Round 15: "short, blunt, disconnected vertical yellow-olive STUBS ... with flat cut-off
+  // tops, no taper". Both halves of that are authored here. The stroke ran at one lineWidth
+  // from root to tip, and on the dumped 256x512 cell that is a 9-14 texel bar of uniform
+  // width — a fence post, not a culm, and the widest contiguous high-alpha structure on the
+  // sheet, so it is also the last thing standing when the mip chain has averaged the 2-4
+  // texel blades under the 0.14 cutoff. Tapering to 42% at the tip narrows exactly the part
+  // that stands against sky, which is where the crown has to win.
+  //
+  // `fadeTop` is for the front re-stroke pass: a stem laid over the finished crown has to
+  // dissolve into it rather than end on a cut, and canvas has no per-vertex alpha, so the
+  // ramp lives in the fill gradient's own stops.
+  const strokeCulm = (cu, alpha, fadeTop = 1) => {
     const pts = cu.pts;
     const k = cu.shade;
+    const halfAt = (t) => cu.wid * 0.5 * (1 - 0.58 * Math.pow(t, 0.85));
     g.globalAlpha = alpha;
+    // Still pale — a backlit culm at magic hour is near luma 200 and that is the cue that
+    // says bamboo rather than shrub. But shifted off the warm axis: GREEN_RATIO's key is
+    // (1.0, 0.412, 0.134), so an albedo at g/r 1.03 (the old 216,222,168) renders warmer
+    // than anything else in the mid-ground however pale it is, and the review measured
+    // exactly that — meanRGB 182.7,159.8,112.8 with R over G in every luma band of the
+    // valley box. These stops sit at g/r 1.14-1.20, which does not make a lit culm green
+    // (nothing under 2.43 can be) but stops it being the frame's most saturated khaki.
+    const fade = (t) => (fadeTop >= 1 ? 1 : 1 - smoothstep(fadeTop * 0.62, fadeTop, t));
+    const stop = (v, r, gg, b) =>
+      `rgba(${(r * k) | 0},${(gg * k) | 0},${(b * k) | 0},${fade(v).toFixed(3)})`;
     const grad = g.createLinearGradient(0, base, 0, base - cu.len);
-    grad.addColorStop(0, `rgb(${(74 * k) | 0},${(88 * k) | 0},${(52 * k) | 0})`);
-    grad.addColorStop(0.35, `rgb(${(150 * k) | 0},${(164 * k) | 0},${(104 * k) | 0})`);
-    grad.addColorStop(1, `rgb(${(216 * k) | 0},${(222 * k) | 0},${(168 * k) | 0})`);
-    g.strokeStyle = grad;
-    g.lineCap = 'round';
-    g.lineJoin = 'round';
-    g.lineWidth = cu.wid;
+    grad.addColorStop(0, stop(0, 64, 88, 44));
+    grad.addColorStop(0.35, stop(0.35, 138, 164, 92));
+    grad.addColorStop(0.70, stop(0.70, 178, 206, 128));
+    grad.addColorStop(1, stop(1, 196, 224, 150));
+    g.fillStyle = grad;
     g.beginPath();
-    g.moveTo(pts[0][0], pts[0][1]);
-    for (let s = 1; s <= steps; s++) g.lineTo(pts[s][0], pts[s][1]);
-    g.stroke();
+    g.moveTo(pts[0][0] - halfAt(0), pts[0][1]);
+    for (let s = 1; s <= steps; s++) g.lineTo(pts[s][0] - halfAt(pts[s][2]), pts[s][1]);
+    for (let s = steps; s >= 0; s--) g.lineTo(pts[s][0] + halfAt(pts[s][2]), pts[s][1]);
+    g.closePath();
+    g.fill();
+    // Round the tip off, or the taper still ends on a horizontal cut — just a narrower one.
+    g.beginPath();
+    g.arc(pts[steps][0], pts[steps][1], Math.max(0.5, halfAt(1)), 0, Math.PI * 2);
+    g.fill();
 
     // A specular-ish rim down the sunward side; a cylinder needs one to stop reading flat.
-    g.strokeStyle = `rgba(${(246 * k) | 0},${(248 * k) | 0},${(212 * k) | 0},0.42)`;
-    g.lineWidth = Math.max(1, cu.wid * 0.28);
+    const rim = g.createLinearGradient(0, base, 0, base - cu.len);
+    rim.addColorStop(0, `rgba(${(232 * k) | 0},${(248 * k) | 0},${(196 * k) | 0},${(0.42 * fade(0)).toFixed(3)})`);
+    rim.addColorStop(1, `rgba(${(232 * k) | 0},${(248 * k) | 0},${(196 * k) | 0},${(0.42 * fade(1)).toFixed(3)})`);
+    g.strokeStyle = rim;
+    g.lineCap = 'round';
+    g.lineJoin = 'round';
+    g.lineWidth = Math.max(1, cu.wid * 0.24);
     g.beginPath();
-    g.moveTo(pts[0][0] + cu.wid * 0.3, pts[0][1]);
-    for (let s = 1; s <= steps; s++) g.lineTo(pts[s][0] + cu.wid * 0.3, pts[s][1]);
+    g.moveTo(pts[0][0] + cu.wid * 0.24, pts[0][1]);
+    for (let s = 1; s <= steps; s++) g.lineTo(pts[s][0] + halfAt(pts[s][2]) * 0.48, pts[s][1]);
     g.stroke();
     g.globalAlpha = 1;
   };
 
   for (const cu of culms) {
     strokeCulm(cu, 1);
-    for (let nI = 1; nI < sprayBands; nI++) {
+    for (let nI = 1; nI <= sprayBands; nI++) {
       const t = nI / sprayBands;
       if (t < spec.leafFrom) continue;
-      const p = cu.pts[Math.round(t * steps)];
+      const p = cu.pts[Math.min(steps, Math.round(t * steps))];
       spraysAt.push([p[0], p[1], t, cu.shade, cu.phase]);
     }
   }
 
   // Leaf sprays over every culm, so the canopy closes across the clump.
+  //
+  // Two passes per node, and the first one is the one that reaches the review frame. The
+  // MASS pass draws the same branch with blades 2.15x wide and a deeper green; the DETAIL
+  // pass draws normal blades over it. At arm's length the eye reads the detail pass and the
+  // mass is just the shaded interior of the cluster; two mip levels down the detail has
+  // averaged away and the mass is still above the 0.14 cutoff, so the clump thins toward a
+  // leafy silhouette instead of collapsing to bare culms. One pass at either width cannot
+  // do both jobs — that is the whole finding.
   for (const [sx, sy, t, k, phase] of spraysAt) {
-    // One branch-shaped cluster per node. The old loop put 5-13 independent leaf sprites
-    // at every node (296-1,189 per archetype cell), far beyond the card's screen bandwidth.
     const side = rnd() < 0.5 ? -1 : 1;
     const a = 0.56 + rnd() * 0.72;
     const len = h * spec.sprayLen * (0.82 + rnd() * 0.36) * (0.82 + t * 0.30);
     const shade = k * (0.78 + rnd() * 0.30);
-    const cA = `rgb(${(52 * shade) | 0},${(116 * shade) | 0},${(44 * shade) | 0})`;
-    const cB = rnd() < 0.18
-      ? `rgb(${(198 * shade) | 0},${(188 * shade) | 0},${(104 * shade) | 0})`
-      : `rgb(${(108 * shade) | 0},${(192 * shade) | 0},${(80 * shade) | 0})`;
+    // g/r of 4.99 and 3.45 in linear — comfortably over GREEN_RATIO's 2.43, so these are
+    // the only pixels on the card that can still be green-dominant once the amber key is
+    // through them. The cured-yellow minority is down from 18% to 9% and its own g/r is up
+    // from 0.95 to 1.06: at 18% it was a fifth of the canopy pulling the wrong way.
+    const cA = `rgb(${(46 * shade) | 0},${(114 * shade) | 0},${(38 * shade) | 0})`;
+    const cB = rnd() < 0.09
+      ? `rgb(${(180 * shade) | 0},${(192 * shade) | 0},${(98 * shade) | 0})`
+      : `rgb(${(102 * shade) | 0},${(194 * shade) | 0},${(74 * shade) | 0})`;
+    const mA = `rgb(${(34 * shade) | 0},${(88 * shade) | 0},${(30 * shade) | 0})`;
+    const mB = `rgb(${(66 * shade) | 0},${(148 * shade) | 0},${(52 * shade) | 0})`;
+    const leaves = Math.max(4, Math.round(spec.sprays * (0.72 + rnd() * 0.22)));
+    const anchor = Math.max(2, w * 0.012);
     g.save();
     g.translate(sx + (rnd() - 0.5) * w * 0.006, sy + (rnd() - 0.5) * h * 0.002);
     if (side < 0) g.scale(-1, 1);
     g.rotate(a);
-    const leaves = Math.max(4, Math.round(spec.sprays * (0.72 + rnd() * 0.22)));
-    drawBambooCardSpray(g, len, cA, cB, 0.46 + phase * 0.10,
-      leaves, Math.max(2, w * 0.012), rnd);
+    drawBambooCardSpray(g, len * 0.92, mA, mB, 0.46 + phase * 0.10, leaves, anchor, rnd, 2.15);
+    drawBambooCardSpray(g, len, cA, cB, 0.46 + phase * 0.10, leaves, anchor, rnd, 1.0);
     g.restore();
   }
 
-  // The nearest three culms again, in front of the foliage. A stand seen from outside always
-  // has stems crossing the leaf mass, and those pale verticals are the entire reason this
-  // silhouette says "bamboo" at 120 m rather than "dark shrub".
-  for (let i = culms.length - 1; i >= Math.max(0, culms.length - 3); i--) strokeCulm(culms[i], 0.9);
+  // The nearest two culms again, in front of the foliage, and only over their lower 70%. A
+  // stand seen from outside always has stems crossing the leaf mass, and those pale
+  // verticals are the entire reason this silhouette says "bamboo" at 120 m rather than
+  // "dark shrub" — but re-stroking all three full length put the pale khaki back on top of
+  // the crown that has to close, which is a third of why the card measures R over G.
+  for (let i = culms.length - 1; i >= Math.max(0, culms.length - 2); i--) strokeCulm(culms[i], 0.82, 0.74);
 
   // A rooted understorey band across the whole cell width, over the bottom 18%.
   //
@@ -1788,20 +1892,45 @@ function paintBambooClump(w, h, spec, seed) {
   return c;
 }
 
-/** The four archetypes, packed 2x2. KAG_ATLAS and the per-instance cell do the rest. */
+/**
+ * The four archetypes packed 4x1 — one ROW, never a 2x2 grid. That layout is the whole
+ * point of this function and it is not a packing preference.
+ *
+ * THE SKYLINE DASHES. Round 15 measured "roughly forty dark maroon dashes, 8-14 px long
+ * and 3-4 px tall, strung through open sky along the bamboo canopy contour" in four of five
+ * review frames. Round 8 had attributed them to a camera-boxed particle field. Both
+ * attributions were tested at runtime against the shipped build at the `valley` pose:
+ * disabling every Weather emitter (petals, leaves, embers, motes, rain) left the dash box
+ * (51,94,405x117) at luma p1 85.6 -> 87.4 and detail 5.87 -> 5.66, i.e. unchanged; hiding
+ * this card mesh alone took the same box to detail 2.15 with no dash visible anywhere.
+ * The dashes are this sheet.
+ *
+ * The mechanism is the atlas seam. In the old 2x2 pack, cells 0 and 1 sat in UV row 0
+ * (v 0..0.5) and cells 2 and 3 in row 1, so cell 0's TOP edge — the culm tips, which is
+ * exactly the part of a card that stands against open sky — was one texel from cell 2's
+ * BASE. `paintBambooClump` deliberately keeps that base **opaque edge to edge** (a rooted
+ * skirt at `rgba(26,52,22,1)`, so the clump cannot appear to hover). The card samples
+ * `vMapUv.y` up to the seam, bilinear filtering pulls ~50% of that opaque near-black skirt
+ * across, 0.5 clears the 0.14 alpha test, and every row-0 card draws a dark horizontal bar
+ * the width of its own crown along its top edge. The bar's length is the card width less
+ * the 28% side ramp — about 13 px at the band's working size, which is the measured 8-14.
+ *
+ * Packed 4x1 there is no horizontal seam at all: every cell's top and bottom edges are the
+ * texture's own edges under ClampToEdgeWrapping. The vertical seams that remain are between
+ * cells whose outer 28% of width is already ramped to alpha 0, so what bleeds across them is
+ * transparency.
+ */
 function paintBambooCard(cellW, cellH) {
-  const c = newCanvas(cellW * 2, cellH * 2);
+  const c = newCanvas(cellW * 4, cellH);
   const g = c.getContext('2d');
-  g.clearRect(0, 0, cellW * 2, cellH * 2);
+  g.clearRect(0, 0, cellW * 4, cellH);
   for (let i = 0; i < 4; i++) {
-    // Soften before compositing. Blurring the finished atlas crosses the deliberate cell
-    // gutters and copies one rooted base into its neighbour as a detached strip.
+    // Soften before compositing. Blurring the finished atlas crosses the cell boundaries
+    // and copies one rooted base into its neighbour as a detached strip.
     const cell = softenAlpha(
       paintBambooClump(cellW, cellH, BAMBOO_ARCHETYPES[i], 0xBA0001 + i * 0x9E37), 2,
     );
-    // Cell (col,row) in UV space; UV row 0 is the canvas *bottom* row band under flipY.
-    const col = i % 2, row = (i / 2) | 0;
-    g.drawImage(cell, col * cellW, (1 - row) * cellH);
+    g.drawImage(cell, i * cellW, 0);
   }
   return c;
 }
@@ -2874,11 +3003,13 @@ export class FoliageSystem {
       // mip footprint is wide enough to disconnect a blade from the spray holding it. See
       // closeAlpha for the measurement of where the review's floating dashes actually sit.
       bambooPlant: T(D(closeAlpha(paintBambooPlant(px), 2))),
-      // The mid-ground impostor: four archetypes in 2x2, each painted in a 1:2 frame so a
+      // The mid-ground impostor: four archetypes in 4x1, each painted in a 1:2 frame so a
       // 12 m culm never has to stretch a square texture. Its own feathering is per cell
       // and side-only, so neither `feather()` nor the alpha-only blur may run over the
       // whole atlas. paintBambooCard softens each cell before compositing; the close then
       // makes real branch joins mip-stable and dilateAlpha still owns RGB colour bleed.
+      // The row layout is load-bearing, not cosmetic — see paintBambooCard for the
+      // measurement that put the skyline dashes on the 2x2 pack's horizontal seam.
       bambooCard: T(D(closeAlpha(paintBambooCard(px >> 1, px), 2))),
       // The blossom card is also alpha-softened: it is the one sheet drawn as filled
       // beziers rather than strokes, so it is the one whose alpha steps 0 -> 250 across a
@@ -2928,6 +3059,7 @@ export class FoliageSystem {
       bendExp = 2.0, whip = 0, bendGain = 1.0, flutter = 1.0,
       fadeNear = [-2, -1], fadeFar = [30, 34], size = [1, 1],
       sss = 1.0, sssColor = 0xb8d07a, sssFloor = 0, sssSat = 0.6,
+      warmFill = null,
       tipGlow = 0.16, baseAO = 0.34,
       grain = 0.16, broad = 0.08, sink = false, atlas = null,
       side = DoubleSide, depthWrite = true, tintAmount = 0.85,
@@ -2967,6 +3099,9 @@ export class FoliageSystem {
       uGrain: { value: grain },
       uBroad: { value: broad },
       uTintAmount: { value: tintAmount },
+      // Zero unless a material asks for it, so this uniform cannot change any surface that
+      // has not been measured. See FRAGMENT_SSS.
+      uWarmFill: { value: warmFill ? new Color(warmFill[0], warmFill[1], warmFill[2]) : new Color(0, 0, 0) },
     };
     mat.userData.kag = local;
 
@@ -3467,7 +3602,10 @@ export class FoliageSystem {
     // was therefore never actually visible in a review frame.
     const cardOpts = {
       name: 'bamboo-card', mode: 0, map: this.tex.bambooCard, color: 0xffffff,
-      atlas: [2, 2],
+      // 4x1, not 2x2 — see paintBambooCard. A vertical seam here put the neighbouring
+      // cell's opaque rooted skirt through the top edge of every row-0 card, which is the
+      // skyline-dash artifact the review has now filed three times.
+      atlas: [4, 1],
       // Alpha test low, deliberately. This card is only ever seen minified, and minifying
       // an alpha cutout averages its coverage down: at 0.24 every thin blade tip fell under
       // the threshold past ~120 m and the clump collapsed to whatever core was dense enough
@@ -3489,7 +3627,13 @@ export class FoliageSystem {
       // Strength and floor are back to sane values. Transmission cannot be the thing that
       // makes the sea green — a card only reads as bamboo if the culm stays pale and the
       // blades keep their own value structure, and at 2.2/0.52 both were being flooded.
-      size: [1, 1], sss: 1.15, sssColor: 0x4fbf2e, sssFloor: 0.28, sssSat: 0.95,
+      //
+      // sssSat to 1.0 and the tint deepened. `trans = mix(vec3(1), uSSSColor, uSSSSat) *
+      // uSunColor`, so the desaturation toward white is *undone* by the key: at 0.95 the
+      // product with GREEN_RATIO's (1.0, 0.412, 0.134) sun came out at g/r 1.79, and at 1.0
+      // with 0x3fb520 it is 3.3. That is the only light path on this card that can be
+      // green-dominant at all — everything else is albedo times an amber key.
+      size: [1, 1], sss: 1.15, sssColor: 0x3fb520, sssFloor: 0.34, sssSat: 1.0,
       tipGlow: 0.20, baseAO: 0.16, grain: 0.10, broad: 0.20, tintAmount: 0.55,
     };
     const cardMat = this._makeMaterial(cardOpts);
@@ -3940,6 +4084,14 @@ export class FoliageSystem {
         bendExp: 2.4, bendGain: 0.60, flutter: 1.35, alphaTest: 0.36,
         fadeFar: fadeOut(RANGE.treeMesh), size: [1, 1], sink: true,
         sss: def.sss, sssColor: def.tint, tipGlow: 0.20, baseAO: 0.18, grain: 0.15,
+        // Sakura only — momiji's albedo is already red-dominant and cedar's is green, so
+        // neither has the cold-purple failure and neither gets the term. See FRAGMENT_SSS.
+        // Sized from the measurement: the hero crown's shadowed clusters read (135.8, 82.6,
+        // 91.3), and the blossom albedo is about (0.85, 0.48, 0.60) linear, so the shift
+        // this adds is (0.85, 0.48, 0.60) * warmFill * (1 - wrap), with (1 - wrap) = 0.774
+        // on a card facing away from the sun. At these values that is roughly +0.056 R,
+        // +0.050 G, +0.008 B in linear, which turns B - G of +8.7 into G - B of about +5.
+        warmFill: def.key === 'sakura' ? [0.095, 0.135, 0.018] : null,
       };
       const woodMat = this._makeMaterial(woodOpts);
       const leafMat = this._makeMaterial(leafOpts);
@@ -4094,6 +4246,14 @@ export class FoliageSystem {
       uTipGlow: { value: 0.10 },
       uBaseAO: { value: 0.16 },
       uGrain: { value: 0.10 },
+      // Chroma pull, applied after the key multiply. The atlas is baked under a neutral
+      // 2.35 white key with tone mapping off, so a pale blossom leaves the bake at roughly
+      // (245, 184, 206); the 0.55 amber mix below then turns that pale pink into a salmon,
+      // and round 15 measured the result at saturation 0.350 against a frame mean of 0.232
+      // and a neighbouring mid-ground at 0.186 — 1.9x the saturation of everything near it.
+      // Mixing toward the fragment's own luminance scales chroma without moving luma, which
+      // is exactly the shape of the finding: pull the saturation back, keep p50 where it is.
+      uChroma: { value: 0.72 },
     };
     mat.userData.kag = local;
 
@@ -4189,13 +4349,20 @@ ${WIND_GLSL}
 
       shader.fragmentShader = shader.fragmentShader
         .replace('#include <common>', '#include <common>\n' +
-          'uniform vec3 uSunColor;\nvarying float vKagFade;\nvarying vec3 vKagTint;')
+          'uniform vec3 uSunColor;\nuniform float uChroma;\n' +
+          'varying float vKagFade;\nvarying vec3 vKagTint;')
         .replace('#include <clipping_planes_fragment>',
           '#include <clipping_planes_fragment>\nif ( vKagFade <= 0.0 ) discard;')
-        .replace('#include <map_fragment>',
-          '#include <map_fragment>\ndiffuseColor.rgb *= vKagTint * mix( vec3( 1.0 ), uSunColor, 0.55 );');
+        .replace('#include <map_fragment>', /* glsl */`
+#include <map_fragment>
+diffuseColor.rgb *= vKagTint * mix( vec3( 1.0 ), uSunColor, 0.55 );
+{
+  float kagLum = dot( diffuseColor.rgb, vec3( 0.2126, 0.7152, 0.0722 ) );
+  diffuseColor.rgb = mix( vec3( kagLum ), diffuseColor.rgb, uChroma );
+}
+`);
     });
-    chainCacheKey(mat, 'kagimpostor2');
+    chainCacheKey(mat, 'kagimpostor3');
 
     this.ctx.sky?.applyFog?.(mat);
     this._materials.push(mat);
