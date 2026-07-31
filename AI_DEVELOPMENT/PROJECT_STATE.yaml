@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-07-31T15:14:06Z",
+  "status": "active",
+  "project": {
+    "name": "KAGEROU 陽炎",
+    "repository": "bachikoljunior-blip/game2",
+    "objective": "Continue the mobile-first third-person Japanese sword-action game toward its established visual and interaction bar without external runtime assets or AI APIs.",
+    "defaultBranch": "main",
+    "defaultBranchVerifiedSha": "eceba5ac14d3eccf246ed1ffea5a3a3238a747dc",
+    "workingBranch": "codex/persistent-protocol-round10",
+    "resumedFromRef": "origin/claude/kagerou-round9-measurement-inj5qq",
+    "resumedFromSha": "6c4c0933240684ccb25907425d7507826edcc3fa"
+  },
+  "sourceOfTruth": {
+    "operatingProtocol": "PROJECT_OPERATING_PROTOCOL.md",
+    "architecture": "ARCHITECTURE.md",
+    "artReviewState": "HANDOFF.md",
+    "artRoundProcedure": "ROUND.md",
+    "publicStatus": "README.md"
+  },
+  "verifiedState": {
+    "lastCompletedVerifiedRound": 12,
+    "activeRound": null,
+    "round9IntegratedVerification": "FAIL at coherent phone/MEDIUM r12v1: apparatus, budgets, tone, and lantern criteria passed; fill, shadow edge, sky, sakura hue, and far-range checks failed; valley semantics are blocked by stale camera probes.",
+    "round10Verdict": "FAIL product gate; verification hardened and shadow-filter/toe experiments rejected without shipping them.",
+    "round11Verdict": "TARGET PASS: the lantern receiver became visible, horizontal, additive, and surface-following; near/far improved from 1.121 to 2.394.",
+    "round12Verdict": "TARGET PASS and OVERALL FAIL: coherent r12v1 passed apparatus, budget, tone, and lantern gates; independent review confirmed those repairs and retained the broader visual blockers.",
+    "latestVerifiedVisualBaseline": "phone/MEDIUM tag r12v1 plus stopped-frame lantern tag r12ab",
+    "capture": {
+      "status": "passed",
+      "tag": "r12v1",
+      "buildFingerprint": "2ed3080cb67cb25e2962dd03dbf01ca68c34ffa0896c8c233c2276f8d224030f",
+      "worstDrawCalls": 119,
+      "worstTriangles": 767124,
+      "resolution": "2532x1170",
+      "limitation": "SwiftShader evidence is not real-device 60 fps evidence."
+    },
+    "productionBuild": {
+      "status": "passed",
+      "command": "npm run build",
+      "checkedAt": "2026-07-31T14:49:46Z",
+      "mainChunkGzipKb": 314.45
+    },
+    "dependencyRestore": {
+      "status": "passed",
+      "command": "npm ci --cache /tmp/game2-npm-cache",
+      "note": "The environment's default /root/.npm cache is not writable."
+    }
+  },
+  "currentWork": {
+    "activeTask": "REMOTE-PUBLISH",
+    "nextTask": "NEXT",
+    "nextStartingPoint": "Push the verified Rounds 10–12 checkpoint, integrate it into main, verify GitHub Pages, persist the result, and stop without starting Round 13.",
+    "blockedBy": [],
+    "remoteStateChangeAuthorized": true,
+    "remotePolicy": "Across future sessions, push verified checkpoints, integrate them into main, and publish GitHub Pages without asking again. This remains active until the user changes it."
+  },
+  "knownUncertainty": [
+    "Fill, shadow-edge behavior, anti-solar sky, sakura hue/form, far-range structure, terrain/foliage, and authored layout remain below the overall visual bar.",
+    "The legacy shadow-edge pixel scanner is confounded even though the independent reviewer confirms the catastrophic staircase is gone.",
+    "The valley fixed-pixel probes are stale after the camera change and require semantic re-anchoring in a future user-authorized round.",
+    "Real iPhone and mid-range Android frame rate has not been measured in this Work run."
+  ]
+}

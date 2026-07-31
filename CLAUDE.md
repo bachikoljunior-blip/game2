@@ -1,52 +1,58 @@
 # KAGEROU 陽炎 — standing instructions
 
-Read this before anything else. It governs every session, not just the one that wrote it.
+Read `PROJECT_OPERATING_PROTOCOL.md` before this file. The protocol is the newest
+project-wide authority; this file remains the standing KAGEROU product and visual-loop brief.
+Where older text below conflicts with the protocol, the protocol wins.
 
 ## Resuming — start here
 
-**Read `HANDOFF.md`, then the "Where this build actually stands" section of `README.md`.**
-Between them they carry the round number, the last verdict, every open item with the
-measurement that states it, and the mechanism guesses already disproved. If someone says
-only "続けて" / "continue", that is where the next action comes from. Do not ask what to work
-on before reading them.
+**Read `AI_DEVELOPMENT/INDEX.md` and its resume sequence, then `HANDOFF.md` and the
+"Where this build actually stands" section of `README.md`.** `AI_DEVELOPMENT` carries the
+concise project-wide state, active logical session, criteria, dependencies and exact next
+task. `HANDOFF.md` carries the detailed art-round measurements and disproved mechanisms. If
+someone says only "続けて" / "continue", reconcile those records with actual git/runtime
+state and continue the highest-value ready task. Do not ask what to work on before reading
+them.
 
-`HANDOFF.md` is the single state file. **Do not create another one.** This repository has
-already carried three competing handoff documents at once because separate sessions each
-wrote their own; the duplication is how two sessions independently spent a round solving the
-same triangle-count problem.
+`HANDOFF.md` is the single detailed **art-review** state file. Do not copy its long
+measurement history into another record. Project-wide session, plan and criteria files may
+point to it; their fields must remain concise and non-duplicative. This repository previously
+carried three competing handoff documents, and that duplication made two sessions
+independently spend a round solving the same triangle-count problem.
 
-### Work on `main`
+### Branches and remote actions
 
-Commit and push to `main` unless a human names a branch. This is not style — it is the
-reason the handoff kept failing. A new session starts from the default branch, so anything
-left only on a feature branch is invisible to the next session, however carefully it was
-written. Two sessions branched from stale points and lost the brief entirely that way.
+Always record the exact working branch, base ref and SHA. A new session often starts from the
+default branch, so state left only on a feature branch can otherwise become invisible.
 
-The loop is expected to outlive any single session: containers get reclaimed, context runs
-out, devices get swapped mid-round. So **finish a round, update `HANDOFF.md` and `README.md`,
-commit, push** — in that order, before reporting. A session that reports and then dies has
-lost the round; one that records and then dies has not.
+Local reversible changes, builds, tests and commits are allowed by a project modification
+request. The user gave standing cross-session authorization on 2026-07-31 to push verified
+checkpoints, integrate them into `main`, and publish GitHub Pages without asking again.
+Inspect the exact remote ref, merged SHA, and public surface before reporting success. Paid,
+destructive, account, credential, production-data, and unrelated external actions remain
+outside that authorization.
 
-### End every session with a handoff prompt
+### Logical-session boundaries
 
-The last thing in your final reply — after the round report — is a fenced code block the
-person can paste straight into a new session. Nothing after it.
+The logical development session ends only when the user explicitly says it is finished. A
+reply boundary, new chat, closed app, tool failure, context compression or completed visual
+round does not end it. Keep `AI_DEVELOPMENT/SESSION_STATE.yaml` active and update the exact
+continuation point after every meaningful verified iteration.
 
-It must state: the branch and the commit you pushed, the round just finished and its
-verdict, the single next action, and any trap the next session would otherwise walk into
-(a held capture lock, a half-finished edit, an unverified fix). Write it standalone: assume
-the reader has none of this conversation.
+Only when the user explicitly ends the logical session, reconcile and archive its state.
+The closing report should then state the branch and local/pushed commit truthfully, the last
+round and verdict, the single next action, and any trap the next session would otherwise
+walk into. A paste-ready block is optional unless the user asks for one; repository state is
+the authority.
 
 ```
-KAGEROU を続けて。main の <sha> まで push 済み。
-ラウンド<N>は<verdict>。次は<次の一手>。
+KAGEROU を続けて。<branch> の <sha> がチェックポイント。remote は<実測状態>。
+現在の統合判定は<verdict>。次は<次の一手>。検証済み成果は standing authorization
+に従って push・main 統合・Pages 公開まで行う。
 <次のセッションが踏みそうな罠があれば1行>
 ```
 
-Keep it short. `CLAUDE.md` and `HANDOFF.md` carry the method and the state; this block only
-has to get the next session pointed at the right thing. Emit it even when the session ends
-badly — especially then, because a session that failed mid-round is exactly the one whose
-state is not obvious from the repository.
+Never name a remote commit as pushed unless the push actually completed and was inspected.
 
 ## The goal, unchanged
 
@@ -67,8 +73,10 @@ The method is not incidental to the goal; it is the goal's mechanism:
 - **Blind side-by-side.** The critic's central question: *shown unlabelled next to the
   reference frame, which would a stranger pick, and why?* If ours loses, it fails. That
   comparison is the whole bar.
-- **Keep going until it is genuinely good**, not until it stops erroring. Continue to the
-  next round unless the build passes or a human says stop.
+- **Keep going until it is genuinely good**, not until it stops erroring. Within each active
+  Work run, continue the highest-value unblocked task; before interruption, persist the exact
+  continuation point. A critic PASS closes the visual-review workstream, not automatically
+  every project-level release criterion.
 
 Do not quietly lower this. If something cannot be done, say so plainly and say why — never
 narrow the target and report success.

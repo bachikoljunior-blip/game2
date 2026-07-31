@@ -21,7 +21,10 @@ import { fileURLToPath } from 'node:url';
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
+import { readdirSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
+import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
@@ -130,11 +133,24 @@ async function acquireLock() {
       writeFileSync(lock, String(process.pid), { flag: 'wx' });
       return () => { try { rmSync(lock, { force: true }); } catch { /* ignore */ } };
     } catch {
-      // Reclaim a lock whose owner died without releasing it.
+      // Reclaim a lock whose owner died without releasing it. Checking only that
+      // the PID exists is insufficient on a long-lived Work host: a dead capture's
+      // PID can be reused by an unrelated daemon, leaving every later run blocked
+      // for two hours. On Linux, also verify that the surviving process really is
+      // this capture tool before treating it as the owner.
+      let ownerIsCapture = false;
       try {
         const owner = Number(readFileSync(lock, 'utf8'));
         process.kill(owner, 0);
+        ownerIsCapture = true;
+        if (process.platform === 'linux') {
+          const cmdline = readFileSync(`/proc/${owner}/cmdline`, 'utf8').replaceAll('\0', ' ');
+          ownerIsCapture = cmdline.includes('capture.mjs');
+        }
       } catch {
+        ownerIsCapture = false;
+      }
+      if (!ownerIsCapture) {
         rmSync(lock, { force: true });
         continue;
       }
@@ -151,6 +167,31 @@ async function acquireLock() {
  * the reviewer nearly filed an already-fixed bug as a regression off the stale frame.
  */
 const REVIEW_SET = ['hero', 'wide', 'torii', 'valley', 'sun'];
+
+function gitText(args, fallback = null) {
+  try {
+    return execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  } catch {
+    return fallback;
+  }
+}
+
+/** Content identity for the exact built surface the screenshots came from. */
+function fingerprintTree(dir) {
+  const hash = createHash('sha256');
+  const walk = (base, relative = '') => {
+    for (const entry of readdirSync(base, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+      const rel = relative ? `${relative}/${entry.name}` : entry.name;
+      const path = join(base, entry.name);
+      if (entry.isDirectory()) walk(path, rel);
+      else if (entry.isFile()) {
+        hash.update(rel); hash.update('\0'); hash.update(readFileSync(path)); hash.update('\0');
+      }
+    }
+  };
+  walk(dir);
+  return hash.digest('hex');
+}
 
 async function main() {
   if (!existsSync(DIST)) {
@@ -192,7 +233,19 @@ async function main() {
     ],
   });
 
-  const report = { at: new Date().toISOString(), profiles: {} };
+  const report = {
+    schemaVersion: 1,
+    at: new Date().toISOString(),
+    mode: argv.review ? 'review' : 'capture',
+    revision: {
+      sha: gitText(['rev-parse', 'HEAD']),
+      branch: gitText(['branch', '--show-current']),
+      dirty: (gitText(['status', '--porcelain'], '') || '').length > 0,
+    },
+    build: { fingerprint: fingerprintTree(DIST) },
+    requested: { profiles: wantProfiles, shots: wantShots },
+    profiles: {},
+  };
 
   for (const pname of wantProfiles) {
     const prof = PROFILES[pname];
@@ -287,7 +340,18 @@ async function main() {
     const shots = { ...carried };
     const histograms = {};
     const perShot = {};
+    const abShots = {};
     if (booted) {
+      // Do not rely on main.js's 60 ms autostart timer. A saturated software-GPU
+      // boot has occasionally reached `__kagerouReady` while that callback was still
+      // queued, leaving a perfectly live world hidden behind the boot veil. Invoke the
+      // public start hook explicitly (it and Engine.start are idempotent), then assert
+      // the veil was actually dismissed before any evidence is captured.
+      const started = await page.evaluate(() => {
+        void window.__kagerouStart?.();
+        return document.getElementById('boot')?.classList.contains('hidden') === true;
+      }).catch(() => false);
+      if (!started) logs.unshift('capture start failed: boot veil remained visible');
       // The opening title card runs a full-screen ink wash over the first few seconds.
       // Left alone it dims every shot by roughly two stops and stamps 陽炎 across the
       // middle of frame, so dismiss it and let the world settle before composing.
@@ -315,6 +379,34 @@ async function main() {
         } catch (e) { logs.push(`shot ${sname}: ${e.message}`); }
         await page.waitForTimeout(shot.wait);
         const file = join(OUT, `${pname}-${sname}${tag}.png`);
+        // Optional deterministic object-level A/B checkpoint. Stop the engine after
+        // the pose has settled, reset TAA history, and render one explicit frame so the
+        // only difference in the paired image is the named object. This is how a baked
+        // light pool can be proven to brighten its receiver instead of being inferred
+        // from a plausible-looking emissive constant in source.
+        let abObjectFound = false;
+        if (argv['ab-object']) {
+          abObjectFound = await page.evaluate((name) => {
+            const k = window.__kagerou;
+            const object = k?.level?.root?.getObjectByName?.(name);
+            if (!object || !k?.pipeline) return false;
+            k.engine?.stop?.();
+            object.visible = true;
+            // `PostFX.render()` advances temporal grain, AO jitter and TAA phase on
+            // every call. Save the phase and re-seed both halves of the A/B pair or a
+            // whole-frame grain change overwhelms the small receiver we are measuring.
+            window.__kagerouCaptureAbState = {
+              frame: k.pipeline._frame,
+              time: k.pipeline._time,
+            };
+            k.pipeline._historyValid = 0;
+            k.pipeline._adaptReset = 1;
+            k.pipeline._lastTime = performance.now() - (1000 / 60);
+            k.pipeline.render(0);
+            return true;
+          }, String(argv['ab-object'])).catch(() => false);
+          if (!abObjectFound) logs.push(`A/B object not found: ${argv['ab-object']}`);
+        }
         // Playwright blocks the capture on `document.fonts.ready`, and the default 30 s
         // is not enough while SwiftShader is saturating the one render thread. We load no
         // webfonts, so this wait has nothing to find — it just needs room to resolve.
@@ -326,6 +418,39 @@ async function main() {
           // shot four should still let the next round carry shots one to three.
           recordShot(pname, sname, file, argv.tag || null);
         } catch (e) { logs.push(`screenshot ${sname}: ${e.message}`); }
+        if (abObjectFound) {
+          const safeObject = String(argv['ab-object']).replace(/[^a-z0-9_-]+/gi, '-');
+          const offFile = join(OUT, `${pname}-${sname}${tag}-without-${safeObject}.png`);
+          const hidden = await page.evaluate((name) => {
+            const k = window.__kagerou;
+            const object = k?.level?.root?.getObjectByName?.(name);
+            if (!object || !k?.pipeline) return false;
+            object.visible = false;
+            const state = window.__kagerouCaptureAbState;
+            if (state) {
+              k.pipeline._frame = state.frame;
+              k.pipeline._time = state.time;
+            }
+            k.pipeline._historyValid = 0;
+            k.pipeline._adaptReset = 1;
+            k.pipeline._lastTime = performance.now() - (1000 / 60);
+            k.pipeline.render(0);
+            return true;
+          }, String(argv['ab-object'])).catch(() => false);
+          if (hidden) {
+            try {
+              await page.screenshot({ path: offFile, type: 'png', timeout: SHOT_TIMEOUT });
+              abShots[sname] = { object: String(argv['ab-object']), on: file, off: offFile };
+            } catch (e) { logs.push(`A/B screenshot ${sname}: ${e.message}`); }
+          }
+          await page.evaluate((name) => {
+            const k = window.__kagerou;
+            const object = k?.level?.root?.getObjectByName?.(name);
+            if (object) object.visible = true;
+            if (k?.pipeline) { k.pipeline._historyValid = 0; k.pipeline.render(0); }
+            k?.engine?.start?.();
+          }, String(argv['ab-object'])).catch(() => {});
+        }
         // Per pose, not once at the end. Draw calls and triangles are frustum-dependent
         // and the spread is not small: the round-5 audit measured 123 calls at the `sun`
         // pose and 146 at `hero` on the same build. Sampling whatever the last shot
@@ -389,12 +514,69 @@ async function main() {
     const stats = await page.evaluate(() => {
       const k = window.__kagerou;
       if (!k?.engine) return null;
+      let adaptation = null;
+      const post = k.pipeline;
+      if (post?.autoExposure && post.rtAdapt?.[post._adaptIdx]) {
+        try {
+          const pixel = new Uint8Array(4);
+          k.renderer.readRenderTargetPixels(post.rtAdapt[post._adaptIdx], 0, 0, 1, 1, pixel);
+          const encodedLogLuma = pixel[0] / 255;
+          const averageSceneLuma = 2 ** (encodedLogLuma * 20 - 10);
+          const lo = post.exposureMin ?? 0;
+          const hi = post.exposureMax ?? Number.POSITIVE_INFINITY;
+          const multiplier = Math.min(hi, Math.max(lo, (post.keyValue ?? 1) / Math.max(averageSceneLuma, 1e-4)));
+          adaptation = {
+            encodedLogLuma: +encodedLogLuma.toFixed(5),
+            averageSceneLuma: +averageSceneLuma.toFixed(5),
+            multiplier: +multiplier.toFixed(4),
+            effectiveExposure: +((post.exposure ?? 1) * multiplier).toFixed(4),
+          };
+        } catch (error) {
+          adaptation = { error: String(error?.message || error) };
+        }
+      }
+      let lanternSpill = null;
+      const pool = k.level?.root?.getObjectByName?.('lantern-pool:__glowPool');
+      if (pool?.isInstancedMesh) {
+        const values = pool.instanceMatrix?.array;
+        let minTerrainClearance = Number.POSITIVE_INFINITY;
+        let maxTerrainClearance = Number.NEGATIVE_INFINITY;
+        let maxTilt = 0;
+        for (let i = 0; values && i < pool.count; i++) {
+          const o = i * 16;
+          const x = values[o + 12], y = values[o + 13], z = values[o + 14];
+          const clearance = y - k.level.groundY(x, z);
+          minTerrainClearance = Math.min(minTerrainClearance, clearance);
+          maxTerrainClearance = Math.max(maxTerrainClearance, clearance);
+          // A horizontal local disc has no world-Y contribution from local X/Z.
+          maxTilt = Math.max(maxTilt, Math.abs(values[o + 1]), Math.abs(values[o + 9]));
+        }
+        const lantern = k.level.root.children.find((o) =>
+          o.isInstancedMesh && o.name?.startsWith('lantern:'));
+        lanternSpill = {
+          count: pool.count,
+          matchesLanternCount: !!lantern && lantern.count === pool.count,
+          minTerrainClearance: +minTerrainClearance.toFixed(4),
+          maxTerrainClearance: +maxTerrainClearance.toFixed(4),
+          maxTilt: +maxTilt.toFixed(6),
+          localNormalY: +(pool.geometry?.getAttribute?.('normal')?.getY(0) ?? 0).toFixed(4),
+          blending: pool.material?.blending ?? null,
+          opacity: +(pool.material?.opacity ?? 0).toFixed(3),
+          depthWrite: !!pool.material?.depthWrite,
+        };
+      }
       return {
         fps: Math.round(k.engine.stats.fps),
         ms: +k.engine.stats.ms.toFixed(2),
         drawCalls: k.engine.stats.drawCalls,
         triangles: k.engine.stats.triangles,
         renderScale: +k.quality.effectiveScale.toFixed(2),
+        renderBuffer: {
+          width: k.renderer.domElement.width,
+          height: k.renderer.domElement.height,
+          cssWidth: k.renderer.domElement.clientWidth,
+          cssHeight: k.renderer.domElement.clientHeight,
+        },
         tier: k.quality.tier,
         // Hard numbers for the lighting review — "it looks grey" is not actionable,
         // "the key is 0.83,0.40,0.23 and the sun is 13 degrees up" is.
@@ -417,7 +599,12 @@ async function main() {
           shadowsActive: !!k.lighting.shadowsActive,
           hemiIntensity: +(k.lighting.hemi?.intensity ?? 0).toFixed(3),
         } : null,
+        // PostFX owns exposure; renderer.toneMappingExposure remains 1 because the
+        // renderer is deliberately configured with NoToneMapping. Keep both so a report
+        // cannot mistake that constant for the exposure actually applied to the frame.
         exposure: +(k.renderer.toneMappingExposure ?? 1).toFixed(3),
+        adaptation,
+        lanternSpill,
         programs: k.renderer.info.programs?.length ?? 0,
         textures: k.renderer.info.memory.textures,
         geometries: k.renderer.info.memory.geometries,
@@ -499,7 +686,7 @@ async function main() {
     }
 
     report.profiles[pname] = {
-      booted, stats, perShot, histograms, draws, drawsByOwner,
+      booted, stats, perShot, histograms, draws, drawsByOwner, abShots,
       errors: logs.slice(0, 40), shots, carriedForward: Object.keys(carried),
     };
     console.log(`[${pname}] booted=${booted}`, stats ? JSON.stringify(stats) : '(no stats)');

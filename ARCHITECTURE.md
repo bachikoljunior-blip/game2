@@ -34,6 +34,11 @@ Every contributor (human or agent) MUST follow this contract so parallel work co
    advancing while drawing nothing and `stats.drawCalls` freezes at a stale value.
    Validate what you export, hold the last good value on failure, and warn once.
    Note `typeof NaN === 'number'` and `clamp()` passes NaN straight through.
+5c. **Checkpoint and state-injection controls are test-only.** Deterministic capture and
+   debug hooks may be present only under an explicit development or capture mode. An
+   ordinary release load must not expose writable game state, cinematic teleport, entity
+   spawn, or inspection controls through a global object. The test build must prove the
+   hooks work; the release gate must prove they are unreachable in normal production use.
 6. **Own only your files.** Do not edit files listed under another system's ownership.
 7. Comments explain *why*, not *what*. Match the surrounding density.
 

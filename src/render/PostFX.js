@@ -1417,10 +1417,19 @@ export class PostFX {
     // / 2.67. Of the 7.5 code values lost, the toe took 3.7 — a power law applied to a
     // value that is already near zero costs proportionally more the darker it gets, and
     // it exaggerates channel ratios by the same exponent, which is where a neutral
-    // shadow picked up its warm cast. At 1.05 the same reconstruction returns the box to
-    // 10.13 / 1.093 / 5.72 with no change anywhere upstream. The frame's midtones move
-    // with it (hero p50 73 -> 82); that is the price and it is intended — 16.9% of the
-    // frame was under code 16, now 9.2%.
+    // shadow picked up its warm cast.
+    //
+    // That inverse-PNG prediction did not survive the integrated six-fix build: `r9v1`
+    // measured 7.46 / 0.987 / 3.50, not 10.13 / 1.093 / 5.72. The reconstruction had
+    // inverted an 8-bit image through clamps, LUT discretisation, grain, AA/sharpen,
+    // chromatic samples and bloom, so matching its identity case did not recover lost
+    // information. Live ablations now provide the boundary: raising the already-equal
+    // 0.4455 ambient budget by a third reached only ~8.44 luma and raised the lit box too;
+    // a larger global lift reached only ~8.1/3.54. The toe was the smallest differential
+    // control left, but the integrated 0.90 capture still failed the contract: hero shade
+    // improved to 9.61 luma / 3.85 detail / 0.147 value ratio while `wide` lost true black
+    // at p0.1=17 (>15). It also remained below the detail and ratio targets. Restore 1.05;
+    // a global curve cannot solve this local receiver without regressing another pose.
     this.filmicToe = 1.05;
     // The shoulder is where this frame's highlight headroom lives, and at 1.14 there was
     // almost none of it. `hero` cleared its p99.9 > 235 gate in round 7 on 3,074 pixels

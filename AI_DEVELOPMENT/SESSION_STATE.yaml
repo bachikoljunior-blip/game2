@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "logicalSession": {
+    "id": "2026-07-31-game2-continuation",
+    "active": true,
+    "startedAt": "2026-07-31T12:54:11Z",
+    "endedAt": null,
+    "endRequiresExplicitUserInstruction": true,
+    "objective": "Execute exactly Rounds 10, 11, and 12, persist the results, then push, merge, and publish the verified incremental checkpoint.",
+    "workingBranch": "codex/persistent-protocol-round10",
+    "baseSha": "6c4c0933240684ccb25907425d7507826edcc3fa",
+    "activePlanNode": "REMOTE-PUBLISH",
+    "activeTask": "REMOTE-PUBLISH",
+    "lastSuccessfulAction": "The coherent r12v1 set and stopped-frame r12ab passed their local gates; an independent source-blind review confirmed the target repairs and retained an overall FAIL.",
+    "currentFailingAction": null,
+    "currentHypothesis": "The locally verified incremental checkpoint can be integrated and published without claiming that the broader visual product gate has passed.",
+    "nextAction": "Run final deterministic gates, push the branch, merge it into main, inspect the public Pages surface, persist the remote result, and do not activate Round 13.",
+    "rollbackPoint": "f5962b6",
+    "pendingVerification": [
+      "Final project-state validation and clean build",
+      "Remote branch ref and main integration",
+      "GitHub Pages public-surface inspection"
+    ],
+    "modifiedFiles": [
+      "src/world/Level.js",
+      "src/world/Props.js",
+      "src/render/PostFX.js",
+      "tools/capture.mjs",
+      "tools/gate-capture-report.mjs",
+      "tools/verify-r9.mjs",
+      "tools/verify-lantern-spill.mjs",
+      "tools/validate-project-state.mjs",
+      "PROJECT_OPERATING_PROTOCOL.md",
+      "AI_DEVELOPMENT/",
+      "HANDOFF.md",
+      "README.md",
+      "ROUND.md"
+    ],
+    "remotePushPendingAuthorization": false,
+    "remoteReleaseAuthorized": true,
+    "remotePublicationStatus": "pending"
+  }
+}

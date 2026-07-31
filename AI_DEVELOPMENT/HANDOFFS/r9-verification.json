@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "taskId": "R9-VERIFY-001",
+  "producer": "project-director",
+  "consumer": "verification-specialist",
+  "objective": "Verify, without adding visual changes, the six Round 9 repair commits against the exact critic regions and all existing contract gates.",
+  "allowedScope": ["dist/", "shots/", "tools/", "AI_DEVELOPMENT/EVIDENCE/", "AI_DEVELOPMENT/TEST_HISTORY/"],
+  "prohibitedChanges": ["Do not rewrite or reuse the r9v1 evidence tag.", "Do not present blocked or failed criteria as passing."],
+  "inputs": ["shots/review-r9.json", "HANDOFF.md", "ROUND.md", "commits d784b87..6c4c093"],
+  "outputs": ["Coherent phone/MEDIUM r9v1 and r12v1 captures", "Capture reports", "Exact-region measurement reports", "Gate status update"],
+  "affectedInterfaces": ["window.__kagerou capture surface", "tools/capture.mjs", "tools/probe.mjs"],
+  "dependencies": ["FND-001", "BUILD-001"],
+  "invariants": ["One build identity for all five frames", "Native 2532x1170 measurements", "No source edits before baseline", "No build during live capture"],
+  "assumptions": ["The environment has or can use the Playwright Chromium runtime already supported by the repository."],
+  "unresolvedQuestions": ["The valley's old fixed boxes require new semantic anchors before that criterion can be decided."],
+  "acceptanceCriteria": ["R9-APPARATUS-001", "R9-PERF-001", "R9-TONE-001", "R9-FILL-001", "R9-SHADOW-EDGE-001", "R9-SKY-001", "R9-VALLEY-001", "R9-SAKURA-001", "R9-FAR-RANGE-001", "R9-LANTERN-001", "R9-DRESSING-001", "R9-CINEMATIC-001"],
+  "testsRequired": ["npm run build", "node tools/capture.mjs --review --profile=phone --tag=r9v1", "Finding-specific tools/probe.mjs measurements", "Native-resolution crop review"],
+  "risks": ["Fresh clone has no differential capture cache", "SwiftShader boot/capture is slow", "A stale capture lock can block the run", "A post-fix shortfall may require another implementation pass"],
+  "rollback": "The integrated baseline remains reproducible from 6c4c093 with build fingerprint bc84b333; generated dist/ and ignored PNG/report outputs can be regenerated.",
+  "status": "verified"
+}

@@ -1,0 +1,11 @@
+# Technical debt and unresolved risk
+
+| ID | Item | Impact | Current disposition |
+|---|---|---|---|
+| TD-001 | Default `main` is behind the selected Round 9 continuation and the verified local checkpoint. | A fresh default-branch session can miss the active work. | Reconcile the verified checkpoint under the standing cross-session remote authorization, then inspect the resulting refs and Pages surface. |
+| TD-003 | Capture/checkpoint hooks are exposed through `window.__kagerou` in the normal bundle. | Development control may be reachable in an ordinary production load. | Gate to explicit capture/debug mode after the current round's harness dependency is mapped and tested. |
+| TD-004 | No real iPhone or mid-range Android performance measurement exists for this Work run. | Headless SwiftShader budgets are not proof of the stated 60 fps target. | Keep release criterion unverified; prepare reproducible device check when a device surface is available. |
+| TD-006 | No general unit-test suite exists; most confidence comes from build and visual capture. | Non-rendering logic regressions may escape the art loop. | Add focused deterministic tests only when tied to an active requirement or known failure. |
+| TD-007 | `three`, Vite, Playwright, and Terser use caret ranges in `package.json`; the lockfile is the actual reproducibility boundary. | A non-lockfile install can change tool behaviour. | Require `npm ci`; do not use `npm install` for verification. |
+| TD-008 | Seven shadow/filter/toe candidates failed or erased expected cast structure. | Repeating parameter searches risks regressions without explaining the thin-caster/receiver failure. | Require a new measured mechanism and same-pose ablation before another implementation candidate. |
+| TD-009 | Review PNGs under `shots/` are ignored and not durable across environments. | Native visual evidence can disappear even when compact metrics remain. | Keep compact reports/reviews in `AI_DEVELOPMENT/EVIDENCE/`; regenerate PNGs from the recorded build and commands when needed. |

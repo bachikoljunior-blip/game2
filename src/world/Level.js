@@ -771,6 +771,17 @@ export class Level {
     const fireY = build.anchors.fire ? build.anchors.fire[1] : 1.6;
     const fireLight = build.lights[0];
     const proto = this._proto('lantern', () => build);
+    // The spill is a second prototype on purpose. The stone can lean and sink into
+    // its footing; its pool must remain horizontal and sit on the visible path,
+    // forecourt or terrain surface. It replaces the old embedded part one-for-one,
+    // so this correction adds neither a draw call nor submitted triangles.
+    const pool = this._proto('lantern-pool', () => this.factory.groundLightPool(), {
+      castShadow: false, receiveShadow: false,
+    });
+    // Keep light variation independent from both the shared world stream and the
+    // stone-weathering stream. The same seed reproduces review frames, while size,
+    // stretch and strength no longer stamp one identical disc down the whole sandō.
+    const poolVary = makeRandom(0x1a117e55);
     // A private stream for the lean and the weathering. `this.rnd` is shared and every
     // prop placed after this one indexes off it, so taking extra numbers out of it here
     // would reshuffle the whole forecourt; a local stream buys the variation for free
@@ -785,7 +796,8 @@ export class Level {
       // instead of hanging the plinth off one edge.
       const lean = vary() < 0.34 ? 0.035 + vary() * 0.055 : 0.0;
       const leanDir = vary() * Math.PI * 2;
-      _m.makeRotationY(this.rnd() * Math.PI * 2);
+      const yaw = this.rnd() * Math.PI * 2;
+      _m.makeRotationY(yaw);
       if (lean > 0) {
         _m2.makeRotationAxis(_v2.set(Math.cos(leanDir), 0, Math.sin(leanDir)), lean);
         _m.premultiply(_m2);
@@ -813,6 +825,22 @@ export class Level {
       const moss = vary() < 0.26 ? 1.0 : 0.0;
       const wr = 1.0 - moss * 0.30, wg = 1.0 - moss * 0.19, wb = 1.0 - moss * 0.34;
       proto.place(_m, [k * (1 + warm) * wr, k * val * wg, k * (1 - warm) * wb]);
+      const poolSize = 0.88 + poolVary() * 0.24;
+      const poolStretch = (poolVary() - 0.5) * 0.18;
+      const poolStrength = 0.86 + poolVary() * 0.22;
+      const poolWarmth = (poolVary() - 0.5) * 0.08;
+      _m2.makeRotationY(yaw);
+      _m2.scale(_v.set(
+        s * poolSize * (1 + poolStretch),
+        s,
+        s * poolSize * (1 - poolStretch),
+      ));
+      _m2.setPosition(x, this._lanternSpillY(x, z), z);
+      pool.place(_m2, [
+        poolStrength * (1 + poolWarmth),
+        poolStrength,
+        poolStrength * (1 - poolWarmth * 0.35),
+      ]);
       // Instanced props never pass through `_emit`, so hoist their flame here.
       if (fireLight) {
         this._lightRequests.push({
@@ -858,6 +886,32 @@ export class Level {
     ]) place(x, z, 1.0 + this.rnd() * 0.18);
     // Flanking the honden gate.
     for (const sx of [-1, 1]) place(sx * 3.4, 2.2, 1.12);
+  }
+
+  /**
+   * Visible surface under a lantern's baked spill. The forecourt is one level
+   * slab, while the sandō is nine independently levelled boxes; using terrain Y
+   * alone put their old embedded discs below both surfaces. Raw-ground pools get
+   * 12 mm of clearance to avoid z-fighting without visibly hovering.
+   */
+  _lanternSpillY(x, z) {
+    const a = LAYOUT.arena;
+    if (Math.abs(x - a.x) <= a.hx + 1.2 && Math.abs(z - a.z) <= a.hz + 1.2) {
+      return this.groundY(a.x, a.z) + 0.14 + 0.006;
+    }
+
+    const pathStart = a.z + a.hz;
+    const pathEnd = LAYOUT.stairTop;
+    if (Math.abs(x) <= 2.8 && z >= pathStart && z <= pathEnd) {
+      const segs = 9;
+      const u = clamp((z - pathStart) / (pathEnd - pathStart), 0, 1 - Number.EPSILON);
+      const i = Math.min(segs - 1, Math.floor(u * segs));
+      const z0 = lerp(pathStart, pathEnd, i / segs);
+      const z1 = lerp(pathStart, pathEnd, (i + 1) / segs);
+      return this.groundY(0, (z0 + z1) * 0.5) + 0.13 + 0.006;
+    }
+
+    return this.groundY(x, z) + 0.012;
   }
 
   _buildBanners() {

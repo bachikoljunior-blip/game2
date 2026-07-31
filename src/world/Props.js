@@ -28,7 +28,7 @@
 import {
   BufferGeometry, BufferAttribute, BoxGeometry, Matrix4, Vector3, Color,
   MeshStandardMaterial, MeshBasicMaterial, ShaderChunk, FrontSide, DoubleSide, InstancedMesh, DataTexture, RGBAFormat,
-  SRGBColorSpace, RepeatWrapping, LinearMipmapLinearFilter, LinearFilter,
+  SRGBColorSpace, RepeatWrapping, LinearMipmapLinearFilter, LinearFilter, AdditiveBlending,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { noise, makeRandom, clamp, lerp, smoothstep, worley2, glslNoise } from '../core/Noise.js';
@@ -85,9 +85,17 @@ export const EMISSIVE = {
    * The falloff now lives in the vertex colour (see `lanternPaperMaterial`,
    * which routes `vColor` onto the emissive), so the number here only has to put
    * the *centre* of a panel at the top of the curve rather than the whole panel
-   * past it. 2.6 lands the centre near 250 and lets a 0.38 rim land near 180.
+   * past it. The integrated Round 11 frame measured the visible core at luma
+   * 240.29 but populated only 1,583 pixels above luma 235; the hero percentile
+   * requires 2,963. Raising the paper peak, rather than the global grade, grows
+   * the authored light-source population without moving sky, stone or blacks.
+   * Live probes bounded the strict integer gate: 2.9 moved hero p99.9 only
+   * 232 -> 234, and 3.3 reached exactly 235 (still a fail for `> 235`). 3.45
+   * remains below the rejected pre-gradient 3.6 level; the measured centre at
+   * 3.3 was luma 244.23, so it retains headroom while the 0.38 rim remains a
+   * diffuser rather than a white card.
    */
-  paper: { color: 0xffd9a8, intensity: 2.6 },
+  paper: { color: 0xffd9a8, intensity: 3.45 },
   /** Warm spill on flagstone. Rec709 luma ≈ 0.38 — below the bloom threshold. */
   pool: { color: 0xff9a52, intensity: 0.85 },
   /** Sky caught in still water. Reads as a glint without becoming a lamp. */
@@ -1340,7 +1348,10 @@ export class PropFactory {
       emissive: new Color(EMISSIVE.pool.color),
       emissiveIntensity: EMISSIVE.pool.intensity,
       roughness: 1, metalness: 0, vertexColors: true,
-      transparent: true, opacity: 0.85, depthWrite: false,
+      // Light must add to the flagstone rather than cover it with a translucent
+      // black card. With normal alpha blending, the zero-emissive rim replaced
+      // 85% of the ground with black and drew a dark ring around every pool.
+      transparent: true, opacity: 0.38, blending: AdditiveBlending, depthWrite: false,
       polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
     });
     m.name = 'prop:glowPool';
@@ -2547,20 +2558,30 @@ export class PropFactory {
     ], circleProfile(8), { smooth: true, uvScale: 1, capStart: false });
     PropFactory.add(b, flame, '__ember');
 
-    // The spill on the flagstone. Radially faded in vertex colour so it lands as a
-    // pool rather than a disc with an edge. Level sinks a lantern 4 cm to bed the
-    // kiso into the ground, so the disc has to clear that or it lands underneath
-    // the terrain it is supposed to be lighting.
-    const poolR = 1.15 * s;
-    PropFactory.add(b, this._spillDisc(poolR, 0.075 * s), '__glowPool');
-
     PropFactory.addCollider(b, PropFactory.boxCollider(0.7 * s, kasaY, 0.7 * s, 0, 0, 0), 'stone', true, false);
     b.lights.push({
       x: 0, y: fbY + fbH * 0.5, z: 0,
       color: 0xffa050, intensity: 2.6 * s, distance: 6.5 * s, flicker: 1,
     });
     b.anchors.fire = [0, fbY + fbH * 0.5, 0];
-    b.bounds = { r: Math.max(0.62 * s, poolR), h: kasaY + 0.55 * s };
+    b.bounds = { r: 0.66 * s, h: kasaY + 0.55 * s };
+    return b;
+  }
+
+  /**
+   * The baked light pool below a stone lantern, deliberately kept as a separate
+   * prototype. A lantern can be scaled, leaned and sunk into its footing; applying
+   * that same transform to a horizontal ground effect either buries or tilts it.
+   * Level therefore places this disc against the actual visible surface instead.
+   */
+  groundLightPool(opts = {}) {
+    // The visible energy still lives inside roughly 1.1 m; the extra tail gives
+    // it another 35-45 cm to reach zero with a zero-slope edge. That removes the
+    // readable perimeter without turning up the centre or bloom.
+    const radius = opts.radius ?? 1.50;
+    const b = PropFactory.build();
+    PropFactory.add(b, this._spillDisc(radius, 0, 24, 1, 0, 6, 1.5), '__glowPool');
+    b.bounds = { r: radius, h: 0.02 };
     return b;
   }
 
@@ -2673,18 +2694,42 @@ export class PropFactory {
    * for baked light spill (centre 1 → rim 0, so the emissive dies out) and for wet
    * ground (centre dark → rim 1, so the damp patch dries off at its edge).
    */
-  _spillDisc(radius, y, segments = 14, centre = 1, rim = 0) {
+  _spillDisc(radius, y, segments = 24, centre = 1, rim = 0, radialRings = 1, falloffPower = 1) {
     const verts = [0, y, 0];
     const uvs = [0.5, 0.5];
     const cols = [centre, centre, centre];
     const idx = [];
-    for (let i = 0; i <= segments; i++) {
-      const a = (i / segments) * Math.PI * 2;
-      const wob = 0.86 + 0.14 * noise.noise2(Math.cos(a) * 2.3, Math.sin(a) * 2.3);
-      verts.push(Math.cos(a) * radius * wob, y, Math.sin(a) * radius * wob);
-      uvs.push(0.5 + Math.cos(a) * 0.5, 0.5 + Math.sin(a) * 0.5);
-      cols.push(rim, rim, rim);
-      if (i > 0) idx.push(0, i, i + 1);
+    const rings = Math.max(1, radialRings | 0);
+    for (let ring = 1; ring <= rings; ring++) {
+      const t = ring / rings;
+      const centreWeight = Math.pow(1 - smoothstep(0, 1, t), Math.max(0.1, falloffPower));
+      const value = lerp(rim, centre, centreWeight);
+      for (let i = 0; i < segments; i++) {
+        const a = (i / segments) * Math.PI * 2;
+        // Every ring follows the same irregular boundary ray; otherwise concentric
+        // noise produces contour bands instead of a continuous light field.
+        const wob = 0.86 + 0.14 * noise.noise2(Math.cos(a) * 2.3, Math.sin(a) * 2.3);
+        verts.push(Math.cos(a) * radius * t * wob, y, Math.sin(a) * radius * t * wob);
+        uvs.push(0.5 + Math.cos(a) * t * 0.5, 0.5 + Math.sin(a) * t * 0.5);
+        cols.push(value, value, value);
+      }
+    }
+    // Seen from above, every triangle must wind clockwise in XZ so its normal is
+    // +Y. The old centre fan wound the other way and FrontSide-culling discarded
+    // the receiver entirely; keep the orientation explicit for both the fan and
+    // the radial quads.
+    for (let i = 0; i < segments; i++) {
+      const next = (i + 1) % segments;
+      idx.push(0, 1 + next, 1 + i);
+    }
+    for (let ring = 2; ring <= rings; ring++) {
+      const inner = 1 + (ring - 2) * segments;
+      const outer = 1 + (ring - 1) * segments;
+      for (let i = 0; i < segments; i++) {
+        const next = (i + 1) % segments;
+        idx.push(inner + i, outer + next, outer + i);
+        idx.push(inner + i, inner + next, outer + next);
+      }
     }
     const geo = new BufferGeometry();
     geo.setAttribute('position', new BufferAttribute(new Float32Array(verts), 3));
