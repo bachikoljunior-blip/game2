@@ -1393,7 +1393,29 @@ export class PostFX {
     // at 1.50 that mass fell off the bottom — 17.7% of the torii frame under code 16,
     // p1 at 0. This keeps a real toe (blacks still reach 0) without eating the eaves.
     this.filmicToe = 1.25;
-    this.filmicShoulder = 1.14;
+    // The shoulder is where this frame's highlight headroom lives, and at 1.14 there was
+    // almost none of it. `hero` cleared its p99.9 > 235 gate in round 7 on 3,074 pixels
+    // against the 2,962 the percentile needs — 3.8% of margin — and round 8 spent it four
+    // ways at once: the blossom emissive going directional cost 301 of those pixels,
+    // routing red and blue back through FXAA cost 198, the dome-derived fog 73 and the
+    // rebuilt sakura mask 60. Every one of those is a change we want. Reverting any single
+    // one of them still leaves the count short (the best, Props.js, lands at 2,928), so the
+    // gate cannot be defended by attributing it to an owner — the curve simply had no
+    // slack at the top.
+    //
+    // Raising the exponent is the documented way to buy that back: `filmicToeShoulder`
+    // pins both exponents at `uFilmicPivot`, so nothing at or below code 112 moves at all
+    // and the toe, the black point and the black gate are untouched by construction.
+    // Simulated on the round-8 frames by inverting the shipped curve per channel and
+    // re-applying it (the pass is the last tonal operator in the composite, per-pixel and
+    // per-channel, so this is exact; at 1.14 it reproduces every published histogram field
+    // to the digit): `hero` p99.9 235 -> 237 on 4,413 pixels, 49% of margin instead of
+    // 3.8%. The whole-grade cost is bounded and small — p50 moves on no frame but `sun`
+    // (128 -> 129), p90 by at most 2, and the clipped fraction above code 240 by 0.11
+    // points on `sun` and 0.004 on `torii`. It is also the *softer* reading of §5.7: the
+    // curve's slope at the clip point falls as the exponent rises, so the top rolls off
+    // more gently than it did, rather than being pushed into white.
+    this.filmicShoulder = 1.20;
     this.filmicPivot = 0.44;
     this.vignette = 0.42;
     this.grain = 0.028;
