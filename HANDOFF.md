@@ -33,8 +33,10 @@ art-direction state record; project-wide session, plan and criterion pointers li
   mean luma / **2.206** tail-core coverage. The final independent five-frame review confirms
   the staircase removal and lantern/tone gains but returns **FAIL overall**: fill, sky,
   mountains, foliage, layout, and sun framing remain below the premium bar.
-- Exact next action: publish this honestly labelled incremental checkpoint, record the remote
-  refs and public URL, then stop without activating Round 13.
+- Exact next action: merge the production Pages routing repair, confirm the public entry,
+  hashed modules and boot surface, record the remote refs and URL, then stop without
+  activating Round 13. PR #1 merged the checkpoint, but its first Pages render exposed the
+  development entry and was correctly rejected as non-runnable.
 - Verified local implementation checkpoint: **`f5962b6`**; rollback base: **`6c4c093`**.
 - Round 8 is six commits: `bc96c3c` (critique), `e9b9717` (postfx), `4a310ed` (foliage),
   `1be775a` (world), `55693b9` (sky), `26bf937` (postfx, gate repair). Round 8 was run on
