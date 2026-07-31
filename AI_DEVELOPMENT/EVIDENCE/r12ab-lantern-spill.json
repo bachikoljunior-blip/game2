@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "criterion": "R9-LANTERN-SPILL-001",
   "tag": "r12ab",
-  "generatedAt": "2026-07-31T15:18:52.924Z",
+  "generatedAt": "2026-07-31T16:01:30.682Z",
   "revision": {
     "sha": "6c4c0933240684ccb25907425d7507826edcc3fa",
     "branch": "codex/persistent-protocol-round10",

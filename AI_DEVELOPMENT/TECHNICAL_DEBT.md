@@ -2,7 +2,7 @@
 
 | ID | Item | Impact | Current disposition |
 |---|---|---|---|
-| TD-001 | Default `main` is behind the selected Round 9 continuation and the verified local checkpoint. | A fresh default-branch session can miss the active work. | Reconcile the verified checkpoint under the standing cross-session remote authorization, then inspect the resulting refs and Pages surface. |
+| TD-001 | Default `main` was behind the selected Round 9 continuation and verified Rounds 10–12 checkpoint. | A fresh default-branch session could miss the active work. | **Resolved 2026-07-31:** checkpoint and Pages repairs were merged; publication-bearing `main` `025a079` passed the real-browser gate. |
 | TD-003 | Capture/checkpoint hooks are exposed through `window.__kagerou` in the normal bundle. | Development control may be reachable in an ordinary production load. | Gate to explicit capture/debug mode after the current round's harness dependency is mapped and tested. |
 | TD-004 | No real iPhone or mid-range Android performance measurement exists for this Work run. | Headless SwiftShader budgets are not proof of the stated 60 fps target. | Keep release criterion unverified; prepare reproducible device check when a device surface is available. |
 | TD-006 | No general unit-test suite exists; most confidence comes from build and visual capture. | Non-rendering logic regressions may escape the art loop. | Add focused deterministic tests only when tied to an active requirement or known failure. |

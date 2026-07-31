@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-07-31T15:56:20.332Z",
+  "requestedUrl": "https://bachikoljunior-blip.github.io/game2/index.html?rev=025a079428e4",
+  "entryStatus": 200,
+  "finalUrl": "https://bachikoljunior-blip.github.io/game2/docs/",
+  "ready": {
+    "url": "https://bachikoljunior-blip.github.io/game2/docs/",
+    "title": "KAGEROU 陽炎",
+    "module": "https://bachikoljunior-blip.github.io/game2/docs/assets/index-B3Qct5lc.js",
+    "ready": true,
+    "startReady": true,
+    "bootStatus": "ready",
+    "tier": "low",
+    "drawingBuffer": [
+      785,
+      363
+    ]
+  },
+  "running": {
+    "bootHidden": true,
+    "engineRunning": true,
+    "drawCalls": 64,
+    "triangles": 423810,
+    "wasAlreadyRunning": false
+  },
+  "pageErrors": [],
+  "consoleErrors": [],
+  "requestFailures": [],
+  "badResponses": [],
+  "status": "passed",
+  "failures": []
+}

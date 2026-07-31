@@ -217,10 +217,10 @@
       "action": "Push the working branch, integrate it into main, and inspect the public Pages URL.",
       "expected": "The remote branch and main contain the verified incremental checkpoint and the public build resolves from that main state without being misrepresented as a full product PASS.",
       "threshold": "Remote refs inspected; integration completed; public URL resolves to the current KAGEROU surface",
-      "evidence": [],
+      "evidence": ["AI_DEVELOPMENT/EVIDENCE/pages-verification.json", "AI_DEVELOPMENT/EVIDENCE/r12-final.md"],
       "severity": "blocking",
       "verification": "GitHub remote inspection and public-surface check",
-      "status": "active"
+      "status": "verified"
     }
   ]
 }

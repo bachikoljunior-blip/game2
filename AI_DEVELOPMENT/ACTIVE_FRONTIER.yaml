@@ -1,18 +1,8 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-31T15:14:06Z",
-  "selectionMethod": "The three-round implementation and review scope is complete. Perform only the authorized remote checkpoint integration and publication; do not activate Round 13.",
+  "updatedAt": "2026-07-31T15:56:54Z",
+  "selectionMethod": "The exact three-round objective, remote integration, and public runtime verification are complete. Preserve unresolved work without activating Round 13.",
   "tasks": [
-    {
-      "id": "REMOTE-PUBLISH",
-      "planNode": "REMOTE-PUBLISH",
-      "status": "active",
-      "priority": 100,
-      "dependencies": ["R12-VERIFY", "R12-REVIEW"],
-      "objective": "Push the verified incremental checkpoint, integrate it into main, and verify the public GitHub Pages surface.",
-      "verification": "Inspect the remote branch ref, merged main SHA, publication status, and public URL.",
-      "nextAction": "Run final local gates, commit the evidence, push, merge, and inspect the published surface."
-    },
     {
       "id": "NEXT",
       "planNode": "NEXT",
@@ -21,7 +11,7 @@
       "dependencies": ["R12-REVIEW"],
       "objective": "Preserve the unresolved product work without beginning another round.",
       "verification": "No Round 13 implementation or capture is started in this run.",
-      "nextAction": "Await a future user instruction after publication."
+      "nextAction": "Await a future user instruction; do not infer continuation from the active logical-session flag alone."
     }
   ]
 }
