@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-31T22:03:35Z",
+  "updatedAt": "2026-07-31T22:32:22Z",
   "status": "active",
   "project": {
     "name": "KAGEROU 陽炎",
     "repository": "bachikoljunior-blip/game2",
     "objective": "Continue the mobile-first third-person Japanese sword-action game toward its established visual and interaction bar without external runtime assets or AI APIs.",
     "defaultBranch": "main",
-    "defaultBranchVerifiedSha": "51f18073ba9868fc59e166f99e009e62ce4ee55d",
+    "defaultBranchVerifiedSha": "4a3eff701af0f6db52f5b780247e38422d40aad6",
     "workingBranch": "agent/rounds-13-14",
     "workingBranchBaseSha": "51f18073ba9868fc59e166f99e009e62ce4ee55d",
-    "workingBranchPublicationSha": "bc598850ee34b4c5624f12f066f0b1692978ee5f",
+    "workingBranchPublicationSha": "b2a7433de7ff72082287d6b5429ca8af54a8642b",
     "resumedFromRef": "origin/claude/kagerou-round9-measurement-inj5qq",
     "resumedFromSha": "6c4c0933240684ccb25907425d7507826edcc3fa"
   },
@@ -55,11 +55,12 @@
         "https://github.com/bachikoljunior-blip/game2/pull/3",
         "https://github.com/bachikoljunior-blip/game2/pull/4"
       ],
-      "verifiedMainSha": "025a079428e4374e8d8fc6912b1f858673228252",
+      "rounds13_14PullRequest": "https://github.com/bachikoljunior-blip/game2/pull/6",
+      "verifiedMainSha": "4a3eff701af0f6db52f5b780247e38422d40aad6",
       "publicUrl": "https://bachikoljunior-blip.github.io/game2/",
       "runtimeUrl": "https://bachikoljunior-blip.github.io/game2/docs/",
-      "checkedAt": "2026-07-31T15:56:20Z",
-      "browserGate": "ready and running; zero page, console, request, or HTTP errors"
+      "checkedAt": "2026-07-31T22:32:03.058Z",
+      "browserGate": "current index-D_EFhYS4.js; ready and running; zero page, console, request, or HTTP errors"
     },
     "dependencyRestore": {
       "status": "passed",
@@ -68,9 +69,9 @@
     }
   },
   "currentWork": {
-    "activeTask": "REMOTE-PUBLISH-2",
-    "nextTask": "AWAIT-USER-INSTRUCTION",
-    "nextStartingPoint": "Build the Pages artifact from r14final, push the two-round branch, merge it into main, and verify the public runtime. Do not activate Round 15.",
+    "activeTask": null,
+    "nextTask": "NEXT15",
+    "nextStartingPoint": "Await a future user instruction. The exact two-round objective and publication are complete; do not activate Round 15 from logical-session state alone.",
     "blockedBy": [],
     "remoteStateChangeAuthorized": true,
     "remotePolicy": "Across future sessions, push verified checkpoints, integrate them into main, and publish GitHub Pages without asking again. This remains active until the user changes it."

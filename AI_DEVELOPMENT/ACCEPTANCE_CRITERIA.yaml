@@ -260,10 +260,13 @@
       "action": "Push the working branch, integrate it into main, rebuild the Pages artifact, and inspect the public runtime.",
       "expected": "Remote branch and main contain the verified two-round checkpoint and the public game reaches ready/running without page, console, request, or HTTP errors.",
       "threshold": "Remote refs inspected; PR merged; public root loads the current hashed production module; ready and engine-running true; zero recorded errors",
-      "evidence": [],
+      "evidence": [
+        "https://github.com/bachikoljunior-blip/game2/pull/6",
+        "AI_DEVELOPMENT/EVIDENCE/pages-verification.json"
+      ],
       "severity": "blocking",
       "verification": "GitHub remote inspection and public real-browser gate",
-      "status": "active"
+      "status": "verified"
     }
   ]
 }

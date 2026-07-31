@@ -26,8 +26,8 @@ direction), §7 (perf budget) and §8 (file ownership) before dispatching anythi
 > **Last completed round: 14. Active round: none.** Round 14 closed on coherent
 > `r14final`: apparatus and budgets passed, source-blind score improved 44 to 50, and the
 > broad sun-glare major finding cleared. One detached-bamboo blocker plus terrain-scale and
-> courtyard-dressing majors remain. Publish this verified checkpoint, then stop; do not
-> activate Round 15 without a new user instruction.
+> courtyard-dressing majors remain. The checkpoint is published and publicly verified;
+> stop and do not activate Round 15 without a new user instruction.
 
 An independent critic has scored it 34 → 48 → 58 → (round 4 unfiled) → (5 and 6 unscored)
 → 44 → **46** → **47 pre-fix in round 9** out of 100 against a *Ghost of Tsushima* /

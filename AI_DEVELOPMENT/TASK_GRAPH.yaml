@@ -11,6 +11,7 @@
     {"id": "NEXT", "dependsOn": ["R12-REVIEW"], "unblocks": [], "status": "superseded"},
     {"id": "R13-ROUND", "dependsOn": ["R12-REVIEW"], "unblocks": ["R14-ROUND"], "status": "verified"},
     {"id": "R14-ROUND", "dependsOn": ["R13-ROUND"], "unblocks": ["REMOTE-PUBLISH-2"], "status": "verified"},
-    {"id": "REMOTE-PUBLISH-2", "dependsOn": ["R14-ROUND"], "unblocks": [], "status": "active"}
+    {"id": "REMOTE-PUBLISH-2", "dependsOn": ["R14-ROUND"], "unblocks": ["NEXT15"], "status": "verified"},
+    {"id": "NEXT15", "dependsOn": ["REMOTE-PUBLISH-2"], "unblocks": [], "status": "deferred"}
   ]
 }

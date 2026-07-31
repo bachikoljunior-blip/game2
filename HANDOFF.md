@@ -44,16 +44,17 @@ art-direction state record; project-wide session, plan and criterion pointers li
 - Remote publication is complete. PRs [#1](https://github.com/bachikoljunior-blip/game2/pull/1),
   [#2](https://github.com/bachikoljunior-blip/game2/pull/2),
   [#3](https://github.com/bachikoljunior-blip/game2/pull/3), and
-  [#4](https://github.com/bachikoljunior-blip/game2/pull/4) are merged. The publication
-  branch is **`bc598850ee34b4c5624f12f066f0b1692978ee5f`** and the verified publication-bearing
-  `main` is **`025a079428e4374e8d8fc6912b1f858673228252`**. The canonical
+  [#4](https://github.com/bachikoljunior-blip/game2/pull/4), and
+  [#6](https://github.com/bachikoljunior-blip/game2/pull/6) are merged. The Rounds 13–14
+  publication branch is **`b2a7433de7ff72082287d6b5429ca8af54a8642b`** and its verified
+  publication-bearing `main` merge is **`4a3eff701af0f6db52f5b780247e38422d40aad6`**. The canonical
   [Pages URL](https://bachikoljunior-blip.github.io/game2/) redirects to the production
-  `/docs/` build, reaches ready/running, and has zero page, console, request, or HTTP errors.
+  `/docs/` build, loads current **`index-D_EFhYS4.js`**, reaches ready/running, and has zero
+  page, console, request, or HTTP errors.
   The initial HTTP-200 development entry and two speculative-module variants were rejected
   before this state was accepted.
-- Exact next action: build the Pages artifact from coherent `r14final`, push
-  `agent/rounds-13-14`, merge it into `main`, and verify the public root/runtime; then await
-  user direction without activating Round 15.
+- Exact next action: await a future user instruction; do not activate Round 15 from the
+  still-active logical session alone.
 - Current rollback point: **`5428d16`**; branch base: **`51f1807`**. Previous verified publication
   implementation checkpoint: **`5fb4c3c`**.
 - Round 8 is six commits: `bc96c3c` (critique), `e9b9717` (postfx), `4a310ed` (foliage),
