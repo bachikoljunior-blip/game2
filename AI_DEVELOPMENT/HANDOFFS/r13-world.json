@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "taskId": "R13-ROUND",
+  "producer": "project-director",
+  "consumer": "world-specialist",
+  "objective": "Restore terrain scale hierarchy in the wide shot and create a legible asymmetric approach composition without touching other owners' systems.",
+  "allowedScope": ["src/world/Terrain.js", "src/world/Level.js"],
+  "prohibitedChanges": ["Do not edit foliage, materials, lighting, sky, post-processing, or cinematic camera poses.", "Do not retest the disproved parallax-ridge explanation for the wide mountain pixels."],
+  "inputs": ["shots/review-r13.json", "shots/phone-wide-r13base.png", "shots/phone-valley-r13base.png", "HANDOFF.md far-range disproof and open-item sections"],
+  "outputs": ["Evidence-backed Terrain.js and/or Level.js repair", "Falsifiable per-file predictions", "Coordinator-ready change summary"],
+  "affectedInterfaces": ["Terrain shader scale hierarchy", "Static level layout and merge groups", "MEDIUM draw/triangle budgets"],
+  "dependencies": ["R9-APPARATUS-001", "R9-PERF-001"],
+  "invariants": ["WORLD constants remain authoritative", "No external assets", "No per-frame allocation", "No camera-pose edit", "Do not exceed 140 draw calls or 900000 submitted triangles"],
+  "assumptions": ["The wide mountain body is macro heightfield terrain, not the parallax ridge band, as already measured."],
+  "unresolvedQuestions": ["Can one bounded terrain-band change materially improve wide hierarchy without destabilizing the established tonal gates?", "Which existing procedural props can strengthen the approach without new draw calls?"],
+  "acceptanceCriteria": ["R13-ROUND-001", "R9-FAR-RANGE-001", "R9-DRESSING-001", "R9-PERF-001"],
+  "testsRequired": ["Same-shot source or ablation diagnosis", "npm run build", "Coordinator-owned coherent phone/MEDIUM recapture and native review"],
+  "risks": ["Terrain changes affect every frame", "Extra dressing can breach submitted-triangle budget", "Composition work can obscure the route or introduce repetitive placement"],
+  "rollback": "Restore src/world/Terrain.js and src/world/Level.js from f50a274c29948a164e65136ffaa1fd4d27c06c4b.",
+  "status": "verified"
+}

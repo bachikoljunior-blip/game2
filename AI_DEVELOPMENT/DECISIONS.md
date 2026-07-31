@@ -106,3 +106,36 @@ Publication is accepted only when an actual browser reaches `ready` and a runnin
 the hashed production bundle with zero page, console, request, or HTTP failures. This policy
 preserves the overall visual FAIL rather than confusing deployment success with product
 acceptance.
+
+## D-014 — Activate exactly Rounds 13 and 14
+
+Accepted 2026-08-01 from the user's latest explicit continuation instruction. The previous
+three-round scope ended after Round 12 and correctly prevented an inferred Round 13. The new
+instruction now explicitly authorizes exactly two additional rounds, so `NEXT` is superseded,
+Round 13 is active, Round 14 is dependency-ready, and Round 15 must not begin. Verified work
+is still pushed, integrated into `main`, and published under D-003.
+
+## D-015 — Keep paper structure only inside the authored highlight margin
+
+Accepted 2026-08-01 in Round 13. The first emissive kumiko lattice preserved the open-paper
+peak but attenuated frame texels to 0.68 and reduced the coherent hero frame from p99.9 237
+to exactly 235, failing the strict `>235` gate. The lattice floor was raised locally to 0.80;
+a targeted hero probe and full coherent r13v2 both passed at 236. Global exposure, filmic
+tone, and other materials were not moved to compensate.
+
+## D-016 — Contain the sun aureole locally, not with global exposure
+
+Accepted 2026-08-01 in Round 14. MEDIUM's radial god-ray pass reinjected enough emitter
+energy to create a broad display-referred white veil, but removing the ray term alone was
+predicted to miss the critic's `<15%` target. A sun-local high-luma shoulder leaves the
+compact core, dark pixels, off-screen-sun poses, global exposure, bloom, and filmic controls
+unchanged. The fresh final frame reduced the exact critic region from **38.112% to 11.330%**
+over 90% luma; all five black gates and the hero/torii white gates still pass.
+
+## D-017 — Close Round 14 on measured progress without claiming product acceptance
+
+Accepted 2026-08-01. The final hostile score improved **44 to 50**, and the sun-glare major
+finding disappeared, but the bamboo blocker remains and the foliage and terrain owner
+predictions did not pass. The two requested rounds are complete because both full
+capture-critique-repair-verification loops and their remaining findings are recorded, not
+because the overall visual bar passed. Round 15 stays inactive pending a new user request.

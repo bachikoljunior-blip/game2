@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "taskId": "R14-ROUND",
+  "producer": "project-director",
+  "consumer": "foliage-specialist",
+  "objective": "Eliminate the remaining detached bamboo skyline dashes in the final authorized round and produce layered continuous crown bands without increasing submitted geometry.",
+  "allowedScope": ["src/render/Foliage.js"],
+  "prohibitedChanges": ["Do not edit sky, weather, post-processing, terrain, or camera poses.", "Do not obscure the symptom with fog, blur, exposure, or full-screen effects."],
+  "inputs": ["shots/review-r14.json", "shots/phone-valley-r14base.png", "shots/phone-wide-r14base.png", "AI_DEVELOPMENT/EVIDENCE/r13-final.md", "AI_DEVELOPMENT/HANDOFFS/r13-foliage.json"],
+  "outputs": ["Smallest evidence-backed Foliage.js repair", "A deterministic native-image detector or source A/B plan for detached open-sky components", "Coordinator-ready prediction and risk summary"],
+  "affectedInterfaces": ["Bamboo card atlas and instancing", "Foliage silhouette and wind", "MEDIUM submitted-triangle budget"],
+  "dependencies": ["R13-ROUND", "R9-PERF-001"],
+  "invariants": ["Shared wind remains authoritative", "No external assets", "No per-frame allocation", "No new draw calls or submitted triangles without measured need", "Nothing non-finite crosses a system boundary"],
+  "assumptions": ["Round 13 proved bamboo-card art is a major producer, but near bamboo and depth-composited leaders may still contribute the remaining native-frame fragments."],
+  "unresolvedQuestions": ["Which residual layer produces the y=125-345 open-sky dashes after the connected-card repair?"],
+  "acceptanceCriteria": ["R14-ROUND-001", "R9-PERF-001"],
+  "testsRequired": ["Prove the residual producer before the final edit", "node --check src/render/Foliage.js", "npm run build", "Coordinator-owned coherent phone/MEDIUM recapture and hostile review"],
+  "risks": ["Over-closing crowns can create a flat hedge", "Removing leaders can erase bamboo identity", "A source-atlas connectivity pass alone may miss depth-composited fragments"],
+  "rollback": "Restore src/render/Foliage.js from 04b552da83f3f17a9f270bbb739b3d2f610def86.",
+  "status": "verified"
+}

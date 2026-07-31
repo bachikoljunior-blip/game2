@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "taskId": "R14-ROUND",
+  "producer": "project-director",
+  "consumer": "world-specialist",
+  "objective": "Introduce broad and mid-scale terrain zoning that leads the wide shot to the shrine while confining fine ground grain to the near field.",
+  "allowedScope": ["src/world/Terrain.js"],
+  "prohibitedChanges": ["Do not edit Level.js, foliage, lighting, post-processing, or camera poses.", "Do not retune the separate parallax ridge band for pixels already proved to be macro heightfield."],
+  "inputs": ["shots/review-r14.json", "shots/phone-wide-r14base.png", "shots/phone-valley-r14base.png", "AI_DEVELOPMENT/EVIDENCE/r13-final.md", "AI_DEVELOPMENT/HANDOFFS/r13-world.json"],
+  "outputs": ["Bounded Terrain.js three-scale zoning repair", "Falsifiable near/mid/far texture prediction", "Coordinator-ready risk summary"],
+  "affectedInterfaces": ["Terrain surface shader", "Every outdoor review frame", "Fragment cost"],
+  "dependencies": ["R13-ROUND", "R9-TONE-001", "R9-PERF-001"],
+  "invariants": ["WORLD constants remain authoritative", "No external assets", "No new geometry or draw calls", "Established black/white gates remain valid", "Far-range macro-heightfield fact remains preserved"],
+  "assumptions": ["One low-frequency world-space mask plus a bounded route-scale term can create visual hierarchy without changing terrain geometry."],
+  "unresolvedQuestions": ["Which existing shader terms cause the near-to-shrine fine ripple cadence, and can they be range-gated without erasing material identity?"],
+  "acceptanceCriteria": ["R14-ROUND-001", "R9-FAR-RANGE-001", "R9-TONE-001", "R9-PERF-001"],
+  "testsRequired": ["Source/evaluator diagnosis before edit", "node --check src/world/Terrain.js", "npm run build", "Coordinator-owned coherent phone/MEDIUM recapture and hostile review"],
+  "risks": ["Terrain changes affect every review frame", "Broad zones can become obvious procedural blobs", "Suppressing fine grain may worsen the existing far-range detail criterion"],
+  "rollback": "Restore src/world/Terrain.js from 04b552da83f3f17a9f270bbb739b3d2f610def86.",
+  "status": "verified"
+}

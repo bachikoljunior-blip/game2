@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-31T15:56:54Z",
-  "selectionMethod": "The exact three-round objective, remote integration, and public runtime verification are complete. Preserve unresolved work without activating Round 13.",
+  "updatedAt": "2026-07-31T22:03:35Z",
+  "selectionMethod": "Rounds 13 and 14 are measured and complete. Publish the verified incremental checkpoint under the standing remote authorization, then await user direction without activating Round 15.",
   "tasks": [
     {
-      "id": "NEXT",
-      "planNode": "NEXT",
-      "status": "deferred",
-      "priority": 0,
-      "dependencies": ["R12-REVIEW"],
-      "objective": "Preserve the unresolved product work without beginning another round.",
-      "verification": "No Round 13 implementation or capture is started in this run.",
-      "nextAction": "Await a future user instruction; do not infer continuation from the active logical-session flag alone."
+      "id": "REMOTE-PUBLISH-2",
+      "planNode": "REMOTE-PUBLISH-2",
+      "status": "active",
+      "priority": 100,
+      "dependencies": ["R14-ROUND"],
+      "objective": "Publish the verified Rounds 13–14 incremental checkpoint and inspect the public user surface.",
+      "verification": "Remote branch and main refs are inspected, the PR is merged, and the public root reaches the current hashed production runtime with zero page, console, request, or HTTP errors.",
+      "nextAction": "Run build:pages, commit the production artifact, push the branch, merge the PR, and run the real-browser Pages gate."
     }
   ]
 }

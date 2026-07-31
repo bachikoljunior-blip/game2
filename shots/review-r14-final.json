@@ -1,0 +1,31 @@
+{
+  "verdict": "FAIL",
+  "blindComparison": "A stranger picks Ghost of Tsushima or SEKIRO because their vegetation forms continuous, layered natural silhouettes, while this scene's bamboo breaks into pole grids, repeated tuft symbols, and detached dark dashes against open sky.",
+  "score": 50,
+  "findings": [
+    {
+      "severity": "blocker",
+      "shot": "phone-valley-r14final.png",
+      "problem": "Across approximately y=115-335, hundreds of detached 2-18 px dark horizontal marks float in the sky above a bamboo wall made of blunt vertical poles, while the taller trees terminate in nearly identical sparse cross-shaped tufts; the same detached marks remain visible on the horizons of the wide, hero, sun, and torii frames.",
+      "why": "The marks read as broken image debris, not stylized vegetation, so every outdoor frame fails a basic shipping-quality silhouette check before its art direction can compete with the references.",
+      "owner": "src/render/Foliage.js",
+      "fix": "At native resolution, eliminate every disconnected dark mark in open sky and replace the pole-grid skyline with contiguous overlapping stalk-and-leaf masses; the valley tree line must show at least three separated depth/value bands, and no tall tree may end in a repeated symbol-like tuft."
+    },
+    {
+      "severity": "major",
+      "shot": "phone-wide-r14final.png",
+      "problem": "The mountains filling roughly y=0-560 are rounded triangular masses covered by uniformly scaled etched wrinkles, while the lower 560 px remains an almost uninterrupted field of equally persistent dark grooves and repeated clumps; neither surface develops broad authored forms as distance changes.",
+      "why": "The constant high-frequency response collapses kilometres of landscape into one procedural-looking sheet, whereas the reference titles use broad geological planes, material bands, and diminishing detail to establish monumental scale.",
+      "owner": "src/world/Terrain.js",
+      "fix": "Make the wide landscape read at three scales: define 3-5 large light/shadow planes on each dominant mountain, add broad 20-50 m soil and path zones around the shrine, and reduce groove/specular contrast beyond the mid-ground by at least half so fine texture is confined to the nearest third of the frame."
+    },
+    {
+      "severity": "major",
+      "shot": "phone-hero-r14final.png",
+      "problem": "The central courtyard from roughly x=670-1510, y=710-990 is mostly bare paving, and its dressing is dominated by repeated identical lanterns and banners; there are no asymmetric clusters of offerings, tools, seating, debris, weeds, or signs of human use to give the shrine a lived history.",
+      "why": "The repetition and empty dead space read as level-editor placement, not a culturally specific inhabited temple courtyard at the density and storytelling standard of SEKIRO.",
+      "owner": "src/world/Props.js",
+      "fix": "Break the symmetry with at least four distinct story clusters in the hero courtyard, each combining two or more non-identical elements such as offerings, water vessels, maintenance tools, benches, worn mats, debris, or encroaching weeds; preserve a clear route to the hall while ensuring no open paving area wider than about 12 m is completely undressed."
+    }
+  ]
+}

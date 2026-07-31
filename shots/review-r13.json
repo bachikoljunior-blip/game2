@@ -1,0 +1,39 @@
+{
+  "verdict": "FAIL",
+  "blindComparison": "A stranger picks the reference title because its detail resolves into coherent natural forms and falls away with distance, while KAGEROU's canopy and terrain dissolve into floating fragments and uniform procedural noise.",
+  "score": 36,
+  "findings": [
+    {
+      "severity": "blocker",
+      "shot": "phone-valley, phone-sun, phone-torii",
+      "problem": "The bamboo skyline visibly breaks into hundreds of isolated horizontal bars, square flecks, and detached crown fragments against the sky. In phone-valley the artifact band runs almost the full frame from roughly x=0-2450, y=55-235; the same broken silhouette is conspicuous behind the gate in phone-sun and phone-torii.",
+      "why": "The most readable high-contrast edge in these frames looks corrupt rather than botanical. A reference-title forest resolves as a stable mass of trunks and crowns; this one announces rendering debris before the viewer can read the place.",
+      "owner": "src/render/Foliage.js",
+      "fix": "Make the bamboo canopy a continuous, stable tree silhouette at 2532x1170: eliminate every detached sky fleck and horizontal fragment, preserve readable trunks and crown masses, and let distant fine detail merge cleanly into the forest rather than scatter above it. Verify the entire skyline in all three named shots at native resolution."
+    },
+    {
+      "severity": "blocker",
+      "shot": "phone-wide",
+      "problem": "The vast ground plane and mountain faces carry nearly the same dense, evenly distributed wrinkle pattern from the bottom edge to the farthest ridge. The foreground is a carpet of repeated dark ripples and identical clumps, while kilometer-scale mountains read as embossed noise with no geological planes or distance-based loss of detail.",
+      "why": "The unchanged texture frequency collapses the valley into a miniature procedural diorama. Tsushima and Sekiro use large landforms, atmospheric separation, and authored macro variation to sell distance; here there is no believable scale hierarchy.",
+      "owner": "src/world/Terrain.js",
+      "fix": "Rebuild the visible terrain hierarchy so the lower third has broad, irregular value zones and localized paths or wet/grass breaks instead of full-frame repetition; mountain faces should be dominated by large erosion planes, with fine texture disappearing on distant ridges. In this shot, make the rightmost ridge visibly bluer, lighter, and at least about one-third lower contrast than the nearest mountain mass."
+    },
+    {
+      "severity": "major",
+      "shot": "phone-torii, phone-hero",
+      "problem": "The hero gate, stone lanterns, shrine timber, rope, and blossom canopy all share a coarse sprayed-noise response and simplified toy-like surfaces. Vermilion beams read as uniformly pocked red tubes, stone lanterns as soft brown casts, and the lantern panels clip to flat yellow-white shapes with almost no paper or frame detail.",
+      "why": "The close shots expose props that do not separate as wood, stone, fiber, paper, and foliage. The shared rough, noisy finish makes the shrine look like a clean modular kit instead of weathered sacred architecture.",
+      "owner": "src/render/Materials.js",
+      "fix": "Give each dominant material a distinct native-resolution read: longitudinal grain and edge-concentrated wear on the red timber, hard mineral variation on stone, visible braided fiber in the rope, translucent paper that retains its dark frame around the light, and blossom masses with leaf/petal breakup rather than lumpy slabs. Preserve lantern detail instead of allowing the emissive areas to become featureless white-yellow blobs."
+    },
+    {
+      "severity": "major",
+      "shot": "phone-wide, phone-valley",
+      "problem": "The wide view places a small, symmetrical shrine kit in the middle of an enormous empty flat field, surrounded by repeated low clumps and fences but no strong foreground, approach, human-scale activity, or asymmetric environmental story. The valley view repeats the emptiness: a fence cuts straight across the frame while a single foreground grass clump serves as the only close dressing.",
+      "why": "Both frames read as a level-editor overview of props on a plane, not a place shaped by use, weather, or ritual. The eye has no authored route through foreground, mid-ground, and background, so the shrine loses drama and scale.",
+      "owner": "src/world/Level.js",
+      "fix": "Create a deliberate approach composition: add a strong near-frame anchor, a readable worn route through sequential gates to the shrine, and clustered asymmetric dressing that marks drainage, foot traffic, offerings, and vegetation boundaries. From the phone-wide camera, the route should connect the lower edge to the shrine without the surrounding field reading as an undifferentiated empty carpet."
+    }
+  ]
+}

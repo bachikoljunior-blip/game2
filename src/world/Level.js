@@ -917,11 +917,11 @@ export class Level {
   _buildBanners() {
     const crimson = this._proto('nobori-c', () => this.factory.nobori({ material: 'clothCrimson', seed: 121 }), { castShadow: false });
     const indigo = this._proto('nobori-i', () => this.factory.nobori({ material: 'clothIndigo', seed: 122 }), { castShadow: false });
-    const place = (x, z, ry, alt) => {
+    const place = (x, z, ry, alt, rng = this.rnd) => {
       _m.makeRotationY(ry);
       _m.setPosition(x, this.groundY(x, z), z);
       const p = alt ? indigo : crimson;
-      const k = 0.9 + this.rnd() * 0.2;
+      const k = 0.9 + rng() * 0.2;
       p.place(_m, [k, k, k]);
     };
     // Cleared off the lanterns. A nobori is a 0.62 x 2.5 m sheet hung from a
@@ -945,6 +945,13 @@ export class Level {
       place(sx * (a.hx - 2.4), a.z + a.hz - 0.6, sx > 0 ? -Math.PI / 2 : Math.PI / 2, true);
       place(sx * (a.hx - 2.4), a.z - a.hz + 2.7, sx > 0 ? -Math.PI / 2 : Math.PI / 2, false);
     }
+
+    // A donor's shoulder at the stair head breaks the mirrored procession before
+    // the first gate. It stays well outside the 5.6 m route and uses a private stream
+    // so this addition cannot reshuffle the established forecourt dressing.
+    const shoulder = makeRandom(0x5a6d0a12);
+    place(-12.0, 72.0, 0.24, false, shoulder);
+    place(-9.5, 68.7, -0.18, true, shoulder);
   }
 
   _buildVotives() {
@@ -1041,6 +1048,22 @@ export class Level {
     drop(barrel, a.hx - 2.4, a.z + a.hz - 3.0, 0.8);
     drop(crate, a.hx - 3.1, a.z + a.hz - 3.4, 2.1);
     drop(bale, -a.hx + 2.6, a.z - a.hz + 2.4, 1.1);
+
+    // Offerings banked against the new processional shoulder. The cask prototype is
+    // already instanced eighteen times, so this makes a near-frame mass without a
+    // new material or draw group.
+    const shoulder = makeRandom(0x0ffe71a5);
+    for (const [x, z, lift, s] of [
+      [-11.65, 69.35, 0.00, 0.98], [-11.08, 69.70, 0.00, 1.08],
+      [-10.48, 69.42, 0.00, 1.00], [-11.36, 69.52, 0.58, 0.96],
+      [-10.78, 69.55, 0.60, 1.02],
+    ]) {
+      _m.makeRotationY((shoulder() - 0.5) * 0.32);
+      _m.scale(_v.set(s, s, s));
+      _m.setPosition(x, this.groundY(x, z) + lift, z);
+      const k = 0.88 + shoulder() * 0.22;
+      cask.place(_m, [k, k * (0.97 + shoulder() * 0.06), k * (0.94 + shoulder() * 0.08)]);
+    }
   }
 
   _buildRoadside() {
@@ -1054,6 +1077,20 @@ export class Level {
       _m.setPosition(x, this.groundY(x, z) - 0.02, z);
       const k = 0.86 + this.rnd() * 0.26;
       jizo.place(_m, [k, k * (0.99 + this.rnd() * 0.04), k * (0.95 + this.rnd() * 0.07)]);
+    }
+
+    // Three older figures lead into the donor shoulder instead of extending the
+    // existing evenly spaced row. Five plus three stays at the small-instance bake
+    // ceiling, so their stone and bibs merge into the existing static buckets.
+    const shoulder = makeRandom(0x07120a11);
+    for (const [x, z, s] of [
+      [-13.0, 70.5, 1.18], [-12.35, 67.9, 1.30], [-11.45, 66.2, 1.08],
+    ]) {
+      _m.makeRotationY(Math.PI + (shoulder() - 0.5) * 0.7);
+      _m.scale(_v.set(s, s, s));
+      _m.setPosition(x, this.groundY(x, z) - 0.025, z);
+      const k = 0.82 + shoulder() * 0.28;
+      jizo.place(_m, [k, k * (0.98 + shoulder() * 0.05), k * (0.93 + shoulder() * 0.08)]);
     }
 
     const cairn = this._proto('cairn', () => f.prayerStones({ count: 6, radius: 0.34, seed: 66 }));

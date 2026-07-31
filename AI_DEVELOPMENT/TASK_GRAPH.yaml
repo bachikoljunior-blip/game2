@@ -8,6 +8,9 @@
     {"id": "R12-VERIFY", "dependsOn": ["R11-LANTERN"], "unblocks": ["R12-REVIEW"], "status": "verified"},
     {"id": "R12-REVIEW", "dependsOn": ["R12-VERIFY"], "unblocks": ["REMOTE-PUBLISH", "NEXT"], "status": "verified"},
     {"id": "REMOTE-PUBLISH", "dependsOn": ["R12-VERIFY", "R12-REVIEW"], "unblocks": [], "status": "verified"},
-    {"id": "NEXT", "dependsOn": ["R12-REVIEW"], "unblocks": [], "status": "deferred"}
+    {"id": "NEXT", "dependsOn": ["R12-REVIEW"], "unblocks": [], "status": "superseded"},
+    {"id": "R13-ROUND", "dependsOn": ["R12-REVIEW"], "unblocks": ["R14-ROUND"], "status": "verified"},
+    {"id": "R14-ROUND", "dependsOn": ["R13-ROUND"], "unblocks": ["REMOTE-PUBLISH-2"], "status": "verified"},
+    {"id": "REMOTE-PUBLISH-2", "dependsOn": ["R14-ROUND"], "unblocks": [], "status": "active"}
   ]
 }

@@ -1,14 +1,15 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-31T16:01:50Z",
+  "updatedAt": "2026-07-31T22:03:35Z",
   "status": "active",
   "project": {
     "name": "KAGEROU 陽炎",
     "repository": "bachikoljunior-blip/game2",
     "objective": "Continue the mobile-first third-person Japanese sword-action game toward its established visual and interaction bar without external runtime assets or AI APIs.",
     "defaultBranch": "main",
-    "defaultBranchVerifiedSha": "025a079428e4374e8d8fc6912b1f858673228252",
-    "workingBranch": "codex/persistent-protocol-round10",
+    "defaultBranchVerifiedSha": "51f18073ba9868fc59e166f99e009e62ce4ee55d",
+    "workingBranch": "agent/rounds-13-14",
+    "workingBranchBaseSha": "51f18073ba9868fc59e166f99e009e62ce4ee55d",
     "workingBranchPublicationSha": "bc598850ee34b4c5624f12f066f0b1692978ee5f",
     "resumedFromRef": "origin/claude/kagerou-round9-measurement-inj5qq",
     "resumedFromSha": "6c4c0933240684ccb25907425d7507826edcc3fa"
@@ -21,27 +22,29 @@
     "publicStatus": "README.md"
   },
   "verifiedState": {
-    "lastCompletedVerifiedRound": 12,
+    "lastCompletedVerifiedRound": 14,
     "activeRound": null,
     "round9IntegratedVerification": "FAIL at coherent phone/MEDIUM r12v1: apparatus, budgets, tone, and lantern criteria passed; fill, shadow edge, sky, sakura hue, and far-range checks failed; valley semantics are blocked by stale camera probes.",
     "round10Verdict": "FAIL product gate; verification hardened and shadow-filter/toe experiments rejected without shipping them.",
     "round11Verdict": "TARGET PASS: the lantern receiver became visible, horizontal, additive, and surface-following; near/far improved from 1.121 to 2.394.",
     "round12Verdict": "TARGET PASS and OVERALL FAIL: coherent r12v1 passed apparatus, budget, tone, and lantern gates; independent review confirmed those repairs and retained the broader visual blockers.",
-    "latestVerifiedVisualBaseline": "phone/MEDIUM tag r12v1 plus stopped-frame lantern tag r12ab",
+    "round13Verdict": "FAIL with measured progress: source-blind score 36 to 43; bamboo skyline and terrain hierarchy improved, blocker count fell from two to one, but detached bamboo fragments remain blocking and four major findings remain.",
+    "round14Verdict": "FAIL with measured progress: source-blind score 44 to 50; the sun-glare major finding cleared, but one detached-bamboo blocker and terrain/courtyard majors remain.",
+    "latestVerifiedVisualBaseline": "phone/MEDIUM tag r14final plus retained stopped-frame lantern tag r12ab",
     "capture": {
       "status": "passed",
-      "tag": "r12v1",
-      "buildFingerprint": "2ed3080cb67cb25e2962dd03dbf01ca68c34ffa0896c8c233c2276f8d224030f",
+      "tag": "r14final",
+      "buildFingerprint": "6693aa477479f10c7dafac3d095d1205a0a3a172ea2b53010ee9e223c4f47d2e",
       "worstDrawCalls": 119,
-      "worstTriangles": 767124,
+      "worstTriangles": 776373,
       "resolution": "2532x1170",
       "limitation": "SwiftShader evidence is not real-device 60 fps evidence."
     },
     "productionBuild": {
       "status": "passed",
       "command": "npm run build:pages",
-      "checkedAt": "2026-07-31T16:01:30Z",
-      "mainChunkGzipKb": 313.65,
+      "checkedAt": "2026-07-31T22:14:39Z",
+      "mainChunkGzipKb": 314.83,
       "entryChunkGzipKb": 1.13
     },
     "publication": {
@@ -65,15 +68,16 @@
     }
   },
   "currentWork": {
-    "activeTask": null,
-    "nextTask": "NEXT",
-    "nextStartingPoint": "Await a future user instruction. Rounds 10–12 are complete and published; do not infer or activate Round 13 from this session.",
+    "activeTask": "REMOTE-PUBLISH-2",
+    "nextTask": "AWAIT-USER-INSTRUCTION",
+    "nextStartingPoint": "Build the Pages artifact from r14final, push the two-round branch, merge it into main, and verify the public runtime. Do not activate Round 15.",
     "blockedBy": [],
     "remoteStateChangeAuthorized": true,
     "remotePolicy": "Across future sessions, push verified checkpoints, integrate them into main, and publish GitHub Pages without asking again. This remains active until the user changes it."
   },
   "knownUncertainty": [
-    "Fill, shadow-edge behavior, anti-solar sky, sakura hue/form, far-range structure, terrain/foliage, and authored layout remain below the overall visual bar.",
+    "Detached bamboo skyline fragments remain the sole visual blocker after Round 14; terrain scale and courtyard specificity remain major findings.",
+    "Fill, shadow-edge behavior, anti-solar sky, sakura hue/form, and far-range structure remain below their existing deterministic criteria.",
     "The legacy shadow-edge pixel scanner is confounded even though the independent reviewer confirms the catastrophic staircase is gone.",
     "The valley fixed-pixel probes are stale after the camera change and require semantic re-anchoring in a future user-authorized round.",
     "Real iPhone and mid-range Android frame rate has not been measured in this Work run."

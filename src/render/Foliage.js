@@ -1523,6 +1523,43 @@ function drawDroopLeaf(g, len, wid, colA, colB, droop) {
 }
 
 /**
+ * A mid-distance spray is one connected branch mass, not a fan of metre-long leaves.
+ * At the card's 20-40 px working size an isolated leaf cannot resolve botanically; it
+ * becomes the horizontal dash the skyline review counted. The round-capped armature stays
+ * above the 0.14 alpha cutoff through mip 4 and every blade overlaps that armature, so the
+ * cluster can simplify into one crown shape instead of breaking into independent flecks.
+ */
+function drawBambooCardSpray(g, len, colA, colB, droop, leafCount, anchorWidth, rnd) {
+  const bx = len * 0.58;
+  const by = len * droop * 0.28;
+  g.strokeStyle = colA;
+  g.lineCap = 'round';
+  g.lineJoin = 'round';
+  g.lineWidth = anchorWidth;
+  g.beginPath();
+  g.moveTo(0, 0);
+  g.quadraticCurveTo(bx * 0.48, by * 0.18, bx, by);
+  g.stroke();
+
+  const count = Math.max(3, leafCount | 0);
+  for (let i = 0; i < count; i++) {
+    const t = 0.06 + (i / Math.max(1, count - 1)) * 0.86;
+    const u = 1 - t;
+    const x = 2 * u * t * bx * 0.48 + t * t * bx;
+    const y = 2 * u * t * by * 0.18 + t * t * by;
+    const side = (i & 1) ? -1 : 1;
+    const a = side * (0.24 + rnd() * 0.34) + (rnd() - 0.5) * 0.12;
+    const l = len * (0.34 + rnd() * 0.22) * (1.0 - t * 0.18);
+    const w = l * (0.14 + rnd() * 0.035);
+    g.save();
+    g.translate(x, y);
+    g.rotate(a);
+    drawDroopLeaf(g, l, w, colA, colB, 0.36 + rnd() * 0.24);
+    g.restore();
+  }
+}
+
+/**
  * Bamboo silhouette archetypes. §5 names the setting as a shrine above a bamboo sea, and
  * the one shape that says so is a *slender segmented pale culm with leaf sprays that
  * droop*. Four of them, because a mid-ground band drawn from a single stamp reads as a
@@ -1546,14 +1583,14 @@ function drawDroopLeaf(g, len, wid, colA, colB, droop) {
  * any archetype now carries. The rest of the motion is bend, from the wind shader.
  */
 const BAMBOO_ARCHETYPES = [
-  /** 0 — young grove: tall, near-vertical, sparse sprays only in the top third. */
-  { culms: 9, hMin: 0.80, hMax: 0.97, bow: 0.03, leafFrom: 0.66, sprays: 7, sprayLen: 0.095, spread: 0.30, hScale: 1.30 },
+  /** 0 — young grove: visible leaders, with crown mass below every leader tip. */
+  { culms: 11, hMin: 0.68, hMax: 0.94, bow: 0.03, leafFrom: 0.56, sprays: 5, sprayLen: 0.078, spread: 0.32, hScale: 1.14 },
   /** 1 — mature stand: the default read; heavy sprays over the top half. */
-  { culms: 14, hMin: 0.55, hMax: 0.93, bow: 0.06, leafFrom: 0.50, sprays: 8, sprayLen: 0.110, spread: 0.40, hScale: 1.00 },
+  { culms: 14, hMin: 0.52, hMax: 0.91, bow: 0.06, leafFrom: 0.46, sprays: 6, sprayLen: 0.082, spread: 0.40, hScale: 1.00 },
   /** 2 — edge clump: culms leaning off the slope, long weeping sprays below horizontal. */
-  { culms: 8, hMin: 0.56, hMax: 0.88, bow: 0.13, leafFrom: 0.42, sprays: 9, sprayLen: 0.125, spread: 0.44, hScale: 0.84 },
+  { culms: 10, hMin: 0.52, hMax: 0.86, bow: 0.08, leafFrom: 0.38, sprays: 6, sprayLen: 0.088, spread: 0.36, hScale: 0.92 },
   /** 3 — understorey: short, bushy, sprays right down to the ground. */
-  { culms: 13, hMin: 0.30, hMax: 0.58, bow: 0.07, leafFrom: 0.24, sprays: 9, sprayLen: 0.115, spread: 0.46, hScale: 0.56 },
+  { culms: 13, hMin: 0.30, hMax: 0.62, bow: 0.07, leafFrom: 0.22, sprays: 7, sprayLen: 0.076, spread: 0.44, hScale: 0.72 },
 ];
 
 /**
@@ -1605,6 +1642,12 @@ function paintBambooClump(w, h, spec, seed) {
     }
   }
 
+  // Quantised attachment bands keep the sprays distributed up each culm. Do not paint
+  // node collars at this LOD: the 4-9 texel horizontal strokes survive alphaTest after
+  // the culm behind them is depth-occluded, so thousands of crossed cards turn them into
+  // detached 2-18 px skyline dashes. Near bamboo still carries explicit node geometry;
+  // here the pale culm, vertical rim and attached crown are the readable bamboo cues.
+  const sprayBands = 9;
   const strokeCulm = (cu, alpha) => {
     const pts = cu.pts;
     const k = cu.shade;
@@ -1622,23 +1665,6 @@ function paintBambooClump(w, h, spec, seed) {
     for (let s = 1; s <= steps; s++) g.lineTo(pts[s][0], pts[s][1]);
     g.stroke();
 
-    // Node rings. A small dark tick plus a bright collar just above it is all it takes
-    // for the stalk to read as segmented rather than as a green pipe.
-    const nodes = 15;
-    for (let nI = 1; nI < nodes; nI++) {
-      const t = nI / nodes;
-      const p = pts[Math.round(t * steps)];
-      const nw = cu.wid * (1.0 - t * 0.35);
-      g.strokeStyle = `rgba(${(52 * k) | 0},${(62 * k) | 0},${(34 * k) | 0},0.75)`;
-      g.lineWidth = Math.max(1, w * 0.006);
-      g.beginPath(); g.moveTo(p[0] - nw * 0.62, p[1]); g.lineTo(p[0] + nw * 0.62, p[1]); g.stroke();
-      g.strokeStyle = `rgba(${(238 * k) | 0},${(242 * k) | 0},${(198 * k) | 0},0.55)`;
-      g.beginPath();
-      g.moveTo(p[0] - nw * 0.5, p[1] - w * 0.010);
-      g.lineTo(p[0] + nw * 0.5, p[1] - w * 0.010);
-      g.stroke();
-    }
-
     // A specular-ish rim down the sunward side; a cylinder needs one to stop reading flat.
     g.strokeStyle = `rgba(${(246 * k) | 0},${(248 * k) | 0},${(212 * k) | 0},0.42)`;
     g.lineWidth = Math.max(1, cu.wid * 0.28);
@@ -1651,9 +1677,8 @@ function paintBambooClump(w, h, spec, seed) {
 
   for (const cu of culms) {
     strokeCulm(cu, 1);
-    const nodes = 15;
-    for (let nI = 1; nI < nodes; nI++) {
-      const t = nI / nodes;
+    for (let nI = 1; nI < sprayBands; nI++) {
+      const t = nI / sprayBands;
       if (t < spec.leafFrom) continue;
       const p = cu.pts[Math.round(t * steps)];
       spraysAt.push([p[0], p[1], t, cu.shade, cu.phase]);
@@ -1662,35 +1687,24 @@ function paintBambooClump(w, h, spec, seed) {
 
   // Leaf sprays over every culm, so the canopy closes across the clump.
   for (const [sx, sy, t, k, phase] of spraysAt) {
-    const nSpray = Math.max(1, Math.round(spec.sprays * (0.45 + rnd())));
-    for (let sI = 0; sI < nSpray; sI++) {
-      // Mostly outward and down: 20 deg below horizontal through to nearly vertical, with
-      // one in four cocked slightly above it so the spray is not a fan of parallel lines.
-      const side = rnd() < 0.5 ? -1 : 1;
-      const a = (0.35 + rnd() * 1.25) * (rnd() < 0.26 ? -0.42 : 1.0);
-      // A bamboo leaf is *small* against its own culm — 15 cm on a 10 m stem. Sized any
-      // larger the sprays swamp the culms and the clump collapses back into a leaf blob
-      // with no stalk in the silhouette, which is the failure this whole card exists to fix.
-      const len = h * spec.sprayLen * (0.55 + rnd() * 0.70) * (0.72 + t * 0.50);
-      const wid = len * (0.10 + rnd() * 0.05);
-      const shade = k * (0.72 + rnd() * 0.40);
-      // See GREEN_RATIO. (70,110) and (148,196) are linear G/R of 2.36 and 1.93 — both
-      // just under the bar, which is the whole reason a sea of visibly green-painted
-      // bamboo still measured as a two-channel image. Pulling red down (not green up)
-      // keeps the blades the same brightness and flips them to the green side.
-      const cA = `rgb(${(52 * shade) | 0},${(116 * shade) | 0},${(44 * shade) | 0})`;
-      const cB = rnd() < 0.18
-        ? `rgb(${(198 * shade) | 0},${(188 * shade) | 0},${(104 * shade) | 0})`  // an old, yellowed blade
-        : `rgb(${(108 * shade) | 0},${(192 * shade) | 0},${(80 * shade) | 0})`;
-      g.save();
-      g.translate(sx + (rnd() - 0.5) * w * 0.02, sy + (rnd() - 0.5) * h * 0.006);
-      // Mirror rather than rotate through pi: rotating would carry the droop *upward* on
-      // the left-hand side and the spray would read as a starburst again.
-      if (side < 0) g.scale(-1, 1);
-      g.rotate(a);
-      drawDroopLeaf(g, len, wid, cA, cB, 0.42 + rnd() * 0.5 + phase * 0.1);
-      g.restore();
-    }
+    // One branch-shaped cluster per node. The old loop put 5-13 independent leaf sprites
+    // at every node (296-1,189 per archetype cell), far beyond the card's screen bandwidth.
+    const side = rnd() < 0.5 ? -1 : 1;
+    const a = 0.56 + rnd() * 0.72;
+    const len = h * spec.sprayLen * (0.82 + rnd() * 0.36) * (0.82 + t * 0.30);
+    const shade = k * (0.78 + rnd() * 0.30);
+    const cA = `rgb(${(52 * shade) | 0},${(116 * shade) | 0},${(44 * shade) | 0})`;
+    const cB = rnd() < 0.18
+      ? `rgb(${(198 * shade) | 0},${(188 * shade) | 0},${(104 * shade) | 0})`
+      : `rgb(${(108 * shade) | 0},${(192 * shade) | 0},${(80 * shade) | 0})`;
+    g.save();
+    g.translate(sx + (rnd() - 0.5) * w * 0.006, sy + (rnd() - 0.5) * h * 0.002);
+    if (side < 0) g.scale(-1, 1);
+    g.rotate(a);
+    const leaves = Math.max(4, Math.round(spec.sprays * (0.72 + rnd() * 0.22)));
+    drawBambooCardSpray(g, len, cA, cB, 0.46 + phase * 0.10,
+      leaves, Math.max(2, w * 0.012), rnd);
+    g.restore();
   }
 
   // The nearest three culms again, in front of the foliage. A stand seen from outside always
@@ -1698,7 +1712,7 @@ function paintBambooClump(w, h, spec, seed) {
   // silhouette says "bamboo" at 120 m rather than "dark shrub".
   for (let i = culms.length - 1; i >= Math.max(0, culms.length - 3); i--) strokeCulm(culms[i], 0.9);
 
-  // An understorey band across the whole cell width, over the bottom 18%.
+  // A rooted understorey band across the whole cell width, over the bottom 18%.
   //
   // This is the part of the density note that a wider scatter cannot fix. A row of clump
   // cards standing on a slope closes at canopy height and stays open at the ankles, because
@@ -1707,24 +1721,46 @@ function paintBambooClump(w, h, spec, seed) {
   // pink-brown dirt" measurement. Litter and low blades at the foot of the card close that
   // strip for free: it is the cheapest coverage on the sheet, since the base is also where
   // neighbouring cards overlap most.
-  const bandTop = h * 0.82;
-  for (let i = 0; i < 90; i++) {
+  // The old litter loop placed its leaf *base* at a random height in this strip. Several
+  // survived alphaTest as islands (including two at mip 4) because nothing joined them to
+  // the soil. A narrow organic skirt makes every low blade share one root mass; it lives
+  // below the skyline and costs no extra geometry or overdraw beyond the card already here.
+  const bandTop = h * 0.84;
+  const skirt = g.createLinearGradient(0, bandTop, 0, h);
+  skirt.addColorStop(0, 'rgba(42,92,34,0.84)');
+  skirt.addColorStop(1, 'rgba(26,52,22,1)');
+  g.fillStyle = skirt;
+  g.beginPath();
+  g.moveTo(0, h);
+  g.lineTo(0, h * 0.940);
+  const skirtSteps = 28;
+  for (let i = 0; i <= skirtSteps; i++) {
+    const x = (i / skirtSteps) * w;
+    // Above the shortest rooted blade's shoulder, so minification cannot sever a blade
+    // one pixel before it reaches the shared base.
+    const y = h * (0.915 + rnd() * 0.025);
+    g.lineTo(x, y);
+  }
+  g.lineTo(w, h);
+  g.closePath();
+  g.fill();
+
+  for (let i = 0; i < 64; i++) {
     const bx = rnd() * w;
-    const by = bandTop + rnd() * (h - bandTop);
-    const t = (by - bandTop) / Math.max(1, h - bandTop);   // 0 at the band top, 1 at the base
-    const len = h * (0.035 + rnd() * 0.055) * (0.7 + t * 0.6);
-    const wid = len * (0.13 + rnd() * 0.10);
-    const shade = 0.52 + rnd() * 0.42 + t * 0.10;
-    const cA = `rgb(${(46 * shade) | 0},${(96 * shade) | 0},${(38 * shade) | 0})`;
-    const cB = rnd() < 0.28
+    const len = h * (0.035 + rnd() * 0.050);
+    const lean = (rnd() - 0.5) * len * 0.72;
+    const wid = Math.max(1.5, len * (0.08 + rnd() * 0.05));
+    const tipY = h - len;
+    const shade = 0.58 + rnd() * 0.40;
+    g.fillStyle = rnd() < 0.28
       ? `rgb(${(178 * shade) | 0},${(160 * shade) | 0},${(88 * shade) | 0})`
-      : `rgb(${(92 * shade) | 0},${(168 * shade) | 0},${(68 * shade) | 0})`;
-    g.save();
-    g.translate(bx, by);
-    if (rnd() < 0.5) g.scale(-1, 1);
-    g.rotate(0.5 + rnd() * 1.5);
-    drawDroopLeaf(g, len, wid, cA, cB, 0.5 + rnd() * 0.6);
-    g.restore();
+      : `rgb(${(74 * shade) | 0},${(156 * shade) | 0},${(58 * shade) | 0})`;
+    g.beginPath();
+    g.moveTo(bx - wid, h);
+    g.quadraticCurveTo(bx + lean * 0.35 - wid * 0.3, h - len * 0.58, bx + lean, tipY);
+    g.quadraticCurveTo(bx + lean * 0.35 + wid * 0.3, h - len * 0.58, bx + wid, h);
+    g.closePath();
+    g.fill();
   }
 
   speckle(g, w, h, 0.24, seed ^ 0x5f5f);
@@ -1758,7 +1794,11 @@ function paintBambooCard(cellW, cellH) {
   const g = c.getContext('2d');
   g.clearRect(0, 0, cellW * 2, cellH * 2);
   for (let i = 0; i < 4; i++) {
-    const cell = paintBambooClump(cellW, cellH, BAMBOO_ARCHETYPES[i], 0xBA0001 + i * 0x9E37);
+    // Soften before compositing. Blurring the finished atlas crosses the deliberate cell
+    // gutters and copies one rooted base into its neighbour as a detached strip.
+    const cell = softenAlpha(
+      paintBambooClump(cellW, cellH, BAMBOO_ARCHETYPES[i], 0xBA0001 + i * 0x9E37), 2,
+    );
     // Cell (col,row) in UV space; UV row 0 is the canvas *bottom* row band under flipY.
     const col = i % 2, row = (i / 2) | 0;
     g.drawImage(cell, col * cellW, (1 - row) * cellH);
@@ -2836,7 +2876,9 @@ export class FoliageSystem {
       bambooPlant: T(D(closeAlpha(paintBambooPlant(px), 2))),
       // The mid-ground impostor: four archetypes in 2x2, each painted in a 1:2 frame so a
       // 12 m culm never has to stretch a square texture. Its own feathering is per cell
-      // and side-only, so `feather()` must not run over the whole atlas.
+      // and side-only, so neither `feather()` nor the alpha-only blur may run over the
+      // whole atlas. paintBambooCard softens each cell before compositing; the close then
+      // makes real branch joins mip-stable and dilateAlpha still owns RGB colour bleed.
       bambooCard: T(D(closeAlpha(paintBambooCard(px >> 1, px), 2))),
       // The blossom card is also alpha-softened: it is the one sheet drawn as filled
       // beziers rather than strokes, so it is the one whose alpha steps 0 -> 250 across a
@@ -3693,10 +3735,10 @@ export class FoliageSystem {
       // It is also true: bamboo on a wind-exposed shoulder is half the height of the same
       // grove down in the sheltered basin.
       const rF = clamp((Math.hypot(x, z) - 96) / 150, 0, 1);
-      // 2.2:1 inside one archetype (was 1.7:1), on top of the 2.3:1 the four hScales
-      // already give: the review asks for a 2:1 tall-to-short spread and reads the band as
-      // "squat, near-identical, same-height".
-      const h = (6.5 + 11.0 * rF) * spec.hScale * (0.62 + rnd() * 0.76);
+      // Keep the height hierarchy without 30 m outliers. Those outliers exposed one sparse
+      // stamp above the shared crown line; the only pixels left visible were its leaf tips,
+      // which is how a connected card became detached bars after depth compositing.
+      const h = (7.0 + 9.0 * rF) * spec.hScale * (0.82 + rnd() * 0.36);
       const green = 0.5 + rnd() * 0.5;
       col.setRGB(0.52 * green + 0.30, 0.70 * green + 0.30, 0.30 * green + 0.16);
 
@@ -3730,10 +3772,9 @@ export class FoliageSystem {
       // The atlas cell is painted in a 1:2 frame, so the card must be planted at that
       // aspect. It used to be 12 m tall and 3 m wide, which stretched every leaf in the
       // texture into a four-times-too-long dagger — half of why the band read as thistles.
-      // Widened 1.3x against that: the archetypes now carry 1.6-2x the culms over 1.5x the
-      // spread, so the extra world width is painted content and not empty cell, and a
-      // horizontal stretch fattens a blade rather than lengthening it.
-      cardB[o + 1] = h * (0.60 + rnd() * 0.16);
+      // The cell is 1:2, so 0.5 is aspect-correct. Keep only a small overlap allowance;
+      // 0.60-0.76 stretched every already-oversized leaf horizontally by 20-52%.
+      cardB[o + 1] = h * (0.54 + rnd() * 0.12);
       cardB[o + 2] = 3.6 + rnd() * 1.8;
       // Integer part = archetype (see KAG_ATLAS), fraction = the dissolve/wind phase.
       cardB[o + 3] = cell + rnd() * 0.999;
