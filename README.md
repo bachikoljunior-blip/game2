@@ -9,6 +9,11 @@ assets** — every texture, mesh, animation and sound is synthesised in code at 
 
 ## Run it
 
+Play the verified production build on
+[GitHub Pages](https://bachikoljunior-blip.github.io/game2/). It contains the published
+Rounds 10–12 checkpoint from `main` at `025a079428e4374e8d8fc6912b1f858673228252`;
+this is a runnable incremental checkpoint, not a claim that the overall visual gate passes.
+
 ```bash
 npm install
 npm run dev        # http://localhost:5173
@@ -70,6 +75,9 @@ The final five-frame source-blind review still returns **FAIL overall** on fill,
 mountains, foliage, authored layout, and sun framing; valley verification is also blocked by
 stale camera-era probes. Rounds 10–12 are complete, and Round 13 has not started. See
 `HANDOFF.md` and `AI_DEVELOPMENT/EVIDENCE/r12-final.md` for the exact checkpoint.
+The public Pages surface was separately verified in a real browser: it booted the relative
+hashed production modules and reached the running engine with zero page, console, request,
+or HTTP failures.
 
 > The 58 (round 3) → 44 (round 7) → 46 (round 8) scores are **not** a single trend line:
 > they come from different critic instances, and the review set has since had the HUD

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-31T15:14:06Z",
+  "updatedAt": "2026-07-31T15:56:54Z",
   "nodes": [
     {
       "id": "PROJECT",
@@ -107,7 +107,7 @@
       "parent": "PROJECT",
       "children": ["REMOTE-PUBLISH"],
       "dependencies": ["R12-VERIFY", "R12-REVIEW"],
-      "status": "active",
+      "status": "verified",
       "priority": 90
     },
     {
@@ -116,7 +116,7 @@
       "parent": "RELEASE",
       "children": [],
       "dependencies": ["R12-VERIFY", "R12-REVIEW"],
-      "status": "active",
+      "status": "verified",
       "priority": 90,
       "criteria": ["REMOTE-001"]
     },

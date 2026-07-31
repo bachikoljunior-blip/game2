@@ -1,14 +1,15 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-31T15:14:06Z",
+  "updatedAt": "2026-07-31T16:01:50Z",
   "status": "active",
   "project": {
     "name": "KAGEROU 陽炎",
     "repository": "bachikoljunior-blip/game2",
     "objective": "Continue the mobile-first third-person Japanese sword-action game toward its established visual and interaction bar without external runtime assets or AI APIs.",
     "defaultBranch": "main",
-    "defaultBranchVerifiedSha": "eceba5ac14d3eccf246ed1ffea5a3a3238a747dc",
+    "defaultBranchVerifiedSha": "025a079428e4374e8d8fc6912b1f858673228252",
     "workingBranch": "codex/persistent-protocol-round10",
+    "workingBranchPublicationSha": "bc598850ee34b4c5624f12f066f0b1692978ee5f",
     "resumedFromRef": "origin/claude/kagerou-round9-measurement-inj5qq",
     "resumedFromSha": "6c4c0933240684ccb25907425d7507826edcc3fa"
   },
@@ -38,9 +39,24 @@
     },
     "productionBuild": {
       "status": "passed",
-      "command": "npm run build",
-      "checkedAt": "2026-07-31T14:49:46Z",
-      "mainChunkGzipKb": 314.45
+      "command": "npm run build:pages",
+      "checkedAt": "2026-07-31T16:01:30Z",
+      "mainChunkGzipKb": 313.65,
+      "entryChunkGzipKb": 1.13
+    },
+    "publication": {
+      "status": "passed",
+      "checkpointPullRequest": "https://github.com/bachikoljunior-blip/game2/pull/1",
+      "publicationRepairPullRequests": [
+        "https://github.com/bachikoljunior-blip/game2/pull/2",
+        "https://github.com/bachikoljunior-blip/game2/pull/3",
+        "https://github.com/bachikoljunior-blip/game2/pull/4"
+      ],
+      "verifiedMainSha": "025a079428e4374e8d8fc6912b1f858673228252",
+      "publicUrl": "https://bachikoljunior-blip.github.io/game2/",
+      "runtimeUrl": "https://bachikoljunior-blip.github.io/game2/docs/",
+      "checkedAt": "2026-07-31T15:56:20Z",
+      "browserGate": "ready and running; zero page, console, request, or HTTP errors"
     },
     "dependencyRestore": {
       "status": "passed",
@@ -49,9 +65,9 @@
     }
   },
   "currentWork": {
-    "activeTask": "REMOTE-PUBLISH",
+    "activeTask": null,
     "nextTask": "NEXT",
-    "nextStartingPoint": "Push the verified Rounds 10–12 checkpoint, integrate it into main, verify GitHub Pages, persist the result, and stop without starting Round 13.",
+    "nextStartingPoint": "Await a future user instruction. Rounds 10–12 are complete and published; do not infer or activate Round 13 from this session.",
     "blockedBy": [],
     "remoteStateChangeAuthorized": true,
     "remotePolicy": "Across future sessions, push verified checkpoints, integrate them into main, and publish GitHub Pages without asking again. This remains active until the user changes it."

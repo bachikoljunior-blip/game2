@@ -33,11 +33,20 @@ art-direction state record; project-wide session, plan and criterion pointers li
   mean luma / **2.206** tail-core coverage. The final independent five-frame review confirms
   the staircase removal and lantern/tone gains but returns **FAIL overall**: fill, sky,
   mountains, foliage, layout, and sun framing remain below the premium bar.
-- Exact next action: merge the production Pages routing repair, confirm the public entry,
-  hashed modules and boot surface, record the remote refs and URL, then stop without
-  activating Round 13. PR #1 merged the checkpoint, but its first Pages render exposed the
-  development entry and was correctly rejected as non-runnable.
-- Verified local implementation checkpoint: **`f5962b6`**; rollback base: **`6c4c093`**.
+- Remote publication is complete. PRs [#1](https://github.com/bachikoljunior-blip/game2/pull/1),
+  [#2](https://github.com/bachikoljunior-blip/game2/pull/2),
+  [#3](https://github.com/bachikoljunior-blip/game2/pull/3), and
+  [#4](https://github.com/bachikoljunior-blip/game2/pull/4) are merged. The publication
+  branch is **`bc598850ee34b4c5624f12f066f0b1692978ee5f`** and the verified publication-bearing
+  `main` is **`025a079428e4374e8d8fc6912b1f858673228252`**. The canonical
+  [Pages URL](https://bachikoljunior-blip.github.io/game2/) redirects to the production
+  `/docs/` build, reaches ready/running, and has zero page, console, request, or HTTP errors.
+  The initial HTTP-200 development entry and two speculative-module variants were rejected
+  before this state was accepted.
+- Exact next action: **await a future user instruction**. There is no active art round; do
+  not start or infer Round 13 from the still-active logical-session flag.
+- Verified local publication implementation checkpoint: **`5fb4c3c`**; rollback base:
+  **`6c4c093`**.
 - Round 8 is six commits: `bc96c3c` (critique), `e9b9717` (postfx), `4a310ed` (foliage),
   `1be775a` (world), `55693b9` (sky), `26bf937` (postfx, gate repair). Round 8 was run on
   `claude/kagerou-round-8-start-jk5lox` because the session operator named that branch, and

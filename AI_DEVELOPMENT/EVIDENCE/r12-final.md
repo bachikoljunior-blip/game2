@@ -33,3 +33,22 @@
 failed; valley is blocked by stale camera-era probes. The source-blind review independently
 confirms that the catastrophic staircase is gone but the full premium visual target is not met.
 No real iPhone or mid-range Android frame-rate measurement was available.
+
+## Remote integration and publication
+
+- The verified Rounds 10–12 checkpoint was integrated through
+  [PR #1](https://github.com/bachikoljunior-blip/game2/pull/1). Publication repairs were
+  integrated through [PR #2](https://github.com/bachikoljunior-blip/game2/pull/2),
+  [PR #3](https://github.com/bachikoljunior-blip/game2/pull/3), and
+  [PR #4](https://github.com/bachikoljunior-blip/game2/pull/4).
+- Verified publication branch: `bc598850ee34b4c5624f12f066f0b1692978ee5f`.
+- Verified publication-bearing `main`: `025a079428e4374e8d8fc6912b1f858673228252`.
+- Canonical URL: https://bachikoljunior-blip.github.io/game2/; production runtime:
+  https://bachikoljunior-blip.github.io/game2/docs/.
+- A real browser followed the root redirect, loaded
+  `docs/assets/index-B3Qct5lc.js`, reached `bootStatus=ready` and a running engine, and
+  reported zero page errors, console errors, request failures, or bad HTTP responses.
+- The first public render returned HTTP 200 but referenced a missing development module.
+  A later repair still made an aborted speculative module request. Both were rejected;
+  publication was accepted only after root made no module request before redirecting.
+- Machine-readable evidence: `AI_DEVELOPMENT/EVIDENCE/pages-verification.json`.
