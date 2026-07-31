@@ -399,6 +399,21 @@ void main() {
     // what turns a screen-space AO into mud, so we fade it out as the pixel gets
     // brighter than plausible ambient. Occluded ambient also loses its warm bounce
     // first, so occlusion drifts toward the cool sky colour instead of grey.
+    //
+    // MEASURED, round 9, and left alone deliberately: uAoDirectRange is in scene-HDR
+    // luma, and this scene never gets there. Reconstructing the round-9 hero buffer
+    // back through the composite (invert toe -> LUT -> contrast -> lift -> sRGB ->
+    // vignette -> ACES) puts sunlit flagstone at scene luma 0.103 and the cast shadow
+    // beside it at 0.024, against a range that only starts to bite at 0.45 — which is
+    // display code 180, i.e. 3.5% of the frame, essentially sky and lantern cores. So
+    // uIndirect is 1.000 to three decimals on every ground pixel, lit and shadowed
+    // alike, and this block is *not* differential between them: it cannot be the cause
+    // of the 46x lit/shadow drop the round-9 critic filed, and ablating it would not
+    // close that gap. The guard genuinely is inoperative over 96.5% of the frame, but
+    // repairing it (dropping the range onto the scene's real luma scale) would *raise*
+    // lit surfaces and widen that ratio, so it is not a round-9 change. uAoTint was
+    // checked in the same pass: at (0.78, 0.85, 1.0) it can only lower R/B, by at most
+    // 19% at k = 0.15, so it cools occlusion and cannot be warming shadow either.
     float l = luma(c);
     float indirect = 1.0 - smoothstep(uAoDirectRange.x, uAoDirectRange.y, l);
     float k = mix(1.0, ao, uAoStrength * indirect);
@@ -1391,8 +1406,22 @@ export class PostFX {
     // where the whole image sat in a narrow band and the toe had a lot of slack. With a
     // real 3.4-intensity key and cascaded shadows the frame has genuine shadow mass, and
     // at 1.50 that mass fell off the bottom — 17.7% of the torii frame under code 16,
-    // p1 at 0. This keeps a real toe (blacks still reach 0) without eating the eaves.
-    this.filmicToe = 1.25;
+    // p1 at 0.
+    //
+    // 1.25 was still eating it. The round-9 blocker ("shadowed ground reads as holes
+    // punched through the courtyard") was traced by inverting this chain per pixel on
+    // `phone-hero-r9.png`: the buffer *arriving* at the grade carries the critic's box
+    // at (1400,1010 100x40) at mean display luma 11.92 with B/R 0.924 and Laplacian
+    // detail 9.83 — already inside the 9-13 the critic asked for, already neutral, and
+    // already 20.8% of the sunlit box beside it. The grade then took it to 4.38 / 0.683
+    // / 2.67. Of the 7.5 code values lost, the toe took 3.7 — a power law applied to a
+    // value that is already near zero costs proportionally more the darker it gets, and
+    // it exaggerates channel ratios by the same exponent, which is where a neutral
+    // shadow picked up its warm cast. At 1.05 the same reconstruction returns the box to
+    // 10.13 / 1.093 / 5.72 with no change anywhere upstream. The frame's midtones move
+    // with it (hero p50 73 -> 82); that is the price and it is intended — 16.9% of the
+    // frame was under code 16, now 9.2%.
+    this.filmicToe = 1.05;
     // The shoulder is where this frame's highlight headroom lives, and at 1.14 there was
     // almost none of it. `hero` cleared its p99.9 > 235 gate in round 7 on 3,074 pixels
     // against the 2,962 the percentile needs — 3.8% of margin — and round 8 spent it four
@@ -1740,10 +1769,20 @@ export class PostFX {
 
   /** Authored look presets, evaluated into a 32^3 tile-strip LUT at boot. */
   static get LOOK_MAGIC_HOUR() {
-    // Autumn magic hour: warm cedar-brown shadows, warm key midtones, a teal cast in
-    // the upper midtones. The *lighting* keeps its cool #4a6b8f sky bounce (see the
-    // composite lift and the AO tint) — this is the grade layered on top of it, and
-    // the two pulling against each other is exactly what gives dusk its depth.
+    // Autumn magic hour: cool slate shadows, warm key midtones, a teal cast in the
+    // upper midtones — warm key against cool shade, which is the whole of golden hour.
+    //
+    // This preset used to carry warm cedar-brown shadows on the argument that the
+    // lighting keeps its cool #4a6b8f sky bounce and "the two pulling against each
+    // other is exactly what gives dusk its depth". Round 9 measured the pull and it
+    // was a rout, not a tension: reconstructing the round-9 `hero` buffer through the
+    // inverse of this chain, the cast shadow on the flagstone arrives at B/R 0.924 —
+    // neutral, the fill is there — and `shadowTint` alone drags it to 0.743 on a
+    // weight of (1 - luma)^2 that reaches 1.0 exactly where the frame is darkest. The
+    // grade was not layering over the sky bounce, it was deleting it, and the critic
+    // read the result as a shadow warmer than the key light. Same hue family as the
+    // #4a6b8f the palette actually specifies, held to the old tint's luma (0.150) so
+    // this is a hue change and not a lift.
     return {
       wb: [1.032, 1.0, 0.978],
       contrast: 1.14, pivot: 0.44,
@@ -1752,7 +1791,7 @@ export class PostFX {
       // 0.026 here plus a shadow tint that lifts to 0.08 was costing us the bottom
       // 16 code values of every frame, and a 0.985 ceiling capped the top.
       toe: 0.008, shoulder: 1.0,
-      shadowTint: [0.205, 0.140, 0.090], shadowAmt: 0.085,  // warm shadow *hue*, not a lift
+      shadowTint: [0.130, 0.152, 0.185], shadowAmt: 0.110,  // cool shadow *hue*, not a lift
       midTint: [1.000, 0.862, 0.690], midAmt: 0.075,        // #ffd9a8 key light
       highTint: [0.560, 0.870, 0.930], highAmt: 0.210,      // teal upper highlights
       sat: 1.10, satShadow: 0.86,
@@ -2083,10 +2122,22 @@ export class PostFX {
       uExposureRange: { value: new Vector2(this.exposureMin, this.exposureMax) },
       uWhiteBalance: { value: new Color(1.02, 1.0, 0.98) },
       uSaturation: { value: this.saturation },
-      // Only enough lift to keep a *hue* in the deep shadow (cool sky bounce, per
-      // ARCHITECTURE §5) — the level it used to carry is now the toe's job, and the
-      // toe runs after the LUT so it can actually reach zero.
-      uLift: { value: new Color(0.004, 0.005, 0.011) },
+      // The shadow *hue*, per ARCHITECTURE §5's #4a6b8f sky bounce. It has to carry a
+      // little level as well, for a reason that was invisible until round 9 measured
+      // it: the contrast line below is `(c - 0.435) * 1.045 + 0.435` **clamped at 0**,
+      // which subtracts 0.0196 — display code 4.8 — from the bottom of the frame and
+      // throws away everything under it. At the old (0.004, 0.005, 0.011) that clamp
+      // was swallowing 29% of the pixels in the critic's `hero` shadow box outright,
+      // all of them landing on one identical value, which is where 72% of that
+      // surface's Laplacian detail went. A lift that clears 0.0187 in every channel
+      // takes the whole frame back out of the clamp before the contrast line runs.
+      // Cool-weighted 1 : 1.15 : 1.55, so the recovered floor arrives blue rather than
+      // grey: measured on the round-9 `hero` buffer the box goes B/R 0.683 -> 1.093,
+      // against the key beside it at 0.632 — a two-temperature split rather than one
+      // black. Costs the black end: p0.1 goes 0,4,0,0,0 -> 2,11,2,2,2 against a gate
+      // of < 15, so `wide` now holds only 4 code values of margin. Anything else that
+      // lifts shadows this round spends the same margin.
+      uLift: { value: new Color(0.0240, 0.0276, 0.0372) },
       uGamma: { value: new Color(1.0, 1.0, 1.0) },
       uGain: { value: new Color(1.0, 1.0, 1.0) },
       uContrast: { value: this.contrast },
