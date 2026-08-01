@@ -155,6 +155,14 @@ decision recorded saying which and why.
 All nine repositories (eight plus `kit`) carry the kit at the same version, `check:kit`
 passes in each, and every replaced tool has a measured before/after — not a plausible diff.
 
+**Say so out loud when it is done.** The session that observes the last acceptance line
+reports to the user that the kit-and-skills rollout is complete, and states plainly which
+repositories carry it, which steps were closed by measurement rather than inspection, and
+anything that had to be left to the user's own machine. This workstream has no finish
+signal otherwise: each step ticks a box in a file nobody is watching, so it can be finished
+for weeks without anyone knowing. Do not report it complete while any step above is open —
+say which remain instead.
+
 ---
 
 ## Traps
