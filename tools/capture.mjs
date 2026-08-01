@@ -21,7 +21,7 @@ import { fileURLToPath } from 'node:url';
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
-import { readdirSync } from 'node:fs';
+import { readdirSync, statSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
@@ -167,6 +167,36 @@ async function acquireLock() {
  * the reviewer nearly filed an already-fixed bug as a regression off the stale frame.
  */
 const REVIEW_SET = ['hero', 'wide', 'torii', 'valley', 'sun'];
+
+/**
+ * The `drawsByOwner` rollup from the most recent previous capture of this profile, so a
+ * system that has stopped drawing entirely can be detected. Returns null when there is no
+ * earlier report — a fresh clone has none, and that is the correct failure direction:
+ * silence, not a false alarm.
+ *
+ * Newest-first by mtime rather than by tag name, because tags are arbitrary strings
+ * (`r16v1`, `bisectB`) with no ordering, and the round's own tag is skipped so a re-run
+ * under the same tag compares against the round before it rather than against itself.
+ */
+function previousDrawsByOwner(profile, currentTag) {
+  let newest = null;
+  try {
+    for (const f of readdirSync(OUT)) {
+      if (!f.startsWith('report') || !f.endsWith('.json')) continue;
+      if (currentTag && f === `report-${currentTag}.json`) continue;
+      const full = join(OUT, f);
+      let mtime;
+      try { mtime = statSync(full).mtimeMs; } catch { continue; }
+      if (newest && mtime <= newest.mtime) continue;
+      let owners;
+      try {
+        owners = JSON.parse(readFileSync(full, 'utf8'))?.profiles?.[profile]?.drawsByOwner;
+      } catch { continue; }
+      if (owners && Object.keys(owners).length) newest = { mtime, owners };
+    }
+  } catch { return null; }
+  return newest ? newest.owners : null;
+}
 
 function gitText(args, fallback = null) {
   try {
@@ -681,6 +711,35 @@ async function main() {
           }
         } else {
           console.log(`[${pname}] budget ${k} ok — worst ${worst.toLocaleString()} at "${where}" against ${cap.toLocaleString()}`);
+        }
+      }
+    }
+
+    // An owning system that drew last round and draws nothing now has almost certainly
+    // failed to build, and nothing else in this report will say so: the budget check only
+    // looks upward, `booted` stays true because a non-essential system is allowed to
+    // degrade, and a build that renders *less* passes every cap more comfortably than the
+    // one before it.
+    //
+    // Round 17 shipped a Foliage.js commit whose init threw. All 140,820 foliage triangles
+    // and 14 draw calls disappeared from every framing, and the report came back
+    // `booted: true`, zero dead shader programs, correct tier, every budget green — a
+    // cleaner-looking report than the working build it replaced. It was caught only because
+    // the triangle counts had moved a long way in a direction nobody had predicted.
+    //
+    // So: compare owners against the most recent report for this profile and fail loudly on
+    // any that vanished. Cheap, and it turns a silent regression into a red line.
+    if (drawsByOwner && Object.keys(drawsByOwner).length) {
+      const prevOwners = previousDrawsByOwner(pname, tag);
+      if (prevOwners) {
+        for (const [owner, was] of Object.entries(prevOwners)) {
+          if (!drawsByOwner[owner] && was.triangles > 0) {
+            const msg = `OWNER VANISHED: "${owner}" drew ${was.triangles.toLocaleString()} triangle(s) in ` +
+              `${was.calls} call(s) in the previous capture and submits nothing now — ` +
+              `treat this build as broken until explained`;
+            logs.unshift(msg);
+            console.log(`[${pname}] ${msg}`);
+          }
         }
       }
     }
