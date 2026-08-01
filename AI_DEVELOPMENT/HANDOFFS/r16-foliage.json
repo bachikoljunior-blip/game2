@@ -1,0 +1,185 @@
+{
+  "round": 16,
+  "team": "foliage",
+  "owns": ["src/render/Foliage.js", "AI_DEVELOPMENT/HANDOFFS/r16-foliage.json"],
+  "branch": "claude/1-round-execution-kgtb9r",
+  "baseSha": "1a805c98bb1b12758d03d2693c4fc9479dc2ccd4",
+  "commit": "8d34429",
+  "capture": "none — this owner ran no capture and launched no browser, per the round instruction. Every number below is either from tools/probe.mjs on shots/phone-*-r16.png, from source arithmetic, or from an offline simulation stated as such.",
+  "apparatus": {
+    "selfTest": "Every custom measurement imported decodePNG from tools/luma.mjs and stats/cut/region from tools/probe.mjs rather than decoding the PNG itself, so the recurring 3-channel/4-byte-stride bug is structurally impossible here. Validated anyway: my harness on shots/phone-valley-r16.png 0.10,0.55,0.06,0.03 returned {\"box\":\"253,644 152x35\",\"meanRGB\":[126.8,84.5,49.7],\"saturation\":0.603,\"luma\":{\"p1\":46,\"p50\":90.9,\"p99\":140},\"lumaSpread\":93.9,\"detail\":11.14}, byte-identical to `node tools/probe.mjs stats` on the same spec.",
+    "imageChannels": "decodePNG reports channels=3 on these frames; probe.mjs indexes with img.channels."
+  },
+
+  "findings": [
+    {
+      "id": "r16-major-valley-lattice",
+      "shot": "valley",
+      "problem": "Valley floor is a near-regular lattice of lone sprigs, each stamped with an identical dark oval; ovals 2.3-2.7x darker than the dirt between them on a ~30 px vertical period.",
+      "verdict": "ACTED — mechanism identified from source and confirmed against the frame; fix committed; post-fix numbers require the coordinator's verification capture.",
+
+      "mechanism": {
+        "conclusion": "The dark element IS the far-cover card. It is not a cast shadow, not a contact decal, and not a vertex-AO disc.",
+        "evidence": [
+          "castShadow is false for far-cover, ground-cards and grass LOD2 (Foliage.js _makeBatchMesh call sites; the LOD2 exclusion is deliberate and documented at _buildGrassBuckets). foliageShadows is false at MEDIUM anyway (Quality.js:36). So no foliage in this frame casts anything.",
+          "Shadow direction disproves it independently: sun dir [0.86,0.225,0.457] is azimuth 28 deg, the valley view axis is azimuth 40 deg, so a ground shadow at 13 deg elevation runs almost straight away from the camera and projects as a short smear along the screen-radial direction. The measured elements are long across the screen (35-60 px) and short vertically (8-14 px), i.e. the wrong axis for a shadow.",
+          "Alpha/mip arithmetic gives the right shape and size. feather({keepBottom:true, inner:0.52, power:1.1}) takes alpha to 0 below v = 0.20 and to 0.48 at v = 0.125; paintGrassClump's 26 blades overlap most densely just above that; the thin tips average below alphaTest 0.34 under minification. The surviving band is therefore v = 0.20-0.40, about 0.19 m of a 0.925 m mean card.",
+          "Projected size matches the pixels. From SHOTS.valley (eye 34.4,2.3,30.6 -> target 186.47,-22.07,158.2, fov 44) the focal length is f = (1170/2)/tan(22 deg) = 1448 px, and the review's own box at y-frac 0.55 is 59-68 m out. There, the old mean card width 1.70 m subtends 39 px and the 0.19 m surviving band subtends 4-5 px. Measured at 5x on the r16 frame: elements 35-60 px long, 8-14 px tall. Same object.",
+          "Hue kills the 'different material' reading and is consistent with 'same material, less light + darker albedo band': classifying the darkest 15% against the brightest 15% inside (152,644 253x105) gives dark [63.26,42.53,31.16] G/R 0.672 and bright [163.87,111.27,66.76] G/R 0.679 — the same hue family to within 1%."
+        ],
+        "whyItIsDark": "Two multiplications on the same texels. (1) paintGrassClump's root gradient stop was the literal rgba(30,44,24,1) — sRGB luma 39.6, linear luminance 0.023, the darkest albedo in the basin. (2) FRAGMENT_TINT multiplies by mix(1 - uBaseAO, 1 + uTipGlow, vKagT), which at far-cover's uBaseAO 0.36 and vKagT 0.25 is 0.775. The texture already carries a root shadow; the material paid for it a second time."
+      },
+
+      "criticHypotheses": [
+        {
+          "text": "(a) ground-cover density is low enough that the scatter's underlying grid is not hidden by overlap",
+          "status": "CONFIRMED, and quantified. 5,134 placed instances over a 150 m scatter disc = 0.073 per square metre, one tussock every 13.7 m^2. The critic called this the dominant read and it is."
+        },
+        {
+          "text": "(b) the dark oval is a per-instance ground-contact darkening (AO card, contact decal, or vertex-AO disc) applied at a fixed size regardless of instance size",
+          "status": "DISPROVED. There is no such element in this file. No foliage mesh casts at MEDIUM; ground-cards (the only ground-lying layer) has RANGE.groundCard = [0,26] m and cannot reach the 59-68 m the ovals are measured at; and the shadow axis is wrong (see evidence). The 'fixed size regardless of instance size' observation is real but its cause is that all instances were nearly the same size (width 1.05-2.35 m, i.e. 39 +/- 12 px), not that a fixed-size decal was stamped under them."
+        }
+      ],
+
+      "otherDisproofs": [
+        {
+          "claim": "feather()'s keepBottom preserves an opaque rooted skirt, as in the bamboo-impostor precedent this round's brief points at.",
+          "status": "FALSE for this file. ny runs -1 at the canvas top to +1 at the canvas bottom, and Math.max(ny,0) zeroes the vertical term over the canvas TOP half — so keepBottom leaves the TIP end uncut and keeps the fade at the base, the opposite of what its doc comment claimed for several rounds. Deliberately left as-is (inverting it would restore an opaque rooted band, which is exactly the failure mode being fixed); the comment is corrected instead.",
+          "value": "This is why the bamboo repack analogy does not transfer as-is: there is no preserved opaque skirt here. The dark band is painted, not preserved."
+        },
+        {
+          "claim": "A finer noise octave on the acceptance test will clump the population.",
+          "status": "DISPROVED in its obvious linear form, then fixed. Offline over 500,000 samples with the repo's own noise/makeRandom: multiplying the acceptance by (0.55 + 0.90*tuft) moved the coefficient of variation of local density from 0.443 to 0.450 at a 1.5 m bin and 0.373 to 0.377 at 2 m — i.e. nothing. The reason is measured: two octaves of fbm2 at frequency 0.26 are near-Gaussian with mean 0.500 and sd 0.164, so a linear remap never leaves the middle of its range. Pushing the same field through smoothstep(0.38, 0.62) moves CV 0.443 -> 0.603 at 1.5 m and 0.373 -> 0.496 at 2 m, with end-to-end acceptance 0.5349 -> 0.5400 so the population size is unchanged. Shipped in the shaped form."
+        },
+        {
+          "claim": "RANGE.farCover's 118 m far edge was bounding triangle cost.",
+          "status": "FALSE. _packOne culls at uFadeFar.y + PACK_MARGIN = 130 m from the camera, but the r16 audit reports foliage/far-cover instances 5,134 against 5,134 placed — nothing was culled in any review pose. The cost is the placed count. The 118 m edge only produced a visible density cliff partway across the basin, so it is now 145 m at zero triangle cost."
+        }
+      ],
+
+      "changes": [
+        "paintGrassClump root gradient stop rgba(30,44,24,1) -> 0.38 x the blade's own palette colour (new shadeHex helper).",
+        "far-cover uBaseAO 0.36 -> 0.18; grass-lod2 uBaseAO 0.38 -> 0.24 (LOD2 is the only other *mapped* grass LOD, so the same double-darkening applies; LOD0/LOD1 are unmapped and keep 0.38 because there uBaseAO IS the root shadow).",
+        "New paintTussockAtlas(cell): four archetype silhouettes packed 4x1. NOT 2x2 — every cell is ground-rooted, so a horizontal seam would bleed each lower cell's densest band through the upper cell's tips at every mip, which is the bamboo-impostor dark-skirt bug. Cell index rides in the integer part of aFoliageB.w via the existing KAG_ATLAS path: no new attribute, no new draw call, no new triangle.",
+        "far-cover map tex.clump -> tex.tussock, atlas [4,1].",
+        "Card size 0.55-1.30 x 1.05-2.35 m -> 0.42-0.98 x 0.62-1.42 m (mean width 1.70 -> 1.02 m).",
+        "New FAR_COVER_CAP = 13500, scaled by grassDensity/0.55 clamped [0.55, 1.8]; it is a hard ceiling on placed instances, so 4 x cap is an exact ceiling on the layer's submitted triangles whatever the site rules accept.",
+        "Attempt budget cap*7 (was target*5), sized from the measured 15.2% end-to-end acceptance so the cap binds rather than the loop bound.",
+        "RANGE.farCover [28,118] -> [28,145]."
+      ],
+
+      "predictions": [
+        {
+          "metric": "critic acceptance (1): max/min of luma p50 over 30x10 boxes at x=260, y=620..800 step 10, shots/phone-valley-r17.png",
+          "before": 2.68,
+          "target": "< 1.60",
+          "predicted": "1.45 - 1.80",
+          "basis": "Element width falls 39 px -> 23 px and the surviving band 4-5 px -> 3-4 px against a 30x10 px box, so no box can be wholly inside one element any more; the min is forced to a dirt/element mixture. Confidence on the direction is high; confidence on clearing 1.60 specifically is moderate and a shortfall here should be reported as a shortfall, not re-explained."
+        },
+        {
+          "metric": "critic acceptance (2a): detail at shots/phone-valley-r17.png 0.10,0.55,0.06,0.03",
+          "before": 11.14,
+          "target": ">= 16.0",
+          "predicted": ">= 15.0",
+          "basis": "2.63x instance count at 0.41x area each (net covered area 1.08x) with four silhouettes instead of one, all inside the 59-68 m band this box samples. detail is mean |Laplacian|, so it scales with edge count per pixel."
+        },
+        {
+          "metric": "critic acceptance (2b): detail at shots/phone-valley-r17.png 0.10,0.42,0.06,0.03",
+          "before": 5.19,
+          "target": ">= 9.0",
+          "predicted": "5.0 - 6.5 — PREDICTED SHORTFALL, stated in advance",
+          "basis": "That box is NOT in the far-cover band. Ray arithmetic on SHOTS.valley: box centre (329,508), f = 1448 px, camera basis from eye (34.4,814.3,30.6) to target (186.47,789.93,158.2), gives a depression of 2.7-3.9 deg across the box, i.e. 137-196 m of ground for a basin floor ~9 m below the eye. far-cover's scatter disc is 150 m and its fade now ends at 145 m. Populating 145-200 m at the new density would cost roughly pi*(200^2-145^2)*0.19 = 11,300 further instances = 45,200 triangles, more than this round's entire allocation, for a band that is 70-83% aerial perspective at fogDensity 0.0088. See budgetAsk."
+        },
+        {
+          "metric": "guard: meanRGB at 0.10,0.55,0.06,0.03 must stay within +/-8% per channel of [126.8,84.5,49.7]",
+          "predicted": "within +/-3%",
+          "basis": "The two effects nearly cancel by construction. Covered band area rises 1,617 -> 1,930 m^2 (+19%) while each element brightens about +17% (uBaseAO 0.36 -> 0.18 changes the vKagT=0.25 factor from 0.775 to 0.910). More coverage of a brighter-but-still-darker-than-dirt element is roughly value-neutral on the region mean. Note the paintGrassClump root-stop change is a small contributor at this distance, because the gradient already reaches full blade colour by 35% of blade length, i.e. below the surviving band for all but the tallest blades."
+        },
+        {
+          "metric": "guard: whole-frame luma p50 on valley within +/-6% of 83.0",
+          "predicted": "within +/-3%",
+          "basis": "The changed layer covers roughly a third of the frame and moves value by single digits within it."
+        }
+      ],
+
+      "budget": {
+        "drawCalls": {"before": 1, "after": 1, "delta": 0, "note": "one InstancedMesh, unchanged. Allocation was +6."},
+        "triangles": {
+          "before": 20536,
+          "afterCeiling": 54000,
+          "delta": "+33,464 max",
+          "allocation": "+40,000",
+          "note": "far-cover geometry is buildCrossCard(2) = 4 triangles and FAR_COVER_CAP bounds placed instances at 13,500 at MEDIUM. Worst pose `wide` 784,449 -> <= 817,913 of 900,000. Verify against the r17 audit's foliage/far-cover instances field: if it reports fewer than 13,500 the site rules bound it, which is a shortfall in density, not a budget saving to spend."
+        },
+        "textures": {"delta": "+1 (tussock strip, 1024x256 RGBA + mips ~1.33 MB at MEDIUM px=512)", "note": "against a 48 MB budget; textures count 102 -> 103."},
+        "boot": "The scatter step 'dressing the basin' does about 2.8x its previous work (94,500 attempts against 33,800, and 13,500 _plantY calls against 5,134). One boot step, once."
+      },
+
+      "contamination": "Three other owners are changing these frames — Lighting.js (wide plateau key), PostFX.js (god-ray spread, which round 15 established also drives the mid-field wash) and Sky.js. Whole-frame guards on valley are therefore NOT attributable to this owner. The two metrics that are: the max/min ratio over the vertical run at x=260, and detail at 0.10,0.55 — no other owner's change moves the size or count of the elements in that band, and a global tonal move cannot change a ratio of two p50s inside one small region without also breaking its own mean guard."
+    },
+
+    {
+      "id": "r16-major-hero-sakura",
+      "shot": "hero",
+      "problem": "The sakura canopy reads as large, flat-shaded, hard-alpha-cut cards with no petal-scale structure.",
+      "verdict": "ROUTED BACK — two of the three mechanisms are not in this file, and the third cannot be fixed from here without the other two. No edit made to Foliage.js for this finding. This is deliberate; acting unilaterally on the texture would regress the frame.",
+
+      "routing": {
+        "criticHypothesisConfirmed": "The critic's own note was right: the draw list entry `level/level:static:0,0:__blossom` (3 calls, 5454 triangles) is Props.js geometry merged by Level.js, not Foliage.js.",
+        "geometry": {
+          "owner": "src/world/Props.js",
+          "where": "PropFactory.sacredTree -> _blossomCluster -> PropFactory.add(b, mergeGeometries(leaves...), '__blossom'), merged into a static cell by src/world/Level.js",
+          "numbers": "Each clump is 3 quads with half-extent s = 1.00 + rnd()*0.68, so cards are 2.00-3.36 m across. The tree is LAYOUT.sacredTree.height = 11.0 m with crown radius height*0.42 = 4.62 m, so ONE CARD IS 22-36% OF THE CROWN DIAMETER. 5,454 audited triangles over 3 passes = 1,818 in the colour pass = 909 quads = 303 clumps."
+        },
+        "material": {
+          "owner": "src/world/Props.js",
+          "where": "get blossomMaterial()",
+          "numbers": "alphaTest 0.36, transparent: false, DoubleSide, no alphaToCoverage and no dither. The critic's hypothesis (b) — 'binary at every scale' — is CONFIRMED at source. It cannot be fixed from a texture: a wider alpha ramp under a hard alphaTest only moves where the cut lands, it never produces partial coverage."
+        },
+        "texture": {
+          "owner": "src/render/Foliage.js (this file)",
+          "where": "tex.blossom = dilateAlpha(softenAlpha(lobeMask(paintBlossom(px)), 1)), published as this.blossomTexture and adopted by Props.bindFoliageTextures()",
+          "verdict": "Already carries 72 florets on three sub-clump centres with a 3.4:1 radius spread. It is not the limit."
+        }
+      },
+
+      "disproof": {
+        "claim": "Painting finer, petal-scale detail into paintBlossom would give the canopy petal-scale structure.",
+        "status": "DISPROVED by scale arithmetic, and would make the frame worse.",
+        "numbers": "paintBlossom's content occupies a radius of about 0.375 of the canvas, so on a 2.68 m mean card it spans about 2.0 m of world. Mean floret radius is size*0.045, i.e. 0.24 m across in world — already about 7x a real sakura floret at 0.03-0.04 m. The critic measures single facets at 45-75 px, so the card renders at roughly 60 px against a 512-texel texture: it is MINIFIED about 8x, not magnified. Painting florets 7x smaller would put them at 0.4-1.2 px on screen, where the mip chain averages them into a uniform pink wash — i.e. MORE flat-shaded, not less. Petal-scale structure at native resolution is only reachable by making the card smaller, which is Props.js's `s`."
+      },
+
+      "handbackToWorld": {
+        "ask": "Reduce _blossomCluster's card size and raise the clump count to hold crown coverage.",
+        "sizing": "The critic's own acceptance is 'the largest single flat-shaded facet in crop 0.16,0.06,0.10,0.14 must be under 25 px across at native'. Facets are currently 45-75 px at s = 1.00-1.68, so s must fall by at least 3x — cards of roughly 0.67-1.12 m, i.e. s = 0.33-0.56.",
+        "cost": "Crown coverage scales with card area, so holding it needs about 9x the clumps: 303 -> ~2,730, and the audited triangle count 5,454 -> ~49,100 (+43,600 over three passes; +14,500 in the colour pass alone). That is a real budget item and it is world's to request, not this owner's to spend.",
+        "coordinatedTextureChange": "If and when card size drops ~3x, tex.blossom should be re-authored at the same time: a 0.9 m card wants a handful of large florets (a card that IS two or three flowers), not 72 small ones, or the mip chain will hand back the same flat wash at the new size. That change is this file's and I will make it in the round world lands the size change. Making it NOW, against 2.7 m cards, would flatten the current canopy. Do not split these two.",
+        "alphaEdge": "The binary silhouette needs alphaToCoverage on Props' blossomMaterial with MSAA on the forward target, or an ordered-dither discard in its onBeforeCompile. Neither is reachable from Foliage.js."
+      },
+
+      "notRelated": "This file's own 48 scattered sakura (_scatterTrees, RANGE.treeMesh/treeCard, 14-130 m along the approach) are a separate population and are not what the critic's crop or its two probe boxes at 0.112,0.230 and 0.150,0.280 land on — those sit on the single 11 m sacred tree in the hero frame's left third."
+    }
+  ],
+
+  "openItems": [
+    {
+      "item": "HANDOFF open item 1 — 'there is no instanced ground cover in the basin at all'",
+      "status": "PARTIALLY CLOSED, and the text is now stale. There IS instanced cover: _buildFarCover has existed since round 9 and placed 5,134 instances at MEDIUM in r16. The live defect was never absence, it was density (0.073 per m^2) and element size. Density is now capped at 13,500 (0.191 per m^2) and the element is 40% narrower. Re-word the item rather than re-opening it as 'none'.",
+      "remaining": "The band beyond 145 m — which is where the review's second acceptance box actually is — still has no instanced cover. See budgetAsk."
+    }
+  ],
+
+  "budgetAsk": {
+    "what": "About +45,000 triangles beyond this round's +40,000 allocation, in a later round, to extend far cover from 145 m to ~200 m.",
+    "why": "The critic's `valley` acceptance box 0.10,0.42,0.06,0.03 measures ground at 137-196 m (ray arithmetic above). Its detail >= 9.0 target is not reachable from any instanced layer that stops at 145 m. I did not take the budget; I am reporting the shortfall instead.",
+    "caveat": "Worth checking first whether it is worth spending. That band is 70-83% aerial perspective at fogDensity 0.0088, so `detail` there may be capped by the atmosphere rather than by geometry — an owner with a capture should measure the fogged contrast ceiling before anyone funds 45,000 triangles into it."
+  },
+
+  "forTheVerificationPass": [
+    "node tools/probe.mjs stats shots/phone-valley-r17.png 0.10,0.55,0.06,0.03  — expect detail >= 15.0 (was 11.14), meanRGB within +/-3% of [126.8,84.5,49.7].",
+    "node tools/probe.mjs stats shots/phone-valley-r17.png 0.10,0.42,0.06,0.03  — expect ~unchanged at 5.19; a shortfall, predicted in advance, with the reason above.",
+    "The 30x10 vertical run at x=260, y=620..800 step 10 — expect max/min of p50 to fall from 2.68 to 1.45-1.80.",
+    "The r17 audit's foliage/far-cover entry — expect calls 1 (unchanged) and instances <= 13,500 with triangles <= 54,000. If instances comes back well below 13,500 the site rules bound the scatter and the density fix is only partial.",
+    "foliage.getStats().floating must still read 0 — 13,500 new _plantY calls go through the same audit."
+  ]
+}

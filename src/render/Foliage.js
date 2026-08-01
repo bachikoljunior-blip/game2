@@ -1197,9 +1197,14 @@ function speckle(c2d, w, h, amount, seed) {
  * in a crown read as hard-edged rectangular slabs, because the rectangle IS the silhouette.
  * Feathering the alpha guarantees the card dissolves before it reaches the geometry.
  *
- * `keepBottom` is for ground-rooted cards (grass clumps, ferns): with flipY the canvas's
- * bottom row is v=0, which is where the plant meets the soil, and fading that would leave
- * the clump hovering.
+ * `keepBottom` is for ground-rooted cards (grass clumps, ferns, tussock). Read the code
+ * before relying on the name: `ny` runs -1 at the canvas top to +1 at the canvas bottom,
+ * and `Math.max(ny, 0)` zeroes the vertical term over the canvas's TOP half. So what
+ * `keepBottom` actually does is leave the **tip** end uncut and keep the fade at the base
+ * — the opposite of what this comment claimed for several rounds. It is left as-is
+ * deliberately: the base is buried by PLANT_BURY anyway, and round 16 measured that an
+ * opaque rooted band is exactly what mips into an identical dark stamp under every
+ * distant instance (see paintGrassClump's root stop). Inverting it would make that worse.
  */
 function feather(canvas, { inner = 0.46, power = 1.35, keepBottom = false } = {}) {
   const g = canvas.getContext('2d');
@@ -1505,6 +1510,16 @@ function drawLeafShape(g, len, wid, colA, colB, veins) {
   }
 }
 
+/**
+ * `#rrggbb` scaled toward black. Used for the root end of a blade gradient, where the
+ * literal near-black it used to carry is the defect measured in round 16 — see
+ * paintGrassClump.
+ */
+function shadeHex(hex, k) {
+  const v = parseInt(hex.slice(1), 16);
+  return `rgb(${(((v >> 16) & 255) * k) | 0},${(((v >> 8) & 255) * k) | 0},${((v & 255) * k) | 0})`;
+}
+
 /** Grass clump silhouette for the far LOD card. */
 function paintGrassClump(size, palette) {
   const c = newCanvas(size, size);
@@ -1519,7 +1534,19 @@ function paintGrassClump(size, palette) {
     const lean = (rnd() - 0.5) * size * 0.30;
     const col = palette[(rnd() * palette.length) | 0];
     const grad = g.createLinearGradient(x, size, x + lean, size - h);
-    grad.addColorStop(0, 'rgba(30,44,24,1)');
+    // The root stop used to be a literal `rgba(30,44,24,1)` — sRGB luma 39.6, linear
+    // luminance 0.023, the darkest albedo anywhere in the basin. That matters far more
+    // than it looks, because of which band of this card survives minification: `feather`
+    // takes alpha to zero below v = 0.20, blade coverage peaks just above that, and the
+    // thin tips average below `alphaTest` by 30 m. So the ONLY part of a distant clump
+    // card that rasterises at all is v = 0.20-0.40 — precisely the near-black end of this
+    // gradient — and the fragment stage then multiplies it again by (1 - uBaseAO). Round
+    // 16 photographed the result as "an identical dark oval under every sprig", tiling
+    // the valley floor at 2.68x darker than the dirt between them. A root shadow is real;
+    // 0.023 linear is not a root shadow, it is a hole. 0.38 of the blade's own colour
+    // keeps the base-to-tip value break and puts the band back in the reflectance range
+    // the surrounding dirt occupies.
+    grad.addColorStop(0, shadeHex(col, 0.38));
     grad.addColorStop(0.35, col);
     grad.addColorStop(1, col);
     g.fillStyle = grad;
@@ -1531,6 +1558,81 @@ function paintGrassClump(size, palette) {
     g.fill();
   }
   speckle(g, size, size, 0.30, 4411);
+  return c;
+}
+
+/** Archetypes for the basin tussock atlas. Four silhouettes, deliberately unlike. */
+const TUSSOCK_ARCHETYPES = [
+  // blades, height band, base half-width, lean, splay, palette bias (0 green .. 1 rust)
+  { blades: 22, hMin: 0.34, hMax: 0.62, w: 0.011, lean: 0.16, splay: 0.86, dry: 0.20, seed: 0x7A55 },
+  { blades: 14, hMin: 0.55, hMax: 0.94, w: 0.013, lean: 0.34, splay: 0.62, dry: 0.62, seed: 0x11C3 },
+  { blades: 31, hMin: 0.22, hMax: 0.44, w: 0.009, lean: 0.10, splay: 0.98, dry: 0.42, seed: 0x9E07 },
+  { blades: 18, hMin: 0.46, hMax: 0.80, w: 0.016, lean: 0.52, splay: 0.74, dry: 0.85, seed: 0x3B21 },
+];
+
+/**
+ * Basin tussock: four silhouettes, packed **4x1**.
+ *
+ * The pack layout is the load-bearing part and it is not a style choice. Every cell here
+ * is ground-rooted, so every cell carries its densest, darkest texels in the same band —
+ * just above the base. Packed 2x2, bilinear sampling across the horizontal seam pulls
+ * that band of the lower row straight through the thin tips of the upper row, at every
+ * mip level; that is the mechanism that put a dark skirt on the bamboo impostors for
+ * three rounds and was fixed by repacking them 4x1 at zero triangle, draw-call or texture
+ * cost. A 4x1 strip has no horizontal seam to bleed across at all, and `feather` takes
+ * each cell's left and right edges to zero alpha, so the vertical seams are transparent
+ * on both sides.
+ *
+ * Why four cells and not one: at 0.073 instances/m^2 the round-16 review read the basin
+ * as "a near-regular lattice of lone sprigs each stamped with an identical dark oval".
+ * One texture on every instance is half of what makes a scatter read as a stamp — the
+ * other half is spacing, which `_buildFarCover` handles. The cell index rides in the
+ * integer part of the instance phase (see KAG_ATLAS in vertexPars), so this costs no
+ * extra attribute, no extra draw call and no extra triangle.
+ */
+function paintTussockAtlas(cell) {
+  const c = newCanvas(cell * 4, cell);
+  const g = c.getContext('2d');
+  g.clearRect(0, 0, cell * 4, cell);
+
+  for (let i = 0; i < 4; i++) {
+    const spec = TUSSOCK_ARCHETYPES[i];
+    const sub = newCanvas(cell, cell);
+    const sg = sub.getContext('2d');
+    sg.clearRect(0, 0, cell, cell);
+    const rnd = makeRandom(spec.seed);
+
+    for (let b = 0; b < spec.blades; b++) {
+      const x = cell * (0.5 + (rnd() - 0.5) * spec.splay);
+      const h = cell * (spec.hMin + rnd() * (spec.hMax - spec.hMin));
+      const w = cell * spec.w * (0.7 + rnd() * 0.8);
+      const lean = (rnd() - 0.5) * cell * spec.lean * 2;
+      // Dry basin palette: AUTUMN_A/B/C by hand, biased per archetype, so the four cells
+      // are different colours as well as different shapes. Kept as literals rather than
+      // read from the Color instances because this runs on a 2D canvas in sRGB bytes.
+      const dry = clamp(spec.dry * (0.55 + rnd() * 0.9), 0, 1);
+      const r = (78 + dry * 114) | 0, gg = (107 + dry * 26) | 0, bb = (60 + dry * 2) | 0;
+      const col = `rgb(${r},${gg},${bb})`;
+      const grad = sg.createLinearGradient(x, cell, x + lean, cell - h);
+      // Same reasoning as paintGrassClump: the root end is the band that survives
+      // minification, so it may be shaded but must not be a hole.
+      grad.addColorStop(0, `rgb(${(r * 0.40) | 0},${(gg * 0.40) | 0},${(bb * 0.40) | 0})`);
+      grad.addColorStop(0.32, col);
+      grad.addColorStop(1, `rgb(${Math.min(255, (r * 1.18) | 0)},${Math.min(255, (gg * 1.12) | 0)},${bb})`);
+      sg.fillStyle = grad;
+      sg.beginPath();
+      sg.moveTo(x - w, cell);
+      sg.quadraticCurveTo(x + lean * 0.4 - w * 0.5, cell - h * 0.55, x + lean, cell - h);
+      sg.quadraticCurveTo(x + lean * 0.4 + w * 0.5, cell - h * 0.55, x + w, cell);
+      sg.closePath();
+      sg.fill();
+    }
+    speckle(sg, cell, cell, 0.30, spec.seed ^ 0x5151);
+    // Sides and the base ramp; `keepBottom` leaves the tip end uncut, which is what the
+    // code actually does (see feather).
+    feather(sub, { inner: 0.50, power: 1.15, keepBottom: true });
+    g.drawImage(sub, i * cell, 0);
+  }
   return c;
 }
 
@@ -2689,8 +2791,22 @@ const RANGE = {
   // Round 8 raised the ground *shading* past target in both (valley detail 7.57 -> 10.3,
   // wide mid-ground 4.78 -> 6.12) and the frames were still called a uniform plane, which
   // is the expected outcome: shading cannot put a plant where none is instanced.
-  farCover: [28, 118],
+  // Far edge 118 -> 145. This is free: the scatter disc is already 150 m and `_packOne`
+  // culls at uFadeFar.y + PACK_MARGIN, but round 15's audit submitted 5,134 of 5,134
+  // placed instances, i.e. nothing was being culled by that cut in any review pose — the
+  // triangle cost is the placed count, which `FAR_COVER_CAP` bounds. What the old 118
+  // bought instead was a visible density cliff partway across the basin floor.
+  farCover: [28, 145],
 };
+
+/**
+ * Hard ceiling on placed far-cover instances at MEDIUM (`grassDensity` 0.55), scaled off
+ * that density for the other tiers. `buildCrossCard(2)` is 4 triangles, so this number
+ * times four is the layer's absolute submitted-triangle cost and it cannot be exceeded by
+ * a site rule accepting more than expected. 13,500 x 4 = 54,000 against round 15's
+ * 5,134 x 4 = 20,536 and a round-16 allocation of +40,000 for this owner.
+ */
+const FAR_COVER_CAP = 13500;
 
 const AUTUMN_A = new Color(0x4e6b3c);
 const AUTUMN_B = new Color(0x9c8548);
@@ -2996,6 +3112,11 @@ export class FoliageSystem {
     const D = (canvas) => dilateAlpha(canvas);
     this.tex = {
       clump: T(D(feather(paintGrassClump(px, palette), rooted))),
+      // Basin tussock, four silhouettes in 4x1. Not 2x2 — see paintTussockAtlas for the
+      // seam measurement that layout exists to avoid. Cells are px/2 square, so the strip
+      // is 2*px x px/2 (1024x256 at MEDIUM) against a card that rasterises 25-50 px wide
+      // at its own 28-118 m range; the extra rows would only cost memory.
+      tussock: T(D(paintTussockAtlas(px >> 1))),
       // Culm bark and leaf spray on ONE sheet, because the near plant is one mesh — see
       // buildBambooPlantGeometry for why that is not negotiable.
       // `closeAlpha` before `dilateAlpha`, on both bamboo sheets and on nothing else:
@@ -3242,8 +3363,13 @@ export class FoliageSystem {
       mk('grass-lod1', 1, null, { bendGain: 0.92 }),
       // LOD2 is a 24 m-wide clump card seen from 20-60 m: the fine grain is sub-pixel out
       // there, so it leans on the broad octave to keep any value inside the silhouette.
+      // baseAO 0.38 -> 0.24: LOD2 is the only *mapped* grass LOD, so unlike LOD0/LOD1 —
+      // where the instance tint IS the albedo and uBaseAO is the whole root shadow — here
+      // it lands on top of a texture that already carries one. Same double-darkening the
+      // far cover was measured with in round 16, one band closer to the camera.
       mk('grass-lod2', 2, this.tex.clump, {
         bendGain: 0.55, flutter: 0.5, alphaTest: 0.34, sss: 1.0, sssFloor: 0.50, broad: 0.22,
+        baseAO: 0.24,
       }),
     ];
     this._grassBase = [bladeHi, bladeLo, clump];
@@ -4687,7 +4813,7 @@ diffuseColor.rgb *= vKagTint * mix( vec3( 1.0 ), uSunColor, 0.55 );
   }
 
   /**
-   * Dry basin cover, 28-118 m. One draw call, one static scatter, no tiles.
+   * Dry basin cover, 28-145 m. One draw call, one static scatter, no tiles.
    *
    * This is the part of the bare-ground blocker the grass ring structurally cannot reach.
    * The ring is camera-centred and 34 m across at MEDIUM, and widening it is not affordable:
@@ -4696,11 +4822,22 @@ diffuseColor.rgb *= vKagTint * mix( vec3( 1.0 ), uSunColor, 0.55 );
    * A world-anchored batch costs one draw call and a triangle count fixed at build time,
    * because the mesh capacity is the number of instances the scatter actually placed.
    *
-   * Budget, at MEDIUM: `target` is 6,760, geometry is `buildCrossCard(2)` = 4 triangles,
-   * so the hard ceiling is 27,040 submitted triangles — 3.0% of the 900 k contract and 18%
-   * of the 153 k `wide` had spare — plus one draw call against a 118/140 worst pose.
+   * Budget, at MEDIUM: geometry is `buildCrossCard(2)` = 4 triangles and `FAR_COVER_CAP`
+   * is a hard ceiling on placed instances, so the layer cannot exceed 4 x cap submitted
+   * triangles whatever the site rules accept. Round 15 measured 5,134 placed = 20,536
+   * triangles; the round-16 cap of 13,500 = 54,000, i.e. +33,464 against an allocation of
+   * +40,000 on a worst pose (`wide`) measuring 784,449 of 900,000. Still one draw call.
    * `_packOne` culls to the fade window, so the frame cost is below that ceiling, never
    * above it.
+   *
+   * Why the count went up 2.6x. Round 16 called this "a scatter test, not a field ...
+   * isolated single grass sprigs of two or three blades each, spaced roughly 40-60 px
+   * apart in a near-regular lattice". The number behind that is 5,134 instances over a
+   * 150 m scatter disc = **0.073 per square metre**, one tussock every 13.7 m^2. No amount
+   * of shading fixes a spacing that wide: the eye reads the near-constant gap as a grid.
+   * The instances are also 45% smaller than they were, so total covered area is roughly
+   * held (0.41 area each x 2.63 count = 1.08) while the *element* size drops below the
+   * 30x10 px box the review probes with — which is what collapses its max/min ratio.
    *
    * Its site rule is `_siteWeight`'s, relaxed by `1 - plateauMask` and only there. Inside
    * the shrine grounds gravel and stone stay a hard zero, which is what keeps the courtyard
@@ -4721,7 +4858,9 @@ diffuseColor.rgb *= vKagTint * mix( vec3( 1.0 ), uSunColor, 0.55 );
     this._geometries.push(geo);
 
     const opts = {
-      name: 'far-cover', mode: 0, map: this.tex.clump, color: 0xffffff,
+      name: 'far-cover', mode: 0, map: this.tex.tussock, color: 0xffffff,
+      // Four silhouettes in 4x1; the cell index rides in the integer part of aFoliageB.w.
+      atlas: [4, 1],
       // Read at 30-120 m, which is beyond where any per-blade detail survives minification;
       // `broad` is what keeps value inside the silhouette once the fine grain has mipped
       // away, exactly as on grass LOD2, whose alphaTest this shares for the same reason.
@@ -4729,14 +4868,23 @@ diffuseColor.rgb *= vKagTint * mix( vec3( 1.0 ), uSunColor, 0.55 );
       fadeNear: [near, near * 1.30], fadeFar: [far * 0.86, far],
       size: [1, 1], sink: true,
       sss: 1.0, sssColor: 0xc2d884, sssFloor: 0.50,
-      tipGlow: 0.18, baseAO: 0.36, grain: 0.16, broad: 0.22,
+      // baseAO 0.36 -> 0.18. This is a *second* darkening of the same texels: the only
+      // band of a mapped clump card that survives minification is v = 0.20-0.40 (feather
+      // cuts below it, the tips average under alphaTest above it), and the fragment stage
+      // multiplies exactly that band by mix(1 - uBaseAO, 1 + uTipGlow, vKagT) ~ 0.64 at
+      // vKagT = 0.25. The texture already carries a root shadow; paying for it twice is
+      // half of why the review measured these as 2.68x darker than the dirt around them.
+      tipGlow: 0.18, baseAO: 0.18, grain: 0.16, broad: 0.22,
     };
     const mat = this._makeMaterial(opts);
 
-    const target = Math.round(6500 * clamp(0.6 + density * 0.8, 0.6, 1.5));
-    const a = new Float32Array(target * 4);
-    const b = new Float32Array(target * 4);
-    const c = new Float32Array(target * 4);
+    // Hard ceiling on placed instances, from the triangle allocation above — the site rules
+    // may accept fewer, never more. Scaled off MEDIUM's own density so the desktop tiers
+    // still gain from their budget without this number meaning two different things.
+    const cap = Math.round(FAR_COVER_CAP * clamp(density / 0.55, 0.55, 1.8));
+    const a = new Float32Array(cap * 4);
+    const b = new Float32Array(cap * 4);
+    const c = new Float32Array(cap * 4);
     const rnd = makeRandom(0xC0FFEE);
     const col = _colScratch;
     let n = 0;
@@ -4745,7 +4893,11 @@ diffuseColor.rgb *= vKagTint * mix( vec3( 1.0 ), uSunColor, 0.55 );
     // origin from 46.7 m out, so the far end of its own measurement box lands at 133 m of
     // world radius. The fade window, which is camera-relative, is what bounds the cost.
     const scatterR = 150;
-    for (let i = 0; i < target * 5 && n < target; i++) {
+    // Attempts, not instances. Round 15 placed 5,134 from 33,800 attempts — 15.2% end to
+    // end, of which the noise gate passes ~52% and the site rules ~29% of those. Reaching
+    // `cap` therefore needs about 6.6 attempts per placement; 7 leaves the cap binding
+    // rather than the loop bound, which is what makes the triangle ceiling exact.
+    for (let i = 0; i < cap * 7 && n < cap; i++) {
       // Uniform over the disc, so density per square metre is flat rather than piling the
       // whole population against the centre where the grass ring already sits.
       const ang = rnd() * Math.PI * 2;
@@ -4754,8 +4906,26 @@ diffuseColor.rgb *= vKagTint * mix( vec3( 1.0 ), uSunColor, 0.55 );
 
       // Cheapest rejections first — a noise lookup before any terrain query, which is the
       // same ordering _generateGrassTile uses.
+      //
+      // Two octaves, not one. The 23 m clump field alone gives a smooth density ramp, and
+      // a smooth ramp sampled sparsely is what reads as a lattice: with nothing varying at
+      // tussock scale, every accepted instance sits at about the mean spacing of its
+      // neighbourhood. The 3.8 m octave below is what puts real holes between real tufts.
       const clump = clamp(noise.fbm2(x * 0.043 + 12.7, z * 0.043 - 5.1, 3) * 0.5 + 0.5, 0, 1);
-      if (rnd() > 0.20 + Math.pow(clump, 1.5) * 0.92) continue;
+      // The shaping on `tuft` is not decoration and the first attempt at it was measured
+      // to do nothing. A plain linear factor (0.55 + 0.90*tuft) moved the coefficient of
+      // variation of local density over 500 k offline samples by +1.6% at a 1.5 m bin and
+      // +1.3% at 2 m — indistinguishable. The reason is the field's own distribution: two
+      // octaves of fbm are near-Gaussian with sd 0.164 about a mean of 0.500, so a linear
+      // remap barely leaves the middle of its range. Pushing it through a smoothstep over
+      // 0.38-0.62 — i.e. two thirds of an sd either side of the mean — turns the same
+      // field into something that is mostly near 0.12 or near 2.27, and that does move it:
+      // CV at a 1.5 m bin 0.443 -> 0.603 (+36%), at 2 m 0.373 -> 0.496 (+33%), with end to
+      // end acceptance 0.5349 -> 0.5400 so the population size is unchanged and the count
+      // rise below stays attributable to `cap` alone.
+      const tuft = clamp(noise.fbm2(x * 0.26 - 3.3, z * 0.26 + 8.8, 2) * 0.5 + 0.5, 0, 1);
+      const ts = clamp((tuft - 0.38) / 0.24, 0, 1);
+      if (rnd() > (0.20 + Math.pow(clump, 1.5) * 0.92) * (0.12 + 2.15 * ts * ts * (3 - 2 * ts))) continue;
       if (this._slopeAt(x, z) > 0.62) continue;
 
       const h0 = this._heightAt(x, z);
@@ -4789,10 +4959,27 @@ diffuseColor.rgb *= vKagTint * mix( vec3( 1.0 ), uSunColor, 0.55 );
       a[o] = x; a[o + 1] = y; a[o + 2] = z; a[o + 3] = rnd() * Math.PI * 2;
       // Tussock scale: tall enough to break the ground plane at a 6-10 degree grazing
       // angle, short enough that it never silhouettes against the far ridge.
-      b[o] = 0.55 + rnd() * 0.75;                       // height, metres
-      b[o + 1] = 1.05 + rnd() * 1.30;                   // width, metres
+      //
+      // Down from 0.55-1.30 x 1.05-2.35 m. Ray arithmetic on the `valley` pose (eye
+      // 34.4, 814.3, 30.6; f = 1448 px at fov 44 on a 1170-tall frame) puts the review's
+      // own probe box at 59-68 m, where the old mean width of 1.70 m subtends 39 px and
+      // the band of the card that survives alphaTest — v = 0.20-0.40, so about 0.19 m —
+      // subtends 4 px. Measured on the r16 frame at 5x, the dark elements are 35-60 px
+      // long and 8-14 px tall, which is that card. A single element WIDER than the 30x10
+      // px box the review probes with is what a 2.68x max/min ratio over a vertical run
+      // actually measures: not contrast in the field, but elements larger than the
+      // sampling window. At 0.62-1.42 m the same element is 14-33 px and no box can land
+      // wholly inside one.
+      b[o] = 0.42 + rnd() * 0.56;                       // height, metres
+      b[o + 1] = 0.62 + rnd() * 0.80;                   // width, metres
       b[o + 2] = 0.55 + rnd() * 0.45;                   // limp, like grass
-      b[o + 3] = rnd();
+      // Integer part = atlas cell (0-3), fraction = the LOD-dissolve/wind phase. The cell
+      // comes from a site hash rather than the acceptance stream so it cannot correlate
+      // with the clump rolls above. `| 0` on a non-finite operand yields 0 rather than
+      // propagating a NaN into an attribute (§5b), and the `& 3` bounds it whatever the
+      // noise returns, so no value here can index outside the strip.
+      const cellIx = (((noise.noise2(x * 3.11, z * 3.11) * 0.5 + 0.5) * 4) | 0) & 3;
+      b[o + 3] = cellIx + rnd() * 0.999;
       c[o] = col.r * shade; c[o + 1] = col.g * shade; c[o + 2] = col.b * shade;
       c[o + 3] = _plant.sag;
       n++;
