@@ -37,8 +37,9 @@ objective:
     - Symptom and mechanism stay separate; disprove a hypothesis before acting on it.
   acceptance_evidence:
     round_16: "shots/review-r16.json (opening FAIL 61), shots/review-r16-final.json (closing FAIL 54), AI_DEVELOPMENT/EVIDENCE/r16-verification.md"
-    round_17: "shots/review-r17.json (opening, carried + 2 re-routes); closing verdict pending"
-    rounds_18_20: not_started
+    round_17: "shots/review-r17.json (opening), shots/review-r17-final.json (closing FAIL 56/100, 4 blockers). Crush regression closed; valley re-pose verified at 319.4 m drop; three blockers carried."
+    round_18: "shots/review-r18.json (opening, carried + 2 evidence-backed re-routes to foliage); in progress"
+    rounds_19_20: not_started
 
 execution:
   selected_rigor: STANDARD
@@ -46,7 +47,7 @@ execution:
     STANDARD for ordinary round work. STRICT applies to any merge to main, Pages
     publication, or protected-branch operation, which additionally triggers F5 before and
     F6 after.
-  active_work: "Round 17 closing pass"
+  active_work: "Round 18 dispatch"
   last_verified_checkpoint:
     commit: 29cbe9c
     branch: claude/1-round-execution-kgtb9r
@@ -78,12 +79,14 @@ execution:
     - "Round 17 closing critic verdict not yet returned at the time of this migration."
     - "Whether the god-ray shafts read as light is unresolved; the round-17 owner reported them NOT closed."
   exact_next_action: >
-    Receive the round-17 closing critic verdict (shots/review-r17-final.json), close round 17
-    into HANDOFF.md / README.md / this file, then run rounds 18, 19 and 20 to the same
-    protocol. Round 18's highest-value inputs are already known: the plaza patch is routed to
-    foliage/ground-cards with world's five eliminations recorded; sky holds a granted, scoped
-    cascade exemption for normalBias/texel-density only; and sky's correction that the
-    26.7-code span target IS reachable means round 18 must not spend itself raising the key.
+    Round 18 owners are dispatched: foliage (5 findings, 2 blockers - it now owns both the
+    black plaza voids and the valley wall after evidence-backed re-routes), postfx (shafts),
+    sky (wide plateau key/shadow, with the scoped normalBias exemption), world (sky lattice,
+    dressing). Do NOT re-route the valley finding back to core or world: the pose and terrain
+    are proven correct and foliage pre-registered the near-plant occlusion with a one-line
+    lever, sample(76,126) -> sample(120,126). After owners land, rebuild, run the r18v1
+    verification capture, check drawsByOwner for a vanished owner, then close and run rounds
+    19 and 20.
 
 floor:
   last_check: "2026-08-01, migration run"

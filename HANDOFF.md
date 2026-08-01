@@ -22,6 +22,46 @@ art-direction state record; project-wide session, plan and criterion pointers li
   cross-session authorization is active to push verified checkpoints, integrate them into
   `main`, and publish GitHub Pages without asking again. Paid, destructive, credential, and
   account actions remain outside that authorization.
+- **Round 17 is COMPLETE.** Same branch. Opening verdict was round 16's closing critique
+  carried forward (tree unchanged) with two coordinator re-routes; closing verdict **FAIL
+  56/100**, 4 blockers / 3 majors / 2 minors, from 54 with 4 blockers. Owner commits:
+  `c0aec9a` core, `ca917bd` postfx, `0f5dc48`+`bb6308b` foliage, `6271c91` world, `266e87e`
+  sky, `e230a05` coordinator gate-flip. Verification set `r17v2`.
+  - **Closed: the crushed shadow floor.** postfx reversed its own round-16 regression —
+    `sun` below-code-8 **12.47% → 1.68%**, `valley` 14.17% → 3.99%, the eaten near upright
+    back to p50 **3.9 → 20.3** / detail 2.53 → 8.66. `hero`/`wide`/`torii` byte-identical, so
+    the plaza patch is not being masked by it. Nothing from round 16 was reverted; it is a
+    flare-gated toe, not a lift (a lift compresses under the knee and would fail the black gate).
+  - **The `valley` re-pose worked and the remaining wall is foliage, predicted in advance.**
+    core moved the eye r 46.04 → 112.00 m; visible drop **0.1 m → 319.4 m**, lowest visible
+    ground 812.0 → 498.6 m ASL, 18.7% of frame now beyond 150 m — at **43 draw calls /
+    286,798 triangles**, far under its own declared bound, because the new frustum is a
+    proved strict subset of the old one. The closing critic nonetheless still sees no drop.
+    **`foliage` predicted this exact outcome before the frame existed**: the new eye stands
+    *inside* the near-plant annulus r∈[76,126] where `plateauMask` reaches 0, and that
+    material has no `fadeNear` — 2.1 culms within 5 m, 8.6 within 10 m. Recorded lever:
+    `sample(76,126)` → `sample(120,126)`. **Do not re-litigate the pose or the terrain.**
+  - **The occluder is a 0.2–0.4 m floor bulge at r = 95–115, not `PLATEAU_RADIUS`.** Visible
+    drop is 0.2 m at r=78, 0.5 m at r=95, **310.0 m at r=100** — a five-metre-wide transition.
+  - **Backlit bamboo: the leaf tint was applied twice**, in `trans` via `uSSSSat` and again in
+    `through` via `uSSSFloor`, so transmitted light was the leaf colour **squared** — red
+    0.0497² = 0.00247 against green 0.4508² = 0.2032, **82:1** before albedo. Red was
+    annihilated by construction, so no value of `uSSSStrength` (the critic's own suggested
+    ablation) could ever have found it. Both critic hypotheses were disproved first.
+  - **sky exonerated the suspect it was given and found its own regression instead.** The
+    round-16 rim cut is innocent (it moved the lit plateau illuminant R/B 1.1577 → 1.1749,
+    *warmer*, and 30× too small). The real path: `fogParams.topColor` is sampled from the
+    **graded** dome, so round 16's `SKY_CHROMA` moved it R/B 0.6122 → 0.3771 (−38%) and
+    `nearAir` handed 100% of that colour to every ground ray below f = 0.10. Model-free
+    confirmation: eight ground-only boxes, 23.4–52.4 m, slope **−2.944 code per 1% fog,
+    r = −0.92, n = 8**.
+  - **Round 16's "structure target is unreachable" was WRONG and is retired.** It used a 0.42
+    log-log display slope; through three's actual ACES + sRGB the span is **26.7 codes**,
+    above the criterion's 25. **Round 18 must not spend itself raising the key light.**
+  - **Granted, scoped exemption:** sky may touch cascade `normalBias` / texel density only.
+    Cascade 1 fits an 87.0 m sphere → 174 m ortho on a 1536 map = **11.3 cm/texel** with
+    normalBias **18.1 cm**, detaching a shadow by **78 cm** at 13°. This is a different claim
+    from the thrice-disproved "no cast shadows on the plaza" and does not reopen it.
 - **Round 16 is COMPLETE.** Working branch **`claude/1-round-execution-kgtb9r`**, base
   `1a805c9` (published `main`). Opening set `r16`, verification set `r16v1`. Opening verdict
   **FAIL 61/100** (3 blockers / 5 majors / 1 minor); closing verdict **FAIL 54/100**
