@@ -93,22 +93,49 @@ floor:
     - "F9: all four gates absent. Repository has no .github/workflows, no required status checks, and no branch protection reachable from this environment. Recorded as absent, not assumed."
   waivers: []
   enforcement:
-    f2_state_update_check: absent
-    f3_execution_check: absent
-    f5_review_record_check: absent
-    f6_public_revision_check: absent
+    f2_state_update_check: active_not_required
+    f3_execution_check: active_not_required
+    f5_review_record_check: active_not_required
+    f6_public_revision_check: prepared_not_executed
     revert_mechanism: absent
-    last_observed_failing: none
-    unenforced_items: [F2, F3, F5, F6]
+    last_observed_failing: "2026-08-01, all three gate logics observed failing on deliberately bad input before wiring"
+    unenforced_items: [F6]
     unattended_allowed: false
+    mechanism: ".github/workflows/floor.yml + tools/floor-gate.mjs"
+    first_remote_run: "workflow 'floor' run_number 1 at f5b79fe — GitHub Actions confirmed enabled and executing"
     detail: >
-      No CI of any kind exists in this repository. Branch protection and required checks are
-      not settable from this environment. The public surface
-      (bachikoljunior-blip.github.io) is denied by agent-proxy policy (403 on CONNECT), so
-      an F6 gate cannot be observed to pass or fail from this container even if written. The
-      build does not currently embed a revision identifier, which the F6 gate requires.
-      Consequence: every floor item is self-reported only, and any work whose sole
-      independent evidence would have been a missing gate is recorded complete_unverified.
+      Installed during the 2.2 migration, where previously there was no CI at all.
+
+      active_not_required means: the check runs on the remote, independently of this agent's
+      report, and FAILS the job on a bad input — but it is NOT a required status check,
+      because branch protection is not settable from this environment. So it cannot be
+      bypassed silently by accident, but it can be bypassed deliberately by merging past a
+      red check, and that bypass is not itself recorded. Under F9's own NOT SATISFIED BY
+      clause that is short of full enforcement, and it is recorded as such rather than
+      rounded up to "active".
+
+      Observed failing before being wired up, which is what F9 requires and what distinguishes
+      these from prepared_not_executed:
+        F2 - failed on 10 product files changed with no STATE.yaml update (exit 1)
+        F5 - failed with the independence level stripped (exit 1); passed with it present
+        F6 - failed closed on the unreachable public surface (HTTP 403), rather than going
+             green when it cannot see anything
+        F3 - executes the real production build, and additionally asserts dist/index.html
+             carries the revision meta tag that F6 needs
+
+      f6_public_revision_check is prepared_not_executed, not active: the logic exists and
+      fails correctly, but the public surface (bachikoljunior-blip.github.io) is denied by
+      agent-proxy policy with 403 on CONNECT, so it cannot run from this container, and no
+      deployment has occurred in rounds 16-17 for it to check. It becomes active the first
+      time it runs in an environment that can reach github.io against a real deployment.
+
+      revert_mechanism is absent: no automatic revert to the last verified revision is
+      wired. Section 0.4 therefore forbids unattended public release regardless of the other
+      gates, which is consistent with unattended_allowed: false.
+
+      Prerequisite installed: vite.config.js now injects a kagerou-build-revision meta tag
+      into the built page, verified present in dist/index.html, so a served revision can be
+      compared against the intended one over HTTP.
 
 recovery:
   last_known_good_revision_or_artifact: 29cbe9c

@@ -69,11 +69,16 @@ is small. If it is unclear whether a trigger fired, **treat it as fired**.
 
 ## Enforcement status — one line
 
-**No F9 gate is active.** The repository has no CI, no required status checks and no branch
-protection reachable from this environment; the public surface is unreachable from this
-container by agent-proxy policy. All floor items are therefore **self-reported only**, and
-work whose sole independent evidence would have been a missing gate is recorded
-`complete_unverified`. See `floor.enforcement` in `STATE.yaml` for the per-gate record.
+**Partial enforcement.** `.github/workflows/floor.yml` + `tools/floor-gate.mjs` run the F2,
+F3 and F5 gates on the remote, and all three were observed failing on deliberately bad input
+before being wired up. They are recorded `active_not_required`, **not** `active`: branch
+protection is not settable from this environment, so a red check cannot be bypassed by
+accident but can be bypassed deliberately without that bypass being recorded. The F6
+public-revision gate is `prepared_not_executed` — its logic fails closed on an unreachable
+surface, but `bachikoljunior-blip.github.io` is denied by agent-proxy policy (403 on CONNECT)
+so it cannot run from this container. No automatic revert is wired, so unattended public
+release stays forbidden (§0.4). See `floor.enforcement` in `STATE.yaml` for the per-gate
+record.
 
 ## Resume procedure
 
