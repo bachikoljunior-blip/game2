@@ -430,6 +430,13 @@ uniform float uFogSunStrength;
 uniform float uFogAirDensity;
 uniform float uFogAirFalloff;
 
+/**
+ * How much of the 33-degree dome sample a *short* ground-directed ray takes (see the
+ * nearAir comment in kagApplyFog for the measurement that set it). Not a uniform: it is
+ * a fixed property of the airlight model, and a const costs nothing on a phone.
+ */
+const float KAG_NEAR_AIR_SKY = 0.35;
+
 /** Optical depth of one exponentially-stratified layer along the ray. */
 float kagFogDepth( float travel, float ry, float dh, float H ) {
   float baseH = exp( - dh / max( H, 0.05 ) );
@@ -494,9 +501,40 @@ vec3 kagApplyFog( vec3 color, vec3 worldPos, vec3 camPos ) {
   // The far field is untouched *by construction*: past f = 0.45 this expression is
   // byte-identical to what round 8 shipped, so a fully-fogged ridge still becomes the sky
   // it is silhouetted against — which is the invariant that change existed to establish.
+  //
+  // But nearAir was taken to 1.0, i.e. a short ground-directed ray was given the *whole*
+  // of the 33-degree sample — the brightest and, since the round-16 chroma restoration, by
+  // far the bluest thing in the dome. Measured on the source-exact twin at t = 0.78, that
+  // one change moved uFogTopColor's R/B 0.6122 -> 0.3771 (-38%) at held luminance
+  // (0.3296 -> 0.3317), and it lands on the plateau at 8-12% of every pixel — where the
+  // sky's radiance is several times the ground's, so a tenth of it is a large fraction of
+  // the pixel. Measured on wide r16v1, a ladder of eight cropped ground-only boxes down
+  // one clean column, 23.4 m to 52.4 m: R-B runs +1.3, +9.5, -2.7, -4.4, -0.9, -12.2,
+  // -15.8, -19.0 against a computed f of 5.1 .. 13.3 % — slope -2.94 code values of R-B per
+  // 1% of f, r = -0.92 over n = 8, and lumaSpread falls 50.1 -> 35.1 across the same span.
+  // That is the "plateau receives no key light and is blue-shifted at magic hour" blocker,
+  // measured as a function of the one term that varies along it.
+  //
+  // A ground ray's air is not lit by the sky ring 33 degrees *above* it, so the near-ground
+  // target is uFogColor plus KAG_NEAR_AIR_SKY of that sample, not the sample outright. It
+  // is a hue move, not a level move: on the wide plateau rays the airlight goes
+  // (0.2075, 0.3466, 0.5504) R/B 0.377 -> (0.2805, 0.3212, 0.4291) R/B 0.654, luminance
+  // 0.3317 -> 0.3208 (-3.3%). Still cool: ARCHITECTURE §5 forbids a neutral-grey shade and
+  // 0.654 is nowhere near one, and it is cooler than the 0.612 this term carried before
+  // round 16 restored the dome's chroma.
+  //
+  // Deliberately uFogColor and *not* horizonCol: horizonCol carries the sunward haze
+  // (R/B 2.33 at t = 0.78), and the two frames that look into the sun would then take
+  // 65% of it on their near ground. Priced on valley, whose fence-shadow box the round-17
+  // critic calls correctly cool at R-B -13.4: through horizonCol that box lands at +3.6,
+  // i.e. warm, which is the §5 violation this whole term exists to avoid. Through
+  // uFogColor it lands near -6.5 and stays cool. Azimuth belongs to the far field, where
+  // the path really is long enough to converge on the ring behind it.
   float nearAir = 1.0 - smoothstep( 0.10, 0.45, f );
-  vec3 fogCol = mix( horizonCol, uFogTopColor,
-                     max( smoothstep( 0.02, 0.55, rd.y ), nearAir ) );
+  float upAir = smoothstep( 0.02, 0.55, rd.y );
+  vec3 fogCol = mix( horizonCol, uFogTopColor, upAir );
+  fogCol = mix( fogCol, mix( uFogColor, uFogTopColor, KAG_NEAR_AIR_SKY ),
+                nearAir * ( 1.0 - upAir ) );
 
   // In-scattering: Henyey-Greenstein-ish forward lobe toward the sun.
   float cs = max( csFull, 0.0 );
@@ -1109,7 +1147,36 @@ export class SkySystem {
       uSunGlareGain: { value: SUN_GLARE_GAIN },
       uTime: { value: 0 },
       uCloudCoverage: { value: 0.46 },
-      uCloudScale: { value: 0.00055 },
+      /**
+       * 0.0022, not 0.00055. Round 7's deck was confetti and the answer was to drop the
+       * mass band to a quarter of the deck's frequency — but it went past "one bank spans
+       * a large fraction of the sky" to *one bank does not fit in the sky*, and a frame
+       * that contains a fraction of one cell has no cloud form in it at all, which is
+       * exactly the round-17 finding.
+       *
+       * Measured on an exact JS mirror of this shader's own snoise2/fbm2/cloudMass (the
+       * mirror is validated: snoise2 mean -0.0003, p1/p99 -0.842/+0.839, fbm2(o3) mean
+       * -0.0004 — the Ashima simplex's own statistics). Globally the pre-threshold field
+       * has median 0.500, so uCloudCoverage 0.455 is authored for roughly half the sky.
+       * Over the torii frame's visible sky at 0.00055 that same field reads p1 0.159 /
+       * p50 0.320 / p99 0.563 — the whole framing sits in one trough of the mass band, so
+       * only its top few per cent clear the 0.465 threshold and the deck's alpha peaks at
+       * 0.103 with a median of exactly 0. At 0.0022 the frame's field converges on the
+       * global distribution (p1 0.222 / p50 0.488 / p99 0.752) and the alpha becomes
+       * p50 0.057 / p99 0.524. The critic's two acceptance boxes go from alpha identically
+       * 0.000 to p50 0.321 / p99 0.445 and p50 0.016 / p99 0.410 — the second is a cloud
+       * edge crossing the box, which is what a lumaSpread target is asking for.
+       *
+       * Coverage is deliberately NOT the lever: it is a threshold on a field whose global
+       * median is 0.500 and is correctly authored there; lowering it to reach this frame
+       * would overcast every other hour and direction to fix one framing.
+       *
+       * Not back to confetti: at slant ~2 a mass-band cell now spans ~34 degrees of sky,
+       * about a third of the torii frame's width, against the ~3 degrees of round 7's
+       * "120x40 px lozenges". The horizon end is unchanged - slant soft-saturates at 18.2
+       * and the deck is already dissolved 85% into the sky past slant 14.
+       */
+      uCloudScale: { value: 0.0022 },
       uCloudHeight: { value: 1700 },
       uCloudThickness: { value: 0.42 },
       uCloudDensity: { value: 1.25 },
