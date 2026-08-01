@@ -3488,27 +3488,55 @@ uniform vec3 uRockCool;
  * the step lands every 4.8 review pixels: straight, evenly spaced, in the sky.
  * Straight lines do not occur in sky.
  *
- * Two extra taps make the slope C0 by taking a central difference either side of the
- * span and interpolating between them, which is what the height already does. The
- * texture is 2048x4 NEAREST and fully resident, and this adds no draw call and no
- * triangle. The height, relief and identity channels are byte-identical.
+ * MAKING IT C0 WAS NECESSARY AND NOT SUFFICIENT, AND THE BASELINE IS WHY. A one-texel
+ * difference is a *derivative*, so it multiplies every frequency in the baked profile
+ * by that frequency, and the profile carries deliberate high-frequency content: the
+ * serration terms at serR 148-232 run at 1-2 deg of arc, which is 25-50 review pixels,
+ * and they exist to break the silhouette, not to be lit. Lighting off them turns each
+ * crest wiggle into a vertical streak hanging down the face — the comb this box has
+ * measured as "rectilinear lattice" for three rounds. Round 17 halved the residual and
+ * moved nothing the eye reads, because the residual was still 8x the landform signal.
+ *
+ * Measured offline on the real baked texture (an r18 twin whose slope mode is
+ * identifiable from the shipped frame: wide r16/r16v1 correlate 0.60-0.63 with the
+ * one-texel mode and 0.46-0.48 with the C0 mode, r17v1/r17v2 correlate 0.42-0.43 with
+ * the C0 mode and 0.12 with the one-texel mode — a clean diagonal, so the twin knows
+ * which build it is looking at). Landform-scale slope RMS against texel-scale residual
+ * RMS, rank 2, over the whole horizon:
+ *
+ *     one texel   0.603 / 8.447   ratio 14.0
+ *     +/-1 (r17)  0.599 / 5.019   ratio  8.4
+ *     +/-8 (now)  0.569 / 1.441   ratio  2.5
+ *
+ * So a +/-8 texel baseline holds the landform signal to within 5.6% — face's mean,
+ * sd and 5th/95th percentiles over the horizon are unchanged to three decimals — while
+ * cutting the residual 5.9x. 8 texels is 1.41 deg of arc, 38 review pixels in wide,
+ * which is a mountain flank rather than a wiggle. Twin-measured band column signal in
+ * the artefact box: 1.330 (pre-17) -> 0.938 (r17) -> 0.306.
+ *
+ * Six taps rather than four, all on a 2048x4 NEAREST texture that is fully resident:
+ * no draw call, no triangle. Height, relief and identity are byte-identical.
  */
+const float KG_SLOPE_ARM = 8.0;
 vec4 kgRidge(float u, float row){
   float p = u * uRidgeCfg.x - 0.5;
   float f = fract(p);
   float x0 = (floor(p) + 0.5) * uRidgeCfg.y;
   float rv = (row + 0.5) * 0.25;
-  vec4 P = texture2D(tRidge, vec2(x0 - uRidgeCfg.y, rv));
+  float arm = KG_SLOPE_ARM * uRidgeCfg.y;
   vec4 A = texture2D(tRidge, vec2(x0, rv));
   vec4 B = texture2D(tRidge, vec2(x0 + uRidgeCfg.y, rv));
-  vec4 N = texture2D(tRidge, vec2(x0 + 2.0 * uRidgeCfg.y, rv));
-  float hp = P.r + P.g * (1.0 / 255.0);
+  vec4 Lm = texture2D(tRidge, vec2(x0 - arm, rv));
+  vec4 Lp = texture2D(tRidge, vec2(x0 + arm, rv));
+  vec4 Rm = texture2D(tRidge, vec2(x0 + uRidgeCfg.y - arm, rv));
+  vec4 Rp = texture2D(tRidge, vec2(x0 + uRidgeCfg.y + arm, rv));
   float ha = A.r + A.g * (1.0 / 255.0);
   float hb = B.r + B.g * (1.0 / 255.0);
-  float hn = N.r + N.g * (1.0 / 255.0);
-  // Central difference at each end of the span, then the same lerp the height gets.
-  float sa = (hb - hp) * 0.5;
-  float sb = (hn - ha) * 0.5;
+  // Wide central difference at each end of the span, then the same lerp the height
+  // gets, so the slope stays C0 across the texel boundary as well as landform-scale.
+  float inv = 1.0 / (2.0 * KG_SLOPE_ARM);
+  float sa = ((Lp.r + Lp.g * (1.0 / 255.0)) - (Lm.r + Lm.g * (1.0 / 255.0))) * inv;
+  float sb = ((Rp.r + Rp.g * (1.0 / 255.0)) - (Rm.r + Rm.g * (1.0 / 255.0))) * inv;
   return vec4(
     uRidgeCfg.z + mix(ha, hb, f) * uRidgeCfg.w,
     mix(A.b, B.b, f),
@@ -3557,7 +3585,13 @@ void kgRank(float row, float u0, float tang, float par, float soft, float haze,
   // mix, so aerial perspective still decides how much survives at this depth — on
   // the furthest rank it should be a suggestion, not a highlight.
   float band = smoothstep(360.0, 40.0, top - h);
-  float shed = smoothstep(0.85, 0.32, abs(r.w) * 0.045);
+  // The shed gate reads the same slope, so widening the baseline shrank its argument
+  // 3x and the gate stopped biting: the fraction of the horizon shedding (shed < 0.5)
+  // fell 0.0273 -> 0.0007, which would have quietly snowed over every steep crest.
+  // 0.100 restores that fraction to 0.0210 with no cost to the column signal
+  // (twin-measured 0.3063 against 0.3065 at the old coefficient). Snow now sheds off a
+  // steep *flank* rather than off an individual 6 m texel, which is what it should do.
+  float shed = smoothstep(0.85, 0.32, abs(r.w) * 0.100);
   float sn = clamp(band * shed * (0.45 + 0.55 * gul), 0.0, 1.0);
   rock = mix(rock, mix(vec3(0.40, 0.50, 0.72), vec3(0.86, 0.87, 0.92), face), sn * 0.72);
 

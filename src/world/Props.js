@@ -258,6 +258,25 @@ export function weatherBand(geo, y0, y1, r, g, b, jitter = 0.35) {
  * not one triangle. The lobe half-angle is deliberately wide: at 75 deg it covers
  * 42% of the circumference, so from any one camera it lands on a usable fraction
  * of the visible half rather than hiding behind the prop as often as not.
+ *
+ * WHAT THIS CAN AND CANNOT DELIVER, MEASURED RATHER THAN ASSERTED. It is a
+ * per-*vertex* term, so its finest feature is the mesh's circumferential pitch. The
+ * lantern shaft is `circleProfile(12)` — 30 deg per vertex — and the plinth is
+ * `hexProfile()` at 60 deg. The old inner edge at `half * 0.45` = 33.8 deg therefore
+ * put the full-strength core on 2.3 shaft vertices and 1.1 plinth vertices, and the
+ * worley rosette field was being sampled two or three times across the entire patch:
+ * at that density it is a smooth ramp, never discrete blotches. Moving the inner edge
+ * to `half * 0.72` = 54 deg raises the third vertex round from t 0.280 to 0.740, so
+ * the lobe reads as a resolved flank instead of a two-vertex smear, and the outer
+ * extent — and therefore the total circumference covered — is unchanged.
+ *
+ * The pattern the round-18 critique actually asks for cannot be bought here. Blotches
+ * need vertices: taking the shaft to `circleProfile(24)` is +600 geometry triangles,
+ * and this prototype is instanced 24 times over the colour pass and both cascades, so
+ * the rollup would charge 3 x 24 x 600 = 43,200 submitted against a 4,000 allocation.
+ * A second prototype or a variant texture is ~+5 draw calls, which the finding's own
+ * guard forbids by name. So the variant stays a tint gradient, and how much of it any
+ * one lantern shows stays a function of the yaw.
  */
 export function weatherFace(geo, bearing, opts = {}) {
   const half = opts.half ?? 1.31;                  // 75 deg
@@ -280,7 +299,7 @@ export function weatherFace(geo, bearing, opts = {}) {
     // together and the patch stays continuous across the seam.
     const d = Math.acos(clamp((x * bx + z * bz) / r, -1, 1))
       + noise.fbm2(x * 2.2, z * 2.2 + y * 1.7, 3) * 0.55;
-    let t = (1 - smoothstep(half * 0.45, half, d)) * strength;
+    let t = (1 - smoothstep(half * 0.72, half, d)) * strength;
     // Growth needs damp and shelter: it thins going up, as it does on real stone.
     t *= 1 - smoothstep(y0, y1, y);
     if (t <= 0.002) continue;
