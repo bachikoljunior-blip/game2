@@ -926,6 +926,40 @@
       "severity": "major",
       "verification": "automated and inspected",
       "status": "verified"
+    },
+    {
+      "id": "BENCH-001",
+      "sourceRequirement": "User instruction 2026-08-01: maintain per-element reference benchmarks as persistent project information",
+      "scope": "AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml and its validation",
+      "preconditions": [
+        "Repository is writable locally"
+      ],
+      "action": "Run npm run validate:project.",
+      "expected": "Every in-scope element has a declared reference from the title set, a stated selection reason on all five axes, at least one principle, at least one criterion with a threshold, and a stated current gap; every criterion marked verified names an existing apparatus and what it measured; the declared counts match the file.",
+      "threshold": "Exit code 0, and the guard demonstrably fails when a criterion is marked verified without apparatus or measurement.",
+      "evidence": [
+        "AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml",
+        "tools/validate-project-state.mjs"
+      ],
+      "severity": "blocking",
+      "verification": "automated",
+      "status": "verified"
+    },
+    {
+      "id": "BENCH-002",
+      "sourceRequirement": "Structural finding recorded in REFERENCE_BENCHMARKS.gapSummary",
+      "scope": "The twelve elements with no verification surface",
+      "preconditions": [
+        "BENCH-001 verified",
+        "A user instruction authorizing the work"
+      ],
+      "action": "Build the missing interaction-capture apparatus: drive the real input surface, record state over time, and make combat, movement, camera, animation, touch, audio and AI criteria measurable.",
+      "expected": "Each element currently listed under gapSummary.byApparatus.noEvidenceAtAll and sourceAuditOnly gains at least one criterion that can actually be run.",
+      "threshold": "Not yet attempted. No round, capture, or measurement has been performed against it.",
+      "evidence": [],
+      "severity": "blocking",
+      "verification": "automated and independent review",
+      "status": "proposed"
     }
   ]
 }

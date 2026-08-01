@@ -6,6 +6,13 @@ session needs to continue has to be in the repo. Read this, then `README.md`
 ("Where this build actually stands") for the current measured numbers, then
 `tools/CRITIC.md` for the standing bar.
 
+The bar itself is now per element:
+`AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml` holds the reference title and criteria for each
+of the sixteen elements. This loop covers **E11-VISUALS** and **E05-WORLD** (plus
+**E07-CHARACTER** and **E09-UI** where the frame shows them); the other twelve elements are
+outside what a still frame can judge and are not passed or failed here. Element criteria live
+in that file — measurements stay here.
+
 Update this file after every meaningful art-round iteration. It is the only detailed
 art-direction state record; project-wide session, plan and criterion pointers live under
 `AI_DEVELOPMENT/` and must not duplicate the measurements below.
@@ -16,8 +23,10 @@ art-direction state record; project-wide session, plan and criterion pointers li
 
 - Logical session: **active** (`2026-07-31-game2-continuation`). It ends only when the user
   explicitly says so.
-- Current working branch: **`claude/1-round-execution-r6rdfs`** (round 15). The rounds-13–14
-  branch `agent/rounds-13-14` is merged and historical. Persistent
+- Current working branch: **`claude/game-reference-benchmark-qh0v0q`**, created from `main`
+  at **`1a805c9`**. It carries the per-element benchmark work, no renderer change. The
+  round-15 branch `claude/1-round-execution-r6rdfs` and the rounds-13–14
+  branch `agent/rounds-13-14` are merged and historical. Persistent
   cross-session authorization is active to push verified checkpoints, integrate them into
   `main`, and publish GitHub Pages without asking again. Paid, destructive, credential, and
   account actions remain outside that authorization.

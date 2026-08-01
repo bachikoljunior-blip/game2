@@ -132,6 +132,35 @@ compact core, dark pixels, off-screen-sun poses, global exposure, bloom, and fil
 unchanged. The fresh final frame reduced the exact critic region from **38.112% to 11.330%**
 over 90% luma; all five black gates and the hero/torii white gates still pass.
 
+## D-018 — One bar per element, three reference titles, principles only
+
+Accepted 2026-08-01 from the user's explicit instruction. The project previously had a single
+global bar — *Ghost of Tsushima* / *SEKIRO* for "look and feel" — which covered the image and
+said nothing about the other fifteen elements.
+`AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml` now assigns each element its own reference,
+selection reason on five axes, generalisable principles, copy prohibitions, and criteria that
+are measurable **on our own build**.
+
+The set is deliberately three titles. *Ghost of Tsushima* and *SEKIRO* were already the stated
+bar and cover thirteen elements between them; the design had in fact already committed to
+SEKIRO's model, since posture and a perfect-parry flag are in the binding entity contract.
+*Genshin Impact* was added for exactly two — the touch layer and the phone performance
+envelope — because neither console title provides a single frame of evidence about a
+touchscreen, and leaving the primary platform without a bar was the larger error. Two of the
+three are also recorded as **anti**-references on their weakest property: SEKIRO's camera in
+enclosed space, and Genshin's sustained thermal behaviour.
+
+Two rules are binding and machine-checked. A criterion marked `verified` must name an
+apparatus that exists and what it measured, so a future session cannot claim a comparison,
+device measurement, or expert judgement that never happened. And a criterion may become
+stricter freely but may be weakened only when proved unsatisfiable as stated, with the
+disproof stored — never to let the current build pass. The precedent is R15-PFX-001, which
+replaced a metric that scored synthetic shaft banding *below* the value it called smooth.
+
+`選択と結果` was scoped down rather than dropped: narrative branching is out of the stated
+concept, so the element covers in-combat risk/reward and player-triggered escalation only,
+with a recorded trigger that reopens it if the user adds a branching narrative.
+
 ## D-017 — Close Round 14 on measured progress without claiming product acceptance
 
 Accepted 2026-08-01. The final hostile score improved **44 to 50**, and the sun-glare major

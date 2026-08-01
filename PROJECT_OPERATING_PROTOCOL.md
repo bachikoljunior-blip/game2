@@ -35,6 +35,11 @@ The project already had a valuable review system. Keep it and give each file one
   including measurements, disproved mechanisms, and open visual findings.
 - `ROUND.md`: executable procedure for an art-direction round.
 - `README.md`: public product and last verified release-facing status.
+- `AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml`: the per-element quality bar — which shipped
+  title is the reference for each element of the product, why it was selected, the
+  generalisable principles taken from it, the concrete criterion each becomes, and the
+  measured or unmeasured gap. It also carries the originality rules that forbid copying any
+  reference's creative work, and the honest statement of what has and has not been compared.
 - `AI_DEVELOPMENT/*`: concise project-wide control state, session state, requirements,
   criteria, plan, dependencies, decisions, failures, debt, evidence, and typed handoffs.
 
@@ -139,6 +144,13 @@ Every significant requirement gets a concrete criterion in
 `AI_DEVELOPMENT/ACCEPTANCE_CRITERIA.yaml`, traceable to its source, plan node, files, tests,
 and evidence. Do not weaken a criterion because it is difficult; material changes require
 the user's approval.
+
+Quality is judged against the per-element bar in `AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml`,
+not against a general impression of "good". Before critiquing, repairing, or declaring any
+element finished, read that element's entry. Its criteria are measured on *our* build; never
+record a comparison against reference footage, a real-device measurement, a blind review, or
+an expert judgement that did not actually happen. A criterion marked `verified` must name the
+apparatus that verified it and what it measured — `npm run validate:project` enforces this.
 
 Use layered gates appropriate to the change:
 

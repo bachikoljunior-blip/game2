@@ -7,7 +7,8 @@ visual-round measurements stay in `../HANDOFF.md`; they are referenced, not dupl
 
 1. `../PROJECT_OPERATING_PROTOCOL.md`
 2. `PROJECT_STATE.yaml` and `SESSION_STATE.yaml`
-3. `REQUIREMENTS.md`, `CONSTRAINTS.md`, and `ACCEPTANCE_CRITERIA.yaml`
+3. `REQUIREMENTS.md`, `CONSTRAINTS.md`, `REFERENCE_BENCHMARKS.yaml`, and
+   `ACCEPTANCE_CRITERIA.yaml`
 4. `ACTIVE_FRONTIER.yaml`, `TASK_GRAPH.yaml`, and relevant branches of `PLAN_TREE.yaml`
 5. Relevant `DECISIONS.md`, `FAILURES.md`, `TECHNICAL_DEBT.md`, handoffs, and evidence
 6. For an art round: `../HANDOFF.md`, `../README.md`, `../ROUND.md`, and
@@ -23,6 +24,7 @@ visual-round measurements stay in `../HANDOFF.md`; they are referenced, not dupl
 | Current concise project state | `PROJECT_STATE.yaml` |
 | Active logical session and exact continuation point | `SESSION_STATE.yaml` |
 | Requirements and constraints | `REQUIREMENTS.md`, `CONSTRAINTS.md` |
+| Per-element reference titles, why each was chosen, and the bar it sets | `REFERENCE_BENCHMARKS.yaml` |
 | Testable completion conditions | `ACCEPTANCE_CRITERIA.yaml` |
 | Complete plan and current actionable work | `PLAN_TREE.yaml`, `ACTIVE_FRONTIER.yaml` |
 | Dependencies between tasks | `TASK_GRAPH.yaml` |
@@ -46,6 +48,11 @@ visual-round measurements stay in `../HANDOFF.md`; they are referenced, not dupl
 - Keep active files concise; move closed session history to `SESSION_ARCHIVE/` only after
   the user explicitly ends the logical session.
 - Preserve a decision's reason when it is superseded.
+- `REFERENCE_BENCHMARKS.yaml` holds the *bar* for each element; `ACCEPTANCE_CRITERIA.yaml`
+  holds the gates a round *ran*. A benchmark criterion moves into acceptance when it is
+  actually executed. Do not duplicate one into the other.
+- A benchmark criterion may become stricter freely. It may be weakened only when proved
+  unsatisfiable as stated, with the disproof stored — never to let the build pass.
 - Put large disposable captures under `shots/`; commit the compact JSON verdict and report,
   not every frame.
 - Run `npm run validate:project` after state changes.

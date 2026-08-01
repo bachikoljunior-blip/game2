@@ -21,6 +21,7 @@ const required = [
   'AI_DEVELOPMENT/REQUIREMENTS.md',
   'AI_DEVELOPMENT/CONSTRAINTS.md',
   'AI_DEVELOPMENT/ACCEPTANCE_CRITERIA.yaml',
+  'AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml',
   'AI_DEVELOPMENT/PLAN_TREE.yaml',
   'AI_DEVELOPMENT/ACTIVE_FRONTIER.yaml',
   'AI_DEVELOPMENT/TASK_GRAPH.yaml',
@@ -82,11 +83,12 @@ const acceptance = load('AI_DEVELOPMENT/ACCEPTANCE_CRITERIA.yaml');
 const plan = load('AI_DEVELOPMENT/PLAN_TREE.yaml');
 const frontier = load('AI_DEVELOPMENT/ACTIVE_FRONTIER.yaml');
 const graph = load('AI_DEVELOPMENT/TASK_GRAPH.yaml');
+const benchmarks = load('AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml');
 const handoffs = readdirSync(resolve(ai, 'HANDOFFS'))
   .filter((name) => name.endsWith('.json') && name !== 'handoff.schema.json')
   .map((name) => [name, load(`AI_DEVELOPMENT/HANDOFFS/${name}`)]);
 
-for (const [label, value] of Object.entries({ project, session, acceptance, plan, frontier, graph })) {
+for (const [label, value] of Object.entries({ project, session, acceptance, plan, frontier, graph, benchmarks })) {
   checkVersion(value, label);
   scanSecretKeys(value, label);
 }
@@ -145,6 +147,102 @@ for (const [name, handoff] of handoffs) {
   }
 }
 
+// ── reference benchmarks ────────────────────────────────────────────────────
+// These rules exist so the per-element bar cannot quietly rot: a title cannot be
+// referenced without being declared, an element cannot lose its bar, and — the one
+// that matters most — a criterion cannot be marked verified without an apparatus
+// that could have verified it and a measurement that did.
+const APPARATUS = new Set(['exists', 'partial', 'missing']);
+const EVIDENCE = new Set([
+  'none', 'source-audit', 'frame-measured', 'runtime-measured', 'device-measured', 'review-judged',
+]);
+const SELECTION_AXES = [
+  'elementQuality', 'reception', 'longevity', 'fitToConcept', 'applicability',
+];
+
+const titleIds = new Set((benchmarks.titleSet?.titles ?? []).map((t) => t.id));
+const antiIds = new Set((benchmarks.antiReferences?.entries ?? []).map((a) => a.id));
+const methods = new Set(Object.keys(benchmarks.methodVocabulary ?? {}));
+if (!titleIds.size) errors.push('benchmarks: titleSet.titles is empty');
+if (!methods.size) errors.push('benchmarks: methodVocabulary is empty');
+
+const elementIds = uniqueIds(benchmarks.elements, 'benchmarks.elements');
+const usedTitles = new Set();
+const benchCriteria = new Set();
+const counts = { total: 0, verified: 0, underReview: 0, blocked: 0, proposed: 0 };
+
+for (const element of benchmarks.elements ?? []) {
+  const label = `benchmark element ${element.id}`;
+  if (typeof element.inScope !== 'boolean') errors.push(`${label}: inScope must be boolean`);
+
+  if (element.inScope) {
+    if (!titleIds.has(element.reference)) {
+      errors.push(`${label}: reference ${JSON.stringify(element.reference)} is not in titleSet`);
+    } else usedTitles.add(element.reference);
+    if (!(element.principles?.length > 0)) errors.push(`${label}: an in-scope element needs at least one principle`);
+    if (!(element.criteria?.length > 0)) errors.push(`${label}: an in-scope element needs at least one criterion`);
+    if (!element.currentGap) errors.push(`${label}: an in-scope element must state its current gap`);
+    for (const axis of SELECTION_AXES) {
+      if (!element.selection?.[axis]) errors.push(`${label}: selection.${axis} is required — a reference without a stated reason is an opinion`);
+    }
+  } else if (!element.scopeNote || !/re-entry|reopen|re-open/i.test(element.scopeNote)) {
+    errors.push(`${label}: an out-of-scope element must record why, and the trigger that brings it back`);
+  }
+
+  if (element.secondaryReference) {
+    if (!titleIds.has(element.secondaryReference)) {
+      errors.push(`${label}: secondaryReference ${JSON.stringify(element.secondaryReference)} is not in titleSet`);
+    } else usedTitles.add(element.secondaryReference);
+    if (!element.secondaryJustification) {
+      errors.push(`${label}: a second reference on one element must justify why one title cannot cover it`);
+    }
+  }
+  if (element.antiReference && !antiIds.has(element.antiReference)) {
+    errors.push(`${label}: unknown antiReference ${element.antiReference}`);
+  }
+
+  for (const criterion of element.criteria ?? []) {
+    const clabel = `benchmark criterion ${criterion.id}`;
+    if (!criterion.id) { errors.push(`${label}: criterion without an id`); continue; }
+    if (benchCriteria.has(criterion.id)) errors.push(`${clabel}: duplicate id`);
+    benchCriteria.add(criterion.id);
+    checkStatus(criterion.status, clabel);
+    if (!methods.has(criterion.method)) errors.push(`${clabel}: unknown method ${JSON.stringify(criterion.method)}`);
+    if (!APPARATUS.has(criterion.apparatus)) errors.push(`${clabel}: apparatus must be one of ${[...APPARATUS].join('/')}`);
+    if (!EVIDENCE.has(criterion.evidenceState)) errors.push(`${clabel}: unknown evidenceState ${JSON.stringify(criterion.evidenceState)}`);
+    if (!criterion.threshold) errors.push(`${clabel}: a criterion without a threshold cannot be failed, so it is not a criterion`);
+
+    // The anti-fabrication rule.
+    if (criterion.status === 'verified') {
+      if (criterion.evidenceState === 'none') errors.push(`${clabel}: verified with evidenceState none`);
+      if (criterion.apparatus === 'missing') errors.push(`${clabel}: verified through an apparatus that does not exist`);
+      if (!criterion.measured) errors.push(`${clabel}: verified without recording what was measured`);
+    }
+
+    counts.total += 1;
+    if (criterion.status === 'verified') counts.verified += 1;
+    else if (criterion.status === 'under_review') counts.underReview += 1;
+    else if (criterion.status === 'blocked') counts.blocked += 1;
+    else if (criterion.status === 'proposed') counts.proposed += 1;
+  }
+}
+
+for (const id of titleIds) {
+  if (!usedTitles.has(id)) errors.push(`benchmarks: title ${id} is declared but referenced by no element — remove it rather than growing the set`);
+}
+
+const declared = benchmarks.gapSummary?.criteriaCounts ?? {};
+for (const [key, value] of Object.entries(counts)) {
+  if (declared[key] !== value) errors.push(`benchmarks.gapSummary.criteriaCounts.${key}: says ${declared[key]}, actual ${value}`);
+}
+
+const bucketed = Object.values(benchmarks.gapSummary?.byApparatus ?? {}).flat();
+for (const id of bucketed) if (!elementIds.has(id)) errors.push(`benchmarks.gapSummary.byApparatus: unknown element ${id}`);
+if (new Set(bucketed).size !== bucketed.length) errors.push('benchmarks.gapSummary.byApparatus: an element is listed in two buckets');
+for (const id of elementIds) {
+  if (!bucketed.includes(id)) errors.push(`benchmarks.gapSummary.byApparatus: ${id} is not accounted for`);
+}
+
 if (errors.length) {
   console.error(`[project-state] FAIL (${errors.length})`);
   for (const error of errors) console.error(`- ${error}`);
@@ -152,3 +250,4 @@ if (errors.length) {
 }
 
 console.log(`[project-state] PASS: ${criteriaIds.size} criteria, ${planIds.size} plan nodes, ${frontierIds.size} active-frontier tasks, ${graphIds.size} graph tasks`);
+console.log(`[benchmarks]    PASS: ${elementIds.size} elements, ${titleIds.size} reference titles, ${counts.total} criteria (${counts.verified} verified, ${counts.underReview} under review, ${counts.blocked} blocked, ${counts.proposed} proposed)`);

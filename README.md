@@ -64,6 +64,31 @@ sample four times.
 - **Audio** is synthesised: struck-bar models for the blade clash, Karplus-Strong for the
   koto, a membrane model for the taiko, and a generative score that reacts to the fight.
 
+## The bar, per element
+
+The reference bar is not one impression of "AAA" — it is assigned element by element in
+[`AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml`](./AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml),
+with the reason for each choice and the concrete criterion it becomes.
+
+| | reference | why |
+|---|---|---|
+| image, camera, movement, exploration, world, UI, audio, stability | **Ghost of Tsushima** | the same fiction, the same light, the same third-person framing problem |
+| combat, animation, AI, character legibility, choice | **SEKIRO** | deflect-and-posture melee — a model this project's entity contract already committed to |
+| touch controls, phone performance envelope | **Genshin Impact** | neither console title offers one frame of evidence about a touchscreen, and the phone is the primary platform |
+
+Two of the three are also **anti**-references on their weakest property: SEKIRO's camera in
+enclosed space, and Genshin's sustained thermal behaviour on mid-range Android. Principles
+only — nothing from any reference's characters, world, layout, UI, staging or music is
+copied, and no reference title is named in the shipped product.
+
+**The honest state of that bar: one element of sixteen has a working review loop.** Visuals
+is measured and currently fails. Four more have partial evidence limited to what a still
+frame or a boot-time counter can show. The other twelve — combat feel, movement, camera
+behaviour, animation, touch, audio, AI among them — have never been verified, because five
+static screenshots cannot see them. No side-by-side against real reference footage, no
+real-device frame rate, and no expert or player review has ever been performed, and none is
+claimed anywhere in this repository.
+
 ## Where this build actually stands
 
 > Picking the work up in a new session? [`HANDOFF.md`](./HANDOFF.md) carries the state
@@ -129,7 +154,7 @@ or HTTP failures.
 | near-sun sky chroma | saturation **0.049 → 0.28**, R−B **16.4 → 57.8** |
 | PWA | installs and launches offline |
 | sun glare | fixed 700x700 region over 90% luma **38.112% → 11.330%** (target <15%) |
-| bundle | 314.83 KB gzip main chunk, zero external assets |
+| bundle | 317.77 KB gzip main chunk (477.1 KB gzip total, against a 1.6 MB cap), zero external assets |
 
 **Solved in round 8: three symptoms that were not what they looked like**
 
