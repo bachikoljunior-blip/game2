@@ -16,8 +16,8 @@ art-direction state record; project-wide session, plan and criterion pointers li
 
 - Logical session: **active** (`2026-07-31-game2-continuation`). It ends only when the user
   explicitly says so.
-- Working branch: **`agent/rounds-13-14`**, created from published `main` at
-  **`51f1807`**. Persistent
+- Current working branch: **`claude/1-round-execution-r6rdfs`** (round 15). The rounds-13–14
+  branch `agent/rounds-13-14` is merged and historical. Persistent
   cross-session authorization is active to push verified checkpoints, integrate them into
   `main`, and publish GitHub Pages without asking again. Paid, destructive, credential, and
   account actions remain outside that authorization.
@@ -39,8 +39,8 @@ art-direction state record; project-wide session, plan and criterion pointers li
   **38.112% → 11.330%** over 90% luma and disappeared from the final review. Detached
   bamboo skyline fragments remain blocking; terrain scale and sparse courtyard dressing
   remain major findings. The foliage collar and terrain range gates produced bounded partial
-  moves, while a follow-up leaf-angle hypothesis failed and was explicitly reverted. Round
-  15 must not start without a new user request. Round 13 had opened at **36/100** with two
+  moves, while a follow-up leaf-angle hypothesis failed and was explicitly reverted.
+  (Round 15 has since been authorized, run and closed — see above.) Round 13 had opened at **36/100** with two
   blockers and closed on `r13v2` at **43/100** with one blocker. The coherent `r12v1`
   checkpoint is complete, but integrated Round 9 product acceptance is not.
   `r9v1` proved that
