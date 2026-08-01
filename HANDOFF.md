@@ -87,6 +87,17 @@ art-direction state record; project-wide session, plan and criterion pointers li
   page, console, request, or HTTP errors.
   The initial HTTP-200 development entry and two speculative-module variants were rejected
   before this state was accepted.
+- **Round 16 publication is repository-verified but NOT publicly verified.** `origin/main`
+  is **`d357cbd`**; `docs/assets` carries `index-BDxY4oFM.js`, `main-CEfIoK1B.js`,
+  `Rig-aFbvwGGB.js` and `three-BTL71eav.js`, `docs/index.html` references
+  `assets/index-BDxY4oFM.js`, and the superseded `index-BoUb9vMW.js`, `main-0qGNkpyh.js`
+  and `Rig-DmfyOsEa.js` are gone. Bundle 482 kB gzip against a 1.6 MB budget. **The live
+  surface was not checked**, for the same reason as round 15: the agent proxy in this
+  container denies `bachikoljunior-blip.github.io:443` by policy (403 on CONNECT, confirmed
+  again via `$HTTPS_PROXY/__agentproxy/status`), so both `npm run verify:pages` and `curl`
+  fail before reaching GitHub. **Do not record a Round 16 public browser gate until it is
+  actually run from a network that can reach github.io.** The last verified public browser
+  gate remains the Rounds 13–14 one at `4a3eff7`.
 - **Round 15 publication is repository-verified but NOT publicly verified.** `origin/main`
   is **`e40a188`**; `docs/assets` carries `index-BoUb9vMW.js`, `main-0qGNkpyh.js`,
   `Rig-DmfyOsEa.js` and `three-BTL71eav.js`, `docs/index.html` references
