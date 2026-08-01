@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "taskId": "R15-POSTFX",
+  "producer": "postfx-specialist",
+  "consumer": "project-director",
+  "objective": "Round 15: settle the 'no god rays' finding on phone-sun-r15 by inspecting the pass's own occluder buffer before touching a weight; measure whether PostFX's SSAO apply is the downstream half of the 'no cool sky-bounce in any shadow' blocker (HANDOFF open item 2); and absorb the haze minor that the sky owner reassigned to this file.",
+  "allowedScope": ["src/render/PostFX.js"],
+  "prohibitedChanges": [
+    "Do not edit src/core/Cinematic.js — the sun pose belongs to another owner and was gated out of this round.",
+    "Do not raise the god-ray gain on an unverified mechanism (round 7 did and made the frame worse).",
+    "Do not apply a compensating AO gain: the materials owner is working the same symptom from the Materials.js:2237 end in parallel."
+  ],
+  "inputs": [
+    "shots/review-r15.json — findings 'post / god rays', 'colour / shadow temperature', 'aerial perspective / haze'",
+    "shots/phone-sun-r15.png, shots/phone-hero-r15.png at native 2532x1170",
+    "HANDOFF.md open items 2, 5, 11 and the round-8 disproof list",
+    "two runtime ablation runs against the existing dist/ through window.__kagerou",
+    "the sky owner's runtime ablation reported at c8ce3ee"
+  ],
+  "outputs": [
+    "SHIPPED — PostFX.js `_passGodRays`: uDecay is now anchored to GOD_SAMPLES (Math.pow(0.94, 24 / this._godSamples)). The decay-weighted tap count (1-d^N)/(1-d) was 12.89/14.37/15.81 against a 1/N normalisation, so the same scene emitted 1.612/1.347/0.988 times the marched radiance at MEDIUM/HIGH/ULTRA — desktop, the showcase tier, was rendering the shafts 39% dimmer than the phone. Now 1.612/1.599/1.587. At 24 taps the expression is exactly 0.94, so the phone MEDIUM review set is unchanged by this line by construction.",
+    "SHIPPED — PostFX.js FRAG_GOD_OCCLUSION: the sky-test comment corrected against a live readback of camera.far = 6200 (Terrain.js:603 raises it from Engine's authored 900). The 0.70/0.92 linear band is 4340-5704 m, not the 630-828 m the comment reasoned about; the test only still works because Sky.js's dome is depthWrite:false and leaves the cleared depth of 1.0.",
+    "DISPROOF — the sun pose is not the fault and HANDOFF open item 11 is STALE. Live on the sun beat, PostFX._sunUv = (0.60509, 0.54474) and _sunScreenStrength = 1.0 (full gain, uGodStrength 0.80). Cinematic.js's current SHOTS.sun (pos [-4.4,1.0,36.9]) already documents the disc landing at UV (0.605,0.455), and the r15 critic measured it at (1529,530) px = (0.604,0.453) top-down. All three agree. The disc does NOT land on the shimenawa tassel; item 11's (0.500,0.500) describes a pose that was replaced. Close item 11.",
+    "DISPROOF — the emitter is not empty. Read back from rtGodA (337x156 at MEDIUM): 10.2-11.0% of texels non-zero across five variants, max channel-mean 0.998, p99 0.479. The zero region is exactly the depth-masked near geometry — the torii uprights, shimenawa, shide and bamboo are present as occluders. No gain change is needed to put occluders into the buffer; they are already there.",
+    "MEASURED — the pass emits a veil, not shafts. rtGodA is non-zero on ~10% of texels; rtGodB (the marched result) is non-zero on 99.9% of them, mean 0.1194, p50 0.0551, p90 0.2928, p99 0.9319. The march spreads a 10%-coverage emitter over the whole frame. That common-mode term is what the sky owner's ablation independently measured as the mid-field wash.",
+    "MEASURED — the march is converged and undersampling is NOT the limiter. Holding the gain (uDecay = 0.94^(24/N)), rtGodB mean/p90 go 0.1194/0.2928 at N=24, 0.1088/0.2703 at N=48 (-8.9%/-7.7%), 0.1083/0.2740 at N=96 (a further -0.5%/+1.4%). So 24 taps under-captures occlusion by ~8% of the marched radiance and 48 taps is converged to within 0.5%. Halving the step again buys nothing. Do not spend fill on GOD_SAMPLES for this finding.",
+    "DISPROOF (source-level) — PostFX is NOT the second multiplication in HANDOFF open item 2. FRAG_RESOLVE receives one colour input, tScene, the composited scene radiance; there is no indirect-only buffer for it to scale. `c *= occTint * k` is a per-pixel scalar multiply applied to key and fill alike, so it is hue-preserving; its only colour term, uAoTint (0.78,0.85,1.0), has B/R 1.282 and can therefore only make occluded pixels COOLER. Open item 2's premise that PostFX.js:397 'scales indirectDiffuse and not the key' is wrong at source. Materials.js:2237 is the sole surviving named suspect.",
+    "DISPROOF (analytic) — the shadow-temperature target is unreachable from PostFX. Taking hero box (760,515,127,47) from B/R 0.579 to the critic's 1.30 requires blue to rise from display code 27.6 to 62 in a box whose red is 47.7. The only shadow-selective additive term in this file is uLift (currently 0.0240,0.0276,0.0372, already cool-weighted 1:1.15:1.55); the required increment is roughly +30 code values of blue on every pixel of every frame, against a black gate of p0.1 < 15 that currently reads 0/12/0/1/6. Every other shadow-selective term here is already cool: uAoTint, uVignetteTint (0.72,0.80,0.95), LOOK_MAGIC_HOUR shadowTint (0.130,0.152,0.185) and satShadow 0.86. The finding belongs upstream, where the critic routed it.",
+    "APPARATUS DISPROOF — the god-ray finding's acceptance metric cannot be satisfied by the effect it demands. `detail` is mean |Laplacian| per pixel, which for a sinusoid of amplitude A and wavelength L px returns 2A(1-cos(2pi/L))(2/pi). Measured with probe.mjs on synthetic strips: +/-40 code values at 60 px period scores detail 0.47, +/-25 at 60 px scores 0.47, +/-10 at 60 px scores 0.47 — all BELOW the 0.57 the critic called 'a mathematically smooth gradient', and level with the clean-sky control's 0.46. Only +/-25 at a 12 px period reaches 4.33, and that is grain, not a crepuscular shaft. An owner chasing detail >= 3.0 in that strip would be driven to add high-frequency noise.",
+    "APPARATUS FAULT (twice) — no pixel evidence was obtained. Run 1's screenshots were taken after engine.stop(); Engine constructs the renderer with preserveDrawingBuffer:false, so the composited buffer is already gone (98.7% of hero-base below code 16). This also means capture.mjs's --ab-object path, which screenshots in a separate round trip after engine.stop(), returns black A/B pairs. Run 2 kept the engine live but every frame carried the 陽炎 title card over an ink wash (95.5% below code 16, and h0-base / h1-ao0 / h2-aoback byte-identical). Probable cause: menus.skipIntro() was issued in the SAME page.evaluate as `void window.__kagerouStart()`, which is main.js's async begin(); capture.mjs only avoids this by using two separate evaluates. A corrected, guarded harness (it screenshots and checks luma p50 before spending evidence shots) is at scratchpad/pfx-abl3.mjs and was NOT run — the two-run budget was spent."
+  ],
+  "affectedInterfaces": [
+    "PostFX god-ray march (mGodBlur uDecay). MEDIUM output identical; HIGH +19%, ULTRA +61% toward MEDIUM parity.",
+    "No composite, bloom, filmic, AO or grade uniform was changed, so every tonal gate is untouched by construction. Measured: hero's _sunScreenStrength is 0, so hero/torii/wide cannot see a god-ray change at all."
+  ],
+  "dependencies": [
+    "R15-SKY (c8ce3ee) reassigned the 'mid-field haze washes 40 m geometry to sky value' minor to this file, on an ablation showing that removing 100% of aerial perspective moves the mid band by nothing (p50 226.3 -> 226.2, sat 0.188 -> 0.188) while switching bloom AND god rays off moves it decisively (sat 0.188 -> 0.348, p50 226.3 -> 206.4, near post detail -> 2.55). This build's own numbers agree on the mechanism: rtGodB is non-zero over 99.9% of the frame. The two findings are in direct tension — the critic asks for MORE god-ray energy through the gap while this says god rays plus bloom are the wash. They are the same defect seen from two sides: the pass delivers common mode, not differential. Raising the gain would deepen the wash, which is exactly the round-7 regression. Neither the reduction nor a spread change could be measured in this round's run budget, so nothing was shipped for it.",
+    "R15-MATERIALS: Materials.js:2237 triplanar AO on indirectDiffuse is now the only named multiplication left in HANDOFF open item 2."
+  ],
+  "invariants": [
+    "black gate p0.1 < 15 on all five frames (currently 0, 12, 0, 1, 6)",
+    "white gate p99.9 > 235 on hero (236) and torii (250)",
+    "highlight cushion 52% via filmicShoulder 1.20 — untouched",
+    "phone MEDIUM draw calls <= 140 and triangles <= 900k — measured live this round at 93/699,967 on the sun pose and 115/744,935 on hero",
+    "no external assets, no per-frame allocation"
+  ],
+  "assumptions": [
+    "The critic's symptom ('no crepuscular striation in the torii gap') is correct; its acceptance metric is not.",
+    "The runtime readbacks (readRenderTargetPixels, uniform and field reads) are unaffected by the screenshot fault, because they never went through the canvas."
+  ],
+  "unresolvedQuestions": [
+    "How many display code values the god-ray pass actually deposits in the torii gap. The ablation that answers it (uGodStrength 0 vs 0.80 vs 4.0 on the sun beat, same pose) was scripted twice and lost twice to the apparatus faults above. Predicted from the buffer: rtGodB p90 0.2928 x gain 0.80 = 0.23 linear added to a region sitting near 1.3 scene-linear, where the ACES+shoulder slope is ~0.13 display-linear per linear unit — about +4 code values total, with the shaft/gap differential a fraction of that. That prediction is unverified.",
+    "Whether the right move is LESS god-ray spread (uSunRadius / uDensity / uWeight) rather than more gain, as the sky ablation implies. The composite's aureole containment is a second candidate in the same region: its derivative d(out)/d(in) inside the aureole at display luma 0.80 is 0.678, so it removes 32% of exactly the shaft contrast this finding is about, while existing to hold round 14's glare fix. Both need one measured run each."
+  ],
+  "acceptanceCriteria": [
+    "R15-ROUND god-ray finding: replace `detail >= 3.0` with a striation criterion, since detail cannot see a shaft. Proposed and calibrated on the same strips: row-averaged high-pass of the 506x23 strip at lag 16 px (band16) must reach >= 7.0 while the clean-sky control (300,120,400x60) stays below 0.5. Calibration — synthetic +/-10-code 60-px shaft banding = band16 7.06; phone-sun-r15 strip (1266,585) = 1.75; strip (1266,644) = 1.59; clean sky = 0.155; genuine ground structure (1266,819) = 11.43. The measurement tool is scratchpad/pfx-band.mjs and agrees with probe.mjs to the digit on every shared field.",
+    "R15-ROUND shadow-temperature finding: unchanged, and not reachable from PostFX (see the analytic disproof in outputs).",
+    "R15-ROUND haze minor, now owned here: needs a target expressed as a reduction, not an increase — e.g. sun-frame mid band (1266,585,506x23) saturation 0.184 -> >= 0.28 and p50 227.2 -> <= 205 with the god-ray and bloom spread cut rather than the fog ramp moved."
+  ],
+  "testsRequired": [
+    "node --check src/render/PostFX.js (done, passes)",
+    "coordinator-owned npm run build and one integrated phone/MEDIUM recapture",
+    "confirm phone-sun-r15 and phone-valley-r15 are unchanged at MEDIUM by the uDecay anchor (it evaluates to exactly 0.94 at 24 taps)",
+    "if a desktop/ULTRA frame is captured, expect the sun-facing framings to gain god-ray luminance ~61%; that is the tier-parity fix, and if the integrated round then judges the shaft term too strong, lower godRayStrength once for all tiers rather than reverting this line"
+  ],
+  "risks": [
+    "The ULTRA/HIGH god-ray gain rises to MEDIUM parity. Given the sky owner's ablation this moves desktop in the direction of MORE wash, not less. It was shipped anyway because a pass that changes brightness with quality tier makes every future measurement of it ambiguous, and because the phone review set — what this round is judged on — cannot move. One-line revert if the coordinator disagrees.",
+    "No pixel-level verification was possible for anything in this handoff. Everything shipped is derived from source arithmetic or from runtime readbacks that bypass the canvas; nothing rests on a screenshot.",
+    "The god-ray and haze findings pull in opposite directions and the next owner must pick one. This handoff argues for cutting the common-mode spread rather than raising the gain."
+  ],
+  "rollback": "git checkout f013950 -- src/render/PostFX.js",
+  "status": "awaiting_verification"
+}
