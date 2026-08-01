@@ -494,6 +494,23 @@ export class LightingSystem {
     this._sphereR = new Float32Array(this.cascadeCount);
     this.csm.splits = this._splits;
 
+    // Per-cascade geometry in **metres**, written every refit. Three separate rounds have
+    // now had to reconstruct these offline from `_computeSplits` by hand — the sub-frustum
+    // bounding radius, the world size of one shadow texel and the world size of the normal
+    // offset are the numbers every argument about a missing shadow turns on, and none of
+    // them was readable from the running build. `mapReady` is here because a cascade whose
+    // map three never allocated and a cascade that draws no casters look identical on
+    // screen, which is exactly the silent shape ARCHITECTURE §0 keeps warning about.
+    // Allocated once; `frameShadows` only writes fields (§0.4, no per-frame allocation).
+    this.cascadeReport = [];
+    for (let i = 0; i < this.cascadeCount; i++) {
+      this.cascadeReport.push({
+        i, near: 0, far: 0, radiusM: 0, texelM: 0, normalBiasM: 0,
+        pcfRadiusM: 0, mapSize: this.shadowMapSize, mapReady: false,
+      });
+    }
+    this._shadowProbeFrames = 0;
+
     // Always MAX_CASCADES long, never `cascadeCount`. three's `WebGLUniforms.flatten`
     // walks an array uniform to the size the *compiled program* declares, so if this
     // array is ever shorter than KAG_CASCADES — one tier step down, before every
@@ -782,6 +799,18 @@ export class LightingSystem {
       const depthRange = cam.far - cam.near;
       light.shadow.normalBias = texel * 1.6;
       light.shadow.bias = -1.6 * texel / depthRange;
+
+      const rep = this.cascadeReport[i];
+      if (rep) {
+        rep.near = this._splits[i];
+        rep.far = this._splits[i + 1];
+        rep.radiusM = r;
+        rep.texelM = texel;
+        rep.normalBiasM = light.shadow.normalBias;
+        rep.pcfRadiusM = texel * Math.max(light.shadow.radius, 1);
+        rep.mapSize = this.shadowMapSize;
+        rep.mapReady = !!light.shadow.map;
+      }
     }
   }
 
@@ -1213,6 +1242,27 @@ export class LightingSystem {
     this.rim.target.updateMatrixWorld();
 
     this.frameShadows(camera);
+
+    // A cascade whose shadow map three never allocated draws a fully-lit world and reports
+    // `castShadow true, cascades 2, shadowsActive true` while doing it — the exact telemetry
+    // that has stood beside "nothing on the plateau casts a shadow" for three rounds. Say so
+    // once, thirty frames in, so it lands in the capture rig's console log instead of having
+    // to be inferred from pixels. Costs one integer compare per frame after that.
+    if (this.shadowsActive && this._shadowProbeFrames <= 30) {
+      this._shadowProbeFrames++;
+      if (this._shadowProbeFrames === 30) {
+        for (let i = 0; i < this.cascadeLights.length; i++) {
+          const l = this.cascadeLights[i];
+          if (l.castShadow && !l.shadow.map) {
+            this._warnOnce(`cascade:${i}:nomap`,
+              `cascade ${i} has castShadow but no shadow map after 30 frames — it is ` +
+              'contributing an unshadowed key. Check the caster set and the light\'s ' +
+              'frustum, not the bias.');
+          }
+        }
+      }
+    }
+
     this._updatePool(dt);
     this._updateStanding();
 
