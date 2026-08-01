@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "taskId": "R17-POSTFX",
+  "producer": "postfx-specialist",
+  "consumer": "project-director",
+  "branch": "claude/1-round-execution-kgtb9r",
+  "baseSha": "3be5c2d",
+  "allowedScope": [
+    "src/render/PostFX.js",
+    "AI_DEVELOPMENT/HANDOFFS/r17-postfx.json"
+  ],
+  "apparatus": {
+    "resolution": "native 2532x1170, shots/phone-*-r16v1.png (current build), shots/phone-*-r16.png (previous). phone profile, TIER.MEDIUM. Note the review PNG is a 1.876x upscale of a 1350x624 drawing buffer.",
+    "harness": "Scratch, NOT committed. Every box and arc imports region()/stats() from tools/probe.mjs rather than re-decoding, so the 3-channel/4-byte-stride bug cannot occur and agreement with the probe CLI is by construction. Independently validated twice: `probe stats shots/phone-sun-r16v1.png 0.70,0.60,0.09,0.30` and the harness both return meanRGB [9.9,3.5,3.7] p50 3.9 detail 2.53; and the harness reproduced the closing critic's 25-sample r=130 px arc to the digit (mean 237.7, ptp 10.7) without being given its numbers.",
+    "occluderMask": "Scratch. geometry = luma < 120, OR y > 690 (treeline/fence/plaza), OR inside two hand rects for the emissive paper lanterns (which are bright but are depth-masked occluders in FRAG_GOD_OCCLUSION). Rendered to r17mask.png and LOOKED AT before any number was taken from it; three sample points quoted as sky were re-probed individually and read meanRGB [243.5,224.7,187.7] / [235.9,215.4,184.1] / [234.1,213.1,181.5], sat 0.22-0.23, lumaSpread 1.9-3.3 - cream sky, not geometry.",
+    "notRun": "No capture and no browser were launched. The two edited shaders are UNCOMPILED. No GLSL validator exists in this container (no glslangValidator/glslc/glslang)."
+  },
+
+  "findings": [
+    {
+      "id": "F1",
+      "severity": "blocker",
+      "critic": "The shadow end of the two sun-facing frames has been clipped rather than deepened, and the clipping has eaten the hero foreground object.",
+      "verdict": "FIXED, all acceptance criteria met in exact simulation; one of the critic's two hypotheses disproved and one of its guards found pre-breached.",
+
+      "attribution": {
+        "claim": "The crush is 100% the god-ray composite term, and it is not the grade, not the fill and not the cascades.",
+        "evidence": "Frame-level differential across round 16, whole-frame share below code 8: hero 4.16 -> 4.13%, wide 0.01 -> 0.01%, torii 4.93 -> 4.83% (unchanged), against sun 0.32 -> 12.47% and valley 3.53 -> 14.17%. uGodStrength = godRayStrength * _sunScreenStrength, and _sunScreenStrength is ~0 on the first three, so the god term is multiplied by zero there in BOTH builds. A change to the grade, to Lighting.js's fill or to the cascades would have moved all five frames; only the two with the sun on screen moved.",
+        "disproved_a": "The critic's hypothesis (a) - 'whatever removed the additive atmospheric term this round removed it uniformly rather than with depth' - is backwards. Read the diff 1a805c9..0dec70b: round 16 ADDED the depth term (`air = mix(uAirFloor, 1, 1 - exp(-z/uAirScale))` in alpha). Before round 16 the term had NO depth dependence at all. The near upright lost its lift because at z = 6 m that airlight is 0.167, compounded with uWeight 3.0 -> 1.34 and the new env.",
+        "disproved_b": "The critic's hypothesis (b) - 'a tone-curve or contrast term was steepened at the same time' - is disproved by the same diff: no tone-curve constant changed in round 16 (uLift, uGamma, uGain, uContrast, uFilmic*, uSaturation are byte-identical), and by the frame differential above, since a curve change is frame-independent.",
+        "revertOrTune": "Asked explicitly, answered explicitly: NOTHING in round 16's god-ray change is reverted. Ratio march, bounded march, emitter conditioning, the airlight receiver term and the aureole-containment removal all stay. The mistake was not any one of those - it was that the pass had silently been the shadow ambient of every into-the-sun framing, and a black point belongs in the print curve, not in a volumetric pass. Reverting `recv` would give back the mid-field wash, which is the one thing round 16 got right."
+      },
+
+      "shipped": "FRAG_COMPOSITE gains a flare toe as the last tonal operator (after grain, before the flash mix). L' = K*(L/K)^g on luminance only, with chroma carried as a ratio; g = 1 + (0.45 - 1) * _sunScreenStrength, K = 0.30, gain ceiling 6.0. At _sunScreenStrength = 0 the exponent is exactly 1 and a uniform branch skips it. New uniform uFlareToe (vec3) is declared unconditionally and set outside the god-ray guard so the grade does not follow the quality tier; _sunScreenStrength is now initialised in the constructor because that read is no longer behind the god-ray guard and `1 + (g-1)*undefined` is NaN (ARCHITECTURE 5b).",
+
+      "whyAToeAndNotALift": "A lift (c + F) compresses everything under the knee toward the floor: it would have taken the upright's detail DOWN from 2.53 and it forces the frame minimum up to the floor, which fails capture.mjs's `p01 < 15` black gate. A toe with g < 1 has local slope g*(K/L)^(1-g) > 1 below the knee, so it EXPANDS shadow contrast and leaves true black at true black. Measured: detail 2.53 -> 8.66, p0.1 0.0 -> 0.0.",
+
+      "prediction": "Stated before measuring. On a re-shot phone/MEDIUM sun: box 0.70,0.60,0.09,0.30 p50 into [18,45], detail >= 5.0, mean B >= 10.0; frame below-code-8 <= 6.0% and below-code-4 <= 2.0%; on valley <= 8.0% and <= 4.0%. Guards held: r=130 arc mean within 237.7 +/-5%, sun saturation >= 0.330, valley >= 0.360, whole-frame sun p50 within 97.1-113.9, and capture.mjs p0.1 < 15 on all five.",
+
+      "measured": {
+        "method": "EXACT simulation, not an estimate: the operator is the last tonal step in FRAG_COMPOSITE and is per-pixel, so applying the identical arithmetic to shots/phone-*-r16v1.png reproduces what the shader will write. Two known one-sided errors, both stated: (1) values the shipped shader clipped to 0 before the PNG was written cannot be recovered here, so detail and lumaSpread are LOWER bounds; (2) the shader runs at 1350x624 and the PNG is a 1.876x upscale, and a per-pixel nonlinearity does not commute with resampling, so detail may land anywhere in roughly 5-9 rather than exactly 8.66.",
+        "sun_upright_box_0.70,0.60,0.09,0.30": {
+          "p50": "3.9 -> 20.3  (target 18-45, PASS)",
+          "detail": "2.53 -> 8.66  (target >= 5.0, PASS)",
+          "meanB": "3.7 -> 15.7  (target >= 10.0, PASS)",
+          "meanRGB": "[9.9,3.5,3.7] -> [37.7,13.9,15.7]",
+          "lumaSpread": "24.4 -> 46.0"
+        },
+        "sun_frame": {
+          "below8": "12.47% -> 1.68%  (target <= 6.0, PASS)",
+          "below4": "5.89% -> 0.81%  (target <= 2.0, PASS)",
+          "p50": "105.5 -> 105.5  (GUARD 2 band 97.1-113.9, PASS - the knee sits far below the median)",
+          "saturation": "0.338 -> 0.338  (guard >= 0.330, PASS by construction)",
+          "p0.1": "0.0 -> 0.0  (capture.mjs black gate < 15, PASS)",
+          "p99/p99.9/p99.99": "247.6/253.4/255 unchanged"
+        },
+        "valley_frame": {
+          "below8": "14.17% -> 3.99%  (target <= 8.0, PASS)",
+          "below4": "9.20% -> 1.87%  (target <= 4.0, PASS)",
+          "saturation": "0.369 -> 0.369  (guard >= 0.360, PASS)",
+          "p50": "57.6 -> 67.3",
+          "p0.1": "0.0 -> 0.0",
+          "critic_boxes_p50": "0.10,0.55: 70.2 -> 73.6 | 0.30,0.88: 3.0 -> 17.9 | 0.62,0.62: 30.1 -> 50.2"
+        },
+        "guards_untouched": {
+          "sun_arc130_mean": "237.7 -> 237.7 (identity: the arc sits at code 237, far above the knee 0.30 = code 76.5)",
+          "sun_midfield_0.55,0.55,0.06,0.04_p50": "237.3 -> 237.3 (identity)"
+        },
+        "no_cross_contamination": "hero, wide and torii come out BYTE-IDENTICAL under the shipped operator (Buffer.compare == 0), because _sunScreenStrength is ~0 there and the exponent is exactly 1. This matters beyond this finding: the Level.js plaza-patch blocker lives on hero at p50 3.1, one code value from this frame's upright at 3.9, and a global shadow lift would have masked it. This one cannot."
+      },
+
+      "apparatusFaults": [
+        "GUARD PRE-BREACHED. The finding's guard 'the mid-field box 0.55,0.55,0.06,0.04 must NOT rise above p50 226' is already breached in the build being judged: that box measures p50 237.3 on shots/phone-sun-r16v1.png, not below 226. The critic appears to have carried 226.1 forward from the r16 build without re-probing it. The guard therefore cannot detect a regression. What DID move in that box is the thing the guard was reaching for, and it moved the right way: lumaSpread 26.7 -> 147.9 and detail 0.60 -> 1.52, i.e. the silhouette came back. The p50 rose because removing the aureole-containment block raised bright near-sun pixels by up to 13% and that box is 88% sky. Suggested replacement: judge that box on lumaSpread >= 100 and detail >= 1.4, and drop the p50 ceiling.",
+        "The acceptance asks for 'no cool sky bounce ... the contract's #4a6b8f'. The numeric part (mean B >= 10.0) is met at 15.7. The HUE part is not this file's to fix and is not attempted: chroma is deliberately carried as a ratio so that whole-frame saturation is invariant (0.338 -> 0.338), and a per-channel cool grade in its place cost 0.044 of frame saturation in the same simulation - four times the guard's own margin. The shadow-side hue of a backlit prop is Lighting.js's ambient colour."
+      ]
+    },
+
+    {
+      "id": "F2",
+      "severity": "blocker",
+      "critic": "There are still no volumetric shafts anywhere in the two frames the contract names.",
+      "verdict": "SYMPTOM CONFIRMED, ACCEPTANCE INSTRUMENT DISPROVED, mechanism localised, partial fix shipped. This blocker is NOT closed and I am saying so in advance.",
+
+      "instrumentDisproof": {
+        "claim": "The round-17 acceptance instrument - 25 boxes of 9x9 px at r = 130 px from the disc over -85deg..+85deg, requiring 3 interior minima each 12 code values below its flanks - cannot be satisfied by ANY occlusion-based volumetric pass, correct or otherwise. It is not a hard target; it is an impossible one.",
+        "argument": "A screen-space god ray at receiver P integrates from P TOWARD the sun. An occluder can only darken P if it lies between P and the sun, i.e. at a smaller radius on the same ray. The nearest occluder to the disc anywhere in the -85..+85 sector sits at r = 159 px (swept at 0.25 deg x 1 px over the mask, and cross-checked by cropping: `probe crop shots/phone-sun-r16v1.png 0.598,0.330,0.080,0.260` is a pure cream gradient with no geometry). The acceptance arc is at 130 px, INSIDE that. Worse, its own march is bounded: at dist = 0.111 the shipped soft bound gives len = 0.0713, so each of those 25 receivers samples radii 47..130 px only. Simulated visibility on all 25 samples: 1.0000, to four places, with no free parameter that can change it. There is nothing there to occlude.",
+        "corollary": "The pass currently deposits 87% of its peak envelope (env(0.111) = 0.872) at exactly the radius where its own geometry makes modulation identically impossible, and 24% (env(0.359) = 0.239) at the radius where the shide, the shimenawa and the hanging lantern actually cut. That is the mechanism, and it is a placement error, not a gain error.",
+        "proposedReplacement": "Judge on an arc that crosses shafts and only sky: r = 420 px, 150deg..200deg, 13x13 boxes, all 11 in-sector boxes mask-verified as sky and three of them individually re-probed (sat 0.22-0.23, lumaSpread 1.9-3.3). Across that arc the pass's own visibility term already spans 0.02 (at 150deg, behind the left upright) to 0.42 (at 195deg) - a 20x range. Current measured p50 there: 217.2 213.7 215.3 217.1 216.4 220.0 226.2 215.7 221.2 220.7 215.0, ptp 12.5, and it does NOT track visibility. Target that the ptp rises and that the profile minimum lands at 150-155deg and the maximum at 185-195deg. That is falsifiable and geometry-anchored; the r=130 arc is not."
+      },
+
+      "prediction": "Stated before measuring, and deliberately modest. env(0.111) rises no more than +5% so GUARD 1 (arc mean 237.7 +/-5%) is untouched; the frame corner stays at least 10x below the 9.6e-3 deposit round 16 identified as the far-field wash; the simulated share of sky receivers carrying a modulation above 0.05 linear units at least doubles. On the proposed r=420 arc, (max - min) rises from 12.5 code toward 16-20 and the minimum moves to 150-155deg. I do NOT predict this closes the blocker: 16-20 code on a mean of 218 is still the same order as the sky's own angular gradient there, and the remaining gap is a scene-radiance problem (the near-sun sky is already at code 237, where the ACES + sRGB chain gives only ~25 code per unit of scene-linear light, against ~62 at code 220).",
+
+      "shipped": "FRAG_GOD_BLUR's radial footprint becomes two lobes: env = mix(exp(-d^2/uGlowRadius^2), exp(-d^2/uGlowOuter^2), uGlowMix) at 0.30 / 0.45 / 0.5. uWeight, uMaxMarch, uDensity, uDecay, uSunRadius, uEmitClamp, uAirScale, uAirFloor and GOD_SAMPLES are all UNCHANGED. This is not a gain change: at the guarded radius the deposit moves +4.0%.",
+
+      "measured": {
+        "method": "Simulation of the exact shipped march on the occluder mask above, emitter = 1 on sky and 0 on geometry so the output is pure visibility and only ratios are claimed.",
+        "env": "d=0.111 (GUARD 1 radius) 0.872 -> 0.907 (+4.0%) | d=0.257 (the single largest modulation in the frame) 0.480 -> 0.601 (+25%) | d=0.359 (the proposed arc) 0.239 -> 0.384 (+61%) | d=1.20 (frame corner) 1.1e-7 -> 4.1e-4, which is 23x BELOW the 9.6e-3 round 16 removed as the wash",
+        "shaftArea": "share of sky receivers carrying a modulation above 0.05 linear units 11.92% -> 20.76%; above 0.15, 4.58% -> 12.07%; peak modulation 0.541 -> 0.678 at native (1232,506)",
+        "r130_unchanged": "simulated visibility on all 25 acceptance samples stays 1.0000 - by construction, and no envelope can change that"
+      },
+
+      "disproved": [
+        "Flattening the march's per-tap weight does NOT buy shaft area. uSunRadius 0.18 -> 0.30 was the obvious next lever (at 0.18 the innermost tap of a march from r = 0.36 is weighted 14x the outermost, so an occluder's shadow decays long before the march does). Simulated on the shipped occluder mask it raises the single best shaft pixel 0.541 -> 0.574 (+6%) while SHRINKING the sky area above 0.05 from 11.92% to 10.39%, because a receiver whose near taps are blocked and far taps are clear now reads as more visible. Left at 0.18. Recorded in the source so it is not retried.",
+        "The round-16 report's own r = 330 px / 55-115 deg arc is retired as an instrument, confirming the closing critic: 8 of its 13 boxes sit on the lantern, the shimenawa and the uprights. Its 'structure' was vermilion lacquer."
+      ],
+
+      "notMeasurable": "The modulation the pass currently produces at r = 420 px (simulated at ~6 code values from a 20x visibility swing) is at or below the sky's own angular gradient across the same arc (12.5 code ptp), so it is not separable in the shipped frame. That, and not the sample count, is why the shafts do not read."
+    }
+  ],
+
+  "budget": {
+    "drawCalls": "+0 (allocation was +1)",
+    "triangles": "+0",
+    "renderTargets": "+0",
+    "perFrameAllocation": "0 - uFlareToe's Vector3 is constructed once and written with .set()",
+    "fillRate": "FRAG_GOD_BLUR: +1 exp and +1 mix per pixel of rtGodB, which is W/4 x H/4 = ~337x156 = 53k pixels at MEDIUM. FRAG_COMPOSITE: +1 dot and one UNIFORM branch on every pixel of the 1350x624 buffer, plus one pow, one min and one vec3 multiply on the ~20% of pixels below the knee, and only on framings where the sun is on screen (elsewhere the branch is not taken). Net still cheaper than the pre-round-16 composite, which carried a length(), two smoothsteps and a divide at full res unconditionally."
+  },
+
+  "risks": [
+    "UNCOMPILED. No browser was launched and no GLSL validator exists in this container. FIRST THING on the verification build: check the console for a shader link error. FRAG_COMPOSITE gained one uniform (uFlareToe) and a 5-line block; FRAG_GOD_BLUR gained two uniforms (uGlowOuter, uGlowMix) and one line. If FRAG_GOD_BLUR fails to link, rtGodB is black and the frame silently loses its god rays; if FRAG_COMPOSITE fails to link, the frame is black - that one is loud.",
+    "The two changes compound on sun and valley and only one of them is in the exact simulation. The two-lobe envelope raises env at the upright's radius (dist 0.242) by 21.6%, which adds god deposit BEFORE the flare toe amplifies it. Predicted upright p50 is therefore 20-27 rather than exactly 20.3; the acceptance band is 18-45, so there is headroom, but if it lands above 45 the lever is this.flareToe (raise it toward 0.55), not the envelope.",
+    "valley was simulated at _sunScreenStrength = 1.0 because its live value is unknown. If it is lower, every valley number above scales down proportionally and below-code-8 may land above 3.99% (the target is <= 8.0%, so there is room for a 2x shortfall before it fails).",
+    "core may re-pose valley entirely and sky may change ground illumination in wide, so any valley number here is contaminated. The sun frame is only touched by a minor Props.js finding this round, so the sun numbers are the safe ones to judge on.",
+    "Grain in the deep shadows of sun and valley is amplified by the toe's local slope (up to ~3.4x on the upright, ceiling 6x). That is wanted - ARCHITECTURE 5.9 - and the resulting detail 8.66 sits beside the critic's own reference for a normal surface (lit flagstone at 8.67). But if the closing critic calls sun noisy rather than grainy, lower this.grain for those framings, not this.flareToe."
+  ],
+
+  "rollback": "git checkout 3be5c2d -- src/render/PostFX.js",
+  "status": "shipped-unverified"
+}

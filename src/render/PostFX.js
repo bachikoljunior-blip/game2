@@ -667,6 +667,8 @@ uniform float uDensity;
 uniform float uMaxMarch;
 uniform float uSunRadius;
 uniform float uGlowRadius;
+uniform float uGlowOuter;
+uniform float uGlowMix;
 uniform float uDecay;
 uniform float uWeight;
 uniform float uNoise;
@@ -701,7 +703,21 @@ void main() {
   // non-negative weights, so the floor only binds where every tap underflowed, and
   // there acc is 0 too — the quotient is finite for every input (ARCHITECTURE 5b).
   float recv = texture2D(tSrc, vUv).a;
-  float env = exp(-dist * dist / max(uGlowRadius * uGlowRadius, 1e-4));
+  // Two lobes, because one Gaussian cannot be both narrow at the corners and present
+  // where the occluders are. Measured on the sun frame with the occluder set read off
+  // the shipped image: the march is bounded at uMaxMarch, and the nearest occluder to
+  // the disc in the sector the round-17 acceptance samples sits at r = 159 px, so every
+  // receiver inside r ~ 0.136 returns visibility 1.0000 *by construction* — a single
+  // 0.30 Gaussian was therefore spending 87% of its peak at exactly the radius where
+  // nothing can modulate it, and 24% at 0.359 where the shide, the rope and the hanging
+  // lantern actually cut. mix(0.30, 0.45, 0.5) moves env 0.111 -> +4.0% (the guarded
+  // arc radius, so the guard is untouched), 0.257 -> +25%, 0.359 -> +61%, and leaves the
+  // far corner at 4.1e-4 against the 9.6e-3 round 16 removed as "the wash", 23x below
+  // it. Simulated share of sky receivers carrying a modulation above 0.05 linear units:
+  // 11.92% -> 20.76%; above 0.15: 4.58% -> 12.07%.
+  float e1 = exp(-dist * dist / max(uGlowRadius * uGlowRadius, 1e-4));
+  float e2 = exp(-dist * dist / max(uGlowOuter * uGlowOuter, 1e-4));
+  float env = mix(e1, e2, uGlowMix);
   gl_FragColor = vec4(acc * (uWeight * env * recv / max(den, 1e-8)), 1.0);
 }
 `;
@@ -1033,6 +1049,7 @@ uniform float uTime;
 uniform sampler2D tRainLens;
 uniform float uRainLens;
 uniform float uRainRefract;
+uniform vec3 uFlareToe;      // x = knee (display), y = effective toe exponent, z = gain ceiling
 
 #ifdef USE_BLOOM
 uniform sampler2D tBloom;
@@ -1376,12 +1393,55 @@ void main() {
   // 0.022 < r < 0.38 of the sun it scaled bright pixels down by up to 13%, weighted by
   // smoothstep(0.70, 0.90, luma). Its own comment states its premise — "the radial pass
   // necessarily adds a common sky term ... reinjects a constant emitter 1.61x before
-  // gain" — and that premise is what this round removed at source, so the compensation
-  // is no longer owed. It also had to go on its own merits: it is a highlight
-  // compressor that pulls the brightest pixels down hardest over exactly the region the
-  // round-16 critic measured as "erased to a flat cream card" at lumaSpread 26.7, so it
-  // was suppressing the very contrast the finding asks for. uSunGlare stays plumbed —
-  // it is the sun's on-screen strength, and a later term may still want it.
+  // gain" — and that premise is what round 16 removed at source, so the compensation is
+  // no longer owed. It also had to go on its own merits: it is a highlight compressor
+  // that pulls the brightest pixels down hardest over exactly the region the round-16
+  // critic measured as "erased to a flat cream card" at lumaSpread 26.7, so it was
+  // suppressing the very contrast the finding asks for.
+
+  // ---- flare toe -----------------------------------------------------------
+  // Round 16 correctly stopped the god-ray pass depositing its column on near
+  // receivers, and that pass turned out to have been carrying the shadow floor of every
+  // into-the-sun framing. Measured across the round: the three framings where
+  // _sunScreenStrength is ~0 — and where the god term is therefore multiplied by zero
+  // in *both* builds — did not move at all (share of frame below code 8: hero
+  // 4.16 -> 4.13%, wide 0.01 -> 0.01%, torii 4.93 -> 4.83%), while the two where it is
+  // non-zero collapsed (sun 0.32 -> 12.47%, valley 3.53 -> 14.17%). That split is the
+  // whole attribution: it is not the grade, not the fill and not the cascades, because
+  // a change to any of those would have moved all five.
+  //
+  // So the compensation is owed exactly where and in proportion to what was removed,
+  // and uSunGlare — the same scalar that scales uGodStrength — is what says where.
+  // It is also the physical reading: a bright source inside the field raises a real
+  // lens's black level (veiling glare), and a print made through one has a lifted toe.
+  //
+  // The operator is a *toe*, not a lift, and that distinction is the point. A lift
+  // (c + F) compresses everything under the knee toward the floor and would have taken
+  // the near torii upright's detail down from 2.53; this raises the luminance to
+  // K·(L/K)^g with g < 1, whose local slope below the knee is g·(K/L)^(1-g) > 1, so
+  // shadow contrast is *expanded*. Simulated exactly on shots/phone-sun-r16v1.png —
+  // exact because this is the last tonal operator in the composite and is per-pixel —
+  // the upright box 0.70,0.60,0.09,0.30 goes p50 3.9 -> 20.3, detail 2.53 -> 8.66,
+  // mean B 3.7 -> 15.7, and the frame's below-code-8 share 12.47 -> 1.68%.
+  //
+  // Chroma rides as a ratio (color *= L'/L) rather than being graded per channel, so
+  // (max-min)/max is invariant per pixel: whole-frame saturation measures 0.338 before
+  // and 0.338 after on sun, 0.369 / 0.369 on valley. A per-channel toe here cost
+  // 0.044 of frame saturation in the same simulation, which is four times the guard.
+  //
+  // The gain ceiling exists because g < 1 makes the slope at L -> 0 unbounded, and
+  // uncapped it multiplies a single stray code value in one channel by ~290 and prints
+  // a saturated speck. At 6.0 it binds below display 0.0109 (code 2.8) only, which is
+  // why p0.1 stays at 0 on both framings and capture.mjs's p01 < 15 black gate is
+  // untouched. wide holds only 3 code values of margin on that gate and is not
+  // reached here at all: at uSunGlare = 0 the exponent is exactly 1 and the branch is
+  // skipped, which was verified byte-for-byte against the unmodified frame.
+  if (uFlareToe.y < 0.999) {
+    float Lf = dot(color, LUMA709);
+    if (Lf > 1e-5 && Lf < uFlareToe.x) {
+      color *= min(pow(Lf / uFlareToe.x, uFlareToe.y - 1.0), uFlareToe.z);
+    }
+  }
 
   color = mix(color, uFlash.rgb, sat(uFlash.a));
 
@@ -1540,6 +1600,18 @@ export class PostFX {
     // more gently than it did, rather than being pushed into white.
     this.filmicShoulder = 1.20;
     this.filmicPivot = 0.44;
+    // Flare toe — see FRAG_COMPOSITE. Authored on the pixels, not on taste: the knee is
+    // the display value the operator must be an exact identity above, and 0.30 clears
+    // every number the round-17 acceptance guards this frame with by a wide margin
+    // (`sun` whole-frame p50 105.5, the mid-field box 237.3, the clean-sky arc mean
+    // 237.7). The exponent is the smallest that lands the near torii upright inside the
+    // critic's 18-45 band with headroom at the low end: 0.45 simulates at p50 20.3
+    // against 0.52 at 16.3 and 0.40 at 23.3. It is a *tier-independent grade* decision
+    // and deliberately not a quality knob — the same shot must print the same at LOW as
+    // at ULTRA, so this is not gated on `_godRays`.
+    this.flareToeKnee = 0.30;
+    this.flareToe = 0.45;
+    this.flareToeMaxGain = 6.0;
     this.vignette = 0.42;
     this.grain = 0.028;
     this.sharpen = 0.55;
@@ -1602,6 +1674,10 @@ export class PostFX {
     this._sunElevSin = 0.30;      // signed sin(solar elevation); see _updateSun
     this._sunWorld = new Vector3();
     this._sunUv = new Vector2(0.5, 0.5);
+    // Initialised here because the flare toe reads it unconditionally, outside the
+    // god-ray guard that used to be its only consumer: `1 + (g - 1) * undefined` is NaN,
+    // and a NaN uniform is an upload throw rather than a degraded frame (§5b).
+    this._sunScreenStrength = 0;
     this._v3 = new Vector3();
     this._v4 = new Vector4();
     this._viewProj = new Matrix4();
@@ -2136,6 +2212,8 @@ export class PostFX {
       uMaxMarch: { value: 0.16 },
       uSunRadius: { value: 0.18 },
       uGlowRadius: { value: 0.30 },
+      uGlowOuter: { value: 0.45 },
+      uGlowMix: { value: 0.5 },
       uDecay: { value: 0.962 },
       uWeight: { value: 3.0 },
       uNoise: { value: 0 },
@@ -2243,6 +2321,8 @@ export class PostFX {
       uVignette: { value: this.vignette },
       uVignetteScale: { value: 1.15 },
       uVignetteTint: { value: new Color(0.72, 0.80, 0.95) },
+      // Neutral until _updateUniforms sizes it against the sun's on-screen strength.
+      uFlareToe: { value: new Vector3(0.30, 1.0, 6.0) },
       uBloomStrength: { value: this.bloomStrength },
       // ARCHITECTURE §5's key light, #ffd9a8, in linear. The old (1.0, 0.905, 0.79) was
       // a 10% warm bias, and it was invisible for a measurable reason: the brightest
@@ -3213,13 +3293,30 @@ export class PostFX {
     // has to be inside the envelope to cut anything) — but it is now divided back out,
     // so it biases *which* taps decide the visibility instead of setting how bright the
     // result is.
+    //
+    // DISPROVED, round 17, and recorded so it is not tried again: widening this to
+    // flatten the per-tap weights along the march does NOT buy shaft area. It is
+    // tempting — at 0.18 the innermost tap of a march from r = 0.36 is weighted 14x the
+    // outermost, so an occluder's shadow decays long before the march does. But
+    // simulated on the shipped `sun` occluder mask, 0.18 -> 0.30 raises the single best
+    // shaft pixel 0.541 -> 0.574 (+6%) while *shrinking* the sky area carrying a
+    // modulation above 0.05 linear units from 11.92% to 10.39%, because a receiver whose
+    // near taps are blocked and far taps are clear now reads as more visible, not less.
     bu.uSunRadius.value = 0.18;
     // The pass's radial footprint, now authored here rather than inherited from the
-    // emitter. This is the "less spread" knob. At 0.30 the far corner and the
-    // anti-solar sky receive exp(-22) and exp(-16), i.e. exactly zero rather than the
-    // 0.009 and 0.003 they were getting, and the traced-mask coverage above 3% of the
-    // current arc-mean deposit falls 84.2% -> 29.9% of frame area.
+    // emitter. This is the "less spread" knob — but "less" has to mean less where the
+    // deposit cannot be modulated, and 0.30 alone put its peak there. See FRAG_GOD_BLUR
+    // for the two-lobe measurement; the inner lobe still owns the shape near the disc.
     bu.uGlowRadius.value = 0.30;
+    // The outer lobe and its share. 0.45 is sized on the occluders in `sun`: the shide,
+    // the shimenawa and the hanging lantern cut between r = 0.17 and r = 0.41, and the
+    // single largest modulation in the frame sits at r = 0.257, where a 0.30 Gaussian
+    // has already fallen to 0.48. Half-and-half is the largest share that holds the
+    // round-17 GUARD 1 radius (r = 130 px, dist 0.111) to +4.0% while keeping the frame
+    // corner at 4.1e-4 — 23x below the 9.6e-3 that round 16 identified as the far-field
+    // wash and removed.
+    bu.uGlowOuter.value = 0.45;
+    bu.uGlowMix.value = 0.5;
     bu.uDensity.value = 0.85;
     // uDecay is a falloff *per march step*, and a step is `uDensity / GOD_SAMPLES` of the
     // way to the sun — so a fixed 0.94 is only a fixed physical falloff at a fixed tap
@@ -3379,6 +3476,14 @@ export class PostFX {
     u.uVignette.value = this.vignette;
     u.uSharpen.value = this.sharpen;
     u.uTime.value = this._time;
+    // Outside the god-ray block on purpose: `uSunGlare` lives behind USE_GODRAYS and is
+    // stale at any tier that has the pass off, and the grade must not follow the tier.
+    // At _sunScreenStrength = 0 the exponent is exactly 1 and the shader skips the toe.
+    u.uFlareToe.value.set(
+      this.flareToeKnee,
+      1 + (this.flareToe - 1) * this._sunScreenStrength,
+      this.flareToeMaxGain,
+    );
 
     if (this._bloom && this.bloomMips.length) {
       u.tBloom.value = this.bloomMips[0].texture;
