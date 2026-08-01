@@ -69,59 +69,51 @@ sample four times.
 > Picking the work up in a new session? [`HANDOFF.md`](./HANDOFF.md) carries the state
 > the container does not — `shots/` is gitignored and the review images do not survive.
 
-Measured, not asserted. The coherent phone/MEDIUM `r15v1` checkpoint is captured and gated.
-Round 15 closed **FAIL at 65/100**, 3 blockers from 4, and was mostly a *disproof* round: it
-retired `HANDOFF.md` open item 2 — the finding that file called the most consequential
-unfixed problem on the project — by showing the cool fill was never being eaten and the
-original measurement had simply omitted albedo. It also killed the "no cast shadows on the
-plaza" claim for the third time, with the critic's own probe box measured at **84.6% cast
-shadow**.
+Measured, not asserted. The coherent phone/MEDIUM `r18v1` checkpoint is captured and gated.
+Rounds 16, 17 and 18 are complete and the sequence is closed at the user's instruction.
+Independent closing verdicts were **FAIL 54**, **FAIL 56** and **FAIL 58** out of 100. Those
+are three different critic instances and are **not** a trend line — this project has measured a
+12-point gap between instances on byte-identical pixels.
 
-> **The round-15 scores are not a trend.** The opening `r15` capture was taken on a tree
-> byte-identical to `r14final`. Round 14 closed at **50**; a fresh critic instance scored the
-> identical pixels **62**. That 12-point gap is inter-critic-instance variance measured
-> directly, and the closing 65 came from a third instance. The instance-independent results
-> are that the detached-sky-dash blocker is gone — confirmed by pixel measurement and by eye
-> — and the blocker count fell 4 → 3.
+What is instance-independent across the three rounds: **one blocker closed** (the crushed
+shadow floor, reversed by the owner that introduced it — `sun` below-code-8 12.47% → 1.68%),
+**one long-standing blocker's mechanism proved** (the plaza voids), **one blocker proved
+unreachable from the file it was routed to for three rounds** (the god rays), and **one
+composition fault fixed at the source** (the `valley` camera stood inside the plateau lip and
+saw 0.1 m of drop; it now sees 319.4 m, at lower cost than before).
 
-The one blocker actually closed was closed by a proven mechanism, not a guess: the bamboo
-card atlas was packed 2×2, so bilinear sampling at v=0.5 pulled the deliberately opaque
-rooted skirt of cells 2/3 through the transparent culm tips of every row-0 card. Five
-ablations isolated it; repacking the atlas 4×1 took the dash region's `detail` from **5.95
-to 2.85** against a floor of 2.15 measured with the entire card mesh hidden — at zero
-triangle, draw-call or texture cost.
+These rounds were unusually productive in *disproof* rather than in pixels. Nine mechanisms
+were eliminated with measurement, several of which had been steering work for rounds:
+the plaza voids are not a lighting, cascade, glow-pool, shadow-proxy, far-cover or
+terrain-albedo defect; the `valley` shot was never a terrain fault; the `wide` shadow failure
+is binary rather than bias or resolution; and the reported sky-lattice regression is not
+terrain's. Two owners declined permissions they had been granted — one refused a cascade
+exemption after disproving both mechanisms it was granted for, another declined a budget
+reclaim that would have traded a closed finding for an open one.
 
+The most consequential defect found was in the measurement apparatus, not the renderer:
+`drop_console: true` was stripping the application's own boot diagnostics out of the exact
+build the review rig photographs. A commit that removed the **entire foliage system** from all
+five frames still produced a report reading `booted: true`, zero dead shaders, correct tier and
+every budget green. That is now fixed, and the rig fails loudly when an owning system stops
+drawing.
 
-Round 10 hardened the evidence and rejected harmful shadow/tone candidates; Round 11/12 made
-the stone-lantern receiver visible, additive, and softly varied. Its fixed hero near/far
-ground ratio moved **1.121 → 2.394**, and an independent source-blind lantern review passed.
-Round 13's source-blind score moved **36 to 43**, with blockers reduced from two to one.
-Round 14 moved **44 to 50** and eliminated the broad sun-glare major finding: the critic's
-fixed region fell from **38.112% to 11.330%** of pixels over 90% luma. Detached bamboo
-skyline fragments remain blocking; terrain scale and sparse courtyard storytelling remain
-major findings. Valley verification is also blocked by stale camera-era probes. The two
-authorized rounds are complete and Round 15 is not active. See `HANDOFF.md` and
-`AI_DEVELOPMENT/EVIDENCE/r14-final.md`.
-The public Pages surface was separately verified in a real browser: it booted the relative
-hashed production modules and reached the running engine with zero page, console, request,
-or HTTP failures.
+**Four blockers remain open**, with mechanisms and next actions recorded in `HANDOFF.md`.
 
-> The 58 (round 3) → 44 (round 7) → 46 (round 8) scores are **not** a single trend line:
-> they come from different critic instances, and the review set has since had the HUD
-> blanked, which removed the authored white ink the highlight gate used to pass on.
-
-**Latest coherent measured checkpoint (`r15v1`; not a full visual PASS)**
+**Latest coherent measured checkpoint (`r18v1`; not a full visual PASS)**
 
 | | measured |
 |---|---|
 | phone draw calls | **119** worst pose (`torii`), against the 140 cap |
-| phone triangles | **784,449** worst pose (`wide`), against the 900,000 cap |
+| phone triangles | **871,997** worst pose (`wide`), against the 900,000 cap |
 | tonal range | true blacks on all five review framings (p0.1 = 0, 11, 0, 1, 5) |
 | highlights | eligible `hero` **236** and `torii` **251**, both above the strict >235 gate |
 | detached sky debris | dash region `detail` **5.95 → 2.85**, against a 2.15 cards-off floor |
 | shadow colour | shaded plaza B/R **0.822 → 1.073**, sunlit-stone guard held at 0.693 ≤ 0.75 |
 | sun disc | core luma p50 **251.9 → 255.0**; sky guard held at 227.6 |
-| shader programs | zero linked dead — 117 linked, audited every capture |
+| shader programs | zero linked dead — 119 linked, audited every capture |
+| owning systems drawing | all six present in the rollup; rig now fails on a vanished owner |
+| build provenance | embedded revision meta matches HEAD, checked at capture |
 | page errors | zero |
 | set colour coherence | frame-to-frame R−B spread **64.1 → 43.2** |
 | aerial perspective | far range now reads **7.9 luma** below the sky above it, from 0.2 |

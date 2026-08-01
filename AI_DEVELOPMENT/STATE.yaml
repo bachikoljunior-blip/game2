@@ -32,7 +32,7 @@ objective:
     やつ終わりまで" — finish with the current round, and finish the in-flight one properly).
     Round 18 is to be completed in full through its close; rounds 19 and 20 are cancelled and
     were never started.
-  status: in_progress
+  status: complete_verified
   authorized_by: "User instruction 5ラウンド実行して (rounds 16-20), narrowed to rounds 16-18 by 今のラウンドで終わらせて"
   key_requirements:
     - One round is the unit of visual measurement and reporting.
@@ -40,10 +40,29 @@ objective:
     - The critic is a separate agent, never the agent that wrote or will fix the code.
     - Apparatus must be checked before any frame reaches a critic.
     - Symptom and mechanism stay separate; disprove a hypothesis before acting on it.
+  f7_acceptance_mapping:
+    - criterion: "One round is the unit of visual measurement and reporting."
+      satisfied: true
+      evidence: "Three rounds each ran capture -> apparatus check -> independent critic -> gated dispatch -> owner repair -> verification capture -> close, and each was reported at its close. Tracked verdicts: review-r16/-final, r17/-final, r18/-final."
+    - criterion: "Dispatch only the owners the critic actually named."
+      satisfied: true
+      evidence: "tools/dispatch.mjs gated every round: r16 spawned 4 of 14 teams, r17 5 of 14, r18 4 of 14. ~2M tokens per round recorded as not spent on owners with no finding."
+    - criterion: "The critic is a separate agent, never the agent that wrote or will fix the code."
+      satisfied: true
+      evidence: "Six independent critic instances (opening and closing per round), each source-blind to implementation reasoning. Independence level A."
+    - criterion: "Apparatus must be checked before any frame reaches a critic."
+      satisfied: true
+      evidence: "Every set checked for booted/dead-shader/tier before critique. It caught the r17v1 total foliage loss BEFORE any critic saw it, and that check now also runs as an automatic OWNER VANISHED gate plus a build-revision match."
+    - criterion: "Symptom and mechanism stay separate; disprove a hypothesis before acting."
+      satisfied: true
+      evidence: "Nine mechanisms disproved with measurement across the three rounds; two owners declined granted permissions after disproving the premise. Recorded in HANDOFF.md."
+    - criterion: "Visual bar: a critic PASS against the Ghost of Tsushima / SEKIRO reference."
+      satisfied: false
+      evidence: "NOT MET. Closing verdicts FAIL 54, FAIL 56, FAIL 58; four blockers remain open at r18v1. This was never expected within three rounds and is recorded as the open gap, not as success."
   acceptance_evidence:
     round_16: "shots/review-r16.json (opening FAIL 61), shots/review-r16-final.json (closing FAIL 54), AI_DEVELOPMENT/EVIDENCE/r16-verification.md"
     round_17: "shots/review-r17.json (opening), shots/review-r17-final.json (closing FAIL 56/100, 4 blockers). Crush regression closed; valley re-pose verified at 319.4 m drop; three blockers carried."
-    round_18: "shots/review-r18.json (opening, carried + 2 evidence-backed re-routes to foliage); in progress"
+    round_18: "shots/review-r18.json (opening), shots/review-r18-final.json (closing FAIL 58/100, 4 blockers). Plaza-void mechanism proved; god rays proved unreachable from PostFX.js and re-routed to fx/Weather.js by the closing critic."
     rounds_19_20: cancelled_by_user_never_started
 
 execution:
@@ -52,7 +71,7 @@ execution:
     STANDARD for ordinary round work. STRICT applies to any merge to main, Pages
     publication, or protected-branch operation, which additionally triggers F5 before and
     F6 after.
-  active_work: "Round 18 dispatch"
+  active_work: "none — objective complete, sequence closed by the user"
   last_verified_checkpoint:
     commit: 29cbe9c
     branch: claude/1-round-execution-kgtb9r
@@ -84,20 +103,30 @@ execution:
     - "Round 17 closing critic verdict not yet returned at the time of this migration."
     - "Whether the god-ray shafts read as light is unresolved; the round-17 owner reported them NOT closed."
   exact_next_action: >
-    Round 18 owners are dispatched: foliage (5 findings, 2 blockers - it now owns both the
-    black plaza voids and the valley wall after evidence-backed re-routes), postfx (shafts),
-    sky (wide plateau key/shadow, with the scoped normalBias exemption), world (sky lattice,
-    dressing). Do NOT re-route the valley finding back to core or world: the pose and terrain
-    are proven correct and foliage pre-registered the near-plant occlusion with a one-line
-    lever, sample(76,126) -> sample(120,126). After owners land, rebuild, run the r18v1
-    verification capture, check drawsByOwner for a vanished owner, then close and run rounds
-    19 and 20.
+    NONE PENDING — the authorized sequence is closed and no round is active. Do not start
+    round 19 without a new explicit user instruction. When work resumes, the highest-value
+    ready items, all with mechanisms already recorded in HANDOFF.md, are:
+    (1) the plaza voids — the face-down winding was real, proved by a 6/6 audit and 95.1%
+        attribution, but the shipped fix moved the box only p50 3.1 -> 4.6 against a predicted
+        49.2, so a second cause remains; start from what else can hold a correctly-wound,
+        correctly-normalled ground card at 4/255 under a 3.41-intensity key.
+    (2) the god rays — proved unreachable from PostFX.js by arithmetic (ceiling 4.43 code
+        against a 10.0 target) and independently re-routed to src/fx/Weather.js by the closing
+        critic; the fx team has never been dispatched on this project.
+    (3) the wide shadow failure — binary, not bias or resolution. One-shot A/B: set
+        shadowCascades: 1 at MEDIUM in Quality.js, re-shoot wide, measure (520,890 120x16)
+        against (350,890)/(690,890). Bar appears -> Lighting.js; bar absent ->
+        Level.js:_realizeShadowProxies or Props.js:1142.
+    (4) the valley wall — the 110-900 m bamboo-canopy shell rasterising 19.0 m from the eye,
+        not the near plants.
+    Live gate failures to carry: valley black gate p0.1 = 18 against < 15, and sun
+    pctAbove240 = 2.549% against a 0.5% guard.
 
 floor:
-  last_check: "2026-08-01, migration run"
+  last_check: "2026-08-01, round 18 close"
   independence_level_used: "A (separate critic agent, source-blind to implementation reasoning)"
   skips:
-    - "F6: n/a for rounds 16-17 — no merge, release, deployment or publication occurred; work stayed on the feature branch."
+    - "F6: n/a for rounds 16-18 — no merge, release, deployment or publication occurred; all work stayed on the feature branch, so nothing changed what a user receives."
     - "F9: all four gates absent. Repository has no .github/workflows, no required status checks, and no branch protection reachable from this environment. Recorded as absent, not assumed."
   waivers: []
   enforcement:

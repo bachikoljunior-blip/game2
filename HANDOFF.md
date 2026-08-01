@@ -22,6 +22,73 @@ art-direction state record; project-wide session, plan and criterion pointers li
   cross-session authorization is active to push verified checkpoints, integrate them into
   `main`, and publish GitHub Pages without asking again. Paid, destructive, credential, and
   account actions remain outside that authorization.
+- **Round 18 is COMPLETE, and it is the last authorized round.** The user narrowed the
+  objective mid-round from rounds 16–20 to rounds 16–18. Opening verdict was round 17's
+  closing critique carried forward with two evidence-backed re-routes; closing verdict **FAIL
+  58/100**, 4 blockers / 4 majors / 2 minors. **All four opening blockers survive.** Owner
+  commits: `f3b41a6` postfx, `9f8ee19` world, `caef724` foliage, `6e47531` sky. Verification
+  set `r18v1`; apparatus clean (booted, zero dead shaders, tier MEDIUM, no owner vanished,
+  embedded build revision matched HEAD). Budgets held: **119/140 calls, 871,997/900,000
+  triangles**, byte-identical to r17v2 because every round-18 change was shader- or
+  winding-side and the contract counts *submitted* triangles.
+  - **THE FIVE-ROUND PLAZA BLOCKER HAS A PROVEN MECHANISM AND THE FIX DID NOT WORK. Both
+    halves matter.** `buildGroundCard` passed `GeoBuilder.card()` its half-extents in the
+    wrong argument order, so `r × u = (0, −s², 0)` and **6 of 6 triangles wound face-down** —
+    unique in the build. `DoubleSide` preserved the silhouette, which is exactly why five
+    critic instances read it as a shadow, while three's `normal_fragment_begin` negates the
+    shading normal on a back face, giving `dot(N, sunDir) = −0.225` and **no direct light at
+    any intensity**. Attribution by rasterising every layer's real instance buffer: **ground
+    cards 95.1%**, grass 7.9%, susuki 5.6%, ferns 2.2%, far-cover 0.0%. The evidence came
+    from an accident: `phone-hero-r17v1.png` was captured while `init()` aborted, making it a
+    free foliage-off ablation — the void boxes read p50 **49.2 / 36.7, detail 10.55 / 9.24**
+    there against 3.1 / 3.4 with foliage, guard box byte-identical.
+    **The argument swap shipped (`caef724`, an ancestor of HEAD, verified in the built
+    bundle) and moved the box only p50 3.1 → 4.6, detail 2.95 → 3.32, against a predicted
+    ~49.2 / ~10.55.** The closing critic calls it invisible. **So the winding was real and is
+    not the whole cause — something else also holds those pixels at ~4. Do not re-file the
+    winding; do not assume the fix failed to apply. Start from: what else can take a
+    correctly-wound, correctly-normalled ground card to 4/255 under a 3.41-intensity key?**
+  - **The god rays are unreachable from `PostFX.js`, proved twice over.** The pass was
+    **blind, not weak**: round 16's `uMaxMarch = 0.16` length cap meant the acceptance
+    receivers marched screen radii **332–500 px** while the crop-verified occluder sat at
+    **40–260 px** — disjoint by 72 px, giving simulated visibility **1.0000 on all 25 samples
+    identically, at every gain, envelope, sunRadius and tap count**. That is why two rounds of
+    tuning moved nothing there. Bounding the march by inner radius instead took visibility to
+    0.661–0.822 and pass high-pass 0.00 → 1.11–1.43 code. Then the arithmetic: over a
+    21-configuration grid the largest attainable high-pass is 0.203, ceiling **4.43 code
+    against a 10.0 target**; every route to 10.0 either pushes `sun`'s inner glow past 255
+    (the round-7 regression) or re-adds 2.8× the wash round 16 removed. **The closing critic
+    independently re-routed this finding to `src/fx/Weather.js`**, which owns volumetric fog
+    in §8. Two independent lines now point away from `PostFX.js`. `fx` has never been
+    dispatched on this project.
+  - **The `wide` shadow failure is BINARY, not bias and not resolution.** sky disproved both
+    mechanisms its exemption was granted for and therefore **declined to use the exemption**:
+    `normalBias` moves the lookup 0.784 m *downsun*, net contact erosion only **0.138 m**;
+    and cascade 1 resolves the outer torii's kasagi at **26 × 3 texels** yet it casts
+    nothing, while two lanterns at 21 m show no dip down their own downsun axis. Cascade 0
+    demonstrably works. It shipped diagnostics only — a `cascadeReport` and a warn-once when
+    a casting cascade has no shadow map after 30 frames. **Decisive one-shot A/B for whoever
+    resumes:** set `shadowCascades: 1` at MEDIUM in `Quality.js` (core's file), re-shoot
+    `wide`, measure (520,890 120×16) against (350,890)/(690,890). Bar appears → `Lighting.js`;
+    bar absent → `Level.js:_realizeShadowProxies` (turns `castShadow` off on every opaque
+    static cell) or `Props.js:1142` (only the heaviest-by-index part of a prototype casts).
+  - **The `valley` wall is the 110–900 m `bamboo-canopy` shell, not the near plants.** The
+    round-17 prediction was confirmed to the digit (1 / 8 / 20 culms within 5/10/15 m against
+    2.1 / 8.6 / 19.1) and then correctly **set aside**: the shell rasterises **19.0 m** from
+    the valley eye with 47.2% of its pixels inside 50 m, and *is* the flat green quad the
+    critic saw, 71.7% of that box. The pre-registered lever was deliberately not applied
+    because it would gut world-wide near bamboo for one still without fixing the cause. The
+    aerial-ladder finding was disproved outright: its "near/mid/far" boxes are all bamboo-card
+    at **22 / 28 / 25 m** — no ladder can exist across 6 m.
+  - **The `wide` sky-lattice regression is not terrain's.** The `detail` 1.14 → 2.20 rise is
+    almost entirely the **y-direction** component (0.738 → 1.919); the x-direction part, where
+    a vertical lattice lives, moved **+1.2%**. The same y-rise appears in the critic's own
+    clean-sky *control* box, where an offline twin puts **zero band coverage**. Routed to
+    sky/postfx. world still fixed the real band mechanism, found by ablation (slope-driven
+    `lit` **×0.578** against six other terms all ≈1.00): slope baseline ±1 → ±8 texels took
+    band column signal **0.938 → 0.306**, and caught a silent side-effect (the shed gate
+    stopped biting, 0.0273 → 0.0007) and rescaled it at zero cost.
+
 - **Round 17 is COMPLETE.** Same branch. Opening verdict was round 16's closing critique
   carried forward (tree unchanged) with two coordinator re-routes; closing verdict **FAIL
   56/100**, 4 blockers / 3 majors / 2 minors, from 54 with 4 blockers. Owner commits:
@@ -431,6 +498,57 @@ steering work for several rounds. Full numbers in `AI_DEVELOPMENT/EVIDENCE/r15-f
   Only the *texture* is `Foliage.js`'s, and at ~8× minification finer florets would land at
   0.4–1.2 px and mip to a flatter wash. **The card-size change and the texture re-author must
   land in the same round or the canopy regresses.**
+
+## Apparatus and process faults found in rounds 17-18 — the rig has now broken twelve times
+
+- **`drop_console: true` was deleting the app's own boot diagnostics from the build the rig
+  photographs.** `vite.config.js` stripped every `console.*` call, so `main.js`'s
+  `console.error('[boot] system "<key>" failed', err)` did not exist at runtime. A round-17
+  commit threw during `FoliageSystem.init()`; the entire foliage system vanished from all five
+  framings (140,820 triangles and 14 draw calls to zero, shader programs 119 → 94, geometries
+  96 → 71) and `report-r17v1.json` still reported `booted: true`, zero dead shaders, correct
+  tier and **every budget green** — a *cleaner* report than the working build, because a build
+  that renders less passes every cap more comfortably. Found only by noticing the counts moved
+  a long way in a direction nobody predicted. **Two wrong explanations were tested and
+  discarded first**: a standalone Playwright page proved the rig's console listener does
+  capture `console.error` including with an `Error` argument, and an unfiltered capture of the
+  broken build showed 14 warnings and zero errors, proving the catch never ran rather than that
+  its message was lost. Fixed: `pure_funcs` drops only log/debug/info/trace; 24 `console.error`
+  calls now survive, 0 `console.log`.
+- **`capture.mjs` now raises `OWNER VANISHED`** when an owner that drew in the previous capture
+  submits nothing. Validated against the real failure: silent on the repaired r17v2, flags
+  `foliage` on the broken r17v1.
+- **The cause of that outage was a JavaScript temporal dead zone**, not a buffer or a shader: a
+  function-scoped `const k` referenced inside a block that declared its own `const k` four lines
+  later. `node --check` parses it fine and cannot see a TDZ. `init()` adds its group to the
+  scene only after all thirteen steps, so a throw anywhere orphans everything already built.
+- **The "arc must cross only sky" rule was too blunt and cost three rounds.** It was imposed
+  after round 16 filed fake shafts from an arc crossing a lantern and two uprights — but a
+  clean-sky sector contains no occluder edge, and shafts *are* occluder edges, so the
+  acceptance geometry and the pass geometry never intersected. Three degrees outside the
+  sampled sector the same field steps 0.94 → 0.41 → 0.05, worth **14.0 code at present gain**.
+  **Corrected rule: a profile quoted as evidence of light must exclude geometry that could be
+  mistaken for light, while containing a genuine visibility step.**
+- **`detail` has never been measuring the sky lattice.** Deleting 100% of column-coherent
+  structure from the target box moves `detail` by **0.002**.
+- **Round 17's projection harness miscounted.** It reported three lanterns inside the `wide`
+  crop; cropping at native shows **two**. Re-validate its occlusion handling before reuse.
+- **The r17v1/r17v2 pair is only a valid ablation on `hero`** (82.20% byte-identical, sky
+  delta 0.02). On wide/torii/sun/valley the sky itself moved 4.16 / 4.34 / 11.38 / **44.45**
+  code values. Any before/after across that boundary on those four shots is contaminated.
+- **Acceptance instruments keep being unsatisfiable as written.** Round 16 had three
+  arithmetically impossible targets; round 17 had five invalid instruments; round 18 added two
+  more — a guard pinning a control box *above* its own target, and a criterion whose guaranteed
+  form costs 43,200 submitted triangles against a 4,000 allocation (10.8×). Owners now declare
+  the breach in advance rather than quietly missing it, which is the right behaviour, but the
+  critique itself needs its arithmetic checked when written.
+- **Parallel owners share one git index.** A concurrent `git add`/`commit --amend` swept another
+  owner's staged files into the wrong commit; it was caught and split apart. `git stash` was
+  used once mid-round and reported afterwards as luck, not method. **Never build during a
+  round** — one owner ran `vite build` with others live and left `dist/` a mixed build.
+- **Commits cannot be signed in this container**: the configured signing key
+  (`/home/claude/.ssh/commit_signing_key.pub`) is zero bytes, so every commit on this branch
+  shows as Unverified regardless of authorship.
 
 ## Apparatus and process faults found in round 16 — the rig has now broken nine times
 
