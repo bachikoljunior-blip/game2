@@ -19,7 +19,7 @@ Measured 2026-08-01. Every SHA below was read back from the remote, not assumed.
 
 | Repo | Branch | SHA | Kit | Skills load? |
 |---|---|---|---|---|
-| `kit` | `claude/kit-template-creation-ndursc` | `d334e77` | source of truth, v0.2.0, 52 files, 34 tests | n/a |
+| `kit` | `main` + `claude/kit-template-creation-ndursc`, both `d334e77` | `d334e77` | source of truth, v0.2.0, 52 files, 34 tests | n/a |
 | `game2` | `claude/past-work-skill-candidates-v6l3xm` | see git | `.kit/` v0.2.0 installed | **yes** — 9 + `round` |
 | `survival` | `claude/past-work-skill-candidates-v6l3xm` | `e1468f0` | `.kit/` v0.2.0 installed | **yes** — 9 |
 | `Cooky` `Gptgame` `Q` `exist-debug` `game` `Simple-browser-cookie-clicker-game` | — | — | none | no |
@@ -39,19 +39,21 @@ What is already proven, so nobody re-proves it:
 
 ## Remaining steps, in order
 
-### 1. Give `kit` a trunk
+### 1. Give `kit` a trunk — branch created 2026-08-01, default branch still not flipped
 
-The repository has **no `main`**. Its only branch is `claude/kit-template-creation-ndursc`
-and HEAD points at it, so a clone lands on a feature branch and there is nothing to merge
-into.
+`main` now exists on the kit remote at `d334e77`, pushed from a session and read back with
+`git ls-remote --heads`. So the first half of the acceptance is observed and a clone can now
+name a trunk.
 
-*Acceptance:* `git ls-remote --heads` on the kit shows `main`, and `--symref HEAD` resolves
-to it.
-
-*Note:* a session may not be able to do this — `add_repo` for the kit was refused in both
-read and push modes on 2026-08-01, and the GitHub repository-creation API returned 403. If it
-is still refused, say so and move to step 2 rather than burning turns on it. The user can do
-it from their own machine in one command.
+*Remaining:* `git ls-remote --symref origin HEAD` still resolves to
+`refs/heads/claude/kit-template-creation-ndursc`, so a bare `git clone` still lands on the
+feature branch. Flipping the default branch is a repository **settings** write, and the
+session's API proxy refuses those explicitly:
+`PATCH /repos/bachikoljunior-blip/kit {"default_branch":"main"}` → `403 Repository settings
+writes are not permitted through this proxy`. No MCP tool in this environment exposes it
+either. **This half is not doable from a session — the user flips it in the repository
+settings, or with `gh repo edit bachikoljunior-blip/kit --default-branch main`.** Do not
+spend turns retrying the API.
 
 ### 2. ~~Bring `survival`'s kit up to v0.2.0~~ — done 2026-08-01
 
@@ -123,5 +125,9 @@ Every one of these has already cost a session.
   if it did not, delete it.
 - **The kit is vendored, not linked.** Editing anything under `.kit/` in place is caught by
   `check:kit` as `edited in place`. Change it in the kit repository and re-install.
-- **`add_repo` for `kit` was refused in this environment.** Do not spend turns retrying it.
-  Reading the kit over plain HTTPS works; pushing to it does not.
+- **Do not conclude the kit is unreachable because `add_repo` refuses it.** That was recorded
+  on 2026-08-01 and is misleading: a session started with the kit in scope has it already
+  cloned at `/home/user/kit` with a working `origin`, and `git push` to it **succeeds** —
+  that is how `main` was created. Check the local clone before believing the repo is
+  read-only. What is genuinely refused is repository *settings* writes through the API proxy
+  (403), which is why the default branch is still the feature branch.
