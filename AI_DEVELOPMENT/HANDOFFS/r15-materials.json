@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "taskId": "R15-MATERIALS",
+  "producer": "materials-specialist",
+  "consumer": "project-director",
+  "objective": "Round 15: make wet stone deliver the specular story it was authored to have, and settle by measurement whether Materials.js is the term eating the cool fill (HANDOFF open item 2).",
+  "allowedScope": [
+    "src/render/Materials.js",
+    "AI_DEVELOPMENT/HANDOFFS/r15-materials.json"
+  ],
+  "prohibitedChanges": [
+    "Do not edit Lighting.js, Sky.js, PostFX.js, Terrain.js, Props.js or Level.js.",
+    "Do not raise the fill in Lighting.js to compensate for a downstream loss.",
+    "Do not apply a compensating gain that the postfx owner is also applying this round.",
+    "Do not move the cobble or stone albedo: Terrain reads both as blend inputs."
+  ],
+  "inputs": [
+    "shots/review-r15.json finding owner=src/render/Materials.js (wet stone)",
+    "shots/review-r15.json blocker 1 (shadow temperature), routed to Lighting.js, downstream half assigned here",
+    "shots/phone-hero-r15.png at native 2532x1170",
+    "HANDOFF.md open items 2, 4, 9 and the envMapIntensity disproof",
+    "tools/probe.mjs (region stats, native resolution)"
+  ],
+  "outputs": [
+    "Roughness-only wet-stone repair in the cobble and stone recipes, albedo provably byte-identical",
+    "Measured disproof of the Materials.js half of HANDOFF open item 2",
+    "Source-level proof that MaterialLibrary.triplanarPatch and addDetailNormal are unreachable in this build",
+    "Albedo chromaticity table that bounds what any fill change in Lighting.js can achieve"
+  ],
+  "affectedInterfaces": [
+    "cobble ORM.g (roughness) \u2014 consumed by Props.groundMaterial for the plaza and sando",
+    "stone ORM.g (roughness) \u2014 consumed by the shrine steps; Terrain reads stone.map only, never its ORM",
+    "No texture count, format, resolution or memory change; no new draw call"
+  ],
+  "dependencies": [
+    "R9-APPARATUS-001",
+    "R9-FILL-001",
+    "R15-SKY (parallel, global fill change)",
+    "R15-POSTFX (parallel, SSAO half of open item 2)"
+  ],
+  "invariants": [
+    "No external assets",
+    "Textures <= 48 MB; texture count unchanged at 102",
+    "Draw calls <= 140 (unchanged, 115 measured at the hero pose); triangles <= 900k (unchanged, 756,503 measured)",
+    "Nothing non-finite crosses a system boundary; every new term is a clamp/smoothstep/lerp of finite inputs",
+    "cobble and stone albedo byte-identical to r15: cobble linear mean [0.24530,0.23239,0.17180] luma 0.23076; stone linear mean [0.24712,0.22895,0.17603] luma 0.22899"
+  ],
+  "assumptions": [
+    "Specular response at 13 degrees of solar elevation is dominated by the direct sun lobe, because scene.environmentIntensity is 0.0643 and the IBL specular is therefore negligible.",
+    "A gloss population shaped by the 27-55 cm coarse damp field survives minification, where one shaped by the 2.5 cm joint net would not."
+  ],
+  "unresolvedQuestions": [
+    "What actually draws the near-black amoeba patches on the hero plaza, and whether the critic's 'puddle' reading is right at all. Two independent bounds say they are not reachable from this file. Scale: the plaza is Props.groundMaterial, the cobble tile laid at GROUND_UV_SCALE 0.62, i.e. 1.61 m per tile, and its two weathering fields run at 27 cm and 31 cm \u2014 nothing authored in the tile can be a 2-3 m blob. Value: over the baked 256^2 tile the single darkest cobble albedo texel is 0.249 of the tile mean in linear luminance and the 1st percentile is 0.350; with Props' own weathering multiply (0.844 at its darkest) the absolute floor is 0.210. The critic's box (1304,977,89x53) reads luma p50 4.1 against the adjacent dry control's 43.6, which is 0.051 in linear \u2014 four times darker than the darkest albedo this file can produce, over an area three orders of magnitude larger than a texel. Light is being removed, not reflectance. The most likely candidate, and the one the r15 ablation was queued to test, is that these ARE the plaza's cast shadows and they are crushed to black; that would also reconcile the round's own blocker 2, which reports no cast shadows on the plaza while these patches sit on it. Owner: src/render/Lighting.js.",
+    "MaterialLibrary.addDetailNormal has zero call sites in src/. The shared detail-grain shader patch, which exists so close-range surfaces reveal grain the base tile has no resolution for, is never installed on any material. Terrain reads lib.detailNormal directly, so the texture is used but the layering patch is not.",
+    "Whether the hemisphere ground colour 0x4c3f31 makes critic target (a) unreachable: see acceptanceCriteria."
+  ],
+  "acceptanceCriteria": [
+    "R15-MAT-001",
+    "R15-MAT-002",
+    "R15-MAT-003",
+    "R15-MAT-004",
+    "R15-MAT-005",
+    "R15-MAT-006",
+    "R15-ROUND-007"
+  ],
+  "testsRequired": [
+    "Offline recipe metrics over the baked 256^2 tile (albedo linear mean/luma/B-R, AO mean, roughness floor/mean/histogram) before and after, same harness both times",
+    "NOT OBTAINED this round: the runtime ablation against the existing dist/ (aoMapIntensity 0 on every scene material, SSAO 0, key off, fill off, shadow intensity 0, environmentIntensity 1.0). Attempt 1 produced ten byte-identical near-black frames and was correctly rejected by the apparatus check below; attempt 2 never reached the head of the shared rig queue in this round's window and was stopped rather than left to contend with the coordinator's verification capture. Every conclusion recorded here is established without it. The two ablations still worth an early run next round are shadow.intensity=0 and scene.environmentIntensity=1.0 on the hero pose, to settle what draws the black patches.",
+    "Apparatus check that must be repeated by anyone scripting this rig: begin() in main.js is async and awaits audio.unlock() before menus.onGameStart(), so a menus.skipIntro() issued in the SAME page.evaluate() as __kagerouStart() is undone by the onGameStart() that follows it, and the title card's ink wash then sits over the world at full alpha. Start, wait for the engine to be ticking, cancel the intro, confirm _title < 0 and _titleA and _introWash are both <= 0.004, and only then call hud.__hide() \u2014 HUD.update clears the shared canvas exactly once when hidden and Menus keeps painting the card on top of it afterwards. Validate the base frame against the review frame's whole-frame luma p50 before trusting any number from the run.",
+    "Coordinator-owned integrated phone/MEDIUM recapture and native review"
+  ],
+  "risks": [
+    "Specular aliasing: roughness 0.13 on 0.1-0.8% of texels can spark under motion. Mitigated because mip averaging raises roughness toward the mean with distance and the film's shape is the coarse field, not the joint net; TAA is on. Watch the hero and torii frames for fireflies on the plaza.",
+    "The plaza's mean roughness falls 0.732 -> 0.662 and stone's 0.694 -> 0.650, which raises the direct specular slightly across the whole ground. At 13 degrees of elevation that returns light only near the mirror direction, so it should read as a streak rather than a lift, but the whole-frame luma gate should be re-checked.",
+    "Contamination: sky, foliage, world and postfx all changed the same frames this round, so no pixel number on the plaza is separable to this owner alone. The offline roughness and albedo numbers are, and are the ones quoted."
+  ],
+  "rollback": "git checkout f013950 -- src/render/Materials.js",
+  "status": "awaiting_verification",
+  "acceptanceCriteriaNotes": [
+    "R15-MAT-001 (met, offline): cobble roughness floor 0.569 -> 0.129 and the share of the tile at or below roughness 0.35 rises 0.00% -> 5.28%, at or below 0.25 0.00% -> 0.82%. Before the change the authored water value of 0.26 was reached on zero texels of the baked 256^2 tile.",
+    "R15-MAT-002 (met, offline): stone roughness floor 0.455 -> 0.129, share at or below 0.35 0.00% -> 3.71%. Authored water value 0.16 was previously reached on zero texels.",
+    "R15-MAT-003 (met, offline): cobble and stone albedo unchanged to five decimals in linear mean and luma, so Terrain's rock, gravel and streambed blend inputs and every tonal gate keyed on ground value are untouched.",
+    "R15-MAT-004 (met, three independent measurements): Materials.js is NOT the term eating the cool fill, and nothing is. (i) The code HANDOFF item 2 names, the TRI_AO block, is never compiled: MaterialLibrary.triplanarPatch has exactly one call site, Terrain.js:1608, and it is called with NO material, so the function returns at its first line and applyTriplanar never runs. (ii) The aoMap term that IS live is three's stock aomap_fragment with this file's per-recipe intensities; measured over each baked tile the effective indirect multiplier is cobble 0.962 (removes 3.8%), lanternStone 0.968, plaster 0.946, stone 0.900, cedar 0.897, dirt 0.786, roofTile 0.766 (removes 23.4%) \u2014 an order of magnitude short of the ~90% removal 'a tenth of the fill survives' requires. (iii) From the live rig read off window.__kagerou (sun intensity 3.4087, colour [1,0.4118,0.1339], elevation 12.99 deg; hemi 1.0197 on 0x6f8db8/0x4c3f31; scene.environmentIntensity 0.06431 delivering probe luminance 0.1815) the plaza illuminant is key [0.766,0.316,0.103] lum 0.396 plus fill [0.334,0.452,0.707] lum 0.446 \u2014 the fill is 52.9% of the illuminant, exactly as budgeted. Total illuminant B/R 0.735; times the measured cobble albedo linear B/R 0.700 gives reflected linear 0.515, approx sRGB 0.740, which brackets the two plaza boxes the critic measured (lit 0.635, 'shaded' 0.822). The frame is doing what its inputs say.",
+    "R15-MAT-006 (cross-owner ceiling, for sky): HANDOFF item 2's 'illuminant fitted from the frame's own pixels is B/R 0.141' is confounded \u2014 a fit from pixels alone returns illuminant x albedo, and these albedos are warm by authored construction: cobble linear B/R 0.700, stone 0.712, lanternStone 0.735, plaster 0.857, cedar 0.519, dirt 0.369, vermilion 0.032. On valley that confound is larger still, because Terrain multiplies dirt by (0.58,0.46,0.35), a further 0.60 on B/R. Consequence for critic target (a), B/R >= 1.30 on the shaded haiden facade: that facade is Level.js wallMaterial 'plaster'. At a vertical normal the hemisphere mixes 50/50 with groundColor 0x4c3f31, so the delivered fill B/R is 1.648, not ARCHITECTURE \u00a75's 4.01. With the key removed entirely, fill x plaster albedo tops out at approx sRGB B/R 1.170, and x cedar at 0.932. Target (a) is therefore NOT reachable by changing the key/fill ratio: the fill's own vertical-normal B/R must rise from 1.648 to >= 2.084 for plaster (+26%) or >= 3.441 for cedar (+109%). The levers are the hemisphere ground colour and the probe's spectrum, both in Lighting.js/Sky.js.",
+    "R15-MAT-005 (coordinator, needs the integrated capture): on the re-captured phone-hero-r15, the dry flagstone control box (1177,1006,76x35) must gain a specular population \u2014 luma p99 rises from 83.9 \u2014 and the plaza must show at least one grazing highlight streak that the r15 frame does not have. The critic's puddle-box targets (a)-(d) at (1304,977,89x53) are NOT claimed: that box is not drawn by this file."
+  ]
+}

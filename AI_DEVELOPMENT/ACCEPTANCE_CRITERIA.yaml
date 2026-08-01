@@ -5,11 +5,15 @@
       "id": "PROTOCOL-001",
       "sourceRequirement": "Project-operation requirements added 2026-07-31",
       "scope": "Persistent control plane",
-      "preconditions": ["Repository is writable locally"],
+      "preconditions": [
+        "Repository is writable locally"
+      ],
       "action": "Run npm run validate:project",
       "expected": "All required state files parse, required identifiers and references are valid, and no forbidden secret-shaped fields are stored.",
       "threshold": "Exit code 0",
-      "evidence": ["AI_DEVELOPMENT/EVIDENCE/2026-07-31-baseline.md"],
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/2026-07-31-baseline.md"
+      ],
       "severity": "blocking",
       "verification": "automated",
       "status": "verified"
@@ -18,11 +22,15 @@
       "id": "BUILD-001",
       "sourceRequirement": "Clean production build",
       "scope": "Resumed Round 9 branch",
-      "preconditions": ["npm ci completed"],
+      "preconditions": [
+        "npm ci completed"
+      ],
       "action": "Run npm run build",
       "expected": "Vite production build completes with no error.",
       "threshold": "Exit code 0 and gzip bundle <= 1.6 MB",
-      "evidence": ["AI_DEVELOPMENT/EVIDENCE/2026-07-31-baseline.md"],
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/2026-07-31-baseline.md"
+      ],
       "severity": "blocking",
       "verification": "automated",
       "status": "verified"
@@ -31,11 +39,16 @@
       "id": "R9-APPARATUS-001",
       "sourceRequirement": "Verified visual-review apparatus",
       "scope": "phone/MEDIUM five-shot set",
-      "preconditions": ["BUILD-001 verified"],
+      "preconditions": [
+        "BUILD-001 verified"
+      ],
       "action": "Capture hero, wide, torii, valley, and sun in one coherent run.",
       "expected": "Every shot reports booted true, tier MEDIUM, no page errors, no linked dead shader, native 2532x1170 output, and one build identity.",
       "threshold": "5/5 valid shots",
-      "evidence": ["shots/report-r11v1.json", "shots/report-r12v1.json"],
+      "evidence": [
+        "shots/report-r11v1.json",
+        "shots/report-r12v1.json"
+      ],
       "severity": "blocking",
       "verification": "automated and inspected",
       "status": "verified"
@@ -44,11 +57,16 @@
       "id": "R9-PERF-001",
       "sourceRequirement": "ARCHITECTURE.md section 7",
       "scope": "phone/MEDIUM worst review pose",
-      "preconditions": ["R9-APPARATUS-001 verified"],
+      "preconditions": [
+        "R9-APPARATUS-001 verified"
+      ],
       "action": "Audit every review pose.",
       "expected": "Submitted work remains inside the MEDIUM budgets.",
       "threshold": "draw calls <= 140; triangles <= 900000; gzip bundle <= 1.6 MB",
-      "evidence": ["shots/report-r11v1.json", "shots/report-r12v1.json"],
+      "evidence": [
+        "shots/report-r11v1.json",
+        "shots/report-r12v1.json"
+      ],
       "severity": "blocking",
       "verification": "automated",
       "status": "verified"
@@ -57,11 +75,17 @@
       "id": "R9-TONE-001",
       "sourceRequirement": "Existing visual contract gates",
       "scope": "All five phone/MEDIUM review frames",
-      "preconditions": ["R9-APPARATUS-001 verified"],
+      "preconditions": [
+        "R9-APPARATUS-001 verified"
+      ],
       "action": "Measure native-resolution histograms.",
       "expected": "Black and highlight populations remain valid without using HUD ink.",
       "threshold": "p0.1 < 15 for every frame; p99.9 > 235 for hero and torii. Wide, valley, and sun histograms remain recorded evidence but are not eligible white-gate inputs.",
-      "evidence": ["shots/report-r9v1.json", "shots/report-r11v1.json", "shots/report-r12v1.json"],
+      "evidence": [
+        "shots/report-r9v1.json",
+        "shots/report-r11v1.json",
+        "shots/report-r12v1.json"
+      ],
       "severity": "blocking",
       "verification": "automated",
       "status": "verified"
@@ -70,11 +94,15 @@
       "id": "R9-FILL-001",
       "sourceRequirement": "Round 9 blocker: shadow fill",
       "scope": "hero exact shadow box and sun ground shadow",
-      "preconditions": ["R9-APPARATUS-001 verified"],
+      "preconditions": [
+        "R9-APPARATUS-001 verified"
+      ],
       "action": "Measure hero (1400,1010 100x40), its adjacent lit box, and the recorded sun shadow region.",
       "expected": "Exterior shade retains cool value and readable surface detail.",
       "threshold": "hero mean luma 9-13; detail >= 6.0; blue/red >= 0.90; shadow value 18-25% of adjacent sunlit value",
-      "evidence": ["AI_DEVELOPMENT/EVIDENCE/r12v1-metrics.json"],
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r12v1-metrics.json"
+      ],
       "severity": "blocking",
       "verification": "pixel measurement and native crop",
       "status": "active"
@@ -83,11 +111,15 @@
       "id": "R9-SHADOW-EDGE-001",
       "sourceRequirement": "Round 9 blocker: staircase shadow boundary",
       "scope": "hero x 880-980, y 770-800",
-      "preconditions": ["R9-APPARATUS-001 verified"],
+      "preconditions": [
+        "R9-APPARATUS-001 verified"
+      ],
       "action": "Repeat the recorded per-row edge scan and contact/far-edge softness comparison.",
       "expected": "No visible block staircase; penumbra grows away from contact.",
       "threshold": "no edge x repeats > 3 rows; no row jump > 6 px; far transition spans >= 6 monotonic intermediate pixels while contact stays tighter",
-      "evidence": ["AI_DEVELOPMENT/EVIDENCE/r12v1-metrics.json"],
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r12v1-metrics.json"
+      ],
       "severity": "blocking",
       "verification": "scripted scan and native crop",
       "status": "active"
@@ -96,11 +128,16 @@
       "id": "R9-SKY-001",
       "sourceRequirement": "Round 9 blocker: anti-solar sky",
       "scope": "clean hero sky (2000,80 300x150), clean torii sky (1850,30 300x150), and hero x=2400 vertical column",
-      "preconditions": ["R9-APPARATUS-001 verified"],
+      "preconditions": [
+        "R9-APPARATUS-001 verified"
+      ],
       "action": "Measure both clean sky boxes, the hero x=2400 vertical column, and visible cloud-form variation.",
       "expected": "The anti-solar sky has a strong coherent golden-hour gradient and cloud form.",
       "threshold": "saturation >= 0.28; vertical span >= 45 luma with cool top/warm horizon; at least one clean 300x150 box detail >= 4.0",
-      "evidence": ["AI_DEVELOPMENT/EVIDENCE/r9v1-metrics.json", "AI_DEVELOPMENT/EVIDENCE/r12v1-metrics.json"],
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r9v1-metrics.json",
+        "AI_DEVELOPMENT/EVIDENCE/r12v1-metrics.json"
+      ],
       "severity": "blocking",
       "verification": "pixel measurement and hostile visual review",
       "status": "active"
@@ -109,11 +146,15 @@
       "id": "R9-VALLEY-001",
       "sourceRequirement": "Round 9 blocker: single-hue valley",
       "scope": "Six recorded valley boxes",
-      "preconditions": ["R9-APPARATUS-001 verified"],
+      "preconditions": [
+        "R9-APPARATUS-001 verified"
+      ],
       "action": "Compute mean colour and hue angle for all six boxes.",
       "expected": "Bamboo remains distinguishably green and the frame contains multiple hue families.",
       "threshold": "grove green >= red; hue-angle spread >= 45 degrees; whole-frame saturation 0.45-0.55",
-      "evidence": ["AI_DEVELOPMENT/EVIDENCE/r9v1-metrics.json"],
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r9v1-metrics.json"
+      ],
       "severity": "blocking",
       "verification": "pixel measurement and hostile visual review",
       "status": "under_review"
@@ -122,11 +163,15 @@
       "id": "R9-SAKURA-001",
       "sourceRequirement": "Round 9 major finding: sakura colour and form",
       "scope": "hero (420,165 40x30) and wide (950,460 200x110) blossom regions",
-      "preconditions": ["R9-APPARATUS-001 verified"],
+      "preconditions": [
+        "R9-APPARATUS-001 verified"
+      ],
       "action": "Measure recorded colour boxes and inspect native alpha edge/facets.",
       "expected": "Sakura reads pink and blossom-scaled rather than orange polygon shards.",
       "threshold": "hero blue/red >= 0.78; wide blue/red >= 0.65; no visible flat facet > 12 px; alpha falloff >= 3 px",
-      "evidence": ["AI_DEVELOPMENT/EVIDENCE/r12v1-metrics.json"],
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r12v1-metrics.json"
+      ],
       "severity": "major",
       "verification": "pixel measurement and native crop",
       "status": "active"
@@ -135,11 +180,15 @@
       "id": "R9-FAR-RANGE-001",
       "sourceRequirement": "Round 9 major finding: distant range",
       "scope": "torii peak body (2030,700 70x40) and matched flanks",
-      "preconditions": ["R9-APPARATUS-001 verified"],
+      "preconditions": [
+        "R9-APPARATUS-001 verified"
+      ],
       "action": "Measure detail, spread, flank colour split, and silhouette diversity.",
       "expected": "Far mountains carry ridge/snow structure and non-repeated landform response.",
       "threshold": "detail >= 5.5; lumaSpread >= 55; matched flank red-minus-blue delta >= 12; peaks not congruent",
-      "evidence": ["AI_DEVELOPMENT/EVIDENCE/r12v1-metrics.json"],
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r12v1-metrics.json"
+      ],
       "severity": "major",
       "verification": "pixel measurement and native crop",
       "status": "active"
@@ -148,11 +197,17 @@
       "id": "R9-LANTERN-001",
       "sourceRequirement": "Round 9 major finding: lantern chroma and contribution",
       "scope": "hero lantern core, projected receiver region, post, and 1-2 m falloff",
-      "preconditions": ["R9-APPARATUS-001 verified"],
+      "preconditions": [
+        "R9-APPARATUS-001 verified"
+      ],
       "action": "Measure core saturation and semantically re-anchored near/far ground contribution; verify the ground receiver by stopped-frame A/B; inspect post and falloff at native resolution.",
       "expected": "Lantern remains warm/chromatic and visibly lights its post and ground.",
       "threshold": "core saturation >= 0.25 and luma < 250; near-ground luma >= 2.2x far-ground with warmer bias; readable 1-2 m falloff",
-      "evidence": ["AI_DEVELOPMENT/EVIDENCE/r12v1-metrics.json", "AI_DEVELOPMENT/EVIDENCE/r12ab-lantern-spill.json", "AI_DEVELOPMENT/EVIDENCE/r12v1-lantern-blind-review.md"],
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r12v1-metrics.json",
+        "AI_DEVELOPMENT/EVIDENCE/r12ab-lantern-spill.json",
+        "AI_DEVELOPMENT/EVIDENCE/r12v1-lantern-blind-review.md"
+      ],
       "severity": "major",
       "verification": "pixel measurement, ablation, and native crop",
       "status": "verified"
@@ -161,11 +216,16 @@
       "id": "R9-LANTERN-SPILL-001",
       "sourceRequirement": "Ground-receiver subset of R9-LANTERN-001",
       "scope": "All stone-lantern spill instances and stopped hero A/B surface",
-      "preconditions": ["BUILD-001 verified"],
+      "preconditions": [
+        "BUILD-001 verified"
+      ],
       "action": "Compare one stopped temporal phase with lantern-pool:__glowPool enabled and disabled, and inspect runtime instance transforms/material state.",
       "expected": "Every lantern has one upward-facing horizontal additive pool above its visible receiver; enabling it adds localized warm light without a dark card or unrelated upper-frame change.",
       "threshold": "count matches lanterns; clearance 0.01-0.18 m; max tilt <= 0.0001; normal Y >= 0.99; additive and no depth write; changed coverage 3-6%; strong-delta coverage >=1.5%; changed/strong coverage >=1.8; >=99% positive and <=1% negative; mean luma delta >=20; changes begin below 55% frame height",
-      "evidence": ["AI_DEVELOPMENT/EVIDENCE/r12ab-lantern-spill.json", "AI_DEVELOPMENT/EVIDENCE/r12v1-lantern-blind-review.md"],
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r12ab-lantern-spill.json",
+        "AI_DEVELOPMENT/EVIDENCE/r12v1-lantern-blind-review.md"
+      ],
       "severity": "major",
       "verification": "automated stopped-frame A/B and runtime inspection",
       "status": "verified"
@@ -174,7 +234,9 @@
       "id": "R9-DRESSING-001",
       "sourceRequirement": "Round 9 major finding: repeated lantern row",
       "scope": "wide x 1150-1650, y 640-920",
-      "preconditions": ["R9-APPARATUS-001 verified"],
+      "preconditions": [
+        "R9-APPARATUS-001 verified"
+      ],
       "action": "Measure spacing, height, lean/weather variation, and path-to-side value.",
       "expected": "The shrine approach reads accumulated and authored rather than loop-placed.",
       "threshold": "spacing variation >= +/-25%; height >= +/-15%; >= 1 in 4 with visible lean/weather/base accumulation; path luma differs >= 25% from off-path",
@@ -187,7 +249,9 @@
       "id": "R9-CINEMATIC-001",
       "sourceRequirement": "Round 8 open sun pose and Round 9 valley composition finding",
       "scope": "sun and valley review poses",
-      "preconditions": ["R9-APPARATUS-001 verified"],
+      "preconditions": [
+        "R9-APPARATUS-001 verified"
+      ],
       "action": "Inspect sun-disc clearance under fixed time and measure valley near-field composition footprint.",
       "expected": "Sun disc is visibly clear with motion slack; valley has a deliberate foreground/mid-ground frame without losing its subject.",
       "threshold": "disc clearance > solar radius with >= 0.40 m reported flutter slack; valley near-field footprint materially exceeds 4.34% baseline and survives hostile review",
@@ -200,11 +264,16 @@
       "id": "R9-REVIEW-001",
       "sourceRequirement": "Independent hostile visual review",
       "scope": "Coherent post-fix five-frame contact sheet",
-      "preconditions": ["R9-APPARATUS-001 verified", "All blocking deterministic gates measured"],
+      "preconditions": [
+        "R9-APPARATUS-001 verified",
+        "All blocking deterministic gates measured"
+      ],
       "action": "Give only the build surface, controls, criteria, and contact sheet to a separate reviewer.",
       "expected": "Reviewer attempts to falsify the result and files evidence-backed findings without source explanations.",
       "threshold": "No unresolved blocker or high-severity finding for Round 9 closure",
-      "evidence": ["AI_DEVELOPMENT/EVIDENCE/r12v1-source-blind-review.md"],
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r12v1-source-blind-review.md"
+      ],
       "severity": "blocking",
       "verification": "independent review",
       "status": "blocked"
@@ -212,12 +281,19 @@
     {
       "id": "REMOTE-001",
       "sourceRequirement": "Persistent explicit user authorization issued 2026-07-31",
-      "scope": "Verified Rounds 10–12 checkpoint and GitHub Pages surface",
-      "preconditions": ["R12-VERIFY complete", "R12-REVIEW complete", "Known overall visual FAIL disclosed"],
+      "scope": "Verified Rounds 10\u201312 checkpoint and GitHub Pages surface",
+      "preconditions": [
+        "R12-VERIFY complete",
+        "R12-REVIEW complete",
+        "Known overall visual FAIL disclosed"
+      ],
       "action": "Push the working branch, integrate it into main, and inspect the public Pages URL.",
       "expected": "The remote branch and main contain the verified incremental checkpoint and the public build resolves from that main state without being misrepresented as a full product PASS.",
       "threshold": "Remote refs inspected; integration completed; public URL resolves to the current KAGEROU surface",
-      "evidence": ["AI_DEVELOPMENT/EVIDENCE/pages-verification.json", "AI_DEVELOPMENT/EVIDENCE/r12-final.md"],
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/pages-verification.json",
+        "AI_DEVELOPMENT/EVIDENCE/r12-final.md"
+      ],
       "severity": "blocking",
       "verification": "GitHub remote inspection and public-surface check",
       "status": "verified"
@@ -226,11 +302,18 @@
       "id": "R13-ROUND-001",
       "sourceRequirement": "Current actionable objective: exactly Rounds 13 and 14",
       "scope": "Round 13 phone/MEDIUM visual iteration",
-      "preconditions": ["Published main 51f1807 checked out", "R9-APPARATUS-001 verified"],
+      "preconditions": [
+        "Published main 51f1807 checked out",
+        "R9-APPARATUS-001 verified"
+      ],
       "action": "Capture one coherent baseline, run an independent hostile review, apply only evidence-backed bounded repairs, and recapture the affected user surface.",
       "expected": "The apparatus, performance, and tonal gates remain valid; the review and repair evidence are durable; regressions are rejected rather than hidden.",
       "threshold": "Fresh coherent five-shot evidence; no page/dead-shader errors; <=140 draw calls; <=900000 triangles; post-fix verdict and remaining findings recorded",
-      "evidence": ["AI_DEVELOPMENT/EVIDENCE/r13-final.md", "AI_DEVELOPMENT/EVIDENCE/r13v2-metrics.json", "shots/review-r13-final.json"],
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r13-final.md",
+        "AI_DEVELOPMENT/EVIDENCE/r13v2-metrics.json",
+        "shots/review-r13-final.json"
+      ],
       "severity": "blocking",
       "verification": "automated gates, native frames, and independent review",
       "status": "verified"
@@ -239,7 +322,9 @@
       "id": "R14-ROUND-001",
       "sourceRequirement": "Current actionable objective: exactly Rounds 13 and 14",
       "scope": "Round 14 phone/MEDIUM visual iteration",
-      "preconditions": ["R13-ROUND-001 complete"],
+      "preconditions": [
+        "R13-ROUND-001 complete"
+      ],
       "action": "Repeat the coherent capture, independent hostile review, bounded repair, and post-fix measurement loop once more.",
       "expected": "A second independently reviewed iteration improves or conclusively narrows the highest-value remaining blocker without weakening established gates.",
       "threshold": "Fresh coherent five-shot evidence; no page/dead-shader errors; <=140 draw calls; <=900000 triangles; final verdict and remaining findings recorded",
@@ -255,8 +340,12 @@
     {
       "id": "REMOTE-002",
       "sourceRequirement": "Persistent explicit remote authorization and current two-round objective",
-      "scope": "Verified Rounds 13–14 checkpoint and GitHub Pages surface",
-      "preconditions": ["R13-ROUND-001 complete", "R14-ROUND-001 complete", "Remaining overall verdict disclosed"],
+      "scope": "Verified Rounds 13\u201314 checkpoint and GitHub Pages surface",
+      "preconditions": [
+        "R13-ROUND-001 complete",
+        "R14-ROUND-001 complete",
+        "Remaining overall verdict disclosed"
+      ],
       "action": "Push the working branch, integrate it into main, rebuild the Pages artifact, and inspect the public runtime.",
       "expected": "Remote branch and main contain the verified two-round checkpoint and the public game reaches ready/running without page, console, request, or HTTP errors.",
       "threshold": "Remote refs inspected; PR merged; public root loads the current hashed production module; ready and engine-running true; zero recorded errors",
@@ -266,6 +355,576 @@
       ],
       "severity": "blocking",
       "verification": "GitHub remote inspection and public real-browser gate",
+      "status": "verified"
+    },
+    {
+      "id": "R15-ROUND-001",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "Foliage: detached dark marks in open sky",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "No detached dark elements in open sky. valley box (51,94,405x117) detail falls toward the cards-off floor and the clean-sky control is unmoved.",
+      "threshold": "MEASURED detail 5.95 -> 2.85 against a 2.15 floor measured with the whole card mesh hidden; control 0.48 -> 0.45. The filed target (detail <= 1.2, p1 >= 190) is UNSATISFIABLE and was proved so.",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "blocking",
+      "verification": "automated and inspected",
+      "status": "verified"
+    },
+    {
+      "id": "R15-ROUND-002",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "Lighting: cool sky-bounce in shadow",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "Shaded surfaces go cool while sunlit surfaces keep their warm bias.",
+      "threshold": "MEASURED hero plaza B/R 0.822 -> 1.073, torii plaza 0.838 -> 1.035, facade 0.579 -> 0.865; sunlit guard held 0.682 -> 0.693 <= 0.75. Filed targets (>= 1.25 / >= 1.30) NOT reached; target (a) proved unreachable from these files.",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "major",
+      "verification": "automated and inspected",
+      "status": "under_review"
+    },
+    {
+      "id": "R15-ROUND-003",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "Foliage: bamboo canopy reads as bamboo",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "Grove gains canopy and green; G exceeds R with saturation rising.",
+      "threshold": "NOT MET. valley G-R -22.9 -> -21.3, saturation 0.397 -> 0.371. Bounded by the illuminant: key (1.0,0.412,0.134) means only albedo above g/r 2.43 can be green-dominant when lit.",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "major",
+      "verification": "automated and inspected",
+      "status": "rejected"
+    },
+    {
+      "id": "R15-ROUND-004",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "Terrain: plateau value range and variation",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "Plateau gains broad surface variation and value range in the wide establishing frame.",
+      "threshold": "PARTIAL. farright lumaSpread 44.9 -> 47.0 against a >= 70 target; G > R now achieved at that box (R 48.5, G 50.4). pctAbove240 and pctBelow16 targets proved unreachable from Terrain.js.",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "major",
+      "verification": "automated and inspected",
+      "status": "under_review"
+    },
+    {
+      "id": "R15-ROUND-005",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "Sky: sun disc reads as a sun",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "Disc core is over-range with a surround-contrast gain, sky guard held.",
+      "threshold": "MET for (a): core luma p50 251.9 -> 255.0; sky guard 225.9 -> 227.6 within +/-12; valley disc 238.1 -> 245.9. Targets (b) B/R <= 0.80 and (c) ratio >= 1.30 are arithmetically impossible alongside (a) in 8-bit and are rejected.",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "major",
+      "verification": "automated and inspected",
+      "status": "verified"
+    },
+    {
+      "id": "R15-ROUND-006",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "PostFX: god-ray striation, and its measurement",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "Readable crepuscular striation through the torii gap, measured by a metric that can actually see a shaft.",
+      "threshold": "ACCEPTANCE METRIC REPLACED. detail is a 1-px Laplacian: synthetic +/-40-code 60-px shaft banding scores detail 0.47, BELOW the 0.57 called 'mathematically smooth'. Replacement calibrated: band16 >= 7.0 with clean-sky control < 0.5 (synthetic 7.06, current strip 1.75, clean sky 0.155, real ground 11.43). No shaft change shipped: the pass smears a 10%-coverage emitter across 99.9% of the frame, so the fix is less spread, not more gain.",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "major",
+      "verification": "automated and inspected",
+      "status": "under_review"
+    },
+    {
+      "id": "R15-ROUND-007",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "Materials: wet stone reads as water",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "Puddles read as sky-reflecting water rather than black voids.",
+      "threshold": "NOT CLAIMED and disproved as a Materials.js defect by two independent bounds (scale: 1.61 m tile vs a 2-3 m blob; value: box reads 0.051 of its neighbour in linear, 4x darker than the darkest reflectance this file can produce). hero puddle p50 4.1 -> 4.1. Re-filed against Lighting.js by the closing critic.",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "major",
+      "verification": "automated and inspected",
+      "status": "rejected"
+    },
+    {
+      "id": "R15-MAT-001",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "Materials: cobble roughness",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "Authored standing-water roughness actually reaches texels.",
+      "threshold": "MET offline: floor 0.569 -> 0.129, share <= 0.35 0.00% -> 5.28%.",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "blocking",
+      "verification": "automated and inspected",
+      "status": "verified"
+    },
+    {
+      "id": "R15-MAT-002",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "Materials: stone roughness",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "Authored standing-water roughness actually reaches texels.",
+      "threshold": "MET offline: floor 0.455 -> 0.129, share <= 0.35 0.00% -> 3.71%.",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "major",
+      "verification": "automated and inspected",
+      "status": "verified"
+    },
+    {
+      "id": "R15-MAT-003",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "Materials: albedo invariance",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "Albedo held so Terrain's derived rock/gravel/streambed inputs and tonal gates are untouched.",
+      "threshold": "MET: unchanged to five decimals in linear mean and luma.",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "major",
+      "verification": "automated and inspected",
+      "status": "verified"
+    },
+    {
+      "id": "R15-MAT-004",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "Materials: is it eating the fill?",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "Determine by measurement whether Materials.js removes the indirect/fill term.",
+      "threshold": "DISPROVED three ways: triplanarPatch's one call site passes no material so TRI_AO never runs; live AO multiplier 0.766-0.968 against the ~0.10 required; fill measures 52.9% of the illuminant as budgeted.",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "major",
+      "verification": "automated and inspected",
+      "status": "verified"
+    },
+    {
+      "id": "R15-MAT-005",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "Materials: grazing specular on dry flagstone",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "Dry flagstone gains a specular population in the integrated capture.",
+      "threshold": "NOT MET in-frame: hero dry-stone control p50 43.6 -> 43.1, detail 9.42 -> 9.45. The baked roughness moved but produced no measurable frame-level specular at this pose.",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "major",
+      "verification": "automated and inspected",
+      "status": "rejected"
+    },
+    {
+      "id": "R15-MAT-006",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "Cross-owner ceiling on the fill-hue target",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "Bound the reachable B/R on the shaded facade given authored albedo.",
+      "threshold": "RECORDED: a pixel-fitted illuminant returns illuminant x albedo, and these albedos are warm by construction. Facade target (a) needs the fill's vertical-normal B/R to rise 1.648 -> >= 2.084; levers are the hemisphere ground colour and probe spectrum.",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "major",
+      "verification": "automated and inspected",
+      "status": "verified"
+    },
+    {
+      "id": "R15-SKY-001",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "Sky: sun disc core",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "Disc core clipped and over-range.",
+      "threshold": "MET: 251.9 -> 255.0.",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "blocking",
+      "verification": "automated and inspected",
+      "status": "verified"
+    },
+    {
+      "id": "R15-SKY-002",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "Sky: valley disc",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "Valley disc lifts.",
+      "threshold": "MET: 236.8 -> 245.9 at runtime; 238.1 -> 245.9 in frame. Does not reach the filed >= 254 because the box includes the disc's outer ramp.",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "major",
+      "verification": "automated and inspected",
+      "status": "verified"
+    },
+    {
+      "id": "R15-SKY-003",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "Sky: radial falloff",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "The sun's radial luma profile stops being flat.",
+      "threshold": "MET: fall from r=48 to r=126 px goes 4.9 -> 9.3 code values against a >= 8 criterion.",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "major",
+      "verification": "automated and inspected",
+      "status": "verified"
+    },
+    {
+      "id": "R15-SKY-004",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "Sky: near-sun sky guard",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "Surround sky is not darkened to fake disc contrast.",
+      "threshold": "HELD: 225.9 -> 227.6, inside +/-12.",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "major",
+      "verification": "automated and inspected",
+      "status": "verified"
+    },
+    {
+      "id": "R15-SKY-005",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "Lighting: plaza shadow hue",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "Shaded plaza boxes go cool.",
+      "threshold": "PARTIAL: hero 0.822 -> 1.073, torii 0.838 -> 1.035 against the owner's own >= 1.00 criterion (MET) and the critic's filed >= 1.25 (NOT met).",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "major",
+      "verification": "automated and inspected",
+      "status": "verified"
+    },
+    {
+      "id": "R15-SKY-006",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "Lighting: shaded facade hue",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "Shaded haiden facade goes cool.",
+      "threshold": "MET against the owner's >= 0.68 criterion: 0.579 -> 0.865. The critic's filed >= 1.30 is DISPROVED as unreachable: a pure #4a6b8f illuminant with all else zeroed still measures 0.378 there.",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "major",
+      "verification": "automated and inspected",
+      "status": "verified"
+    },
+    {
+      "id": "R15-SKY-007",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "Lighting: sunlit-stone guard",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "Sunlit flagstone keeps its warm bias, proving the change is hue-selective and not a global tint.",
+      "threshold": "HELD, and it was the tightest guard in the set: 0.682 -> 0.693 against <= 0.75.",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "major",
+      "verification": "automated and inspected",
+      "status": "verified"
+    },
+    {
+      "id": "R15-SKY-008",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "Sky: haze minor reassignment",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "Establish by ablation whether the mid-field wash is aerial perspective.",
+      "threshold": "DISPROVED for Sky.js: removing 100% of aerial perspective moves the boxes by nothing (p50 226.3 -> 226.2). Bloom + god rays off moves them decisively (sat 0.188 -> 0.348, p50 -> 206.4). Reassigned to PostFX.js.",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "major",
+      "verification": "automated and inspected",
+      "status": "verified"
+    },
+    {
+      "id": "R15-SKY-009",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "Sky: far-field guard",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "Distant mountains keep their aerial perspective.",
+      "threshold": "HELD: wide far field saturation 0.185 -> 0.178, p50 160.5 -> 160.4.",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "major",
+      "verification": "automated and inspected",
+      "status": "verified"
+    },
+    {
+      "id": "R15-WORLD-001",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "Terrain: mid-range band lumaSpread",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "Revived mid-range band raises variation at 50-67 m.",
+      "threshold": "NOT MET: farright lumaSpread 44.9 -> 47.0 against a >= 70 prediction and a modelled 91.",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "blocking",
+      "verification": "automated and inspected",
+      "status": "rejected"
+    },
+    {
+      "id": "R15-WORLD-002",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "Terrain: detail is the wrong metric here",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "detail should move little because kgMidBand is ~22 review px while detail is a 1-px Laplacian.",
+      "threshold": "CONFIRMED: 4.98 -> 5.15, as predicted. Do not read a flat detail as a failed fix.",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "major",
+      "verification": "automated and inspected",
+      "status": "verified"
+    },
+    {
+      "id": "R15-WORLD-003",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "Terrain: whole-frame black point",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "Partial move only; the rest is not reachable from Terrain.js.",
+      "threshold": "PARTIAL: wide p1 18 -> 11, pctBelow16 0.458% -> 0.554% against a predicted 0.9-1.5%. pctBelow16 >= 3.0% and pctAbove240 >= 0.05% proved unreachable from this file.",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "major",
+      "verification": "automated and inspected",
+      "status": "rejected"
+    },
+    {
+      "id": "R15-WORLD-004",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "Terrain: whole-frame saturation",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "Bounded from Terrain alone.",
+      "threshold": "RECORDED: whole-frame saturation is an illuminant property and belongs to Lighting.js.",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "major",
+      "verification": "automated and inspected",
+      "status": "verified"
+    },
+    {
+      "id": "R15-WORLD-005",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "Terrain: contamination declaration",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "Declare which numbers this owner is the sole plausible mover of.",
+      "threshold": "RECORDED: only the farright box's lumaSpread at 50-67 m; every whole-frame histogram and saturation number is contaminated by sky and foliage.",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "major",
+      "verification": "automated and inspected",
+      "status": "verified"
+    },
+    {
+      "id": "R15-PFX-001",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "PostFX: striation metric replacement",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "Replace an acceptance metric that no physical fix could satisfy.",
+      "threshold": "DELIVERED and calibrated (band16 >= 7.0, control < 0.5).",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "blocking",
+      "verification": "automated and inspected",
+      "status": "verified"
+    },
+    {
+      "id": "R15-PFX-002",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "PostFX: shadow-temperature reachability",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "Determine whether the shadow-hue blocker is reachable from PostFX.",
+      "threshold": "DISPROVED: reaching B/R 1.30 needs ~+42 display code of blue on every pixel, landing p0.1 near 42 against a gate of < 15. Every shadow-selective term in the file is already cool.",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "major",
+      "verification": "automated and inspected",
+      "status": "verified"
+    },
+    {
+      "id": "R15-PFX-003",
+      "sourceRequirement": "Round 15 source-blind art-direction review (shots/review-r15.json)",
+      "scope": "PostFX: god-ray tier invariance",
+      "preconditions": [
+        "R9-APPARATUS-001 verified on the r15v1 capture"
+      ],
+      "action": "Measure the named native-pixel box with tools/probe.mjs on the coherent phone/MEDIUM capture.",
+      "expected": "A tier may change how finely the march is sampled; it may not change how bright the result is.",
+      "threshold": "MET: marched radiance 1.612/1.347/0.988 -> 1.612/1.599/1.587 at MEDIUM/HIGH/ULTRA. Exactly 0.94 at 24 taps, so the phone review set is unchanged by construction.",
+      "evidence": [
+        "AI_DEVELOPMENT/EVIDENCE/r15-final.md",
+        "shots/review-r15.json",
+        "shots/review-r15-final.json"
+      ],
+      "severity": "major",
+      "verification": "automated and inspected",
       "status": "verified"
     }
   ]

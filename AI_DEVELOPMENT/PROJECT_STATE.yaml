@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-31T22:32:22Z",
+  "updatedAt": "2026-08-01T02:10:00Z",
   "status": "active",
   "project": {
-    "name": "KAGEROU 陽炎",
+    "name": "KAGEROU \u967d\u708e",
     "repository": "bachikoljunior-blip/game2",
     "objective": "Continue the mobile-first third-person Japanese sword-action game toward its established visual and interaction bar without external runtime assets or AI APIs.",
     "defaultBranch": "main",
     "defaultBranchVerifiedSha": "4a3eff701af0f6db52f5b780247e38422d40aad6",
-    "workingBranch": "agent/rounds-13-14",
-    "workingBranchBaseSha": "51f18073ba9868fc59e166f99e009e62ce4ee55d",
+    "workingBranch": "claude/1-round-execution-r6rdfs",
+    "workingBranchBaseSha": "8e72e01",
     "workingBranchPublicationSha": "b2a7433de7ff72082287d6b5429ca8af54a8642b",
     "resumedFromRef": "origin/claude/kagerou-round9-measurement-inj5qq",
     "resumedFromSha": "6c4c0933240684ccb25907425d7507826edcc3fa"
@@ -22,7 +22,7 @@
     "publicStatus": "README.md"
   },
   "verifiedState": {
-    "lastCompletedVerifiedRound": 14,
+    "lastCompletedVerifiedRound": 15,
     "activeRound": null,
     "round9IntegratedVerification": "FAIL at coherent phone/MEDIUM r12v1: apparatus, budgets, tone, and lantern criteria passed; fill, shadow edge, sky, sakura hue, and far-range checks failed; valley semantics are blocked by stale camera probes.",
     "round10Verdict": "FAIL product gate; verification hardened and shadow-filter/toe experiments rejected without shipping them.",
@@ -30,21 +30,23 @@
     "round12Verdict": "TARGET PASS and OVERALL FAIL: coherent r12v1 passed apparatus, budget, tone, and lantern gates; independent review confirmed those repairs and retained the broader visual blockers.",
     "round13Verdict": "FAIL with measured progress: source-blind score 36 to 43; bamboo skyline and terrain hierarchy improved, blocker count fell from two to one, but detached bamboo fragments remain blocking and four major findings remain.",
     "round14Verdict": "FAIL with measured progress: source-blind score 44 to 50; the sun-glare major finding cleared, but one detached-bamboo blocker and terrain/courtyard majors remain.",
-    "latestVerifiedVisualBaseline": "phone/MEDIUM tag r14final plus retained stopped-frame lantern tag r12ab",
+    "latestVerifiedVisualBaseline": "phone/MEDIUM tag r15v1",
     "capture": {
       "status": "passed",
-      "tag": "r14final",
-      "buildFingerprint": "6693aa477479f10c7dafac3d095d1205a0a3a172ea2b53010ee9e223c4f47d2e",
+      "tag": "r15v1",
       "worstDrawCalls": 119,
-      "worstTriangles": 776373,
+      "worstTriangles": 784449,
       "resolution": "2532x1170",
+      "programs": 117,
+      "deadShaders": 0,
+      "consoleErrors": 0,
       "limitation": "SwiftShader evidence is not real-device 60 fps evidence."
     },
     "productionBuild": {
       "status": "passed",
-      "command": "npm run build:pages",
-      "checkedAt": "2026-07-31T22:14:39Z",
-      "mainChunkGzipKb": 314.83,
+      "command": "npm run build",
+      "checkedAt": "2026-08-01T01:05:00Z",
+      "mainChunkGzipKb": 317.77,
       "entryChunkGzipKb": 1.13
     },
     "publication": {
@@ -66,21 +68,24 @@
       "status": "passed",
       "command": "npm ci --cache /tmp/game2-npm-cache",
       "note": "The environment's default /root/.npm cache is not writable."
-    }
+    },
+    "round15Verdict": "FAIL at 65/100, 3 blockers from 4. Mostly a disproof round: HANDOFF open item 2 (the cool fill being eaten) is dead with all three named suspects eliminated independently and the original measurement shown to have omitted albedo; the plaza cast-shadow claim is wrong for the third time (the critic's own probe box is 84.6% cast shadow); open items 7 and 11 were stale and are closed. The detached-sky-dash blocker IS closed by a proven mechanism (bamboo atlas 2x2 bilinear bleed; detail 5.95 -> 2.85 against a 2.15 cards-off floor). Scores are confounded: the r15 opening capture was a tree byte-identical to r14final, and a fresh critic instance scored the same pixels 62 against round 14's 50, so 12 points of inter-instance variance were measured directly."
   },
   "currentWork": {
     "activeTask": null,
-    "nextTask": "NEXT15",
-    "nextStartingPoint": "Await a future user instruction. The exact two-round objective and publication are complete; do not activate Round 15 from logical-session state alone.",
+    "nextTask": "NEXT16",
+    "nextStartingPoint": "Await a future user instruction. Round 15 is complete and its checkpoint is published. Do not activate Round 16 from logical-session state alone. Highest-value ready work when authorized: the god-ray/mid-field-wash pair, which round 15 proved is ONE defect (the pass smears a 10%-coverage emitter across 99.9% of the frame) and which must be attacked as less spread, not more gain.",
     "blockedBy": [],
     "remoteStateChangeAuthorized": true,
     "remotePolicy": "Across future sessions, push verified checkpoints, integrate them into main, and publish GitHub Pages without asking again. This remains active until the user changes it."
   },
   "knownUncertainty": [
-    "Detached bamboo skyline fragments remain the sole visual blocker after Round 14; terrain scale and courtyard specificity remain major findings.",
-    "Fill, shadow-edge behavior, anti-solar sky, sakura hue/form, and far-range structure remain below their existing deterministic criteria.",
-    "The legacy shadow-edge pixel scanner is confounded even though the independent reviewer confirms the catastrophic staircase is gone.",
-    "The valley fixed-pixel probes are stale after the camera change and require semantic re-anchoring in a future user-authorized round.",
+    "The god-ray and mid-field-haze findings are one defect: rtGodA is ~10% non-zero while rtGodB is 99.9% non-zero, so the pass delivers common mode not differential. More gain is the round-7 regression; the untested lever is less spread.",
+    "The sky dome measures achromatic (sun-side saturation 0.018-0.062). Verified NOT a round-15 regression: sun upper sky 0.069 -> 0.069 and anti-solar 0.038 -> 0.038 across the round.",
+    "A ~10,493 px flat-black patch on the hero plaza was routed to Lighting.js by the closing critic and independently predicted by the materials owner to be cast shadow crushed to black, not a material. Unconfirmed.",
+    "UNVERIFIED APPARATUS RISK: capture.mjs --ab-object screenshots after engine.stop(), and preserveDrawingBuffer is false, so the retained r12ab stopped-frame lantern A/B evidence may be black. Re-verify before citing it again.",
+    "src/ui/HUD.js permanently stamps the title card into later frames if the HUD is hidden while the intro is live.",
+    "The bamboo green target is bounded by the illuminant: the key is (1.0, 0.412, 0.134), so only albedo above g/r 2.43 can be green-dominant when lit.",
     "Real iPhone and mid-range Android frame rate has not been measured in this Work run."
   ]
 }

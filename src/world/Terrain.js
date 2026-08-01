@@ -103,6 +103,26 @@ const STAIR_TERRACES = 14;
 const STAIR_HALF = 6.5;
 const STAIR_SHOULDER = 16.0;
 
+/**
+ * The working route east off the forecourt, over the garden bridge to the overlook.
+ *
+ * This route is already authored in the *geometry*: `Level._buildBridge` takes its
+ * bearing from the line between `LAYOUT.arena` and `LAYOUT.overlook` and lays a 7.5 m
+ * span on it, and `_buildOverlook` puts a railed stone terrace and a bench at its far
+ * end. Nobody had ever worn the ground underneath. A shrine plateau whose only worn
+ * ground is the processional axis reads as a level editor with props dropped in —
+ * a bridge is built where feet already go, not the other way round.
+ *
+ * Deliberately narrower and less scoured than the 参道: two people a day, not three
+ * centuries of them, so it keeps a verge and never reaches the sandō's wear level.
+ */
+const OVERLOOK_CTRL = [
+  [10.5, 29.4], [16.0, 31.6], [21.5, 33.4], [27.5, 34.9], [33.0, 36.0], [38.5, 37.2],
+];
+/** Half-width of the worn core, and the reach the index has to cover. */
+const OVERLOOK_HALF = 1.35;
+const OVERLOOK_SHOULDER = 6.0;
+
 // ------------------------------------------------------------ the swept ground
 //
 // Which ground is *maintained*. This used to be the plateau mask, and the plateau
@@ -516,6 +536,7 @@ export class Terrain {
     // --- authored features ----------------------------------------------------
     this.river = null;         // resampled polyline + per-node bed/surface elevation
     this.stair = null;
+    this.overlook = null;      // the worn side route; splat only, never carved
     this.riverBridgeStation = 0;
 
     // --- preallocated scratch (update() and the queries must never allocate) ---
@@ -741,6 +762,9 @@ export class Terrain {
     // Node spacing is deliberately finer than the coarsest grid cell so the carve
     // never staircases along the spline on LOW.
     this.stair = buildPolylineIndex(resampleSpline(STAIR_CTRL, 3), STAIR_SHOULDER + 4);
+    // Splat only — this route is worn, not carved. The plateau under it is already
+    // level, and cutting a trench into a hand-levelled court would be wrong twice.
+    this.overlook = buildPolylineIndex(resampleSpline(OVERLOOK_CTRL, 2), OVERLOOK_SHOULDER + 4);
     const river = buildPolylineIndex(resampleSpline(RIVER_CTRL, 4), GORGE_HALF * 2.2);
     river.bed = new Float32Array(river.n);
     river.surface = new Float32Array(river.n);
@@ -1236,6 +1260,17 @@ export class Terrain {
         // the one axis the eye walks down.
         let wear = st.d < STAIR_SHOULDER
           ? smootherstep(STAIR_HALF * 1.5, STAIR_HALF * 0.45, st.d) : 0;
+        // `closestOnPolyline` returns a single shared scratch object, so every read of
+        // `st` has to be finished before the next query overwrites it. It is, above.
+        const ov = closestOnPolyline(this.overlook, x, z);
+        if (ov.d < OVERLOOK_SHOULDER) {
+          // Its own wobble, an octave finer than the sandō's: a side track wanders
+          // more per metre than a swept processional axis does, and reusing `scuff`
+          // here would give the two routes a visibly common meander.
+          const wob = noise.fbm2(x * 0.082 - 31.6, z * 0.082 + 12.4, 2) * 1.15;
+          wear = Math.max(wear, 0.84 * smootherstep(
+            OVERLOOK_HALF + 1.7, OVERLOOK_HALF * 0.5, ov.d + wob));
+        }
         if (z > -16 && z < 104) {
           const wob = noise.fbm2(x * 0.055 + 2.7, z * 0.055 - 9.4, 2) * 2.6;
           const halfW = 3.1 + 3.3 * smoothstep(40, 6, z);
@@ -1798,6 +1833,12 @@ float kgFine;
  * pixels, so it needs no gate and never leaves.
  */
 float kgLodBand;
+/**
+ * The same construction three octaves coarser — about twelve drawing-buffer pixels
+ * rather than four. Four pixels is grain; twelve is the size a variance read over a
+ * probe box actually responds to, and it is the band the mid ground had nothing in.
+ */
+float kgMidBand;
 
 /** Shared per-fragment tile-breaking state, set once at the top of the surface pass. */
 vec2 kgWarp;
@@ -2254,6 +2295,30 @@ void kgComputeSurface(){
   // stays gated on wild2, or the plateau apron would go tree-line green.
   float farDetail = max(wild2, farLod * core * 0.62);
 
+  // --- the mid ground, 30-155 m --------------------------------------------
+  // The band between where the 0.3-7 m dressing above fades out and where the far
+  // reconstruction fades in. 'kgNearGrain' reaches zero at 78 m and 'farLod' does not
+  // leave zero until 90 m, so 78-90 m carried nothing at all and 45-78 m carried a
+  // dressing already down to a third of its weight.
+  //
+  // 'coreFar' below was meant to hold exactly this band and could not. Its gate was
+  // 'core * smoothstep(55, 240, dist) * kgNearGrain', and the maximum of that product
+  // over *all* distances is 0.00189, at 67 m — against its own '> 0.002' branch guard.
+  // The branch has never executed for a single pixel in any frame this project has
+  // captured. The r15 review measured the hole without knowing what it was: on the
+  // establishing frame's plateau, lumaSpread 58.7 / detail 7.31 at 33 m against
+  // 42.2 / 5.36 at 67 m, with nothing between the two but mipped library texture and
+  // the 12-48 m 'nB' field.
+  //
+  // The reason the old gate was written to overlap the near envelope is recorded and
+  // still stands: a *fixed* 2.9/7.8 m grain starting where the dressing stops makes
+  // the cadence continuous instead of zoned, which is worse than the hole. A
+  // footprint-locked band cannot do that — its world wavelength grows with the pixel,
+  // so it is a different size from the near dressing everywhere by construction, and
+  // the same size on screen everywhere it is seen.
+  float coreMid = core * smoothstep(30.0, 62.0, dist)
+                * (1.0 - smoothstep(155.0, 330.0, dist));
+
   // --- the landform frame --------------------------------------------------
   // One set of macro taps, shared by every rule below that draws a line on the
   // massif. Differenced over three macro texels (48 m): wide enough that what comes
@@ -2282,6 +2347,7 @@ void kgComputeSurface(){
   kgFarBump = vec2(0.0);
   kgFine = 0.0;
   kgLodBand = 0.0;
+  kgMidBand = 0.0;
   // One hierarchy ramp shared by rock and snow. The locked band is useful once a
   // pixel covers metres of the deep range, but at the establishing-shot massif it
   // was resolving at the same prominence as foreground grain and miniaturising it.
@@ -2342,6 +2408,18 @@ void kgComputeSurface(){
       kgLodBand = mix(fbm2(P.xz * frqA + 61.7, 2),
                       fbm2(P.xz * (frqA * 0.5) + 61.7, 2), lodM - lodI)
                     * mix(0.24, 1.0, kgScaleRamp);
+    }
+    // The mid band's own lock, same crossfade so it cannot swim as the camera moves,
+    // but tuned to ~12 buffer pixels instead of ~4. On the establishing pose that is
+    // 3-8 m of ground across the 30-155 m band — coarser than the dressing's 0.55-2.6 m
+    // and finer than 'nB' at 12-48 m, which is exactly the octave nothing occupied.
+    // Behind its own gate, so near ground and the far massif both pay nothing for it.
+    if (coreMid > 0.002) {
+      float mM = log2(max(kgFoot, 0.02) * 12.0);
+      float mI = floor(mM);
+      float mA = exp2(-mI);
+      kgMidBand = mix(fbm2(P.xz * mA - 128.3, 2),
+                      fbm2(P.xz * (mA * 0.5) - 128.3, 2), mM - mI);
     }
   }
   if (wild2 > 0.002) {
@@ -2419,23 +2497,30 @@ void kgComputeSurface(){
     albedo = mix(albedo, far, wild2 * 0.88);
     rough = mix(rough, mix(0.88, 0.96, veg), wild2 * 0.8);
   }
-  // Preserve the old core reconstruction only where it overlaps the near envelope.
-  // Letting it grow all the way to 240 m recreated 2.9/7.8 m grain immediately after
-  // the dressing above faded, which made the cadence continuous instead of zoned.
-  float coreFar = core * smoothstep(55.0, 240.0, dist) * kgNearGrain;
-  if (coreFar > 0.002) {
-    float grit = 1.0 - smoothstep(1.15, 2.70, kgFoot);
-    float rk1c = fbm2(P.xz * 0.128 + 61.7, 2);
-    float rk2c = fbm2(P.xz * 0.345 - 14.9, 2);
-    // Two octaves of fbm land an RMS near a quarter of nominal, so 1.7 nominal is
-    // about ±0.20 in practice: dry ground varying by two thirds of a stop over a few
-    // metres, which is less than a real autumn hillside does.
-    float v = (rk1c * 0.95 + rk2c * 0.75) * grit * coreFar;
-    // Dry autumn ground is patchy in *colour*, not just value — the ochre comes and
-    // goes with the grass cover — so the variance is tinted rather than a grey gain.
-    // Without this the band gains contrast and stays the same desaturated olive.
-    albedo *= 1.0 + v * vec3(1.30, 1.0, 0.62);
-    rough = clamp(rough + v * 0.20, 0.04, 1.0);
+  // The mid ground's reconstruction, on the gate that actually opens. Replaces the
+  // 'coreFar' block, whose gate is arithmetically dead — see the note at 'coreMid'.
+  if (coreMid > 0.002) {
+    // Less of it on the maintained routes: a swept sandō is the one surface here that
+    // genuinely is uniform, and it is the composition's only unbroken line.
+    float mid = coreMid * (1.0 - wear * 0.45);
+
+    // Value first, in stops so it cannot drive the albedo negative, and debiased: for
+    // a symmetric band E[2^(g·b)] = 2^(0.3466·g²·var) > 1, so a raw exponential gain
+    // *brightens* the band as a side effect of texturing it. A two-octave fbm2 lands
+    // var ≈ 0.085, the same figure the far range is debiased against.
+    float mStops = 1.45 * mid;
+    albedo *= exp2(kgMidBand * mStops - 0.0294 * mStops * mStops);
+
+    // Then hue, split the way the near mottle splits it — dry rises warm, held ground
+    // cool — so the *character* stays continuous across the hand-over while the
+    // *scale* is zoned. A value-only field at this size reads as vignetting, and a
+    // warm-only one (which is what the dead block would have applied) walks the frame
+    // further away from §5's cool shade rather than toward it.
+    float mDry  = smoothstep(0.02, 0.46, kgMidBand) * mid;
+    float mDamp = smoothstep(-0.02, -0.46, kgMidBand) * mid;
+    albedo *= mix(vec3(1.0), vec3(1.22, 1.10, 0.88), mDry * 0.70);
+    albedo *= mix(vec3(1.0), vec3(0.70, 0.84, 0.90), mDamp * 0.80);
+    rough = clamp(rough + kgMidBand * 0.22 * mid, 0.04, 1.0);
   }
 
   // --- 雪 ------------------------------------------------------------------
@@ -3748,6 +3833,38 @@ void main(){
     if (slope > 0.62 || h > 940) return 'stone';
     if (h < 890 && slope < 0.4) return 'grass';
     return 'dirt';
+  }
+
+  /**
+   * How much ground cover this spot actually carries, 0..1 — the splat's own continuous
+   * turf weight, bilinear, not `surfaceAt`'s argmax.
+   *
+   * `surfaceAt` collapses five continuous weights to one of five names, and 83.9% of the
+   * plateau the establishing frame sees comes back as the single name 'grass'. The weight
+   * underneath it is not uniform at all: measured over that region it is mean 0.613,
+   * sd 0.260, p10 0.039 against p90 0.888. Foliage's `_siteWeight` reads the name, so it
+   * plants a 23:1 density range at one density, which is what "uniform stochastic density,
+   * no clumping, no drift, no density gradient" is as a mechanism. The field exists; only
+   * the accessor did not, and Foliage cannot add one to a file it does not own.
+   *
+   * Moss counts at partial weight: damp turf holds cover, mossy *stone* does not.
+   */
+  coverAt(x, z) {
+    if (!this.splatBytes) return 0;
+    const N = this.gridN;
+    const fx = (x + CORE_HALF) / this.cell;
+    const fz = (z + CORE_HALF) / this.cell;
+    if (!(fx >= 0 && fz >= 0 && fx <= N - 1 && fz <= N - 1)) return 0;
+    const i0 = Math.min(N - 2, fx | 0), j0 = Math.min(N - 2, fz | 0);
+    const tx = fx - i0, tz = fz - j0;
+    const S = this.splatBytes;
+    let acc = 0;
+    for (let d = 0; d < 4; d++) {
+      const k = ((j0 + (d >> 1)) * N + i0 + (d & 1)) * 4;
+      const w = ((d & 1) ? tx : 1 - tx) * ((d >> 1) ? tz : 1 - tz);
+      acc += w * (S[k] + S[k + 3] * 0.6);
+    }
+    return clamp(acc / 255, 0, 1);
   }
 
   /** Snap a vector onto the ground, optionally offset along the surface. Mutates. */

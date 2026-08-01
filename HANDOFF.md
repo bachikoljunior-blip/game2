@@ -21,7 +21,19 @@ art-direction state record; project-wide session, plan and criterion pointers li
   cross-session authorization is active to push verified checkpoints, integrate them into
   `main`, and publish GitHub Pages without asking again. Paid, destructive, credential, and
   account actions remain outside that authorization.
-- **Rounds 10–14 are complete; no product round is active.** Round 14 opened at
+- **Round 15 is COMPLETE.** Working branch **`claude/1-round-execution-r6rdfs`**, created
+  from published `main` at **`8e72e01`**. Opening set `r15`, verification set `r15v1`.
+  Verdict **FAIL** at **65/100**, 3 blockers / 5 majors / 3 minors, from 62/100 with
+  4 blockers. Full measurements: `AI_DEVELOPMENT/EVIDENCE/r15-final.md`.
+- **Read this before quoting the round-15 score.** The `r15` opening capture was taken on a
+  tree byte-identical to `r14final` (build fingerprint `6693aa47…`). Round 14 closed at
+  **50**; a fresh critic instance opened the identical pixels at **62**. That 12-point gap
+  is **inter-critic-instance variance measured directly**, and the 62 → 65 closing delta is
+  from a third instance, so it is not a progress measurement either. What *is*
+  instance-independent this round: the detached-sky-dash blocker disappeared from the
+  closing review entirely and is confirmed gone by pixel measurement and by eye, and the
+  blocker count fell 4 → 3.
+- **Rounds 10–14 are complete.** Round 14 opened at
   source-blind **44/100** with one blocker and two majors and closed on coherent
   `r14final` at **50/100** with one blocker and two majors. The exact sun-glare region moved
   **38.112% → 11.330%** over 90% luma and disappeared from the final review. Detached
@@ -53,10 +65,11 @@ art-direction state record; project-wide session, plan and criterion pointers li
   page, console, request, or HTTP errors.
   The initial HTTP-200 development entry and two speculative-module variants were rejected
   before this state was accepted.
-- Exact next action: await a future user instruction; do not activate Round 15 from the
+- Exact next action: await a future user instruction; do not activate Round 16 from the
   still-active logical session alone.
-- Current rollback point: **`5428d16`**; branch base: **`51f1807`**. Previous verified publication
-  implementation checkpoint: **`5fb4c3c`**.
+- Current rollback point for round 15: **`8e72e01`** (published `main`, the branch base).
+  Owner commits are `65617e7` foliage, `11c8795` world, `30f20f4` materials, `c8ce3ee` sky,
+  `b196bb8` postfx. Previous verified publication implementation checkpoint: **`5fb4c3c`**.
 - Round 8 is six commits: `bc96c3c` (critique), `e9b9717` (postfx), `4a310ed` (foliage),
   `1be775a` (world), `55693b9` (sky), `26bf937` (postfx, gate repair). Round 8 was run on
   `claude/kagerou-round-8-start-jk5lox` because the session operator named that branch, and
@@ -185,6 +198,99 @@ authored god-ray gain derivation, which claimed an upright removes ~22% of the d
 when it removes none — `delta = (vUv − sunUv)/N`, so every pixel's march terminates at the
 sun's UV and collects the disc as its last tap.
 
+## What round 15 disproved — do not re-test these
+
+Round 15 was mostly a disproof round, and three of its results retire items that had been
+steering work for several rounds. Full numbers in `AI_DEVELOPMENT/EVIDENCE/r15-final.md`.
+
+- **Open item 2 is DEAD. The cool fill was never being eaten; the measurement omitted
+  albedo.** Three owners eliminated all three named suspects independently.
+  `MaterialLibrary.triplanarPatch` has exactly one call site, `Terrain.js:1608`, called with
+  **no material**, so it returns at its first line and the cited `TRI_AO` block never runs.
+  `PostFX.js`'s `FRAG_RESOLVE` receives only `tScene`, the *composited* radiance — there is
+  no indirect-only buffer, `c *= occTint * k` multiplies key and fill alike, and its only
+  colour term `uAoTint (0.78,0.85,1.0)` has B/R 1.282, so it can only make occluded pixels
+  cooler. Ablating both at once (`aoMapIntensity = 0` everywhere, `uAoStrength = 0`) moves
+  the fill-only plaza **21.0 → 21.6 p50, +2.9%**, against a noise floor where 77–87% of
+  pixels already differ by > 0.5; "a tenth survives" needs ≈ −90%. The fill measures
+  **52.9% of the illuminant, exactly as budgeted**. The reason the original number looked
+  damning: an illuminant fitted from a frame's own pixels returns illuminant × albedo, and
+  these albedos are warm by authored construction (cobble 0.700, cedar 0.519, dirt 0.369
+  linear B/R), with `Terrain.js` multiplying dirt by a further (0.58,0.46,0.35). That is
+  exactly why `valley` fitted 0.141 against the key's own 0.134.
+  **The genuine defect in the same area** was a unit bug: `SHADOW_FILL_MAX_RB = 0.52` is
+  §5 `#4a6b8f`'s R/B in **sRGB** compared against three's **linear** `Color.r/Color.b`,
+  where it is **0.2493** — a ceiling 2.08× too warm, so the clamp had never fired. Fixed.
+- **Open item 7 is CLOSED — trees no longer float.** `_scatterTrees` already plants through
+  `_plantY`, both tree materials declare `sink: true`, the impostor reads the deficit from
+  `aFoliageB.z`, and the runtime placement audit reports `floating: 0`.
+- **Open item 11 is STALE — the `SHOTS.sun` pose is not the fault.** `_sunUv` reads
+  **(0.60509, 0.54474)** live with `_sunScreenStrength = 1.0`, and the round-15 critic
+  independently measured the disc at (0.604, 0.453). Its (0.500,0.500)-on-the-tassel figure
+  describes a pose that has since been replaced. Nothing should be routed to `Cinematic.js`
+  for the god rays.
+- **"No cast shadow on the plaza" is WRONG for the third time.** The critic's own box
+  (152,1006,152×59), labelled "shaded plaza", is **84.6% cast shadow** — it measured the
+  shadow and called it the ground. The closing critic independently killed the same
+  candidate by cropping at native. **Nobody should touch cascade code.** The real limit is
+  an exposure ratio: `ambientReport` omitted `this.rim`, an unshadowed scene-wide
+  directional worth 0.1482 luminous irradiance, so fill is **0.5937 against key 0.3960 =
+  1.50×** and the best achievable contrast is 1 + key/fill = **1.67×** against 1.38×
+  measured.
+- **The dark plaza blobs are not drawn by `Materials.js`.** Scale: the plaza tile is 1.61 m
+  with weathering fields at 27/31 cm, so nothing in it can be a 2–3 m blob. Value: the
+  critic's box reads **0.051 of its neighbour in linear, 4× darker than the darkest
+  reflectance this file can produce**. Light is being removed, not reflectance. The closing
+  critic independently re-filed the same patch against `Lighting.js`.
+- **Undersampling is not what stops the god rays.** Holding gain via `uDecay = 0.94^(24/N)`,
+  `rtGodB` mean/p90 = 0.1194/0.2928 at N=24, 0.1088/0.2703 at N=48, 0.1083/0.2740 at N=96 —
+  converged by 48. Do not spend fill on `GOD_SAMPLES`. The emitter is not empty either:
+  `rtGodA` is 10.2–11.0% non-zero with the uprights, shimenawa, shide and bamboo present.
+  **What the pass actually does is smear a 10%-coverage emitter across 99.9% of the frame —
+  it delivers common mode, not differential.** `sky` reached the same place from the other
+  side: removing 100% of the aerial perspective moves the haze finding's boxes by nothing
+  (p50 226.3 → 226.2), while turning **bloom and god rays off** moves them decisively
+  (saturation 0.188 → **0.348**, p50 226.3 → **206.4**). The god-ray finding and the
+  mid-field-wash finding are one defect. **If anyone acts here it must be less spread, not
+  more gain** — more gain is the round-7 regression.
+- **The sky's flatness is NOT a round-15 regression.** Measured before/after on the same
+  regions: `sun` upper sky saturation 0.069 → 0.069, anti-solar 0.038 → 0.038, `hero` sky
+  band 0.076 → 0.075. The largest move anywhere is −0.018 on `valley`, whose lumaSpread
+  *rose* 59.8 → 65.7. The closing critic's "achromatic grey card" blocker is a real
+  long-standing defect newly surfaced, not something this round broke.
+- **Vermilion is correct** — torii posts measure RGB [170.6,49.7,23.7] and [142.7,42.0,19.7]
+  at saturation 0.87 against the contract's `#c8321e`. Earlier "washed pink" readings were
+  edge contamination from the sky. Sky banding is cleanly dithered under a 16× contrast
+  stretch. Lantern ground-spill discs are soft warm pools, not hard-edged coasters.
+
+## Apparatus faults found in round 15 — the rig has now broken eight times
+
+- **`detail` cannot measure a light shaft, and a finding's acceptance target was therefore
+  unsatisfiable by any physical fix.** Synthetic shaft banding of ±40 code values at a 60 px
+  period scores `detail` **0.47** — *below* the 0.57 the same critic called "mathematically
+  smooth". Only ±25 at a 12 px period reaches 4.33, which is grain. Calibrated replacement:
+  row-averaged high-pass of the 506×23 strip at lag 16 px (`band16`) ≥ 7.0 with the
+  clean-sky control below 0.5 — synthetic ±10 @ 60 px = 7.06, current strip = 1.75, clean
+  sky = 0.155, real ground = 11.43. **Use `detail` for fine texture only.**
+- **Screenshots taken after `engine.stop()` are void.** `Engine` sets
+  `preserveDrawingBuffer: false`, so the buffer is already gone; an owner's run came back
+  98.7% below code 16. **Unverified consequence that must be checked before the retained
+  `r12ab` lantern A/B evidence is cited again: `capture.mjs --ab-object` screenshots in a
+  separate round trip after `engine.stop()`, so those pairs may be black.**
+- **Hiding the HUD while the title card is live stamps 陽炎 permanently into every later
+  frame.** `HUD.update()` clears the overlay once when hidden and returns, while
+  `Menus.update()` keeps painting the intro wash into the same canvas. Owner
+  `src/ui/HUD.js`. Related: `menus.skipIntro()` issued in the *same* `page.evaluate` as
+  `window.__kagerouStart()` runs before the intro exists, because `begin()` is async;
+  `capture.mjs` avoids this only by using two separate evaluates.
+- **An ablation harness returned byte-identical results across all eight configurations**
+  because `_passAdapt` writes the target the next composite reads. Caught by its own owner,
+  which rebuilt it to settle like `capture.mjs` and hash every shot.
+- **The round-7 four-byte-stride bug recurred**, this time in the closing critic's own
+  decoder reading a 3-channel PNG, and produced a phantom "field of RGB confetti". It caught
+  and corrected it before filing. The standing rule holds and earned itself again: **run one
+  region through `tools/probe.mjs` first and require agreement to the digit.**
+
 ## Open items, each with the measurement that states it
 
 Ordered by what a hostile art director would hit first. Numbers are the round-8 verification
@@ -198,8 +304,12 @@ the current source-level predictions are not replacements for measured post-fix 
    is instanced. This is the dominant remaining part of the bare-ground blocker and it is
    **not** in `Terrain.js`. Owner: `src/render/Foliage.js`.
 
-2. **The cool fill is eaten between the rig and the pixel.** This is the round's most
-   consequential unfixed finding and two independent agents reached it. The rig delivers fill
+2. **CLOSED IN ROUND 15 — DISPROVED. Do not act on the text below; it is kept only so the
+   reasoning that produced it stays legible.** The fill is not eaten: it measures 52.9% of
+   the illuminant as budgeted, and all three named suspects were eliminated independently.
+   The apparent loss was an illuminant fitted without dividing out albedo. See "What round
+   15 disproved" above. ~~The cool fill is eaten between the rig and the pixel.~~ This was
+   the round's most consequential unfixed finding and two independent agents reached it. The rig delivers fill
    0.446 against key 0.396 (53% of the illuminant) and a term ablation confirms the fill
    itself *is* cool and *is* arriving — fill-only on `torii`'s ground band measures meanRGB
    **13.0, 16.0, 17.0**, R−B −3.9. Yet the illuminant fitted from `valley`'s own pixels is
@@ -237,10 +347,10 @@ the current source-level predictions are not replacements for measured post-fix 
    question about how much a backlit canopy should emit, now decoupled from the contract
    check. Owner: `src/world/Props.js`.
 
-7. **Trees float over the clipmap chord.** `_scatterTrees` plants through `_heightAt`, not
-   `_plantY`, and neither tree material declares `sink` — the exact defect round 7 fixed for
-   bamboo, still live for trees. Found by the foliage owner and flagged rather than changed
-   blind. Unmeasured. Owner: `src/render/Foliage.js`.
+7. **CLOSED IN ROUND 15 — already fixed and the item was stale.** `_scatterTrees` plants
+   through `_plantY`, both tree materials declare `sink: true`, the impostor reads the
+   deficit from `aFoliageB.z`, and the runtime placement audit reports `floating: 0`.
+   No change was needed.
 
 8. **`wide` is front-lit by construction** — sun 123° off the view axis, so no specular in
    frame reflects toward the viewer. It is exempt from the highlight gate for that reason,
@@ -257,7 +367,11 @@ the current source-level predictions are not replacements for measured post-fix 
    Pre-existing and not made worse by round 8 (1.25% → 1.17%). Worth a look if flat summits
    ever show. Unowned.
 
-11. **`Cinematic.js`'s `SHOTS.sun` pose is wrong about its own framing.** Its comment claims
+11. **CLOSED IN ROUND 15 — STALE.** `_sunUv` reads (0.60509, 0.54474) live with
+   `_sunScreenStrength = 1.0`, and the round-15 critic independently measured the disc at
+   (0.604, 0.453); the current `SHOTS.sun` already documents (0.605, 0.455). The figure
+   below describes a pose that has since been replaced. Nothing routes to `Cinematic.js`
+   for the god rays. ~~Its comment claims
    the sun "sits in the open bay at ~3.2 m"; it actually lands dead centre behind the
    shimenawa's tassel (the disc's UV is 0.500,0.500 and that pixel is rope at RGB 114,86,30),
    so the ~150-linear disc never enters the depth-masked emitter. "No sun disc in frame" is a

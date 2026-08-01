@@ -69,7 +69,29 @@ sample four times.
 > Picking the work up in a new session? [`HANDOFF.md`](./HANDOFF.md) carries the state
 > the container does not — `shots/` is gitignored and the review images do not survive.
 
-Measured, not asserted. The coherent phone/MEDIUM `r14final` checkpoint is captured and gated.
+Measured, not asserted. The coherent phone/MEDIUM `r15v1` checkpoint is captured and gated.
+Round 15 closed **FAIL at 65/100**, 3 blockers from 4, and was mostly a *disproof* round: it
+retired `HANDOFF.md` open item 2 — the finding that file called the most consequential
+unfixed problem on the project — by showing the cool fill was never being eaten and the
+original measurement had simply omitted albedo. It also killed the "no cast shadows on the
+plaza" claim for the third time, with the critic's own probe box measured at **84.6% cast
+shadow**.
+
+> **The round-15 scores are not a trend.** The opening `r15` capture was taken on a tree
+> byte-identical to `r14final`. Round 14 closed at **50**; a fresh critic instance scored the
+> identical pixels **62**. That 12-point gap is inter-critic-instance variance measured
+> directly, and the closing 65 came from a third instance. The instance-independent results
+> are that the detached-sky-dash blocker is gone — confirmed by pixel measurement and by eye
+> — and the blocker count fell 4 → 3.
+
+The one blocker actually closed was closed by a proven mechanism, not a guess: the bamboo
+card atlas was packed 2×2, so bilinear sampling at v=0.5 pulled the deliberately opaque
+rooted skirt of cells 2/3 through the transparent culm tips of every row-0 card. Five
+ablations isolated it; repacking the atlas 4×1 took the dash region's `detail` from **5.95
+to 2.85** against a floor of 2.15 measured with the entire card mesh hidden — at zero
+triangle, draw-call or texture cost.
+
+
 Round 10 hardened the evidence and rejected harmful shadow/tone candidates; Round 11/12 made
 the stone-lantern receiver visible, additive, and softly varied. Its fixed hero near/far
 ground ratio moved **1.121 → 2.394**, and an independent source-blind lantern review passed.
@@ -88,14 +110,17 @@ or HTTP failures.
 > they come from different critic instances, and the review set has since had the HUD
 > blanked, which removed the authored white ink the highlight gate used to pass on.
 
-**Latest coherent measured checkpoint (`r14final`; not a full visual PASS)**
+**Latest coherent measured checkpoint (`r15v1`; not a full visual PASS)**
 
 | | measured |
 |---|---|
 | phone draw calls | **119** worst pose (`torii`), against the 140 cap |
-| phone triangles | **776,373** worst pose (`wide`), against the 900,000 cap |
-| tonal range | true blacks on all five review framings (p0.1 = 0, 12, 0, 1, 6) |
-| highlights | eligible `hero` **236** and `torii` **250**, both above the strict >235 gate |
+| phone triangles | **784,449** worst pose (`wide`), against the 900,000 cap |
+| tonal range | true blacks on all five review framings (p0.1 = 0, 11, 0, 1, 5) |
+| highlights | eligible `hero` **236** and `torii` **251**, both above the strict >235 gate |
+| detached sky debris | dash region `detail` **5.95 → 2.85**, against a 2.15 cards-off floor |
+| shadow colour | shaded plaza B/R **0.822 → 1.073**, sunlit-stone guard held at 0.693 ≤ 0.75 |
+| sun disc | core luma p50 **251.9 → 255.0**; sky guard held at 227.6 |
 | shader programs | zero linked dead — 117 linked, audited every capture |
 | page errors | zero |
 | set colour coherence | frame-to-frame R−B spread **64.1 → 43.2** |

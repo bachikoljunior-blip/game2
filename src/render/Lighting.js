@@ -357,12 +357,27 @@ export class LightingSystem {
     this.probeAmbientShare = PROBE_AMBIENT_SHARE;
     this.hemiAmbientShare = HEMI_AMBIENT_SHARE;
     /**
-     * Diagnostics, written every frame: what the two ambient terms are actually putting on
-     * an up-facing surface, in luminous irradiance, next to the key. Read these rather than
+     * Diagnostics, written every frame: what every non-key term is actually putting on an
+     * up-facing surface, in luminous irradiance, next to the key. Read these rather than
      * the intensities — an intensity is meaningless without the colour it multiplies, which
      * is exactly the mistake that let a probe carry three quarters of the fill unnoticed.
+     *
+     * `rim` is here because it was **not**, and its absence has been quietly distorting
+     * every key/fill argument on this project. `this.rim` is a scene-wide DirectionalLight
+     * with `castShadow = false`; read live off the magic-hour rig it is intensity 0.2988 on
+     * (0.3832, 0.5055, 0.7321), i.e. **0.1482 of luminous irradiance** — a third of the
+     * stated fill again, cool (B/R 1.910), and landing on every lit surface in the frame
+     * whether or not the sun reaches it. With it counted the fill is 0.5937 against a key of
+     * 0.3960: the fill is **1.50x the key**, not the 1.125x the three-term report implied.
+     *
+     * That number is the whole of round 15's "no readable cast shadow on the plaza". On a
+     * horizontal plane the best a shadow can do is `1 + key/fill` = **1.67x**, and the
+     * differential ablation measures the full rig at **1.38x** and the same frame with the
+     * ambient zeroed at **2.24x**. The shadow map is not the problem and never was; the
+     * exposure ratio is, and it cannot be reasoned about from a report that omits a third
+     * of its denominator.
      */
-    this.ambientReport = { key: 0, probe: 0, hemi: 0 };
+    this.ambientReport = { key: 0, probe: 0, hemi: 0, rim: 0, fill: 0 };
 
     this._splits = null;
     this._sphereZ = null;
@@ -1146,15 +1161,21 @@ export class LightingSystem {
       this.ctx.scene.environmentIntensity =
         MathUtils.lerp(ambient * NIGHT_PROBE_GAIN, solvedProbe, probeOk ? dayW : 0);
 
-      const r = this.ambientReport;
-      r.key = lum709(_col) * intensity * Math.max(this.sunDirection.y, 0);
-      r.hemi = this.hemi.intensity * skyLum;
-      r.probe = this.ctx.scene.environmentIntensity * probeLum;
-
       // Cool the rim toward the sky bounce so it always reads as the opposite of key.
       _col2.setRGB(0.55, 0.7, 1.0);
       this.rim.color.copy(sky.skyColor).lerp(_col2, 0.55);
       this.rim.intensity = 0.22 + 0.18 * (1 - MathUtils.clamp(sky.sunDirection.y * 2.5, 0, 1));
+
+      // Reported after the rim is solved, not before — the ordering is why it was missed.
+      const r = this.ambientReport;
+      r.key = lum709(_col) * intensity * Math.max(this.sunDirection.y, 0);
+      r.hemi = this.hemi.intensity * skyLum;
+      r.probe = this.ctx.scene.environmentIntensity * probeLum;
+      // A directional's irradiance on a surface facing it is intensity x colour; the rim is
+      // aimed roughly down the view axis from above and behind, so a horizontal plane sees
+      // most of this. Unshadowed, so it is present in the cast shadow too.
+      r.rim = this.rim.intensity * lum709(this.rim.color);
+      r.fill = r.hemi + r.probe + r.rim;
     }
 
     // --- rim placement: always behind the subject, from the camera's point of view.

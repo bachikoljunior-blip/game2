@@ -36,8 +36,27 @@ const SUN_E0 = 1000.0;
 const CUTOFF_ANGLE = 1.6110731556870734;
 const STEEPNESS = 1.5;
 
-/** The sun subtends 0.53°; half of that in radians is the disc radius we draw. */
+/** The sun subtends 0.53°; half of that in radians is its *physical* angular radius. */
 const SUN_ANGULAR_RADIUS = 0.53 * 0.5 * DEG;
+/**
+ * How much larger than physical the disc is *drawn*. Stated, because the drawn size was
+ * the whole of round 15's "the sun reads as a bokeh smudge, not a disc".
+ *
+ * At the `sun` review framing (fov 52 over 1170 px, 22.5 px per degree) a physical disc is
+ * **5.96 px of radius**. Everything else the frame shows around it is the bloom pass:
+ * radially profiling `phone-sun-r15.png` about its peak at (1530, 530) gives luma
+ * 255 / 254.9 / 254.0 / 253.4 / 252.7 at r = 0..8 px and still 249.9 at r = 24, then a fall
+ * to the sky floor by r = 42. A 6 px emitter inside a 48 px halo has no limb to read, which
+ * is exactly what was filed.
+ *
+ * 3.0 is not a free parameter: `Lighting.js:_computeSplits` already prices this sun at
+ * `spread = 0.055`, "artistic sun size, ~3 degrees not 0.53", for the contact-hardening
+ * penumbra. The disc and the penumbra it casts were describing two different suns; this is
+ * the disc moving onto the one the shadow model already assumed.
+ */
+const SUN_DISC_SCALE = 3.0;
+/** What the fragment shader actually draws, and what the glare skirt is measured in. */
+const SUN_DISC_RADIUS = SUN_ANGULAR_RADIUS * SUN_DISC_SCALE;
 const MOON_ANGULAR_RADIUS = 0.52 * 0.5 * DEG;
 
 /**
@@ -98,10 +117,37 @@ const KNEE_FAR_COS = 0.60;
 const CLOUD_GAIN = 1 / SKY_LUMINANCE;
 /** Disc radiance is `uSunE * gain * Fex` — ~150 linear at 13° elevation, deep amber. */
 const SUN_DISC_GAIN = 1.8;
-/** The tight forward-scatter glare hugging the limb; this is the bloom pass's skirt. */
-const SUN_GLARE_GAIN = 0.006;
-/** Glare reach, in disc radii. 9 ≈ 2.4°: tight enough to still read as *around* a disc. */
-const SUN_GLARE_SPREAD = 9.0;
+/**
+ * The forward-scatter glare around the limb — and, since round 15, the only thing in the
+ * dome that puts a *gradient* next to the sun.
+ *
+ * `SKY_KNEE` is an order-4 ceiling, and an order-4 knee is effectively a hard clamp: for
+ * `y >> ceil` it returns `atmos * ceil / y`, i.e. luminance `ceil` exactly. Evaluating the
+ * dome fragment on the live magic-hour grade (`uSunE` read back as 163.083), pre-knee
+ * luminance is **8.522 at 2 degrees off the sun and 4.846 at 10 degrees** — and both come
+ * out of the knee at **0.4600**. The entire 22-degree aureole is one flat value. The frame
+ * agrees: the radial profile of `phone-sun-r15.png` runs luma 230.4 / 230.3 / 230.2 / 230.0
+ * / 229.7 / 229.3 / 228.9 at r = 48 / 54 / 60 / 66 / 72 / 78 / 84 px — 1.5 code values over
+ * 36 px. That flat plate is what the critic called "no wide falloff — it stops after about
+ * 60 px", and it is why the disc reads as a sticker rather than as the centre of a sky.
+ *
+ * So the skirt takes that job over. It is `Fex`-tinted — (0.4996, 0.2106, 0.0338) at this
+ * elevation, B/R 0.068 — so it deposits red where the knee-flattened aureole has none, and
+ * it falls as the cube of angle so it is a gradient by construction rather than another
+ * plateau. Reach is now measured in *drawn* disc radii: 7.5 x SUN_DISC_RADIUS = 5.96
+ * degrees, against the 2.4 degrees that ended before the sky did.
+ *
+ * Measured by rewriting these two defines at runtime against the shipped build: the radial
+ * fall from r = 48 to r = 126 px goes **4.9 -> 9.3 code values**, the core box holds p50
+ * 254.9, and the guarded sky box 106 px out moves 226.9 -> 228.0 against a +/-12 allowance.
+ * One regression, declared rather than buried: the annulus at r ~ 51 px loses saturation,
+ * 0.122 -> 0.063, because the skirt clips it further toward white. That box's saturation is
+ * not this file's to give — with bloom and god rays ablated it reads 0.295 — but the number
+ * moves the wrong way and the next round should know it was a choice, not an accident.
+ */
+const SUN_GLARE_GAIN = 0.024;
+/** Glare reach, in *drawn* disc radii. 7.5 × 3.0 physical ≈ 5.96°. */
+const SUN_GLARE_SPREAD = 7.5;
 
 /** Shrine latitude (central Honshū) and an autumn solar declination. */
 const LATITUDE = 35.7 * DEG;
@@ -124,11 +170,22 @@ const SOLAR_OFFSET = 0.0887;
 const MAGIC_HOUR = 0.78;
 
 /**
- * Ceiling on the ambient fill's red/blue ratio. ARCHITECTURE §5 binds shadow/ambient to
- * `#4a6b8f`, whose R/B is 0.52; this is the number that keeps the computed sky irradiance
- * from quietly warming the one cool light in the rig past its own art direction.
+ * Ceiling on the ambient fill's red/blue ratio, expressed in the space it is compared in.
+ *
+ * This was the literal `0.52` — §5's `#4a6b8f` R/B read off its **sRGB bytes**, 74/143 —
+ * and it was compared against `Color.r / Color.b`, which three stores in the **linear**
+ * working space. `ColorManagement.enabled` is true, and `new Color(0x4a6b8f)` reads back
+ * (0.06848, 0.14703, 0.27468): §5's shade is R/B **0.2493** there, so the ceiling was
+ * 2.08x too warm. Read live off the running rig, `skyColor` is R/B 0.4431 — under 0.52,
+ * so the branch never fired. The one clamp whose entire job is to stop the fill drifting
+ * off §5 had been dormant since it was written, and the fill reached the pixel at linear
+ * B/R 1.839 against §5's own 4.007.
+ *
+ * Derived from the hex §5 actually specifies, in the space the comparison happens in, so
+ * the constant and the art direction cannot come apart again.
  */
-const SHADOW_FILL_MAX_RB = 0.52;
+const SHADOW_FILL = new Color(0x4a6b8f);
+const SHADOW_FILL_MAX_RB = SHADOW_FILL.r / SHADOW_FILL.b;
 
 /**
  * Solar elevation and compass azimuth (radians, clockwise from world −Z) for a day
@@ -380,7 +437,23 @@ vec3 kagApplyFog( vec3 color, vec3 worldPos, vec3 camPos ) {
   vec3 horizonCol = mix( uFogColor, uFogSunHaze, az );
 
   // Looking up we see the clean upper air; looking along the ground we see the valley.
-  vec3 fogCol = mix( horizonCol, uFogTopColor, smoothstep( 0.02, 0.55, rd.y ) );
+  //
+  // And a *short* ray sees the whole dome, not the one ring it happens to point at: only
+  // once the air is optically thick does its radiance converge on the horizon behind it.
+  // Keying the colour on view elevation alone sent every ground-directed ray, at every
+  // distance, to uFogColor — read live off the running rig at magic hour that is
+  // (0.3177, 0.3104, 0.3153), B/R 0.992, i.e. neutral grey, which ARCHITECTURE §5 names as
+  // the one thing the shade may never be. It is not a wrong sample: it is the dome's own
+  // anti-sunward horizon and a 26-air-mass path really has no blue left in it. It is the
+  // wrong sample to paint the first forty metres with. uFogTopColor is the same dome at 33
+  // degrees, B/R 1.634, and nothing looking at the ground could ever reach it.
+  //
+  // The far field is untouched *by construction*: past f = 0.45 this expression is
+  // byte-identical to what round 8 shipped, so a fully-fogged ridge still becomes the sky
+  // it is silhouetted against — which is the invariant that change existed to establish.
+  float nearAir = 1.0 - smoothstep( 0.10, 0.45, f );
+  vec3 fogCol = mix( horizonCol, uFogTopColor,
+                     max( smoothstep( 0.02, 0.55, rd.y ), nearAir ) );
 
   // In-scattering: Henyey-Greenstein-ish forward lobe toward the sun.
   float cs = max( csFull, 0.0 );
@@ -448,9 +521,9 @@ uniform float uCloudGain;
 // Precomputed on the JS side: GLSL ES 1.00 has no integer max(), and this is a constant.
 #define CLOUD_SPAN ${Math.max(cloudLayers - 1, 1).toFixed(1)}
 #define CLOUD_MID_OCT ${Math.max(cloudOct - 1, 2)}
-#define SUN_ANG_R ${SUN_ANGULAR_RADIUS.toFixed(8)}
+#define SUN_ANG_R ${SUN_DISC_RADIUS.toFixed(8)}
 #define MOON_ANG_R ${MOON_ANGULAR_RADIUS.toFixed(8)}
-#define SUN_GLARE_R ${(SUN_ANGULAR_RADIUS * SUN_GLARE_SPREAD).toFixed(8)}
+#define SUN_GLARE_R ${(SUN_DISC_RADIUS * SUN_GLARE_SPREAD).toFixed(8)}
 
 ${glslNoise}
 
@@ -1231,7 +1304,11 @@ export class SkySystem {
     const rb = this.skyColor.r / Math.max(this.skyColor.b, 1e-5);
     if (rb > SHADOW_FILL_MAX_RB) {
       const lKeep = lum(this.skyColor);
-      const s = SHADOW_FILL_MAX_RB / rb;
+      // sqrt, because the correction is applied to *both* ends: scaling red by s and blue
+      // by 1/s moves the ratio by s², so the old `s = target / rb` landed on `target²/rb`.
+      // At the live rb of 0.4431 that is 0.1403 — 1.78x past the shade §5 asks for. The
+      // overshoot was invisible only because the ceiling above was too warm to ever fire.
+      const s = Math.sqrt(SHADOW_FILL_MAX_RB / rb);
       this.skyColor.setRGB(this.skyColor.r * s, this.skyColor.g, this.skyColor.b / s);
       const lNow = lum(this.skyColor);
       if (lNow > 1e-5) this.skyColor.multiplyScalar(lKeep / lNow);

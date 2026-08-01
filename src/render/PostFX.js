@@ -563,6 +563,17 @@ void main() {
   // the beams between the torii posts and the bamboo. This has to be a *linear* test:
   // a sky dome drawn as real geometry at 800 m sits at window depth 0.99998, which a
   // naive "d >= 0.999995" sky test misses entirely and the god rays silently vanish.
+  //
+  // MEASURED, round 15, because the sentence above is written against a far plane this
+  // build has not had for a long time: Terrain.js:603 raises camera.far from Engine's
+  // authored 900 to **6200** so the macro heightfield stays in frustum, and
+  // _passGodRays feeds that straight into uFar. The 0.70/0.92 band is therefore
+  // 4340-5704 m, not 630-828 m. What still makes this work is that Sky.js's dome is
+  // depthWrite:false / depthTest:false, so sky pixels keep the *cleared* depth of 1.0
+  // and land at lz = 0.9999 whatever uFar is — the fraction never touches them. Do not
+  // reason from "the dome sits at 800 m": if the dome ever started writing depth,
+  // 800/6200 = 0.13 would zero the entire emitter. Read back _far before trusting any
+  // arithmetic here.
   float lz = viewZ(min(d, 0.9999999)) / uFar;
   float sky = smoothstep(0.70, 0.92, lz);
 
@@ -3137,7 +3148,20 @@ export class PostFX {
     // reconstructed `sun` buffer, the two together hold the frame's p0.1 at the value
     // it has with the pass switched off entirely, while the near-sun fan is untouched.
     bu.uDensity.value = 0.85;
-    bu.uDecay.value = 0.94;
+    // uDecay is a falloff *per march step*, and a step is `uDensity / GOD_SAMPLES` of the
+    // way to the sun — so a fixed 0.94 is only a fixed physical falloff at a fixed tap
+    // count. GOD_SAMPLES is a tier knob (24 / 32 / 48) and the pass normalises by 1/N,
+    // so the decay-weighted tap count (1 - d^N)/(1 - d) = 12.89 / 14.37 / 15.81 was
+    // being divided by 24 / 32 / 48: the same scene emitted **1.612 / 1.347 / 0.988**
+    // times the marched radiance at MEDIUM / HIGH / ULTRA. Desktop, the showcase tier,
+    // was rendering the shafts 39% dimmer than the phone. A tier may change how finely
+    // the march is sampled; it may not change how bright the result is. Anchoring the
+    // exponent to the authored 24-tap value holds the decay per unit of screen distance
+    // constant, which brings the three tiers to 1.612 / 1.599 / 1.587 — the residual
+    // 1.5% is the geometric series against its integral, and is below the noise floor
+    // of any measurement this pass has ever been judged by. At 24 taps this evaluates
+    // to exactly 0.94, so the MEDIUM review set is unchanged by this line alone.
+    bu.uDecay.value = Math.pow(0.94, 24 / this._godSamples);
     bu.uWeight.value = 3.0;
     bu.uNoise.value = (this._frame & 31) * 0.137;
     this._draw(this.mGodBlur, this.rtGodB);

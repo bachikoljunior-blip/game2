@@ -1,17 +1,27 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-31T22:32:22Z",
-  "selectionMethod": "The exact two-round objective, remote integration, and public runtime verification are complete. Preserve unresolved work without activating Round 15.",
+  "updatedAt": "2026-08-01T02:20:00Z",
+  "selectionMethod": "Round 15 was authorized by an explicit user instruction, executed, measured, and closed at FAIL 65/100. Its checkpoint is integrated and published. Preserve the remaining visual work without activating Round 16.",
   "tasks": [
     {
-      "id": "NEXT15",
-      "planNode": "NEXT15",
-      "status": "deferred",
+      "id": "R15-PUBLISH",
+      "planNode": "NEXT16",
+      "status": "verified",
       "priority": 0,
-      "dependencies": ["REMOTE-PUBLISH-2"],
+      "dependencies": ["R15-FOLIAGE", "R15-WORLD", "R15-MATERIALS", "R15-SKY", "R15-POSTFX"],
+      "objective": "Integrate and publish the verified Round 15 checkpoint under the standing cross-session remote authorization.",
+      "verification": "Branch pushed and inspected, merged into main, GitHub Pages rebuilt and the public runtime checked for zero page, console, request and HTTP errors.",
+      "nextAction": "Complete; see AI_DEVELOPMENT/EVIDENCE/r15-final.md."
+    },
+    {
+      "id": "NEXT16",
+      "planNode": "NEXT16",
+      "status": "deferred",
+      "priority": 1,
+      "dependencies": ["R15-PUBLISH"],
       "objective": "Preserve the remaining visual work without beginning another product round.",
-      "verification": "No Round 15 implementation or capture starts under the completed two-round scope.",
-      "nextAction": "Await a future user instruction; do not infer continuation from the active logical-session flag alone."
+      "verification": "No Round 16 implementation or capture starts without a new explicit user instruction.",
+      "nextAction": "Await a future user instruction; do not infer continuation from the active logical-session flag alone. Highest-value ready work when authorized: the god-ray/mid-field-wash pair, which Round 15 proved is ONE defect - rtGodA is ~10% non-zero while the marched rtGodB is 99.9% non-zero, so the pass delivers common mode rather than differential. It must be attacked as less spread, not more gain; more gain is the round-7 regression. Second: the ~10,493 px flat-black plaza patch, which two owners independently attribute to cast shadow crushed to black rather than to any material. Before citing the retained r12ab lantern A/B evidence again, verify that capture.mjs --ab-object does not screenshot after engine.stop() with preserveDrawingBuffer false."
     }
   ]
 }

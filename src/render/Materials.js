@@ -879,12 +879,33 @@ RECIPES.push({
     // which Terrain would have picked up as a brighter, more rock-favouring hillside.
     // These reproduce the old pool to within 0.02 at the face, the joint and the
     // crack floor alike, so nothing downstream of albedo or roughness moves.
-    const pool = clamp((0.7285 - h) * 6.4, 0, 1) * wet;
+    const low = clamp((0.7285 - h) * 6.4, 0, 1);
+    const pool = low * wet;
     let ro = 0.74 + (grain - 0.5) * 0.16 - quartz * 0.22 + mica * 0.10;
     ro = lerp(ro, 0.90, chip * 0.6);
     ro = lerp(ro, 0.96, lich * 0.7);
     ro = lerp(ro, 0.66, smoothstep(0.4, 0.9, joint) * 0.35);   // foot-polished tread
-    ro = lerp(ro, 0.16, pool * 0.85);
+
+    // `pool` keeps the albedo exactly as it was — Terrain lays this albedo as its
+    // rock layer and reads `hRock = kgLum(cRock) * 1.30 + 0.12` off it, so the value
+    // here is another owner's blend input and is not available to spend. Water is a
+    // gloss story anyway, and this recipe was not telling it: measured over the baked
+    // 256^2 tile the old chain put the roughness floor at **0.455** with **0.00%** of
+    // texels below 0.45, against an authored water value of 0.16. The cause is
+    // arithmetic, not taste — `wet` is a bilerped 56-grid coarse field whose measured
+    // range is p50 0.471, p90 0.603, max 0.823, so it never approaches 1, and
+    // `pool * 0.85` then only ever travelled about half way to 0.16. The water was
+    // authored and never delivered.
+    //
+    // A film is a threshold, not a gradient — stone is either under water or it is
+    // not — so the gloss term is thresholded against that measured distribution
+    // (0.50 -> 0.68 arms it over the wettest ~12% of the tile and nowhere else) and
+    // reaches water roughness where the film actually stands. `wet` is smooth and
+    // 55 cm across at this tile size, so the threshold's own transition *is* the damp
+    // rim, centimetres of ground wide rather than one texel.
+    const film = smoothstep(0.50, 0.68, wet) * clamp(0.55 + low * 1.6, 0, 1);
+    ro = lerp(ro, 0.58, smoothstep(0.40, 0.62, wet) * 0.30 * (1 - lich));  // damp rim
+    ro = lerp(ro, 0.13, film * (1 - lich * 0.8));
     scalec(s, 1 - pool * 0.42);
 
     const ao = 1 - (1 - joint) * 0.62 - crack * 0.32 - chip * 0.22 - lich * 0.14;
@@ -1085,11 +1106,41 @@ RECIPES.push({
 
     // Standing water is a roughness story, not an albedo one — the old recipe
     // spent a third of the paving's value on it and bought nothing but darkness.
+    //
+    // Then it stopped telling the story at all. Measured over the baked 256^2 tile,
+    // the old chain's roughness floor was **0.569** with **0.00%** of texels below
+    // 0.55, against an authored water value of 0.26. The reason is arithmetic rather
+    // than taste: `wet` is a bilerped 48-grid coarse field whose measured range is
+    // p50 0.497, p90 0.599, max 0.759 — it never approaches 1 — and the relief mask
+    // caps at 0.77, so `pool * 0.75` only ever travelled about half way to 0.26. The
+    // courtyard had water authored into it and delivered none, which is why the
+    // review can find no specular story anywhere on the plaza: a 13 degree sun on
+    // roughness 0.57 has no lobe narrow enough to return a highlight to the camera.
+    //
+    // A film is a threshold, not a gradient — stone is either under water or it is
+    // not — so the gloss term is thresholded against that measured distribution and
+    // reaches water roughness where the film actually stands. `wet` is smooth and
+    // 31 cm across at this tile size, so the threshold's own transition *is* the damp
+    // rim, a few centimetres of ground wide rather than one texel, and it survives
+    // minification because its shape is the coarse field's and not the joint net's.
+    //
+    // `pool` still drives the albedo untouched. Terrain lays this tile as both its
+    // gravel and its streambed layer and derives `hGravel = kgLum(cCobble) * 1.15`
+    // from it, so this albedo's value is another owner's blend input and is not
+    // available to spend on a wet look.
     const pool = clamp(joint * 0.55 + (1 - crown) * 0.22, 0, 1) * wet;
     let ro = 0.80 + (grain - 0.5) * 0.16 + pitting * 0.10;
-    ro = lerp(ro, 0.50, crown * crown * 0.55 * (1 - moss));  // crowns polished by feet
+    // Crowns polished by feet. 0.50 -> 0.44 at 0.55 -> 0.60 of weight, because the
+    // review's second ask on this surface is a raised specular response on the *dry*
+    // flagstone at a grazing sun, and the crown is the only part of a laid flag that
+    // has any right to one. Whole-tile mean roughness 0.732 -> 0.662, so this is a
+    // narrowing of the lobe on the proudest 30% of each stone, not a global gloss.
+    ro = lerp(ro, 0.44, crown * crown * 0.60 * (1 - moss));
     ro = lerp(ro, 0.94, moss * 0.85);
-    ro = lerp(ro, 0.26, pool * 0.75 * (1 - moss * 0.7));
+    const film = smoothstep(0.50, 0.66, wet)
+      * clamp(0.55 + joint * 0.45 + (1 - crown) * 0.25, 0, 1);
+    ro = lerp(ro, 0.55, smoothstep(0.40, 0.60, wet) * 0.30 * (1 - moss));  // damp rim
+    ro = lerp(ro, 0.13, film * (1 - moss * 0.7));
     scalec(s, 1 - pool * 0.14);
 
     const ao = 1 - joint * 0.24 - seam * 0.14 - moss * 0.08 - pitting * 0.10;
