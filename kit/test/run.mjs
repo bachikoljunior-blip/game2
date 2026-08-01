@@ -340,26 +340,33 @@ test('parseOwnershipTree reads the architecture document and the drift check fin
   assert.equal(checkOwnershipDrift(missing, doc.teams).ok, false);
 });
 
-test('kit buildPlan reproduces the existing dispatcher exactly', { skip: !hasGame2 }, async () => {
-  const legacy = await import(join(GAME2, 'tools/dispatch.mjs'));
-  const src = readFileSync(join(GAME2, 'tools/dispatch.mjs'), 'utf8');
-  const body = src.slice(src.indexOf('const TEAMS = {') + 'const TEAMS = '.length);
-  const teams = JSON.parse(body.slice(0, body.indexOf('\n};') + 2)
-    .replace(/'/g, '"').replace(/,(\s*[}\]])/g, '$1').replace(/([a-z]+):/g, '"$1":'));
+/**
+ * Equivalence against the dispatcher this replaced.
+ *
+ * The comparison is against a **frozen fixture**, not against the live module. Once
+ * `game2/tools/dispatch.mjs` is re-implemented on top of this library, comparing the two
+ * would be circular and would pass no matter what either of them did. The fixture was
+ * generated from the original 160-line implementation
+ * (sha256 5c27bbb9ed289782…) before it was touched.
+ */
+test('kit buildPlan reproduces the original dispatcher exactly', { skip: !hasGame2 }, () => {
+  const fixturePath = new URL('./fixtures/legacy-dispatch-plans.json', import.meta.url);
+  const expected = JSON.parse(readFileSync(fixturePath, 'utf8'));
+  const teams = JSON.parse(readFileSync(new URL('./fixtures/game2-teams.json', import.meta.url), 'utf8'));
 
   const norm = (p) => JSON.stringify({
     d: p.dispatch.map((x) => [x.team, x.model, x.effort, x.findings, x.blockers, x.worst, x.files, x.summary]),
     s: p.skipped, u: p.unrouted.map((x) => x.reason),
   });
 
-  const files = readdirSync(join(GAME2, 'shots')).filter((n) => n.startsWith('review-'));
-  assert.ok(files.length >= 4);
-  for (const f of files) {
-    const review = JSON.parse(readFileSync(join(GAME2, 'shots', f), 'utf8'));
+  const names = Object.keys(expected);
+  assert.ok(names.length >= 4, 'the fixture must cover the real review files');
+  for (const name of names) {
+    const review = JSON.parse(readFileSync(join(GAME2, 'shots', name), 'utf8'));
     assert.equal(
       norm(buildPlan(review, { teams, fileExists: (p) => existsSync(join(GAME2, p)) })),
-      norm(legacy.buildPlan(review)),
-      `${f} produced a different plan`,
+      norm(expected[name]),
+      `${name} produced a different plan than the original dispatcher`,
     );
   }
 });

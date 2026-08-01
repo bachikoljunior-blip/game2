@@ -227,6 +227,7 @@ src/
     EventBus.js        pub/sub                               [core]
     Audio.js           procedural audio                      [audio]
     Noise.js           shared noise (simplex/fbm/worley)     [core]
+    Cinematic.js       deterministic review camera poses     [core]
   render/
     Materials.js       procedural PBR texture library        [materials]
     Sky.js             atmosphere, sun, env, time-of-day     [sky]
@@ -237,6 +238,7 @@ src/
     Terrain.js         heightfield + splat + collision       [world]
     Props.js           torii, lanterns, buildings, bridges   [world]
     Level.js           layout, spawns, objectives            [world]
+    Constants.js       authoritative world frame             [world]
   anim/
     Rig.js             skeleton + procedural animation       [anim]
     Poses.js           keyframe pose library                 [anim]
