@@ -12,13 +12,13 @@
  *   node tools/probe.mjs px    shots/phone-wide-r5.png 760,515,127,47      # pixel box
  *
  * Regions are `x,y,w,h` as fractions of the frame, matching HUD_MASKS in luma.mjs. The
- * implementation is `kit/lib/image`, shared with the other repositories; `stats` is exported
+ * implementation is `.kit/lib/image`, shared with the other repositories; `stats` is exported
  * under its old name so `verify-r9.mjs` keeps working unchanged.
  */
 
 import { readFileSync, writeFileSync } from 'node:fs';
-import { decodePNG, encodePNG } from '../kit/lib/image/png.mjs';
-import { cut, pixelRegion, region, regionStats } from '../kit/lib/image/measure.mjs';
+import { decodePNG, encodePNG } from '../.kit/lib/image/png.mjs';
+import { cut, pixelRegion, region, regionStats } from '../.kit/lib/image/measure.mjs';
 
 export { region, cut, pixelRegion };
 /** Historical name kept for `verify-r9.mjs`. */

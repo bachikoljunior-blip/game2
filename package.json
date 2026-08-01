@@ -10,9 +10,8 @@
     "build:pages": "npm run build && node tools/sync-pages.mjs",
     "verify:pages": "node tools/verify-pages.mjs",
     "validate:project": "node tools/validate-project-state.mjs",
-    "check:ownership": "node kit/tools/check-ownership.mjs --repo=.",
-    "test:kit": "node --test kit/test/run.mjs",
-    "check": "npm run validate:project && npm run check:ownership && npm run test:kit && npm run build",
+    "check:ownership": "node .kit/tools/check-ownership.mjs --repo=.",
+    "check": "npm run validate:project && npm run check:ownership && npm run check:kit && npm run build",
     "gate:capture": "node tools/gate-capture-report.mjs",
     "verify:r9": "node tools/verify-r9.mjs",
     "verify:lantern-spill": "node tools/verify-lantern-spill.mjs",
@@ -21,7 +20,8 @@
     "shots": "vite build && node tools/capture.mjs",
     "review": "vite build && node tools/capture.mjs --review --diff --profile=phone",
     "dispatch": "node tools/dispatch.mjs",
-    "stale": "node tools/manifest.mjs"
+    "stale": "node tools/manifest.mjs",
+    "check:kit": "node .kit/tools/bootstrap.mjs --target=. --check"
   },
   "dependencies": {
     "three": "^0.180.0"

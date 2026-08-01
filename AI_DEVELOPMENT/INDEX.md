@@ -32,6 +32,7 @@ visual-round measurements stay in `../HANDOFF.md`; they are referenced, not dupl
 | Failed patterns and recovery facts | `FAILURES.md` |
 | Known non-blocking liabilities | `TECHNICAL_DEBT.md` |
 | Detailed art-review state and disproved visual hypotheses | `../HANDOFF.md` |
+| Shared-kit rollout across all repositories, and what remains | `../KIT_ROLLOUT.md` |
 | Art-round procedure and number | `../ROUND.md` |
 | Public verified status | `../README.md` |
 | Specialist contracts | `HANDOFFS/` |
