@@ -61,6 +61,20 @@ Build a game at the level of a shipped AAA console title. The bar is *Ghost of T
 Three.js, with **zero external assets** — every texture, mesh, animation and sound
 synthesised at boot.
 
+**The bar is per element.** `AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml` names the reference
+title for each of the sixteen elements, why it was chosen, and the concrete criterion it
+becomes — *Ghost of Tsushima* for image, camera, movement, world, UI and audio; *SEKIRO* for
+combat, animation, AI and character legibility; *Genshin Impact* for the touch layer and the
+phone performance envelope, because neither console title says anything about a touchscreen.
+Read your element's entry before you change it, and take principles only: copying any
+reference's characters, world, layout, UI, staging or music is forbidden. The result must
+read as one original game, not a seam of imitations.
+
+That file also records, honestly, that **only one of the sixteen elements has a working
+review loop.** Twelve have never been verified at all, because five static screenshots cannot
+see combat feel, animation, camera behaviour, touch, or audio. Do not mistake a passing
+visual gate for a passing product.
+
 The method is not incidental to the goal; it is the goal's mechanism:
 
 - **Fan out.** Independent agents own separate systems in parallel against a binding

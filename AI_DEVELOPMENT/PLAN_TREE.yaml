@@ -13,7 +13,8 @@
         "NEXT",
         "ROUNDS13_14",
         "RELEASE13_14",
-        "NEXT15"
+        "NEXT15",
+        "BENCH"
       ],
       "dependencies": [],
       "status": "active",
@@ -341,6 +342,47 @@
       "criteria": [
         "REMOTE-002"
       ]
+    },
+    {
+      "id": "BENCH",
+      "title": "Per-element reference benchmarks and the bar they set",
+      "parent": "PROJECT",
+      "children": [
+        "BENCH-INSTALL",
+        "BENCH-APPARATUS"
+      ],
+      "dependencies": [],
+      "status": "active",
+      "priority": 96,
+      "reason": "Authorized by the user's 2026-08-01 instruction to hold the stated concept as the top criterion and give every element its own high-quality reference, converted into concrete evidence-based criteria that persist across sessions."
+    },
+    {
+      "id": "BENCH-INSTALL",
+      "title": "Establish and validate the per-element benchmark authority",
+      "parent": "BENCH",
+      "children": [],
+      "dependencies": [],
+      "status": "verified",
+      "priority": 96,
+      "criteria": [
+        "BENCH-001"
+      ],
+      "reason": "16 elements, 3 reference titles, 62 criteria. The honesty guard is enforced by npm run validate:project and was proved to fail on a fabricated verification."
+    },
+    {
+      "id": "BENCH-APPARATUS",
+      "title": "Build the missing interaction-capture surface",
+      "parent": "BENCH",
+      "children": [],
+      "dependencies": [
+        "BENCH-INSTALL"
+      ],
+      "status": "deferred",
+      "priority": 94,
+      "criteria": [
+        "BENCH-002"
+      ],
+      "reason": "The benchmark pass measured the project's real structural blocker: twelve of sixteen elements have no verification surface at all, because the apparatus is five static screenshots. This outranks another visual round on value, but it is new product work and awaits a user instruction."
     },
     {
       "id": "NEXT16",

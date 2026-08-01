@@ -201,6 +201,22 @@
       ],
       "unblocks": [],
       "status": "deferred"
+    },
+    {
+      "id": "BENCH-INSTALL",
+      "dependsOn": [],
+      "unblocks": [
+        "BENCH-APPARATUS"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "BENCH-APPARATUS",
+      "dependsOn": [
+        "BENCH-INSTALL"
+      ],
+      "unblocks": [],
+      "status": "deferred"
     }
   ]
 }

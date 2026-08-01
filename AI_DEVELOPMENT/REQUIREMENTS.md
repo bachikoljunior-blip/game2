@@ -32,6 +32,28 @@
   integrate them into `main`, and publish GitHub Pages. Paid actions, account or credential
   changes, destructive external actions, and unrelated publication remain unauthorized.
 
+## Quality-bar requirements added 2026-08-01
+
+- The user's latest stated concept is the top criterion. Every reference and every criterion
+  serves it; nothing is judged against a bar the concept did not ask for.
+- Each element of the product is judged against its own reference title in
+  `AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml`, selected for that element's actual quality,
+  expert and player reception, long-term reputation, fit to this concept, and applicability
+  to this device class and production scale — not for fame or sales.
+- Reuse a title across elements wherever it is the best bar. Do not grow the title set
+  without a recorded reason.
+- Take generalisable design principles, quality standards, degree of finish and problem-
+  solving methods only. Copying or near-copying any reference's characters, story, world,
+  maps, missions, UI, staging, music or design is prohibited. The result must be one unified
+  original game.
+- Convert every reference into a criterion that can be checked against evidence from our own
+  build. Never record a comparison, real-device measurement, blind review, or expert approval
+  that did not actually occur.
+- If the user changes part of the concept, update that part and everything downstream of it,
+  keep unchanged conditions intact, and re-select a reference only where the change makes the
+  old one unfit.
+- Never weaken a criterion to make the current implementation pass.
+
 ## Completed actionable objective
 
 Rounds 13 and 14 were executed from published `main` `51f1807` with coherent phone/MEDIUM

@@ -13,7 +13,32 @@ Do not be encouraging. Do not praise what is merely competent. Do not grade on t
 "this is WebGL, so it's good for the web" — that curve does not exist. The player does not
 know or care what it was built in.
 
+## Which bar you are holding this frame to
+
+`AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml` assigns every element of the product its own
+reference title and its own criterion. For the still-frame review set the elements in play
+are **E11-VISUALS** and **E05-WORLD** (both benchmarked against *Ghost of Tsushima*, with
+*SEKIRO* as the secondary bar for compact courtyard space), plus **E07-CHARACTER**
+(silhouette and rim-light separation, *SEKIRO*) and **E09-UI** whenever HUD ink is present.
+Read those entries before judging. Where that file states a measured threshold, use it — do
+not invent a looser one, and do not invent a stricter one either without saying so.
+
+Elements that a still frame **cannot** judge — combat feel, movement, camera behaviour,
+animation, touch, audio, AI — are not yours to pass or fail from this set. If you can see
+evidence bearing on one, file it as an observation and say which element it belongs to.
+
+**Originality is part of the bar.** If any part of the frame reads as a copy of a specific
+reference title's location, landmark, composition, UI or staging rather than as this game's
+own, that is a finding — severity major at minimum. The references supply principles; the
+game must be its own.
+
 ## The blind comparison
+
+You are comparing against the reference title **from memory**. Say so. The project has never
+fetched reference footage and no side-by-side against a real reference frame has ever been
+performed — do not describe your comparison as anything more than an experienced judgement,
+and never write it up as a measured or verified comparison. Your authority is your eyes on
+*our* frame; that authority is genuine and is enough.
 
 For each shot, do this honestly:
 

@@ -1,0 +1,1198 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-08-01T08:00:00Z",
+  "status": "active",
+  "purpose": "Per-element reference benchmarks for KAGEROU. This file is the authority for WHICH shipped title sets the bar for each element of the product, WHY that title was chosen, and WHAT concrete criterion each reference is converted into. It carries across sessions and is loaded before any critique, repair, or final quality judgement.",
+  "authorityBoundary": {
+    "thisFile": "Element-level quality bars derived from reference titles, their selection reasons, their concrete criteria, and the measured or unmeasured gap for each element.",
+    "acceptanceCriteriaYaml": "Executed gate criteria for specific rounds and releases. A benchmark criterion becomes an ACCEPTANCE_CRITERIA entry when a round actually runs it.",
+    "handoffMd": "Detailed art-round measurement history. Not duplicated here.",
+    "architectureMd": "Binding technical contract. Where a benchmark criterion restates an ARCHITECTURE budget it references it rather than re-stating a different number."
+  },
+
+  "concept": {
+    "statement": "KAGEROU 陽炎 — a mobile-first, third-person Japanese sword-action game in Three.js, set at a mountain shrine above a bamboo sea at magic hour, built to the standard of a shipped AAA console title, with every texture, mesh, animation and sound synthesised locally at boot and zero external runtime assets.",
+    "lastConfirmed": "2026-08-01",
+    "source": "CLAUDE.md 'The goal, unchanged'; ARCHITECTURE.md §0/§5/§6/§7; AI_DEVELOPMENT/REQUIREMENTS.md. No part of the concept was changed by the instruction that created this file.",
+    "invariants": [
+      "Third-person melee swordplay is the core verb. The game is not a shooter, not a soulslike stat-treadmill, and not an open-world checklist.",
+      "Phone is the primary platform and the pass/fail line; desktop is supported, never prioritised.",
+      "Zero external runtime assets. No downloaded meshes, textures, audio, fonts, or recorded voice — which permanently removes voice acting, licensed music, and photo-scanned material from every solution space below.",
+      "No external AI API, hosted agent, or paid inference in the shipped product.",
+      "Scope is one authored vertical slice: a 220 m fenced playable region (WORLD.PLAYABLE), four scripted encounters, one shrine plateau. Not an open world.",
+      "Quality is judged by a separate hostile critic against evidence, never by the agent that wrote the code."
+    ],
+    "outOfConcept": [
+      "Branching narrative, dialogue trees, morality systems, romance, faction reputation.",
+      "Loot, crafting, gear progression, levelling curves, live-service economy.",
+      "Multiplayer, online services, accounts, telemetry upload.",
+      "Stealth as a primary pillar, ranged weapons as a primary pillar, mount/traversal-vehicle systems."
+    ]
+  },
+
+  "evidenceBasis": {
+    "declaration": "HONEST STATEMENT OF WHAT THIS FILE IS AND IS NOT. The reference titles below are characterised from general knowledge of their published gameplay and critical reception. Within this repository and container NO reference footage was fetched, NO reference title was played or measured, NO blind side-by-side against a real reference frame has been performed, and NO expert or player review of KAGEROU has been solicited. Outbound network access is proxy-restricted in this environment and even the project's own GitHub Pages surface was denied at the last attempt (PROJECT_STATE.verifiedState.publication.browserGate).",
+    "consequence": "Every criterion below is therefore written so it can be checked against KAGEROU'S OWN build with tools this repository has or can build — a measurable property of our frames, our source, our runtime, or our device — never as 'compare to the reference image'. Reference titles supply the PRINCIPLE and the STANDARD; the threshold is always measured on us.",
+    "prohibitedClaims": [
+      "Do not record a blind comparison against a reference title as performed. The critic's recalled-framing comparison in tools/CRITIC.md is a judgement from memory and must be labelled as such.",
+      "Do not record real-device performance as measured. SwiftShader capture evidence is not phone evidence.",
+      "Do not record expert or player validation. None has occurred.",
+      "Do not describe a reference title's internal implementation as fact. Only its observable, published behaviour is usable."
+    ]
+  },
+
+  "titleSet": {
+    "rule": "Three titles, deliberately. A title is added only when the existing set provides no usable evidence for an element; a title is reused wherever it is the best available bar. Adding a fourth title requires a recorded reason in changeLog.",
+    "titles": [
+      {
+        "id": "GT",
+        "title": "Ghost of Tsushima",
+        "developer": "Sucker Punch Productions",
+        "year": 2020,
+        "platform": "PS4/PS5",
+        "usedFor": ["E02-MOVEMENT", "E03-CAMERA", "E04-EXPLORATION", "E05-WORLD (primary)", "E09-UI", "E11-VISUALS", "E13-AUDIO", "E16-STABILITY"],
+        "whyInSet": "The closest shipped title to KAGEROU's exact fiction, camera and light: a third-person Japanese sword-action game whose defining achievement is wind-driven, colour-graded natural landscape at low sun, read through a composing third-person camera with a near-absent HUD. It is the only reference whose art problem IS our art problem.",
+        "notBenchmarkFor": ["Combat depth — its combat is respected but is not the genre's high-water mark and its stance system assumes an enemy-type roster we do not have.", "Performance envelope — it is a console title and says nothing about a phone."]
+      },
+      {
+        "id": "SK",
+        "title": "SEKIRO: Shadows Die Twice",
+        "developer": "FromSoftware",
+        "year": 2019,
+        "platform": "PS4/XB1/PC",
+        "usedFor": ["E01-COMBAT", "E05-WORLD (secondary, compact authored space)", "E06-NARRATIVE", "E07-CHARACTER", "E08-CHOICE", "E12-ANIMATION", "E14-AI"],
+        "whyInSet": "The reference standard for deflect-and-posture melee: a fixed learnable defensive window, posture as the win condition, and enemy behaviour that is legible rather than random. KAGEROU's entity contract already encodes this model (posture/maxPosture, perfect-parry flag, posture-break stagger window in ARCHITECTURE.md §3), so the bar is not being imported — it is the bar the design already committed to.",
+        "notBenchmarkFor": ["Camera — see antiReferences.", "Environment art at magic hour — its palette and light are deliberately colder and more overcast than our brief.", "Touch or mobile anything."]
+      },
+      {
+        "id": "GI",
+        "title": "Genshin Impact",
+        "developer": "HoYoverse",
+        "year": 2020,
+        "platform": "Mobile / PC / console",
+        "usedFor": ["E10-TOUCH", "E15-PERFORMANCE"],
+        "whyInSet": "Neither console reference ships on a touchscreen, so for two elements they supply zero evidence. Genshin is the most widely used, longest-running example of a full 3D action game controlled by two thumbs on the exact device class KAGEROU targets, and it has sustained that on mid-range Android for years — which is a load-bearing, long-term reputational result rather than a launch-window one. It is used ONLY for the touch layer and the mobile performance envelope.",
+        "notBenchmarkFor": ["Art direction, palette, character design, combat design, narrative — none of these are referenced and none may be borrowed.", "Sustained thermal behaviour — see antiReferences."]
+      }
+    ]
+  },
+
+  "antiReferences": {
+    "rule": "A named property of a respected title that KAGEROU must NOT reproduce. These are as binding as the positive criteria and exist because 'be like the reference' is wrong wherever the reference is weakest.",
+    "entries": [
+      {
+        "id": "AR-01",
+        "title": "SEKIRO",
+        "property": "Third-person camera behaviour in enclosed space and against large targets: the widely reported failure mode where a locked target leaves frame, or the camera is pinned by nearby geometry, at the exact moment the deflect window matters.",
+        "rule": "KAGEROU's camera is benchmarked against GT, not SK. A frame in which the locked target is not resolvable is a defect regardless of how good the combat underneath it is. See BM-CAMERA-01 and BM-CAMERA-04."
+      },
+      {
+        "id": "AR-02",
+        "title": "Genshin Impact",
+        "property": "Sustained frame rate on mid-range Android: frame-rate ceilings and thermal degradation over a long session on the device class we target.",
+        "rule": "GI defines the DEVICE ENVELOPE we must operate in, not the smoothness we must match. KAGEROU's bar is the console-title expectation of steady frame pacing at its stated target, held over a sustained session. See BM-PERF-02 and BM-PERF-03."
+      },
+      {
+        "id": "AR-03",
+        "title": "Ghost of Tsushima",
+        "property": "Open-world density of map icons, collectible counters and repeated activity markers in its non-guided UI modes.",
+        "rule": "We take its restraint (guiding wind, near-invisible HUD), not its checklist layer. KAGEROU is a vertical slice and must have no map, no icon field, and no collectible counter. See BM-UI-01."
+      }
+    ]
+  },
+
+  "originalityRules": {
+    "statement": "References supply generalisable design principles, quality standards, degree of finish, and problem-solving method ONLY. The finished game must be one unified original work, not a seam of imitations.",
+    "prohibited": [
+      "Copying or near-copying any reference title's characters, names, story, setting, factions, world layout, level geometry, mission structure, UI layout, icon language, typography, HUD arrangement, staging, camera choreography, music, motifs, sound design signatures, or visual design elements.",
+      "Reproducing a reference's distinctive signature effect as an identifier — for example a directional guidance mechanic presented the way GT presents it, or a specific on-screen combat symbol used the way SK uses it. KAGEROU's 危 mark, its 受/避/技/敵 seals, its objective lines and its shrine layout are its own and must stay its own.",
+      "Naming a reference title inside the shipped product, its UI, its store text, or its source-visible strings."
+    ],
+    "required": [
+      "Any borrowed idea must be reduced to a stated principle before it is implemented — 'the defensive window is fixed and learnable' is a principle; 'the deflect sounds like that game' is a copy.",
+      "Every criterion in this file must be satisfiable by an original implementation. If a criterion can only be met by resembling a specific reference artefact, the criterion is wrong and must be rewritten.",
+      "The unity test: the finished build must read as one authored place with one hand behind it. A reviewer must not be able to point at a system and say which title it came from."
+    ],
+    "verification": "Originality is checked by the hostile critic at review time (tools/CRITIC.md) and cannot be self-certified by the implementing agent."
+  },
+
+  "methodVocabulary": {
+    "source-audit": "Read the authored value or structure in source. Evidence that the intent is coded. NOT evidence that it feels right at runtime.",
+    "frame-measurement": "tools/probe.mjs and tools/capture.mjs pixel measurement on the coherent five-shot phone/MEDIUM review set. Apparatus exists and is verified.",
+    "instrumented-runtime": "Counters, telemetry or offline render read from a running build. Partially exists — capture.mjs collects draw calls, triangles, programs and page errors; nothing measures gameplay state.",
+    "interaction-capture": "Driving the real input surface (touch, pointer, keyboard) and recording the result over time. DOES NOT EXIST. This is the single largest apparatus gap on the project.",
+    "device-test": "A real phone. DOES NOT EXIST in this container and cannot be simulated.",
+    "hostile-review": "A separate critic instance judging by eye against tools/CRITIC.md. Exists for static frames only."
+  },
+
+  "elements": [
+    {
+      "id": "E01-COMBAT",
+      "name": { "ja": "戦闘", "en": "Combat" },
+      "inScope": true,
+      "reference": "SK",
+      "selection": {
+        "elementQuality": "Deflect-and-posture melee where defence is the aggressive act. Fixed, learnable windows; posture as the actual win condition; unblockable attacks that demand a different verb rather than a faster reflex.",
+        "reception": "Broadly treated by critics and players as the benchmark implementation of reactive parry combat, and the element of that title most consistently praised.",
+        "longevity": "Its combat model has outlived its release window and is now the named point of comparison whenever a new game ships a parry system.",
+        "fitToConcept": "KAGEROU already committed to this model in ARCHITECTURE.md §3: posture, maxPosture, a perfect-parry flag and a posture-break stagger window are in the binding entity contract. src/gameplay/Combat.js implements a two-stage window with posture rewards.",
+        "applicability": "A timing model costs almost nothing on a phone. It is deterministic, testable, and independent of animation budget — the cheapest high-ceiling combat design available to a procedural build."
+      },
+      "principles": [
+        "The defensive window is fixed, learnable and identical for a given attack — the player improves, the numbers do not move.",
+        "Deflecting must out-earn avoiding, or the fight drifts backwards and the design collapses into kiting.",
+        "Posture, not health, resolves the fight; health is the punishment for being wrong.",
+        "An unblockable attack is answered with a different verb, so knowledge beats reflex.",
+        "Impact lands on three channels in the same frame — time (hit-stop), image (shake/FX), sound (transient) — or it reads as weightless."
+      ],
+      "mustNotCopy": ["Reference posture/HP numbers, enemy movesets, boss patterns, the shape or placement of its on-screen warning symbol, or its audio signature for a successful deflect."],
+      "criteria": [
+        {
+          "id": "BM-COMBAT-01",
+          "statement": "The perfect-deflect window is a fixed authored duration with a forgiving late window behind it, and the perfect reward strictly exceeds the late one and the cost of failing.",
+          "method": "source-audit",
+          "apparatus": "exists",
+          "threshold": "perfect window ≥ 100 ms; late window present; posture dealt by a perfect deflect ≥ 2× the posture the defender risks on a late one; a guaranteed punish opening ≥ 0.5 s.",
+          "measured": "src/gameplay/Combat.js TUNING: PARRY_PERFECT 0.130 s, PARRY_LATE 0.110 s, PARRY_PERFECT_POSTURE 26 vs PARRY_SELF_POSTURE 4.5 (5.8×), PUNISH_WINDOW 0.75 s.",
+          "evidenceState": "source-audit",
+          "status": "verified"
+        },
+        {
+          "id": "BM-COMBAT-02",
+          "statement": "Fights are resolved by posture, not by an HP race.",
+          "method": "instrumented-runtime",
+          "apparatus": "missing",
+          "threshold": "Over ≥ 20 scripted encounters at default tuning, ≥ 60% of enemy deaths follow a posture break rather than health depletion.",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        },
+        {
+          "id": "BM-COMBAT-03",
+          "statement": "Every enemy attack is legible before it can land, and unblockable attacks are distinguishable from deflectable ones at a glance.",
+          "method": "interaction-capture",
+          "apparatus": "missing",
+          "threshold": "Visible windup ≥ the AI reaction floor the player is implicitly held to (0.140 s, EnemyAI REACTION_FLOOR) for every attack; the unblockable mark is separable from the deflectable colour at thumbnail scale with no colour-vision dependency.",
+          "measured": "Colour language exists in source (Combat.js parryable 0xe8f0ff; a 危 unblockable path). Timing and legibility unverified.",
+          "evidenceState": "source-audit",
+          "status": "proposed"
+        },
+        {
+          "id": "BM-COMBAT-04",
+          "statement": "A successful deflect is felt as heavily as a heavy hit across all three feedback channels within the same frame.",
+          "method": "source-audit",
+          "apparatus": "exists",
+          "threshold": "hit-stop ≥ 60 ms on a perfect deflect; a camera-shake event; an audio transient; all three emitted from the same resolution point.",
+          "measured": "HITSTOP_PARRY 0.090 s, SHAKE_PARRY 0.42, and a parry event on ctx.bus consumed by FX and Audio.",
+          "evidenceState": "source-audit",
+          "status": "verified"
+        }
+      ],
+      "currentGap": "The model is authored correctly and its constants meet the reference-derived thresholds that can be read from source. Nothing about how it PLAYS has ever been verified — no encounter has been driven through the real input surface and measured. BM-COMBAT-02 and -03 are unreachable until an interaction-capture harness exists."
+    },
+
+    {
+      "id": "E02-MOVEMENT",
+      "name": { "ja": "移動", "en": "Movement and traversal" },
+      "inScope": true,
+      "reference": "GT",
+      "selection": {
+        "elementQuality": "Grounded, weighted locomotion with immediate directional response and no parkour vocabulary — a swordsman who runs like a person carrying a sword, over natural ground, with foot contact that reads.",
+        "reception": "Its traversal feel is consistently cited as one of the reasons the world reads as a place rather than a map.",
+        "longevity": "Grounded traversal ages better than trick-based movement; the standard has not moved.",
+        "fitToConcept": "KAGEROU's authored speed set (walk 1.9 / run 5.4 / sprint 7.2 m/s, ARCHITECTURE.md §4) and its capsule controller describe exactly this kind of movement. SK's grapple-based mobility is out of concept.",
+        "applicability": "Costs no assets: it is capsule dynamics plus procedural foot planting, both of which src/anim/Rig.js already implements."
+      },
+      "principles": [
+        "Momentum is visible but never in charge — acceleration reads as weight, not as ice.",
+        "Terrain is traversed, not solved: no ledge puzzles, no traversal minigame.",
+        "Feet contact the ground the eye is looking at; sliding contact destroys weight instantly.",
+        "The movement vocabulary is small enough to be mastered and never contradicts the fiction."
+      ],
+      "mustNotCopy": ["Reference animation timing, traversal set-pieces, or the specific feel-tuning of a title we cannot measure."],
+      "criteria": [
+        {
+          "id": "BM-MOVE-01",
+          "statement": "The authored speed set is the one the controller actually produces, at every tier.",
+          "method": "instrumented-runtime",
+          "apparatus": "partial",
+          "threshold": "Steady-state ground speed within ±5% of 1.9 / 5.4 / 7.2 m/s; independent of frame rate and of dt up to the 0.25 s Engine clamp.",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        },
+        {
+          "id": "BM-MOVE-02",
+          "statement": "No foot sliding at any locomotion speed.",
+          "method": "interaction-capture",
+          "apparatus": "missing",
+          "threshold": "Planted-foot world-space drift ≤ 2 cm per frame while the foot is in contact, at all three speeds and on ≥ 15° slopes.",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        },
+        {
+          "id": "BM-MOVE-03",
+          "statement": "Direction changes are immediate and weighted, with no unresponsive turn-in-place window that the player can feel as lag.",
+          "method": "interaction-capture",
+          "apparatus": "missing",
+          "threshold": "A 180° stick reversal at run speed produces a heading change within 250 ms and never a state where input is ignored for > 100 ms.",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        }
+      ],
+      "currentGap": "Entirely unverified at runtime. The constants exist in src/world/Constants.js and ARCHITECTURE.md §4; whether the controller honours them, and whether feet slide, has never been measured."
+    },
+
+    {
+      "id": "E03-CAMERA",
+      "name": { "ja": "カメラ", "en": "Camera" },
+      "inScope": true,
+      "reference": "GT",
+      "antiReference": "AR-01",
+      "selection": {
+        "elementQuality": "A third-person camera that composes rather than merely follows: framing that keeps a photograph at every moment, controlled distance and FOV response, and lock-on that keeps both bodies readable.",
+        "reception": "Its framing quality is the most frequently praised aspect of the title after its art direction.",
+        "longevity": "Composition-first third-person camera work remains the standard; nothing has displaced it.",
+        "fitToConcept": "src/gameplay/PlayerCamera.js already states this intent in its own header — 'lock-on that composes a genuine two-shot'. KAGEROU's entire review loop is composition-driven, so a camera benchmarked on framing is coherent with how the project already judges itself.",
+        "applicability": "Pure maths: boom length, damping, sphere-cast collision, event-driven FOV. No asset or budget cost."
+      },
+      "principles": [
+        "Every frame should survive being paused and looked at.",
+        "Lock-on frames the relationship, not just the target — both bodies readable, the space between them legible.",
+        "The camera never fights the player and never occupies geometry.",
+        "FOV and distance changes are event-driven and bounded; a constantly breathing camera is nausea, not energy."
+      ],
+      "mustNotCopy": ["Reference shot choreography, cinematic camera moves, or photo-mode framing presets."],
+      "criteria": [
+        {
+          "id": "BM-CAMERA-01",
+          "statement": "Under lock-on, both the player and the locked target remain resolvable in frame, including against walls and in the shrine's tightest space.",
+          "method": "interaction-capture",
+          "apparatus": "missing",
+          "threshold": "Both bodies inside the central 80% of the frame for ≥ 95% of a lock-on encounter; the target never fully leaves frame; explicitly tested backed into a corner and against the tallest enemy archetype (this is anti-reference AR-01).",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        },
+        {
+          "id": "BM-CAMERA-02",
+          "statement": "The camera never renders from inside geometry.",
+          "method": "instrumented-runtime",
+          "apparatus": "partial",
+          "threshold": "Zero frames over a scripted traversal of the playable region where the near plane is inside a collider; the sphere-cast pull-in never produces a discontinuous jump > 1.5 m in one frame.",
+          "measured": "A sphereCast pull-in exists (PlayerCamera._collide, CAM_RADIUS). Never measured.",
+          "evidenceState": "source-audit",
+          "status": "proposed"
+        },
+        {
+          "id": "BM-CAMERA-03",
+          "statement": "FOV and boom responses are bounded and event-driven.",
+          "method": "source-audit",
+          "apparatus": "exists",
+          "threshold": "Base FOV fixed; total event-driven excursion ≤ 10°; every excursion tied to a named gameplay event rather than a continuous oscillator.",
+          "measured": "Base FOV 58°, sprint push +6°, heavy-connect pull-in, damped at 5.0. Within the bound.",
+          "evidenceState": "source-audit",
+          "status": "verified"
+        },
+        {
+          "id": "BM-CAMERA-04",
+          "statement": "Camera shake never costs legibility during a defensive window.",
+          "method": "interaction-capture",
+          "apparatus": "missing",
+          "threshold": "During any 130 ms perfect-deflect window the target's on-screen centroid moves ≤ 4% of frame width from shake alone.",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        }
+      ],
+      "currentGap": "Only the FOV bound is verified, and only as an authored value. The composition and lock-on claims in the source header have never been tested — and the five-shot review set uses fixed cinematic framings, so it cannot test them even in principle."
+    },
+
+    {
+      "id": "E04-EXPLORATION",
+      "name": { "ja": "探索", "en": "Exploration and navigation" },
+      "inScope": true,
+      "reference": "GT",
+      "selection": {
+        "elementQuality": "Diegetic navigation: the world and its weather guide the player instead of an icon field, and looking around is rewarded rather than replaced by a map.",
+        "reception": "The single most-cited design idea from the title, and the one most often adopted by later games.",
+        "longevity": "It changed the default expectation for guidance in third-person games and still reads as the better answer.",
+        "fitToConcept": "KAGEROU has a 220 m playable region, a wind field that already drives every visual system (WeatherSystem), and objective lines rather than a map. The principle scales down to a vertical slice without modification.",
+        "applicability": "Free: it is a subtraction. It removes UI rather than adding systems, which suits a phone screen and a zero-asset build."
+      },
+      "principles": [
+        "Landmarks navigate, not icons. Silhouette hierarchy is the map.",
+        "Guidance is diegetic and optional; the player is never reading instructions instead of looking at the world.",
+        "Curiosity is rewarded — a player who walks toward something odd finds something authored.",
+        "No minimap, no icon field, no collectible counter (anti-reference AR-03)."
+      ],
+      "mustNotCopy": ["A directional guidance mechanic presented the way the reference presents it. If KAGEROU uses its wind at all for guidance, the expression must be its own and must not read as a quotation."],
+      "criteria": [
+        {
+          "id": "BM-EXPLORE-01",
+          "statement": "The shrine is navigable by landmark alone.",
+          "method": "interaction-capture",
+          "apparatus": "missing",
+          "threshold": "From every spawn and approach point, at least one navigational landmark (great torii, honden roof, bell tower) is visible in silhouette; a first-time route to the honden requires no HUD navigation aid.",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        },
+        {
+          "id": "BM-EXPLORE-02",
+          "statement": "Off-path curiosity is rewarded with authored content, not emptiness.",
+          "method": "source-audit",
+          "apparatus": "exists",
+          "threshold": "≥ 3 discoverable interactables that are not on the critical path and that produce a distinct authored response.",
+          "measured": "src/world/Level.js implements at least three: the ema votive plaque (emits its own objective line), the chōzuya purification (身を清めた), and the bell (audio cue plus encounter escalation).",
+          "evidenceState": "source-audit",
+          "status": "verified"
+        },
+        {
+          "id": "BM-EXPLORE-03",
+          "statement": "No map, minimap, icon field, or collectible counter appears anywhere in the product.",
+          "method": "source-audit",
+          "apparatus": "exists",
+          "threshold": "Zero such elements in src/ui/.",
+          "measured": "src/ui/HUD.js and Menus.js contain no map or icon-field layer.",
+          "evidenceState": "source-audit",
+          "status": "verified"
+        }
+      ],
+      "currentGap": "The content exists and the restraint holds. Whether the place is actually legible to navigate has never been tested with a player or a driven session."
+    },
+
+    {
+      "id": "E05-WORLD",
+      "name": { "ja": "世界設計", "en": "World and level design" },
+      "inScope": true,
+      "reference": "GT",
+      "secondaryReference": "SK",
+      "secondaryJustification": "This element contains two genuinely different problems at two scales, and no single title is best at both. GT sets the bar for the 1.8 km vista — landscape composition, aerial perspective, wind-driven fields. SK sets the bar for the 40 m authored courtyard — compact, vertical, legible space with sightlines that make an encounter readable before it starts. KAGEROU has both: a bamboo-sea valley and a shrine plateau. No third title is introduced; both are already in the set.",
+      "selection": {
+        "elementQuality": "GT: landscape composition where every vantage is a photograph and distance behaves atmospherically. SK: compact spaces whose geometry teaches the encounter before the fight begins.",
+        "reception": "GT's environment art is the most decorated aspect of that title; SK's level legibility is a durable point of praise even from its critics.",
+        "longevity": "Both remain reference points years after release.",
+        "fitToConcept": "ARCHITECTURE.md §5 already describes exactly this composite: a mountain shrine above a bamboo sea, mist in the valley, a torii approach — a compact authored plateau inside a large atmospheric landscape.",
+        "applicability": "Composition and layout cost nothing at runtime; they are authoring decisions inside existing budgets."
+      },
+      "principles": [
+        "Every important view has a foreground, a mid-ground and a background, with something framing the shot.",
+        "Distance reads atmospherically or the vista is a painted backdrop.",
+        "A place looks inhabited: wear, asymmetry, accumulation, clutter that implies use.",
+        "The encounter space is readable before the encounter starts — sightlines, cover, and escape routes are legible from the entrance.",
+        "Landmark hierarchy is deliberate: one dominant silhouette, a small number of secondary ones, and everything else subordinate."
+      ],
+      "mustNotCopy": ["Any reference map layout, shrine or castle plan, landmark placement, or set-piece arrangement. KAGEROU's plateau geometry is defined by WORLD in src/world/Constants.js and is its own."],
+      "criteria": [
+        {
+          "id": "BM-WORLD-01",
+          "statement": "Every review framing separates into at least three depth planes.",
+          "method": "frame-measurement",
+          "apparatus": "exists",
+          "threshold": "Foreground, mid-ground and background separable by measured aerial perspective in each of the five review framings.",
+          "measured": "Partially achieved: far range now reads 7.9 luma below the sky above it, from 0.2 (r15v1). Composition itself remains a live critic finding.",
+          "evidenceState": "frame-measured",
+          "status": "under_review"
+        },
+        {
+          "id": "BM-WORLD-02",
+          "statement": "The shrine approach reads as accumulated rather than loop-placed.",
+          "method": "frame-measurement",
+          "apparatus": "exists",
+          "threshold": "Existing criterion R9-DRESSING-001 (spacing variation ≥ ±25%, height ≥ ±15%, ≥ 1 in 4 with visible lean/weather/base accumulation, path luma differing ≥ 25% from off-path). Not restated at a weaker value.",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "under_review"
+        },
+        {
+          "id": "BM-WORLD-03",
+          "statement": "Landmark hierarchy survives a thumbnail.",
+          "method": "hostile-review",
+          "apparatus": "exists",
+          "threshold": "At thumbnail scale a stranger can name the dominant landmark and at least two subordinate ones in the wide framing.",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        },
+        {
+          "id": "BM-WORLD-04",
+          "statement": "The plateau's terrain scale reads as mountain, not as a modelled hill.",
+          "method": "frame-measurement",
+          "apparatus": "exists",
+          "threshold": "The open terrain-scale and courtyard-storytelling findings from rounds 13–15 are cleared by measurement and by the critic, not by re-scoping.",
+          "measured": "Open. farright lumaSpread 44.9 → 47.0 against a ≥ 70 target (R15-WORLD-001, rejected); terrain and courtyard majors remain filed.",
+          "evidenceState": "frame-measured",
+          "status": "blocked"
+        }
+      ],
+      "currentGap": "This is the second-best evidenced element after visuals, and it is failing: terrain scale and sparse courtyard storytelling have been named as major findings in three consecutive rounds and the last attempt to move the mid-range band was measured and rejected."
+    },
+
+    {
+      "id": "E06-NARRATIVE",
+      "name": { "ja": "物語", "en": "Narrative" },
+      "inScope": true,
+      "scopeNote": "In scope ONLY as terse, place-carried framing: objective lines, environmental storytelling, and a title beat. Dialogue, cutscene drama, and character arcs are out of concept and additionally impossible under the zero-asset rule, which removes recorded voice permanently.",
+      "reference": "SK",
+      "selection": {
+        "elementQuality": "Terse narrative that trusts place and objective over exposition: the player is told where to go and what it costs, and the rest is in the architecture.",
+        "reception": "Its restraint and environmental delivery are durable points of praise; the model works without a dialogue budget.",
+        "longevity": "Low-text environmental narrative has aged better than heavy exposition and remains a respected approach.",
+        "fitToConcept": "KAGEROU has no voice, no dialogue system, and four encounters. src/world/Level.js already delivers story exclusively as short objective lines (山の社へ / 鳥居をくぐれ / 境内を清めよ / 奥の敵を討て) and interactable responses. SK is the only reference in the set whose narrative method survives having no voice track at all.",
+        "applicability": "Text and geometry only. Zero asset cost, which is the binding constraint here."
+      },
+      "principles": [
+        "Say the goal, not the backstory. An objective line is intent, not instruction.",
+        "The place carries the history — wear, offerings, a rung bell — and needs no caption.",
+        "Never take control away for long; a cutscene the player cannot skip is a cost with no budget here.",
+        "Ambiguity is allowed; confusion about what to do next is not."
+      ],
+      "mustNotCopy": ["Reference plot, characters, names, factions, lore, or the specific phrasing and typographic presentation of its on-screen text."],
+      "criteria": [
+        {
+          "id": "BM-STORY-01",
+          "statement": "Every objective states an in-world intent in one short line and never explains a mechanic.",
+          "method": "source-audit",
+          "apparatus": "exists",
+          "threshold": "All objective lines ≤ 12 characters of primary text with an optional subtitle; zero lines that describe a control or a system.",
+          "measured": "The four encounter objectives and the interactable responses in src/world/Level.js satisfy this as authored.",
+          "evidenceState": "source-audit",
+          "status": "verified"
+        },
+        {
+          "id": "BM-STORY-02",
+          "statement": "At least three pieces of story are delivered by the world without text.",
+          "method": "hostile-review",
+          "apparatus": "exists",
+          "threshold": "A critic viewing the frames without objective text can name ≥ 3 things that happened at this place.",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        },
+        {
+          "id": "BM-STORY-03",
+          "statement": "Control is never removed for more than a beat.",
+          "method": "source-audit",
+          "apparatus": "exists",
+          "threshold": "No non-interactive sequence longer than 5 s outside the title beat; every such beat is skippable.",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        }
+      ],
+      "currentGap": "The authored text meets its bar. Nothing about whether the place actually tells a story has been reviewed — the critic has never been asked the question, because CRITIC.md only asks about pixels."
+    },
+
+    {
+      "id": "E07-CHARACTER",
+      "name": { "ja": "キャラクター", "en": "Character design and readability" },
+      "inScope": true,
+      "reference": "SK",
+      "selection": {
+        "elementQuality": "Enemy archetypes that are legible as silhouettes and that each demand a specific answer, so recognising the shape IS the tactical information.",
+        "reception": "Enemy readability and archetype distinctness are consistently credited as the reason its difficulty reads as fair.",
+        "longevity": "Silhouette-first enemy design is durable craft, not a trend.",
+        "fitToConcept": "KAGEROU generates every mesh procedurally, so archetype identity must come from proportion and silhouette rather than from detailed asset work. ARCHITECTURE.md §5.10 already demands rim-lit enemy separation at all times.",
+        "applicability": "Silhouette design is free; it is proportion, stance and rim light, not polygon count."
+      },
+      "principles": [
+        "Recognisable at thumbnail, at speed, from behind, and in shadow.",
+        "One archetype, one signature verb the player must answer differently.",
+        "Separation from the background is lighting's job and must hold in every environment the enemy can appear in.",
+        "The player character reads as one clear shape with a sword — the most important silhouette in the game."
+      ],
+      "mustNotCopy": ["Reference character designs, armour, masks, proportions, or enemy identities. KAGEROU's oni are its own."],
+      "criteria": [
+        {
+          "id": "BM-CHAR-01",
+          "statement": "Enemy archetypes are distinguishable as pure silhouettes.",
+          "method": "hostile-review",
+          "apparatus": "partial",
+          "threshold": "≥ 3 archetypes correctly told apart at thumbnail scale as black shapes.",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        },
+        {
+          "id": "BM-CHAR-02",
+          "statement": "Enemies are separated from the background by rim light at all times.",
+          "method": "frame-measurement",
+          "apparatus": "exists",
+          "threshold": "Measured luma difference across the enemy edge in every combat framing, in both sunlit and shaded placement. ARCHITECTURE.md §5.10 is the source requirement.",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        },
+        {
+          "id": "BM-CHAR-03",
+          "statement": "Each archetype has one signature verb that changes the correct player response.",
+          "method": "source-audit",
+          "apparatus": "exists",
+          "threshold": "Documented per archetype in src/gameplay/Enemy.js and implemented, with no two archetypes answered identically.",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        }
+      ],
+      "currentGap": "Unverified. The review set contains combat framings but no enemy-silhouette or rim-light measurement has ever been run, despite the rim-light requirement being in the binding contract since the beginning."
+    },
+
+    {
+      "id": "E08-CHOICE",
+      "name": { "ja": "選択と結果", "en": "Choice and consequence" },
+      "inScope": true,
+      "scopeNote": "SCOPED DOWN DELIBERATELY. Narrative branching, morality systems and dialogue choices are out of concept (see concept.outOfConcept) and no reference is assigned to them. What IS in scope, because the build already has it: moment-to-moment defensive choice with distinct payoffs, and player-initiated encounter escalation. Re-entry trigger: if the user adds a branching narrative to the concept, this element re-opens and needs a reference with a genuine reputation for consequence design, which none of the current three has.",
+      "reference": "SK",
+      "selection": {
+        "elementQuality": "Risk/reward legibility in the moment: deflect, dodge and guard have visibly different costs and payoffs, and committing to the riskiest option is the most rewarded.",
+        "reception": "The clarity of that trade is a large part of why its combat is regarded as fair rather than punishing.",
+        "longevity": "Durable — it is a property of the tuning, not of a plot device.",
+        "fitToConcept": "src/gameplay/Combat.js already implements a distinct payoff matrix across parry-perfect, parry-late, dodge and guard, and src/world/Level.js already lets the player choose to ring the bell and call the next wave.",
+        "applicability": "Pure tuning. No cost."
+      },
+      "mustNotCopy": ["Reference tuning values or the specific narrative consequences of any reference title."],
+      "principles": [
+        "Each defensive option has a distinct, learnable cost and payoff; none is strictly dominant.",
+        "A consequence the player triggered must be announced before it commits, and must never be triggered accidentally.",
+        "The player must be able to attribute an outcome to their decision — an unreadable consequence teaches nothing."
+      ],
+      "criteria": [
+        {
+          "id": "BM-CHOICE-01",
+          "statement": "The defensive options form a real trade with no dominant answer.",
+          "method": "source-audit",
+          "apparatus": "exists",
+          "threshold": "Perfect deflect, late deflect, dodge and guard each carry a distinct posture/damage/opening outcome, and the highest reward carries the tightest window.",
+          "measured": "Combat.js TUNING: perfect 26 attacker posture and a 0.75 s guaranteed opening at a 130 ms window; late 11 attacker posture with 4.5 self posture and 22% damage still landing; dodge answers unblockables that deflect cannot. The trade holds as authored.",
+          "evidenceState": "source-audit",
+          "status": "verified"
+        },
+        {
+          "id": "BM-CHOICE-02",
+          "statement": "Player-initiated escalation is deliberate and announced.",
+          "method": "interaction-capture",
+          "apparatus": "missing",
+          "threshold": "The bell cannot be rung by accident during combat movement, and its consequence is signalled before the wave commits.",
+          "measured": "The escalation exists (Level.js: ringing the bell triggers the second wave set). Its accident-resistance is untested.",
+          "evidenceState": "source-audit",
+          "status": "proposed"
+        }
+      ],
+      "currentGap": "The in-scope version of this element is authored and coherent. It has never been played."
+    },
+
+    {
+      "id": "E09-UI",
+      "name": { "ja": "UI", "en": "UI and HUD" },
+      "inScope": true,
+      "reference": "GT",
+      "antiReference": "AR-03",
+      "selection": {
+        "elementQuality": "A HUD that earns every pixel and is willing to disappear, leaving the image to do the work.",
+        "reception": "Its near-invisible presentation is one of the title's signature achievements and was widely adopted afterwards.",
+        "longevity": "The restraint has aged well; heavier HUDs from the same period have not.",
+        "fitToConcept": "KAGEROU's HUD is a single canvas2d composite (ARCHITECTURE.md §6) on a phone screen where every pixel of HUD is a pixel of game lost, and the project's own review loop blanks the HUD to judge the frame — which only works if the HUD was never load-bearing.",
+        "applicability": "Subtractive. Costs nothing and directly buys screen area on the primary platform."
+      },
+      "principles": [
+        "Show a meter when it is contested, fade it when it is not.",
+        "Never occlude the action zone or the thumb zones.",
+        "One composite per frame; no DOM layout in the render path.",
+        "No map, no icon field, no counters (AR-03).",
+        "The frame must pass its quality bar with the HUD hidden — the HUD is not allowed to be the reason an image looks finished."
+      ],
+      "mustNotCopy": ["Reference HUD layout, meter shapes, iconography, typography, or on-screen prompt language."],
+      "criteria": [
+        {
+          "id": "BM-UI-01",
+          "statement": "HUD ink is minimal out of combat and never occludes the action or thumb zones.",
+          "method": "frame-measurement",
+          "apparatus": "exists",
+          "threshold": "Non-combat HUD ink ≤ 3% of frame pixels; zero HUD pixels inside the safe-area insets or the two thumb zones.",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        },
+        {
+          "id": "BM-UI-02",
+          "statement": "The image passes its tonal and art gates with the HUD hidden.",
+          "method": "frame-measurement",
+          "apparatus": "exists",
+          "threshold": "Existing gate R9-TONE-001 measured on HUD-blanked frames. This is already enforced and must not be relaxed.",
+          "measured": "Enforced since the review set was HUD-blanked; r15v1 passes all five black gates and both eligible white gates without HUD ink.",
+          "evidenceState": "frame-measured",
+          "status": "verified"
+        },
+        {
+          "id": "BM-UI-03",
+          "statement": "Posture and health are readable at phone viewing distance.",
+          "method": "device-test",
+          "apparatus": "missing",
+          "threshold": "Legible on a ~6 inch screen at arm's length, judged by a human.",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        },
+        {
+          "id": "BM-UI-04",
+          "statement": "The HUD never permanently stamps stale content into the frame.",
+          "method": "instrumented-runtime",
+          "apparatus": "partial",
+          "threshold": "No retained title-card or overlay pixels after the intro under any hide/show ordering.",
+          "measured": "OPEN DEFECT, already recorded: src/ui/HUD.js permanently stamps the title card into later frames if the HUD is hidden while the intro is live (PROJECT_STATE.knownUncertainty).",
+          "evidenceState": "runtime-measured",
+          "status": "blocked"
+        }
+      ],
+      "currentGap": "The restraint is real and the HUD-blanked gate is genuinely enforced. One known stamping defect is open. Nothing about on-device legibility has been checked."
+    },
+
+    {
+      "id": "E10-TOUCH",
+      "name": { "ja": "タッチ操作", "en": "Touch controls" },
+      "inScope": true,
+      "reference": "GI",
+      "antiReference": "AR-02",
+      "selection": {
+        "elementQuality": "A dual-thumb layout for a full 3D action game that works on phones of every size: a stick that does not have to be found, an action cluster on a thumb arc, honest hit targets, and clear press/cooldown state.",
+        "reception": "Sustained by a very large mobile player base over years — the most load-bearing evidence available that this layout survives real use rather than a review window.",
+        "longevity": "Still the layout new mobile action games converge on.",
+        "fitToConcept": "KAGEROU's primary platform is a phone and ARCHITECTURE.md §6 already specifies a floating stick, a four-button thumb arc, safe-area compliance and ≥48 px targets. Neither console reference offers any evidence here.",
+        "applicability": "Directly applicable — it is the same problem on the same hardware."
+      },
+      "principles": [
+        "The stick appears where the thumb lands; it is never a fixed target to hunt for.",
+        "Action targets sit on an arc the thumb sweeps without regripping, with hit zones larger than their ink.",
+        "Every target obeys the device's safe area on every phone shape.",
+        "Press, hold and cooldown each have a distinct visual state — a phone gives no haptic guarantee.",
+        "No gesture may collide with an OS edge gesture, and no gesture may fire while the camera is being dragged."
+      ],
+      "mustNotCopy": ["Reference button art, icon language, layout proportions, or UI skin. KAGEROU's 受/避/技/敵 ink seals are its own."],
+      "criteria": [
+        {
+          "id": "BM-TOUCH-01",
+          "statement": "Every action target meets or exceeds the platform minimum, with a padded hit zone.",
+          "method": "source-audit",
+          "apparatus": "exists",
+          "threshold": "ARCHITECTURE.md §6: ≥ 48 CSS px visual, hit zone padded to ≥ 64 px.",
+          "measured": "src/ui/TouchControls.js: HIT = max(72, 78·s) with the arc radius derived so 29° of separation keeps ≥ HIT px between neighbours. Exceeds the contract as authored.",
+          "evidenceState": "source-audit",
+          "status": "verified"
+        },
+        {
+          "id": "BM-TOUCH-02",
+          "statement": "Every control is clamped inside the device safe area.",
+          "method": "source-audit",
+          "apparatus": "exists",
+          "threshold": "Each button centre clamped into env(safe-area-inset-*) plus its own radius, on every orientation and notch geometry.",
+          "measured": "TouchControls._layout clamps b.cx/b.cy into safe.left/right/top/bottom plus radius plus 4 px.",
+          "evidenceState": "source-audit",
+          "status": "verified"
+        },
+        {
+          "id": "BM-TOUCH-03",
+          "statement": "Gestures do not misfire.",
+          "method": "interaction-capture",
+          "apparatus": "missing",
+          "threshold": "Over a scripted set of ≥ 100 camera drags, < 1% produce an unintended slash or button press; no gesture starts within the OS edge-gesture margin.",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        },
+        {
+          "id": "BM-TOUCH-04",
+          "statement": "Input latency is bounded.",
+          "method": "instrumented-runtime",
+          "apparatus": "missing",
+          "threshold": "A touch event is consumed by game state in the same frame it arrives; no input is deferred more than one frame by the input layer.",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        },
+        {
+          "id": "BM-TOUCH-05",
+          "statement": "The layout works one-handed on the smallest supported phone.",
+          "method": "device-test",
+          "apparatus": "missing",
+          "threshold": "All four action seals and the stick reachable without regripping on a small phone, judged by a human.",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        }
+      ],
+      "currentGap": "The geometry contract is met as authored and exceeds the minimum. Nothing has been touched by a human or a driven pointer — misfire rate, latency and reachability are all unknown, on the platform that is supposed to be primary."
+    },
+
+    {
+      "id": "E11-VISUALS",
+      "name": { "ja": "映像", "en": "Visuals and art direction" },
+      "inScope": true,
+      "reference": "GT",
+      "selection": {
+        "elementQuality": "Golden-hour natural landscape with wind, atmospheric distance, decisive warm/cool separation and a filmic grade — the exact image KAGEROU is trying to make.",
+        "reception": "Its art direction is the most decorated and most durably praised aspect of the title.",
+        "longevity": "Still the point of comparison for this specific look.",
+        "fitToConcept": "ARCHITECTURE.md §5 is already written against it, and tools/CRITIC.md already judges against its framings.",
+        "applicability": "The look is achieved by light, colour and composition rather than by asset density, which is the only route available to a zero-asset procedural build."
+      },
+      "principles": [
+        "One confident key light with contact-hardening shadows.",
+        "Warm key against cool shadow; never one temperature.",
+        "Distance desaturates and lifts toward the sky, or the vista is a backdrop.",
+        "Grain at every scale; no untextured flat surface anywhere in frame.",
+        "Soft wide bloom and a filmic grade — not a glow filter."
+      ],
+      "mustNotCopy": ["Reference locations, compositions, colour scripts, or signature set-pieces. The palette in ARCHITECTURE.md §5 is KAGEROU's own and is authored to its own setting."],
+      "criteria": [
+        {
+          "id": "BM-VIS-01",
+          "statement": "The standing visual gates hold on a coherent phone/MEDIUM capture.",
+          "method": "frame-measurement",
+          "apparatus": "exists",
+          "threshold": "R9-APPARATUS-001, R9-PERF-001 and R9-TONE-001 as written. Not restated at weaker values.",
+          "measured": "PASS at r15v1: 5/5 coherent shots, 119 draw calls, 784,449 triangles, 117 programs with zero dead shaders, zero page errors, all five black gates and both eligible white gates.",
+          "evidenceState": "frame-measured",
+          "status": "verified"
+        },
+        {
+          "id": "BM-VIS-02",
+          "statement": "The hostile critic returns PASS on the source-blind review set.",
+          "method": "hostile-review",
+          "apparatus": "exists",
+          "threshold": "Zero blockers. A single blocker is a FAIL regardless of score (tools/CRITIC.md).",
+          "measured": "FAIL. Round 15 closed at 65/100 with 3 blockers, down from 4.",
+          "evidenceState": "review-judged",
+          "status": "blocked"
+        },
+        {
+          "id": "BM-VIS-03",
+          "statement": "Scores are not treated as a trend line across critic instances.",
+          "method": "hostile-review",
+          "apparatus": "exists",
+          "threshold": "Any score comparison must come from the same critic instance or be reported with the measured inter-instance variance.",
+          "measured": "Measured directly in round 15: a fresh instance scored byte-identical pixels 62 against round 14's 50 — 12 points of pure instance variance. Blocker COUNT is the instance-independent signal.",
+          "evidenceState": "review-judged",
+          "status": "verified"
+        },
+        {
+          "id": "BM-VIS-04",
+          "statement": "The review judges the game in motion, not only five still frames.",
+          "method": "interaction-capture",
+          "apparatus": "missing",
+          "threshold": "The critic sees motion for the criteria that require it — legibility under motion, animation readability, camera behaviour, effect timing.",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        }
+      ],
+      "currentGap": "The best-evidenced element on the project and the honest current answer is FAIL — 65/100 with 3 blockers at r15v1. The measurable contract gates pass; the critic's blockers are what stand between here and the bar. Note that even this loop only sees still frames."
+    },
+
+    {
+      "id": "E12-ANIMATION",
+      "name": { "ja": "アニメーション", "en": "Animation" },
+      "inScope": true,
+      "reference": "SK",
+      "selection": {
+        "elementQuality": "Combat animation whose startup, active and recovery phases are readable at a glance, where weight transfer is visible and the animation never lies about its hitbox.",
+        "reception": "Its animation readability is the foundation critics credit for the combat being learnable at all.",
+        "longevity": "Readability-first combat animation is durable craft.",
+        "fitToConcept": "KAGEROU has no imported clips: src/anim/Rig.js and Poses.js synthesise a pose-blend graph with 2D locomotion blending, two-bone IK, foot planting and Verlet cloth. Under that constraint, readability has to be engineered deliberately rather than inherited from mocap — which makes an explicit readability bar more necessary here than in a title with a motion-capture stage.",
+        "applicability": "Procedural rigs can hit readability targets; they cannot hit mocap naturalism. The bar is set at the property that matters for play."
+      },
+      "principles": [
+        "Startup, active and recovery are three visibly distinct phases.",
+        "Recovery is the price the player reads before committing.",
+        "The hitbox and the blade are in the same place at the same time.",
+        "Hit reactions respect direction and mass.",
+        "Transitions are fast enough to feel responsive and long enough not to pop."
+      ],
+      "mustNotCopy": ["Reference animation timing charts, movesets, stances, or signature poses."],
+      "criteria": [
+        {
+          "id": "BM-ANIM-01",
+          "statement": "Every attack has a visible startup no shorter than the reaction time the design assumes of a player.",
+          "method": "interaction-capture",
+          "apparatus": "missing",
+          "threshold": "Startup ≥ 0.140 s (the AI's own REACTION_FLOOR) for every enemy attack; measured from first visible motion, not from the state change.",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        },
+        {
+          "id": "BM-ANIM-02",
+          "statement": "The weapon's damaging window matches its visible arc.",
+          "method": "instrumented-runtime",
+          "apparatus": "missing",
+          "threshold": "Weapon-active frames coincide with the visible blade sweep within one frame at both ends.",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        },
+        {
+          "id": "BM-ANIM-03",
+          "statement": "Pose transitions never pop.",
+          "method": "interaction-capture",
+          "apparatus": "missing",
+          "threshold": "No blend discontinuity; transitions complete within 150 ms; no bone rotates more than a documented per-frame limit during a blend.",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        },
+        {
+          "id": "BM-ANIM-04",
+          "statement": "Nothing non-finite reaches the rig.",
+          "method": "instrumented-runtime",
+          "apparatus": "partial",
+          "threshold": "ARCHITECTURE.md §5b: no NaN crosses a system boundary; the landing-absorb spring class of defect cannot recur at dt = 0.25 s.",
+          "measured": "The historical divergence is documented and fixed in the contract; no automated assertion currently guards it.",
+          "evidenceState": "source-audit",
+          "status": "proposed"
+        }
+      ],
+      "currentGap": "Completely unverified, and structurally invisible to the current apparatus: a still frame cannot show a startup, a blend or a hit reaction. This is the element with the largest distance between what the design requires and what the project can currently see."
+    },
+
+    {
+      "id": "E13-AUDIO",
+      "name": { "ja": "音響", "en": "Audio" },
+      "inScope": true,
+      "reference": "GT",
+      "selection": {
+        "elementQuality": "A spatial, weather-reactive soundscape under a clean mix hierarchy, with music that follows the state of the fight rather than looping over it.",
+        "reception": "Its audio work is among the most praised aspects of the title, particularly the wind-and-landscape bed and the restraint of its score.",
+        "longevity": "Durable; the approach is still cited as a model for natural-world audio.",
+        "fitToConcept": "KAGEROU synthesises all audio (struck-bar clash, Karplus-Strong koto, membrane taiko, generative score) and owns a single wind field in WeatherSystem that the audio can share with the visuals. Ambience-plus-reactive-score is the achievable half of this bar; the recorded-performance half is permanently out of reach under the zero-asset rule and is not claimed.",
+        "applicability": "Mix discipline, ducking and reactivity are free. Sample-based realism is not available and is not the benchmark."
+      },
+      "principles": [
+        "The mix has a hierarchy: an impact takes priority and the bed gets out of its way.",
+        "Ambience is spatial and driven by the same wind that bends the grass.",
+        "Music follows the fight's state and never announces its loop.",
+        "Nothing clips a phone speaker, including a five-enemy clash.",
+        "Combat feedback is an audio channel first — a deflect must be identifiable with eyes closed."
+      ],
+      "mustNotCopy": ["Reference music, motifs, instrumentation choices as signature, or sound-design identity."],
+      "criteria": [
+        {
+          "id": "BM-AUDIO-01",
+          "statement": "The output path is protected against clipping.",
+          "method": "source-audit",
+          "apparatus": "exists",
+          "threshold": "A limiter on the master path, present regardless of scene load.",
+          "measured": "src/core/Audio.js: buses → master → limiter → destination, documented as existing so a five-enemy clash cannot clip the phone speaker.",
+          "evidenceState": "source-audit",
+          "status": "verified"
+        },
+        {
+          "id": "BM-AUDIO-02",
+          "statement": "Impacts duck the bed rather than fighting it.",
+          "method": "source-audit",
+          "apparatus": "exists",
+          "threshold": "A sidechain that pulls music and ambience down under an impact and releases them smoothly.",
+          "measured": "Audio.duckFor implements exactly this across the music and ambience buses.",
+          "evidenceState": "source-audit",
+          "status": "verified"
+        },
+        {
+          "id": "BM-AUDIO-03",
+          "statement": "Peak output stays below clipping under worst-case simultaneity.",
+          "method": "instrumented-runtime",
+          "apparatus": "missing",
+          "threshold": "≤ -1 dBFS true peak with five simultaneous impacts plus the full bed, measured from an offline render.",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        },
+        {
+          "id": "BM-AUDIO-04",
+          "statement": "A perfect deflect is identifiable by sound alone.",
+          "method": "hostile-review",
+          "apparatus": "missing",
+          "threshold": "A listener with no picture distinguishes perfect deflect, late deflect and a clean hit.",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        },
+        {
+          "id": "BM-AUDIO-05",
+          "statement": "Ambience and image share one wind field.",
+          "method": "source-audit",
+          "apparatus": "exists",
+          "threshold": "Audio reads ctx.weather/ctx.wind rather than implementing its own gust maths (ARCHITECTURE.md §10).",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        }
+      ],
+      "currentGap": "The mix architecture is right where it can be read from source. No audio has ever been rendered, measured, or listened to in this project's review loop — the review surface is silent screenshots."
+    },
+
+    {
+      "id": "E14-AI",
+      "name": { "ja": "AI", "en": "Enemy AI" },
+      "inScope": true,
+      "reference": "SK",
+      "selection": {
+        "elementQuality": "Opponents that are legible rather than random: human-scaled reaction, real commitment to a chosen action, regulated group aggression, and no input reading.",
+        "reception": "Its enemy behaviour is credited as the reason its difficulty is regarded as fair.",
+        "longevity": "Legibility-first AI is durable; adaptive-difficulty fashions have not aged as well.",
+        "fitToConcept": "src/gameplay/EnemyAI.js is already a utility-scored brain with a bounded reaction time, hysteresis and commitment — the same design family, chosen independently.",
+        "applicability": "Utility scoring at 8 Hz is cheap enough for a phone, which a per-frame behaviour tree over many agents would not be."
+      },
+      "principles": [
+        "Reaction time is human-scaled and bounded from both sides — never instant, never asleep.",
+        "A chosen action is committed to; flickering between behaviours reads as noise.",
+        "Group aggression is regulated so a crowd cannot dogpile — one attacker commits while the others posture.",
+        "The AI answers what it can see, never what the player has not yet done.",
+        "The player can always tell what an enemy is about to do."
+      ],
+      "mustNotCopy": ["Reference enemy behaviour patterns, aggression scripts, or boss logic."],
+      "criteria": [
+        {
+          "id": "BM-AI-01",
+          "statement": "Reaction time is bounded on both sides.",
+          "method": "source-audit",
+          "apparatus": "exists",
+          "threshold": "A floor no faster than human reaction and a ceiling that keeps the enemy awake.",
+          "measured": "EnemyAI REACTION_FLOOR 0.140 s, REACTION_CEIL 0.320 s.",
+          "evidenceState": "source-audit",
+          "status": "verified"
+        },
+        {
+          "id": "BM-AI-02",
+          "statement": "Behaviour does not flicker.",
+          "method": "source-audit",
+          "apparatus": "exists",
+          "threshold": "A decision interval plus hysteresis plus per-behaviour commitment, so a scored choice cannot alternate frame to frame.",
+          "measured": "TICK_INTERVAL 1/8 s, HYSTERESIS 0.14, per-behaviour COMMIT table.",
+          "evidenceState": "source-audit",
+          "status": "verified"
+        },
+        {
+          "id": "BM-AI-03",
+          "statement": "Group aggression is regulated.",
+          "method": "instrumented-runtime",
+          "apparatus": "missing",
+          "threshold": "With ≥ 3 enemies engaged, the number simultaneously committed to an attack stays within an authored token limit for ≥ 95% of the encounter.",
+          "measured": "A token concept is referenced in EnemyAI's scoring inputs; its runtime behaviour is unverified.",
+          "evidenceState": "source-audit",
+          "status": "proposed"
+        },
+        {
+          "id": "BM-AI-04",
+          "statement": "The AI never reads unexpressed player input.",
+          "method": "source-audit",
+          "apparatus": "exists",
+          "threshold": "No branch consumes raw input state; enemies react only to entity state that is already visible in the world.",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        }
+      ],
+      "currentGap": "The tuning constants meet the reference-derived bars as authored, which is genuinely more than most elements can say. No encounter has been run and measured, so group regulation and legibility remain unknown."
+    },
+
+    {
+      "id": "E15-PERFORMANCE",
+      "name": { "ja": "性能", "en": "Performance" },
+      "inScope": true,
+      "reference": "GI",
+      "antiReference": "AR-02",
+      "selection": {
+        "elementQuality": "A full 3D action game holding a playable frame rate across a wide range of mid-range Android hardware, with scalable settings and dynamic resolution — the exact envelope KAGEROU targets.",
+        "reception": "Its scalability across cheap hardware is a genuine engineering achievement acknowledged even by its critics; its sustained thermal behaviour is not, which is why it is also an anti-reference.",
+        "longevity": "Years of sustained operation on the device class is stronger evidence than any launch benchmark.",
+        "fitToConcept": "ARCHITECTURE.md §2 makes 60 fps on an Adreno 640-class mid-range Android at TIER.MEDIUM the pass/fail line. Neither console reference speaks to that at all.",
+        "applicability": "Same device class, same constraint set: thermal budget, memory pressure, dynamic resolution, tiered quality."
+      },
+      "principles": [
+        "The frame budget is a contract; a budget met on desktop and missed on the phone is a missed budget.",
+        "Scale resolution before dropping frames, and never let the scaler hide a real regression.",
+        "Measure the sustained state, not the first minute — thermal decay is the failure mode that matters (AR-02).",
+        "Submit less rather than draw faster: instance, merge, atlas.",
+        "Boot cost is part of performance in a procedural build — synthesis time is time the player waits."
+      ],
+      "mustNotCopy": ["Nothing here is copyable; this is an engineering envelope, not a design."],
+      "criteria": [
+        {
+          "id": "BM-PERF-01",
+          "statement": "Submitted work stays inside the MEDIUM budget.",
+          "method": "frame-measurement",
+          "apparatus": "exists",
+          "threshold": "ARCHITECTURE.md §7 as written, enforced by R9-PERF-001: ≤ 140 draw calls, ≤ 900,000 triangles, ≤ 48 MB textures, ≤ 1.6 MB gzip bundle.",
+          "measured": "PASS at r15v1: 119 draw calls worst pose, 784,449 triangles worst pose, and a production build well inside the bundle cap.",
+          "evidenceState": "frame-measured",
+          "status": "verified"
+        },
+        {
+          "id": "BM-PERF-02",
+          "statement": "60 fps at MEDIUM on a mid-range Android.",
+          "method": "device-test",
+          "apparatus": "missing",
+          "threshold": "Median frame time ≤ 16.7 ms on an Adreno 640-class device at TIER.MEDIUM with the dynamic scaler not pinned to its floor.",
+          "measured": "NOT MEASURED, and not measurable in this container. All capture evidence to date is SwiftShader, which is not device evidence. This is the single most important unverified criterion on the project.",
+          "evidenceState": "none",
+          "status": "blocked"
+        },
+        {
+          "id": "BM-PERF-03",
+          "statement": "Performance is sustained, not just initial.",
+          "method": "device-test",
+          "apparatus": "missing",
+          "threshold": "Over a 10-minute continuous session on the target device, median frame time degrades ≤ 10% and the dynamic render scale never sits at its 0.5 floor.",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        },
+        {
+          "id": "BM-PERF-04",
+          "statement": "Boot-time synthesis is bounded.",
+          "method": "device-test",
+          "apparatus": "missing",
+          "threshold": "Time from load to playable ≤ 3 s on the target device, with the download under 2 MB.",
+          "measured": "The download side holds (production main chunk is a few hundred KB gzip; see PROJECT_STATE.verifiedState.productionBuild). Synthesis time on a phone is unmeasured.",
+          "evidenceState": "none",
+          "status": "proposed"
+        },
+        {
+          "id": "BM-PERF-05",
+          "statement": "The JS frame budget holds.",
+          "method": "instrumented-runtime",
+          "apparatus": "partial",
+          "threshold": "≤ 5 ms JS per frame at MEDIUM (ARCHITECTURE.md §7), with zero per-frame allocation in update().",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        }
+      ],
+      "currentGap": "The submitted-work budgets are genuinely verified and comfortable. The frame rate — the actual pass/fail line of the entire project — has never been measured on any real phone, and cannot be from here. Every performance statement made so far is about draw counts, not about fps."
+    },
+
+    {
+      "id": "E16-STABILITY",
+      "name": { "ja": "安定性", "en": "Stability and robustness" },
+      "inScope": true,
+      "reference": "GT",
+      "selection": {
+        "elementQuality": "Shipped-console launch polish: a long session without a crash, a soft-lock, or a state that needs a restart.",
+        "reception": "Its technical polish at launch was widely noted, in a period when it was not the norm.",
+        "longevity": "The expectation has not softened.",
+        "fitToConcept": "KAGEROU runs in a browser on a phone, where the failure modes are different but the bar is the same: a tab-switch, a rotation, a phone call, or a lost WebGL context must not end the session.",
+        "applicability": "Costs discipline, not budget: validate what crosses a boundary, hold last-good values, degrade rather than throw."
+      },
+      "principles": [
+        "Degrade, never throw. A system that fails should hold its last good value and warn once.",
+        "Nothing non-finite crosses a system boundary (ARCHITECTURE.md §5b).",
+        "Interruption is normal on a phone: tab-switch, rotation, audio interruption, context loss, background/foreground.",
+        "No state the player can reach requires a reload.",
+        "A frozen counter is a symptom, not a reading — an aborted frame must be detectable, not silent."
+      ],
+      "mustNotCopy": ["Nothing; this is an engineering standard."],
+      "criteria": [
+        {
+          "id": "BM-STAB-01",
+          "statement": "The build boots and runs with zero page or console errors and zero dead shader programs.",
+          "method": "frame-measurement",
+          "apparatus": "exists",
+          "threshold": "Zero page errors, zero console errors, zero linked-dead programs, on every capture.",
+          "measured": "PASS at r15v1: 117 programs linked, zero dead, zero console errors, audited every capture.",
+          "evidenceState": "frame-measured",
+          "status": "verified"
+        },
+        {
+          "id": "BM-STAB-02",
+          "statement": "Interruption and recovery are survivable.",
+          "method": "interaction-capture",
+          "apparatus": "missing",
+          "threshold": "Tab-switch (including the dt = 0.25 s clamp path), orientation change, audio-context suspend/resume and WebGL context loss each recover to a playable state with no NaN and no reload.",
+          "measured": "The dt clamp exists and the class of spring divergence it caused is documented and fixed. Nothing else is tested.",
+          "evidenceState": "source-audit",
+          "status": "proposed"
+        },
+        {
+          "id": "BM-STAB-03",
+          "statement": "No soft-lock exists in the encounter flow.",
+          "method": "interaction-capture",
+          "apparatus": "missing",
+          "threshold": "Every encounter can be completed or exited from any reachable state, including after a death, a wave-trigger race, or an enemy falling out of the world.",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        },
+        {
+          "id": "BM-STAB-04",
+          "statement": "Non-finite values are trapped at system boundaries by an automated assertion, not by convention.",
+          "method": "instrumented-runtime",
+          "apparatus": "missing",
+          "threshold": "A development-mode assertion covering the exported values named in ARCHITECTURE.md §5b, with a test that proves it fires.",
+          "measured": null,
+          "evidenceState": "none",
+          "status": "proposed"
+        },
+        {
+          "id": "BM-STAB-05",
+          "statement": "The published surface actually loads for a player.",
+          "method": "instrumented-runtime",
+          "apparatus": "partial",
+          "threshold": "A real browser reaches ready and a running engine through the hashed production bundle with zero page, console, request or HTTP failures.",
+          "measured": "Last verified at main 4a3eff7 (rounds 13–14). The round-15 publication at e40a188 is repository-verified but its public browser gate is NOT verified: the agent proxy denies github.io in this container.",
+          "evidenceState": "runtime-measured",
+          "status": "under_review"
+        }
+      ],
+      "currentGap": "Boot-level stability is genuinely verified every capture. Everything that makes a phone game survive real use — interruption, rotation, context loss, soft-locks — is untested, and the newest published build has never been loaded in a browser."
+    }
+  ],
+
+  "gapSummary": {
+    "asOf": "2026-08-01",
+    "headline": "Of 16 in-scope elements, exactly ONE (映像 / visuals) has a working independent review loop, and its honest current verdict is FAIL at 65/100 with 3 blockers. Three more (世界設計, 性能, 安定性) have partial evidence covering only what a still frame or a boot-time counter can show. The remaining twelve have never been verified at all, because the project's entire apparatus is five static screenshots.",
+    "byApparatus": {
+      "verifiedLoopExists": ["E11-VISUALS"],
+      "partialEvidence": ["E05-WORLD", "E15-PERFORMANCE", "E16-STABILITY", "E09-UI"],
+      "sourceAuditOnly": ["E01-COMBAT", "E04-EXPLORATION", "E06-NARRATIVE", "E08-CHOICE", "E10-TOUCH", "E13-AUDIO", "E14-AI"],
+      "noEvidenceAtAll": ["E02-MOVEMENT", "E03-CAMERA", "E07-CHARACTER", "E12-ANIMATION"]
+    },
+    "criteriaCounts": { "total": 62, "verified": 18, "underReview": 3, "blocked": 4, "proposed": 37 },
+    "criteriaCountsNote": "Machine-checked. tools/validate-project-state.mjs recomputes these from the elements array and fails if they drift. 'verified' overwhelmingly means verified BY SOURCE AUDIT — that the intent is correctly coded — not that it was verified in play: only 6 of the 62 criteria carry a frame measurement and only 2 carry a runtime measurement.",
+    "structuralFinding": "The dominant blocker across the product is not any single defect; it is that 'interaction-capture' does not exist. Combat feel, movement, camera behaviour, animation readability, touch misfire rate, AI legibility and soft-lock freedom are all invisible to a still-frame review by construction, and no amount of further art rounds will reveal them. The highest-value next investment for overall quality is the missing apparatus, not another visual round.",
+    "unmeasurableHere": [
+      "Real-device frame rate, thermal behaviour and boot time — no phone in this container.",
+      "The live public surface — the agent proxy denies github.io by policy.",
+      "Any comparison against actual reference-title footage — not fetched, not available, and not claimed anywhere in this file."
+    ]
+  },
+
+  "conceptChangeProcedure": {
+    "trigger": "The user changes any part of the concept.",
+    "steps": [
+      "Record the new instruction verbatim in changeLog with its date, and update concept.statement, invariants or outOfConcept to match. The latest explicit user instruction wins (PROJECT_OPERATING_PROTOCOL.md §1).",
+      "Update only the parts the change actually touches, plus everything downstream of them. Unchanged conditions stay exactly as they are.",
+      "For each affected element, re-check whether its reference still fits the changed concept. Change the reference ONLY if it no longer fits — not because a different title is newly interesting.",
+      "If a reference must change, the replacement must be at least as strong on the same five selection axes (element quality, expert and player reception, long-term reputation, fit to concept, applicability to this device and production scale). Record the reason.",
+      "Re-derive the affected criteria. A criterion may become stricter freely; it may only be weakened under the rule below.",
+      "Run npm run validate:project and update PROJECT_STATE.yaml and SESSION_STATE.yaml."
+    ],
+    "criterionWeakeningRule": {
+      "statement": "A criterion may NEVER be weakened to let the current implementation pass.",
+      "onlyPermittedCause": "The criterion is proved unsatisfiable AS STATED — arithmetically impossible, measuring something other than what it claims, or unreachable from the file it is filed against — and the proof is recorded.",
+      "requirement": "The replacement must demand the same or more of the product, and the disproof must be stored as evidence. Precedent: R15-PFX-001 replaced a 1-px Laplacian 'detail' metric that scored synthetic shaft banding BELOW the value it called smooth, with a calibrated band16 metric plus a clean-sky control — a strictly better test, not a lower bar.",
+      "prohibited": "Narrowing scope, dropping an element, moving a threshold toward the measured value, or reclassifying a blocker as a minor, in order to reach a PASS."
+    }
+  },
+
+  "changeLog": [
+    {
+      "date": "2026-08-01",
+      "change": "File created. Per-element reference benchmarks established for the first time; before this the project had a single global visual bar (Ghost of Tsushima / SEKIRO in ARCHITECTURE.md §0 and tools/CRITIC.md) and no bar at all for the other fifteen elements.",
+      "conceptChanged": false,
+      "reason": "User instruction: maintain the latest stated concept as the top criterion and assign each element its own most-appropriate high-quality reference, converted into concrete evidence-based criteria and carried across sessions.",
+      "titleSetDecision": "Three titles. Ghost of Tsushima and SEKIRO were already the project's stated bar and cover thirteen elements between them. Genshin Impact was added for exactly two elements — touch controls and the mobile performance envelope — because neither console title provides any evidence for a touchscreen or a phone, and leaving those elements without a reference would have meant the primary platform had no bar.",
+      "notableScoping": "選択と結果 was deliberately scoped down to in-combat risk/reward and player-triggered escalation, because narrative branching is out of the stated concept. It is not silently dropped: a re-entry trigger is recorded."
+    }
+  ]
+}

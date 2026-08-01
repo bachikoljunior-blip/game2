@@ -3,6 +3,13 @@
 A mobile-first, AAA-grade samurai action game (third person) in Three.js.
 Reference bar: **Ghost of Tsushima** / **SEKIRO** for look and feel — not Call of Duty.
 
+The bar is per element, not one global impression: `AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml`
+assigns every element (combat, movement, camera, exploration, world, narrative, character,
+choice, UI, touch, visuals, animation, audio, AI, performance, stability) its own reference
+title and its own measurable criterion. Read your element's entry before you change it. It is
+also binding in the other direction: principles only — copying any reference title's
+characters, world, layout, UI, staging, music or design is forbidden there and here.
+
 Every contributor (human or agent) MUST follow this contract so parallel work composes.
 
 ---

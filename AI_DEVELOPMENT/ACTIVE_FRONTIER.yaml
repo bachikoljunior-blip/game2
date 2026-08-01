@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "updatedAt": "2026-08-01T02:20:00Z",
-  "selectionMethod": "Round 15 was authorized by an explicit user instruction, executed, measured, and closed at FAIL 65/100. Its checkpoint is integrated and published. Preserve the remaining visual work without activating Round 16.",
+  "selectionMethod": "Round 15 was authorized by an explicit user instruction, executed, measured, and closed at FAIL 65/100. Its checkpoint is integrated and published. The 2026-08-01 instruction then authorized a separate, non-round task: establish per-element reference benchmarks as persistent project information. That is complete and validated. Round 16 remains unactivated.",
   "tasks": [
     {
       "id": "R15-PUBLISH",
@@ -22,6 +22,26 @@
       "objective": "Preserve the remaining visual work without beginning another product round.",
       "verification": "No Round 16 implementation or capture starts without a new explicit user instruction.",
       "nextAction": "Await a future user instruction; do not infer continuation from the active logical-session flag alone. Highest-value ready work when authorized: the god-ray/mid-field-wash pair, which Round 15 proved is ONE defect - rtGodA is ~10% non-zero while the marched rtGodB is 99.9% non-zero, so the pass delivers common mode rather than differential. It must be attacked as less spread, not more gain; more gain is the round-7 regression. Second: the ~10,493 px flat-black plaza patch, which two owners independently attribute to cast shadow crushed to black rather than to any material. Before citing the retained r12ab lantern A/B evidence again, verify that capture.mjs --ab-object does not screenshot after engine.stop() with preserveDrawingBuffer false."
+    },
+    {
+      "id": "BENCH-INSTALL",
+      "planNode": "BENCH-INSTALL",
+      "status": "verified",
+      "priority": 0,
+      "dependencies": [],
+      "objective": "Give every element of the product its own reference title, selection reason, generalisable principles, originality prohibitions, and concrete criteria measurable on our own build, and make the whole thing machine-checked and durable across sessions.",
+      "verification": "npm run validate:project passes with 16 elements, 3 titles and 62 criteria, and was proved to FAIL when a criterion was marked verified without an apparatus or a measurement.",
+      "nextAction": "Complete. Read AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml before critiquing, repairing, or declaring any element finished."
+    },
+    {
+      "id": "BENCH-APPARATUS",
+      "planNode": "BENCH-APPARATUS",
+      "status": "deferred",
+      "priority": 1,
+      "dependencies": ["BENCH-INSTALL"],
+      "objective": "Build the interaction-capture surface the other twelve elements need before they can be judged at all.",
+      "verification": "Each element under gapSummary.byApparatus.noEvidenceAtAll and sourceAuditOnly gains at least one runnable criterion.",
+      "nextAction": "Await a user instruction. This is now the highest-value unblocked work on the project by final-value contribution - it converts twelve unverifiable elements into measurable ones, where another visual round improves the one element that already has a loop. It is deliberately NOT started autonomously: it is new product work, not a continuation of Round 15."
     }
   ]
 }

@@ -21,3 +21,11 @@
   into `main`, and GitHub Pages publication of verified checkpoints. Paid, destructive,
   credential, account, and unrelated external actions remain outside that authorization.
 - Do not store secrets or personal data in project files or evidence.
+- Each element is held to its reference title in `AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml`.
+  Principles only: no reference's characters, story, world, layout, UI, staging, music or
+  design may be copied or near-copied, and no reference title may be named in the shipped
+  product.
+- A benchmark criterion may be made stricter at any time. It may be weakened only when proved
+  unsatisfiable as stated, with the disproof stored as evidence — never to reach a PASS.
+- A criterion may be marked verified only when an apparatus that exists actually measured it.
+  `npm run validate:project` enforces this and will fail the claim otherwise.
