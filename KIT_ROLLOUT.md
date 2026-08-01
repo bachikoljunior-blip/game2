@@ -21,7 +21,7 @@ Measured 2026-08-01. Every SHA below was read back from the remote, not assumed.
 |---|---|---|---|---|
 | `kit` | `claude/kit-template-creation-ndursc` | `d334e77` | source of truth, v0.2.0, 52 files, 34 tests | n/a |
 | `game2` | `claude/past-work-skill-candidates-v6l3xm` | see git | `.kit/` v0.2.0 installed | **yes** — 9 + `round` |
-| `survival` | `claude/past-work-skill-candidates-v6l3xm` | `e726e7a` | `.kit/` v0.1.0 installed | **yes** — 9 |
+| `survival` | `claude/past-work-skill-candidates-v6l3xm` | `e1468f0` | `.kit/` v0.2.0 installed | **yes** — 9 |
 | `Cooky` `Gptgame` `Q` `exist-debug` `game` `Simple-browser-cookie-clicker-game` | — | — | none | no |
 
 What is already proven, so nobody re-proves it:
@@ -53,12 +53,10 @@ read and push modes on 2026-08-01, and the GitHub repository-creation API return
 is still refused, say so and move to step 2 rather than burning turns on it. The user can do
 it from their own machine in one command.
 
-### 2. Bring `survival`'s kit up to v0.2.0
+### 2. ~~Bring `survival`'s kit up to v0.2.0~~ — done 2026-08-01
 
-It is on v0.1.0 and predates the YAML parser, the template and five tests.
-
-*Acceptance:* `npm run check:kit` in `survival` passes **and** `.kit/KIT_VERSION` reads
-`0.2.0`. Push and read the remote SHA back.
+`check:kit` reports the vendored tree intact at v0.2.0, the PNG codec and floor gate were run
+inside `survival` to confirm the copy executes there, and the remote reads `e1468f0`.
 
 ### 3. Replace `survival`'s duplicated harness
 
