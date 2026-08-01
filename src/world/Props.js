@@ -287,19 +287,40 @@ export function roughen(geo, amount, freq = 1.6, axisMask = null) {
  * Sampled through `cos/sin` of the angle around the axis so the field is exactly
  * periodic and no seam runs up the post, with a slow drift along it — which is
  * what makes a streak wander like grain rather than sit like a stripe.
+ *
+ * `lines` is the number of grain streaks the caller wants around the full
+ * circumference, and it is a parameter because the sampling frame is the mesh's
+ * own column count and nothing here can see it. The field is evaluated on a
+ * circle of radius `lines / 2π` in noise space, so its arc length is exactly
+ * `lines` noise periods: one streak per period, by construction.
+ *
+ * It used to be evaluated on circles of radius 9 and 27 with a 3-octave fbm on
+ * the first. Those have arc lengths of 56.5 and 170 noise units — and the finest
+ * octave of a 3-octave fbm runs at 4x its base, so the two taps carried 226 and
+ * 170 features around a post the mesh samples at **20 columns**. Both are an
+ * order of magnitude past the lattice's Nyquist, so neither could draw a streak:
+ * they aliased to an uncorrelated value per column, which is the smooth blotchy
+ * mottle a round-16 review measured at 1.48 mean |Laplacian| against 7.2 for the
+ * flagstone beside it. The comment above ("20 around a 1.4 m circumference is a
+ * 7 cm line") states the intent exactly; the arithmetic never delivered it.
  */
-export function axialGrain(geo, cx, cz, amount = 0.12, scale = 1, warm = 0.55) {
+export function axialGrain(geo, cx, cz, amount = 0.12, scale = 1, warm = 0.55, lines = 7) {
   const pos = geo.getAttribute('position');
   let col = geo.getAttribute('color');
   if (!col) { normalizeGeo(geo); col = geo.getAttribute('color'); }
   const inv = 1 / Math.max(1e-3, scale);
+  // Two bands, both under the lattice: the broad sap/heart drift at 0.42 of the
+  // streak count, and the streaks themselves. Single-octave, because an fbm's
+  // upper octaves are exactly the part that cannot be sampled.
+  const rF = Math.max(0.4, lines) / (Math.PI * 2);
+  const rC = rF * 0.42;
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
     const th = Math.atan2(z - cz, x - cx);
     const c = Math.cos(th), s = Math.sin(th);
-    const coarse = noise.fbm2(c * 9.0, s * 9.0 + y * 0.55 * inv, 3);
-    const fine = noise.noise2(c * 27.0, s * 27.0 + y * 1.9 * inv);
-    const g = coarse * 0.68 + fine * 0.32;
+    const coarse = noise.noise2(c * rC, s * rC + y * 0.22 * inv);
+    const fine = noise.noise2(c * rF, s * rF + y * 0.62 * inv);
+    const g = coarse * 0.42 + fine * 0.58;
     const k = 1 + g * amount;
     // Late wood is darker *and* browner than early wood; a purely luminance
     // streak reads as dirt, the hue shift is what makes it read as timber.
@@ -390,6 +411,55 @@ export function circleProfile(n = 8, phase = 0) {
   for (let i = 0; i < n; i++) {
     const a = phase + (i / n) * Math.PI * 2;
     p.push([Math.cos(a) * 0.5, Math.sin(a) * 0.5]);
+  }
+  return p;
+}
+
+/**
+ * 手斧 chōna — a hand-adzed round section rather than a turned one.
+ *
+ * A torii pillar is worked down from a log with an adze, so its section is a
+ * shallow polygon of facets, not a circle. The modulation is written as a cosine
+ * about the *mean* radius rather than cut inward from it, so the mean section —
+ * and therefore the silhouette, the collider and the entasis — is unchanged and
+ * only the surface normal moves.
+ *
+ * This exists because a perfect cylinder under a single key light produces a
+ * strictly monotone Lambert ramp with no local structure anywhere across it,
+ * which is precisely what a round-16 review measured across 350 native pixels of
+ * the foreground upright.
+ *
+ * `lobes`, `n` and `depth` were chosen by ablation, not by taste, because the
+ * first three guesses did nothing. Sweeping the three against the real
+ * `sweepProfile` output and counting local minima of N·L on the lit arc under the
+ * shot's own sun (0.86, 0.225, 0.457), averaged over five rings:
+ *
+ *   circle, any n            0 minima      — the shipped behaviour, and the finding
+ *   40 cols,  9 lobes, 0.06  2.0 minima, median dip 10%
+ *   40 cols,  9 lobes, 0.09  3.0 minima, median dip 15%
+ *   40 cols,  9 lobes, 0.12  4.0 minima, median dip 18%   <- chosen
+ *   32 cols,  8 lobes, 0.028 0 minima     — the first guess: it perturbs the ramp
+ *                                           without ever reversing it
+ *
+ * The lesson worth keeping: a modulation smaller than the lattice's own per-column
+ * curvature step cannot produce a *minimum*, only a slower rise, and `detail` and
+ * a box run both read minima. 0.12 is ±6% out of round — 16 mm on a 5.6 m gate,
+ * which is what a chōna actually leaves.
+ */
+export function adzedProfile(n = 40, lobes = 9, depth = 0.12, phase = 0) {
+  const p = [];
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2;
+    // Cut inward only: an adze removes wood, it never adds any, so the section's
+    // *maximum* radius stays exactly 0.5. That is not cosmetic — everything else
+    // stuck to this post (`_lacquerChips`, `_shrinkageChecks`) is placed a few
+    // millimetres proud of the nominal radius, and a modulation that swung the
+    // surface outward by 6% would bury all of it under the facet crests. The
+    // cosine amplitude, and therefore dr/dθ and every shading number measured
+    // above, is identical to the symmetric form; only the mean radius moves, by
+    // −depth/4 (3% at 0.12, 8 mm on a 5.6 m gate).
+    const r = 0.5 * (1 - depth * 0.5 * (1 - Math.cos(lobes * a + phase)));
+    p.push([Math.cos(a) * r, Math.sin(a) * r]);
   }
   return p;
 }
@@ -1788,13 +1858,17 @@ export class PropFactory {
     const sori = 0.20 * s;                    // arc rise at the ends
     const flick = 0.13 * s;                   // extra kick in the last tenth
 
-    // 20 columns and 26 rings, up from 12 and 9. Both are carrying the grain:
+    // 40 columns and 32 rings, up from 20 and 26. Both are carrying the grain:
     // the streaks in `axialGrain` are per-vertex, so the column count sets how
-    // many grain lines run up the post (20 around a 1.4 m circumference is a
-    // 7 cm line, about right for old cedar) and the ring count sets how far a
-    // stain or a run can travel before it has to be straight.
-    const pillarProfile = circleProfile(20);
-    const SEG = 26;
+    // many grain lines run up the post and the ring count sets how far a stain
+    // or a run can travel before it has to be straight. The rise is also what
+    // makes the nine adze facets samplable — at 20 columns a facet had 2.2
+    // vertices across it and came out as a beat against the lattice.
+    // `PropFactory.compact` merges every part of this build by material, so none
+    // of this adds a draw call; the cost is triangles only.
+    const GRAIN_LINES = 15;                   // under the 20-line Nyquist of 40 columns
+    const pillarProfile = adzedProfile(40, 9, 0.12);
+    const SEG = 32;
 
     for (let side = 0; side < 2; side++) {
       const sx = side === 0 ? -1 : 1;
@@ -1811,13 +1885,17 @@ export class PropFactory {
           y: h * t + (i === 0 ? -0.14 * s : 0),
           z: 0,
           sx: r * 2, sy: r * 2,
+          // The adze facets wander up the post rather than running as eight dead
+          // straight arrises — a chōna is swung, not indexed. `roll` rotates the
+          // whole section frame, so this costs nothing and moves no vertex count.
+          roll: Math.sin(t * 2.35 + (side ? 1.9 : 0.0)) * 0.11,
           ao: lerp(0.52, 1.0, smoothstep(0, 0.28, t)),
         });
       }
       const pillar = sweepProfile(samples, pillarProfile, { smooth: true, uvScale: 0.9, capStart: false });
       bakeAO(pillar, { ground: 0.42, groundH: 0.55 * s, cavity: 0.12, down: 0.2, floor: 0.34 });
       weatherBand(pillar, 0.0, 1.05 * s, 0.70, 0.66, 0.60, 0.22);
-      axialGrain(pillar, x0, 0, 0.115, s, 0.55);
+      axialGrain(pillar, x0, 0, 0.115, s, 0.55, GRAIN_LINES);
       // Water sheets off both faces of the nuki and runs the height of a man
       // down the post below it.
       runoffStain(pillar, nukiY - nukiH * 0.5, 2.1 * s, x0, 0, 0.38);
@@ -1826,7 +1904,20 @@ export class PropFactory {
       // Bare grey wood showing through where the lacquer has gone. Not only at
       // the foot: paint fails wherever water sits or a hand touches, so the
       // flakes climb the whole post with a bias toward the wet end.
-      this._lacquerChips(b, x0, 0, rBase, h * 0.80, 22, rnd, s);
+      this._lacquerChips(b, x0, 0, rBase, h * 0.80, 22, rnd, s, (y) => {
+        const t = clamp(y / h, 0, 1);
+        return lerp(rBase, rTop, t * t * 0.82 + t * 0.18) + Math.sin(t * Math.PI) * 0.012 * s;
+      });
+
+      // 干割れ the shrinkage checks. A round post dries from the outside in and
+      // splits along the rays; every torii of this age has two or three running
+      // most of its height. They are here because they are the only feature on a
+      // pillar whose *width* is a pixel or two at hero range — the lacquer's own
+      // craze net is authored at a 1.7 cm cell whose lines are 0.7 mm wide, which
+      // is a fifth of a texel at this UV density and mips to nothing before it
+      // ever reaches a fragment. A hard dark line with a lit lip is what mean
+      // |Laplacian| can actually see, and it is what the flagstone scores on.
+      this._shrinkageChecks(b, x0, 0, rBase, rTop, batter, sx, h, 3, rnd, s);
 
       // 根巻き nemaki — the stone collar that keeps the post out of the wet.
       const collar = sweepProfile([
@@ -2041,21 +2132,108 @@ export class PropFactory {
   }
 
   /**
+   * 干割れ — the vertical shrinkage checks in a round post.
+   *
+   * Green heartwood dries from the outside in and the circumference has to give
+   * somewhere, so a round pillar splits along a ray and stays split. Two or three
+   * checks running most of the height is what an old torii actually looks like,
+   * and none of them is straight: a check follows the grain, so it wanders a few
+   * degrees around the post as it climbs.
+   *
+   * Built as a five-column strip 1.5 mm proud of the pillar rather than as a
+   * modelled groove. A groove needs side walls that are two triangles each per
+   * segment and are back-facing over half the post's rotation; the read that
+   * matters is the *value* profile across the split — lit lip, hard black core,
+   * lit lip — and vertex colour delivers that at a fifth of the cost and with no
+   * winding to get wrong.
+   *
+   * `radius` follows the pillar's own taper and batter laws so the strip neither
+   * sinks into the post at the foot nor floats off it at the head; getting that
+   * wrong on a 5.6 m gate is a 3 cm float, which reads as a decal.
+   */
+  _shrinkageChecks(build, cx, cz, rBase, rTop, batter, sx, h, count, rnd, s) {
+    const parts = [];
+    for (let k = 0; k < count; k++) {
+      const a0 = rnd() * Math.PI * 2;
+      const y0 = (0.06 + rnd() * 0.16) * h;
+      const y1 = y0 + (0.42 + rnd() * 0.33) * h;
+      // ~7-16 mm of arc on a 5 m gate: one to four drawing-buffer pixels at hero
+      // range, which is the whole point of the feature.
+      const halfA = 0.014 + rnd() * 0.018;
+      const wander = (rnd() - 0.5) * 0.55;
+      const ROWS = 14, COLS = 4;
+      const verts = [], uvs = [], col = [], idx = [];
+      for (let j = 0; j <= ROWS; j++) {
+        const v = j / ROWS;
+        const y = lerp(y0, y1, v);
+        const t = clamp(y / h, 0, 1);
+        const swell = Math.sin(t * Math.PI) * 0.012 * s;
+        const r = lerp(rBase, rTop, t * t * 0.82 + t * 0.18) + swell + 0.0015 * s;
+        const ax = cx - sx * batter * t * t;
+        const a = a0 + wander * t + Math.sin(t * 5.1 + a0) * 0.035;
+        // Tapered at both ends — a check closes rather than stopping square.
+        const taper = Math.min(1, Math.min(v, 1 - v) * 6.0);
+        for (let i = 0; i <= COLS; i++) {
+          const u = i / COLS;
+          const th = a + (u * 2 - 1) * halfA * (0.35 + 0.65 * taper);
+          verts.push(ax + Math.sin(th) * r, y, cz + Math.cos(th) * r);
+          uvs.push(u * halfA * r * 6, v * (y1 - y0) * 3);
+          // Lit lip, black core, lit lip. The lip is the lacquer standing proud of
+          // the split; the core is end grain in shadow and is the darkest thing on
+          // the prop by design.
+          const prof = [0.98, 0.30, 0.10, 0.30, 0.98][i];
+          const g = lerp(1.0, prof, taper);
+          col.push(g, g * 0.97, g * 0.94);
+        }
+      }
+      const W = COLS + 1;
+      for (let j = 0; j < ROWS; j++) {
+        for (let i = 0; i < COLS; i++) {
+          const p = j * W + i;
+          idx.push(p, p + W + 1, p + W, p, p + 1, p + W + 1);
+        }
+      }
+      const geo = new BufferGeometry();
+      geo.setAttribute('position', new BufferAttribute(new Float32Array(verts), 3));
+      geo.setAttribute('uv', new BufferAttribute(new Float32Array(uvs), 2));
+      geo.setAttribute('color', new BufferAttribute(new Float32Array(col), 3));
+      geo.setIndex(idx);
+      geo.computeVertexNormals();
+      parts.push(geo);
+    }
+    if (!parts.length) return build;
+    // 'cedar', not 'vermilion': the inside of a split is bare wood, and this also
+    // merges into the part `_lacquerChips` already contributes, so the pillar's
+    // draw-call count is unchanged.
+    return PropFactory.add(build, parts.length === 1 ? parts[0] : mergeGeometries(parts, false), 'cedar');
+  }
+
+  /**
    * Flakes of bare grey wood where the vermilion has come off a round post.
    *
    * Sat 2 mm proud of the pillar so the patch wins the depth test everywhere,
    * with the lacquer's lifted rim written into the border vertices — a chip is
    * legible because of its edge, not because of its middle.
+   *
+   * `taper` is the pillar's own radius law, `(t) => r`, with `t` the height
+   * fraction. Without it the patch is placed at the *base* radius all the way up,
+   * which on the great gate leaves a chip at 0.8 h floating 31 mm proud of a post
+   * that has tapered 44 mm — seven drawing-buffer pixels of daylight under it at
+   * hero range, which is exactly how a chip stops reading as a chip.
    */
-  _lacquerChips(build, cx, cz, radius, maxY, count, rnd, s) {
+  _lacquerChips(build, cx, cz, radius, maxY, count, rnd, s, taper = null) {
     const parts = [];
     for (let i = 0; i < count; i++) {
       const a = rnd() * Math.PI * 2;
       // Biased low — the foot stays wet — but the whole post loses paint.
       const y = Math.pow(rnd(), 1.7) * maxY;
+      // §5b: a taper that returns anything non-finite falls back to the base
+      // radius rather than propagating NaN into a vertex buffer.
+      let rLocal = radius;
+      if (taper) { const r = taper(y); if (Number.isFinite(r) && r > 0) rLocal = r; }
       const halfA = (0.10 + rnd() * 0.26);            // radians, ~2.5–8 cm of arc
       const hh = (0.06 + rnd() * 0.26) * s;
-      const g = this._cylPatch(cx, cz, radius + 0.002 * s, a, halfA, y, y + hh, 4, 3);
+      const g = this._cylPatch(cx, cz, rLocal + 0.002 * s, a, halfA, y, y + hh, 4, 3);
       PropFactory._bareWood(g, rnd);
       // The rim of surrounding lacquer overhangs the hole it left.
       shadeGeo(g, (px, py, pz) => {

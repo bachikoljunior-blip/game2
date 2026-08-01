@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "taskId": "R16-WORLD",
+  "producer": "world-specialist",
+  "consumer": "project-director",
+  "objective": "Act on the three r16 findings owned by world: the untextured foreground torii uprights (Props.js), the `valley` shot containing no valley (Terrain.js), and the distant mountain in `torii` having no surface structure (Terrain.js).",
+  "allowedScope": [
+    "src/world/Terrain.js",
+    "src/world/Props.js",
+    "src/world/Level.js",
+    "src/world/Constants.js",
+    "AI_DEVELOPMENT/HANDOFFS/r16-world.json"
+  ],
+  "prohibitedChanges": [
+    "No camera-pose edit. src/core/Cinematic.js belongs to core and was not spawned this round.",
+    "No Materials.js edit, so the vermilion recipe's craze net could not be widened; routed instead.",
+    "envMapIntensity was not reintroduced in Props.js — round 8 proved it is overwritten before upload.",
+    "Vermilion hue was not retuned — round 15 measured the posts at RGB [170.6,49.7,23.7] sat 0.87 on target.",
+    "HANDOFF open item 12 (displacement-aware blend) not touched; round 8 measured that fixing it cannot help past ~20 m."
+  ],
+  "inputs": [
+    "shots/review-r16.json, the three findings whose owner is src/world/Props.js or src/world/Terrain.js",
+    "shots/phone-sun-r16.png and shots/phone-torii-r16.png at native 2532x1170",
+    "HANDOFF.md open items 3, 10, 12 and both 'what round N disproved' sections",
+    "src/core/Cinematic.js SHOTS.valley and SHOTS.torii, read-only"
+  ],
+  "outputs": [
+    "APPARATUS PASS, terrain: an offline harness runs the real Terrain field pipeline (_buildMacroField through _blendEdges) under a stub ctx. gridN 161, cell 3.200, core-field FNV-1a hash 7e23ca7 — identical to the live-page hash recorded in r15-world.json. Every distance, height and pixel-footprint figure below comes from that harness, not from a replica. The hash is unchanged after this round's edits, which is the proof that nothing here moved a vertex of terrain.",
+    "APPARATUS PASS, pixels: all image measurement imports decodePNG from tools/luma.mjs and stats/cut from tools/probe.mjs directly rather than re-implementing them, so the 3-channel/4-byte-stride bug cannot recur by construction. Reproduced the critic's boxes to the digit before anything else: 1823,234 127x140 -> meanRGB [158.6,97.7,55.8] sat 0.649 p50 106.9 spread 60.8 detail 1.48; 1823,819 -> [123.5,69.8,37.9] detail 1.88; 506,995 -> detail 7.20.",
+    "FINDING 'valley contains no valley' — RE-ROUTED TO core (src/core/Cinematic.js). The terrain is innocent and the pose is the fault, exactly as the critic's own hypothesis allowed for. Numbers below.",
+    "FINDING 'foreground torii uprights are untextured flat-shaded surfaces' — ACTED ON in Props.js. Three mechanisms found, two fixed in file, one routed to materials.",
+    "FINDING 'distant mountain in torii has no surface structure' — ACTED ON in Terrain.js. Two silent defects found and fixed; HANDOFF open item 3's stated mechanism DISPROVED for this finding."
+  ],
+  "affectedInterfaces": [
+    "Props.js: new exported adzedProfile(n, lobes, depth, phase)",
+    "Props.js: axialGrain() gains a 7th parameter `lines` (default 7); it has exactly one call site",
+    "Props.js: PropFactory._lacquerChips() gains a 9th parameter `taper` (default null, preserves old behaviour)",
+    "Props.js: new PropFactory._shrinkageChecks()",
+    "Terrain.js fragment shader: new globals kgMassifRamp and kgLodAmp beside kgScaleRamp"
+  ],
+  "dependencies": [
+    "R16-CORE (the valley pose re-route below cannot be actioned by this owner)",
+    "R16-MATERIALS (the residual `detail` gap on the torii uprights is in the vermilion recipe, see unresolvedQuestions)",
+    "R16-SKY and R16-LIGHTING are changing the same frames; every whole-frame number this record predicts against is contaminated"
+  ],
+  "invariants": [
+    "WORLD constants unchanged and not re-declared; Constants.js and Level.js were not edited",
+    "No external assets",
+    "No per-frame allocation; every change is in boot-time geometry synthesis or in GLSL",
+    "No camera-pose edit",
+    "Terrain change is fragment-shader-only: core heightfield hash 7e23ca7 before and after",
+    "Props change adds no material and no draw call: PropFactory.compact still yields exactly 5 groups per gate (vermilion, cedar, stone, __goldPolished, steelDark), the same 5 as before",
+    "Audited all four vertex attributes of every part of all three gates for non-finite components: 0 (ARCHITECTURE 5b)"
+  ],
+  "assumptions": [
+    "The review PNG is a 1.876x upscale of a 1350x624 drawing buffer, per r15-world.json's camera reconstruction. Every 'per drawing-buffer pixel' figure divides by that.",
+    "The sun direction is (0.86, 0.225, 0.457), as Cinematic.js's SHOTS.sun comment states.",
+    "Aerial perspective replaces roughly 72% of the torii massif's pixel at 580 m. This was back-solved from the measured lumaSpread against the modelled albedo swing, not measured directly, and it is the largest single uncertainty in the mountain prediction below."
+  ],
+  "unresolvedQuestions": [
+    "ROUTE TO core / src/core/Cinematic.js — SHOTS.valley. The terrain has the valley; the camera cannot see it. Measured on the harness: the pose stands at pos [34.4, 2.3, 30.6], which is r = 46.04 m from PLATEAU_CENTER — well inside PLATEAU_RADIUS 78, i.e. on the dead-flat shrine floor, 66 m short of where the flattening even begins to release. Ray-marching the centre ray: ground is 812.0 m out to 80 m, then 805.6 at 100, 779.7 at 130, 761.3 at 200, 691.8 at 300, 647.9 at 370, and 498.1 m ASL at its lowest inside 2 km — a 314 m drop. It crosses WATER_LEVEL 782 at 127 m along the ray. The drop is emphatically there. But from an eye 2.3 m above that floor the LAST VISIBLE GROUND is at 72 m and 811.9 m ASL, elevation angle -1.89 deg; all 1,928 sampled metres beyond it are occluded by the plateau lip, and the total visible drop is 0.1 m. The 'wall of trees at the horizon' the critic describes is arithmetically forced: a tree standing on the 799 m ground at 110 m needs to be over 11.3 m tall to clear that -1.89 deg line, and Cinematic's own note measures the near culms at 10.7-13.0 m. TWO FIXES BOTH WORK AND BOTH ARE core's: (a) raise the eye to 20 m above the floor at the same XZ — measured, the last visible ground jumps from 72 m to past 2 km and 308 m of drop comes into view; or (b) keep the eye at 2.3 m and move it out along VALLEY_AZIMUTH 135 to r = 112 (the outer edge of PLATEAU_RADIUS + PLATEAU_FALLOFF), where the visible drop measures 308.5 m. At r = 95 it is still -0.4 m and at r = 112 it is 308.5 m: the transition is a cliff in the literal sense and the pose is on the wrong side of it. (b) is the better shot and needs no new terrain.",
+    "OBSERVATION FOR core AND FOR THIS OWNER'S NEXT ROUND, not acted on: Level.js's LAYOUT.overlook sits at (36, 36), r = 50.9 m, and LAYOUT.rimRadius is 74.0 with the comment 'Beyond this radius the plateau falls away; also where the guard rail goes'. Neither is true of the built terrain: the plateau is flat to 78 and does not finish falling away until 112. So the file's own 'A cliff-edge overlook to the south-east' (Level.js:12) describes a terrace standing 61 m inside the cliff, and the valley pose is sited near it — the pose is downstream of the layout. Moving LAYOUT.overlook out to the real lip is a Level.js change this owner could make, but it moves the bridge bearing (Level.js:737 takes it from arena -> overlook), a patrol route, a spawn point and Terrain's worn route with it, and on its own it would change no pixel in any framing unless core also moves the camera. Deliberately deferred rather than done blind. Recommend the two changes land in the same round.",
+    "ROUTE TO materials / src/render/Materials.js — the residual `detail` on the torii uprights. The vermilion recipe's decorative fields have these world scales at the pillar's UV density (uvScale 0.9, so the tile is 1.11 m, and the post resolves at 4.4 mm per drawing-buffer pixel): `sun` 2.2 cycles/tile = 50 cm, `chip` 4.2 = 26 cm, `dust` 5.5 = 20 cm, `grain` 56 in u = 2.0 cm (4.5 buffer px, amplitude only +/-9% of albedo via scalec), `micro` 128 = 8.7 mm, and the age-crazing net at 64x64 worley cells = 1.7 cm cells whose LINES are `1 - smoothstep(0, 0.040, f2-f1)` wide, i.e. about 0.3 texels of a 512 map — a fifth of a texel, so the craze net mips to its own mean before it ever reaches a fragment. Crazing is the one feature in that recipe with the hard high-contrast edge that mean |Laplacian| actually scores on (it is what the flagstone scores on: hard stone joints), and it is the only one that is invisible. Widening that smoothstep and raising the `mixc(s, PAL.vermAged, ... + crackLine*0.10)` weight is a Materials.js change worth one round. Measured support: detrended horizontal residual across the clean post face is 1.64-2.37 code RMS against 8.37-10.97 on the plaza in the same frame.",
+    "NOT RE-TESTABLE FROM THIS FILE: whether the aerial-perspective share at 580 m really is ~72%. If it is materially lower the mountain prediction below is conservative and the numbers will overshoot; if higher, they will fall short. A single frame settles it."
+  ],
+  "acceptanceCriteria": [
+    "R16-WORLD-TORII-UPRIGHT",
+    "R16-WORLD-MASSIF",
+    "R16-WORLD-VALLEY-REROUTE"
+  ],
+  "acceptanceCriteriaNotes": [
+    "PREDICTION, torii uprights, criterion (b) — 'the horizontal run of 20x20 boxes at y-frac 0.51 across x=1720..2070 must contain at least 4 local minima with a >= 10-code dip'. MECHANISM, measured: the pillar was `circleProfile(20)`, a perfect cylinder, and a perfect cylinder under one key has a strictly monotone Lambert ramp by construction — which is exactly the 204.6 195.9 187.3 174.7 163.2 152.2 142.7 133.6 124.1 115.4 104.4 96.9 92.8 87.5 82.8 77.3 74.2 76.9 sequence the critic quotes. FIX: adzedProfile(40, 9, 0.12), chosen by ablation against the real sweepProfile output and not by taste. Counting local minima of N.L on the lit arc under the shot's own sun, averaged over five rings: circle = 0.0 minima; 40 cols/9 lobes at depth 0.06 = 2.0, at 0.09 = 3.0, at 0.12 = 4.0 with a median dip of 19% of the local peak; the first guess (32 cols, 8 lobes, depth 0.028) scored 0.0, because a modulation smaller than the lattice's own per-column curvature step slows the ramp without ever reversing it. A 19% dip on this run's p50 range (204 down to 74) is 39 code at the lit end and 14 at the dark end. PREDICT: 4 or more local minima with dips of 14-39 code. Confidence high — it is geometry, not texture, and it was measured on the shipped mesh generator.",
+    "PREDICTION, torii uprights, criterion (a) — `detail` >= 6.5 in boxes 0.72,0.20,0.05,0.12 and 0.72,0.70,0.05,0.12, currently 1.48 and 1.88. PREDICT 3.5-4.8, A SHORTFALL, AND IT IS BEING REPORTED AS ONE BEFORE THE FACT. `detail` is a 1-pixel Laplacian and the review PNG is a 1.876x upscale, so nothing finer than about 2 review pixels can carry energy at all. Budgeting the three contributions this file can add: the nine adze facets are a ~70-review-px sinusoid, whose 1-px Laplacian is A*(2pi/P)^2 = about 0.15 mean, i.e. negligible to `detail` by construction (they are for criterion (b), not this one); the repaired grain streaks at 15 lines around the post are a ~22-review-px period at +/-11.5% vertex colour, about +0.6; the three shrinkage checks are hard 3-4 px dark lines with a lit lip and contribute about +0.5 each where one crosses the box. Sum 1.48 + ~2.2 = ~3.7. Reaching 6.5 needs high-contrast features at the 2-4 review-pixel scale and the only source of those on a lacquered post is the craze net, which is in Materials.js and is currently sub-texel (see unresolvedQuestions). Do not read a 3.7 as a failed fix; read it as the file's ceiling and route the rest.",
+    "MECHANISM DISCOVERED AND FIXED, torii uprights — axialGrain was aliasing, not grain-ing. It evaluated `noise.fbm2(cos(th)*9, sin(th)*9 + ...)` and `noise.noise2(cos(th)*27, sin(th)*27 + ...)`. Those are circles of radius 9 and 27 in noise space, arc lengths 56.5 and 170 noise units — and a 3-octave fbm's finest octave runs at 4x its base, so the two taps carried 226 and 170 features around a post the mesh samples at 20 columns. Both are an order of magnitude past the lattice Nyquist, so neither could draw a streak; they aliased to an uncorrelated value per column, which is the smooth blotchy mottle visible in `crop shots/phone-sun-r16.png 0.68,0.25,0.14,0.24`. The function's own comment ('20 around a 1.4 m circumference is a 7 cm line, about right for old cedar') states the intent exactly and the arithmetic never delivered it. Now parameterised: the field is evaluated on a circle of radius lines/2pi so its arc length is exactly `lines` noise periods, one streak per period, single-octave because an fbm's upper octaves are the part that cannot be sampled. Called with lines = 15 against a 20-line Nyquist at 40 columns.",
+    "PREDICTION, torii uprights, GUARDS. meanRGB must stay within +/-6% per channel of [158.6,97.7,55.8] and [123.5,69.8,37.9]. Every term added is zero-mean by construction: the adze modulation is a cosine about the section (and cut inward only, so the maximum radius is unchanged and nothing stuck to the post is buried), the grain is a zero-mean noise multiplier at the same +/-11.5% it already had, and the checks cover about 1.5% of the post's projected area. The one term that is not zero-mean is the check core at vertex colour 0.10, and at 1.5% coverage it can pull the box mean down by at most 1.4%. The plaza control at 0.20,0.85,0.06,0.04 (detail 7.20) and whole-frame `sun` detail 3.11 cannot be moved by this file at all — no terrain, no plaza, no sky geometry changed.",
+    "PREDICTION, torii massif, boxes 0.06,0.28,0.06,0.06 (detail 1.93, lumaSpread 17.8) and 0.10,0.20,0.05,0.05 (detail 1.91). PREDICT detail 4.3-5.0 and lumaSpread 41-46 on the first, detail 4.6-5.4 on the second. Both are AT THE LINE of the 4.5 / 40 / 4.0 targets rather than comfortably past them, deliberately — see risks.",
+    "PREDICTION BASIS, torii massif. Effective standard deviation of the locked band, in stops: before = sd(fbm2) 0.291 x kgLodAmp 0.24 x lodStops 2.056 = 0.1436. After, at the box's measured kgFoot of 0.49-0.64 = 0.291 x 0.512-0.598 x 3.04-3.28 = 0.408-0.572, a factor of 2.8-4.0. The shader's own recorded ablation says this band supplies 59% of the far range's pixel-scale variance, so the whole-box sd factor is sqrt(0.41 + 0.59*f^2) = 2.25-2.73, applied to detail 1.93 and lumaSpread 17.8. The snow box additionally gets its drift weight 0.34 -> 0.48.",
+    "PREDICTION, torii massif, GUARDS. meanRGB within +/-6% of [144.0,131.2,126.2] and [193.1,179.4,163.2]: every band added is zero-mean in stops and the debias is now exact rather than approximate, which raises `far` by 8.4% at the mix weight 0.88 = +7.4% on the box albedo, and at the assumed ~72% aerial replacement +2.1% on the pixel. Sky control 0.70,0.18,0.08,0.04 must keep detail below 1.0: ray-marched, that pixel has NO terrain hit within 6 km, so it is sky or the parallax band and this change cannot reach it — safe by construction, not by tuning. Whole-frame `torii` detail within +/-20% of 4.44: the massif is roughly 6% of the frame, so 1.93 -> 4.7 adds about +0.17, i.e. +3.8%."
+  ],
+  "testsRequired": [
+    "Coordinator-owned npm run build (not run here — a build rewrites dist/ under the server and three other owners were live in the same tree)",
+    "Coordinator-owned coherent phone/MEDIUM recapture of the five review framings",
+    "Assert draw calls <= 140 and submitted triangles <= 900,000 at the worst pose",
+    "probe stats shots/phone-sun-rN.png 0.72,0.20,0.05,0.12 and 0.72,0.70,0.05,0.12 and the 20x20 box run at y-frac 0.51 across x=1720..2070",
+    "probe stats shots/phone-torii-rN.png 0.06,0.28,0.06,0.06 and 0.10,0.20,0.05,0.05 and the sky control 0.70,0.18,0.08,0.04",
+    "Regression watch on shots/phone-wide-rN.png mountain control 0.35,0.10,0.08,0.06 (+/-8% per channel of [185.4,166.2,151.0])"
+  ],
+  "risks": [
+    "BUDGET, measured not estimated. The three gates go from 17,184 to 28,440 submitted triangles, +11,256, against an allocation of +50,000. Draw calls: PropFactory.compact yields the same 5 material groups per gate before and after (vermilion, cedar, stone, __goldPolished, steelDark), so +0 against an allocation of +8. The shrinkage checks are added under 'cedar', which _lacquerChips already contributes, precisely so they merge rather than opening a group. `wide` is the triangle-worst pose at 784,449 and sees all three gates, so the worst case becomes about 795,700 of 900,000.",
+    "The massif change also lifts `wide`'s far range, which sits at kgFoot 0.81 and already measures detail 3.85-6.01 with no finding against it. The ramp is shaped as a band with a roll-off from 0.62 to 1.10 specifically to damp that: `wide` gets an effective band factor of 2.5 against the massif's 2.8-4.0, so predict `wide`'s far range at detail 7.7-12.0. That is a doubling of a region nobody complained about, and it is the single most likely way this change goes wrong. If the verification frame shows the wide massif reading as noise rather than as rock, lower the 0.60 cap in kgLodAmp; the massif boxes will fall proportionally and should be reported as a shortfall rather than re-boosted.",
+    "The adze facets are +/-6% out of round (16 mm on a 5.6 m gate). That is what a chona actually leaves, but it is a silhouette change on the hero prop and it was chosen by a shading ablation, not by looking at a rendered edge. It has not been seen.",
+    "Nothing in this round has been rendered. Every number above is either a pixel measurement of the r16 frames, a ray-march against a hash-verified heightfield, or an ablation against the shipped mesh generator run offline. The predictions are model predictions.",
+    "Three other owners changed Sky, Lighting and Foliage in the same frames. Every whole-frame figure and every guard stated as a percentage of a current value is contaminated. The numbers this owner is the only plausible mover of are: the two upright boxes and the box run across them in `sun`, and the two massif boxes in `torii`.",
+    "HANDOFF open item 10 (1.25% of macro cells clamping flat at HEIGHT_MAX 1199) was checked against this finding and is not implicated: the torii massif's summits ray-march to 1015-1076 m ASL, 120 m below the clamp. Not acted on."
+  ],
+  "rollback": "git checkout 82e57f0 -- src/world/Terrain.js src/world/Props.js. Both changes are self-contained: Terrain's is three GLSL expressions plus two new locals, Props' is one new exported profile function, one extra parameter on axialGrain and on _lacquerChips, and one new private method. No migration, no data format, no interface another owner consumes.",
+  "status": "awaiting_verification"
+}

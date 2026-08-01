@@ -2352,6 +2352,33 @@ void kgComputeSurface(){
   // pixel covers metres of the deep range, but at the establishing-shot massif it
   // was resolving at the same prominence as foreground grain and miniaturising it.
   float kgScaleRamp = smoothstep(0.80, 1.90, kgFoot);
+
+  // A second, smaller share for the range the review set actually photographs.
+  //
+  // Ray-marching the r16 poses against the built heightfield (offline harness whose
+  // core field hashes 7e23ca7, identical to the live page) puts the 'torii' massif —
+  // the one a reviewer called "a smooth airbrushed dome" — at 555-619 m and
+  // 0.49-0.64 m of rock per drawing-buffer pixel, and 'wide''s mountain control box
+  // at 544 m and 0.81. 'kgScaleRamp''s lower edge is 0.80, so it evaluates to
+  // **0.000 on every massif in the review set**: the locked band has been running at
+  // its 0.24 floor and the lodStops boost at nothing, on exactly the pixels the
+  // finding is about. The comment above describes the intent correctly and the
+  // window simply sits above the subject.
+  //
+  // Widening 'kgScaleRamp' itself would be wrong — its amplitudes were solved for a
+  // 1.8-2.5 m pixel, and at 0.55 m they swing the albedo by a factor of 2.6. This is
+  // a separate, bounded share for the 0.3-0.9 m band, and it is written so that
+  // everything past 1.9 m/pixel is byte-identical to before.
+  // Shaped as a band rather than a step, and rolled off above 0.62, because 'wide's
+  // own massif sits at 0.81 and already measures detail 3.85-6.01 with no complaint
+  // filed against it. A monotone ramp would have multiplied that by 3.5 as a side
+  // effect of fixing a mountain nobody was looking at from the same distance.
+  float kgMassifRamp = smoothstep(0.30, 0.58, kgFoot)
+                     * (1.0 - smoothstep(0.62, 1.10, kgFoot))
+                     * (1.0 - kgScaleRamp);
+  // The locked band's amplitude, hoisted out of the assignment because the debias
+  // below needs the same number — see the note at 'lodStops'.
+  float kgLodAmp = mix(mix(0.24, 0.60, kgMassifRamp), 1.0, kgScaleRamp);
   {
     // Striation runs down the fall line, so the sampling frame is stretched along
     // it: features come out as gullies and ribs, not as a blanket of noise.
@@ -2407,7 +2434,7 @@ void kgComputeSurface(){
       float frqA = exp2(-lodI);
       kgLodBand = mix(fbm2(P.xz * frqA + 61.7, 2),
                       fbm2(P.xz * (frqA * 0.5) + 61.7, 2), lodM - lodI)
-                    * mix(0.24, 1.0, kgScaleRamp);
+                    * kgLodAmp;
     }
     // The mid band's own lock, same crossfade so it cannot swim as the camera moves,
     // but tuned to ~12 buffer pixels instead of ~4. On the establishing pose that is
@@ -2479,8 +2506,18 @@ void kgComputeSurface(){
     // where the pixel is coarse. This band supplies 59% of the far range's whole
     // pixel-scale variance (ablation: removing it takes the modelled relative detail
     // in the torii peak box from 0.211 to 0.087), so it is the term worth spending on.
-    float lodStops = 2.31 * (1.0 + 1.30 * farRamp) * (1.0 - veg * 0.5);
-    far *= exp2(kgLodBand * lodStops - 0.0294 * lodStops * lodStops);
+    float lodStops = 2.31 * (1.0 + 1.30 * farRamp + 0.42 * kgMassifRamp) * (1.0 - veg * 0.5);
+    // The debias has to be taken against the variance of the band *as written*, not
+    // against the raw fbm2's. For a symmetric band E[2^(g*b)] = 2^(0.3466*var*b^2),
+    // and the 0.0294 constant this line used to carry is 0.3466 x 0.0848 — the raw
+    // band's measured variance. But 'kgLodBand' is scaled by 'kgLodAmp' before it
+    // gets here, so its actual variance is 0.0848*kgLodAmp^2, and a fixed constant
+    // over-subtracts by exp2(-b^2 * 0.0294 * (1 - kgLodAmp^2)) wherever the amplitude
+    // is below full. At the 'torii' massif that is kgLodAmp 0.24 and b 2.06, i.e. the
+    // far range was being darkened 7.8% by its own debias — silently, since the term
+    // looks like a correction and reduces to the right thing at kgLodAmp = 1.
+    float lodVar = 0.0848 * kgLodAmp * kgLodAmp;
+    far *= exp2(kgLodBand * lodStops - 0.3466 * lodVar * lodStops * lodStops);
 
     // Slope aspect. A range this size has a dry sun-facing flank and a damp shaded one
     // — sparser cover, oxidised scree and sun-bleached rock against moss, held moisture
@@ -2656,8 +2693,12 @@ void kgComputeSurface(){
       // flat fill however much structure the rock under it had. 'kgLodBand' is the one
       // band that is the right size wherever the sheet is seen from; wind-packed snow
       // varies by more than this over a few metres.
+      // 0.34 -> 0.48: the snow cap is the one place the locked band is the *only*
+      // term at its scale (s2 and s3 are 16 m fields, ~9 px at this range), and it
+      // was running at the 0.24 floor there for the same reason the rock was. Zero
+      // mean, so the sheet's mean reflectance does not move.
       snowCol *= 0.80 + 0.26 * (s2 * 0.5 + 0.5) + 0.14 * (s3 * 0.5 + 0.5)
-               + 0.34 * kgLodBand;
+               + 0.48 * kgLodBand;
       albedo = mix(albedo, snowCol, sheet * 0.95);
       rough = mix(rough, mix(0.74, 0.38, sheet), sheet * 0.85);
       kgSnowCover = sheet;
