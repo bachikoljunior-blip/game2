@@ -3,14 +3,14 @@
   "taskId": "R15-FOLIAGE",
   "producer": "foliage-specialist",
   "consumer": "project-director",
-  "objective": "Round 15: settle the attribution of the floating skyline dashes, give the mid-ground bamboo card a canopy instead of bare culms, and pull the sakura back into the palette — all three findings the critic assigned to src/render/Foliage.js.",
+  "objective": "Round 15: settle the attribution of the floating skyline dashes, give the mid-ground bamboo card a canopy instead of bare culms, and pull the sakura back into the palette \u2014 all three findings the critic assigned to src/render/Foliage.js.",
   "allowedScope": [
     "src/render/Foliage.js",
     "AI_DEVELOPMENT/HANDOFFS/r15-foliage.json"
   ],
   "prohibitedChanges": [
     "Did not run npm run build or tools/capture.mjs --review; the coordinator owns the integrated verification capture.",
-    "Did not edit src/fx/Weather.js even though the critic's labelled hypothesis pointed there — it was tested at runtime and cleared.",
+    "Did not edit src/fx/Weather.js even though the critic's labelled hypothesis pointed there \u2014 it was tested at runtime and cleared.",
     "Did not raise the bamboo card instance count; the review frames' triangle headroom was 123,627 and this owner was named the round's main budget risk."
   ],
   "inputs": [
@@ -49,12 +49,13 @@
   ],
   "unresolvedQuestions": [
     "Finding 2's target (dash box 51,94,405x117 must reach luma p1 >= 190 and detail <= 1.2) is unreachable: with the entire bamboo card mesh hidden the same box still measures p1 88.3 / detail 2.15, because it contains near bamboo geometry at its left edge and sakura at its lower right. The achievable floor is the cards-off control, and the reachable criterion is detail <= 2.8 with no dash population visible at native resolution.",
-    "Finding 3's target (d), a visible trunk under the sakura in phone-wide, is not a Foliage defect: the crop (900,520,340x200) shows the tree's base occluded by the honden roof and the vermilion torii. The impostor bake does include the trunk — frameRel puts the card's lower edge at 0.023 of tree height — so the trunk draws wherever a sakura is not behind architecture. Re-siting that tree is Level.js's call, not this file's.",
+    "Finding 3's target (d), a visible trunk under the sakura in phone-wide, is not a Foliage defect: the crop (900,520,340x200) shows the tree's base occluded by the honden roof and the vermilion torii. The impostor bake does include the trunk \u2014 frameRel puts the card's lower edge at 0.023 of tree height \u2014 so the trunk draws wherever a sakura is not behind architecture. Re-siting that tree is Level.js's call, not this file's.",
     "Finding 1's target (a) asks the valley box to invert to G > R by >= 12. The illuminant caps this: GREEN_RATIO's key is (1.0, 0.412, 0.134), so only an albedo above g/r 2.43 can be green-dominant when lit, and the pale culm that makes the band read as bamboo cannot be that green. This round moves the ratio with leaf area and with the transmission path; whether it crosses zero depends on the sky owner's haze.",
     "The fern atlas (paintFernAtlas, atlas [2,2] at line ~4534) has the same 2x2 horizontal seam the bamboo card just lost, and its cells also carry content at the cell's bottom edge (the frond base is drawn at translate(..., half)). It was NOT changed: undergrowth is read at 0-30 m where the sampled mip is near level 0, so the bleed is a one-texel stem rather than the 86.7%-opaque skirt row measured on the bamboo sheet, and nothing in review-r15 measures it. Check it before assuming it is clean."
   ],
   "acceptanceCriteria": [
     "R15-ROUND-001",
+    "R15-ROUND-003",
     "R9-PERF-001"
   ],
   "testsRequired": [
