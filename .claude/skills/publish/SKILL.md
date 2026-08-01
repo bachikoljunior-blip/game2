@@ -17,10 +17,10 @@ Never name a remote commit as pushed, or a surface as published, until you have 
 ## The five steps, in order
 
 ```js
-import { revision }      from '@bachikoljunior/kit/release/revision.mjs';
-import { writeMirror, checkMirror } from '@bachikoljunior/kit/release/mirror.mjs';
-import { verifyServed }  from '@bachikoljunior/kit/release/verifyServed.mjs';
-import { verifyLive }    from '@bachikoljunior/kit/release/verifyLive.mjs';
+import { revision }      from './.kit/lib/release/revision.mjs';
+import { writeMirror, checkMirror } from './.kit/lib/release/mirror.mjs';
+import { verifyServed }  from './.kit/lib/release/verifyServed.mjs';
+import { verifyLive }    from './.kit/lib/release/verifyLive.mjs';
 ```
 
 1. **Build**, then **stamp**. `revision.stamp(html)` returns the digest and the stamped

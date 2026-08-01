@@ -55,7 +55,7 @@ Write JSON to disk — never relay findings through the coordinator's reply, whi
 the same text three times. Validate before anything consumes it:
 
 ```js
-import { validateFindings } from '@bachikoljunior/kit/plan/findings.mjs';
+import { validateFindings } from './.kit/lib/plan/findings.mjs';
 validateFindings(review, { strict: true, knownOwners });
 ```
 

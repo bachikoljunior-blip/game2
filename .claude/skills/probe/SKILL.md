@@ -34,12 +34,12 @@ Import from the kit rather than re-writing the boilerplate. Six copies of the st
 and four dialects of the Chromium flags existed before this.
 
 ```js
-import { serveStatic }            from '@bachikoljunior/kit/browser/serve.mjs';
-import { launchHeadless }         from '@bachikoljunior/kit/browser/launch.mjs';
-import { attachPageDiagnostics }  from '@bachikoljunior/kit/browser/diagnostics.mjs';
-import { waitForBoot }            from '@bachikoljunior/kit/browser/boot.mjs';
-import { acquireLock, releaseOnExit } from '@bachikoljunior/kit/browser/lock.mjs';
-import { measureLuma, regionStats, region, compareRegion } from '@bachikoljunior/kit/image/measure.mjs';
+import { serveStatic }            from './.kit/lib/browser/serve.mjs';
+import { launchHeadless }         from './.kit/lib/browser/launch.mjs';
+import { attachPageDiagnostics }  from './.kit/lib/browser/diagnostics.mjs';
+import { waitForBoot }            from './.kit/lib/browser/boot.mjs';
+import { acquireLock, releaseOnExit } from './.kit/lib/browser/lock.mjs';
+import { measureLuma, regionStats, region, compareRegion } from './.kit/lib/image/measure.mjs';
 ```
 
 Four things that are not optional:
