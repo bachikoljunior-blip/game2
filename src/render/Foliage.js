@@ -3634,7 +3634,18 @@ export class FoliageSystem {
       // with 0x3fb520 it is 3.3. That is the only light path on this card that can be
       // green-dominant at all — everything else is albedo times an amber key.
       size: [1, 1], sss: 1.15, sssColor: 0x3fb520, sssFloor: 0.34, sssSat: 1.0,
-      tipGlow: 0.20, baseAO: 0.16, grain: 0.10, broad: 0.20, tintAmount: 0.55,
+      // `broad` up from 0.20. This is `fbm2(worldXZ * 0.26)`, i.e. ~24 m features — about
+      // 145 px across in the `wide` framing at the band's own range, which is the scale a
+      // grove is actually patchy at. It was the only value variation in the band that
+      // survives minification, and at 0.20 the round-16 review measured the whole band at
+      // lumaSpread 51.2 against a 90 target and called it "a stamped texture".
+      //
+      // `tintAmount` up from 0.55. KAG_TINT_MODULATE normalises the per-instance tint to
+      // unit luminance before applying it — `lum(mix(vec3(1), t/lum(t), a)) == 1` for any
+      // `a` — so this knob is a pure hue rotation and cannot re-expose the band however far
+      // it is pushed. At 0.55 the plant-to-plant hue authored below was arriving at roughly
+      // half strength, which is why 12 500 cards with a green tint measured G - R = -0.1.
+      tipGlow: 0.20, baseAO: 0.16, grain: 0.10, broad: 0.34, tintAmount: 0.85,
     };
     const cardMat = this._makeMaterial(cardOpts);
 
@@ -3883,8 +3894,15 @@ export class FoliageSystem {
       // stamp above the shared crown line; the only pixels left visible were its leaf tips,
       // which is how a connected card became detached bars after depth compositing.
       const h = (7.0 + 9.0 * rF) * spec.hScale * (0.82 + rnd() * 0.36);
-      const green = 0.5 + rnd() * 0.5;
-      col.setRGB(0.52 * green + 0.30, 0.70 * green + 0.30, 0.30 * green + 0.16);
+      const green = 0.45 + rnd() * 0.62;
+      // Authored against GREEN_RATIO (line 1139), which this member was failing. The tint
+      // is applied luminance-normalised, so only the *ratio* matters: the old form sat at
+      // linear g/r 1.16-1.22 and the magic-hour key is (1.0, 0.412, 0.134), so a lit card
+      // could not come out green-dominant at any density — it needs g/r > 1/0.412 = 2.43.
+      // This form holds 2.70-2.76 across the whole `green` range. Measured: the band's own
+      // pixels (the 61.5% of the critic's box that disappears when `bamboo-cards` is
+      // hidden) read G - R = +5.8 at saturation 0.119 before this.
+      col.setRGB(0.24 * green + 0.13, 0.62 * green + 0.38, 0.18 * green + 0.11);
 
       // THE FLOATING CULMS. Both bamboo layers were the only ground-planted scatters in
       // this file still using `_heightAt` — grass, undergrowth and the ground cards have
@@ -4246,14 +4264,32 @@ export class FoliageSystem {
       uTipGlow: { value: 0.10 },
       uBaseAO: { value: 0.16 },
       uGrain: { value: 0.10 },
-      // Chroma pull, applied after the key multiply. The atlas is baked under a neutral
-      // 2.35 white key with tone mapping off, so a pale blossom leaves the bake at roughly
-      // (245, 184, 206); the 0.55 amber mix below then turns that pale pink into a salmon,
-      // and round 15 measured the result at saturation 0.350 against a frame mean of 0.232
-      // and a neighbouring mid-ground at 0.186 — 1.9x the saturation of everything near it.
-      // Mixing toward the fragment's own luminance scales chroma without moving luma, which
-      // is exactly the shape of the finding: pull the saturation back, keep p50 where it is.
-      uChroma: { value: 0.72 },
+      // Chroma pull, applied after the key multiply, PER ATLAS ROW. The atlas is baked
+      // under a neutral 2.35 white key with tone mapping off, so a pale blossom leaves the
+      // bake at roughly (245, 184, 206); the amber key below then turns that pale pink into
+      // a salmon, and round 15 measured the result at saturation 0.350 against a frame mean
+      // of 0.232 and a neighbouring mid-ground at 0.186 — 1.9x the saturation of everything
+      // near it. Mixing toward the fragment's own luminance scales chroma without moving
+      // luma, which is exactly the shape of that finding.
+      //
+      // It was a scalar, and that is why round 16 measured the mid-ground forest band at
+      // saturation 0.132 with G - R = -0.1: one pull authored for the sakura row was also
+      // taking 28% of the chroma out of the cedar row, which is the row that has to carry
+      // the green. `aFoliageC.w` already carries the row (see _scatterTrees), so the pull
+      // is now per species: x = row 0 (cedar), y = row 1 (momiji), z = row 2 (sakura).
+      uChroma: { value: new Vector3(1.0, 0.86, 0.72) },
+      // The cool half of the impostor's illuminant. Everything past the mesh LOD is a
+      // MeshBasicMaterial sampling a neutrally-baked atlas, so it has no light model at all
+      // — the whole band used to be multiplied by one amber constant whatever way it faced.
+      // ARCHITECTURE §5's shadow/ambient is #4a6b8f; this is that hue as a multiplier,
+      // normalised so it costs luminance rather than adding it.
+      uFillColor: { value: new Color(0.42, 0.56, 0.78) },
+      // How hard the key/fill split is driven. x = face term (is the camera on the sun's
+      // side of this tree), y = the lateral ramp across the card, z = overall gain on the
+      // resulting illuminant. Setting x and y to 0, z to 1 and uFillColor to the key itself
+      // reproduces the round-16 constant-amber behaviour exactly — which is how the
+      // before/after pair for this change was measured out of a single boot.
+      uLitMix: { value: new Vector3(0.34, 0.55, 1.08) },
     };
     mat.userData.kag = local;
 
@@ -4272,9 +4308,15 @@ uniform vec2 uFadeNear;
 uniform vec2 uFadeFar;
 uniform vec2 uAtlas;
 uniform vec2 uSink;
+uniform vec3 uSunDir;
+uniform vec3 uLitMix;
+uniform float uGrain;
 
 varying float vKagFade;
 varying vec3  vKagTint;
+varying float vKagLit;
+varying float vKagH;
+varying float vKagRow;
 
 vec3 kagPosG;
 
@@ -4308,7 +4350,32 @@ ${WIND_GLSL}
   float thr = fract( aFoliageB.w * 31.7 + 0.137 );
   float grow = smoothstep( thr * 0.72, thr * 0.72 + 0.28, fade );
   vKagFade = grow > 0.0 ? 1.0 : 0.0;
-  vKagTint = aFoliageC.rgb;
+  // A grove is patchy at the grove's own scale, not at the card's. One broad lookup on the
+  // instance's base position — ~20 m features, one evaluation per card, no per-fragment
+  // cost — is what stops several thousand identically-tinted cards averaging into the flat
+  // stamped field the round-16 review measured at lumaSpread 51.2.
+  float kagBroad = fbm2( base.xz * 0.048 + 9.3, 2 ) * 0.5 + 0.5;
+  vKagTint = aFoliageC.rgb * mix( 1.0 - uGrain, 1.0 + uGrain, kagBroad );
+  vKagRow = aFoliageC.w;
+  vKagH = clamp( position.y + 0.5, 0.0, 1.0 );
+
+  // The impostor is the ONLY foliage in the file with no light model: it is a
+  // MeshBasicMaterial sampling an atlas baked under a fixed neutral key, and every card in
+  // the band was multiplied by the same amber constant regardless of which way it faced.
+  // That is the mechanism behind "no light-side/shade-side on any single plant" and behind
+  // the band measuring G - R = -0.1: the key is (1, 0.412, 0.134), so a 0.55 mix of it
+  // takes cedar's linear g/r of 1.53 down to 1.03 — dead olive, exactly as measured.
+  //
+  // The card has no normal to shade with, but it does have two angles that are free here:
+  // whether the camera stands on the sun's side of the tree, and which way the card's own
+  // horizontal axis is turned against the sun. The first separates front-lit stands from
+  // back-lit ones; the second puts a real sun-struck flank and a shaded flank on every
+  // individual card, which is what the band has to have before a crown can read at all.
+  vec2 kagSunXZ = normalize( vec2( uSunDir.x, uSunDir.z ) + vec2( 1e-5, 0.0 ) );
+  float kagFront = dot( vec2( toCam.x, toCam.z ), kagSunXZ );
+  float kagLat   = dot( vec2( right.x, right.z ), kagSunXZ );
+  vKagLit = clamp( 0.5 + uLitMix.x * kagFront + uLitMix.y * ( position.x * 2.0 ) * kagLat,
+                   0.0, 1.0 );
   vMapUv = vec2( 0.0 );
 
   if ( grow <= 0.0 ) {
@@ -4349,20 +4416,37 @@ ${WIND_GLSL}
 
       shader.fragmentShader = shader.fragmentShader
         .replace('#include <common>', '#include <common>\n' +
-          'uniform vec3 uSunColor;\nuniform float uChroma;\n' +
-          'varying float vKagFade;\nvarying vec3 vKagTint;')
+          'uniform vec3 uSunColor;\nuniform vec3 uChroma;\nuniform vec3 uFillColor;\n' +
+          'uniform vec3 uLitMix;\nuniform float uTipGlow;\nuniform float uBaseAO;\n' +
+          'varying float vKagFade;\nvarying vec3 vKagTint;\n' +
+          'varying float vKagLit;\nvarying float vKagH;\nvarying float vKagRow;')
         .replace('#include <clipping_planes_fragment>',
           '#include <clipping_planes_fragment>\nif ( vKagFade <= 0.0 ) discard;')
         .replace('#include <map_fragment>', /* glsl */`
 #include <map_fragment>
-diffuseColor.rgb *= vKagTint * mix( vec3( 1.0 ), uSunColor, 0.55 );
 {
+  // Warm key against cool fill (ARCHITECTURE §5), interpolated by the card's own facing.
+  // uLitMix.z holds the overall gain: the split costs luminance on the shaded half, and
+  // this is what keeps the band's median where the round-16 measurement found it instead
+  // of paying for the contrast with two thirds of a stop.
+  vec3 kagKey  = mix( vec3( 1.0 ), uSunColor, 0.55 );
+  vec3 kagIllum = mix( uFillColor, kagKey, vKagLit ) * uLitMix.z;
+  // A crown sits in the light its own trunk does not reach. uTipGlow and uBaseAO were
+  // already being uploaded to this material and read by nothing.
+  kagIllum *= mix( 1.0 - uBaseAO, 1.0 + uTipGlow, vKagH );
+  diffuseColor.rgb *= vKagTint * kagIllum;
+
+  // Per-row chroma pull; see uChroma. step() rather than an index so this stays valid on
+  // every profile the build targets.
+  float kagCh = uChroma.x;
+  kagCh = mix( kagCh, uChroma.y, step( 0.5, vKagRow ) );
+  kagCh = mix( kagCh, uChroma.z, step( 1.5, vKagRow ) );
   float kagLum = dot( diffuseColor.rgb, vec3( 0.2126, 0.7152, 0.0722 ) );
-  diffuseColor.rgb = mix( vec3( kagLum ), diffuseColor.rgb, uChroma );
+  diffuseColor.rgb = mix( vec3( kagLum ), diffuseColor.rgb, kagCh );
 }
 `);
     });
-    chainCacheKey(mat, 'kagimpostor3');
+    chainCacheKey(mat, 'kagimpostor4');
 
     this.ctx.sky?.applyFog?.(mat);
     this._materials.push(mat);
@@ -4427,8 +4511,25 @@ diffuseColor.rgb *= vKagTint * mix( vec3( 1.0 ), uSunColor, 0.55 );
         b[o + 1] = h * (0.9 + rnd() * 0.22);               // trees scale near-uniformly
         b[o + 2] = 1.7 + rnd() * 0.9;                      // stiff: trunks barely move
         b[o + 3] = rnd();
-        const v = 0.86 + rnd() * 0.28;
-        c[o] = v; c[o + 1] = v * (0.96 + rnd() * 0.08); c[o + 2] = v * (0.94 + rnd() * 0.10);
+        // Per-plant value and warm/cool bias. At 0.86-1.14 with a 4% hue wobble the whole
+        // grove sat inside one eighth of a stop, and the round-16 review measured the band
+        // it makes at lumaSpread 51.2 against a 90 target — "every element the same height
+        // and the same value". The spread is doubled and given a hue axis: an individual
+        // plant is now either an older, warmer, drier one or a fresher, cooler one, which
+        // is the variation a real treeline separates its crowns with. The mean is held at
+        // 1.00 (pow 0.85 over [0.70, 1.25]) so nothing downstream re-exposes.
+        //
+        // EXACTLY THREE DRAWS, as before. `rnd` is one stream shared by all three species
+        // loops, so taking two here or four would reshuffle every tree planted after this
+        // one and the before/after boxes would then be comparing different trees in
+        // different places as well as different shading. `jitter` is the third draw and is
+        // spent on a small green wobble so it is not a dead call.
+        const v = 0.70 + Math.pow(rnd(), 0.85) * 0.55;
+        const warm = rnd();
+        const jitter = rnd();
+        c[o] = v * (0.94 + warm * 0.16);
+        c[o + 1] = v * (0.99 + (1 - warm) * 0.06 + (jitter - 0.5) * 0.04);
+        c[o + 2] = v * (0.86 + (1 - warm) * 0.26);
         // aFoliageC.w is the clipmap chord deficit here, not an atlas row. The standing
         // note that trees could not take KAG_SINK because "trees and impostors already
         // spend that slot on their atlas row" is only true of the impostor shader: the
