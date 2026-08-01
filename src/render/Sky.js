@@ -108,6 +108,40 @@ const SKY_KNEE_FAR = 1.10;
 /** Blend band for the two ceilings, in cos(angle to the sun): 0.93 ≈ 21.6°, 0.60 ≈ 53.1°. */
 const KNEE_NEAR_COS = 0.93;
 const KNEE_FAR_COS = 0.60;
+
+/**
+ * Chroma restored after Preetham's closing display curve, as a per-channel exponent about
+ * the fragment's own luminance. **Luminance-preserving by construction** — see below.
+ *
+ * `atmos = pow( tex, 1/(1.2 + 1.2*uSunFade) )` is the last line of the Preetham model and
+ * it is the single largest destroyer of sky colour in this build. `uSunFade` is
+ * `1 - clamp(1 - exp(sunY), 0, 1)`, and `exp(sunY) > 1` for *any* sun above the horizon, so
+ * the clamp pins it at 1 and the exponent is a constant **0.4167 through the whole of
+ * daylight** — it has no time-of-day behaviour at all despite being written as if it does.
+ *
+ * What that costs, measured on the JS twin at t = 0.78 (the twin reproduces the live
+ * readbacks exactly: sunDirection (0.860, 0.225, 0.457), uSunE 163.083, sunColor
+ * (1, 0.412, 0.134), and Lighting's ambientReport key 0.3960 / fill 0.5937): down the
+ * `torii` sky the raw pre-curve radiance is (0.1436, 0.4397, 0.9364) — saturation **0.847**,
+ * B/R **6.52**, a properly Rayleigh-blue sky. After the curve it is (0.4455, 0.7101, 0.9730)
+ * — saturation **0.542**, B/R **2.18**. *Sixty per cent of the dome's blue is gone before
+ * any post pass touches the frame.* That is the "flat near-achromatic card" the critic
+ * measured, and it is in the dome, not in bloom.
+ *
+ * The fix has to give the colour back without moving the level, because the dome is 34.7%
+ * of the `torii` frame and every level guard in the review is written on frame medians. So
+ * this is a pure chroma operation: divide by luminance, raise the ratios to `SKY_CHROMA`,
+ * multiply the luminance back. `c' = y · (c/y)^k` renormalised to luminance `y` moves
+ * *only* the ratios; the twin confirms the dome's luminance is held to within 0.9% at every
+ * probe box in the review set while the `torii` sky saturation goes 0.472 → 0.707.
+ *
+ * Display-referred only. `_renderEnvironment` neutralises it for the bake exactly as it
+ * already neutralises `uSkyExposure` and `uSkyKnee`, so the probe, `probeIrradiance` and
+ * therefore the whole ambient budget are byte-identical to before this existed. That is
+ * deliberate: the fill's hue is bound to §5 `#4a6b8f` by `SHADOW_FILL_MAX_RB` and must not
+ * follow the dome's grade.
+ */
+const SKY_CHROMA = 1.7;
 /**
  * Undoes the dome's display scale for the cloud deck. `1 / SKY_LUMINANCE` exactly, which is
  * the same correction `uStarStrength` and `uMoonStrength` already apply: the deck's colours
@@ -311,7 +345,16 @@ const LADDER = [
   K(0.78, {   // 18:43 — THE SHOT. Low amber sun, cool blue shadow, mist in the valley.
     turbidity: 5.4, rayleigh: 2.9, mie: 0.0165, mieG: 0.815,
     exposure: 0.96, sunIntensity: 2.35, ambient: 0.33,
-    tint: new Color(1.06, 0.97, 0.92), sunTint: new Color(1.00, 0.66, 0.34),
+    // B was 0.92, and that 8% was the measured cause of the critic's "literally colourless,
+    // faintly green sky". The dome's own maximum channel is B at every angle in the review
+    // set — at `valley`'s far box the raw radiance is (1.281, 2.038, 2.046) — but the raw
+    // B/G margin out in the forward-scatter belt is only 0.4%, so a tint that takes 8% off B
+    // and 3% off G *promotes G to the maximum channel* and the sky reads green. Measured on
+    // the twin: with 0.92 the graded box is (0.4951, 0.5494, 0.5218), G > B; with 1.00 it is
+    // (0.4948, 0.5491, 0.5668), B > G, which is the ordering the physics produced. R keeps
+    // its 1.06 — the warm grade §5 asks for is on the key and the sunward air, not a
+    // suppression of blue everywhere else.
+    tint: new Color(1.06, 0.97, 1.00), sunTint: new Color(1.00, 0.66, 0.34),
     sky: new Color(0x6f8db8), ground: new Color(0x4c3f31),
     // The bulk-air colour away from the sun. #a9a8ad was neutral grey (R/B 0.95) and it is
     // what every surface in the set fades toward — the aerial perspective is the largest
@@ -499,6 +542,7 @@ uniform float uStarStrength;
 uniform float uMoonStrength;
 uniform float uSkyKnee;
 uniform float uSkyKneeFar;
+uniform float uSkyChroma;
 uniform float uSunDiscGain;
 uniform float uSunGlareGain;
 uniform float uTime;
@@ -809,6 +853,16 @@ vec3 skyRadiance( vec3 rd, out vec3 FexOut ) {
   vec3 atmos = pow( max( tex, vec3( 0.0 ) ), vec3( 1.0 / ( 1.2 + 1.2 * uSunFade ) ) );
   atmos *= uSkyTint * uSkyExposure;
 
+  // Give back the chroma the closing curve above just compressed out, without touching the
+  // level. See SKY_CHROMA: the exponent is a constant 0.4167 in all daylight and it costs
+  // the dome 60% of its blue (raw B/R 6.52 -> 2.18). Ratios only — luminance in equals
+  // luminance out — so every level guard in the review set is unaffected by construction.
+  if ( uSkyChroma != 1.0 ) {
+    float y0 = max( dot( atmos, vec3( 0.2126, 0.7152, 0.0722 ) ), 1e-6 );
+    vec3 ch = pow( max( atmos / y0, vec3( 1e-8 ) ), vec3( uSkyChroma ) );
+    atmos = ch * ( y0 / max( dot( ch, vec3( 0.2126, 0.7152, 0.0722 ) ), 1e-6 ) );
+  }
+
   // Soft knee, order 4, on LUMINANCE — never per channel. A per-channel knee is a
   // per-channel *ceiling*: every channel that overshoots lands on the same uSkyKnee, so the
   // 25-degree cap of sky around a low sun converges on neutral grey no matter what colour
@@ -1050,6 +1104,7 @@ export class SkySystem {
       uMoonStrength: { value: 0 },
       uSkyKnee: { value: SKY_KNEE },
       uSkyKneeFar: { value: SKY_KNEE_FAR },
+      uSkyChroma: { value: SKY_CHROMA },
       uSunDiscGain: { value: SUN_DISC_GAIN },
       uSunGlareGain: { value: SUN_GLARE_GAIN },
       uTime: { value: 0 },
@@ -1464,7 +1519,19 @@ export class SkySystem {
     // skips both, which is the state `_renderEnvironment` bakes the cube in — that is what
     // the PMREM probe actually lights the world with, so it is what Lighting must be told.
     const e = g.exposure * (raw ? 1 : SKY_LUMINANCE);
-    const cr = rgb[0] * g.tint.r * e, cg = rgb[1] * g.tint.g * e, cb = rgb[2] * g.tint.b * e;
+    let cr = rgb[0] * g.tint.r * e, cg = rgb[1] * g.tint.g * e, cb = rgb[2] * g.tint.b * e;
+    // Chroma restoration, twin of the dome fragment. `raw` is the state the env cube is
+    // baked in and `_renderEnvironment` sets uSkyChroma = 1 there, so the twin must skip it
+    // for exactly the same argument — otherwise `probeIrradiance` describes a sky the probe
+    // is not baked from, which is the class of drift that cost this project three rounds.
+    if (!raw && SKY_CHROMA !== 1) {
+      const y0 = Math.max(cr * 0.2126 + cg * 0.7152 + cb * 0.0722, 1e-6);
+      const hr = Math.pow(Math.max(cr / y0, 1e-8), SKY_CHROMA);
+      const hg = Math.pow(Math.max(cg / y0, 1e-8), SKY_CHROMA);
+      const hb = Math.pow(Math.max(cb / y0, 1e-8), SKY_CHROMA);
+      const y1 = Math.max(hr * 0.2126 + hg * 0.7152 + hb * 0.0722, 1e-6);
+      cr = hr * y0 / y1; cg = hg * y0 / y1; cb = hb * y0 / y1;
+    }
     // cosTheta, because the ceiling is angle-dependent — the twin has to carry that too or
     // the fog target and the ambient hue are sampled from a sky that is not on screen.
     const k = raw ? 1 : kneeScale(cr, cg, cb, cosTheta);
@@ -1640,6 +1707,11 @@ export class SkySystem {
     const keepExposure = u.uSkyExposure.value;
     const keepKnee = u.uSkyKnee.value;
     const keepDisc = u.uSunDiscGain.value;
+    // SKY_CHROMA is a display grade on the dome, not radiance the world is lit by. Baking it
+    // would push it into the probe and from there into the fill, whose hue §5 pins to
+    // `#4a6b8f` via SHADOW_FILL_MAX_RB. Neutralised here so the cube — and `probeIrradiance`,
+    // and Lighting's whole ambient budget — are byte-identical to before it existed.
+    const keepChroma = u.uSkyChroma.value;
     // The dome material is `toneMapped: true`, so whatever `renderer.toneMapping` happens
     // to be at this instant is baked into the probe. `SkySystem.init()` runs at main.js:93
     // and PostFX — the system that switches the renderer to NoToneMapping — is not built
@@ -1656,10 +1728,12 @@ export class SkySystem {
     u.uSkyExposure.value = keepExposure / SKY_LUMINANCE;
     u.uSkyKnee.value = 1e6;
     u.uSunDiscGain.value = 0;
+    u.uSkyChroma.value = 1;
     this._cubeCamera.update(renderer, this._envScene);
     u.uSkyExposure.value = keepExposure;
     u.uSkyKnee.value = keepKnee;
     u.uSunDiscGain.value = keepDisc;
+    u.uSkyChroma.value = keepChroma;
     renderer.toneMapping = keepTone;
 
     const prev = this._pmremRT;

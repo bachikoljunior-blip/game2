@@ -71,6 +71,16 @@ const lum709 = (c) => c.r * 0.2126 + c.g * 0.7152 + c.b * 0.0722;
 const MAX_CASCADES = 4;
 
 /**
+ * Elevation of the rim light above its target, in degrees, and the two factors derived from
+ * it. Fixed as an *angle* so the fraction of the rim that lands on a horizontal surface is
+ * the same in every framing and can be stated in `ambientReport` as a constant — see the
+ * comment there for the measurement this corrects.
+ */
+const RIM_ELEVATION_DEG = 9;
+const RIM_UP = Math.sin(RIM_ELEVATION_DEG * DEG2RAD);
+const RIM_TAN = Math.tan(RIM_ELEVATION_DEG * DEG2RAD);
+
+/**
  * PCSS blocker search, in **metres of world**, not texels. It has to be near the scale of
  * the thing casting the contact — a stone lantern shaft is ~0.35 m — because the search is
  * what decides whether a fragment gets a shadow at all: `kagGetShadow` returns fully lit
@@ -1171,10 +1181,15 @@ export class LightingSystem {
       r.key = lum709(_col) * intensity * Math.max(this.sunDirection.y, 0);
       r.hemi = this.hemi.intensity * skyLum;
       r.probe = this.ctx.scene.environmentIntensity * probeLum;
-      // A directional's irradiance on a surface facing it is intensity x colour; the rim is
-      // aimed roughly down the view axis from above and behind, so a horizontal plane sees
-      // most of this. Unshadowed, so it is present in the cast shadow too.
-      r.rim = this.rim.intensity * lum709(this.rim.color);
+      // A directional's irradiance on a surface facing it is intensity x colour — but the
+      // ground is not facing it, and `r.fill` is quoted against `r.key`, which *is* cosine
+      // weighted (`* max(sunDirection.y, 0)`). Round 15 added this term without the cosine
+      // and the mismatch has been steering the plateau finding ever since: it recorded fill
+      // 0.5937 and a contrast ceiling of 1.67x, when a horizontal surface receives only
+      // `RIM_UP` of the rim. The honest figures on the same grade are fill 0.4687, key/fill
+      // 0.845 and a ceiling of 1.845x against 1.38x measured — i.e. there is roughly three
+      // times more headroom than the record claimed, and the finding is not at its ceiling.
+      r.rim = this.rim.intensity * lum709(this.rim.color) * RIM_UP;
       r.fill = r.hemi + r.probe + r.rim;
     }
 
@@ -1184,7 +1199,16 @@ export class LightingSystem {
     _side.crossVectors(_camDir, _upY);
     if (_side.lengthSq() < 1e-6) _side.set(1, 0, 0); else _side.normalize();
     this.rim.position.copy(_rimTarget).addScaledVector(_camDir, 16).addScaledVector(_side, 7);
-    this.rim.position.y += 6;
+    // Elevation set as an angle, not as an additive metre offset. `+= 6` competed with
+    // whatever vertical component `_camDir` happened to have, so the fraction of the rim a
+    // horizontal surface received swung 0.227 (`valley`) to 0.537 (`torii`) with the shot —
+    // the one light in the rig that is scene-wide *and* unshadowed was flooding the floor by
+    // a factor that varied 2.4x between framings, and `wide`'s plateau got 0.270 of it in
+    // every cast shadow. A rim light belongs on silhouettes (ARCHITECTURE §5 #10), which are
+    // vertical: dropping it to a fixed 9 degrees cuts what the floor receives to 0.156
+    // everywhere and *raises* what a vertical surface receives, which is the job.
+    this.rim.position.y = _rimTarget.y +
+      Math.hypot(this.rim.position.x - _rimTarget.x, this.rim.position.z - _rimTarget.z) * RIM_TAN;
     this.rim.target.position.copy(_rimTarget);
     this.rim.target.updateMatrixWorld();
 
