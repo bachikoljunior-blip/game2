@@ -609,12 +609,23 @@ const FRAGMENT_SSS = /* glsl */`
   // it. Desaturating uSSSColor toward white before it meets the (strongly amber) magic-hour
   // sun is what stops pale blossom from coming out of the tone mapper as a hot primary red.
   //
-  // uSSSSat is that desaturation, per material, and it is the only knob in the file that
-  // can put green into the frame. The magic-hour sun is (1.0, 0.41, 0.13): at the 0.6
-  // default every transmission product comes out red-dominant no matter how green the
-  // leaf is, which is precisely why a bamboo sea backlit by it measured as a duotone.
-  // Chlorophyll really does filter that hard, so bamboo runs near 1.0 and keeps its
-  // yellow-green; grass and blossom stay at 0.6 and are unchanged.
+  // uSSSSat is that desaturation, per material. READ THIS BEFORE RAISING IT: the leaf tint
+  // appears TWICE along this path — once here in 'trans', and again below in 'through',
+  // where uSSSFloor lifts the albedo toward the same uSSSColor. At uSSSSat 1.0 the tint is
+  // therefore SQUARED, and that is not a subtle bias. Evaluated offline on the shipped r16
+  // bamboo-card numbers (uSSSColor 0x3fb520, uSSSFloor 0.34, uSunColor (1, 0.412, 0.134),
+  // forward 0.846 at the 'valley' pose): C_lin is (0.0497, 0.4508, 0.0144), so the squared
+  // factor is 0.00247 in red against 0.2032 in green — a ratio of 82:1 before the albedo is
+  // consulted at all. The measured consequence, on a mass leaf texel, was
+  // glow = (0.0012, 0.0291, 0.00003), i.e. R/G 0.041 and blue gone entirely.
+  //
+  // That is why a bamboo sea with the sun directly behind it could not read as backlit at
+  // any strength: the red channel of the transmitted light was being annihilated by
+  // construction, and raising uSSSStrength only scaled a colour that was already wrong. A
+  // leaf backlit by an amber key transmits amber filtered ONCE by chlorophyll — olive-gold,
+  // which is what §5's magic hour is for. So the tint belongs in 'through' (the filter) and
+  // this term should stay close to the light: bamboo now runs uSSSSat 0.12-0.16 and gets its
+  // green from uSSSColor in 'through'. Grass and blossom stay at 0.6 and are unchanged.
   vec3 sssTint = mix( vec3( 1.0 ), uSSSColor, uSSSSat );
   vec3 trans = sssTint * uSunColor * ( forward * 0.85 + 0.10 ) * thin * uSSSStrength * lit;
 
@@ -798,11 +809,30 @@ function buildBambooPlantGeometry(sides, internodes, sprays, seed = 0x8B0011) {
     prev = ring;
   }
 
-  // Leaf sprays along the upper third and a little below it — a real culm leafs out over
-  // its top 40-50%, and a tuft on the end of a bare pole is a palm, not bamboo. Successive
-  // sprays step round by the golden angle so the crown has an outline instead of stacking
-  // into a bottle-brush, and the attachment radius grows with height.
-  const leafFrom = 0.54;
+  // Leaf sprays along the culm. `leafFrom` is where the crown starts as a fraction of
+  // height, and it is the single number the round-17 "bare poles" finding is about.
+  //
+  // Measured on shots/phone-valley-r16v1.png at native, crop 0.46,0.02,0.16,0.28: on 23
+  // detected culm columns the worst bare-stem run between two leaf clusters was 118-166 px
+  // (the six worst all 138-166), against the review's 60 px acceptance. The run is not
+  // *between* sprays — consecutive sprays already overlap, because at 8 sprays the spacing
+  // is 0.0657 of height while a spray card is 0.11-0.19 of height tall. The run is the
+  // stretch BELOW the lowest spray: 0.54 of the culm carried no foliage at all, and on a
+  // culm standing ~307 px tall in that frame 0.54 x 307 = 166 px. That is the measured
+  // number, to within a pixel.
+  //
+  // So the fix is `leafFrom`, not spray count — but dropping it without adding sprays would
+  // only stretch the same eight cards over 1.65x the span and open real gaps between them.
+  // 0.26 with 20 sprays gives a spacing of 0.039 of height against a card 0.08-0.12 tall,
+  // i.e. every point of the leafy span is covered two to three deep.
+  //
+  // 0.26 rather than 0.16: leafing from a sixth of the culm is a shrub, not bamboo. At 0.26
+  // the residual bare run is 0.26 x 307 = 80 px on that same culm — a stated shortfall
+  // against the 60 px line, not a claim of a pass. Closing the last 20 px means either
+  // foliage over three quarters of a moso, or shorter culms, and both cost more than they
+  // buy. Successive sprays still step round by the golden angle so the crown has an outline
+  // instead of stacking into a bottle-brush.
+  const leafFrom = 0.26;
   for (let i = 0; i < sprays; i++) {
     const f = i / Math.max(1, sprays - 1);
     const t = leafFrom + f * (1.0 - leafFrom) + (rnd() - 0.5) * 0.03;
@@ -2238,6 +2268,42 @@ function drawFloret(g, r, edge, mid, throat, rnd, boss = true) {
 }
 
 /**
+ * THE BLOSSOM CARD GATE. Read this before touching `paintBlossom`.
+ *
+ * `tex.blossom` is painted here but *worn* by geometry this file does not own: the sacred
+ * tree's canopy is `PropFactory.sacredTree -> _blossomCluster` in `src/world/Props.js`,
+ * merged into a static cell by `src/world/Level.js` and drawn under `Props.blossomMaterial`.
+ * The texture and the card's world size are one decision, and splitting them regresses the
+ * crown in either direction:
+ *
+ *   - Painting finer, petal-scale florets against today's 2.00-3.36 m cards makes the canopy
+ *     FLATTER, not finer. The card renders at roughly 60 px against a 512-texel sheet, i.e.
+ *     it is minified about 8x, so florets smaller than today's land at 0.4-1.2 px and the mip
+ *     chain averages them into a uniform pink wash. Round 16 measured this and refused to
+ *     ship the texture alone; it was right.
+ *   - Shrinking the card without re-authoring the texture hands back the same flat wash at
+ *     the new size, because 72 florets on a 21 px card are 2 px each.
+ *
+ * So this constant IS the agreement, in metres, of the mean card diameter the texture is
+ * authored for, and everything below derives itself from it:
+ *
+ *   2.68  the card that ships today (`s = 1.00 + rnd()*0.68`, diameter 2s). At this value
+ *         `paintBlossom` reproduces the round-16 sheet EXACTLY — 72 florets, unscaled radii,
+ *         unscaled layout — so leaving the gate closed changes nothing at all.
+ *   0.92  the card agreed with the `world` owner in round 17 (`s = 0.34 + rnd()*0.24`, mean
+ *         0.92 m, 2.91x smaller, which is what puts the critic's 45-80 px facets under its
+ *         25 px line). At this value the sheet re-authors itself to 12 florets at 2.48x the
+ *         radius over a layout contracted to 0.47, which holds total painted area — and
+ *         therefore the card's mean colour, which the critic guards to +/-8% per channel —
+ *         to within a few per cent while making each floret ~5.3 px on screen instead of 2.
+ *
+ * It is a ONE-LINE flip and it must be flipped in the same build as the Props.js size change,
+ * never before and never after. It is shipped at 2.68 because `world` had not confirmed when
+ * this was committed.
+ */
+const BLOSSOM_CARD_M = 2.68;
+
+/**
  * Sakura at peak (ARCHITECTURE §5). This card is the sacred tree's whole read, and the
  * previous version aimed at "past peak, bone and blush" and landed on lichen: measured off
  * the hero frame, its bright pixels were (138.5, 122.7, 131.1) — saturation 0.11, R-B of
@@ -2256,6 +2322,24 @@ function paintBlossom(size) {
   g.clearRect(0, 0, size, size);
   const rnd = makeRandom(3312);
   const cx = size * 0.5, cy = size * 0.5;
+
+  // --- the BLOSSOM_CARD_M derivation, all three numbers from one constant ---------------
+  //
+  // `k` scales every floret radius. Exponent 0.85 rather than 1.0 deliberately: holding the
+  // floret's SCREEN size exactly constant as the card shrinks needs k = 2.68/CARD = 2.91,
+  // which drives the count to 72/2.91^2 = 8.5 and leaves a card too sparse to read as a
+  // cluster. 0.85 lands on 2.48 and 12 florets — three or four flowers on each of the three
+  // sub-clump spurs, which is what a cherry actually carries — at 5.3 px each rather than 6.2.
+  const k = Math.min(3.2, Math.max(1, Math.pow(2.68 / BLOSSOM_CARD_M, 0.85)));
+  // Count falls as k^2, which is what holds total painted area — and therefore the card's
+  // mean colour and its alpha coverage, i.e. the crown's density per card — constant.
+  const florets = Math.max(8, Math.round(72 / (k * k)));
+  // Layout contraction, solved so the painted content's outer envelope does not move. The
+  // furthest a floret's rim can reach is (clump offset 0.16 + radial spread 0.215) * L plus
+  // its own max radius 0.134 * k, and that sum is 0.510 of the canvas at k = 1. Without this
+  // a 2.48x floret would push content from 0.51 to 0.62 and change the silhouette `lobeMask`
+  // then bites into, which would move the crown's coverage as well as its detail.
+  const L = Math.min(1, Math.max(0.25, (0.510 - 0.134 * k) / 0.375));
 
   // Twig armature first, so blossom sits on it rather than floating in front of it.
   //
@@ -2277,11 +2361,14 @@ function paintBlossom(size) {
   g.lineCap = 'round';
   for (let i = 0; i < 6; i++) {
     const a = (i / 6) * Math.PI * 2 + rnd() * 0.7;
-    g.lineWidth = Math.max(1, size * (0.013 - i * 0.0012));
+    // Thickened by `k` for the same reason the florets are: a twig authored for a 60 px card
+    // is a third of a pixel on a 21 px one, and a sub-pixel dark line does not thin, it
+    // aliases. Reach contracts with the rest of the layout so no twig can reach the mask.
+    g.lineWidth = Math.max(1, size * (0.013 - i * 0.0012) * k);
     g.beginPath();
-    g.moveTo(cx, cy + size * 0.03);
-    g.quadraticCurveTo(cx + Math.cos(a) * size * 0.08, cy + Math.sin(a) * size * 0.08,
-      cx + Math.cos(a) * size * 0.155, cy + Math.sin(a) * size * 0.155);
+    g.moveTo(cx, cy + size * 0.03 * L);
+    g.quadraticCurveTo(cx + Math.cos(a) * size * 0.08 * L, cy + Math.sin(a) * size * 0.08 * L,
+      cx + Math.cos(a) * size * 0.155 * L, cy + Math.sin(a) * size * 0.155 * L);
     g.stroke();
   }
 
@@ -2312,14 +2399,13 @@ function paintBlossom(size) {
   const clumps = [];
   for (let i = 0; i < 3; i++) {
     const ca = ((i + rnd() * 0.55) / 3) * Math.PI * 2;
-    const cr = size * (0.10 + rnd() * 0.06);
+    const cr = size * (0.10 + rnd() * 0.06) * L;
     clumps.push([cx + Math.cos(ca) * cr, cy + Math.sin(ca) * cr]);
   }
-  const florets = 72;
   for (let f = 0; f < florets; f++) {
     const t = Math.pow(rnd(), 0.70);              // 0 at the clump core, 1 at its rim
     const a = rnd() * Math.PI * 2;
-    const rad = t * size * 0.215;
+    const rad = t * size * 0.215 * L;
     const home = clumps[(rnd() * clumps.length) | 0];
     const px = home[0] + Math.cos(a) * rad;
     const py = home[1] + Math.sin(a) * rad;
@@ -2328,7 +2414,7 @@ function paintBlossom(size) {
     // repeating ~12 px pink circle motif ... bubble wrap": a repeated motif reads as a
     // repeat because it is the same SIZE, before it is the same shape. `pow(rnd, 2.1)`
     // puts most florets small and a handful large, which is what a real cluster does.
-    const r = size * (0.078 - t * 0.028) * (0.42 + Math.pow(rnd(), 2.1) * 1.30);
+    const r = size * (0.078 - t * 0.028) * (0.42 + Math.pow(rnd(), 2.1) * 1.30) * k;
     // One in six has gone over: bone, not brown. Kept as a minority accent so the mean
     // stays blush instead of being dragged grey the way a third of them did.
     const spent = rnd() < 0.16;
@@ -3683,7 +3769,15 @@ export class FoliageSystem {
     const hi = q.tier >= 2;
     // One geometry for the whole near plant. Culm and sprays scale together — the
     // scatterer sets width = height so canonical space stays isotropic.
-    const plant = buildBambooPlantGeometry(hi ? 6 : 4, hi ? 13 : 8, hi ? 13 : 8);
+    // Internodes down 8 -> 6 at MEDIUM, sprays up 8 -> 20. The internode rings are pure
+    // triangle cost at this distance: the geometry only bulges the radius 11% at a node and
+    // the culm is 2.6-3.6 px wide at the far edge of its own fade window, so the bulge is a
+    // third of a pixel — the *readable* nodes are painted into the bark strip by
+    // paintBambooPlant and are unaffected. Audited on shots/report-r16v1.json the plant is
+    // 7,680 triangles over 48 instances = 160 each, which is exactly 16 ring links x 4 sides
+    // x 2 + 8 sprays x 2 cards x 2; the same arithmetic makes this 12 x 4 x 2 + 20 x 2 x 2 =
+    // 176, i.e. +16 per instance and +768 at the audited instance count.
+    const plant = buildBambooPlantGeometry(hi ? 6 : 4, hi ? 13 : 6, hi ? 24 : 20);
     const card = buildCrossCard(2, 1.0, false, 0.55);
     this._geometries.push(plant, card);
 
@@ -3698,15 +3792,27 @@ export class FoliageSystem {
       // the crown tens of degrees off vertical — the review reads that as broken rather
       // than windblown and asks for a lean capped near 8 degrees. See KAG_SINK below for
       // the other half of "the bamboo does not stand up".
-      bendExp: 1.6, whip: 0.16, bendGain: 0.62, flutter: 1.15, alphaTest: 0.30,
+      // alphaTest down 0.30 -> 0.22, for the reason the mid-ground card already runs at 0.14:
+      // this sheet is only ever seen minified (a spray card is 41-87 px against the 355
+      // texels PLANT_UV.leafU0..leafU1 gives it, i.e. mip 2-3 at the `valley` pose), and
+      // minifying a cutout averages its coverage DOWN, so the thin blade ends fall under the
+      // threshold before the branch armature does and the spray collapses to its core — the
+      // review's "small, detached, hard-aliased leaf clusters". `dilateAlpha` runs on this
+      // sheet, so a partially-covered mip texel keeps the leaf's colour instead of being
+      // multiplied toward black; the silhouette thins toward green rather than toward specks.
+      // The bark strip is alpha 1 edge to edge, so the culm cannot be touched by this.
+      bendExp: 1.6, whip: 0.16, bendGain: 0.62, flutter: 1.15, alphaTest: 0.22,
       fadeFar: fadeOut(RANGE.bambooCulm), size: [1, 1], side: DoubleSide, sink: true,
-      // A leaf held up to a low sun passes green, and at the 0.6 default desaturation the
-      // amber key turns that into another orange surface in a frame that already has too
-      // many. The green itself comes from the sheet's albedo (see paintBambooLeaves); this
-      // only tints the light coming *through* it. Pulled back from the old leaf-only 1.05
-      // because the same term now also lands on the opaque bark strip, and a culm that
-      // transmits is a culm that silhouettes brighter than the sky behind it.
-      sss: 0.80, sssColor: 0x5cc233, sssFloor: 0.22, sssSat: 0.88,
+      // Transmission, re-solved in round 17 — see the uSSSSat block in FRAGMENT_SSS for the
+      // arithmetic. At sssSat 0.88 the leaf tint was applied twice and the near culms' glow
+      // came out at R/G 0.19, so a plant standing between the camera and the sun rendered as
+      // an opaque dark-green cutout. Same evaluation with these numbers: glow R/G 0.19 ->
+      // 0.74 and glow luminance x2.95 on the sheet's own rgb(74,150,58) blade.
+      //
+      // Gentler than the card deliberately. These are the plants inside 46 m, so almost no
+      // aerial perspective is diluting them and the same multiplier that a 200 m card needs
+      // would blow a near crown to white.
+      sss: 1.05, sssColor: 0x9ec83f, sssFloor: 0.30, sssSat: 0.16,
       // baseAO down from the old culm's 0.28: the sheet now paints its own base-to-tip
       // value ramp, and stacking a second one on top of it drove the lower half of every
       // culm toward black at exactly the distance the culm has to stay readable.
@@ -3745,21 +3851,27 @@ export class FoliageSystem {
       bendExp: 1.8, bendGain: 0.38, flutter: 0.6, alphaTest: 0.14, sink: true,
       fadeNear: fadeIn(RANGE.bambooCard),
       fadeFar: fadeOut(RANGE.bambooCard),
-      // 0x4fbf2e is not a leaf's reflectance, it is what a leaf *transmits*: chlorophyll
-      // absorbs red and blue hard, so at uSSSSat 0.95 the product with the (1, 0.41, 0.13)
-      // sun still lands green-dominant at G/R 1.8. Anything paler and the amber wins and
-      // the whole sea comes out orange again.
+      // Transmission. This is the surface the round-17 review measured as "dark, opaque and
+      // green-dominant against a sky at p50 200-240 immediately above it" — tree wall
+      // 0.08,0.20,0.06,0.08 at meanRGB [39.0, 60.3, 52.6], canopy band 0.60,0.20,0.10,0.06
+      // with G leading R by 1.7 over a box that is 41.5% lit sky.
       //
-      // Strength and floor are back to sane values. Transmission cannot be the thing that
-      // makes the sea green — a card only reads as bamboo if the culm stays pale and the
-      // blades keep their own value structure, and at 2.2/0.52 both were being flooded.
+      // The previous note here reasoned about `trans` alone and concluded that only a deep
+      // green tint at uSSSSat 1.0 could keep the sea from going orange. That reasoning was
+      // half the term. `glow = through * trans`, and `through` already carries uSSSColor via
+      // uSSSFloor, so uSSSSat 1.0 squared it: 0.0497^2 = 0.00247 in red against 0.4508^2 =
+      // 0.2032 in green. Evaluated on the sheet's own leaf colours at the `valley` pose, the
+      // shipped glow was (0.0012, 0.0291, 0.00003) — R/G 0.041, blue annihilated. No value of
+      // uSSSStrength recovers a channel that has been multiplied by 0.0025.
       //
-      // sssSat to 1.0 and the tint deepened. `trans = mix(vec3(1), uSSSColor, uSSSSat) *
-      // uSunColor`, so the desaturation toward white is *undone* by the key: at 0.95 the
-      // product with GREEN_RATIO's (1.0, 0.412, 0.134) sun came out at g/r 1.79, and at 1.0
-      // with 0x3fb520 it is 3.3. That is the only light path on this card that can be
-      // green-dominant at all — everything else is albedo times an amber key.
-      size: [1, 1], sss: 1.15, sssColor: 0x3fb520, sssFloor: 0.34, sssSat: 1.0,
+      // With the tint applied once, the same evaluation over a population-weighted texel set
+      // (40% mass, 22% deep mass, 20% blade, 18% pale culm) moves surface radiance R/G from
+      // 0.107 to ~1.04 and luminance x2.8-2.9. The green does not leave the sea: it is still
+      // in the albedo, in the wrap-lit ambient, and in uSSSColor's filter inside `through`.
+      // What changes is that the *forward-scattered* lobe — the one the sun is actually
+      // behind — comes out olive-gold instead of bottle-green, which is what §5's magic hour
+      // and §9's SUN_AZIMUTH_DEFAULT 118 exist to produce.
+      size: [1, 1], sss: 1.40, sssColor: 0xa8c845, sssFloor: 0.36, sssSat: 0.12,
       tipGlow: 0.20, baseAO: 0.16, grain: 0.10, broad: 0.20, tintAmount: 0.55,
     };
     const cardMat = this._makeMaterial(cardOpts);
