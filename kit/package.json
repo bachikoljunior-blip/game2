@@ -1,6 +1,6 @@
 {
   "name": "@bachikoljunior/kit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Verified, reusable development kit extracted from eight shipped browser-game projects: measurement harness, release verification, adversarial review, and project-state gates.",
   "type": "module",
   "private": true,

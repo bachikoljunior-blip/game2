@@ -1,0 +1,69 @@
+# The gate. Everything that can fail cheaply, in the order it gets cheaper to fix.
+#
+# Two things here are unusual and both are deliberate.
+#
+# 1. `Prove the gates can fail` runs before the gates themselves. A silently inert gate and a
+#    passing gate are indistinguishable from the outside — both print nothing and exit 0 —
+#    and two migrations on record ended with gates installed but never observed failing. This
+#    step makes each one fire on a deliberately broken input, and fails the run if any of them
+#    stays quiet or if the must-pass control fires.
+#
+# 2. Node 22, not 20. `.kit/` uses `node:fs.globSync` and the built-in test runner. A repo
+#    that pins 20 here — as one of the surveyed repositories does — installs the kit
+#    successfully and then cannot run it.
+name: check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The floor gate needs the base commit to diff against.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      # The vendored kit must match the ledger written when it was installed. A copy nobody
+      # verifies is a fork nobody declared.
+      - name: Vendored kit integrity
+        run: node .kit/tools/bootstrap.mjs --target=. --check
+
+      - name: Prove the gates can fail
+        run: node tools/validate-state.mjs --selftest
+
+      - name: Validate operating state
+        run: node tools/validate-state.mjs
+
+      # F2/F5: a change to product files must move the state file and its review record in
+      # the same change set. Only meaningful on a pull request, where a base ref exists.
+      - name: Floor gate
+        if: github.event_name == 'pull_request'
+        run: node tools/validate-state.mjs --gate=origin/${{ github.base_ref }}
+
+      # Replace or delete the steps below to match the project. Keep the order: the earlier a
+      # step is, the cheaper its failure is to diagnose.
+      - name: Build
+        run: npm run build --if-present
+
+      - name: Tests
+        run: npm test --if-present

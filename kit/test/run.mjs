@@ -11,6 +11,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -24,6 +25,7 @@ import { runGateSelfTests } from '../lib/state/selftest.mjs';
 import { uniqueIds, checkRefs, detectCycles, exactlyOne, antiFabrication } from '../lib/state/graph.mjs';
 import { scanSecretKeys, scanSecretValues } from '../lib/state/secrets.mjs';
 import { requireFiles, requireByteCeiling, requireContains } from '../lib/state/files.mjs';
+import { parseYaml } from '../lib/state/yaml.mjs';
 import { buildPlan, invertOwnership } from '../lib/plan/dispatch.mjs';
 import { validateFindings } from '../lib/plan/findings.mjs';
 import { parseOwnershipTree, extractFencedBlock, checkOwnershipDrift } from '../lib/plan/ownership.mjs';
@@ -418,5 +420,141 @@ test('a deleted dependency registers as a change', () => {
   const before = planner.hashOf('k');
   rmSync(join(root, 'src/a.js'));
   assert.notEqual(planner.hashOf('k'), before, 'deleting a dependency must not hash the same');
+  rmSync(root, { recursive: true, force: true });
+});
+
+/* ------------------------------------------------------------------ yaml */
+
+test('parseYaml reads every construct the state files use', () => {
+  const doc = [
+    '---',
+    '# a comment',
+    'schema_version: 1',
+    'state_revision: "2026-01-01.1"',
+    'project:',
+    '  name: EXAMPLE   # trailing comment',
+    '  ratio: -0.5',
+    '  archived: false',
+    '  parent: ~',
+    '  empty: []',
+    '  tags: [a, "b c", 3]',
+    'plan_nodes:',
+    '  - id: ROOT',
+    '    parent: null',
+    '    dependencies: []',
+    '  - id: CHILD',
+    '    parent: ROOT',
+    '    note: |-',
+    '      line one',
+    '        indented',
+    'flat:',
+    '  - one',
+    '  - two',
+    'nested:',
+    '  - - a',
+    '    - b',
+    '',
+  ].join('\n');
+
+  assert.deepEqual(parseYaml(doc, { path: 'sample.yaml' }), {
+    schema_version: 1,
+    state_revision: '2026-01-01.1',
+    project: { name: 'EXAMPLE', ratio: -0.5, archived: false, parent: null, empty: [], tags: ['a', 'b c', 3] },
+    plan_nodes: [
+      { id: 'ROOT', parent: null, dependencies: [] },
+      { id: 'CHILD', parent: 'ROOT', note: 'line one\n  indented' },
+    ],
+    flat: ['one', 'two'],
+    nested: [['a', 'b']],
+  });
+});
+
+test('parseYaml refuses what it cannot honestly read, with the line number', () => {
+  const cases = [
+    ['a: 1\na: 2\n', /:2: duplicate key/],
+    ['a:\n\tb: 1\n', /:2: tab in indentation/],
+    ['a: &x 1\n', /:1: anchors/],
+    ['a: *x\n', /:1: aliases/],
+    ['a: >\n  x\n', /:1: folded block scalars/],
+    ['a: {b: 1}\n', /:1: non-empty inline mappings/],
+    ['a: 1\n---\nb: 2\n', /:2: multiple documents/],
+    ['<<: *base\n', /:1: merge keys/],
+    ['a: 1\n  b: 2\n', /:2: unexpected indentation/],
+    ['a: 1\nplain text\n', /:2: expected "key: value"/],
+    ['a: foo: bar\n', /:1: ambiguous plain scalar/],
+    ['a: "unterminated\n', /:1: unterminated double-quoted string/],
+  ];
+  for (const [text, pattern] of cases) {
+    assert.throws(() => parseYaml(text, { path: 'x' }), pattern, `not rejected: ${JSON.stringify(text)}`);
+  }
+  // A nested sequence must not silently become the string "- a".
+  assert.deepEqual(parseYaml('a:\n  - - x\n'), { a: [['x']] });
+});
+
+test('parseYaml round-trips the template state files and they stay snake_case', () => {
+  const key = /^[a-z0-9_]+$/;
+  for (const rel of ['AI_DEVELOPMENT/PROJECT_STATE.yaml', 'AI_DEVELOPMENT/SESSION_STATE.yaml']) {
+    const path = new URL(`../template/${rel}`, import.meta.url).pathname;
+    const parsed = parseYaml(readFileSync(path, 'utf8'), { path: rel });
+    assert.ok(parsed && typeof parsed === 'object', `${rel} did not parse to a mapping`);
+    const walk = (node, trail) => {
+      if (Array.isArray(node)) return node.forEach((v, i) => walk(v, `${trail}[${i}]`));
+      if (!node || typeof node !== 'object') return;
+      for (const [k, v] of Object.entries(node)) {
+        assert.match(k, key, `${rel} key ${trail}.${k} is not snake_case`);
+        walk(v, `${trail}.${k}`);
+      }
+    };
+    walk(parsed, rel);
+  }
+});
+
+test('antiFabrication reads the evidence field it is told to read', () => {
+  const verified = [{ id: 'C1', status: 'verified', apparatus: 'node tools/m.mjs', measured: '0.42', evidence_state: 'none' }];
+
+  // The trap: the default field name is camelCase, so against a snake_case state file the
+  // lookup is `undefined`, `undefined` is in emptyEvidence, and the check appears to work
+  // while never inspecting the field at all.
+  assert.equal(antiFabrication(verified).filter((f) => f.includes('evidence')).length, 1,
+    'the default field name must still report *something*, not pass silently');
+  assert.ok(antiFabrication(verified)[0].includes('evidenceState'), 'the default reports the field it actually read');
+
+  const named = antiFabrication(verified, { evidenceField: 'evidence_state' });
+  assert.equal(named.length, 1);
+  assert.match(named[0], /evidence_state "none"/);
+
+  assert.deepEqual(
+    antiFabrication([{ ...verified[0], evidence_state: 'AI_DEVELOPMENT/EVIDENCE/r1.md' }], { evidenceField: 'evidence_state' }),
+    [], 'a fully evidenced criterion must not fire',
+  );
+});
+
+/* ------------------------------------------------------------------ template */
+
+test('the template installs, validates, and proves its own gates can fail', () => {
+  const root = tmp();
+  execFileSync('git', ['-C', root, 'init', '-q'], { stdio: 'ignore' });
+  const kit = new URL('..', import.meta.url).pathname;
+  const node = (args, cwd) => execFileSync('node', args, { cwd, encoding: 'utf8' });
+
+  const installed = node([join(kit, 'tools/bootstrap.mjs'), `--target=${root}`, '--template'], kit);
+  assert.match(installed, /template -> .*: 10 file\(s\) written, 0 left alone/);
+
+  // The shipped placeholders must pass as they land, or the first thing a new repository
+  // learns is to ignore the validator.
+  assert.match(node([join(root, 'tools/validate-state.mjs')], root), /state is valid/);
+
+  // Every gate fires on a broken input and the control stays quiet.
+  assert.match(node([join(root, 'tools/validate-state.mjs'), '--selftest'], root), /gate self-tests behaved as specified/);
+
+  // Scaffolding is meant to be edited, so a second install must not overwrite it.
+  writeFileSync(join(root, 'PROJECT_OPERATING_PROTOCOL.md'), 'edited by the project\n');
+  const again = node([join(kit, 'tools/bootstrap.mjs'), `--target=${root}`, '--template'], kit);
+  assert.match(again, /0 file\(s\) written, 10 left alone/);
+  assert.equal(readFileSync(join(root, 'PROJECT_OPERATING_PROTOCOL.md'), 'utf8'), 'edited by the project\n');
+
+  // ...and the vendored half, which is not meant to be edited, is still verifiable.
+  assert.match(node([join(kit, 'tools/bootstrap.mjs'), `--target=${root}`, '--check'], kit), /is installed and current/);
+
   rmSync(root, { recursive: true, force: true });
 });

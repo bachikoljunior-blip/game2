@@ -1,0 +1,99 @@
+# PROJECT_STATE.yaml — the canonical machine state for this repository.
+#
+# This is the file the floor gate names (`state_path`), so it is the one file a product
+# change must move. Keep it a *projection*: stable ids, parents, dependencies, statuses,
+# and references to where the prose lives. Do not copy requirement, design or review prose
+# in here — that is what the documents in `authorities` are for, and a second copy is a
+# second thing to disagree with the first.
+#
+# Every value below is a placeholder. Replace them, delete the rows that do not apply, and
+# run `node tools/validate-state.mjs`.
+
+schema_version: 1
+
+# Bumped by hand on every meaningful state change, and echoed in SESSION_STATE.yaml.
+# The validator fails when the two disagree, which is how a half-applied edit — one file
+# saved, the other not — stops looking like a consistent state.
+state_revision: "2026-01-01.1"
+
+project:
+  id: PROJECT-EXAMPLE
+  name: EXAMPLE
+  repository: owner/repo
+  default_branch: main
+  # The last commit whose gates were actually observed to pass. Not "the last commit".
+  verified_baseline: null
+  working_branch: main
+  phase: null
+
+# Where the prose lives. The protocol refers to these by role, never by path, so a repository
+# can keep the document layout it already has.
+authorities:
+  operating_protocol: PROJECT_OPERATING_PROTOCOL.md
+  requirements_and_constraints: null
+  approved_design: null
+  acceptance_criteria: null
+  human_readable_state: null
+  review_findings: null
+
+# The review record the floor gate reads. These four fields must be *touched by the same
+# change set* that touches product files — a valid record from three commits ago otherwise
+# satisfies the gate forever.
+#
+#   independence_level_used  A = a different agent with no sight of the implementation
+#                            B = a fresh context, sanitized evidence package
+#                            C = the same context, self-review — record it honestly
+#   review_outcome           complete_verified is the only accepted value. See template/README.md.
+review:
+  independence_level_used: null
+  review_outcome: null
+  reviewed_at: null
+  review_scope: null
+
+# Remote pushes, merges and public deployments are off by default. Turn this on only from an
+# explicit user instruction, and quote it in `source`.
+remote_authorization:
+  status: inactive
+  source: null
+  persists_across_sessions: false
+  authorized_actions: []
+  safety_boundary: |-
+    Purchases, credential and account changes, destructive production-data or cloud
+    operations, irreversible migrations and disabling security controls are never
+    authorized by this field.
+
+# The plan hierarchy. `parent: null` marks the single root. Statuses come from the
+# vocabulary in INDEX.md; the validator rejects anything outside it.
+plan_nodes:
+  - id: PROJECT-EXAMPLE
+    parent: null
+    status: active
+    title: Replace this with the outcome the project exists to deliver
+
+# Leaf work. `dependencies` must resolve to ids in this file and must not form a cycle —
+# a cycle is invisible in review and simply makes the resume procedure never select a task.
+# `evidence` paths must exist on disk; evidence that is not there is not evidence.
+tasks:
+  - id: TASK-0001
+    parent: PROJECT-EXAMPLE
+    status: proposed
+    title: Replace this with the first bounded, independently verifiable task
+    dependencies: []
+    criteria: []
+    evidence: []
+
+# One row per criterion that decides whether something is done. A criterion may only be
+# `verified` when it names the apparatus that measured it, what that apparatus measured, and
+# evidence that is not `none` — enforced, because otherwise "verified" costs nothing to write.
+criteria:
+  - id: CRIT-0001
+    task: TASK-0001
+    status: proposed
+    statement: Replace this with an observable outcome, a threshold, or a comparison
+    apparatus: null
+    measured: null
+    evidence_state: none
+
+# What is not known, written down so the next session does not rediscover it. Keep each entry
+# to a claim and its current standing.
+known_uncertainty: []

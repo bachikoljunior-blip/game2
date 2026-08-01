@@ -1,0 +1,41 @@
+# SESSION_STATE.yaml — the active logical session and the exact point work resumes from.
+#
+# A logical session ends only when the user says so. A new chat, a closed app, a finished
+# turn, a commit, a merged PR, a tool failure or a compressed context are all checkpoints,
+# not endings. `end_declared_by_user` is a boolean rather than a paragraph precisely so a
+# validator can hold that line instead of a habit.
+#
+# The one field that pays for the whole file is `next_action`. Write it so that an agent with
+# no memory of this session can execute it without reading anything else first.
+
+schema_version: 1
+
+# Must equal PROJECT_STATE.yaml's value. The validator fails when they disagree.
+state_revision: "2026-01-01.1"
+
+session:
+  id: SESSION-2026-01-01-01
+  status: active
+  opened_by_user: true
+  end_declared_by_user: false
+  objective: Replace this with what this session is for, in one sentence
+  active_task: null
+  # The small set of tasks that are actionable *now*. Ids must exist in PROJECT_STATE.yaml.
+  # Updating this must never require rewriting the whole plan.
+  active_frontier: []
+  final_handoff: null
+  archive_reference: null
+
+checkpoint:
+  id: CP-2026-01-01-01
+  # The commit this session's work is measured against, and the one to return to.
+  baseline: null
+  rollback_point: null
+  last_verified_action: null
+  current_failure: null
+  current_hypothesis: null
+  next_action: Replace this with the single next action, executable without prior context
+  # Verification that is owed but has not run. An entry here is the honest alternative to
+  # recording an unexecuted check as passed.
+  pending_verification: []
+  modified_files: []

@@ -1,0 +1,86 @@
+# Publish to GitHub Pages, then prove the public surface actually serves the new build.
+#
+# The verify step is the point. "The push succeeded" and "the deploy step is green" are not
+# evidence that the site serves what you published, and two failures in exactly that gap are
+# on record: a Pages race after a state-only default-branch update, and a rendered README
+# overwriting a published game. Neither was caught by the build.
+#
+# `.kit/lib/release/verifyServed.mjs` recomputes the revision digest from the served bytes, so
+# it fails on *content* rather than on a mismatch with something we wrote down — which is what
+# makes it catch the README case without being told to look for it.
+#
+# Delete this file if the project does not publish. Do not keep it and skip the verify step.
+name: pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+
+      # Never publish a checkpoint whose state gate fails.
+      - name: Validate operating state
+        run: node tools/validate-state.mjs
+
+      - name: Build
+        run: npm run build
+
+      # If the project mirrors the build into a publication directory, check the mirror is
+      # not stale before uploading. A stale mirror is a second, older copy of the application
+      # sitting on the public surface. See .kit/lib/release/mirror.mjs.
+      - name: Validate publication mirror
+        run: npm run validate:mirror --if-present
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  verify:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+
+      # Fetch what the public gets and prove it is what was published. Retries across CDN
+      # propagation; a 200 that serves the wrong page still fails. Add a --marker only the
+      # real page contains.
+      - name: Verify the served bytes
+        run: node tools/verify-published.mjs
+        env:
+          PUBLIC_URL: ${{ needs.deploy.outputs.page_url || format('https://{0}.github.io/{1}/', github.repository_owner, github.event.repository.name) }}
