@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "taskId": "R18-POSTFX",
+  "producer": "postfx-specialist",
+  "consumer": "project-director",
+  "branch": "claude/1-round-execution-kgtb9r",
+  "baseSha": "edea1c7",
+  "allowedScope": [
+    "src/render/PostFX.js",
+    "AI_DEVELOPMENT/HANDOFFS/r18-postfx.json"
+  ],
+  "status": "shipped-unverified",
+  "verdict": "ROOT CAUSE FOUND AND FIXED; THE ROUND-18 ACCEPTANCE TARGET IS PROVED UNREACHABLE FROM THIS FILE. Both halves are first-class results and both are stated with arithmetic. The blocker is NOT closed and I am saying so in advance.",
+
+  "apparatus": {
+    "resolution": "native 2532x1170, shots/phone-valley-r17v2.png and shots/phone-sun-r17v2.png, phone profile, TIER.MEDIUM. The review PNG is a 1.876x upscale of a 1350x624 drawing buffer; the shader's radial metric is dist = (pixels from the sun) / (frame height), which is scale-invariant, so every dist below is quoted in NATIVE pixels / 1170.",
+    "harness": "Scratch, NOT committed. Every decode goes through tools/luma.mjs decodePNG imported from tools/probe.mjs's own dependency, never re-decoded, so the 3-channel/4-byte-stride bug cannot occur. Cross-checked against the probe CLI: `probe stats shots/phone-valley-r17v2.png 0.2,0.3,0.1,0.1` and the harness both return meanRGB [185.3,161.6,132.1] p50 184.7 detail 3.80.",
+    "instrumentReproduction": "The round-18 critic's `valley` disc centroid is reproduced EXACTLY: centroid of pixels with luma >= 246 is (950.43, 56.17), n = 1045, rounding to the critic's (950,56). The 25 arc samples reproduce to a mean absolute error of 2.0 code values (the sky gradient there is ~1 code/px, so a one-pixel difference in the sampling convention accounts for all of it); my box-9 high-pass reads mean 1.443 / max 4.221 against the critic's 1.298 / 3.834, 11% high. EVERY claim below is differential on the same harness, so that offset cancels.",
+    "occluderMask": "geometry = B < 0.62*R on `valley` (sky there is cream, B/R 0.78-0.83; culm, leaf and treeline are B/R 0.32-0.40), and luma < 150 OR B < 0.55*R OR y > 735 OR inside the two traced paper-lantern rects on `sun`. BOTH masks were rendered with the geometry painted magenta over the frame and LOOKED AT at native before any number was taken from them. The `valley` mask slightly UNDER-covers the softest sunlit leaf edges inside the disc glow, which makes every modulation figure below a LOWER bound. Sampled on the 337x156 grid rtGodA actually occupies at MEDIUM (1350x624 >> 2), point-sampled, so a thin leaf is resolved exactly as the pass resolves it.",
+    "notRun": "No capture and no browser were launched. FRAG_GOD_BLUR IS RESTRUCTURED AND UNCOMPILED. No GLSL validator exists in this container.",
+    "codeSlopeBracket": "All figures in CODE VALUES carry a bracket, because d(code)/d(post-exposure unit) at the arc is estimated, not measured on this build: round 16 measured 62 at code 220, and inverting the ACES fit plus sRGB encode at code 213 gives 80. Both are reported. Figures in VISIBILITY units are exact given the mask."
+  },
+
+  "findings": [
+    {
+      "id": "F2",
+      "severity": "blocker",
+      "critic": "There are still no volumetric shafts anywhere in the two frames the contract names. `valley` r = 500 px arc, theta 0..24 deg: max |high-pass at lag 9| 3.834, mean 1.298. Target 10.0 and 4.0.",
+
+      "rootCause": {
+        "claim": "The pass has not been weak at the acceptance radius. It has been BLIND there, and the cause is round 16's own fix. The march was bounded by LENGTH (uMaxMarch = 0.16, len = M*(1 - exp(-dist*uDensity/M))), and a length bound is a reach limit that bites hardest on exactly the receivers a shaft has to reach.",
+        "arithmetic": "The acceptance arc sits at r = 500 px = dist 0.4274. len = 0.16*(1 - exp(-0.4274*0.85/0.16)) = 0.1435, so those 25 receivers march screen radii 332..500 px. The occluder the critic verified by crop is at r = 40..260 px. THE TWO SETS ARE DISJOINT, by 72 px. I re-derived the occluder independently from the mask: along theta 0..24 deg every blocking texel lies at r = 80..190 px and everything from r = 200 px outward is clean sky at every one of those angles.",
+        "measurement": "Simulated visibility on all 25 acceptance samples with the shipped march: 1.0000, 1.0000, ... 1.0000 - identically, to four places, at every gain, every envelope, every sunRadius and every tap count, because 1 is what an integral over clean sky returns. The pass deposits 17-22 code of pure common mode there and cannot modulate one of them.",
+        "whatThisExplains": "Why round 17's envelope work measurably moved the frame (+61% deposit at dist 0.359, sky area above 0.05 modulation 11.92% -> 20.76%) and could not move this arc by one code value; and why the critic reads a 'smooth monotone falloff with no angular structure whatever'. It is the same class of defect as round 17's instrument disproof, in the opposite direction, and it is the third consecutive round in which the acceptance geometry and the pass geometry did not intersect."
+      },
+
+      "shipped": "FRAG_GOD_BLUR is bounded by an inner RADIUS, not by a length. `x = dist - uInnerR; reach = 0.5*(x + sqrt(x*x + uSoftK*uSoftK)); q = (reach/uMaxMarch)^4; len = reach * inversesqrt(sqrt(1.0 + q))`. uInnerR = 0.09, uSoftK = 0.03, uMaxMarch 0.16 -> 0.75 and demoted to a far-field cap, uDensity deleted. uWeight (1.34), uSunRadius (0.18), uGlowRadius/uGlowOuter/uGlowMix, uDecay, uEmitClamp, uAirScale, uAirFloor and GOD_SAMPLES are ALL UNCHANGED. This is not a gain change and not an envelope change; it is march geometry only.",
+
+      "whyARadiusAndNotALength": "The quantity that must stay out of every receiver's integral is the unoccludable, clamp-saturated disc - that is round 16's common mode, and it is a RADIUS. A length bound only says 'do not travel far', which is a different statement and denies reach to the far receivers while granting it to the near ones. Bounding by radius makes both true at once: no receiver's integral ever contains the core, and every receiver reaches every occluder between itself and that core. 0.09 frame-heights = 105 px is sized on the measured disc: azimuthal means at 3 deg steps give code >= 240 out to r ~ 100 px on `sun` and r ~ 45 px on `valley`. The soft max is the sqrt form rather than max() because a corner in the sampling extent rings; the p = 4 smooth-min replaces round 16's exponential cap because an exponential compresses everywhere (at M = 1.2 it still took 13% off the reach at dist 0.43, which is where the shafts are), while p = 4 is within 1.2% of transparent there and still holds the frame corner to len 0.72 instead of 1.13.",
+
+      "prediction": "Stated before any measurement and deliberately including its own shortfall. On a re-shot phone/MEDIUM `valley`, the critic's 25-sample r = 500 px theta 0..24 deg arc moves from max |high-pass| 3.834 / mean 1.298 to roughly 4.3-5.5 / 1.5-1.9. IT DOES NOT REACH 10.0 / 4.0. The arc mean falls 213.0 -> 207.7-208.9, holding GUARD 1 (202.4-223.7) with at least 5.4 code of margin. `sun` share below code 8 FALLS rather than rises, `sun` whole-frame p50 moves 106.5 -> 106.5-108.4, and the `sun` r = 130 px arc mean stays 237.7 exactly.",
+
+      "measured": {
+        "method": "Simulation of the exact shipped march - the constants are READ BACK OUT of src/render/PostFX.js by regex at run time so the simulation cannot drift from the file - on the two mask-verified occluder sets, emitter = 1 on sky and 0 on geometry so the output is pure visibility and only ratios are claimed.",
+        "valley_r500_theta0to24_ACCEPTANCE": {
+          "visibility": "1.0000 on all 25 (identically, by construction) -> 0.661..0.822, mean 0.755",
+          "marchInnerRadius": "332 px -> 108 px (the occluder is at 80..190 px)",
+          "passDepositMean": "16.93-21.85 code -> 12.79-16.51 code",
+          "passHighPassMax": "0.00 -> 1.11-1.43 code",
+          "passHighPassMean": "0.00 -> 0.35-0.45 code",
+          "predictedFrameTotal": "3.834 -> ~4.3-5.5 max, 1.298 -> ~1.5-1.9 mean. TARGET 10.0 / 4.0 NOT MET."
+        },
+        "sun_r430_theta187to211_NEW_VERIFIED_INSTRUMENT": {
+          "note": "The round-18 critic wrote 'I could not construct ANY uncontaminated arc in sun'. This one is constructed and verified twice: swept over all 360 deg for a 25 deg window whose 13-point neighbourhoods are 100% non-geometry in the mask, then cropped at native and looked at, then re-probed - `probe stats shots/phone-sun-r17v2.png 0.4199,0.2458,0.0348,0.1701` returns p1 205 / p50 212 / p99 220.9, lumaSpread 15.9, detail 0.80, i.e. pure sky. It is radially outward of a real occluder: the ray from theta 200 deg crosses the left torii upright (native x 1163-1248) at r = 364 px, inside the receiver's 430.",
+          "visibility": "0.205..0.514 mean 0.390 -> 0.388..0.476 mean 0.455",
+          "passHighPassMax": "0.90-1.16 code -> 1.18-1.52 code (+31%)",
+          "peakToTrough": "0.309 -> 0.088 in visibility units. Declared as a loss: the deeper march adds highly-weighted clean taps at r = 0.09..0.22 where `sun` has no occluder, which removes common mode from the high-pass but also from the peak-to-trough. The metric the critic uses is the high-pass, and it rises."
+        },
+        "guards": {
+          "GUARD_1_valley_arc_mean": "213.0 -> 207.7-208.9 against the band 202.4-223.7. HOLDS.",
+          "GUARD_2_valley_below8": "0.011% cannot rise: geometry-receiver deposit goes 1.01 -> 1.21 code and sky-receiver mean 11.50 -> 10.90 code, so `valley` dark pixels GAIN 0.2 code. HOLDS against the 2.0% ceiling.",
+          "GUARD_2_sun_below8": "1.639% cannot rise: geometry-receiver deposit goes 1.32 -> 3.21 code, i.e. `sun` shadowed surfaces gain ~1.9 code. This moves AWAY from the ceiling and cannot regress round 17's crush fix. HOLDS against 4.0%.",
+          "GUARD_2_sun_p50": "sky receivers -0.17 code, geometry receivers +1.9 code; the `sun` median pixel is geometry, so p50 106.5 -> 106.5-108.4 against the band 98.0-115.0. HOLDS.",
+          "r17_GUARD_sun_arc130": "237.7 UNCHANGED, and by a mechanism worth recording: at dist 0.111 the new reach is 0.0288 against the old 0.0707, so near-sun receivers now march LESS, never inside r = 96 px, and their visibility is 1.0 either way because `sun` has no occluder inside 159 px. Their deposit is identical.",
+          "sun_pctAbove240": "2.549% unchanged for the same reason - every pixel in that population sits at dist < 0.11 where the march got shorter and the visibility was and remains 1.0. Nothing in this change adds light near the disc.",
+          "valley_black_gate_p0.1": "18-19 against the project gate's < 15. NOT ADDRESSED and NOT WORSENED: the only `valley` pixels this change lifts are geometry receivers, by <= 0.2 code, and the far corner deposit moves 0.000 -> 0.003 code.",
+          "far_field_wash": "The envelope is untouched, so the corner env stays 2.94e-4 on `valley` and 4.27e-5 on `sun` - still 23x and 200x below the 9.6e-3 round 16 removed. No wash is re-added."
+        }
+      },
+
+      "impossibilityProof": {
+        "claim": "The round-18 acceptance target - max |high-pass at lag 9| >= 10.0 code on the r = 500 px, theta 0..24 deg arc, under GUARD 1 - cannot be met from src/render/PostFX.js by ANY mechanism, additive or multiplicative, at any march geometry. The ceiling is 4.43 code. This is a factor of 2.26.",
+        "step1_ceilingAtUnchangedGain": "Modulation in code = (open-sky deposit) x (high-pass of the visibility field). I searched the whole march-geometry grid - uInnerR in {0.045, 0.06, 0.075, 0.09, 0.11, 0.13} x uSunRadius in {0.07, 0.09, 0.11, 0.14, 0.18}, 20 additional configurations plus the shipped one, all on the same verified mask. The largest high-pass of V on that sector anywhere in the grid is 0.203, at uInnerR 0.06 / uSunRadius 0.07. Open-sky deposit is 16.9-21.9 code. Ceiling: 0.203 x 21.9 = 4.43 code.",
+        "step2_gainIsBarred": "Reaching 10.0 needs a deposit of 10/0.203 = 49.3 code, 2.25x the present one. Deposit = uWeight x env(dist), and env's SHAPE is fixed, so the same 2.25x multiplies the deposit at dist 0.111 through the fixed envelope ratio env(0.111)/env(0.427) = 0.907/0.269 = 3.37. `sun` reads 237.7 on its r = 130 px arc today with roughly 23 code of that being the god term; 2.25x puts the whole inner glow past 255. That is the round-7 regression and it is the failure the shader's own uEmitClamp comment already names - 'at a gain large enough for the shafts it is a white-out'.",
+        "step3_envelopeFlatteningIsBarred": "Decoupling the two radii means flattening env. To take env(0.427) from 0.269 to 0.605 with env(0.111) held, uGlowOuter must go 0.45 -> ~0.70, which takes the frame-corner env from 2.94e-4 to 2.65e-2 - 2.8x MORE far-field wash than the 9.6e-3 round 16 measured and removed as the defect.",
+        "step4_theOneConfigThatGetsCloseBreaksTheOtherFrame": "hp(V) = 0.203 requires uSunRadius = 0.07, which concentrates every tap's weight into r = 0.06..0.10 where `valley`'s bamboo is. `sun`'s occluders are at r = 0.17..0.41, where a 0.07 weight is exp(-5.9) = 0.003. The same setting takes `sun`'s verified clean-sky arc from peak-to-trough 0.309 to 0.026. It buys one named frame by deleting the pass in the other.",
+        "step5_theMultiplicativeRouteIsAlsoBarred": "The pass can only ADD, so it prints bright bars and never dark ones; the physically correct missing half is a multiplicative attenuation of the aerial light where visibility is below the local mean, and it scales with the SCENE's radiance (0.585 post-exposure units at the arc) instead of the pass's 0.21-0.27, which is why it looked like the way out. It is not. atten_i = k*env*recv*(1 - V_i) gives hp(code) = 46.8*k*env*hp(1-V) and a mean attenuation of k*env*mean(1-V). At the best V field (mean deficit 0.703, hp 0.203), 10 code needs k = 3.9, which attenuates the arc by 73.8% and takes it from 213 to ~125 - GUARD 1's floor is 202.4, so it is breached by 78 code, a factor of 7. At the shipped V field it is worse still (k = 12.4, mean attenuation 0.82). Not shipped, and recorded here so it is not tried.",
+        "conclusion": "Every mechanism available in this file is bounded by the same visibility field and the same two constraints. The ceiling is 4.43 code against a 10.0 target."
+      },
+
+      "whatWouldHaveToChangeInstead": [
+        {
+          "owner": "src/render/Foliage.js (or whoever plants the valley bamboo)",
+          "claim": "THE OCCLUDER IN THE SAMPLED SECTOR HAS NO EDGE, AND THIS IS THE BIGGEST SINGLE LEVER BY A FACTOR OF 3.",
+          "evidence": "Over theta 0..24 deg at r = 500 the visibility field's high-pass-to-mean ratio is 0.19-0.29 under every march geometry tested, because what the sector contains is the soft outer edge of a leaf spray with no gap in it - a smooth angular ramp, which a 9-sample box high-pass is designed to reject. THREE DEGREES OUTSIDE the sector it is a different scene: over theta -3..+21 deg, on the identical march and the identical mask, the field steps 0.94 -> 0.41 -> 0.05 in two degrees and hp(V) = 0.641, which at the PRESENT deposit is 14.0 code and clears the 10.0 target with 40% margin. A bamboo culm crossing the sun's sector is what prints a bar; a leaf-spray boundary is not.",
+          "action": "Plant a culm (or leave one standing) across theta 0..24 deg from the `valley` disc, or re-derive the acceptance sector after foliage changes."
+        },
+        {
+          "owner": "the round's apparatus",
+          "claim": "The acceptance sector should be chosen where the occluder has an angular step, not only where the sky is clean.",
+          "evidence": "Rounds 16, 17 and 18 have each judged this blocker on an arc that the pass geometry could not modulate: r = 330 px crossing lacquer, r = 130 px inside the nearest occluder, r = 500 px outside the march's reach. Clean-sky verification is necessary and is not sufficient; the sector must also contain a visibility step. The r = 500 / theta -3..+21 window above is clean sky by the same mask AND contains one."
+        },
+        {
+          "owner": "src/render/Sky.js",
+          "claim": "The near-sun sky is at code 213 on the ACES shoulder, where a post-exposure unit is worth only 62-80 code against ~105 at code 190.",
+          "evidence": "The pass's modulation is a fixed number of post-exposure units; how many code values it prints is set by where the sky sits on the curve. Bringing the near-sun sky down 25-30 code would multiply the SAME 4.43 code ceiling by ~1.3-1.4 with no change here. It is a real contribution and it is not, on its own, enough."
+        }
+      ],
+
+      "disproved": [
+        "Widening the per-tap solar-proximity weight, re-checked in BOTH directions on the inner-radius march because round 17's disproof was taken on a march that could not reach `valley`'s occluder at all. Widening still loses (0.18 -> 0.30 and 0.45 both cut the modulation). NARROWING is what the `valley` arc wants - 0.18 -> 0.07 takes its high-pass 1.43 -> 4.43 code - and it is overfitting: the same change takes `sun`'s verified arc from 0.309 to 0.026 peak-to-trough. 0.18 is the only value measured to improve both. Recorded in the source.",
+        "'The march undersamples.' Not re-tested (round 15 settled it) and not needed: the failure mode found this round is that the sampled INTERVAL misses the occluder entirely, which no sample count can fix.",
+        "The multiplicative / two-sided route - see impossibilityProof step 5. Barred by GUARD 1 by a factor of 7."
+      ],
+
+      "apparatusFaults": [
+        "The round-18 acceptance instrument is sound as a MEASUREMENT (I reproduced its disc centroid exactly and its statistic to 11%) and is unreachable as a TARGET, for the reasons in impossibilityProof. That is a different failure from round 17's instrument, which could not detect a shaft at all; this one can, and nothing this file can build will print one that large there.",
+        "GUARD 1 as written (25-sample mean within 213.0 +/- 5%) is the binding constraint on every mechanism, additive or multiplicative. If the round wants shafts it has to decide which it wants more: a differential pass necessarily removes deposit from the blocked directions and therefore lowers that mean. The shipped change spends 4.1-5.3 of the 10.65 code the guard allows."
+      ]
+    }
+  ],
+
+  "budget": {
+    "drawCalls": "+0 (allocation was +1, unused)",
+    "triangles": "+0 (allocation was +0)",
+    "renderTargets": "+0",
+    "perFrameAllocation": "0 - two new uniforms are scalars set with `.value =`, no object is constructed",
+    "fillRate": "FRAG_GOD_BLUR only, which is 337x156 = 52.6k pixels at MEDIUM, 1.7% of the 1350x624 buffer. Per pixel: -1 exp(), +2 sqrt(), +1 inversesqrt(), +3 mul. Tap count UNCHANGED at 24, so the texture-fetch count is unchanged. The one thing worth watching on the device: the march stride grows from <= 0.16 to <= 0.72 frame-heights, so the 24 taps are spread wider across rtGodA - the working set is the same ~420 KB half-float target and stays resident, only locality changes. Expected net within +/-1% of a pass that is itself 1.7% of the frame. FRAG_GOD_OCCLUSION and FRAG_COMPOSITE are byte-identical to round 17."
+  },
+
+  "risks": [
+    "UNCOMPILED, AND FRAG_GOD_BLUR IS RESTRUCTURED. No browser was launched and no GLSL validator exists in this container. FIRST THING on the verification build: check the console for a shader link error. The blur shader gained two uniforms (uInnerR, uSoftK), lost one (uDensity), and replaced its `len` expression with five lines. A FRAG_GOD_BLUR link failure is SILENT - rtGodB goes black and the frame merely loses its god rays. `esbuild --bundle src/render/PostFX.js` passes and `node --check` passes, but that only proves the JS parses; note that a stray backtick inside a GLSL template literal terminates it, which is what a `node --check` failure caught in this very edit before it shipped.",
+    "SEPARATE AND NOT MINE, BUT IT WILL KILL THE WHOLE ROUND: `src/world/Terrain.js` does not currently parse. `npx esbuild --bundle src/main.js` fails with `Expected \"}\" but found \"wide\"` at src/world/Terrain.js:3501:41 - a backtick pair inside a GLSL template literal, the same bug class. If that lands as it stands the build fails and every owner's round is lost. src/render/PostFX.js bundles clean on its own.",
+    "CONTAMINATED. Foliage owns the `valley` bamboo this round and is explicitly asked to change what stands between the camera and the drop. The occluder my whole measurement rests on may not exist in the verification frame. If the r = 500 arc reads differently from my prediction in EITHER direction, re-derive the occluder from the new frame before attributing anything to this file. The `sun` r = 430 arc is the safer number - only Props.js has a minor finding on that frame.",
+    "The code-value figures carry the 62-80 slope bracket. The VISIBILITY figures (1.0000 -> 0.661..0.822) are exact given the mask and are the ones to judge the mechanism on.",
+    "uDecay is now applied over a march that is 2.5x longer at the acceptance radius (len 0.14 -> 0.36), so the pass's effective falloff length in screen space has grown by the same factor. That is measured into every number above. The tier anchoring (`0.94 ^ (24 / GOD_SAMPLES)`) still holds the weighting SHAPE constant across 24/32/48 taps and the ratio normalisation still holds the magnitude constant, so HIGH and ULTRA are unchanged relative to MEDIUM."
+  ],
+
+  "rollback": "git checkout edea1c7 -- src/render/PostFX.js"
+}

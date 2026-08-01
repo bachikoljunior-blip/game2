@@ -646,14 +646,28 @@ void main() {
  *    near the sun collects several times what a pixel further out does no matter what
  *    occludes either, which is a radial ramp with a weak modulation riding on it.
  *
- * 2. The march no longer terminates at the sun. `delta = (vUv - uSunUv)/N` makes every
- *    ray in the frame finish at the sun's UV, so every pixel's last taps sample the
- *    same unoccludable near-sun core; at the arc radius the critic measures, taps
- *    inside r = 0.12 carry 41% of the decay-weighted integral and no occluder in that
- *    sector reaches them. That is the common mode, and it is why a blocked direction
- *    still retained 67% of an open one. Bounding the march to uMaxMarch takes it to
- *    17%. The bound is a soft-min, `M*(1 - exp(-d/M))`, because a hard min() puts a
- *    slope discontinuity in the sampling extent and rings.
+ * 2. The march does not reach the sun, and — round 18 — the thing it is bounded BY is a
+ *    radius, not a length. `delta = (vUv - uSunUv)/N` made every ray finish at the sun's
+ *    UV, so every pixel's last taps sampled the same unoccludable near-sun core: that is
+ *    the common mode, and it is why a blocked direction still retained 67% of an open
+ *    one. Round 16 fixed it by capping the march LENGTH at uMaxMarch = 0.16, and that
+ *    cap is what has kept this blocker open for two rounds since. A length cap does not
+ *    say "do not sample the core"; it says "do not travel far", and those differ for
+ *    exactly the receivers that should carry shafts. MEASURED on the `valley` frame the
+ *    round-18 critic judged: a receiver on its acceptance arc sits at dist = 0.427 and
+ *    the cap gives len = 0.143, so its march covers screen radii 332..500 px — while the
+ *    crop-verified bamboo occluder sits at 40..260 px. The two sets are DISJOINT.
+ *    Simulated visibility on all 25 acceptance samples: 1.0000, exactly, at every gain,
+ *    every envelope and every tap count. The pass was not weak there; it was blind.
+ *
+ *    Bounding by inner radius fixes both halves at once: no receiver's integral ever
+ *    contains the core (uInnerR sits outside the clamp-saturated disc in both framings —
+ *    measured, `sun` reads code >= 240 out to r ~ 100 px and `valley` to r ~ 45 px, and
+ *    0.09 frame-heights is 105 px), and every receiver reaches every occluder between
+ *    itself and that core. `reach` is a smooth max(dist - uInnerR, 0) — the sqrt form,
+ *    not max(), because a corner in the sampling extent rings — and uMaxMarch survives
+ *    only as a far-field cap on the p = 4 smooth-min, which is within 1.2% of transparent
+ *    at dist = 0.43 and still holds the frame corner to 0.72 rather than 1.13.
  *
  * `r` is tracked as a scalar because the march is exactly radial, so the per-tap
  * envelope costs one exp() and no length().
@@ -663,7 +677,8 @@ ${GLSL_COMMON}
 uniform sampler2D tSrc;
 uniform vec2 uSunUv;
 uniform float uAspect;
-uniform float uDensity;
+uniform float uInnerR;
+uniform float uSoftK;
 uniform float uMaxMarch;
 uniform float uSunRadius;
 uniform float uGlowRadius;
@@ -678,7 +693,16 @@ void main() {
   // Aspect-corrected so a radius is the same physical distance in x and y. In this
   // metric r is simply (pixels from the sun) / (frame height).
   float dist = length(toSun * vec2(uAspect, 1.0));
-  float len = uMaxMarch * (1.0 - exp(-(dist * uDensity) / max(uMaxMarch, 1e-4)));
+  // Stop at a fixed RADIUS from the disc, not after a fixed LENGTH. Everything below is
+  // finite for every input (ARCHITECTURE 5b): the sqrt argument is a sum of squares plus
+  // uSoftK^2 > 0, q >= 0, and inversesqrt takes 1 + q >= 1. At dist < uInnerR the reach
+  // decays smoothly to ~uSoftK/2 rather than clamping, so the pixels under the disc keep
+  // a short, continuous march instead of a hole.
+  float x = dist - uInnerR;
+  float reach = 0.5 * (x + sqrt(x * x + uSoftK * uSoftK));
+  float q = reach / max(uMaxMarch, 1e-4);
+  q *= q; q *= q;
+  float len = reach * inversesqrt(sqrt(1.0 + q));
   float stepR = len / float(GOD_SAMPLES);
   vec2 stepUv = toSun * (stepR / max(dist, 1e-5));
   // Jitter the march start per pixel: a fixed step count on a low-res buffer bands
@@ -705,9 +729,9 @@ void main() {
   float recv = texture2D(tSrc, vUv).a;
   // Two lobes, because one Gaussian cannot be both narrow at the corners and present
   // where the occluders are. Measured on the sun frame with the occluder set read off
-  // the shipped image: the march is bounded at uMaxMarch, and the nearest occluder to
-  // the disc in the sector the round-17 acceptance samples sits at r = 159 px, so every
-  // receiver inside r ~ 0.136 returns visibility 1.0000 *by construction* — a single
+  // the shipped image: the nearest occluder to the disc in the sector the round-17
+  // acceptance samples sits at r = 159 px, and under the round-16 length cap every
+  // receiver inside r ~ 0.136 returned visibility 1.0000 *by construction* — a single
   // 0.30 Gaussian was therefore spending 87% of its peak at exactly the radius where
   // nothing can modulate it, and 24% at 0.359 where the shide, the rope and the hanging
   // lantern actually cut. mix(0.30, 0.45, 0.5) moves env 0.111 -> +4.0% (the guarded
@@ -2208,8 +2232,9 @@ export class PostFX {
       tSrc: { value: black },
       uSunUv: { value: new Vector2(0.5, 0.5) },
       uAspect: { value: 1.78 },
-      uDensity: { value: 0.55 },
-      uMaxMarch: { value: 0.16 },
+      uInnerR: { value: 0.09 },
+      uSoftK: { value: 0.03 },
+      uMaxMarch: { value: 0.75 },
       uSunRadius: { value: 0.18 },
       uGlowRadius: { value: 0.30 },
       uGlowOuter: { value: 0.45 },
@@ -3273,21 +3298,43 @@ export class PostFX {
     bu.tSrc.value = this.rtGodA.texture;
     bu.uSunUv.value.copy(this._sunUv);
     bu.uAspect.value = this._w / Math.max(1, this._h);
-    // uDensity now only shapes the short-range case; uMaxMarch is what bounds the long
-    // one. The old note here claimed density 0.85 "starves the far field" because a ray
-    // from 0.5 UV out ends at 0.075 — but 0.075 is *inside* the 0.18 envelope at
-    // prox = 0.83, so the far field was not starved at all, it was being handed the
-    // near-sun core at 83% strength. Simulated on the traced `sun` occluder set: with
-    // the old geometry a fully blocked direction on the critic's r = 330 px arc still
-    // returned 67% of an open one (0.395 vs 0.587); bounding the march at 0.16 takes
-    // that to 17% (0.092 vs 0.552), and the arc's relative peak-to-trough goes
-    // 42% -> 188% from the march geometry alone.
+    // ROUND 18, and it is the whole finding: the march is bounded by an inner RADIUS.
     //
-    // 0.16 is sized on where the occluders are, not on taste: the shide, the shimenawa
-    // and the hanging lantern in `sun` sit between r = 0.17 and r = 0.41, so an arc
-    // pixel at r = 0.282 must reach ~0.12 to cross them and must not reach the 0-0.12
-    // core, which nothing in that sector occludes. 0.16 lands it at 0.122.
-    bu.uMaxMarch.value = 0.16;
+    // The round-16 length cap (uMaxMarch = 0.16, march = M*(1 - exp(-d*density/M))) is
+    // what has kept "no volumetric shafts" open since. It reads as conservative and it is
+    // not — it is a reach limit, and it bites hardest on exactly the receivers a shaft has
+    // to reach. Measured against the round-18 critic's own acceptance geometry on
+    // `valley`: the disc centroid of pixels >= 246 is (950.43, 56.17), the arc is at
+    // r = 500 px = dist 0.4274, and the cap gives len = 0.1435, so those 25 receivers
+    // march screen radii 332..500 px. The occluder the critic verified by crop sits at
+    // 40..260 px. Disjoint. Simulated visibility on all 25 samples: 1.0000 to four places,
+    // and no gain, envelope or tap count can change a number that is 1 by construction.
+    // That is why round 17's envelope work moved the frame and could not move this arc.
+    //
+    // 0.09 is sized on the disc, which is the thing that actually must stay out of the
+    // integral: `sun` reads code >= 240 out to r ~ 100 px and `valley` to r ~ 45 px
+    // (azimuthal means, 3 deg steps, both r17v2 frames), and 0.09 frame-heights = 105 px.
+    // Below that the emitter is at uEmitClamp for every receiver at once, which is the
+    // common mode round 16 removed. Above it, every receiver now reaches every occluder
+    // between itself and the core: the same 25 samples go to visibility 0.53..0.90.
+    //
+    // Larger values were measured and are worse in both frames, so do not walk it back
+    // toward 0.16: at uInnerR = 0.13 the acceptance arc's high-pass is 0.65 code against
+    // 1.43 at 0.09, and the `sun` clean-sky arc's is 0.064 against 0.051 — but 0.13 also
+    // costs `sun` 8% of its sky-receiver deposit for that. Smaller values buy nothing on
+    // the acceptance arc (1.38-1.40 code at 0.075 and 0.06) and start eating the disc.
+    bu.uInnerR.value = 0.09;
+    // Rounding on the smooth max(dist - uInnerR, 0). 0.03 puts the knee two texels wide
+    // on rtGodB at MEDIUM, which is below the jitter's own footprint.
+    bu.uSoftK.value = 0.03;
+    // uMaxMarch survives only as a far-field cap, and it is now a p = 4 smooth-min rather
+    // than the old exponential, because an exponential cap compresses *everywhere*: at
+    // M = 1.2 it still took 13% off the reach at dist = 0.43, which is where the shafts
+    // are. At p = 4 the cap is within 1.2% of transparent there and still holds the frame
+    // corner (dist 1.2) to len 0.72 instead of 1.13, so a 24-tap march never strides more
+    // than ~35 native px. Its own slope break sits at dist ~ 0.83, where env is 0.018 and
+    // the whole deposit is ~1 code — a discontinuity there cannot ring visibly.
+    bu.uMaxMarch.value = 0.75;
     // The march's per-tap sampling weight. Same 0.18 the emitter used to be multiplied
     // by, same reason (the susuki ridge on the valley beat sits 0.204 below the sun and
     // has to be inside the envelope to cut anything) — but it is now divided back out,
@@ -3302,6 +3349,16 @@ export class PostFX {
     // shaft pixel 0.541 -> 0.574 (+6%) while *shrinking* the sky area carrying a
     // modulation above 0.05 linear units from 11.92% to 10.39%, because a receiver whose
     // near taps are blocked and far taps are clear now reads as more visible, not less.
+    //
+    // ROUND 18, re-checked against the inner-radius march because that disproof was taken
+    // on a march that could not reach `valley`'s occluder at all, and re-checked in the
+    // other direction: NARROWING it is what the `valley` acceptance arc wants and it is
+    // overfitting. 0.18 -> 0.07 takes that arc's high-pass 1.43 -> 4.43 code, because it
+    // concentrates every tap's weight into r = 0.06..0.10 where the bamboo is. In `sun`
+    // the occluders are at r = 0.17..0.41, where a 0.07 weight is exp(-5.9) = 0.003: the
+    // same change takes `sun`'s verified clean-sky arc from peak-to-trough 0.309 to 0.026,
+    // i.e. it buys one of the two named frames by deleting the pass in the other. Left at
+    // 0.18, which is the only value measured to improve both.
     bu.uSunRadius.value = 0.18;
     // The pass's radial footprint, now authored here rather than inherited from the
     // emitter. This is the "less spread" knob — but "less" has to mean less where the
@@ -3317,9 +3374,12 @@ export class PostFX {
     // wash and removed.
     bu.uGlowOuter.value = 0.45;
     bu.uGlowMix.value = 0.5;
-    bu.uDensity.value = 0.85;
-    // uDecay is a falloff *per march step*, and a step is `uDensity / GOD_SAMPLES` of the
-    // way to the sun — so a fixed 0.94 is only a fixed physical falloff at a fixed tap
+    // uDensity is gone with the length cap it shaped; the march extent is now uInnerR and
+    // uMaxMarch alone. Deleted rather than left at its old value, because a uniform that
+    // no longer appears in the shader is silently dropped and reads as a live knob.
+    //
+    // uDecay is a falloff *per march step*, and a step is `len / GOD_SAMPLES` of the way
+    // to the sun — so a fixed 0.94 is only a fixed physical falloff at a fixed tap
     // count. GOD_SAMPLES is a tier knob (24 / 32 / 48) and the pass normalises by 1/N,
     // so the decay-weighted tap count (1 - d^N)/(1 - d) = 12.89 / 14.37 / 15.81 was
     // being divided by 24 / 32 / 48: the same scene emitted **1.612 / 1.347 / 0.988**
