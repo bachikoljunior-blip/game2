@@ -16,11 +16,33 @@ art-direction state record; project-wide session, plan and criterion pointers li
 
 - Logical session: **active** (`2026-07-31-game2-continuation`). It ends only when the user
   explicitly says so.
-- Current working branch: **`claude/1-round-execution-r6rdfs`** (round 15). The rounds-13–14
+- Current working branch: **`claude/1-round-execution-kgtb9r`** (round 16, base `1a805c9`).
+  The round-15 branch `claude/1-round-execution-r6rdfs` is merged and historical. The rounds-13–14
   branch `agent/rounds-13-14` is merged and historical. Persistent
   cross-session authorization is active to push verified checkpoints, integrate them into
   `main`, and publish GitHub Pages without asking again. Paid, destructive, credential, and
   account actions remain outside that authorization.
+- **Round 16 is COMPLETE.** Working branch **`claude/1-round-execution-kgtb9r`**, base
+  `1a805c9` (published `main`). Opening set `r16`, verification set `r16v1`. Opening verdict
+  **FAIL 61/100** (3 blockers / 5 majors / 1 minor); closing verdict **FAIL 54/100**
+  (4 blockers / 3 majors / 4 minors). Owner commits: `0dec70b` postfx, `9156715` foliage,
+  `82e57f0` sky, `5a1d72c` world. Measurements: `AI_DEVELOPMENT/EVIDENCE/r16-verification.md`.
+  **Do not read the 61 → 54 move as a regression measurement** — different critic instances,
+  and this project has already measured a 12-point gap between instances on byte-identical
+  pixels. What is instance-independent: one blocker genuinely closed (flat achromatic sky),
+  one blocker newly introduced by this round's own postfx change (crushed shadow floor), and
+  the god-ray blocker NOT closed despite a shipped change.
+- **Round 16's central lesson: the god-ray "success" was a measurement artefact, and the
+  coordinator propagated it.** The verification pass reported the `sun` arc going from 1
+  local maximum / 0 minima to 4 maxima / 3 minima with dips of 65.2/95.8/30.5 code values,
+  and that was read as shafts appearing. It was not. The closing critic re-measured on
+  **clean-sky arcs at r=130 px and r=600 px that cross no geometry** and found them flat to
+  **10.7 and 8.2 code values** — the "structure" was the paper lantern, the shimenawa and the
+  uprights crossing the measurement arc. The postfx owner had itself warned in its report
+  that **8 of the 13 arc boxes sit on near geometry rather than sky**, and that warning was
+  relayed and then not applied when the same arc was used as evidence. **Rule earned: an arc
+  or profile used as evidence of light must be shown to cross only sky, by cropping it and
+  looking, before any number from it is quoted.**
 - **Round 15 is COMPLETE.** Working branch **`claude/1-round-execution-r6rdfs`**, created
   from published `main` at **`8e72e01`**. Opening set `r15`, verification set `r15v1`.
   Verdict **FAIL** at **65/100**, 3 blockers / 5 majors / 3 minors, from 62/100 with
@@ -75,8 +97,15 @@ art-direction state record; project-wide session, plan and criterion pointers li
   `curl` fail before reaching GitHub. **Do not record a Round 15 public browser gate until
   it is actually run from a network that can reach github.io.** The last verified public
   browser gate remains the Rounds 13–14 one at `4a3eff7`.
-- Exact next action: await a future user instruction; do not activate Round 16 from the
-  still-active logical session alone.
+- Exact next action: **Round 17**, authorized by the user's explicit instruction to run five
+  rounds (16–20). Highest-value ready work, in order: (1) the postfx crush regression this
+  round introduced — `sun` below-code-8 went **0.32% → 12.47%** and the near torii upright
+  reads meanRGB [9.9,3.5,3.7] / p50 3.9 — together with the still-unclosed god-ray blocker,
+  and these are one file and must be judged on clean-sky arcs only; (2) the black plaza patch,
+  now localised to world XZ (−6.0, 38.2) and owned by `world`, not `Lighting.js`;
+  (3) the `valley` pose, owned by `core`/`Cinematic.js`, ideally with the `LAYOUT.overlook`
+  change in the same round; (4) the sakura canopy, which needs `world` (card size) and
+  `foliage` (texture) in the same round or it regresses.
 - Current rollback point for round 15: **`8e72e01`** (published `main`, the branch base).
   Owner commits are `65617e7` foliage, `11c8795` world, `30f20f4` materials, `c8ce3ee` sky,
   `b196bb8` postfx. Previous verified publication implementation checkpoint: **`5fb4c3c`**.
@@ -300,6 +329,98 @@ steering work for several rounds. Full numbers in `AI_DEVELOPMENT/EVIDENCE/r15-f
   decoder reading a 3-channel PNG, and produced a phantom "field of RGB confetti". It caught
   and corrected it before filing. The standing rule holds and earned itself again: **run one
   region through `tools/probe.mjs` first and require agreement to the digit.**
+
+## What round 16 disproved, localised or corrected — do not re-test these
+
+- **The near-black plaza patch is NOT a `Lighting.js` defect. Filed three times, disproved
+  three times, and now finally LOCALISED.** The `__glowPool` hypothesis from round 15 is also
+  dead: the pool is `AdditiveBlending` (r16 telemetry `blending=2`), monotone non-decreasing,
+  and the critic's own `wide` row measures a lantern pool as the **brightest** of ten boxes.
+  The shadow injection multiplies `directLight.color` only, and the round-15-verified
+  84.6%-cast-shadow box reads p50 **29.8** / spread 55.4 / detail 6.37 against the patch's
+  p50 **3.1** / spread **7.1** / detail 2.54 — different populations. Unprojected, the patch
+  is an **opaque ground surface 2.0 × 2.1 m at world XZ (−6.0, 38.2)**, beside the path slab
+  by the z=38.5 torii. Owner is `Level.js` / `Props.js` / `Terrain.js`. It measured
+  byte-identical across the round (p50 3.1 → 3.1, detail 2.98 → 2.93), which independently
+  confirms the disproof. **Do not route this to `Lighting.js` a fourth time.**
+- **`valley` has no valley because the POSE is wrong, not the terrain.** Ray-marching the
+  built heightfield (harness core-field hash `7e23ca7`, identical to the live page) shows the
+  drop is real: 812.0 m at 80 m out, 779.7 at 130, 691.8 at 300, 647.9 at 370, crossing
+  `WATER_LEVEL` 782 at **127 m**. But the pose sits at **r = 46.04 m from `PLATEAU_CENTER`**,
+  inside `PLATEAU_RADIUS` 78, and from 2.3 m of eye height the last visible ground is at 72 m
+  / 811.9 m ASL — a **visible drop of 0.1 m**, with all 1,928 sampled metres beyond it
+  occluded by the lip. At r = 112 the same eye sees **308.5 m** of drop. This confirms round
+  15's labelled hypothesis. Owner is `src/core/Cinematic.js`, NOT `Terrain.js`. Related and
+  not yet acted on: `LAYOUT.overlook` (r = 50.9) and `rimRadius` 74 contradict the built
+  terrain, so the "cliff-edge overlook" sits 61 m inside the cliff — that is a `Level.js`
+  change that moves zero pixels without a matching pose change, so both must land together.
+- **The far-massif mechanism recorded in open item 3 does NOT apply to the massif.** The
+  massif is at **555–619 m and 0.49–0.64 m per buffer pixel**, not the 1.0–2.3 km / 1.8 m the
+  shader comment asserts, so `kgScaleRamp = smoothstep(0.80,1.90,kgFoot)` measures **0.000 on
+  every massif in the set** and the locked band sat pinned at its 0.24 floor. `kgFine` is
+  **0.874** there, not the ~0.06 open item 3 describes. A silent debias bug darkening the far
+  range **7.8%** was found in the same place. Open item 10 (the `HEIGHT_MAX` clamp) is not
+  implicated — summits measure 1015–1076 m.
+- **The flat achromatic sky was a pinned clamp, and it is FIXED.**
+  `pow(x, 1/(1.2 + 1.2·uSunFade))` evaluates to a **constant 0.4167 in all daylight** because
+  the clamp is pinned for any `sunY > 0`, costing 60% of the dome's blue; and tint B=0.92
+  promoted G above B where the raw B/G margin is 0.4%. Measured `torii` profile saturation
+  **0.472 → 0.707**, `valley` far box 0.099 → 0.206 with B > G restored, luminance held to
+  +0.8%. The closing critic independently confirmed the dome is now a real blue with
+  azimuthal chroma structure and downgraded the finding to a minor about cloud form.
+- **Round 15's recorded contrast ceiling of 1.67× is WRONG and must not be re-quoted.**
+  `ambientReport.rim` had no cosine term while `r.key` did. There is roughly **3× more
+  headroom** than the record claimed, and it is not in `Sky.js`/`Lighting.js`.
+- **The torii upright defect is geometry, not texture.** Ablating the shipped mesh generator:
+  a circular section gives **0.0** lit-arc minima per ring, `adzedProfile(40,9,0.12)` gives
+  **4.0**, median dip 19% of local peak = 14–39 code values. The residual `detail` shortfall
+  is a `Materials.js` matter — the only sub-4-px feature on a lacquered post is the craze net,
+  which is **sub-texel (0.3 texels wide)** in the current recipe, and the 1.876× review
+  upscale caps what any 1-px Laplacian can carry.
+- **The repeated dark oval on the valley floor is the far-cover card itself**, not a shadow or
+  a decal — no foliage casts at MEDIUM and the shadow axis is wrong (sun az 28° vs view az
+  40°). It was dark twice over: `paintGrassClump`'s root stop `rgba(30,44,24)` = 0.023 linear,
+  then `×(1 − uBaseAO)` = 0.775. Density was **0.073 instances/m²**.
+- **`feather()`'s `keepBottom` does the OPPOSITE of its doc comment** — it keeps the tip and
+  fades the base — so the bamboo-atlas "opaque rooted skirt" analogy does not transfer to the
+  grass cards. Comment corrected, code deliberately left alone.
+- **The sakura canopy is not `Foliage.js`'s to fix alone.** `__blossom` is
+  `Props.js:_blossomCluster` (3 quads, half-extent `s = 1.00 + rnd()*0.68` → cards
+  **2.00–3.36 m** on an 11.0 m tree, 22–36% of crown diameter), merged by `Level.js`;
+  material `Props.blossomMaterial` is `alphaTest 0.36, transparent:false`, no A2C or dither.
+  Only the *texture* is `Foliage.js`'s, and at ~8× minification finer florets would land at
+  0.4–1.2 px and mip to a flatter wash. **The card-size change and the texture re-author must
+  land in the same round or the canopy regresses.**
+
+## Apparatus and process faults found in round 16 — the rig has now broken nine times
+
+- **An arc or profile quoted as evidence of light must be shown to cross only sky.** See the
+  round-16 entry under "Where the work is". This is the ninth break and the first one the
+  coordinator itself propagated.
+- **Acceptance criteria that are arithmetically unsatisfiable.** Three of the nine opening
+  findings set a structure target and a brightness guard in the same finding that could not
+  both hold. Worked example: finding 2 needed the `torii` sky box +0.116 saturation while its
+  own guard capped the whole frame at ±0.04, and sky is 34.7% of that frame —
+  0.116 × 0.347 = 0.0403, impossible at the *minimum* satisfying value. Two probe boxes were
+  also mislabelled: a box called "the entire visible sky" spans elevation 39.2°→21.4° and
+  contains no zenith (the frame tops out at 48°), and a box called "anti-solar" is **45.6°
+  from the sun**. Owners correctly declared the breaches in advance instead of quietly
+  missing them; the closing critic was instructed to check its own arithmetic.
+- **Parallel owner agents share one git index.** A concurrent `git add` / `git commit --amend`
+  swept another owner's staged files into the wrong commit. It was caught and split apart, and
+  the final history is clean (each commit holds exactly its owner's files), but the standing
+  "never `git add -A`" rule is **necessary and not sufficient**. One owner also used
+  `git stash`/`pop` mid-round, which touches the whole shared tree; nothing was lost, and it
+  reported that as luck rather than method.
+- **An owner's stated triangle cost was ~21k low.** `world` reported +11,256 for the three
+  gates; the `level` rollup measured **+32,432**. `foliage` came in under its own prediction
+  (+27,764 against +33,464). Check the rollup, not the owner's arithmetic.
+- **The `--ab-object` black-frame worry is narrowed, not closed.** The structural concern is
+  real: `engine.stop()` then `pipeline.render(0)` happen inside one `page.evaluate` while the
+  screenshot is a separate round trip against `preserveDrawingBuffer: false`. But two void
+  frames diff to zero, and the retained r12ab lantern A/B recorded **99.336% positive pixels
+  and +22.53 mean luma**, which is impossible from black pairs. A definitive image re-check is
+  unavailable in a fresh clone — `shots/` is gitignored and those PNGs did not survive.
 
 ## Open items, each with the measurement that states it
 
