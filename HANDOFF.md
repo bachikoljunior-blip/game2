@@ -65,6 +65,16 @@ art-direction state record; project-wide session, plan and criterion pointers li
   page, console, request, or HTTP errors.
   The initial HTTP-200 development entry and two speculative-module variants were rejected
   before this state was accepted.
+- **Round 15 publication is repository-verified but NOT publicly verified.** `origin/main`
+  is **`e40a188`**; `docs/assets` carries `index-BoUb9vMW.js`, `main-0qGNkpyh.js`,
+  `Rig-DmfyOsEa.js` and `three-BTL71eav.js`, `docs/index.html` references
+  `assets/index-BoUb9vMW.js`, and the superseded `index-D_EFhYS4.js`, `main-Ctu2PmB7.js`
+  and `Rig-DXuvNL97.js` are gone. **The live surface was not checked**: the agent proxy in
+  this container denies `bachikoljunior-blip.github.io:443` by policy (403 on CONNECT,
+  confirmed via `$HTTPS_PROXY/__agentproxy/status`), so both `npm run verify:pages` and
+  `curl` fail before reaching GitHub. **Do not record a Round 15 public browser gate until
+  it is actually run from a network that can reach github.io.** The last verified public
+  browser gate remains the Rounds 13–14 one at `4a3eff7`.
 - Exact next action: await a future user instruction; do not activate Round 16 from the
   still-active logical session alone.
 - Current rollback point for round 15: **`8e72e01`** (published `main`, the branch base).

@@ -11,7 +11,7 @@
     "baseSha": "8e72e01",
     "activePlanNode": "NEXT16",
     "activeTask": null,
-    "lastSuccessfulAction": "Round 15 closed FAIL 65/100 on coherent phone/MEDIUM r15v1; five owners dispatched and committed (65617e7, 11c8795, 30f20f4, c8ce3ee, b196bb8); apparatus gate and all budget/tonal gates passed.",
+    "lastSuccessfulAction": "Round 15 closed FAIL 65/100 on coherent phone/MEDIUM r15v1 and merged to main at e40a188 with the Pages build synced to docs/. The live public surface could NOT be checked: the agent proxy denies github.io by policy.",
     "currentFailingAction": null,
     "currentHypothesis": null,
     "nextAction": "Await a further user instruction; do not start Round 16 from logical-session state alone.",
@@ -19,7 +19,8 @@
     "pendingVerification": [
       "Open overall visual criteria in a future user-authorized round",
       "Real-device iPhone and mid-range Android performance",
-      "Whether capture.mjs --ab-object returns black pairs after engine.stop(), which would invalidate retained r12ab lantern evidence"
+      "Whether capture.mjs --ab-object returns black pairs after engine.stop(), which would invalidate retained r12ab lantern evidence",
+      "Public GitHub Pages browser gate for Round 15 \u2014 blocked in this container by an agent-proxy policy denial on github.io:443"
     ],
     "modifiedFiles": [
       "src/render/Foliage.js",
@@ -43,8 +44,8 @@
     ],
     "remotePushPendingAuthorization": false,
     "remoteReleaseAuthorized": true,
-    "remotePublicationStatus": "verified",
-    "publishedMainSha": "4a3eff701af0f6db52f5b780247e38422d40aad6",
+    "remotePublicationStatus": "repository_verified_public_surface_unverified",
+    "publishedMainSha": "e40a1884a57250391dd08bdf50dc2c6cb3837a36",
     "publishedUrl": "https://bachikoljunior-blip.github.io/game2/"
   }
 }
