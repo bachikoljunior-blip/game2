@@ -26,7 +26,7 @@ All eight target repositories now carry the kit, on one branch name:
 | Repo | SHA (remote-read) | Kit | Skills |
 |---|---|---|---|
 | `kit` | `d334e77` on `main` + `claude/kit-template-creation-ndursc` | source of truth, v0.2.0, 52 files, 34 tests | n/a |
-| `game2` | `e664c4c` | v0.2.0, `check:kit` passes, validator on `lib/state` | 9 + `round` |
+| `game2` | branch head — this file's own commit is the last one | v0.2.0, `check:kit` passes, validator on `lib/state` | 9 + `round` |
 | `survival` | `54c541e` | v0.2.0, harness on `lib/browser` + `lib/image`, validator on `lib/state` | 9 |
 | `Gptgame` | `4586c66` | v0.2.0, validator on `lib/state`, self-test in CI | 9 |
 | `Q` | `1720d47` | v0.2.0, both gates on `lib/state`, self-test in CI | 9 |
@@ -261,6 +261,24 @@ decision recorded saying which and why.
 
 All nine repositories (eight plus `kit`) carry the kit at the same version, `check:kit`
 passes in each, and every replaced tool has a measured before/after — not a plausible diff.
+
+### Where this stands, 2026-08-01
+
+Steps 2, 3, 4, 5 and 6 are closed by measurement. **Step 1 is the only one still open**, and
+its remaining half cannot be done from a session at all: flipping `kit`'s default branch to
+`main` is a repository *settings* write and the API proxy refuses those with
+`403 Repository settings writes are not permitted through this proxy`. `main` exists at
+`d334e77` and was read back from the remote; only the `HEAD` symref still points at
+`claude/kit-template-creation-ndursc`.
+
+**The one action left for the user:**
+
+```
+gh repo edit bachikoljunior-blip/kit --default-branch main
+```
+
+Do not spend turns retrying the API. Once that lands, `git ls-remote --symref origin HEAD`
+resolves to `refs/heads/main` and the workstream is finished.
 
 **Say so out loud when it is done.** The session that observes the last acceptance line
 reports to the user that the kit-and-skills rollout is complete, and states plainly which
