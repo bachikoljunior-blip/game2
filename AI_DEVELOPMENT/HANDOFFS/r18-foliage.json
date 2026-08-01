@@ -1,0 +1,224 @@
+{
+  "round": 18,
+  "team": "foliage",
+  "owns": ["src/render/Foliage.js", "AI_DEVELOPMENT/HANDOFFS/r18-foliage.json"],
+  "branch": "claude/1-round-execution-kgtb9r",
+  "baseSha": "edea1c7",
+  "status": "complete_unverified",
+  "statusNote": "F4 vocabulary. Every change below is verified by CONSTRUCTION (init() runs to completion offline, the winding audit passes, the canopy shader injection is proven to land on an existing include) and by OFFLINE RASTERISATION of the shipped instance buffers against each shot's real camera. None of it is verified in pixels: no capture and no browser was launched, per the round instruction. The coordinator's verification capture is what turns this into complete_verified or failed.",
+  "capture": "none. No browser, no rig lock. `npm run build` was run once to prove the file bundles; it rewrites dist/, so if a capture had been in flight it would have been corrupted — it was not, and the coordinator rebuilds before capturing anyway. Flagging it because CLAUDE.md names this as a rig hazard.",
+
+  "apparatus": {
+    "measurementSources": [
+      "tools/probe.mjs and tools/luma.mjs, imported (never re-decoded), so the recurring 3-channel/4-byte-stride bug is structurally impossible.",
+      "An offline construction harness (scratch, ~60 lines + rasteriser) that boots FoliageSystem.init() under a no-op Canvas2D shim and a stub ctx, then rasterises every mesh's real instance buffers through each shot's real camera. It reproduces the vertex placement path exactly (fade window, per-instance dissolve threshold fract(phase*31.7+0.137), shrink, yaw, uSize) at zero wind.",
+      "An unprojection/projection pair for each SHOTS entry."
+    ],
+    "selfTest": "The unprojection was validated against an INDEPENDENT prior measurement before it was used: round 16 unprojected the hero plaza void to world XZ (-6.0, 38.2). My harness unprojects the void's own connected-component centroid (1388,1016) to (-6.12, 38.31) and reprojects (-6, 812, 38.2) to (1395.6, 1010.5). Agreement 0.12 m / 8 px. The winding audit was validated by running it on geometries known to be correct (buildCrossCard's far-cover and grass-l2: 4/4 agree; tree-impostors 2/2 agree) before it was believed about the one that failed.",
+    "APPARATUS FINDING — READ THIS BEFORE USING THE r17v1/r17v2 PAIR": {
+      "claim": "shots/phone-hero-r17v1.png is a free, exact ablation of the ENTIRE foliage system (r17v1 was captured while FoliageSystem.init() aborted on the TDZ; r17v2 after the fix, with nothing else changed). It is the single most useful artefact in shots/ and it is about to be deleted by the next capture. **But it is only valid for `hero`.**",
+      "evidence": "Byte-identical pixel fraction between r17v1 and r17v2, and mean |Δluma| over the top 12 rows (pure sky, no foliage): hero 82.20% identical, Δ 0.02 — clean. wide 0.01% identical, Δ 4.16. torii 1.81%, Δ 4.34. sun 1.03%, Δ 11.38. valley 0.02% identical, Δ 44.45.",
+      "meaning": "On four of five framings the sky itself moved by 4 to 44 code values between the two captures, i.e. something global (adaptive exposure being the obvious candidate, since removing all foliage changes mean scene luminance most where foliage fills the frame) rebalanced the image. Any before/after taken across that boundary on wide/torii/sun/valley is contaminated. I used the pair ONLY on hero and used the harness everywhere else."
+    }
+  },
+
+  "findings": [
+    {
+      "id": "r18-blocker-hero-plaza-voids",
+      "shot": "hero",
+      "severity": "blocker",
+      "verdict": "MECHANISM FOUND AND FIXED. Cause identified by ablation and by an executable geometry audit, not by argument. Filed five times across four rounds; this is the first round it was localised to a line.",
+      "prediction": {
+        "stated": "BEFORE the fix: correcting the winding makes the card an up-facing Lambert surface, i.e. it is lit exactly as the flagstone it lies on. The foliage-absent capture measures those same boxes at p50 49.2 / detail 10.55 and p50 36.7 / detail 9.24, so a correctly-lit card of similar albedo lands near there.",
+        "boxA_0.5581,0.8453,0.0201,0.0197": "p50 3.1 -> predict 30-55 (acceptance >= 22); detail 2.54 -> predict >= 6 (acceptance >= 5.0)",
+        "boxB_0.5119,0.8376,0.0502,0.0504": "p50 3.4 -> predict 24-45 (acceptance >= 20); detail 4.02 -> predict >= 6 (acceptance >= 6.0)",
+        "guard_0.4949,0.8453": "p50 41.3 must not move. STRUCTURALLY SAFE: that box is byte-identical between r17v1 and r17v2, i.e. NO foliage fragment lands in it at all, so nothing in my file can move it.",
+        "guard_frameP50": "75.8 +/- 8%. The lifted region is 22,769 px = 0.769% of the frame and lies below the median, so the median cannot move measurably.",
+        "falsifier": "If the boxes come back still under 10, the winding was not the mechanism and the next thing to read is whether Props/Level draws something else at world XZ (-6.0, 38.2)."
+      },
+      "howItWasLocalised": [
+        "1. ABLATION, free and already captured. r17v1 has no foliage at all. The three void boxes read p50 49.2 / 36.7 and detail 10.55 / 9.24 there, against 3.1 / 3.4 and 2.54 / 4.02 in r17v2, while the critic's own guard box is byte-identical in both. The voids ARE foliage. The re-route was correct.",
+        "2. Connected-component analysis of 'foliage turned this pixel near-black' (v2 luma < 10 while v1 luma > 25): 22,769 px in hero, dominant component 9,242 px at bbox (1285,973) 210x93, centroid (1388,1016) -> world XZ (-6.12, 38.31), 10.3 m from the hero eye, footprint 2.6 x 2.8 m.",
+        "3. WHICH LAYER. Rasterised every foliage mesh's real instance buffer through the hero camera and intersected with that mask: ground-cards 95.1% (and it covers the centroid), grass-l0-b2 7.9%, susuki 5.6%, grass-l1-b1 3.5%, ferns 2.2%, grass-l2 0.0%, far-cover 0.0%. far-cover is independently dead here: its fadeIn is [28, 35] m against a 10.3 m patch, which confirms the coordinator's elimination.",
+        "4. WHY BLACK. An executable audit comparing each geometry's per-triangle GEOMETRIC normal ((b-a) x (c-a)) against its authored vertex normal, over every mesh in the group. ground-cards: 6 triangles, 0 agree, **6 OPPOSE**. Nothing else in the build has a fully antiparallel pair (far-cover 4/4 agree, grass-l2 4/4, bamboo-cards 4/4, tree-impostors 2/2)."
+      ],
+      "mechanism": {
+        "where": "buildGroundCard(), src/render/Foliage.js.",
+        "what": "GeoBuilder.card(c, A, B, nrm, ...) winds its quad (c-A-B, c+A-B, c+A+B, c-A+B), so the geometric face normal is A x B. buildGroundCard passed A = r = (cos a, 0, sin a)*s and B = u = (-sin a, 0, cos a)*s, and r x u = (0, -s^2, 0). Every ground card's face was wound pointing DOWN, exactly antiparallel to the `up` normal authored on its own vertices.",
+        "whyItWasSilent": "The material is DoubleSide, so the card still rasterises and still alpha-tests correctly — the silhouette in the frame is right, which is why five rounds read it as a shadow or a decal rather than as the card itself. What breaks is shading: three's <normal_fragment_begin> negates the interpolated normal on a double-sided BACK face (`normal *= faceDirection`), and every camera in this build looks at a ground card from above, i.e. from the side its winding declares the back. So the fragment shades with N = (0,-1,0).",
+        "arithmetic": "dot(N, sunDir) with sunDir (0.86, 0.225, 0.457) is -0.225, clamped to zero: NO direct sun at any intensity. The hemisphere term samples the ground colour instead of the sky. The only light left is FRAGMENT_SSS's wrapped lobe at wrap = clamp((-0.225+0.55)/1.55) = 0.210, which is the residual the critic measured INSIDE the voids as luma 3.1 with a faint structure visible at 8x gain — not 'no texture inside', but the card's own moss/litter texture at ~0.001 linear.",
+        "whyByteIdenticalAcrossBuilds": "buildGroundCard has not been touched since it was written. Round 16 changed far-cover, round 17 changed bamboo; neither goes near it.",
+        "whyItIsBELOW the fill floor": "Round 15's 'fill-only plaza p50 21.0' is the floor for an UP-facing surface. A down-facing one does not get that floor, which is exactly why this patch was 7x darker than a legitimate cast shadow (p50 16.3) sitting 100 px away in the same crop."
+      },
+      "change": "buildGroundCard now calls g.card([cx,y,cz], u, r, up, ...) — arguments swapped, so the cross product is u x r = (0, +s^2, 0). Verified by re-running the audit: 6 triangles, 6 agree, 0 oppose. It transposes the texture on the card, which is invisible: every instance is yawed at random.",
+      "blastRadius": "Pixels foliage turns near-black, per shot, measured on the r17v1/r17v2 pair (valid only for hero as an ablation, but the ground-card layer is the only near-black producer in all of them): hero 22,769 px (0.769%, mean 43.0 -> 3.9); torii 7,861 (0.265%); sun 745; valley 353; wide 43. hero and torii are where this lands.",
+      "cost": "0 triangles, 0 draw calls, 0 textures. Same 6 triangles, same 1,925 placed instances."
+    },
+
+    {
+      "id": "r18-blocker-valley-wall",
+      "shot": "valley",
+      "severity": "blocker",
+      "verdict": "PREDECESSOR'S PRE-REGISTERED PREDICTION CONFIRMED, AND THEN SET ASIDE: the near plants are real but they are NOT the wall. The wall is two other things in this file, both found by measurement, and both fixed. The predecessor's one-line lever was NOT applied, with reasons.",
+      "predecessorPrediction": {
+        "text": "r17-foliage predicted, before the frame existed: '2.1 culms within 5 m, 8.6 within 10 m, 19.1 within 15 m' of the new valley eye, from a Monte-Carlo over the r in [76,126] annulus.",
+        "measured": "Booting the shipped scatter at the valley pose and counting the actual placed instances: **1 within 5 m, 8 within 10 m, 20 within 15 m**, 113 inside the 46 m fade window of which 25 are forward of the eye.",
+        "verdict": "CONFIRMED. Three predicted means against a single Poisson realisation, and 8 vs 8.6 and 20 vs 19.1 are dead on. This is the strongest pre-registration this project has produced and it should be treated as such.",
+        "whyTheLeverWasNOTapplied": "sample(76,126) -> sample(120,126) would leave a 6 m annulus for the near bamboo of the ENTIRE WORLD, to fix one still. And the measurement says it would not fix it: those 25 forward culms are sparse vertical strokes, while the frame is walled by something else. The predecessor themselves called the near culms 'a composition question, not a defect' and Tsushima frames vistas through exactly this. Applying it would have been acting on a confirmed prediction that answers a different question."
+      },
+      "whatTheWallActuallyIs": {
+        "1_theFlatGreenQuad": {
+          "criticQuote": "'a hard-edged straight-sided completely flat dark-green quad' at (1130,940 110x60), meanRGB [59.7,69.7,37.2], detail 3.24 against dirt at 7.09. ARCHITECTURE 5.9 forbids it outright.",
+          "identification": "It is `bamboo-canopy`, my far-field shell, and it covers 71.7% of that exact box.",
+          "mechanism": "RANGE.canopy declares the shell as the 110-900 m stand-in, and that was enforced ONLY as a world radius about the origin — never as a distance from the camera. Round 17 moved the valley eye to r = 112.00, two metres outside the shell's own inner rim.",
+          "measurement": "Rasterising this static mesh against each shot's camera (exact geometry, not an estimate) — nearest covered pixel: hero 113.6 m, wide 120.0 m, torii 89.4 m, sun 67.8 m, **valley 19.0 m, with 47.2% of its covered pixels inside 50 m and 52.1% inside 75 m**. A shell quad is about 7 x 6 m where it first survives the `below` test, so at 19-33 m it rasterises 250-300 px across: a straight-edged, untextured, flat dark-green facet. That is the finding, exactly.",
+          "fix": "A camera-distance dissolve in the canopy fragment shader over [70.4, 110.0] m — the far end is RANGE.canopy[0] itself, not a tuned number. World-space fbm threshold so the boundary is stable under camera motion and reads as a thinning stand rather than a ring. Costs 0 triangles and 0 draw calls; it does cost early-Z on that one mesh, which is the trade.",
+          "byShot": "Removes 100% of valley's sub-70 m canopy and partially dissolves 75-110 m. hero (113.6) and wide (120.0) are UNTOUCHED — nearest > 110. torii 3.5% affected, sun 12.5%."
+        },
+        "2_theBambooCardBand": {
+          "measurement": "Cards nearer than 56 m from the eye cover **47.25% of the `valley` frame** (357 instances drawn, nearest 24.4 m) and **0.00% of `hero`, `wide`, `torii` and `sun`** — in those four the nearest card is 48.2 / 25.1 / 51.6 / 59.5 m and every one falls outside the frustum. The near edge is free everywhere except the frame it breaks.",
+          "theDepthMeasurement": "Ray-marching the built terrain profile per pixel over the middle third of `valley` (rows 390-780) and compositing every foliage layer's depth against it: nearest surface is inside 56 m for **76.4%** of that band, and the 56-150 m interval is **0.0%** of it. The frame has no mid-ground at all.",
+          "fix": "RANGE.bambooCard near edge 23 -> 52 m, i.e. fadeIn [52, 65]. The card is the mid-ground stand-in; `bambooCulm` (real geometry) already owns 0-46 m, and 23 gave the two layers a 23 m overlap that was harmless while the eye stood inside the plateau.",
+          "measuredEffect": "Far field (>150 m) in the middle third 23.6% -> ~37% (measured 31.7% at a 44 m edge and 45.4% at 60 m). Cards inside 56 m now cover 0.00% of the valley frame, down from 47.25%. Drawn card instances: valley 7,500 -> 7,127, wide 7,435 -> 7,261, hero 8,324 -> 8,289, torii 8,499 -> 8,475, sun 8,610 -> 8,609."
+        }
+      },
+      "acceptanceHonestly": {
+        "(3) green quad detail >= 6.0 at 0.4463,0.8034,0.0434,0.0513": "PREDICT PASS. The shell is discarded there (mean depth in that box 31.6 m, well inside the window) and what is behind it is bamboo-card, which covers 100% of that box at 28.2 m — painted clump texture, not a flat fill. Predict detail 6-12 from 3.24.",
+        "(1) a readable drop": "PREDICT PARTIAL. Two of the occluders are gone; the near mound in the bottom of the crop is terrain, not mine.",
+        "(2) a middle-third box at p50 >= 130 AND saturation <= 0.30": "PREDICT SHORTFALL ON THE SATURATION HALF, and stated in advance. The far field the change exposes is the same surface the critic themselves quoted as the target — the sliver at (730,430) — and that sliver measures **saturation 0.434**, which fails the critic's own <= 0.30 by 45%. No amount of un-occluding can produce a number the exposed surface does not have. The p50 half is reachable (that sliver is p50 145.8). The saturation half belongs to Sky's aerial perspective, not to this file. ROUTED OUT."
+      }
+    },
+
+    {
+      "id": "r18-major-valley-aerial-ladder",
+      "shot": "valley",
+      "severity": "major",
+      "verdict": "PREMISE DISPROVED BY MEASUREMENT, and the real defect turns out to be the same one as the valley blocker. No fog change made, and none should be.",
+      "criticHypotheses": [
+        {
+          "text": "(a) the foliage material is not consuming the same fog/aerial term the terrain is",
+          "status": "DISPROVED by source. `this.ctx.sky?.applyFog?.(mat)` is called on all three material factories in this file — _makeMaterial (line ~3384, which builds every bamboo, grass, fern, susuki, ground-card and far-cover material), _makeImpostorMaterial (~4641) and the canopy (~5292). And FRAGMENT_SSS is injected before <envmap_fragment>, which is before <fog_fragment>, so the transmitted lobe is fogged too."
+        },
+        {
+          "text": "(b) the term is keyed off a depth input the instanced card path does not write, so every card is evaluated at the camera's own depth",
+          "status": "NOT THE MECHANISM, because there is nothing for it to be wrong about."
+        }
+      ],
+      "theDisproof": "The three boxes the finding is built on are not near, mid and far. Rasterising every layer's depth through the valley camera and taking the nearest visible surface per pixel: the 'near' box 0.0790,0.6667 is bamboo-card at 22 m (nearest 19), the 'mid' box 0.5727,0.5983 is bamboo-card at 28 m (nearest 22), and the 'far' box 0.7504,0.5128 is bamboo-card at **25 m** (nearest 22). All three are the same layer within six metres of each other. The critic inferred distance from apparent culm width (90 px vs 25 px), but the card band's instances vary 7-20 m in world height and each card is painted with several culms, so a small on-screen culm is a SMALL CARD, not a distant one.",
+      "consequence": "No aerial-perspective ladder can exist across a 6 m depth interval, and the finding's own p50 measurement (falling 6 codes over what it believed was a 3.6x scale ratio) is what you get when the three samples are at the same distance and differ only by which card they landed on. The frame does not lack fog; it lacks depth. That is finding 3, and the bamboo-card near-edge change above is the fix for both.",
+      "prediction": "After the near edge moves to 52 m, the three boxes stop being the same distance: the 'far' box should be looking at cards 60-170 m out or at the exposed valley wall. If the p50 ladder is still flat AFTER that, the finding becomes Sky's, and the instrument should be rewritten to sample boxes chosen by measured depth rather than by apparent culm width."
+    },
+
+    {
+      "id": "r18-major-wide-tree-impostors",
+      "shot": "wide, torii",
+      "severity": "major",
+      "verdict": "PARTIAL. One half fixed structurally; the other half DISPROVED as reachable from this file, with the arithmetic.",
+      "criticHypotheses": [
+        {
+          "text": "whether the impostor is receiving the same aerial-perspective term as the terrain it stands on",
+          "status": "DISPROVED. _makeImpostorMaterial calls this.ctx.sky.applyFog(mat) at line ~4641, the same call every other material in the file gets."
+        },
+        {
+          "text": "whether the impostor card is a single quad per tree with no crown silhouette at all",
+          "status": "CONFIRMED, by the geometry audit: tree-impostors is **2 triangles**, i.e. one quad per tree. Its silhouette is entirely the baked alpha."
+        }
+      ],
+      "fixed": {
+        "what": "frameRel margin 1.06 -> 1.22 in _buildTreeAssets.",
+        "why": "frameRel sizes the bake camera AND the card's world half-extent, so raising it widens both by the same factor: the tree keeps its world size and gains transparent margin. At 1.06 the crown's widest point sat at 0.94 of the half-cell, so on the azimuths where the crown is widest it reached the cell border and the atlas cut it WITH the border — a straight vertical alpha edge, which is precisely what the finding measures ('near-identical vertical lozenges, each with a binary alpha edge') and what its acceptance forbids ('no straight vertical alpha edge longer than 25 px'). At 1.22 the crown cannot reach the border on any of the 8 azimuths.",
+        "cost": "0 triangles, 0 draw calls. Texel density inside the cell drops to (1.06/1.22)^2 = 0.755 of a 256 px cell feeding a 40-80 px card — still 3x oversampled. Fill on the card goes up 32%."
+      },
+      "notFixed_andWhy": {
+        "acceptance": "mean saturation >= 0.15 (currently 0.085).",
+        "theKnob": "uChroma in _makeImpostorMaterial, currently 0.72. It mixes each fragment toward its own luminance: diffuseColor = mix(vec3(lum), diffuseColor, uChroma). Round 15 set it by measurement, against a sakura impostor at saturation 0.350 when the frame mean was 0.232.",
+        "disproof": "Saturation as probe.mjs defines it, (max-min)/max, scales essentially linearly with this mix. Removing the pull ENTIRELY (uChroma 1.0) can therefore reach at most 0.085 / 0.72 = **0.118**, against the 0.15 acceptance — a 21% shortfall — while re-introducing exactly the over-saturated sakura impostor round 15 fixed by measurement. So I did not touch it: shipping a knob that provably cannot clear its own acceptance and reverts a measured fix is the failure mode this project's preamble is about. The residue is in the baked atlas's own colour (the bake runs under a neutral 2.35 white key with tone mapping off) and in the fog applied after it.",
+        "alsoNotReached": "lumaSpread >= 70 (currently 44.6) needs a lit-top / shaded-underside break inside the impostor, which is a property of the bake's lighting rig, not of the frame margin. Not attempted this round."
+      },
+      "apparatusCaveat": "I could NOT confirm from the harness that the `wide` band at (100,380 700x140) is tree-impostors: _scatterTrees places against the real splat and slope field, and my stub terrain is a radial profile with no hillside, so no impostor lands in that box offline. The identification rests on tree-impostors being the only distant tree layer in the build and on the critic's description matching a one-quad billboard atlas exactly. If the verification frame shows the band unchanged in silhouette, check first whether the band is terrain splat rather than my layer."
+    },
+
+    {
+      "id": "r18-major-hero-sakura",
+      "shot": "hero",
+      "severity": "major",
+      "verdict": "HANDED BACK TO `world`, WITH NUMBERS. Nothing changed in this file. Three separate fixes for this finding landed in the SAME build and the acceptance metric did not respond.",
+      "whatShippedAndWasVerified": [
+        "Card size: `world` landed s = 0.40 + rnd()*0.12 at 2,595 clumps (commit 6271c91), mean card 0.86-0.92 m against 2.36-2.68 m.",
+        "Texture: BLOSSOM_CARD_M reads 0.92 in the file today (commit e230a05), so paintBlossom emits floretScale 2.481 / 12 florets / layoutK 0.473 — the sheet authored FOR that card, in the same build as the card. The r17 gate did what it was for.",
+        "Binding: Props.bindFoliageTextures() swaps blossomFallbackTexture for foliage.blossomTexture, and foliage.blossomTexture is published (verified: true in the offline boot).",
+        "Alpha: Props.blossomMaterial DOES carry hashed alpha — interleaved-gradient noise on gl_FragCoord jittering the 0.36 threshold by +/-0.11, with customProgramCacheKey 'kagBlossom4'. The critic's hypothesis (b) is therefore already answered in the shipped build."
+      ],
+      "theMeasurement": {
+        "boxA 0.1122,0.2299,0.0201,0.0299": "detail r16v1 5.91 -> r17v2 **5.03** (acceptance >= 12.0). meanRGB [98.7,75.2,98.0] -> [117.8,103.8,117.8]; luma p50 76.5 -> 118.9 while p99 held 130.7 -> 131.4 and p1 rose 40.3 -> 50.3.",
+        "boxB 0.1501,0.2803,0.0201,0.0299": "detail r16v1 8.27 -> r17v2 **8.39** (acceptance >= 12.0). lumaSpread 87.4 -> 105.5.",
+        "reading": "Card size fell 2.8x, clump count rose 8.6x and a hashed-alpha dither was installed, and the high-frequency energy in the crown moved -0.88 and +0.12. So the residual is NOT card size, NOT the floret scale on my sheet, and NOT the binary cutout — all three were changed together and measured. What DID move is the value distribution: box A's median rose 42 codes while its p99 did not move at all, i.e. the crown's shaded population climbed into its lit population and the internal value break collapsed. That is the shape of an emissive/ambient floor, and Props.blossomMaterial carries one (totalEmissiveRadiance += diffuseColor * (0.052,0.070,0.100) + (0.150,0.168,0.176) * skyView), which round 17 raised by +22.3% at the sphere mean."
+      },
+      "routedTo": "world (src/world/Props.js). The `__blossom` crown is Props geometry merged by Level and drawn on Props.blossomMaterial; my file contributes the texture and nothing else — the offline raster confirms no Foliage mesh covers either acceptance box. The specific ask: measure the crown's lit/shaded value break before and after ablating the emissive floor, because the numbers say the canopy is being flattened by fill, not by facet size.",
+      "notDone": "I did not re-author paintBlossom. The r17 handoff's standing instruction — 'if a later round finds the canopy still flat, the constant is the first thing to look at; do NOT re-author paintBlossom from scratch' — is discharged: the constant is correct at 0.92 and the sheet matches the card that ships."
+    }
+  ],
+
+  "changes": [
+    "buildGroundCard: g.card(c, r, u, up, ...) -> g.card(c, u, r, up, ...). Fixes an inverted face winding that made every ground card shade with N = (0,-1,0). BLOCKER.",
+    "_buildCanopy fragment shader: a world-space dissolve at <clipping_planes_fragment> discarding shell fragments closer than [0.64*rInner, rInner] = [70.4, 110.0] m from the camera. chainCacheKey bumped kagcanopy1 -> kagcanopy2. BLOCKER.",
+    "RANGE.bambooCard near edge 23 -> 52 m (fadeIn [52, 65]). BLOCKER + the aerial-ladder major.",
+    "_buildTreeAssets frameRel margin 1.06 -> 1.22. MAJOR, partial.",
+    "Comments carrying the measurement for each of the above."
+  ],
+
+  "budget": {
+    "allocation": "+12,000 triangles, +4 draw calls",
+    "drawCalls": { "before": 6, "after": 6, "delta": 0, "note": "No mesh, material, geometry or pack added or removed. Offline boot: 21 meshes, 12 textures, 34 materials, 37 geometries — identical to r17." },
+    "triangles": {
+      "delta": "NEGATIVE on every review pose. Only the bamboo-card near edge moves a count, and it moves it down.",
+      "perShot_cardsDrawn": { "hero": "8,324 -> 8,289 (-35 inst, -140 tri)", "wide": "7,435 -> 7,261 (-174 inst, -696 tri)", "torii": "8,499 -> 8,475 (-24 inst, -96 tri)", "valley": "7,500 -> 7,127 (-373 inst, -1,492 tri)", "sun": "8,610 -> 8,609 (-1 inst, -4 tri)" },
+      "worstPose": "`wide` carries the 871,997 of 900,000 breach and my change takes 696 triangles OFF it. I took none of the +12,000 allocation and FAR_COVER_CAP is unchanged at 13,500.",
+      "note": "The canopy dissolve and the ground-card winding fix change zero triangles; frameRel changes zero triangles (the card is still 2)."
+    },
+    "textures": "0 delta. No sheet added, removed or resized.",
+    "fill": "Two costs, stated: the canopy shell loses early-Z on the one mesh that now discards (3,840 tris, 20-50% of frame coverage), and the tree impostor card grows 32% in area. Both are on far-field surfaces."
+  },
+
+  "verificationByConstruction": {
+    "whyThisSectionExists": "My predecessor's round-17 commit removed the entire foliage system via a TDZ that `node --check` cannot see, and it cost a full verification capture and a bisect. Every claim below was executed, not inspected.",
+    "executed": [
+      "FoliageSystem.init() runs to completion offline under a stubbed ctx: 13/13 steps, group added, 21 meshes, 12 textures, 34 materials, 37 geometries, blossomTexture and momijiTexture both published, getStats().floating = 0.",
+      "Winding audit re-run after the edit: ground-cards 6 triangles, 6 agree, 0 oppose (was 0/6). far-cover, grass-l2, bamboo-cards and tree-impostors unchanged at fully agreeing.",
+      "Canopy shader gate: ran the material's own onBeforeCompile chain against three's real ShaderLib.lambert source and asserted (a) the injection landed, (b) '#include <clipping_planes_fragment>' still present, (c) the window parsed out as [70.4, 110.0], (d) `float fbm2` is declared before its use, (e) `varying vec3 vCanopyW` is declared before its use. All five pass. This is the specific class of failure — a replace() target that does not exist, or a reference above its declaration — that this file's own comments record as having silently killed every atlas material once.",
+      "node --check: parse OK. npm run build: bundles clean, main 987.88 kB / gzip 330.09 kB."
+    ],
+    "notExecuted": "Nothing was rendered. The GLSL discard, the shading of the corrected normal and the fog on the exposed far field are all unverified in pixels."
+  },
+
+  "forTheVerificationPass": [
+    "BLOCKER 1, hero: `node tools/probe.mjs stats shots/phone-hero-rN.png 0.5581,0.8453,0.0201,0.0197` expect p50 30-55 (was 3.1, acceptance >= 22) and detail >= 6 (was 2.54, acceptance >= 5.0). Then `0.5119,0.8376,0.0502,0.0504` expect p50 24-45 (was 3.4, acceptance >= 20) and detail >= 6 (was 4.02, acceptance >= 6.0). The guard 0.4949,0.8453 cannot move — no foliage fragment lands in it.",
+    "BLOCKER 1, torii: the same defect is worth 7,861 px there (0.265% of frame). Expect the plaza's near-black population to drop by about that much.",
+    "BLOCKER 2, green quad: `node tools/probe.mjs stats shots/phone-valley-rN.png 0.4463,0.8034,0.0434,0.0513` expect detail 6-12 (was 3.24, acceptance >= 6.0). If it is still ~3 and still flat dark green, the dissolve did not link — read the shader, do not re-tune the window.",
+    "BLOCKER 2, the drop: crop 0.3357,0.7009,0.3555,0.2991 and look. Expect the mid-frame to open. Expect acceptance (2)'s p50 >= 130 half to be reachable and its saturation <= 0.30 half to FAIL at about 0.43 — that number is the exposed surface's own and belongs to sky.",
+    "GUARD, valley near-bamboo 0.0790,0.6667,0.1580,0.2564 must stay within p50 61.4 +/- 20%. That box is bamboo-card at 19-22 m, which the 52 m near edge REMOVES. This is the one guard my change can plausibly break, and I am flagging it rather than hoping: if it comes back empty or far outside the band, the near edge is too aggressive and 44 m is the measured fallback (far field 31.7% instead of ~37%).",
+    "MAJOR, wide impostor band 0.0395,0.3248,0.2765,0.1197: expect the straight vertical alpha edges to go. Expect saturation to stay near 0.085 (acceptance 0.15) — a shortfall stated in advance and disproved as reachable from uChroma. Expect lumaSpread to stay near 44.6 (acceptance 70) — not attempted.",
+    "MAJOR, hero sakura: NO CHANGE FROM THIS FILE. Score it against world.",
+    "AUDIT: foliage draw calls must read 6 and bamboo-plants must still be 176 triangles/instance. Total foliage triangles should fall by 140 (hero) to 1,492 (valley).",
+    "foliage.getStats().floating must still read 0. No placement code changed."
+  ],
+
+  "openItems": [
+    {
+      "item": "The r17v1/r17v2 ablation pair is about to be overwritten and it is the only foliage-off capture that exists.",
+      "detail": "It found a five-round blocker in one command. Worth keeping a copy, or better, worth teaching capture.mjs a `--ablate=<owner>` mode. hero is the only framing where it is clean (82.20% byte-identical, sky delta 0.02); on wide/torii/sun/valley something global rebalanced between the two captures (sky delta 4.16 / 4.34 / 11.38 / 44.45) and any before/after across that boundary is contaminated."
+    },
+    {
+      "item": "The offline harness is worth committing to tools/.",
+      "detail": "It is about 200 lines: a no-op Canvas2D shim, a stub ctx, and a rasteriser that walks the real instance buffers through a SHOTS camera. It located this round's blocker to a line, disproved a major's premise, and sized every change before it was made, without a browser or the rig lock. It needs a real terrain to be useful on valley — the radial profile I used is copied out of Cinematic.js's own documented ray-march along that shot's bearing, and the crude 'drop from r=80' version my predecessor used puts the valley eye 27 m above its own ground and makes every near-field raster read 0%."
+    },
+    {
+      "item": "GeoBuilder.card()'s winding contract is undocumented and has now cost one blocker.",
+      "detail": "The geometric normal is A x B for arguments (A, B), and nothing says so. Every other caller happens to pass a vertical card whose authored normal is deliberately fake and roughly perpendicular to the face, so the sign never mattered; buildGroundCard was the one horizontal card, where the two could be exactly antiparallel. A cheap guard for a later round: assert at boot that no triangle's geometric normal opposes its authored vertex normal by more than 90 degrees on any single-sided-lit layer. The audit is fifteen lines and it is in this round's scratch."
+    },
+    {
+      "item": "sakura-wood, momiji-wood and cedar-wood also audit as 100% opposing (1280/1280, 868/868, 1904/1904).",
+      "detail": "NOT investigated and NOT changed — out of scope for this round's findings, and unlike buildGroundCard these are closed tubes whose 'authored' normal is the outward ring normal, so the audit's verdict may be an artefact of how buildTree winds its own quads rather than a defect. Flagging it only because the round-18 critic describes the sakura branches as 'flat dark strokes drawn on top of the blossom mass', which is what an inside-out tube renders as, and because this file's own linkRings comment says exactly that: 'every culm and every trunk is built inside out and renders as an unlit black shell'. One command settles it; nobody has run it."
+    }
+  ]
+}

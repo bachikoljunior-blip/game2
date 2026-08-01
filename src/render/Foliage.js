@@ -866,7 +866,37 @@ function buildBambooPlantGeometry(sides, internodes, sprays, seed = 0x8B0011) {
   return g.toGeometry();
 }
 
-/** Ground-hugging card, used for fallen leaves and moss patches. */
+/**
+ * Ground-hugging card, used for fallen leaves and moss patches.
+ *
+ * **The half-extent vectors are passed `u` first and `r` second, and that order is the
+ * whole fix for the plaza voids.** `GeoBuilder.card()` winds its quad as
+ * (c−A−B, c+A−B, c+A+B, c−A+B) for arguments (A, B), so the *geometric* face normal is
+ * A × B. This is the only card in the build whose plane is horizontal, and with the
+ * obvious argument order — r = (cos a, 0, sin a)·s, u = (−sin a, 0, cos a)·s — that cross
+ * product is (0, −s², 0): the face was wound pointing **down, into the ground**, exactly
+ * antiparallel to the `up` normal authored on its vertices. `linkRings` has carried a
+ * comment about this failure mode for the culms since round 9; nobody checked the one
+ * geometry where the authored normal and the winding could disagree by 180°.
+ *
+ * The material is `DoubleSide`, so the card still rasterised — which is why this was
+ * silent. But three's `normal_fragment_begin` negates the shading normal on a
+ * double-sided back face (`normal *= faceDirection`), and every camera in the build looks
+ * at these cards from above, i.e. from the side the winding called the back. So the
+ * fragment was shaded with N = (0, −1, 0): `dot(N, sunDir)` = −0.225 against a 13° sun,
+ * clamped to zero — **no direct light at all** — and a hemisphere term sampling the
+ * ground colour rather than the sky. The only light left was FRAGMENT_SSS's wrapped
+ * term at `wrap = (−0.225 + 0.55)/1.55 = 0.21`, which is the residual glow measured
+ * inside the voids at code 3.
+ *
+ * Measured, on the pair of captures that bracket the foliage system's own absence
+ * (r17v1 aborted in `init()`, r17v2 did not, everything else identical): ground-card
+ * quads contain **95.1%** of every pixel that foliage turns near-black in `hero`
+ * — 22,769 px, mean luma 43.0 → 3.9. Nothing else in the file exceeds 8%.
+ *
+ * Swapping the two arguments makes the cross product u × r = (0, +s², 0). It transposes
+ * the texture on the card, which is invisible: every instance is yawed at random anyway.
+ */
 function buildGroundCard(count = 3, seed = 11) {
   const g = new GeoBuilder();
   const rnd = makeRandom(seed);
@@ -878,7 +908,7 @@ function buildGroundCard(count = 3, seed = 11) {
     const y = 0.004 + i * 0.004;
     const r = [Math.cos(a) * s, 0, Math.sin(a) * s];
     const u = [-Math.sin(a) * s, 0, Math.cos(a) * s];
-    g.card([cx, y, cz], r, u, up, 0, 0, 1, 1, 0.1, rnd());
+    g.card([cx, y, cz], u, r, up, 0, 0, 1, 1, 0.1, rnd());
   }
   return g.toGeometry();
 }
@@ -2870,7 +2900,34 @@ const RANGE = {
   // which only exists where the ground has already dropped 6 m below the plateau, so not on
   // the far ridge that rises again — there was a band with no bamboo in it at all. That gap
   // is exactly where the critic measured "no bamboo" and read the leftover scrub instead.
-  bambooCard: [23, 300],
+  // Near edge 23 -> 52. This is the `valley` wall, measured rather than reasoned.
+  //
+  // The card is the MID-GROUND stand-in; the near band is real geometry (`bambooCulm`,
+  // fading out at 40.5-46 m), and 23 gave the two layers a 23 m overlap that was harmless
+  // while the valley eye stood at r = 46.04 inside the plateau. The round-17 re-pose put
+  // the eye at r = 112.00, two metres outside the card annulus's own inner radius of 96,
+  // and the overlap band swung round in front of the lens.
+  //
+  // Rasterised offline from the shipped instance buffers against each shot's camera:
+  // cards nearer than 56 m cover **47.25% of the `valley` frame** (357 instances, nearest
+  // 24.4 m) and **0.00% of `hero`, `wide`, `torii` and `sun`** — in those four the nearest
+  // card is 48.2 / 25.1 / 51.6 / 59.5 m and every one of them falls outside the frustum.
+  // So this edge is free everywhere except the frame it is breaking.
+  //
+  // What it buys, ray-marching the built terrain profile per pixel over the middle third
+  // of `valley` (rows 390-780) and compositing every foliage layer's depth against it:
+  // the nearest surface is inside 56 m for **76.4%** of that band today and the 56-150 m
+  // interval is **0.0%** of it — the frame has no mid-ground at all, which is why the
+  // grove cannot show an aerial-perspective ladder (round-18 finding 6) and why the drop
+  // is not readable (finding 3). They are one defect. Far field (>150 m) goes 23.6% ->
+  // ~37% at this edge (measured 31.7% at 44 m and 45.4% at 60 m).
+  //
+  // 52 rather than 60: `bambooCulm` dies at 46 and `fadeIn` opens this at [52, 65], so the
+  // seam is 6 m of far-cover rather than the 14 m a 60 m edge would leave. 60 recovers
+  // another 8 points of far field and is the number to reach for if one round of this is
+  // not enough — the cost is a wider bare seam for a player standing at the lip, not
+  // anything in the five review framings.
+  bambooCard: [52, 300],
   canopy: [110, 900],
   treeMesh: [0, 55],
   treeCard: [88, 340],
@@ -4351,7 +4408,22 @@ export class FoliageSystem {
       const radius = Math.max(
         Math.abs(bb.min.x), Math.abs(bb.max.x), Math.abs(bb.min.z), Math.abs(bb.max.z), 0.2);
       // Square impostor frame around the whole canopy, in canonical (height = 1) units.
-      const frameRel = Math.max(radius, 0.5) * 1.06;
+      //
+      // Margin 1.06 -> 1.22. `frameRel` sizes the bake camera (line ~4458) AND the card's
+      // world half-extent at scatter (line ~4765), so raising it widens the frame and the
+      // card by the same factor: the tree keeps its world size and gains transparent
+      // margin. At 1.06 the crown's widest point sat at 0.94 of the half-cell, so on the
+      // azimuths where the crown is widest it reached the cell border and the atlas cut it
+      // with the border — which is a *straight vertical alpha edge*, exactly what the
+      // round-18 `wide` finding measures ("near-identical vertical lozenges, each with a
+      // binary alpha edge") and what its acceptance forbids ("no straight vertical alpha
+      // edge longer than 25 px at native"). At 1.22 the crown cannot reach the border on
+      // any azimuth.
+      //
+      // The cost is texel density inside the cell, (1.06/1.22)^2 = 0.755 of before, against
+      // a 256 px cell at MEDIUM feeding a card that rasterises 40-80 px in `wide`. Still
+      // oversampled by 3x. Fill goes up 32% on a two-triangle card in the far band.
+      const frameRel = Math.max(radius, 0.5) * 1.22;
 
       list.push({
         key: def.key, spec, built, woodMat, leafMat, bakeWood, bakeLeaf,
@@ -5202,6 +5274,38 @@ vCanopyG = cg;
       shader.fragmentShader = shader.fragmentShader
         .replace('#include <common>', '#include <common>\n' + glslNoise +
           '\nuniform vec3 uSunColor;\nuniform vec3 uSunDir;\nvarying vec3 vCanopyW;\nvarying float vCanopyG;')
+        // RANGE.canopy declares this shell as the 110-900 m stand-in, and until round 18
+        // that was enforced only as a *world radius about the origin*. Nothing enforced it
+        // as a distance from the camera, and the round-17 re-pose moved the `valley` eye to
+        // r = 112.00 — two metres outside the shell's own inner rim.
+        //
+        // Measured offline, rasterising this mesh against each shot's camera (the shell is
+        // static, so this is exact geometry, not an estimate): nearest covered pixel is
+        // 113.6 m in `hero`, 120.0 m in `wide`, 89.4 m in `torii`, 67.8 m in `sun` — and
+        // **19.0 m in `valley`, with 47.2% of its covered pixels inside 50 m**. A shell quad
+        // is about 7 x 6 m where it first survives the `below` test, so at 19-33 m it
+        // rasterises 250-300 px across: a straight-edged, untextured, flat dark-green facet.
+        // That is exactly the "hard-edged straight-sided completely flat dark-green quad"
+        // the round-18 critic measured at (1130,940) at detail 3.24, and ARCHITECTURE §5.9
+        // forbids it outright.
+        //
+        // So the range the shell already claimed is now enforced against the camera as well.
+        // The window ends at RANGE.canopy[0] itself rather than at a tuned number, and the
+        // dissolve is keyed off world position (not screen) so the boundary is stable when
+        // the camera moves and reads as thinning stand rather than as a ring. Nothing is
+        // left bare behind it: bamboo-card runs 23-300 m from the camera and covers 99.0%
+        // of the valley crop this uncovers.
+        .replace('#include <clipping_planes_fragment>', /* glsl */`
+#include <clipping_planes_fragment>
+{
+  float camD = distance( cameraPosition, vCanopyW );
+  float keep = smoothstep( ${(rInner * 0.64).toFixed(1)}, ${rInner.toFixed(1)}, camD );
+  if ( keep < 0.999 ) {
+    float d1 = fbm2( vCanopyW.xz * 0.33, 3 ) * 0.5 + 0.5;
+    if ( keep <= d1 ) discard;
+  }
+}
+`)
         .replace('#include <map_fragment>', /* glsl */`
 #include <map_fragment>
 {
@@ -5226,7 +5330,7 @@ vCanopyG = cg;
 #include <envmap_fragment>
 `);
     });
-    chainCacheKey(mat, 'kagcanopy1');
+    chainCacheKey(mat, 'kagcanopy2');
     this.ctx.sky?.applyFog?.(mat);
     this._materials.push(mat);
 
