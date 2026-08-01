@@ -1316,7 +1316,11 @@ export class PropFactory {
     m.vertexColors = true;
     m.side = DoubleSide;
     m.name = 'prop:lanternPaper';
-    this._installWind(m);
+    // No transmission on this one. A chōchin is already a source and its spill
+    // budget has been tuned across three rounds against `verify-lantern-spill`;
+    // adding the sun through the back of the paper would move a measurement that
+    // is not this round's to move.
+    this._installWind(m, 0);
     const prevCompile = m.onBeforeCompile;
     m.onBeforeCompile = (shader, renderer) => {
       if (prevCompile) prevCompile.call(m, shader, renderer);
@@ -1619,7 +1623,7 @@ export class PropFactory {
       shader.fragmentShader = shader.fragmentShader
         .replace('#include <common>', '#include <common>\nvarying vec3 vKagGroundW;\n' + glslNoise + /* glsl */`
           vec2 kagRot(vec2 p, vec2 sc){ return vec2(p.x * sc.y - p.y * sc.x, p.x * sc.x + p.y * sc.y); }
-          vec2 kagUvA; vec2 kagUvB; float kagBlend; float kagWear; float kagGn;
+          vec2 kagUvA; vec2 kagUvB; float kagBlend; float kagWear; float kagGn; vec2 kagP;
           // Every channel goes through this one function, so albedo, normal and
           // the packed ORM cannot disagree about where they are on the ground.
           vec4 kagGroundTex(sampler2D t){
@@ -1635,9 +1639,19 @@ export class PropFactory {
             vec2 q = P + wLo * 1.25 + wHi * 0.28;
             kagUvA = kagRot(q, vec2(0.3746, 0.9272)) * ${GROUND_UV_SCALE.toFixed(4)};
             kagUvB = kagRot(q + vec2(37.13, -18.77), vec2(0.7071, 0.7071)) * ${(GROUND_UV_SCALE * 0.617).toFixed(4)};
+            kagP = P;
             kagGn = fbm2(P * 0.058 + 27.5, 2);
             kagBlend = smoothstep(-0.24, 0.24, kagGn);
-            kagWear = 1.0 - smoothstep(1.6, 4.4, abs(P.x));
+            // The walked line. It used to be 'abs(P.x)' against a 1.6-4.4 m ramp: a
+            // straight-sided corridor 8.8 m wide, which is wider than the whole
+            // foreground the 'torii' pose sees (the eye stands 2 m back at x = 1.6 and
+            // the frame's half-width there is 2.1 m), so the shot contained the middle
+            // of the band and none of its edges and the path could not read as a path.
+            // Feet do not walk a surveyed line: the centre wanders on a ~18 m period
+            // and the band is 2.3 m of full polish falling off over the next 2.2 m,
+            // which is the width a procession actually wears.
+            float kagCl = fbm2(vec2(P.y * 0.056, 7.3), 1) * 0.85;
+            kagWear = 1.0 - smoothstep(1.15, 3.35, abs(P.x - kagCl));
           }
         `);
 
@@ -1657,18 +1671,66 @@ export class PropFactory {
       swap('aomap_fragment', 'aoMap', 'vAoMapUv');
 
       // Terrain's weathering mask, applied after the albedo lookup: grime in the
-      // hollows, scrubbed out of the traffic band down the middle of the sandō.
+      // hollows, scrubbed out of the traffic band down the middle of the sandō —
+      // plus what a hundred years of use leaves behind between the stones.
+      //
+      // Round 16, on the whole flagstone expanse in `torii`: "not one fallen leaf,
+      // not one weed in a joint, not one moss patch ... every joint is clean and
+      // every stone is the same grey-brown", against a target of three separable
+      // albedo populations inside any 0.10x0.10 box and a walked path reading 25%
+      // off the plaza either side of it. The stone itself is not the problem — the
+      // paving, its joint net and its seam-breaking are all measured good. What was
+      // missing is everything that arrives *on* it and never gets swept out of the
+      // corners, and that is one field with two tails rather than three new ones.
       shader.fragmentShader = shader.fragmentShader.replace(
         'diffuseColor *= sampledDiffuseColor;', /* glsl */`
         diffuseColor *= sampledDiffuseColor;
         {
-          float weather = clamp((kagGn * 0.5 + 0.5) * 0.8 - kagWear * 0.75, 0.0, 1.0);
-          diffuseColor.rgb *= mix(1.0, 0.76, weather * 0.65);
-          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.16, 1.12, 1.06), kagWear * 0.75);
+          float weather = clamp((kagGn * 0.5 + 0.5) * 0.8 - kagWear * 0.9, 0.0, 1.0);
+          diffuseColor.rgb *= mix(1.0, 0.68, weather * 0.75);
+          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.30, 1.24, 1.14), kagWear * 0.85);
+
+          // Where the joints are. A crazy-paving normal map tips hard at a joint
+          // wall and lies flat on a stone crown, so its tangent-space normal is a
+          // joint mask already paid for; nothing accumulates on the crown of a
+          // stone. Keyed on the *xy magnitude* rather than on z: xy is zero on flat
+          // ground whatever strength the map was authored at, where z sits near 1
+          // and its useful range is whatever is left below that. The first attempt
+          // here did key on z, through smoothstep(0.88, 0.34), and measured as a
+          // no-op — green fraction 0.000 → 0.006 in the two off-path plaza boxes at
+          // 'torii' x = +5.88 m and x = -3.60 m, i.e. the accumulation never drew.
+          #ifdef USE_NORMALMAP
+            vec2 kagJxy = kagGroundTex(normalMap).xy * 2.0 - 1.0;
+            float kagJoint = smoothstep(0.04, 0.30, length(kagJxy));
+          #else
+            float kagJoint = 1.0 - smoothstep(0.06, 0.26,
+              dot(sampledDiffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722)));
+          #endif
+
+          // One 1.6 m field, read from both ends: its high tail is moss holding
+          // damp in the joint, its low tail is leaf litter and grit drifted into
+          // it. Both are scrubbed out of the walked line, which is the other half
+          // of why a worn path reads — a swept route is not merely paler stone,
+          // it is stone with nothing on it.
+          // The joint mask is a *bias*, not a gate. Two captures measured it as
+          // ~0 whichever channel it keyed on, and Materials.js says why: this
+          // recipe deliberately authors its joints as "4 mm of dish at ~22 degrees"
+          // because a 58-degree joint wall under a 13-degree key turned the whole
+          // plaza into a dried lakebed. There is no strong joint signal to key on
+          // and there should not be one, so accumulation gets 45% of its weight
+          // everywhere off the walked line and the rest where the surface does dip.
+          float kagCov = fbm2(kagP * 0.62 + 12.9, 2);
+          float kagBias = 0.45 + 0.55 * kagJoint;
+          float kagMoss = smoothstep(0.05, 0.45, kagCov) * (1.0 - kagWear) * kagBias;
+          float kagLit = smoothstep(-0.05, -0.45, kagCov)
+                       * (1.0 - kagWear * 0.85) * kagBias;
+          diffuseColor.rgb = mix(diffuseColor.rgb,
+            diffuseColor.rgb * vec3(0.52, 0.86, 0.44) + vec3(0.016, 0.032, 0.012), kagMoss * 0.70);
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.135, 0.072, 0.030), kagLit * 0.55);
         }
       `);
     };
-    m.customProgramCacheKey = () => 'kagGround2';
+    m.customProgramCacheKey = () => 'kagGround3';
     this.ctx?.sky?.applyFog?.(m);
     this._ground = m;
     this.disposables.push(m);
@@ -1676,15 +1738,70 @@ export class PropFactory {
   }
 
   /**
-   * Bend a cloth/paper material with the shared wind field. The uniform objects
-   * are spliced in **by identity** so a gust crossing the bamboo is the same gust
-   * that snaps the nobori beside it (ARCHITECTURE §5.5, §10).
+   * Bend a cloth/paper material with the shared wind field, and let light through it.
+   *
+   * The wind uniform objects are spliced in **by identity** so a gust crossing the
+   * bamboo is the same gust that snaps the nobori beside it (ARCHITECTURE §5.5, §10).
+   *
+   * 透過 — the fragment half. A nobori is a single layer of hemp a few tenths of a
+   * millimetre thick and a shoji panel is one sheet of washi; with the sun behind
+   * either of them, most of what reaches the eye went *through* the sheet rather than
+   * bouncing off the front of it. A `MeshStandardMaterial` has no path for that at
+   * all, so backlit cloth resolves as an opaque board: round 16 measured the two
+   * nobori in `sun` — planted between the lens and a 13 degree sun — as flat slabs
+   * carrying detail 3.09 against 7.34 on the flagstone beside them.
+   *
+   * `USE_TRANSMISSION` is the stock answer and it is not affordable here: it forces
+   * the transmissive pass, which re-renders the frame into a backbuffer texture per
+   * material. This is the cheap two-lobe form instead — a wrap term for the light
+   * landing on the far face, and a forward lobe for the fraction that keeps its
+   * direction through a thin sheet — costing four ALU and no samples.
+   *
+   * The tint is `diffuseColor` itself, which is what makes the printed device read:
+   * the ink is already in the cloth's vertex colour, so it blocks the transmitted
+   * light exactly as it blocks the reflected light, and a backlit banner shows its
+   * mon as a dark figure in a glowing sheet without a second texture.
+   *
+   * `directionalLights[0]` is the sun by construction — Lighting.js adds its cascade
+   * lights first and they all share one direction and colour (`Lighting.js`, "N
+   * DirectionalLights share one sun direction"), so index 0 is the key and reading
+   * only it cannot double-count the cascades.
    */
-  _installWind(mat) {
+  _installWind(mat, transmit = 0.62) {
     const ctx = this.ctx;
     const prev = Object.prototype.hasOwnProperty.call(mat, 'onBeforeCompile') ? mat.onBeforeCompile : null;
     mat.onBeforeCompile = (shader, renderer) => {
       if (prev) prev.call(mat, shader, renderer);
+
+      // Transmission first, so a build with no WeatherSystem still gets lit cloth.
+      // A `String.replace` that finds nothing is silent, and silent is how most of
+      // this project's defects have arrived — so say so rather than shipping cloth
+      // that is quietly still opaque.
+      if (transmit > 0 && !shader.fragmentShader.includes('#include <lights_fragment_end>')) {
+        if (!PropFactory._warnedCloth) {
+          PropFactory._warnedCloth = true;
+          console.warn('[props] cloth transmission not installed: lights_fragment_end already consumed');
+        }
+      }
+      if (transmit > 0) shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <lights_fragment_end>', /* glsl */`
+        #include <lights_fragment_end>
+        #if NUM_DIR_LIGHTS > 0
+        {
+          vec3 kagL = directionalLights[ 0 ].direction;
+          // 'normal' is already flipped toward the eye on a DoubleSide surface, so a
+          // negative N.L is light standing on the face we cannot see — which is the
+          // only case this term exists for.
+          float kagWrap = max(-dot(normal, kagL), 0.0);
+          // Thin-sheet forward scatter: the fraction that keeps its direction. Peaks
+          // when the eye is on the sun's own ray, which is the shot this is for.
+          float kagFwd = pow(clamp(dot(-kagL, geometryViewDir), 0.0, 1.0), 3.0);
+          reflectedLight.indirectDiffuse += directionalLights[ 0 ].color * diffuseColor.rgb
+            * (kagWrap * (0.34 + 0.66 * kagFwd)) * ${transmit.toFixed(3)};
+        }
+        #endif
+      `);
+
       const u = ctx?.weather?.windUniforms;
       if (!u) return;                     // no Weather: props stand still, deliberately
       shader.uniforms.uWind = u.uWind;
@@ -1703,7 +1820,7 @@ export class PropFactory {
           }
         `);
     };
-    mat.customProgramCacheKey = () => 'kagWindShared1';
+    mat.customProgramCacheKey = () => `kagClothLit1:${transmit.toFixed(3)}`;
   }
 
   // ------------------------------------------------------------- build util
@@ -3986,9 +4103,31 @@ export class PropFactory {
     // any of it takes the key is decided entirely by the bearing it was planted on —
     // and at this hour three of the four bearings lose. 11x22 costs 968 triangles
     // against 320 and is what lets the cloth have a shape at all.
-    const NX = 11, NY = 22;
+    // Round 16: "a smooth vertical gradient inside a hard rectangular outline",
+    // detail 3.09 against 7.34 on the flagstone beside it — the flattest surface in
+    // the set, on the one prop in the frame standing between the lens and the sun.
+    // Two separate faults, and they need different answers:
+    //
+    //   *interior* — the S curl below is one wavelength across two and a half metres.
+    //     A hanging sheet does not drape at the scale of the sheet; it takes standing
+    //     folds every 20-30 cm, and at the 66 px this banner occupies in `sun` those
+    //     are the only structure that can survive to a Laplacian read. 15x30 puts six
+    //     quads across one fold, which is the coarsest grid that can carry one.
+    //   *outline* — the quad's edges were exactly the parametric domain, so the
+    //     silhouette was a perfect rectangle at every scale. Only the outer ring
+    //     moves: a hem that has let go unevenly, and a bottom edge that sags away
+    //     from the pole where nothing holds it.
+    //
+    // 900 triangles against 484, over twelve placed banners: +4,992 submitted at
+    // worst-pose, against ARCHITECTURE §7's 900k.
+    const NX = 15, NY = 30;
     const verts = [], uvs = [], cols = [], idx = [], fl = [];
     const y0 = poleH - 0.10, y1 = y0 - bh;
+    // Drawn per edge cell rather than per vertex so the two triangles meeting on an
+    // edge cannot disagree about where the edge is.
+    const frayX = [], frayY = [];
+    for (let j = 0; j <= NY; j++) frayX.push((rnd() - 0.5) * 0.034 * bw + (rnd() < 0.14 ? -0.055 * bw : 0));
+    for (let i = 0; i <= NX; i++) frayY.push((rnd() - 0.5) * 0.030 * bh + (rnd() < 0.18 ? -0.048 * bh : 0));
     // Kanji column: three glyph blocks down the middle third, drawn into the vertex
     // colour because the cloth material is shared and its map is not ours (§8). Each
     // block is a 5x5 on/off stamp — not lettering that reads at a metre, but at the
@@ -4008,8 +4147,11 @@ export class PropFactory {
     for (let j = 0; j <= NY; j++) {
       for (let i = 0; i <= NX; i++) {
         const u = i / NX, v = j / NY;
-        const x = lerp(0.07, bw + 0.07, u);
-        const y = lerp(y0, y1, v);
+        const x = lerp(0.07, bw + 0.07, u) + (i === NX ? frayX[j] : 0);
+        // The bottom hem carries no rail, so it sags, and it sags further out where
+        // the sheet is only held by itself.
+        const sag = j === NY ? (0.028 + 0.036 * u) * bh + frayY[i] : 0;
+        const y = lerp(y0, y1, v) - sag;
         // The rest curl. Cloth hung from one edge and tied along another does not
         // hang flat: it takes an S down its free edge, and the S deepens toward the
         // bottom where nothing holds it. Amplitude scales with the free-edge
@@ -4018,7 +4160,15 @@ export class PropFactory {
         // band of it faces the key from any bearing the banner is planted on.
         const curl = Math.sin(v * 4.3 + u * 1.7) * 0.16 * bw * u * (0.35 + 0.65 * v)
                    + Math.sin(u * 5.9 + v * 2.2) * 0.045 * bw * u;
-        verts.push(x, y, curl);
+        // Standing drape folds, ~26 cm apart, opening downward. This is the term the
+        // Laplacian read actually sees: ±0.019 m of relief across 0.26 m is a ±24°
+        // normal swing, so the sheet is banded light/dark at a scale that survives at
+        // 66 px wide instead of being one gradient.
+        // Measured at 0.030/0.010: detail 3.09 → 4.47 against a 6.0 target, so the
+        // fold amplitude is the lever and it was under-driven.
+        const drape = Math.sin(u * 15.0 + v * 1.1) * 0.052 * bw * (0.30 + 0.70 * v)
+                    + Math.sin(u * 31.0 - v * 0.8) * 0.019 * bw * v;
+        verts.push(x, y, curl + drape);
         uvs.push(u, v);
         // Hem: a stitched double border, darker and slightly warm, one cell wide.
         const hem = (i === 0 || i === NX || j === 0 || j === NY) ? 1

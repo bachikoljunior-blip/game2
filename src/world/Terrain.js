@@ -1737,9 +1737,21 @@ ${this._heightGLSL()}
     // exists above 1042 m and the plateau is at 812 — so no near surface can see it.
     gl_FragColor.rgb += uSunTint * kgSnowLit;
 
-    float kgLum = dot(gl_FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
-    vec3 kgFar = mix(vec3(kgLum), uSkyTint, 0.7);
-    gl_FragColor.rgb = mix(gl_FragColor.rgb, kgFar, kgA * 0.88);
+    // Extinction and in-scatter, separated. The form this replaces faded toward
+    // 'mix(vec3(kgLum), uSkyTint, 0.7)': three tenths of the fade target was the
+    // surface's own luminance with its chroma stripped out, so the air bleached the
+    // distance as a side effect of hazing it, and the far range's saturation was
+    // capped at 0.7 of the sky's however saturated the sky became. Round 16 measured
+    // the consequence — 1000-1080 m terrain at saturation 0.119 and a snowcap at
+    // R-B 37.3 under a 13 degree key.
+    //
+    // The two forms are algebraically identical on an achromatic surface. Expand
+    // them: the old one leaves c(1 - 0.88a) + 0.264a*luma(c) + 0.616a*S, the new one
+    // c(1 - 0.616a) + 0.616a*S, and they differ by exactly 0.264a*(c - luma(c)),
+    // which is zero when c has no chroma. So this is not a haze-strength change and
+    // cannot move a grey pixel by one code value; it only stops the air removing
+    // chroma it was never physically entitled to touch.
+    gl_FragColor.rgb = mix(gl_FragColor.rgb, uSkyTint, kgA * 0.616);
   }
 `);
     });
@@ -2485,14 +2497,19 @@ void kgComputeSurface(){
     // Slope aspect. A range this size has a dry sun-facing flank and a damp shaded one
     // — sparser cover, oxidised scree and sun-bleached rock against moss, held moisture
     // and old snow — and that is a property of the *ground*, not of the light. It has
-    // to be in the albedo because the air takes it out of the lighting: at 1.5 km the
-    // aerial term replaces 56% of the pixel with 'mix(vec3(kgLum), uSkyTint, 0.7)',
-    // which is chromatically flat by construction, so barely a third of any lit/shaded
-    // colour split survives to the eye. Keyed on the landform normal for the same
-    // reason the snow terminator is: the flank has to turn where the ridge turns.
+    // to be in the albedo because the air used to take it out of the lighting: the
+    // aerial term's old fade target was chromatically flat by construction and barely
+    // a third of any lit/shaded colour split survived to the eye. That target is now
+    // a pure in-scatter (see the aerial patch), so the split arrives at full weight
+    // and this can be an honest ground property rather than a compensation. Keyed on
+    // the landform normal for the same reason the snow terminator is: the flank has to
+    // turn where the ridge turns.
     float aspect = clamp(dot(kgLandN.xz, uSunDir.xz) / max(lFallW, 1e-4), -1.0, 1.0)
                  * smoothstep(0.10, 0.42, lFallW) * farRamp;
-    far *= vec3(1.0 + aspect * 0.30, 1.0 + aspect * 0.06, 1.0 - aspect * 0.26);
+    // Measured on the establishing frame's 1000-1080 m box: the aerial change plus
+    // 0.30 → 0.40 here took mean saturation 0.119 → 0.136 and R−B 16.8 → 19.4
+    // against a 0.20 target, so the term responds and is simply under-driven.
+    far *= vec3(1.0 + aspect * 0.56, 1.0 + aspect * 0.10, 1.0 - aspect * 0.46);
 
     albedo = mix(albedo, far, wild2 * 0.88);
     rough = mix(rough, mix(0.88, 0.96, veg), wild2 * 0.8);
@@ -2521,6 +2538,27 @@ void kgComputeSurface(){
     albedo *= mix(vec3(1.0), vec3(1.22, 1.10, 0.88), mDry * 0.70);
     albedo *= mix(vec3(1.0), vec3(0.70, 0.84, 0.90), mDamp * 0.80);
     rough = clamp(rough + kgMidBand * 0.22 * mid, 0.04, 1.0);
+
+    // Ground *cover*, at the scale ground cover actually varies at. Everything above
+    // is locked to ~12 buffer pixels, which is 3-8 m across this band; a probe box on
+    // the plateau apron in the establishing frame is 456x117 px and spans roughly 40 m
+    // of ground, so a field that finishes an octave below the window cannot move what
+    // the window reads. Measured: lumaSpread 47.7 there against an 80 target, with the
+    // box mean neutral to 0.3 code values.
+    //
+    // Two octaves at 19 m and 59 m, split into exposed grit and held turf. Skewed
+    // bright rather than symmetric in stops: bare gravel and bleached autumn turf
+    // raise the ceiling, where a symmetric gain takes the floor down with it and
+    // reads as blotching on ground that is already sitting at luma 46. The hues are
+    // the same dry-warm / damp-cool pair the band above and the near mottle use, so
+    // the character stays continuous and only the scale is new.
+    float mCov = fbm2(P.xz * 0.0530 + 203.7, 2) * 0.62 + fbm2(P.xz * 0.0170 - 88.1, 2) * 0.38;
+    float mBare = smoothstep(0.03, 0.50, mCov) * mid;
+    float mTurf = smoothstep(-0.05, -0.48, mCov) * mid;
+    albedo *= 1.0 + mBare * 1.00;
+    albedo *= mix(vec3(1.0), vec3(1.16, 1.05, 0.85), mBare * 0.85);
+    albedo *= mix(vec3(1.0), vec3(0.74, 0.83, 0.72), mTurf * 0.55);
+    rough = clamp(rough + mBare * 0.10 - mTurf * 0.06, 0.04, 1.0);
   }
 
   // --- 雪 ------------------------------------------------------------------
@@ -2645,10 +2683,18 @@ void kgComputeSurface(){
       float sunL = dot(LN, uSunDir);
       float sunF = smoothstep(-0.16, 0.30, sunL);
 
-      // Fresh snow is albedo ~0.9 and there is no honest way around that. The shadow
-      // side is neither grey nor black: it is the sky bounce of §5 (#4a6b8f) at a
+      // Snow is albedo ~0.9 and there is no honest way around that. The shadow side
+      // is neither grey nor black: it is the sky bounce of §5 (#4a6b8f) at a
       // snowfield's own reflectance, which is why shadowed snow photographs blue.
-      vec3 snowCol = mix(vec3(0.244, 0.338, 0.508), vec3(0.902, 0.922, 0.962), sunF);
+      //
+      // The *lit* side used to carry a blue lean of its own (B/R = 1.067), and that
+      // is a fresh-powder property this snow does not have: the model above is
+      // explicitly late-autumn cover on a crest with rock standing through it, which
+      // is settled, wind-packed and dust-contaminated. Worse, it was subtracting from
+      // the one thing the highest and most directly sun-struck surface in the frame
+      // is supposed to have — at a 13 degree key the summit reads warm or it is not a
+      // summit. Same mean reflectance (0.929), the lean reversed to match the light.
+      vec3 snowCol = mix(vec3(0.244, 0.338, 0.508), vec3(0.958, 0.930, 0.899), sunF);
       // Drift shading. Wind-packed crests catch the light, the troughs between them
       // stay blue; this and the partial coverage are the interior variance.
       // The snow interior had nothing in it finer than s3's 16 m — 9 px at the range
@@ -2684,7 +2730,11 @@ void kgComputeSurface(){
       // drift and grit bands ride on it at full weight — modulating two and a half
       // units of radiance is what puts surface into the sheet, where modulating the
       // albedo of a lambert lobe could only ever move it by tenths.
-      kgSnowLit = sheet * sunF * (0.55 + 0.45 * clamp(sunL, 0.0, 1.0)) * 2.55
+      // 2.55 → 2.95. The surge is the only warm radiance on the sheet; the rest of
+      // what lights it is cool ambient, so the summit's warm/cool balance is this
+      // number. Measured after the albedo and aerial changes, the snowcap sat at
+      // R−B 42.9 against a 55 target, up from 37.3.
+      kgSnowLit = sheet * sunF * (0.55 + 0.45 * clamp(sunL, 0.0, 1.0)) * 2.95
                 * clamp(0.72 + 0.56 * (s2 * 0.5 + 0.5)
                         - 0.34 * grit - 0.16 * bare * fine
                         + 0.75 * kgLodBand * fine, 0.10, 1.55);
