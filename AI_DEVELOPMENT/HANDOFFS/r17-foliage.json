@@ -1,23 +1,23 @@
 {
   "round": 17,
   "team": "foliage",
-  "owns": ["src/render/Foliage.js", "AI_DEVELOPMENT/HANDOFFS/r17-foliage.json"],
+  "owns": [
+    "src/render/Foliage.js",
+    "AI_DEVELOPMENT/HANDOFFS/r17-foliage.json"
+  ],
   "branch": "claude/1-round-execution-kgtb9r",
   "baseSha": "8273602",
   "capture": "none — this owner ran no capture and launched no browser, per the round instruction. Every number below is from tools/probe.mjs on shots/phone-valley-r16v1.png, from a harness built on tools/luma.mjs + tools/probe.mjs, from source arithmetic, or from an offline evaluation of the shipped shader stated as such.",
-
   "apparatus": {
     "selfTest": "Every custom measurement imports decodePNG from tools/luma.mjs and region/cut/stats from tools/probe.mjs rather than decoding the PNG itself, so the recurring 3-channel/4-byte-stride bug is structurally impossible. Validated anyway: the harness on shots/phone-valley-r16v1.png 0.60,0.20,0.10,0.06 returned {\"box\":\"1519,234 253x70\",\"meanRGB\":[121.6,123.3,110],\"saturation\":0.247,\"luma\":{\"p1\":38.1,\"p50\":88.1,\"p99\":202.2},\"lumaSpread\":164.1,\"detail\":11.19} — byte-identical to `node tools/probe.mjs stats` on the same spec, and identical to the digits in the critic's own finding.",
     "triangleModel": "Validated against shots/report-r16v1.json before it was used to spend budget. The audit reports foliage/bamboo-plants at 7,680 triangles over 48 instances = 160 each; buildBambooPlantGeometry at MEDIUM (sides 4, internodes 8, sprays 8) computes 16 ring links x 4 sides x 2 + 8 sprays x 2 cards x 2 = 160 exactly. The same arithmetic is what costs the change below."
   },
-
   "findings": [
     {
       "id": "r17-major-valley-bamboo",
       "shot": "valley",
       "problem": "Bamboo does not read as bamboo and does not read as backlit: bare poles with detached hard-aliased leaf clusters and long empty stretches, and no translucency or rim with the sun directly behind them.",
       "verdict": "ACTED on both halves. The transmission mechanism was found by source arithmetic and is a genuine defect, not a tuning miss. The continuity half is fixed structurally but with a PREDICTED SHORTFALL against the 60 px acceptance, stated in advance with the arithmetic.",
-
       "criticHypotheses": [
         {
           "text": "(a) the leaf material has no transmission/subsurface term at all, so a thin leaf is shaded as an opaque Lambert sheet",
@@ -29,7 +29,6 @@
           "note": "The critic's suggested ablation — 'force a transmission term to a large value and re-measure' — would NOT have found this. uSSSStrength scales a colour that is already wrong; raising it makes the sea a brighter bottle-green."
         }
       ],
-
       "mechanism": {
         "conclusion": "The leaf tint is applied TWICE along the transmission path, so the transmitted light is the leaf colour SQUARED. That annihilates red and makes a backlit bamboo sea physically incapable of going warm at any strength.",
         "where": "FRAGMENT_SSS. `trans = mix(vec3(1), uSSSColor, uSSSSat) * uSunColor * ...` and `through = mix(diffuseColor.rgb, uSSSColor * (0.26 + aLum*1.9), uSSSFloor)`, then `glow = min(through * trans, 0.85)`. uSSSColor appears in both factors.",
@@ -42,13 +41,11 @@
         ],
         "whyItMatters": "This is the same defect class as 'albedo multiplied by itself' in HANDOFF.md's list, wearing different clothes. It is silent: the uniforms all read plausibly, the term is linked, the light is right, nothing is clamped, and the only symptom is that the one shot ARCHITECTURE §9's SUN_AZIMUTH_DEFAULT exists to serve cannot fire."
       },
-
       "atlasCheckDemandedByR16": {
         "status": "CHECKED BEFORE ADDING GEOMETRY, and CLEAR. This symptom is NOT another instance of the r16 atlas-bleed bug.",
         "bambooCard": "atlas [4,1]; paintBambooCard composes four cells into a newCanvas(cellW*4, cellH) left to right. Packing and sampling agree. Unchanged this round.",
         "bambooPlant": "not an atlas at all — no KAG_ATLAS define; PLANT_UV splits one sheet into a bark strip and a leaf card. At px = 512 (Foliage.js:3173, min(512, max(128, textureSize>>1)) with MEDIUM textureSize 1024) the opaque bark ends at texel 137 (stripW = round(512*0.27) = 138) and the card's first sampled leaf texel is 154.6 (leafU0 0.302), i.e. 18 texels of transparent gutter. A spray card is 41-87 px on screen against the 355 texels leafU0..leafU1 gives it, so it works at mip 2-3 and its filter footprint is +/-2 to 4 texels. Bark cannot reach the leaf card at any review distance; it would need mip 5, where the card is 16 px."
       },
-
       "changes": [
         "bamboo-card material: sssSat 1.0 -> 0.12, sssColor 0x3fb520 -> 0xa8c845, sssStrength 1.15 -> 1.40, sssFloor 0.34 -> 0.36. This is the mechanism fix — uSSSSat 0 is exactly 'apply the tint once', and the knob already existed per material, so no shared shader maths changed and no other material moved.",
         "bamboo-plant material: sssSat 0.88 -> 0.16, sssColor 0x5cc233 -> 0x9ec83f, sssStrength 0.80 -> 1.05, sssFloor 0.22 -> 0.30. Deliberately gentler than the card: these are the plants inside 46 m, with almost no aerial perspective diluting them.",
@@ -56,13 +53,11 @@
         "buildBambooPlantGeometry leafFrom 0.54 -> 0.26 and sprays 8 -> 20 at MEDIUM (13 -> 24 at HIGH/ULTRA); internodes 8 -> 6 at MEDIUM to pay for most of it.",
         "FRAGMENT_SSS's uSSSSat comment rewritten to state the double application with its numbers. Comment only — no GLSL changed."
       ],
-
       "measuredBaseline": {
         "canopyBand 0.60,0.20,0.10,0.06": "meanRGB [121.6,123.3,110.0], R-G = -1.7, saturation 0.247, p50 88.1. Decomposed by luma at threshold 150: 41.5% sky at mean [208.8,193.4,173.6] (R-G +15.5) and 58.5% plant at mean [59.9,73.6,65.0] (R-G -13.8). So the box reaching R-G >= +8 requires the PLANT half to move from -13.8 to >= +2.7, a 16.5-code swing.",
         "treeWall 0.08,0.20,0.06,0.08": "meanRGB [39.0,60.3,52.6], p50 54.0, saturation 0.359, 0% sky. Plant R-G -21.3.",
         "bareStemRuns crop 0.46,0.02,0.16,0.28": "23 culm columns detected above the wall line (wallTop row 266 of 328). Worst bare-stem run between two clusters 166 px; the six worst 138-166 px; the twelve worst all have the gap BELOW the lowest cluster (gapRows [77,244], [72,223], [6,157], [77,225], [76,223], [84,223], [114,241], [108,231], [109,231], [109,231], [109,230], [111,230]). That location is the finding: the gap is not between sprays, it is the stretch below where sprays start."
       },
-
       "predictions": [
         {
           "metric": "critic acceptance (1): mean R must lead mean G by >= 8 at 0.60,0.20,0.10,0.06",
@@ -106,14 +101,12 @@
           "basis": "The only foliage in that box is grass and far-cover, neither of which changed. No bamboo card or plant reaches it."
         }
       ],
-
       "contamination": {
         "verdict": "TOTAL on this shot. EVERY 'before' number above refers to a view that no longer exists, and none of my before/after pairs on `valley` is a clean delta. This is stated rather than worked around — the numbers are kept because they are the evidence the mechanism was found from, not because they are comparable to what r17 will photograph.",
         "cause": "`core` committed a re-sited `valley` camera at c0aec9a while this owner was working. Old pose pos [34.4, 2.3, 30.6] target [186.47, -22.07, 158.2], r = 46.04. New pose pos [83.68, 6.00, 74.44] target [235.77, -18.37, 202.04], fov 44 unchanged, r = 112.00, eye 818.00 m ASL. Visible drop 0.1 m -> 319.4 m; lowest visible ground 812.0 -> 498.6 m ASL; 18.7% of the frame now beyond 150 m and below WATER_LEVEL.",
         "whatSurvives": "Only relative statements. (1) The channel ORDER of a backlit bamboo pixel — R over G rather than G over R — which is a property of the material, not of the pose. (2) The ratio of a backlit canopy pixel's luminance to a neighbouring lit-sky pixel. (3) The bare-stem run as a FRACTION of a culm's on-screen height, which moves 0.54 -> 0.26 by construction and is pose-independent. Every absolute code value quoted above is void.",
         "alsoContaminating": "`postfx` is fixing a crushed shadow floor in `sun`/`valley`, and `sky` may move the aerial-perspective ladder that the tree-wall box depends on more than my change does."
       },
-
       "reOcclusionAnswerForCore": {
         "question": "core flagged possible re-occlusion by near canopy at r = 130-170 — if the verification frame shows a wall of foliage at the lip instead of the 319 m drop, is that foliage or the pose?",
         "answer": "It cannot be the bamboo CARDS at r = 130-170, and here is the arithmetic so the next round does not re-litigate it.",
@@ -126,7 +119,6 @@
         "whatCouldOcclude": "The NEAR PLANTS, not the cards, and this is a new hazard the re-pose creates. _scatterBamboo samples them into an annulus r in [76,126] and the new eye stands at r = 112.00 — inside their band, at exactly the radius where plateauMask reaches 0 (78 + FALLOFF 34), so the placement filter that keeps the courtyard clear does not defend this position at all. The material has fadeFar [40.5, 46] and NO fadeNear, so a culm two metres from the lens draws at full size. Expected counts, integrated over the annulus at the placed density (869 over 31,730 m^2) and calibrated against the audited 48 drawn at the old pose: 2.1 plants within 5 m of the eye, 8.6 within 10 m, 19.1 within 15 m, roughly half of them forward of it. A 5-16 m culm at 8 m is 0.10-0.16 m thick, i.e. 18-29 px wide at f = 1448, and crosses the whole frame vertically.",
         "prediction": "The verification `valley` frame will show a handful of full-height near culms crossing it. That is a composition question, not a defect — Tsushima frames its vistas through exactly this — but if it reads as a wall, the lever is ONE line and it is in this file: raise the near-plant sampling annulus inner radius from 76 (Foliage.js `_scatterBamboo`, `sample(76, 126)`) to about 120, which clears the eye's own 8 m neighbourhood without touching the band the shot looks across. Do NOT add a fadeNear to bamboo-plant instead: culms would dissolve four metres in front of a walking player, which is worse in gameplay than it is good in one still. I did not take either change this round because I cannot see the frame."
       },
-
       "routedOut": [
         {
           "to": "sky",
@@ -138,22 +130,19 @@
         }
       ]
     },
-
     {
       "id": "r17-major-hero-sakura",
       "shot": "hero",
       "problem": "The sakura canopy reads as large flat-shaded hard-alpha cards with 45-80 px facets and stair-stepped edges.",
       "verdict": "GATED, NOT SHIPPED — and that is the intended outcome, agreed with the coordinator. No pixel in the hero frame changes from this file this round.",
-
       "theGate": {
         "constant": "BLOSSOM_CARD_M in src/render/Foliage.js, immediately above paintBlossom.",
         "whatItIs": "The mean world DIAMETER, in metres, of the blossom card the sheet is authored for. paintBlossom derives its floret radius scale `k`, its floret count and its layout contraction `L` from this one number and nothing else.",
         "at2_68": "The card that ships today (Props.js `_blossomCluster`, s = 1.00 + rnd()*0.68, diameter 2s, mean 2.68 m). k = 1.000, florets = 72, L = 1.000 — every multiplier is exactly 1 and the sheet is byte-identical to round 16's. This is what is committed.",
         "at0_92": "The card agreed with `world` and ruled on by the coordinator (s = 0.34 + rnd()*0.24, mean 0.92 m, 2.91x smaller). k = 2.481, florets = 12, L = 0.473. Total painted area 1.026x, so the card's mean colour — which the critic guards to +/-8% per channel on both target boxes — is held. Painted content envelope 0.510 -> 0.510 of the canvas, i.e. the silhouette lobeMask bites into does not move, so the crown's per-card coverage is unchanged and only the element scale inside it changes. Each floret lands at ~5.3 px on screen instead of ~2.",
         "whyGated": "Splitting the two changes regresses the canopy in EITHER direction, which round 16 measured and refused to do: 12 large florets on today's 2.68 m card are twelve 0.65 m flowers, worse than what ships; and 72 florets on a 0.92 m card are 2 px each and mip to a flatter wash than today. It is a one-line flip and it must happen in the SAME BUILD as the Props.js size change, never before and never after.",
-          "whoFlipsIt": "The coordinator, at verification time, recorded as a coordinator edit — it explicitly took this off my hands so my commit does not depend on anyone remembering. If a later round finds the canopy still flat, the constant is the first thing to look at; do NOT re-author paintBlossom from scratch."
+        "whoFlipsIt": "The coordinator, at verification time, recorded as a coordinator edit — it explicitly took this off my hands so my commit does not depend on anyone remembering. If a later round finds the canopy still flat, the constant is the first thing to look at; do NOT re-author paintBlossom from scratch."
       },
-
       "agreedWithWorld": {
         "route": "SendMessage to `world` failed ('No agent named world is reachable'), so the terms went to the coordinator, who relayed them and ruled.",
         "cardSize": "s = 1.00 + rnd()*0.68 -> s = 0.34 + rnd()*0.24. Facets measure 45-80 px today, so 45-80 / 2.91 = 15-27 px against the critic's 'under 25 px' line. Anything less than a 2.8x cut misses the top of that range.",
@@ -161,13 +150,17 @@
         "coverage": "2,600 clumps at (0.92/2.68)^2 = 0.118 of the area each is 0.307 of the current covered area... stated precisely: coverage scales as count x area, 2600/303 x 0.118 = 1.01, i.e. crown coverage is held to within 1%.",
         "notMine": "alphaTest 0.36 with no alphaToCoverage and no dither is a Props.blossomMaterial property. The critic's stair-stepping and hard-alpha call cannot be answered from a texture — a wider alpha ramp under a hard alphaTest only moves where the cut lands, it never produces partial coverage. Routed to world rather than worked around here."
       },
-
       "budgetOfferDeclined": "I offered a reclaim of FAR_COVER_CAP 13,500 -> 10,500 instances = -12,000 triangles if world's canopy came up short. The coordinator declined it, correctly: the measured cost is far-cover density 0.191 -> 0.149 tussocks/m^2, which partly walks back round 16's valley-lattice fix, and the 2-quad variant makes it unnecessary. Nothing was taken speculatively and FAR_COVER_CAP is unchanged at 13,500."
     }
   ],
-
   "budget": {
-    "drawCalls": {"before": 6, "after": 6, "delta": 0, "allocation": "+2", "note": "No mesh, material or pack was added or removed. Both bamboo layers are the same two InstancedMeshes."},
+    "drawCalls": {
+      "before": 6,
+      "after": 6,
+      "delta": 0,
+      "allocation": "+2",
+      "note": "No mesh, material or pack was added or removed. Both bamboo layers are the same two InstancedMeshes."
+    },
     "triangles": {
       "layer": "foliage/bamboo-plants",
       "perInstance": "160 -> 176",
@@ -178,10 +171,12 @@
       "allocation": "+5,000",
       "verify": "The r17 audit's foliage/bamboo-plants entry: expect calls 1 and triangles/instances = 176 exactly. If that ratio is not 176 the geometry did not rebuild."
     },
-    "textures": {"delta": "0", "note": "BLOSSOM_CARD_M ships at 2.68, where k = 1, florets = 72 and L = 1, so paintBlossom emits the round-16 sheet unchanged. No texture was added, removed or resized; textures count stays 103."},
+    "textures": {
+      "delta": "0",
+      "note": "BLOSSOM_CARD_M ships at 2.68, where k = 1, florets = 72 and L = 1, so paintBlossom emits the round-16 sheet unchanged. No texture was added, removed or resized; textures count stays 103."
+    },
     "boot": "Negligible. The plant geometry gains 24 quads and loses 16 ring links, once, at boot."
   },
-
   "forTheVerificationPass": [
     "READ FIRST: the `valley` camera moved to r = 112 at core's c0aec9a. All three acceptance boxes below now land on different geometry at a different distance than the r16v1 numbers they are compared against, so score them against the critic's THRESHOLDS, not against my deltas. Every 'was' figure below is from the old pose and is quoted only for provenance.",
     "node tools/probe.mjs stats shots/phone-valley-r17.png 0.60,0.20,0.10,0.06 — expect mean R to lead mean G by 7-12 (old pose: -1.7) and saturation 0.35-0.50 (old pose: 0.247). If the box no longer contains canopy at all under the new pose, re-crop before scoring and say so.",
@@ -193,7 +188,6 @@
     "foliage.getStats().floating must still read 0. No placement code changed, so a non-zero value would mean another owner moved the terrain.",
     "IF AND ONLY IF world landed s = 0.34 + rnd()*0.24 and 2,600 clumps: flip BLOSSOM_CARD_M from 2.68 to 0.92 in src/render/Foliage.js and re-capture `hero`. Expect detail at 0.112,0.230,0.020,0.030 to rise from 5.91 and at 0.150,0.280,0.020,0.030 from 8.27, with both boxes' meanRGB inside the critic's +/-8% guard. If world did NOT land it, leave the constant alone — the sheet is correct for today's card at 2.68."
   ],
-
   "openItems": [
     {
       "item": "The 60 px bare-stem acceptance is not reachable from leafFrom alone on the tallest near culms.",
@@ -203,5 +197,38 @@
       "item": "Whether the transmission lift is enough is gated on a number I could not measure offline: the aerial-perspective fraction of a tree-wall pixel.",
       "detail": "An owner with a capture can settle it in one shot by ablating fog on the `valley` frame and re-measuring 0.08,0.20,0.06,0.08. If the surface term is under 30% of that pixel, no foliage change can move it to 75 and the finding should be re-routed to sky."
     }
-  ]
+  ],
+  "regressionIntroducedAndFixed": {
+    "severity": "BLOCKER, self-inflicted, introduced by my own commit 0f5dc48 and fixed here. The whole foliage system was absent from every frame of r17v1.",
+    "mechanism": "A temporal-dead-zone ReferenceError in paintBlossom, thrown on the first floret of the first call, i.e. inside _buildTextures, which is step 1 of FoliageSystem.init().",
+    "exactFault": "I introduced a function-scoped `const k` at the top of paintBlossom (the floret radius scale derived from BLOSSOM_CARD_M) and then referenced it at `const r = size * (...) * k;` INSIDE the floret loop. That loop body already declared its own `const k = 0.90 + rnd() * 0.16;` four lines further down. A `const` shadows for its ENTIRE block, not from its declaration onward, so the reference resolved to the inner binding in its temporal dead zone and threw `ReferenceError: Cannot access 'k' before initialization` every single time. It was never conditional on BLOSSOM_CARD_M, which is why the coordinator's bisect A — reverting the 0.92 gate flip to 2.68 — correctly exonerated that edit.",
+    "fix": "Renamed the two derived constants so they cannot be shadowed: `k` -> `floretScale`, `L` -> `layoutK`. No arithmetic changed; floretScale/florets/layoutK are still 2.481 / 12 / 0.473 at BLOSSOM_CARD_M 0.92 and 1.000 / 72 / 1.000 at 2.68. Nothing else in the round-17 work was dropped: the SSS double-tint fix, leafFrom 0.26, sprays 20, internodes 6 and alphaTest 0.22 are all kept.",
+    "whyItGotThroughReview": "`node --check` parses and cannot see a TDZ — it is a runtime error, and I treated a clean parse as evidence the file would boot. That was the whole gap: I measured pixels and triangles carefully and never once executed the code. The rule this project already has — 'configuration that looks correct is not evidence' — applies to a diff as much as to a uniform.",
+    "theSwallower": {
+      "where": "src/main.js:168-179, the boot loop. Each system runs inside `try { await fn(); } catch (err) { console.error(`[boot] system \"${key}\" failed`, err); if (key === 'materials' || key === 'sky' || key === 'terrain') throw err; }`. `foliage` is not in that essential set, so the boot continues and `window.__kagerouReady` is still set: booted reads true and the capture proceeds against a build with no foliage in it.",
+      "whyEVERYTHING vanished rather than part of it": "Two compounding facts. (1) `FoliageSystem.init()` does `this.ctx.scene.add(this.group)` at the very END, after all thirteen steps, so a throw at ANY step orphans every resource built before it — the group is never parented and not one mesh can draw. (2) `engine.add(ctx.foliage)` in main.js runs after `await ctx.foliage.init()`, so the system is never even updated. `ctx.foliage` is nevertheless assigned (the constructor ran), so every `ctx.foliage?.x` consumer downstream sees a live-looking object on a half-built system and reports nothing.",
+      "theInferenceThatWasWrong": "The coordinator read `level:static:0,0:__blossom` still drawing at 31,140 triangles as proof that my texture library had built and the abort was later. It is not: `this.blossomTexture = this.tex.blossom` is assigned AFTER the `this.tex = { ... }` object literal in _buildTextures, so the throw inside that literal leaves blossomTexture null and Props draws the merged canopy geometry on its material's base colour. The abort was in fact in the FIRST step, not a late one. Worth recording because the same inference will be made again."
+    },
+    "apparatusFinding": {
+      "claim": "A real `console.error` WAS emitted for this failure and the r17v1 report does not contain it. The round's 'no non-warning console errors' clearance was false, and that is a rig defect independent of my bug.",
+      "evidence": "tools/capture.mjs:305 pushes every console message of type error or warning into `logs`, and line 690 writes `errors: logs.slice(0, 40)`. shots/report-r17v1.json profiles.phone.errors has 17 entries — 12 Canvas2D willReadFrequently warnings, 4 GL ReadPixels stalls and 1 requestFullscreen warning — so the 40-cap did not truncate anything, and the string `[boot] system \"foliage\" failed` is not among them. The listener is attached before page.goto, so ordering is not the explanation.",
+      "corroboration": "The 12 Canvas2D warnings are themselves the fingerprint of where the throw landed. Chrome emits that warning once per canvas context that does a readback, and counting the canvases _buildTextures touches before `blossom:` in its object literal (clump, the four tussock cells plus the strip, the bamboo-plant sheet plus its leaf sub-canvas, the four bamboo-card cells plus the atlas) gives 12-14. paintBlossom throws before its own canvas is ever read back, so the count stops exactly at the blossom entry.",
+      "askOfTheRig": "Either surface `errors` in the round gate, or fail the gate when drawsByOwner loses an owner that was present in the previous round. A whole system disappearing should not need a human to notice a missing key. This project has now lost rounds twice to silently-absent foliage — 11,390 bamboo cards whose shader linked dead, and this."
+    },
+    "verificationByConstruction": {
+      "method": "No capture and no browser was launched. I wrote a Node harness that stubs Canvas2D with pure no-ops (getImageData/createImageData return correctly-sized zeroed buffers, gradients are addColorStop no-ops, every unlisted 2D call is a no-op via a Proxy) plus a stub ctx (three.js Scene/Camera, a renderer with the handful of methods _bakeImpostors calls, Weather's two wind uniforms, and a terrain shaped to core's own r16 ray-march: 812.0 at r<=80, 779.7 at 130, 691.8 at 300). No shim value can change a branch, so anything that throws throws for a structural reason. Then it constructs FoliageSystem and awaits init().",
+      "threeWayBisect": [
+        "0f5dc48 (my broken commit): INIT THREW at step 'sowing textures' — ReferenceError: Cannot access 'k' before initialization, at paintBlossom -> _buildTextures -> step -> init. Reproduces the coordinator's bisect exactly, offline, in one second.",
+        "5a1d72c (pre-round-17): INIT OK, 13/13 steps, group added, bamboo-plants at 160 triangles/instance.",
+        "this commit: INIT OK, 13/13 steps, group added to scene, 21 meshes, 12 textures, 34 materials, 37 geometries, blossomTexture and momijiTexture both published, bamboo-plants at 176 triangles/instance, getStats() floating 0."
+      ],
+      "keptForNextTime": "The harness is not committed (it is scratch), but it is worth rebuilding: it is about 130 lines, needs no browser, does not take the rig lock, and it would have caught this in the round it was written. Any owner of a system with an async init() can run the same shape."
+    },
+    "expectedAfterTheFix": {
+      "theInvariantToCheckFirst": "In the re-captured audit, EVERY foliage row must be identical to the bisect-B numbers (Foliage.js reverted, everything else applied) except one: `foliage/bamboo-plants`, whose triangles / instances must be exactly 176, where bisect B has 160. That ratio is the whole geometric change and it is checkable without knowing any instance count. Draw calls must be unchanged — no mesh, material or pack was added or removed.",
+      "drawsByOwner_foliage": "The full review report samples drawsByOwner at the `torii` pose (verified: r17v1's level+terrain+player+sky+Mesh sum to 680,739, which is perShot.torii exactly). Expect the foliage key to RETURN. Against bisect B's hero figures of 17 calls / 169,116 triangles, expect hero 17 calls / 169,700-170,400 triangles and hero total 844,619 -> 845,000-845,900.",
+      "perPoseDelta": "Estimated plants drawn and the triangle delta they carry, from a Monte-Carlo over the r in [76,126] scatter annulus at the placed density (869), calibrated by the 48 drawn vs 28 geometric at the old valley eye (survival 1.689): hero ~57 plants +912; wide ~204 +3,264; torii ~44 +704; sun ~16 +256; valley ~186 +2,976. Worst pose `wide` at +3,264 is inside the +5,000 allocation.",
+      "ifItIsStillAbsent": "Then the fault is NOT this one and the next thing to read is profiles.phone.errors, which will now be the only place the reason exists. My handoff's prediction is falsifiable: if foliage returns with bamboo-plants at 176 tri/instance, the TDZ was the whole cause."
+    }
+  }
 }

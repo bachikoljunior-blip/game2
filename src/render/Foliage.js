@@ -2336,16 +2336,16 @@ function paintBlossom(size) {
   // which drives the count to 72/2.91^2 = 8.5 and leaves a card too sparse to read as a
   // cluster. 0.85 lands on 2.48 and 12 florets — three or four flowers on each of the three
   // sub-clump spurs, which is what a cherry actually carries — at 5.3 px each rather than 6.2.
-  const k = Math.min(3.2, Math.max(1, Math.pow(2.68 / BLOSSOM_CARD_M, 0.85)));
+  const floretScale = Math.min(3.2, Math.max(1, Math.pow(2.68 / BLOSSOM_CARD_M, 0.85)));
   // Count falls as k^2, which is what holds total painted area — and therefore the card's
   // mean colour and its alpha coverage, i.e. the crown's density per card — constant.
-  const florets = Math.max(8, Math.round(72 / (k * k)));
+  const florets = Math.max(8, Math.round(72 / (floretScale * floretScale)));
   // Layout contraction, solved so the painted content's outer envelope does not move. The
   // furthest a floret's rim can reach is (clump offset 0.16 + radial spread 0.215) * L plus
   // its own max radius 0.134 * k, and that sum is 0.510 of the canvas at k = 1. Without this
   // a 2.48x floret would push content from 0.51 to 0.62 and change the silhouette `lobeMask`
   // then bites into, which would move the crown's coverage as well as its detail.
-  const L = Math.min(1, Math.max(0.25, (0.510 - 0.134 * k) / 0.375));
+  const layoutK = Math.min(1, Math.max(0.25, (0.510 - 0.134 * floretScale) / 0.375));
 
   // Twig armature first, so blossom sits on it rather than floating in front of it.
   //
@@ -2370,11 +2370,11 @@ function paintBlossom(size) {
     // Thickened by `k` for the same reason the florets are: a twig authored for a 60 px card
     // is a third of a pixel on a 21 px one, and a sub-pixel dark line does not thin, it
     // aliases. Reach contracts with the rest of the layout so no twig can reach the mask.
-    g.lineWidth = Math.max(1, size * (0.013 - i * 0.0012) * k);
+    g.lineWidth = Math.max(1, size * (0.013 - i * 0.0012) * floretScale);
     g.beginPath();
-    g.moveTo(cx, cy + size * 0.03 * L);
-    g.quadraticCurveTo(cx + Math.cos(a) * size * 0.08 * L, cy + Math.sin(a) * size * 0.08 * L,
-      cx + Math.cos(a) * size * 0.155 * L, cy + Math.sin(a) * size * 0.155 * L);
+    g.moveTo(cx, cy + size * 0.03 * layoutK);
+    g.quadraticCurveTo(cx + Math.cos(a) * size * 0.08 * layoutK, cy + Math.sin(a) * size * 0.08 * layoutK,
+      cx + Math.cos(a) * size * 0.155 * layoutK, cy + Math.sin(a) * size * 0.155 * layoutK);
     g.stroke();
   }
 
@@ -2405,13 +2405,13 @@ function paintBlossom(size) {
   const clumps = [];
   for (let i = 0; i < 3; i++) {
     const ca = ((i + rnd() * 0.55) / 3) * Math.PI * 2;
-    const cr = size * (0.10 + rnd() * 0.06) * L;
+    const cr = size * (0.10 + rnd() * 0.06) * layoutK;
     clumps.push([cx + Math.cos(ca) * cr, cy + Math.sin(ca) * cr]);
   }
   for (let f = 0; f < florets; f++) {
     const t = Math.pow(rnd(), 0.70);              // 0 at the clump core, 1 at its rim
     const a = rnd() * Math.PI * 2;
-    const rad = t * size * 0.215 * L;
+    const rad = t * size * 0.215 * layoutK;
     const home = clumps[(rnd() * clumps.length) | 0];
     const px = home[0] + Math.cos(a) * rad;
     const py = home[1] + Math.sin(a) * rad;
@@ -2420,7 +2420,7 @@ function paintBlossom(size) {
     // repeating ~12 px pink circle motif ... bubble wrap": a repeated motif reads as a
     // repeat because it is the same SIZE, before it is the same shape. `pow(rnd, 2.1)`
     // puts most florets small and a handful large, which is what a real cluster does.
-    const r = size * (0.078 - t * 0.028) * (0.42 + Math.pow(rnd(), 2.1) * 1.30) * k;
+    const r = size * (0.078 - t * 0.028) * (0.42 + Math.pow(rnd(), 2.1) * 1.30) * floretScale;
     // One in six has gone over: bone, not brown. Kept as a minority accent so the mean
     // stays blush instead of being dragged grey the way a third of them did.
     const spent = rnd() < 0.16;
