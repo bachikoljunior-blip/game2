@@ -81,18 +81,64 @@ enclosed space, and Genshin's sustained thermal behaviour on mid-range Android. 
 only — nothing from any reference's characters, world, layout, UI, staging or music is
 copied, and no reference title is named in the shipped product.
 
-**The honest state of that bar: one element of sixteen has a working review loop.** Visuals
-is measured and currently fails. Four more have partial evidence limited to what a still
-frame or a boot-time counter can show. The other twelve — combat feel, movement, camera
-behaviour, animation, touch, audio, AI among them — have never been verified, because five
-static screenshots cannot see them. No side-by-side against real reference footage, no
-real-device frame rate, and no expert or player review has ever been performed, and none is
-claimed anywhere in this repository.
+**The honest state of that bar, as of 2026-08-01: ten elements of sixteen now carry at
+least one executed measurement, against one the day before.** That is coverage, not
+quality — the first interaction run returned 5 pass, 9 fail and 4 inconclusive. Visuals is
+measured and currently fails. Combat and AI are the last two elements resting on a source
+audit alone: their scenarios and metrics are wired, but the sample they need is
+unaffordable until the physics cost in TD-010 comes down, and that was recorded rather
+than quietly reduced to a smaller sample. No side-by-side against real reference footage,
+no real-device frame rate, and no expert or player review has ever been performed, and
+none is claimed anywhere in this repository.
 
 ## Where this build actually stands
 
 > Picking the work up in a new session? [`HANDOFF.md`](./HANDOFF.md) carries the state
 > the container does not — `shots/` is gitignored and the review images do not survive.
+
+### The game is now measured in motion, not only photographed
+
+Until 2026-08-01 the project's entire apparatus was five static screenshots, so exactly one
+of the sixteen elements in `AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml` had ever been
+verified. The interaction rig (`tools/interaction-capture.mjs`, brief in
+[`tools/INTERACTION.md`](./tools/INTERACTION.md)) closes that gap: it drives the built game
+through scripted play at a fixed simulation timestep, through real DOM pointer and keyboard
+events on the real canvas, and writes traces a separate pure module turns into
+per-criterion verdicts. **Nothing in `src/` was changed to make this possible** — the whole
+page-side half is injected by the rig and cannot exist in a release load.
+
+Its own validation runs first: two runs of an identical stimulus diverged by **0**, and
+replacing the post pipeline with a matrix-only stub — the substitution that makes the rig
+affordable at **8.73 s per rendered frame against 2.2 ms per simulated one** — also
+diverged by **0**.
+
+What the first run found, in its first hour:
+
+- **Locomotion is exactly as authored.** Ground speed measured from world position, not
+  from the controller's self-report: **1.9 / 5.4 / 7.2 m/s**, all three inside ±5%.
+- **Feet slide.** A planted foot drifts **~26 cm per frame** at the 95th percentile against
+  a 2 cm bar — there is no foot lock, which no still frame can show.
+- **A 180° reversal takes 283 ms** against a 250 ms bar, with a 17 ms response latency. A
+  small, real miss rather than a feel complaint.
+- **Three enemies cost 194–850 ms of JS per frame** against 1.25–1.7 ms with none — 137×
+  to 500×, against a 5 ms budget. A CPU profile puts **91.6%** of that frame in the physics
+  narrow phase: the whole static world is five colliders totalling 2,148 triangles, and one
+  frame issues 209,886–419,414 triangle tests. This is JavaScript, not rasterisation, so it
+  is not a SwiftShader artifact — though a container CPU is not a phone either, so the
+  ratio and the mechanism transfer, not the millisecond count. Recorded as TD-010; it is
+  the largest thing on the project's plate, and it is also what stops the rig sampling
+  combat.
+- **The interactables are unreachable.** `Level.interact()`, `nearestInteractable()` and
+  `ringBell()` have no caller anywhere, and Input's `interact` intent is consumed by
+  nobody. The bell, the ema and the chōzuya have authored responses no player can reach,
+  and the bell is also a wave trigger. `BM-EXPLORE-02` had been marked *verified* on a
+  source audit that read those responses without checking that anything invokes them.
+  Recorded as TD-011.
+
+Full results and every measured number: `shots/interaction-i1.json` and
+[`AI_DEVELOPMENT/EVIDENCE/interaction-i1.md`](./AI_DEVELOPMENT/EVIDENCE/interaction-i1.md).
+Nothing in that run is a play test, a device measurement, or a comparison against any
+reference title — none of those have happened on this project.
 
 Measured, not asserted. The coherent phone/MEDIUM `r15v1` checkpoint is captured and gated.
 Round 15 closed **FAIL at 65/100**, 3 blockers from 4, and was mostly a *disproof* round: it

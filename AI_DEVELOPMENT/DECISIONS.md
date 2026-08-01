@@ -168,3 +168,41 @@ finding disappeared, but the bamboo blocker remains and the foliage and terrain 
 predictions did not pass. The two requested rounds are complete because both full
 capture-critique-repair-verification loops and their remaining findings are recorded, not
 because the overall visual bar passed. Round 15 stays inactive pending a new user request.
+
+## D-019 — Build the interaction-capture apparatus in the rig, not in the game
+
+Accepted 2026-08-01 from the user's explicit instruction to do BENCH-APPARATUS.
+
+Twelve of sixteen elements had never been verified because the project's entire apparatus
+was five static screenshots. The obvious implementation — add checkpoint hooks to `src/` so
+a driver can pose combat, step time and read state — was rejected. ARCHITECTURE.md §0 rule
+5c already forbids shipping writable game state, and TD-003 records that the existing
+`window.__kagerou` surface is itself an open liability; widening it to make the game
+testable would have made the release problem worse to solve a review problem.
+
+The whole page-side half therefore lives in `tools/harness/runtime.js` and is injected with
+`page.addInitScript`. It reaches the game only through surfaces a player already has — DOM
+pointer and keyboard events on the real canvas — and through state the game already
+publishes. **Nothing in `src/` changed.**
+
+Three decisions inside that are load-bearing:
+
+- **The clock is virtualised, not the game.** Overriding `performance.now` and
+  `requestAnimationFrame` from the harness makes the simulation advance by exactly 1/60 s
+  per frame regardless of how long the frame took to draw. THREE.Clock reads
+  `performance.now`, so Engine's `dt` follows without a patch, and Input.js's gesture
+  classification — which times swipes and taps off the same clock — becomes scriptable in
+  frames. Without this, every `dt` under SwiftShader slams into Engine's 0.25 s clamp and a
+  130 ms parry window is unreachable by construction.
+- **Scenarios are data, not closures.** The exact input timeline that produced a number is
+  serialised into the trace, so a disputed measurement can be replayed or diffed, and there
+  is no eval path into the page.
+- **The rig records; a separate pure module judges.** `tools/interaction-metrics.mjs` is a
+  function of a written trace, so a verdict can be re-derived without a browser, and
+  `inconclusive` is a first-class result distinct from `fail`.
+
+The rendering substitution that makes it affordable (a matrix-only stub in place of the post
+pipeline, 8.73 s → 2.2 ms per frame) was treated as a hypothesis and measured: two runs of
+an identical stimulus, one fully rendered, diverged by exactly 0. The self-check that proves
+it runs before any verdict is believed, and is carried between runs only against an
+identical build fingerprint.
