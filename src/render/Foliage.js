@@ -2298,10 +2298,16 @@ function drawFloret(g, r, edge, mid, throat, rnd, boss = true) {
  *         to within a few per cent while making each floret ~5.3 px on screen instead of 2.
  *
  * It is a ONE-LINE flip and it must be flipped in the same build as the Props.js size change,
- * never before and never after. It is shipped at 2.68 because `world` had not confirmed when
- * this was committed.
+ * never before and never after. It was committed at 2.68 because `world` had not confirmed
+ * at that point.
+ *
+ * FLIPPED to 0.92 by the round-17 coordinator once `world` landed the matching size change in
+ * `Props.js` (`6271c91`): final `s = 0.40 + rnd()*0.12`, two quads, 2,595 clumps, primary-quad
+ * width 0.80-1.04 m for a mean of exactly 0.92 m. Both halves are therefore in the same build,
+ * which is the condition this gate exists to enforce. The flip was made by the coordinator
+ * rather than by either owner so that one file had one writer.
  */
-const BLOSSOM_CARD_M = 2.68;
+const BLOSSOM_CARD_M = 0.92;
 
 /**
  * Sakura at peak (ARCHITECTURE §5). This card is the sacred tree's whole read, and the
