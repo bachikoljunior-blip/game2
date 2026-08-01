@@ -101,6 +101,20 @@ const _p2 = { x: 0, y: 0, z: 0, t: 0, inside: false, nx: 0, ny: 0, nz: 0, depth:
 const _p3 = { x: 0, y: 0, z: 0, t: 0, inside: false, nx: 0, ny: 0, nz: 0, depth: 0, fnx: 0, fny: 1, fnz: 0 };
 const _ss = { s: 0, t: 0, ax: 0, ay: 0, az: 0, bx: 0, by: 0, bz: 0 };
 
+/**
+ * One warning per distinct fault, for the lifetime of the page. A non-finite
+ * state repeats every frame at 60 Hz, and a console flooded at that rate is
+ * indistinguishable from no console at all.
+ */
+const _warned = new Set();
+function warnOnce(key, msg, extra) {
+  if (_warned.has(key)) return;
+  _warned.add(key);
+  console.warn(msg, extra !== undefined ? extra : '');
+}
+
+const finite3 = (x, y, z) => Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z);
+
 /** Sweep / slide / depenetration results (scalar, never aliased). */
 const _slideA = makeHit();    // primary collide-and-slide
 const _slideB = makeHit();    // step-up trial slide
@@ -689,6 +703,19 @@ class TriBVH {
 
   /** Collect triangle indices whose leaf AABB overlaps the query box. */
   overlapAABB(minx, miny, minz, maxx, maxy, maxz, outArr) {
+    // A non-finite query box does not fail loudly here — it fails *inclusively*.
+    // Every rejection below is a `<` or `>` against the box, and every comparison
+    // against NaN is false, so no node is ever culled and the traversal walks the
+    // whole tree and returns every triangle in the mesh. That is the mechanism
+    // behind TD-010: one bad character position turned a 12-triangle candidate set
+    // into a 732-triangle one and cost 209,886 narrow-phase tests in a single
+    // frame. An inverted box is the same class of caller error and returns nothing
+    // for the same reason it should: it selects no volume.
+    if (!(minx <= maxx && miny <= maxy && minz <= maxz)) {
+      warnOnce('bvh-degenerate-query', '[physics] degenerate BVH query box ignored',
+        [minx, miny, minz, maxx, maxy, maxz]);
+      return 0;
+    }
     const st = this._stack;
     let sp = 0, count = 0;
     st[sp++] = 0;
@@ -1740,17 +1767,33 @@ export class PhysicsWorld {
       move(displacement, dt) { return world._moveCharacter(ch, displacement, dt); },
       jump(speed) { ch.velocity.y = speed; ch.grounded = false; ch.coyote = 0; ch.groundInfo.grounded = false; },
       canJump() { return ch.grounded || ch.coyote > 0; },
+      /**
+       * Accepts three scalars or a single vector-like. Both call shapes are in
+       * use — Player passes components, Enemy passes the entity's own position
+       * object on respawn — and the scalar-only signature turned that second
+       * form into `position.x = <Vector3>, y = undefined, z = undefined` without
+       * an error. Nothing non-finite gets in: see `_moveCharacter`.
+       */
       teleport(x, y, z) {
+        if (x !== null && typeof x === 'object') { const v = x; x = v.x; y = v.y; z = v.z; }
+        if (!finite3(x, y, z)) {
+          warnOnce('teleport-nonfinite', '[physics] non-finite teleport ignored', [x, y, z]);
+          return;
+        }
         ch.position.set(x, y, z);
         ch.smoothPosition.copy(ch.position);
         ch.velocity.set(0, 0, 0);
         ch.grounded = false; ch.coyote = 0;
+        ch._gx = x; ch._gy = y; ch._gz = z;
       },
       setSlopeLimit(deg) { ch.slopeLimit = deg; ch.cosSlope = Math.cos(deg * Math.PI / 180); },
       remove() { world.remove(ch); },
     };
     if (opts.position) ch.position.copy(opts.position);
+    if (!finite3(ch.position.x, ch.position.y, ch.position.z)) ch.position.set(0, 0, 0);
     ch.smoothPosition.copy(ch.position);
+    // Last known-good transform, held as scalars so restoring one costs nothing.
+    ch._gx = ch.position.x; ch._gy = ch.position.y; ch._gz = ch.position.z;
     this.characters.push(ch);
     return ch;
   }
@@ -1765,15 +1808,47 @@ export class PhysicsWorld {
    * snapping are handled here. Returns the (reused) groundInfo record.
    */
   _moveCharacter(ch, displacement, dt) {
-    if (!ch.enabled || dt <= 0) return ch.groundInfo;
+    if (!ch.enabled || !(dt > 0)) return ch.groundInfo;
+
+    // ARCHITECTURE §5b, at the one boundary where a violation is *silent in both
+    // directions*. A non-finite position never throws here and never NaNs a
+    // uniform: it makes every query AABB non-finite, and a non-finite box culls no
+    // BVH node, so the narrow phase quietly degrades from "the dozen triangles
+    // under this capsule" to "every triangle in the world", once per distance
+    // evaluation. Measured: 209,886 triangle tests in one frame against a static
+    // world of 2,148, and 194 ms of JS against a 5 ms budget (TD-010). So the
+    // controller refuses a broken state at the door and holds the last good one.
+    if (!finite3(ch.position.x, ch.position.y, ch.position.z)) {
+      warnOnce('character-position-nonfinite',
+        '[physics] non-finite character position held at its last good value', ch.id);
+      return this._restoreCharacter(ch);
+    }
+    if (!finite3(ch.velocity.x, ch.velocity.y, ch.velocity.z)) {
+      warnOnce('character-velocity-nonfinite', '[physics] non-finite character velocity zeroed', ch.id);
+      ch.velocity.set(0, 0, 0);
+    }
+
     const steps = Math.min(MAX_SUBSTEPS, Math.max(1, Math.ceil(dt / FIXED_DT)));
     const sdt = dt / steps;
-    const dx = (displacement ? displacement.x : 0) / steps;
-    const dy = (displacement ? displacement.y : 0) / steps;
-    const dz = (displacement ? displacement.z : 0) / steps;
+    let dx = (displacement ? displacement.x : 0) / steps;
+    let dy = (displacement ? displacement.y : 0) / steps;
+    let dz = (displacement ? displacement.z : 0) / steps;
+    if (!finite3(dx, dy, dz)) {
+      warnOnce('displacement-nonfinite', '[physics] non-finite displacement treated as zero', ch.id);
+      dx = 0; dy = 0; dz = 0;
+    }
     ch.lastDisplacement.set(0, 0, 0);
     ch.stepOffset = 0;
     for (let i = 0; i < steps; i++) this._charStep(ch, dx, dy, dz, sdt);
+
+    // The step itself is scalar arithmetic over collider data we do not own, so
+    // the exit is checked too rather than assumed.
+    if (!finite3(ch.position.x, ch.position.y, ch.position.z)) {
+      warnOnce('character-step-nonfinite',
+        '[physics] character step produced a non-finite position; reverted', ch.id);
+      return this._restoreCharacter(ch);
+    }
+    ch._gx = ch.position.x; ch._gy = ch.position.y; ch._gz = ch.position.z;
 
     // Damp the render y toward the physical y so a 0.42 m stair does not pop.
     const k = 1 - Math.exp(-22 * dt);
@@ -1781,6 +1856,19 @@ export class PhysicsWorld {
     ch.smoothPosition.z = ch.position.z;
     const dyv = ch.position.y - ch.smoothPosition.y;
     ch.smoothPosition.y += Math.abs(dyv) > 0.55 ? dyv : dyv * k;
+    return ch.groundInfo;
+  }
+
+  /**
+   * Put a character back on its last good transform. Returns `groundInfo` so a
+   * caller can `return this._restoreCharacter(ch)` on the failure path.
+   */
+  _restoreCharacter(ch) {
+    ch.position.set(ch._gx, ch._gy, ch._gz);
+    ch.smoothPosition.copy(ch.position);
+    ch.velocity.set(0, 0, 0);
+    ch.lastDisplacement.set(0, 0, 0);
+    ch.stepOffset = 0;
     return ch.groundInfo;
   }
 
@@ -1995,10 +2083,15 @@ export class PhysicsWorld {
     for (let i = 0; i < n; i++) {
       const a = list[i];
       if (!a.enabled || !a.pushable) continue;
+      // This loop writes A from B and B from A, so one non-finite character
+      // infects every other one in a single frame — which is how a single bad
+      // enemy spawn took the player's capsule with it.
+      if (!finite3(a.position.x, a.position.y, a.position.z)) continue;
       const aTop = a.position.y + a.height;
       for (let j = i + 1; j < n; j++) {
         const b = list[j];
         if (!b.enabled || !b.pushable) continue;
+        if (!finite3(b.position.x, b.position.y, b.position.z)) continue;
         const bTop = b.position.y + b.height;
         // Vertical overlap first — standing on someone's head should not push.
         if (a.position.y > bTop || b.position.y > aTop) continue;
