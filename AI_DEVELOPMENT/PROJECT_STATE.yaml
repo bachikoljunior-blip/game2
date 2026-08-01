@@ -50,19 +50,14 @@
       "entryChunkGzipKb": 1.13
     },
     "publication": {
-      "status": "passed",
-      "checkpointPullRequest": "https://github.com/bachikoljunior-blip/game2/pull/1",
-      "publicationRepairPullRequests": [
-        "https://github.com/bachikoljunior-blip/game2/pull/2",
-        "https://github.com/bachikoljunior-blip/game2/pull/3",
-        "https://github.com/bachikoljunior-blip/game2/pull/4"
-      ],
-      "rounds13_14PullRequest": "https://github.com/bachikoljunior-blip/game2/pull/6",
-      "verifiedMainSha": "4a3eff701af0f6db52f5b780247e38422d40aad6",
+      "status": "partially_verified",
+      "round15MainMergeSha": "e40a1884a57250391dd08bdf50dc2c6cb3837a36",
+      "round15BranchSha": "56382d8d1e445fa35fbc5dfeb257e054d5715617",
       "publicUrl": "https://bachikoljunior-blip.github.io/game2/",
       "runtimeUrl": "https://bachikoljunior-blip.github.io/game2/docs/",
-      "checkedAt": "2026-07-31T22:32:03.058Z",
-      "browserGate": "current index-D_EFhYS4.js; ready and running; zero page, console, request, or HTTP errors"
+      "repositoryVerified": "INSPECTED: origin/main is e40a188; docs/assets carries index-BoUb9vMW.js, main-0qGNkpyh.js, Rig-DmfyOsEa.js and three-BTL71eav.js, docs/index.html references assets/index-BoUb9vMW.js, and the superseded index-D_EFhYS4.js / main-Ctu2PmB7.js / Rig-DXuvNL97.js are removed.",
+      "browserGate": "NOT VERIFIED IN THIS RUN. The agent proxy denies bachikoljunior-blip.github.io:443 by policy (403 on CONNECT, confirmed at $HTTPS_PROXY/__agentproxy/status), so neither npm run verify:pages nor curl can reach the live surface from this container. Do not record a public browser gate for Round 15 until it is actually run from a network that can reach github.io. The Rounds 13-14 browser gate at 4a3eff7 remains the last verified one.",
+      "checkedAt": "2026-08-01T02:45:00Z"
     },
     "dependencyRestore": {
       "status": "passed",
