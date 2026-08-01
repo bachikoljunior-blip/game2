@@ -1,0 +1,734 @@
+{
+  "schemaVersion": 1,
+  "at": "2026-08-01T14:58:25.836Z",
+  "tool": "tools/interaction-capture.mjs",
+  "tag": "physctl-after",
+  "revision": {
+    "sha": "e503c9540f57d917c973372a0a3b1b77570b3cef",
+    "branch": "claude/kagerou-round-16-q5h1ah",
+    "dirty": true
+  },
+  "build": {
+    "fingerprint": "3ac65b51ba7214b917944148f2312d5384256476747f19680f8c38172ad5365b"
+  },
+  "profile": {
+    "name": "phone",
+    "viewport": {
+      "width": 844,
+      "height": 390
+    },
+    "deviceScaleFactor": 3,
+    "isMobile": true,
+    "hasTouch": true,
+    "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1",
+    "tier": "medium"
+  },
+  "limitations": [
+    "SwiftShader software rendering — no statement here is device performance evidence.",
+    "The player is a scripted policy in tools/harness/runtime.js, not a human.",
+    "No reference-title footage was fetched or compared; thresholds are measured on our own build.",
+    "Input is synthesised as DOM PointerEvents in-page; the browser's own digitiser-to-event path is not exercised."
+  ],
+  "scenarios": {},
+  "selfCheck": {
+    "carried": false,
+    "error": "build fingerprint differs (8c9d2e4b7c75 vs 3ac65b51ba72) — re-run --self-check"
+  },
+  "extras": {
+    "zoneAudit": {
+      "viewport": {
+        "w": 844,
+        "h": 390
+      },
+      "zones": [
+        {
+          "name": "guard",
+          "mode": "hold",
+          "x": 623.428440113981,
+          "y": 321.8837209302326,
+          "w": 72,
+          "h": 72
+        },
+        {
+          "name": "dodge",
+          "mode": "press",
+          "x": 642.0213959540765,
+          "y": 251.26916487790345,
+          "w": 72,
+          "h": 72
+        },
+        {
+          "name": "special",
+          "mode": "press",
+          "x": 693.1378829776119,
+          "y": 197.40362677831956,
+          "w": 72,
+          "h": 72
+        },
+        {
+          "name": "lockOn",
+          "mode": "press",
+          "x": 763.959900958555,
+          "y": 175.0735302829626,
+          "w": 72,
+          "h": 72
+        },
+        {
+          "name": "pause",
+          "mode": "press",
+          "x": 7.255813953488372,
+          "y": 7.255813953488372,
+          "w": 50,
+          "h": 50
+        }
+      ],
+      "buttons": [
+        {
+          "name": "guard",
+          "cx": 659.428440113981,
+          "cy": 357.8837209302326,
+          "visualRadius": 28.11627906976744,
+          "hitRadius": 36
+        },
+        {
+          "name": "dodge",
+          "cx": 678.0213959540765,
+          "cy": 287.26916487790345,
+          "visualRadius": 28.11627906976744,
+          "hitRadius": 36
+        },
+        {
+          "name": "special",
+          "cx": 729.1378829776119,
+          "cy": 233.40362677831956,
+          "visualRadius": 28.11627906976744,
+          "hitRadius": 36
+        },
+        {
+          "name": "lockOn",
+          "cx": 799.959900958555,
+          "cy": 211.0735302829626,
+          "visualRadius": 28.11627906976744,
+          "hitRadius": 36
+        }
+      ],
+      "smallestVisualDiameterPx": 56.23255813953488,
+      "smallestHitDiameterPx": 72,
+      "zonesInsideEdgeMargin": 2,
+      "edgeMarginBasis": "visible control geometry",
+      "paddedRectsCrossingMargin": 3,
+      "edgeMarginPx": 16
+    },
+    "landmarks": {
+      "points": [
+        {
+          "name": "stair-top",
+          "eye": [
+            0,
+            813.6,
+            72
+          ],
+          "visible": [
+            "great-torii",
+            "honden-roof",
+            "bell-tower",
+            "haiden-roof"
+          ]
+        },
+        {
+          "name": "first-torii",
+          "eye": [
+            0,
+            816.17,
+            68
+          ],
+          "visible": [
+            "great-torii",
+            "honden-roof",
+            "bell-tower",
+            "haiden-roof"
+          ]
+        },
+        {
+          "name": "second-torii",
+          "eye": [
+            0,
+            816.82,
+            54
+          ],
+          "visible": [
+            "great-torii",
+            "honden-roof",
+            "bell-tower",
+            "haiden-roof"
+          ]
+        },
+        {
+          "name": "arena",
+          "eye": [
+            0,
+            813.77,
+            26
+          ],
+          "visible": [
+            "honden-roof",
+            "haiden-roof"
+          ]
+        },
+        {
+          "name": "chozuya",
+          "eye": [
+            -14.5,
+            814.24,
+            30
+          ],
+          "visible": [
+            "honden-roof",
+            "haiden-roof"
+          ]
+        },
+        {
+          "name": "ema-rack",
+          "eye": [
+            10.5,
+            813.62,
+            43
+          ],
+          "visible": [
+            "honden-roof",
+            "bell-tower",
+            "haiden-roof"
+          ]
+        },
+        {
+          "name": "west-edge",
+          "eye": [
+            -22,
+            813.62,
+            34
+          ],
+          "visible": [
+            "honden-roof",
+            "bell-tower",
+            "haiden-roof"
+          ]
+        },
+        {
+          "name": "east-edge",
+          "eye": [
+            22,
+            814.84,
+            34
+          ],
+          "visible": []
+        }
+      ],
+      "anchors": [
+        "great-torii",
+        "honden-roof",
+        "bell-tower",
+        "haiden-roof"
+      ]
+    },
+    "jsFrameCost": {
+      "noEnemies": {
+        "frames": 120,
+        "totalMs": 149.8,
+        "msPerFrame": 1.248,
+        "systems": [
+          {
+            "name": "xr",
+            "msPerFrame": 0.7308
+          },
+          {
+            "name": "Uc",
+            "msPerFrame": 0.1575
+          },
+          {
+            "name": "Or",
+            "msPerFrame": 0.1142
+          },
+          {
+            "name": "ai",
+            "msPerFrame": 0.0483
+          },
+          {
+            "name": "ic",
+            "msPerFrame": 0.0433
+          },
+          {
+            "name": "Rs",
+            "msPerFrame": 0.0308
+          },
+          {
+            "name": "ph",
+            "msPerFrame": 0.0117
+          },
+          {
+            "name": "On",
+            "msPerFrame": 0.0083
+          },
+          {
+            "name": "_l",
+            "msPerFrame": 0.0067
+          },
+          {
+            "name": "fa",
+            "msPerFrame": 0.0067
+          },
+          {
+            "name": "Vc",
+            "msPerFrame": 0.0067
+          },
+          {
+            "name": "ps",
+            "msPerFrame": 0.0058
+          },
+          {
+            "name": "Uo",
+            "msPerFrame": 0.0042
+          }
+        ]
+      },
+      "noEnemiesPhysics": {
+        "statics": 5,
+        "dynamics": 0,
+        "ragdolls": 0,
+        "broadphaseChecks": 24,
+        "narrowphaseChecks": 1338,
+        "ms": 0
+      },
+      "threeEnemies": {
+        "frames": 30,
+        "totalMs": 109.7,
+        "msPerFrame": 3.657,
+        "systems": [
+          {
+            "name": "Eh",
+            "msPerFrame": 2.1667
+          },
+          {
+            "name": "xr",
+            "msPerFrame": 0.8133
+          },
+          {
+            "name": "Uc",
+            "msPerFrame": 0.1267
+          },
+          {
+            "name": "Or",
+            "msPerFrame": 0.11
+          },
+          {
+            "name": "ph",
+            "msPerFrame": 0.0767
+          },
+          {
+            "name": "ic",
+            "msPerFrame": 0.04
+          },
+          {
+            "name": "Rs",
+            "msPerFrame": 0.0367
+          },
+          {
+            "name": "sn",
+            "msPerFrame": 0.0233
+          },
+          {
+            "name": "Uo",
+            "msPerFrame": 0.0167
+          },
+          {
+            "name": "On",
+            "msPerFrame": 0.0133
+          },
+          {
+            "name": "ai",
+            "msPerFrame": 0.0133
+          },
+          {
+            "name": "ps",
+            "msPerFrame": 0.0067
+          },
+          {
+            "name": "_l",
+            "msPerFrame": 0.0067
+          },
+          {
+            "name": "fa",
+            "msPerFrame": 0.0067
+          },
+          {
+            "name": "Vc",
+            "msPerFrame": 0.0067
+          },
+          {
+            "name": "Object",
+            "msPerFrame": 0.0067
+          }
+        ]
+      },
+      "threeEnemiesPhysics": {
+        "statics": 5,
+        "dynamics": 0,
+        "ragdolls": 0,
+        "broadphaseChecks": 132,
+        "narrowphaseChecks": 8062,
+        "ms": 0
+      },
+      "colliders": {
+        "statics": 5,
+        "byKind": {
+          "triangleMesh": 5
+        },
+        "triangleMeshTriangles": 2148
+      }
+    },
+    "audioPeak": {
+      "peak": 0.25172004103660583,
+      "samples": 6,
+      "impacts": [
+        "swordHitFlesh",
+        "swordHitArmor",
+        "swordHitWood",
+        "swordHitStone",
+        "clash"
+      ],
+      "truePeakEstimateDb": -11.98,
+      "soundNamesAvailable": 42
+    }
+  },
+  "results": [
+    {
+      "criterion": "BM-MOVE-01",
+      "element": "E02-MOVEMENT",
+      "scenario": "move-speeds",
+      "method": "instrumented-runtime",
+      "verdict": "inconclusive",
+      "measured": null,
+      "threshold": null,
+      "detail": "scenario did not run"
+    },
+    {
+      "criterion": "BM-MOVE-03",
+      "element": "E02-MOVEMENT",
+      "scenario": "move-reversal",
+      "method": "interaction-capture",
+      "verdict": "inconclusive",
+      "measured": null,
+      "threshold": null,
+      "detail": "scenario did not run"
+    },
+    {
+      "criterion": "BM-MOVE-02",
+      "element": "E02-MOVEMENT",
+      "scenario": "foot-plant",
+      "method": "interaction-capture",
+      "verdict": "inconclusive",
+      "measured": null,
+      "threshold": null,
+      "detail": "scenario did not run"
+    },
+    {
+      "criterion": "BM-CAMERA-02",
+      "element": "E03-CAMERA",
+      "scenario": "camera-traverse",
+      "method": "instrumented-runtime",
+      "verdict": "inconclusive",
+      "measured": null,
+      "threshold": null,
+      "detail": "scenario did not run"
+    },
+    {
+      "criterion": "BM-CAMERA-01",
+      "element": "E03-CAMERA",
+      "scenario": "lockon-framing",
+      "method": "interaction-capture",
+      "verdict": "inconclusive",
+      "measured": null,
+      "threshold": null,
+      "detail": "scenario did not run"
+    },
+    {
+      "criterion": "BM-CAMERA-04",
+      "element": "E03-CAMERA",
+      "scenario": "lockon-framing/lockon-noshake",
+      "method": "interaction-capture",
+      "verdict": "inconclusive",
+      "measured": null,
+      "threshold": null,
+      "detail": "one of the ablation pair did not run"
+    },
+    {
+      "criterion": "BM-COMBAT-02",
+      "element": "E01-COMBAT",
+      "scenario": "encounters",
+      "method": "instrumented-runtime",
+      "verdict": "inconclusive",
+      "measured": null,
+      "threshold": null,
+      "detail": "scenario did not run"
+    },
+    {
+      "criterion": "BM-AI-03",
+      "element": "E14-AI",
+      "scenario": "encounters",
+      "method": "instrumented-runtime",
+      "verdict": "inconclusive",
+      "measured": null,
+      "threshold": null,
+      "detail": "scenario did not run"
+    },
+    {
+      "criterion": "BM-TOUCH-03",
+      "element": "E10-TOUCH",
+      "scenario": "touch-drags",
+      "method": "interaction-capture",
+      "verdict": "inconclusive",
+      "measured": null,
+      "threshold": null,
+      "detail": "scenario did not run"
+    },
+    {
+      "criterion": "BM-TOUCH-04",
+      "element": "E10-TOUCH",
+      "scenario": "touch-latency",
+      "method": "instrumented-runtime",
+      "verdict": "inconclusive",
+      "measured": null,
+      "threshold": null,
+      "detail": "scenario did not run"
+    },
+    {
+      "criterion": "BM-ANIM-01",
+      "element": "E12-ANIMATION",
+      "scenario": "anim-startup",
+      "method": "interaction-capture",
+      "verdict": "inconclusive",
+      "measured": null,
+      "threshold": null,
+      "detail": "scenario did not run"
+    },
+    {
+      "criterion": "BM-ANIM-02",
+      "element": "E12-ANIMATION",
+      "scenario": "blade-window",
+      "method": "instrumented-runtime",
+      "verdict": "inconclusive",
+      "measured": null,
+      "threshold": null,
+      "detail": "scenario did not run"
+    },
+    {
+      "criterion": "BM-STORY-03",
+      "element": "E06-NARRATIVE",
+      "scenario": "control-continuity",
+      "method": "interaction-capture",
+      "verdict": "inconclusive",
+      "measured": null,
+      "threshold": null,
+      "detail": "scenario did not run"
+    },
+    {
+      "criterion": "BM-CHOICE-02",
+      "element": "E08-CHOICE",
+      "scenario": "bell-accident",
+      "method": "interaction-capture",
+      "verdict": "inconclusive",
+      "measured": null,
+      "threshold": null,
+      "detail": "scenario did not run"
+    },
+    {
+      "criterion": "BM-EXPLORE-01",
+      "element": "E04-EXPLORATION",
+      "scenario": "landmark-survey",
+      "method": "interaction-capture",
+      "verdict": "fail",
+      "measured": {
+        "points": 8,
+        "anchorsResolved": 4,
+        "pointsWithNoLandmark": 1,
+        "blindPoints": [
+          "east-edge"
+        ],
+        "perPoint": [
+          {
+            "name": "stair-top",
+            "visible": [
+              "great-torii",
+              "honden-roof",
+              "bell-tower",
+              "haiden-roof"
+            ]
+          },
+          {
+            "name": "first-torii",
+            "visible": [
+              "great-torii",
+              "honden-roof",
+              "bell-tower",
+              "haiden-roof"
+            ]
+          },
+          {
+            "name": "second-torii",
+            "visible": [
+              "great-torii",
+              "honden-roof",
+              "bell-tower",
+              "haiden-roof"
+            ]
+          },
+          {
+            "name": "arena",
+            "visible": [
+              "honden-roof",
+              "haiden-roof"
+            ]
+          },
+          {
+            "name": "chozuya",
+            "visible": [
+              "honden-roof",
+              "haiden-roof"
+            ]
+          },
+          {
+            "name": "ema-rack",
+            "visible": [
+              "honden-roof",
+              "bell-tower",
+              "haiden-roof"
+            ]
+          },
+          {
+            "name": "west-edge",
+            "visible": [
+              "honden-roof",
+              "bell-tower",
+              "haiden-roof"
+            ]
+          },
+          {
+            "name": "east-edge",
+            "visible": []
+          }
+        ]
+      },
+      "threshold": "from every spawn and approach point, ≥ 1 navigational landmark is visible",
+      "detail": "visibility = inside the frustum at eye height and not occluded on a ray to the landmark anchor; it does not judge whether the silhouette reads"
+    },
+    {
+      "criterion": "BM-CHAR-02",
+      "element": "E07-CHARACTER",
+      "scenario": "archetype-rim",
+      "method": "frame-measurement",
+      "verdict": "inconclusive",
+      "measured": null,
+      "threshold": "measured luma difference across the enemy edge in every combat framing",
+      "detail": "measurement did not run"
+    },
+    {
+      "criterion": "BM-AUDIO-03",
+      "element": "E13-AUDIO",
+      "scenario": "audio-peak",
+      "method": "instrumented-runtime",
+      "verdict": "pass",
+      "measured": {
+        "samplePeak": 0.25172,
+        "samplePeakDbfs": -11.98,
+        "oversampledEstimateDbfs": -11.98,
+        "windows": 6,
+        "impacts": [
+          "swordHitFlesh",
+          "swordHitArmor",
+          "swordHitWood",
+          "swordHitStone",
+          "clash"
+        ]
+      },
+      "threshold": "≤ -1 dBFS true peak with five simultaneous impacts plus the full bed",
+      "detail": "this is a SAMPLE peak taken post-limiter through an AnalyserNode, with a 4× interpolated estimate beside it. It is not an ITU-R BS.1770 true-peak meter and must not be recorded as one."
+    },
+    {
+      "criterion": "BM-PERF-05",
+      "element": "E15-PERFORMANCE",
+      "scenario": "js-frame-cost",
+      "method": "instrumented-runtime",
+      "verdict": "pass",
+      "measured": {
+        "msPerFrameNoEnemies": 1.248,
+        "msPerFrameThreeEnemies": 3.657,
+        "ratio": 2.9,
+        "heaviestSystem": {
+          "name": "Eh",
+          "msPerFrame": 2.1667
+        },
+        "narrowphaseChecksNoEnemies": 1338,
+        "narrowphaseChecksThreeEnemies": 8062,
+        "colliders": {
+          "statics": 5,
+          "byKind": {
+            "triangleMesh": 5
+          },
+          "triangleMeshTriangles": 2148
+        }
+      },
+      "threshold": "≤ 5 ms JS per frame at MEDIUM (ARCHITECTURE.md §7)",
+      "detail": "Measured in a container, not on a phone — the absolute milliseconds are not device evidence. What is device-independent is the shape: the whole static world is a handful of triangle-mesh colliders totalling ~2.1k triangles, and three engaged enemies drive hundreds of thousands of narrow-phase triangle tests in a single frame."
+    }
+  ],
+  "summary": {
+    "criteria": 18,
+    "verdicts": {
+      "pass": 2,
+      "fail": 1,
+      "inconclusive": 15
+    },
+    "elements": 12,
+    "elementsCovered": [
+      "E01-COMBAT",
+      "E02-MOVEMENT",
+      "E03-CAMERA",
+      "E04-EXPLORATION",
+      "E06-NARRATIVE",
+      "E07-CHARACTER",
+      "E08-CHOICE",
+      "E10-TOUCH",
+      "E12-ANIMATION",
+      "E13-AUDIO",
+      "E14-AI",
+      "E15-PERFORMANCE"
+    ],
+    "elementsWithAMeasurement": [
+      "E04-EXPLORATION",
+      "E13-AUDIO",
+      "E15-PERFORMANCE"
+    ]
+  },
+  "errors": [
+    "warning: [.WebGL-0x60c0012bc00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: [.WebGL-0x60c0012bc00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "warning: [.WebGL-0x60c0012bc00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "warning: [.WebGL-0x60c0012bc00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  ]
+}
