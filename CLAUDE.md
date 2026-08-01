@@ -1,8 +1,26 @@
 # KAGEROU 陽炎 — standing instructions
 
-Read `PROJECT_OPERATING_PROTOCOL.md` before this file. The protocol is the newest
-project-wide authority; this file remains the standing KAGEROU product and visual-loop brief.
-Where older text below conflicts with the protocol, the protocol wins.
+<!-- BEGIN PROJECT-OPERATING-PROTOCOL LOADER (v2.2) — do not edit by hand except to update paths -->
+
+> At the start of every Claude Code run for this repository, read `START_HERE.md`, load the
+> minimum relevant durable state, verify it against the actual working tree, GitHub state,
+> runtime, deployment and test evidence, and resume from the last verified checkpoint. Apply
+> the mandatory floor in full, and the lowest sufficient level of rigor above it. Load
+> protocol detail and module files only when the active work reaches them. End the run with
+> the floor check line.
+
+The full protocol is `AI_DEVELOPMENT/PROTOCOL.md` (Section 0, the mandatory floor, is in it
+in full). Canonical active state is `AI_DEVELOPMENT/STATE.yaml`. Module texts are in
+`AI_DEVELOPMENT/MODULES/` and load only when a trigger fires. Do not import any of them here.
+
+`PROJECT_OPERATING_PROTOCOL.md` and `AI_DEVELOPMENT/INDEX.md` are the superseded legacy
+protocol and loader, retained as history; they are no longer the operating authority.
+
+<!-- END PROJECT-OPERATING-PROTOCOL LOADER -->
+
+This file remains the standing KAGEROU product and visual-loop brief. Where older text below
+conflicts with the protocol above, the protocol wins; everything that does not conflict
+remains in force.
 
 ## Resuming — start here
 

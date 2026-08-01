@@ -1,7 +1,38 @@
 import { defineConfig } from 'vite';
+import { execSync } from 'node:child_process';
+
+/**
+ * The revision the F6 floor gate compares against. It must be reachable from the *public*
+ * surface, not just from the bundle, because the failure F6 exists to catch is "the deploy
+ * job went green but the old revision is still being served" — and that is only detectable
+ * by fetching the page and reading what is actually there.
+ */
+function buildRevision() {
+  if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA;
+  try {
+    return execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
+  } catch {
+    return 'unknown';
+  }
+}
+
+/** Injects the revision as a meta tag so `floor-gate.mjs f6` can read it over HTTP. */
+function revisionMeta() {
+  const rev = buildRevision();
+  return {
+    name: 'kagerou-revision-meta',
+    transformIndexHtml(html) {
+      return html.replace(
+        /<head>/i,
+        `<head>\n    <meta name="kagerou-build-revision" content="${rev}">`,
+      );
+    },
+  };
+}
 
 export default defineConfig({
   base: './',
+  plugins: [revisionMeta()],
   build: {
     target: 'es2020',
     minify: 'terser',

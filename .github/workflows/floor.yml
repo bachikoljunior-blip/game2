@@ -1,0 +1,58 @@
+# Deterministic enforcement of the Section 0 floor (AI_DEVELOPMENT/PROTOCOL.md).
+#
+# These jobs must FAIL, not merely report. A job that only reports does not satisfy F9.
+#
+# They exist because self-report is indistinguishable from compliance. Round 17 shipped a
+# commit that removed the entire foliage system from every frame; the capture report still
+# said booted, zero dead shaders, correct tier, every budget green.
+name: floor
+
+on:
+  pull_request:
+  push:
+    branches: ['**']
+
+jobs:
+  f2-continuity-write:
+    name: F2 — state updated alongside product changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - name: State file must move when product files do
+        run: |
+          BASE="${{ github.event.pull_request.base.sha || github.event.before }}"
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
+            echo "no usable base ref; skipping (recorded as not-applicable, not as pass)"
+            exit 0
+          fi
+          node tools/floor-gate.mjs f2 --base="$BASE"
+
+  f3-execution:
+    name: F3 — build actually executes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: 'npm' }
+      - run: npm ci
+      - name: Production build must succeed
+        run: npm run build
+      - name: Rig and gate scripts must parse
+        run: |
+          for f in tools/*.mjs; do node --check "$f"; done
+      - name: Built page must carry a revision identifier for F6
+        run: |
+          grep -q 'kagerou-build-revision' dist/index.html \
+            || { echo "FLOOR GATE FAIL: dist/index.html has no revision meta; F6 cannot verify a deploy"; exit 1; }
+
+  f5-review-record:
+    name: F5 — independence level recorded
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - run: node tools/floor-gate.mjs f5

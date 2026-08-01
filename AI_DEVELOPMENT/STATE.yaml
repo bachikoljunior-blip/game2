@@ -1,0 +1,146 @@
+protocol_version: "2.2-adaptive-enforced-floor"
+
+project:
+  id: kagerou-game2
+  name: "KAGEROU 陽炎"
+  repository: bachikoljunior-blip/game2
+  status: active
+  default_branch: main
+  default_branch_verified_sha: 1a805c9
+  objective_long_term: >
+    A mobile-first third-person Japanese sword-action game in Three.js with zero external
+    runtime assets, advanced toward the Ghost of Tsushima / SEKIRO visual bar by an
+    independent-critic review loop. See ARCHITECTURE.md for the binding contract.
+
+logical_session:
+  id: 2026-07-31-game2-continuation
+  status: active
+  explicit_end_required: true
+  note: >
+    Carried across the 2.2 migration unchanged. A reply boundary, new chat, context
+    compression, container restart or completed round does NOT end it. Only an explicit
+    user statement does.
+
+objective:
+  id: rounds-16-20
+  statement: >
+    Execute five consecutive art-direction review rounds (16, 17, 18, 19, 20) on explicit
+    user instruction, each to the full ROUND.md protocol: capture, apparatus check,
+    independent critic, gated dispatch, owner repair, verification capture, close.
+  status: in_progress
+  authorized_by: "User instruction 5ラウンド実行して (rounds 16-20)"
+  key_requirements:
+    - One round is the unit of visual measurement and reporting.
+    - Dispatch only the owners the critic actually named (tools/dispatch.mjs).
+    - The critic is a separate agent, never the agent that wrote or will fix the code.
+    - Apparatus must be checked before any frame reaches a critic.
+    - Symptom and mechanism stay separate; disprove a hypothesis before acting on it.
+  acceptance_evidence:
+    round_16: "shots/review-r16.json (opening FAIL 61), shots/review-r16-final.json (closing FAIL 54), AI_DEVELOPMENT/EVIDENCE/r16-verification.md"
+    round_17: "shots/review-r17.json (opening, carried + 2 re-routes); closing verdict pending"
+    rounds_18_20: not_started
+
+execution:
+  selected_rigor: STANDARD
+  rigor_note: >
+    STANDARD for ordinary round work. STRICT applies to any merge to main, Pages
+    publication, or protected-branch operation, which additionally triggers F5 before and
+    F6 after.
+  active_work: "Round 17 closing pass"
+  last_verified_checkpoint:
+    commit: 29cbe9c
+    branch: claude/1-round-execution-kgtb9r
+    what: >
+      Round 17 owner commits all landed and pushed; foliage init regression found by bisect
+      and repaired; r17v2 verification capture clean (booted, zero dead shaders, tier
+      MEDIUM, every owner present in the draw rollup); capture rig and build config
+      repaired for apparatus fault #10.
+    measured:
+      worst_draw_calls: 119
+      worst_draw_calls_cap: 140
+      worst_triangles: 871997
+      worst_triangles_cap: 900000
+      foliage_rollup: "14 calls / 141,588 triangles (restored from 0/0)"
+      bamboo_plants_tri_per_instance: 176.0
+  modified_but_unverified: []
+  current_blockers:
+    - id: valley-black-gate
+      status: failed
+      detail: >
+        valley p0.1 = 18 against the project's < 15 black gate, with only 0.057% of pixels
+        below code 16. Introduced by the round-17 valley re-pose, which looks down a bright
+        hazy 319 m drop. Flagged by the rig itself. Judgement of whether it is a real tonal
+        fault was put to the round-17 closing critic.
+    - id: sun-pct-above-240
+      status: failed
+      detail: "sun pctAbove240 = 2.549% against an earlier critic guard of 0.5%."
+  current_uncertainty:
+    - "Round 17 closing critic verdict not yet returned at the time of this migration."
+    - "Whether the god-ray shafts read as light is unresolved; the round-17 owner reported them NOT closed."
+  exact_next_action: >
+    Receive the round-17 closing critic verdict (shots/review-r17-final.json), close round 17
+    into HANDOFF.md / README.md / this file, then run rounds 18, 19 and 20 to the same
+    protocol. Round 18's highest-value inputs are already known: the plaza patch is routed to
+    foliage/ground-cards with world's five eliminations recorded; sky holds a granted, scoped
+    cascade exemption for normalBias/texel-density only; and sky's correction that the
+    26.7-code span target IS reachable means round 18 must not spend itself raising the key.
+
+floor:
+  last_check: "2026-08-01, migration run"
+  independence_level_used: "A (separate critic agent, source-blind to implementation reasoning)"
+  skips:
+    - "F6: n/a for rounds 16-17 — no merge, release, deployment or publication occurred; work stayed on the feature branch."
+    - "F9: all four gates absent. Repository has no .github/workflows, no required status checks, and no branch protection reachable from this environment. Recorded as absent, not assumed."
+  waivers: []
+  enforcement:
+    f2_state_update_check: absent
+    f3_execution_check: absent
+    f5_review_record_check: absent
+    f6_public_revision_check: absent
+    revert_mechanism: absent
+    last_observed_failing: none
+    unenforced_items: [F2, F3, F5, F6]
+    unattended_allowed: false
+    detail: >
+      No CI of any kind exists in this repository. Branch protection and required checks are
+      not settable from this environment. The public surface
+      (bachikoljunior-blip.github.io) is denied by agent-proxy policy (403 on CONNECT), so
+      an F6 gate cannot be observed to pass or fail from this container even if written. The
+      build does not currently embed a revision identifier, which the F6 gate requires.
+      Consequence: every floor item is self-reported only, and any work whose sole
+      independent evidence would have been a missing gate is recorded complete_unverified.
+
+recovery:
+  last_known_good_revision_or_artifact: 29cbe9c
+  pre_migration_checkpoint: 29cbe9c
+  rollback_or_recovery_method: >
+    All round-16/17 work is a linear series of commits on claude/1-round-execution-kgtb9r
+    above origin/main 1a805c9. Any owner commit can be reverted individually; the branch can
+    be reset to 1a805c9 to return to published main. shots/ is gitignored, so review images
+    do not survive a fresh clone — the tracked shots/review-r*.json verdicts and
+    AI_DEVELOPMENT/EVIDENCE/ are the durable evidence.
+
+remote:
+  branch: claude/1-round-execution-kgtb9r
+  branch_pushed: true
+  branch_head: 29cbe9c
+  pull_request: none
+  deployed_revision: e40a1884a57250391dd08bdf50dc2c6cb3837a36
+  verified_public_revision: 4a3eff701af0f6db52f5b780247e38422d40aad6
+  public_url: https://bachikoljunior-blip.github.io/game2/
+  status: >
+    Round 15's publication is repository-verified but NOT publicly verified; the last
+    verified public browser gate remains the rounds 13-14 one at 4a3eff7. Rounds 16 and 17
+    have NOT been merged or published. Section 14 grants standing remote-delivery
+    authorization, but this session additionally carries an operator-level directive to
+    develop and push only on claude/1-round-execution-kgtb9r and never push to another
+    branch without explicit permission. Those conflict on main-integration and Pages
+    publication. Resolution in force: push the feature branch freely; do NOT merge to main
+    or publish without an explicit user instruction. Recorded rather than silently resolved.
+
+updated_at: "2026-08-01"
+reconciliation_status: >
+  Reconciled against verified reality during the 2.2 migration. Legacy PROJECT_STATE.yaml and
+  SESSION_STATE.yaml were stale (they described round 15 as the last completed round and
+  claude/1-round-execution-r6rdfs as the working branch); actual repository state at 29cbe9c
+  supersedes them. Superseded legacy fields are preserved in place and marked, not deleted.
