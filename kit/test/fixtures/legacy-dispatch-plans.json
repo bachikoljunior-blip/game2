@@ -1,0 +1,785 @@
+{
+  "review-r13-final.json": {
+    "dispatch": [
+      {
+        "team": "foliage",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/render/Foliage.js"
+        ],
+        "findings": 1,
+        "blockers": 1,
+        "worst": "blocker",
+        "summary": [
+          "phone-valley, phone-sun, phone-wide: The bamboo mass is denser than before, but its skyline still sheds hundre"
+        ]
+      },
+      {
+        "team": "world",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/world/Terrain.js",
+          "src/world/Level.js"
+        ],
+        "findings": 2,
+        "blockers": 0,
+        "worst": "major",
+        "summary": [
+          "phone-wide, phone-valley: The mountain chain now has clearer large planes and the far-right ridges lift with d",
+          "phone-wide, phone-valley: A sign and offering cluster now occupy the lower-left of phone-wide, but the shrine "
+        ]
+      },
+      {
+        "team": "postfx",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/render/PostFX.js"
+        ],
+        "findings": 1,
+        "blockers": 0,
+        "worst": "major",
+        "summary": [
+          "phone-sun: The backlit gate view loses a large central region to near-white glare: sky, distant gate, fence, a"
+        ]
+      },
+      {
+        "team": "materials",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/render/Materials.js"
+        ],
+        "findings": 1,
+        "blockers": 0,
+        "worst": "major",
+        "summary": [
+          "phone-torii, phone-hero: The close hero assets still share a coarse sprayed-noise finish and simplified toy-li"
+        ]
+      }
+    ],
+    "skipped": [
+      "core",
+      "audio",
+      "sky",
+      "anim",
+      "physics",
+      "player",
+      "combat",
+      "enemy",
+      "fx",
+      "ui"
+    ],
+    "unrouted": []
+  },
+  "review-r13.json": {
+    "dispatch": [
+      {
+        "team": "foliage",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/render/Foliage.js"
+        ],
+        "findings": 1,
+        "blockers": 1,
+        "worst": "blocker",
+        "summary": [
+          "phone-valley, phone-sun, phone-torii: The bamboo skyline visibly breaks into hundreds of isolated horizontal b"
+        ]
+      },
+      {
+        "team": "world",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/world/Terrain.js",
+          "src/world/Level.js"
+        ],
+        "findings": 2,
+        "blockers": 1,
+        "worst": "blocker",
+        "summary": [
+          "phone-wide: The vast ground plane and mountain faces carry nearly the same dense, evenly distributed wrinkle p",
+          "phone-wide, phone-valley: The wide view places a small, symmetrical shrine kit in the middle of an enormous em"
+        ]
+      },
+      {
+        "team": "materials",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/render/Materials.js"
+        ],
+        "findings": 1,
+        "blockers": 0,
+        "worst": "major",
+        "summary": [
+          "phone-torii, phone-hero: The hero gate, stone lanterns, shrine timber, rope, and blossom canopy all share a co"
+        ]
+      }
+    ],
+    "skipped": [
+      "core",
+      "audio",
+      "sky",
+      "postfx",
+      "anim",
+      "physics",
+      "player",
+      "combat",
+      "enemy",
+      "fx",
+      "ui"
+    ],
+    "unrouted": []
+  },
+  "review-r14-final.json": {
+    "dispatch": [
+      {
+        "team": "foliage",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/render/Foliage.js"
+        ],
+        "findings": 1,
+        "blockers": 1,
+        "worst": "blocker",
+        "summary": [
+          "phone-valley-r14final.png: Across approximately y=115-335, hundreds of detached 2-18 px dark horizontal marks "
+        ]
+      },
+      {
+        "team": "world",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/world/Terrain.js",
+          "src/world/Props.js"
+        ],
+        "findings": 2,
+        "blockers": 0,
+        "worst": "major",
+        "summary": [
+          "phone-wide-r14final.png: The mountains filling roughly y=0-560 are rounded triangular masses covered by unifor",
+          "phone-hero-r14final.png: The central courtyard from roughly x=670-1510, y=710-990 is mostly bare paving, and i"
+        ]
+      }
+    ],
+    "skipped": [
+      "core",
+      "audio",
+      "materials",
+      "sky",
+      "postfx",
+      "anim",
+      "physics",
+      "player",
+      "combat",
+      "enemy",
+      "fx",
+      "ui"
+    ],
+    "unrouted": []
+  },
+  "review-r14.json": {
+    "dispatch": [
+      {
+        "team": "foliage",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/render/Foliage.js"
+        ],
+        "findings": 1,
+        "blockers": 1,
+        "worst": "blocker",
+        "summary": [
+          "phone-valley-r14base.png: Across roughly y=125-345, the skyline is littered with hundreds of detached 2-18 px "
+        ]
+      },
+      {
+        "team": "postfx",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/render/PostFX.js"
+        ],
+        "findings": 1,
+        "blockers": 0,
+        "worst": "major",
+        "summary": [
+          "phone-sun-r14base.png: The central backlight floods x=1100-1799, y=120-819: 38.1% of that 700x700 region is ab"
+        ]
+      },
+      {
+        "team": "world",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/world/Terrain.js"
+        ],
+        "findings": 1,
+        "blockers": 0,
+        "worst": "major",
+        "summary": [
+          "phone-wide-r14base.png: Nearly the entire lower 560 px is one uninterrupted brown-silver field of equally stro"
+        ]
+      }
+    ],
+    "skipped": [
+      "core",
+      "audio",
+      "materials",
+      "sky",
+      "anim",
+      "physics",
+      "player",
+      "combat",
+      "enemy",
+      "fx",
+      "ui"
+    ],
+    "unrouted": []
+  },
+  "review-r15-final.json": {
+    "dispatch": [
+      {
+        "team": "postfx",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/render/PostFX.js"
+        ],
+        "findings": 2,
+        "blockers": 1,
+        "worst": "blocker",
+        "summary": [
+          "sun, valley: There are no volumetric god-ray shafts anywhere in the review set, including in the two shots fra",
+          "all: Film grain is effectively absent. Measuring per-pixel high-pass residual (pixel minus its 3x3 mean) in fl"
+        ]
+      },
+      {
+        "team": "sky",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/render/Sky.js",
+          "src/render/Lighting.js"
+        ],
+        "findings": 3,
+        "blockers": 1,
+        "worst": "blocker",
+        "summary": [
+          "hero, wide, torii: The sky dome is an achromatic grey card with almost no gradient, in a set whose entire prem",
+          "hero: A large flat-black patch lies on the plaza floor with no ambient floor and no stone texture inside it. C",
+          "sun, valley: The sun disc renders as a neutral clipped white circle. In phone-sun-r15v1.png the disc at box 0."
+        ]
+      },
+      {
+        "team": "foliage",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/render/Foliage.js"
+        ],
+        "findings": 2,
+        "blockers": 1,
+        "worst": "blocker",
+        "summary": [
+          "wide: The forested hillside that fills the left third of the establishing shot is built from flat-topped verti",
+          "hero, wide, torii: The sakura canopy has no petal, cluster or branch structure at any distance. At 1:1 in phon"
+        ]
+      },
+      {
+        "team": "materials",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/render/Materials.js"
+        ],
+        "findings": 1,
+        "blockers": 0,
+        "worst": "major",
+        "summary": [
+          "valley, hero: The paving material loses its joint network wherever the light is not raking, so at close range "
+        ]
+      },
+      {
+        "team": "core",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/core/Cinematic.js"
+        ],
+        "findings": 1,
+        "blockers": 0,
+        "worst": "major",
+        "summary": [
+          "valley: The shot briefed as 'bamboo sea from the overlook' shows a flat plain at eye level with no overlook, n"
+        ]
+      },
+      {
+        "team": "world",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/world/Level.js"
+        ],
+        "findings": 1,
+        "blockers": 0,
+        "worst": "major",
+        "summary": [
+          "wide: The right 45% of the establishing frame is undressed ground. Region x 0.55-1.0, y 0.52-0.85 of phone-wid"
+        ]
+      },
+      {
+        "team": "fx",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/fx/Weather.js"
+        ],
+        "findings": 1,
+        "blockers": 0,
+        "worst": "minor",
+        "summary": [
+          "hero, wide, torii, valley, sun: No falling sakura, no drifting embers and no discrete mist layer appear in any"
+        ]
+      }
+    ],
+    "skipped": [
+      "audio",
+      "anim",
+      "physics",
+      "player",
+      "combat",
+      "enemy",
+      "ui"
+    ],
+    "unrouted": []
+  },
+  "review-r15.json": {
+    "dispatch": [
+      {
+        "team": "sky",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/render/Lighting.js",
+          "src/render/Sky.js"
+        ],
+        "findings": 4,
+        "blockers": 2,
+        "worst": "blocker",
+        "summary": [
+          "hero, torii, wide, valley, sun (all five): Every shadowed surface in the set is warm brown. There is no cool s",
+          "hero, torii, wide: On the shrine plaza there is no readable cast shadow from anything. In phone-torii-r15, cro",
+          "sun, valley: The sun disc does not read as a sun. In phone-sun-r15 the disc sits at approximately (1529,530) n",
+          "sun: The mid-distance in phone-sun-r15 is washed to near-white far too close to camera. The bamboo horizon and"
+        ]
+      },
+      {
+        "team": "foliage",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/render/Foliage.js"
+        ],
+        "findings": 3,
+        "blockers": 2,
+        "worst": "blocker",
+        "summary": [
+          "wide, valley, hero, sun: The bamboo sea — the thing the setting is built around — does not read as bamboo. In ",
+          "valley, wide, hero, sun: Small dark horizontal dashes float in clear, empty sky above the bamboo canopy line i",
+          "wide, hero, torii, valley: The sakura reads as a formless pink puff, not a tree. In phone-wide-r15 crop (861,4"
+        ]
+      },
+      {
+        "team": "world",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/world/Terrain.js"
+        ],
+        "findings": 1,
+        "blockers": 0,
+        "worst": "major",
+        "summary": [
+          "wide: The shrine plateau in the establishing frame is a featureless smeared brown plane covering roughly 45% o"
+        ]
+      },
+      {
+        "team": "postfx",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/render/PostFX.js"
+        ],
+        "findings": 1,
+        "blockers": 0,
+        "worst": "major",
+        "summary": [
+          "sun: There are no god rays. phone-sun-r15 is the frame composed for exactly this test — the sun sits in the ga"
+        ]
+      },
+      {
+        "team": "materials",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/render/Materials.js"
+        ],
+        "findings": 1,
+        "blockers": 0,
+        "worst": "major",
+        "summary": [
+          "hero: The puddles on the flagstone plaza render as near-black voids. phone-hero-r15 crop (1114,959,405x152) an"
+        ]
+      },
+      {
+        "team": "core",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/core/Cinematic.js"
+        ],
+        "findings": 1,
+        "blockers": 0,
+        "worst": "minor",
+        "summary": [
+          "wide: The establishing frame has no foreground, no framing element and no subject scale. In phone-wide-r15 the"
+        ]
+      }
+    ],
+    "skipped": [
+      "audio",
+      "anim",
+      "physics",
+      "player",
+      "combat",
+      "enemy",
+      "fx",
+      "ui"
+    ],
+    "unrouted": []
+  },
+  "review-r7.json": {
+    "dispatch": [
+      {
+        "team": "sky",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/render/Sky.js",
+          "src/render/Lighting.js"
+        ],
+        "findings": 3,
+        "blockers": 2,
+        "worst": "blocker",
+        "summary": [
+          "all five (worst in phone-torii-r7, phone-sun-r7, phone-hero-r7): The clouds are not clouds. They are dozens of",
+          "all five (measured in phone-sun-r7, phone-torii-r7, phone-hero-r7): Shadowed surfaces receive no cool fill any",
+          "phone-torii-r7 (also visible in phone-valley-r7): In the torii pose, foreground and mid-ground props sit on th"
+        ]
+      },
+      {
+        "team": "foliage",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/render/Foliage.js"
+        ],
+        "findings": 2,
+        "blockers": 1,
+        "worst": "blocker",
+        "summary": [
+          "phone-valley-r7, phone-wide-r7, phone-sun-r7: The bamboo sea — the headline element of ARCHITECTURE §5's setti",
+          "phone-hero-r7, phone-wide-r7: The sakura canopy — the largest single object in phone-hero-r7, occupying roughl"
+        ]
+      },
+      {
+        "team": "world",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/world/Terrain.js"
+        ],
+        "findings": 1,
+        "blockers": 1,
+        "worst": "blocker",
+        "summary": [
+          "phone-valley-r7, phone-wide-r7: Large areas of ground are a single flat wash with no macro content at all. (a)"
+        ]
+      },
+      {
+        "team": "postfx",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/render/PostFX.js"
+        ],
+        "findings": 2,
+        "blockers": 0,
+        "worst": "major",
+        "summary": [
+          "phone-torii-r7, phone-sun-r7, phone-hero-r7: Every lit lantern in the set is a hard-edged, clipped, neutral-wh",
+          "phone-sun-r7: This is the shot framed directly into a low sun, with a torii post, a shimenawa rope, two banner"
+        ]
+      }
+    ],
+    "skipped": [
+      "core",
+      "audio",
+      "materials",
+      "anim",
+      "physics",
+      "player",
+      "combat",
+      "enemy",
+      "fx",
+      "ui"
+    ],
+    "unrouted": []
+  },
+  "review-r8.json": {
+    "dispatch": [
+      {
+        "team": "sky",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/render/Lighting.js",
+          "src/render/Sky.js"
+        ],
+        "findings": 2,
+        "blockers": 1,
+        "worst": "blocker",
+        "summary": [
+          "phone-torii-r8, phone-hero-r8, phone-wide-r8, phone-sun-r8: No object in any of the four daylight framings cas",
+          "phone-wide-r8 (against the rest of the set): phone-wide-r8 is a different time of day from the other four fram"
+        ]
+      },
+      {
+        "team": "postfx",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/render/PostFX.js"
+        ],
+        "findings": 1,
+        "blockers": 1,
+        "worst": "blocker",
+        "summary": [
+          "phone-hero-r8, phone-wide-r8, phone-sun-r8 (all frames): Every high-contrast silhouette edge in the set is out"
+        ]
+      },
+      {
+        "team": "foliage",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/render/Foliage.js"
+        ],
+        "findings": 2,
+        "blockers": 1,
+        "worst": "blocker",
+        "summary": [
+          "phone-valley-r8, phone-sun-r8, phone-wide-r8: A horizontal band of detached magenta/crimson rectangular dashes",
+          "phone-hero-r8, phone-wide-r8: The sakura reads as a pink cauliflower, not a tree. In phone-hero-r8 (crop 127,2"
+        ]
+      },
+      {
+        "team": "world",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/world/Terrain.js",
+          "src/world/Props.js"
+        ],
+        "findings": 4,
+        "blockers": 1,
+        "worst": "blocker",
+        "summary": [
+          "phone-valley-r8, phone-wide-r8: The ground in the two landscape framings is a bare, featureless plain covering",
+          "phone-wide-r8: The distant range on the right (x=1290..2280, y=200..400) is a row of literal flat-shaded isoce",
+          "phone-torii-r8, phone-hero-r8, phone-sun-r8: The shimenawa rope reads as a machine-extruded corrugated pipe. I",
+          "phone-torii-r8, phone-sun-r8: The tall standing banners are flat untextured dark quads. In phone-torii-r8 the "
+        ]
+      },
+      {
+        "team": "fx",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/fx/Effects.js"
+        ],
+        "findings": 1,
+        "blockers": 0,
+        "worst": "major",
+        "summary": [
+          "phone-sun-r8, phone-hero-r8: The ground carries dark elliptical blobs that are not attached to anything. In ph"
+        ]
+      }
+    ],
+    "skipped": [
+      "core",
+      "audio",
+      "materials",
+      "anim",
+      "physics",
+      "player",
+      "combat",
+      "enemy",
+      "ui"
+    ],
+    "unrouted": []
+  },
+  "review-r9.json": {
+    "dispatch": [
+      {
+        "team": "sky",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/render/Lighting.js",
+          "src/render/Sky.js"
+        ],
+        "findings": 3,
+        "blockers": 3,
+        "worst": "blocker",
+        "summary": [
+          "hero, sun, valley: Nothing fills shadow. Sky/ambient contribution to shadowed surfaces is effectively zero, an",
+          "hero: The cast shadow boundary is a hard rectangular staircase with no penumbra at all. Per-row measurement of",
+          "hero, torii: The anti-solar sky is a flat neutral grey card. In `phone-hero-r9.png` a column scan at x=2400 fr"
+        ]
+      },
+      {
+        "team": "postfx",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/render/PostFX.js"
+        ],
+        "findings": 1,
+        "blockers": 1,
+        "worst": "blocker",
+        "summary": [
+          "valley: `phone-valley-r9.png` is a single-hue frame. Six 300x150 boxes spread across the entire image all retu"
+        ]
+      },
+      {
+        "team": "foliage",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/render/Foliage.js"
+        ],
+        "findings": 1,
+        "blockers": 0,
+        "worst": "major",
+        "summary": [
+          "hero, wide: The cherry blossom is orange and it is built from hard-edged polygon shards. Colour: in `hero` the"
+        ]
+      },
+      {
+        "team": "world",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/world/Terrain.js",
+          "src/world/Props.js"
+        ],
+        "findings": 2,
+        "blockers": 0,
+        "worst": "major",
+        "summary": [
+          "torii: The distant mountain range is a row of untextured paper triangles. A 1:1 crop of (1700,640 560x200) in ",
+          "wide: The village reads as a level editor, not a place. A 1:1 crop of (1150,640 500x280) shows identical stone"
+        ]
+      },
+      {
+        "team": "materials",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/render/Materials.js"
+        ],
+        "findings": 1,
+        "blockers": 0,
+        "worst": "major",
+        "summary": [
+          "hero, torii, wide: Every lit lantern clips to a neutral white rectangle and emits no light into the scene. In "
+        ]
+      },
+      {
+        "team": "core",
+        "role": "owner",
+        "model": "opus",
+        "effort": "high",
+        "files": [
+          "src/core/Cinematic.js"
+        ],
+        "findings": 1,
+        "blockers": 0,
+        "worst": "minor",
+        "summary": [
+          "valley: `phone-valley-r9.png` has no composition. Ground fills the bottom 60% of the frame as a single unbroke"
+        ]
+      }
+    ],
+    "skipped": [
+      "audio",
+      "anim",
+      "physics",
+      "player",
+      "combat",
+      "enemy",
+      "fx",
+      "ui"
+    ],
+    "unrouted": []
+  }
+}
