@@ -16,6 +16,8 @@
     "verify:lantern-spill": "node tools/verify-lantern-spill.mjs",
     "preview": "vite preview --host 0.0.0.0 --port 4173",
     "capture": "node tools/capture.mjs",
+    "interaction": "vite build && node tools/interaction-capture.mjs",
+    "interaction:self-check": "node tools/interaction-capture.mjs --self-check",
     "shots": "vite build && node tools/capture.mjs",
     "review": "vite build && node tools/capture.mjs --review --diff --profile=phone",
     "dispatch": "node tools/dispatch.mjs",

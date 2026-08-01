@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "at": "2026-08-01T08:24:34.806Z",
+  "tool": "tools/interaction-capture.mjs",
+  "tag": "sc1",
+  "revision": {
+    "sha": "72187ac32365259bfc5eb98f7419d58675f988ae",
+    "branch": "claude/kagerou-benchmark-verification-7fb2zd",
+    "dirty": true
+  },
+  "build": {
+    "fingerprint": "8c9d2e4b7c75a5c1f1255296e2c6f3c13987230b8d9e4e7ee59258d61bb3f4ea"
+  },
+  "profile": {
+    "name": "phone",
+    "viewport": {
+      "width": 844,
+      "height": 390
+    },
+    "deviceScaleFactor": 3,
+    "isMobile": true,
+    "hasTouch": true,
+    "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1",
+    "tier": "medium"
+  },
+  "limitations": [
+    "SwiftShader software rendering — no statement here is device performance evidence.",
+    "The player is a scripted policy in tools/harness/runtime.js, not a human.",
+    "No reference-title footage was fetched or compared; thresholds are measured on our own build.",
+    "Input is synthesised as DOM PointerEvents in-page; the browser's own digitiser-to-event path is not exercised."
+  ],
+  "scenarios": {},
+  "selfCheck": {
+    "determinism": {
+      "frames": 120,
+      "columns": {
+        "px": 0,
+        "pz": 0,
+        "pyaw": 0,
+        "pspeed": 0
+      },
+      "worstAbsoluteDivergence": 0,
+      "identical": true
+    },
+    "renderSubstitution": {
+      "frames": 120,
+      "columns": {
+        "px": 0,
+        "pz": 0,
+        "pyaw": 0,
+        "pspeed": 0
+      },
+      "worstAbsoluteDivergence": 0,
+      "identical": true,
+      "note": "sim-only vs fully-rendered run of an identical stimulus; a non-zero divergence invalidates every render:false trace in this report"
+    },
+    "agreementWithScreenshotRig": {
+      "pose": "hero",
+      "measuredHere": {
+        "draws": 117,
+        "tris": 751557,
+        "tier": "medium"
+      },
+      "screenshotRig": null,
+      "note": "no shots/report.json to compare against in this run"
+    }
+  },
+  "extras": {},
+  "results": null,
+  "summary": null,
+  "errors": [
+    "warning: [.WebGL-0x246400123c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Failed to execute 'requestFullscreen' on 'Element': API can only be initiated by a user gesture.",
+    "warning: [.WebGL-0x246400123c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "warning: [.WebGL-0x246400123c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "warning: [.WebGL-0x246400123c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  ]
+}

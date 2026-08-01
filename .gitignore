@@ -11,3 +11,8 @@ dist-single/
 # file inside an ignored directory.)
 shots/*
 !shots/review-*.json
+# Same reasoning for the interaction rig: the report carries the verdicts, the numbers each
+# was measured against, and the apparatus self-check, in 40 KB. The per-scenario traces under
+# shots/interaction-<tag>/ are 2 MB of raw per-frame columns and stay out — tools/interaction-score.mjs
+# needs them to re-derive a verdict, so re-run the rig rather than expecting them to survive.
+!shots/interaction-*.json

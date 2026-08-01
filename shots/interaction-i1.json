@@ -1,0 +1,1325 @@
+{
+  "schemaVersion": 1,
+  "at": "2026-08-01T12:08:31.991Z",
+  "tool": "tools/interaction-capture.mjs",
+  "tag": "i1",
+  "revision": {
+    "sha": "72187ac32365259bfc5eb98f7419d58675f988ae",
+    "branch": "claude/kagerou-benchmark-verification-7fb2zd",
+    "dirty": true
+  },
+  "build": {
+    "fingerprint": "8c9d2e4b7c75a5c1f1255296e2c6f3c13987230b8d9e4e7ee59258d61bb3f4ea"
+  },
+  "profile": {
+    "name": "phone",
+    "viewport": {
+      "width": 844,
+      "height": 390
+    },
+    "deviceScaleFactor": 3,
+    "isMobile": true,
+    "hasTouch": true,
+    "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1",
+    "tier": "medium"
+  },
+  "limitations": [
+    "SwiftShader software rendering — no statement here is device performance evidence.",
+    "The player is a scripted policy in tools/harness/runtime.js, not a human.",
+    "No reference-title footage was fetched or compared; thresholds are measured on our own build.",
+    "Input is synthesised as DOM PointerEvents in-page; the browser's own digitiser-to-event path is not exercised."
+  ],
+  "scenarios": {
+    "control-continuity": {
+      "frames": 1440,
+      "wallMs": 2140,
+      "events": 122,
+      "failedActions": 0,
+      "criteria": [
+        "BM-STORY-03"
+      ],
+      "trace": "shots/interaction-i1/control-continuity.json",
+      "note": "run first, from a fresh boot, before anything cancelled the intro",
+      "carriedForward": true
+    },
+    "move-speeds": {
+      "frames": 540,
+      "wallMs": 632,
+      "events": 72,
+      "failedActions": 0,
+      "criteria": [
+        "BM-MOVE-01"
+      ],
+      "trace": "shots/interaction-i1/move-speeds.json",
+      "carriedForward": true
+    },
+    "move-reversal": {
+      "frames": 984,
+      "wallMs": 979,
+      "events": 162,
+      "failedActions": 0,
+      "criteria": [
+        "BM-MOVE-03"
+      ],
+      "trace": "shots/interaction-i1/move-reversal.json",
+      "carriedForward": true
+    },
+    "foot-plant": {
+      "frames": 540,
+      "wallMs": 464,
+      "events": 72,
+      "failedActions": 0,
+      "criteria": [
+        "BM-MOVE-02"
+      ],
+      "trace": "shots/interaction-i1/foot-plant.json",
+      "carriedForward": true
+    },
+    "camera-traverse": {
+      "frames": 1896,
+      "wallMs": 1764,
+      "events": 282,
+      "failedActions": 0,
+      "criteria": [
+        "BM-CAMERA-02"
+      ],
+      "trace": "shots/interaction-i1/camera-traverse.json",
+      "carriedForward": true
+    },
+    "lockon-framing": {
+      "frames": 840,
+      "wallMs": 556546,
+      "events": 191,
+      "failedActions": 0,
+      "criteria": [
+        "BM-CAMERA-01",
+        "BM-CAMERA-04"
+      ],
+      "trace": "shots/interaction-i1/lockon-framing.json",
+      "carriedForward": true
+    },
+    "lockon-noshake": {
+      "frames": 840,
+      "wallMs": 972972,
+      "events": 102,
+      "failedActions": 0,
+      "criteria": [
+        "BM-CAMERA-04"
+      ],
+      "trace": "shots/interaction-i1/lockon-noshake.json",
+      "carriedForward": true
+    },
+    "touch-drags": {
+      "frames": 6930,
+      "wallMs": 9002,
+      "events": 120,
+      "failedActions": 0,
+      "criteria": [
+        "BM-TOUCH-03"
+      ],
+      "trace": "shots/interaction-i1/touch-drags.json",
+      "carriedForward": true
+    },
+    "touch-latency": {
+      "frames": 2520,
+      "wallMs": 3476,
+      "events": 196,
+      "failedActions": 0,
+      "criteria": [
+        "BM-TOUCH-04"
+      ],
+      "trace": "shots/interaction-i1/touch-latency.json",
+      "carriedForward": true
+    },
+    "anim-startup": {
+      "frames": 900,
+      "wallMs": 3816863,
+      "events": 48,
+      "failedActions": 0,
+      "criteria": [
+        "BM-ANIM-01"
+      ],
+      "trace": "shots/interaction-i1/anim-startup.json",
+      "carriedForward": true
+    },
+    "blade-window": {
+      "frames": 786,
+      "wallMs": 254517,
+      "events": 77,
+      "failedActions": 0,
+      "criteria": [
+        "BM-ANIM-02"
+      ],
+      "trace": "shots/interaction-i1/blade-window.json",
+      "carriedForward": true
+    },
+    "bell-accident": {
+      "frames": 720,
+      "wallMs": 12876,
+      "events": 18,
+      "failedActions": 0,
+      "criteria": [
+        "BM-CHOICE-02"
+      ],
+      "trace": "shots/interaction-i1/bell-accident.json",
+      "carriedForward": true
+    }
+  },
+  "selfCheck": {
+    "carried": true,
+    "from": "shots/interaction-sc1.json",
+    "at": "2026-08-01T08:24:34.806Z",
+    "buildFingerprint": "8c9d2e4b7c75a5c1f1255296e2c6f3c13987230b8d9e4e7ee59258d61bb3f4ea",
+    "determinism": {
+      "frames": 120,
+      "columns": {
+        "px": 0,
+        "pz": 0,
+        "pyaw": 0,
+        "pspeed": 0
+      },
+      "worstAbsoluteDivergence": 0,
+      "identical": true
+    },
+    "renderSubstitution": {
+      "frames": 120,
+      "columns": {
+        "px": 0,
+        "pz": 0,
+        "pyaw": 0,
+        "pspeed": 0
+      },
+      "worstAbsoluteDivergence": 0,
+      "identical": true,
+      "note": "sim-only vs fully-rendered run of an identical stimulus; a non-zero divergence invalidates every render:false trace in this report"
+    },
+    "agreementWithScreenshotRig": {
+      "pose": "hero",
+      "measuredHere": {
+        "draws": 117,
+        "tris": 751557,
+        "tier": "medium"
+      },
+      "screenshotRig": null,
+      "note": "no shots/report.json to compare against in this run"
+    }
+  },
+  "extras": {
+    "interactables": [
+      {
+        "id": "bell",
+        "kind": "bell",
+        "used": false
+      },
+      {
+        "id": "ema",
+        "kind": "read",
+        "used": false
+      },
+      {
+        "id": "rest",
+        "kind": "rest",
+        "used": false
+      }
+    ],
+    "zoneAudit": {
+      "viewport": {
+        "w": 844,
+        "h": 390
+      },
+      "zones": [
+        {
+          "name": "guard",
+          "mode": "hold",
+          "x": 623.428440113981,
+          "y": 321.8837209302326,
+          "w": 72,
+          "h": 72
+        },
+        {
+          "name": "dodge",
+          "mode": "press",
+          "x": 642.0213959540765,
+          "y": 251.26916487790345,
+          "w": 72,
+          "h": 72
+        },
+        {
+          "name": "special",
+          "mode": "press",
+          "x": 693.1378829776119,
+          "y": 197.40362677831956,
+          "w": 72,
+          "h": 72
+        },
+        {
+          "name": "lockOn",
+          "mode": "press",
+          "x": 763.959900958555,
+          "y": 175.0735302829626,
+          "w": 72,
+          "h": 72
+        },
+        {
+          "name": "pause",
+          "mode": "press",
+          "x": 7.255813953488372,
+          "y": 7.255813953488372,
+          "w": 50,
+          "h": 50
+        }
+      ],
+      "buttons": [
+        {
+          "name": "guard",
+          "cx": 659.428440113981,
+          "cy": 357.8837209302326,
+          "visualRadius": 28.11627906976744,
+          "hitRadius": 36
+        },
+        {
+          "name": "dodge",
+          "cx": 678.0213959540765,
+          "cy": 287.26916487790345,
+          "visualRadius": 28.11627906976744,
+          "hitRadius": 36
+        },
+        {
+          "name": "special",
+          "cx": 729.1378829776119,
+          "cy": 233.40362677831956,
+          "visualRadius": 28.11627906976744,
+          "hitRadius": 36
+        },
+        {
+          "name": "lockOn",
+          "cx": 799.959900958555,
+          "cy": 211.0735302829626,
+          "visualRadius": 28.11627906976744,
+          "hitRadius": 36
+        }
+      ],
+      "smallestVisualDiameterPx": 56.23255813953488,
+      "smallestHitDiameterPx": 72,
+      "zonesInsideEdgeMargin": 2,
+      "edgeMarginBasis": "visible control geometry",
+      "paddedRectsCrossingMargin": 3,
+      "edgeMarginPx": 16
+    },
+    "landmarks": {
+      "points": [
+        {
+          "name": "stair-top",
+          "eye": [
+            0,
+            813.6,
+            72
+          ],
+          "visible": [
+            "great-torii",
+            "honden-roof",
+            "bell-tower",
+            "haiden-roof"
+          ]
+        },
+        {
+          "name": "first-torii",
+          "eye": [
+            0,
+            816.17,
+            68
+          ],
+          "visible": [
+            "great-torii",
+            "honden-roof",
+            "bell-tower",
+            "haiden-roof"
+          ]
+        },
+        {
+          "name": "second-torii",
+          "eye": [
+            0,
+            816.82,
+            54
+          ],
+          "visible": [
+            "great-torii",
+            "honden-roof",
+            "bell-tower",
+            "haiden-roof"
+          ]
+        },
+        {
+          "name": "arena",
+          "eye": [
+            0,
+            813.77,
+            26
+          ],
+          "visible": [
+            "honden-roof",
+            "haiden-roof"
+          ]
+        },
+        {
+          "name": "chozuya",
+          "eye": [
+            -14.5,
+            814.24,
+            30
+          ],
+          "visible": [
+            "honden-roof",
+            "haiden-roof"
+          ]
+        },
+        {
+          "name": "ema-rack",
+          "eye": [
+            10.5,
+            813.62,
+            43
+          ],
+          "visible": [
+            "honden-roof",
+            "bell-tower",
+            "haiden-roof"
+          ]
+        },
+        {
+          "name": "west-edge",
+          "eye": [
+            -22,
+            813.62,
+            34
+          ],
+          "visible": [
+            "honden-roof",
+            "bell-tower",
+            "haiden-roof"
+          ]
+        },
+        {
+          "name": "east-edge",
+          "eye": [
+            22,
+            814.84,
+            34
+          ],
+          "visible": []
+        }
+      ],
+      "anchors": [
+        "great-torii",
+        "honden-roof",
+        "bell-tower",
+        "haiden-roof"
+      ]
+    },
+    "jsFrameCost": {
+      "noEnemies": {
+        "frames": 120,
+        "totalMs": 169.2,
+        "msPerFrame": 1.41,
+        "systems": [
+          {
+            "name": "_r",
+            "msPerFrame": 0.8058
+          },
+          {
+            "name": "Er",
+            "msPerFrame": 0.1917
+          },
+          {
+            "name": "Ic",
+            "msPerFrame": 0.1167
+          },
+          {
+            "name": "Ds",
+            "msPerFrame": 0.04
+          },
+          {
+            "name": "Jl",
+            "msPerFrame": 0.0392
+          },
+          {
+            "name": "ii",
+            "msPerFrame": 0.0192
+          },
+          {
+            "name": "Io",
+            "msPerFrame": 0.0125
+          },
+          {
+            "name": "lh",
+            "msPerFrame": 0.0117
+          },
+          {
+            "name": "Nc",
+            "msPerFrame": 0.01
+          },
+          {
+            "name": "Bn",
+            "msPerFrame": 0.0092
+          },
+          {
+            "name": "pa",
+            "msPerFrame": 0.0083
+          },
+          {
+            "name": "fl",
+            "msPerFrame": 0.0067
+          },
+          {
+            "name": "en",
+            "msPerFrame": 0.0067
+          },
+          {
+            "name": "us",
+            "msPerFrame": 0.005
+          },
+          {
+            "name": "Ph",
+            "msPerFrame": 0.0025
+          },
+          {
+            "name": "Object",
+            "msPerFrame": 0.0025
+          }
+        ]
+      },
+      "noEnemiesPhysics": {
+        "statics": 5,
+        "dynamics": 0,
+        "ragdolls": 0,
+        "broadphaseChecks": 24,
+        "narrowphaseChecks": 1338,
+        "ms": 0
+      },
+      "threeEnemies": {
+        "frames": 30,
+        "totalMs": 5826.7,
+        "msPerFrame": 194.223,
+        "systems": [
+          {
+            "name": "Ph",
+            "msPerFrame": 181.9767
+          },
+          {
+            "name": "_r",
+            "msPerFrame": 10.86
+          },
+          {
+            "name": "Ic",
+            "msPerFrame": 0.2367
+          },
+          {
+            "name": "Er",
+            "msPerFrame": 0.19
+          },
+          {
+            "name": "lh",
+            "msPerFrame": 0.18
+          },
+          {
+            "name": "Ds",
+            "msPerFrame": 0.0933
+          },
+          {
+            "name": "Jl",
+            "msPerFrame": 0.0733
+          },
+          {
+            "name": "ii",
+            "msPerFrame": 0.0333
+          },
+          {
+            "name": "Bn",
+            "msPerFrame": 0.0233
+          },
+          {
+            "name": "pa",
+            "msPerFrame": 0.0233
+          },
+          {
+            "name": "Nc",
+            "msPerFrame": 0.02
+          },
+          {
+            "name": "Io",
+            "msPerFrame": 0.0167
+          },
+          {
+            "name": "us",
+            "msPerFrame": 0.0133
+          },
+          {
+            "name": "fl",
+            "msPerFrame": 0.0133
+          },
+          {
+            "name": "en",
+            "msPerFrame": 0.01
+          }
+        ]
+      },
+      "threeEnemiesPhysics": {
+        "statics": 5,
+        "dynamics": 0,
+        "ragdolls": 0,
+        "broadphaseChecks": 87,
+        "narrowphaseChecks": 209886,
+        "ms": 0
+      },
+      "colliders": {
+        "statics": 5,
+        "byKind": {
+          "triangleMesh": 5
+        },
+        "triangleMeshTriangles": 2148
+      }
+    },
+    "audioPeak": {
+      "peak": 0.23894616961479187,
+      "samples": 6,
+      "impacts": [
+        "swordHitFlesh",
+        "swordHitArmor",
+        "swordHitWood",
+        "swordHitStone",
+        "clash"
+      ],
+      "truePeakEstimateDb": -12.44,
+      "soundNamesAvailable": 42
+    },
+    "rimContrast": [
+      {
+        "archetype": "ashigaru",
+        "placement": "sunlit",
+        "silhouettePx": 81538,
+        "innerEdgeLuma": 0.3592,
+        "outerEdgeLuma": 0.284,
+        "edgeLumaDelta": 0.0752,
+        "edgeSamples": {
+          "inside": 79273,
+          "outside": 320345
+        }
+      },
+      {
+        "archetype": "ronin",
+        "placement": "sunlit",
+        "silhouettePx": 95059,
+        "innerEdgeLuma": 0.354,
+        "outerEdgeLuma": 0.2898,
+        "edgeLumaDelta": 0.0643,
+        "edgeSamples": {
+          "inside": 80355,
+          "outside": 327459
+        }
+      },
+      {
+        "archetype": "oyoroi",
+        "placement": "sunlit",
+        "silhouettePx": 145688,
+        "innerEdgeLuma": 0.3263,
+        "outerEdgeLuma": 0.2867,
+        "edgeLumaDelta": 0.0397,
+        "edgeSamples": {
+          "inside": 105101,
+          "outside": 351440
+        }
+      },
+      {
+        "archetype": "shinobi",
+        "placement": "sunlit",
+        "silhouettePx": 95190,
+        "innerEdgeLuma": 0.3946,
+        "outerEdgeLuma": 0.3115,
+        "edgeLumaDelta": 0.0831,
+        "edgeSamples": {
+          "inside": 87055,
+          "outside": 312927
+        }
+      },
+      {
+        "archetype": "ashigaru",
+        "placement": "shaded",
+        "silhouettePx": 60720,
+        "innerEdgeLuma": 0.2428,
+        "outerEdgeLuma": 0.1915,
+        "edgeLumaDelta": 0.0513,
+        "edgeSamples": {
+          "inside": 58544,
+          "outside": 294380
+        }
+      },
+      {
+        "archetype": "ronin",
+        "placement": "shaded",
+        "silhouettePx": 90713,
+        "innerEdgeLuma": 0.2633,
+        "outerEdgeLuma": 0.1875,
+        "edgeLumaDelta": 0.0758,
+        "edgeSamples": {
+          "inside": 71346,
+          "outside": 328424
+        }
+      },
+      {
+        "archetype": "oyoroi",
+        "placement": "shaded",
+        "silhouettePx": 142026,
+        "innerEdgeLuma": 0.2144,
+        "outerEdgeLuma": 0.1795,
+        "edgeLumaDelta": 0.0349,
+        "edgeSamples": {
+          "inside": 94946,
+          "outside": 317315
+        }
+      },
+      {
+        "archetype": "shinobi",
+        "placement": "shaded",
+        "silhouettePx": 152349,
+        "innerEdgeLuma": 0.2167,
+        "outerEdgeLuma": 0.1856,
+        "edgeLumaDelta": 0.0311,
+        "edgeSamples": {
+          "inside": 96463,
+          "outside": 311075
+        }
+      }
+    ]
+  },
+  "results": [
+    {
+      "criterion": "BM-MOVE-01",
+      "element": "E02-MOVEMENT",
+      "scenario": "move-speeds",
+      "method": "instrumented-runtime",
+      "verdict": "pass",
+      "measured": {
+        "rows": {
+          "walk": {
+            "target": 1.9,
+            "measuredFromPosition": 1.9,
+            "controllerSelfReport": 1.9,
+            "samples": 70
+          },
+          "run": {
+            "target": 5.4,
+            "measuredFromPosition": 5.4,
+            "controllerSelfReport": 5.4,
+            "samples": 70
+          },
+          "sprint": {
+            "target": 7.2,
+            "measuredFromPosition": 7.2,
+            "controllerSelfReport": 7.2,
+            "samples": 70
+          }
+        },
+        "clearance": [
+          {
+            "label": "speed:walk",
+            "metres": 24.89,
+            "blocked": true
+          },
+          {
+            "label": "speed:run",
+            "metres": 24.89,
+            "blocked": true
+          },
+          {
+            "label": "speed:sprint",
+            "metres": 24.89,
+            "blocked": true
+          }
+        ]
+      },
+      "threshold": "within ±5% of 1.9 / 5.4 / 7.2 m/s",
+      "detail": "all three speeds inside ±5%"
+    },
+    {
+      "criterion": "BM-MOVE-03",
+      "element": "E02-MOVEMENT",
+      "scenario": "move-reversal",
+      "method": "interaction-capture",
+      "verdict": "fail",
+      "measured": {
+        "reversals": [
+          {
+            "label": "reversal:0",
+            "turnMs": 283,
+            "responseLatencyMs": 17
+          },
+          {
+            "label": "reversal-back:0",
+            "turnMs": 283,
+            "responseLatencyMs": 17
+          },
+          {
+            "label": "reversal:1",
+            "turnMs": 283,
+            "responseLatencyMs": 17
+          },
+          {
+            "label": "reversal-back:1",
+            "turnMs": 283,
+            "responseLatencyMs": 17
+          },
+          {
+            "label": "reversal:2",
+            "turnMs": 283,
+            "responseLatencyMs": 17
+          },
+          {
+            "label": "reversal-back:2",
+            "turnMs": 283,
+            "responseLatencyMs": 17
+          },
+          {
+            "label": "reversal:3",
+            "turnMs": 283,
+            "responseLatencyMs": 17
+          },
+          {
+            "label": "reversal-back:3",
+            "turnMs": 283,
+            "responseLatencyMs": 17
+          }
+        ],
+        "slowestTurnMs": 283,
+        "worstResponseLatencyMs": 16.7
+      },
+      "threshold": "180° heading change ≤ 250 ms; no input-ignored window > 100 ms",
+      "detail": "all reversals completed"
+    },
+    {
+      "criterion": "BM-MOVE-02",
+      "element": "E02-MOVEMENT",
+      "scenario": "foot-plant",
+      "method": "interaction-capture",
+      "verdict": "fail",
+      "measured": {
+        "contactSamples": 181,
+        "p95DriftCm": 25.903,
+        "worstDriftCm": 29.874,
+        "contactFloorMetres": [
+          0.085,
+          0.085
+        ],
+        "bandMetres": 0.02,
+        "verticalStillnessMetres": 0.004,
+        "windows": 3,
+        "sampledFrames": 213
+      },
+      "threshold": "planted-foot world drift ≤ 2 cm per frame",
+      "detail": "181 contact samples across walk/run/sprint"
+    },
+    {
+      "criterion": "BM-CAMERA-02",
+      "element": "E03-CAMERA",
+      "scenario": "camera-traverse",
+      "method": "instrumented-runtime",
+      "verdict": "fail",
+      "measured": {
+        "frames": 1896,
+        "framesInsideGeometry": 36,
+        "worstFrameJumpM": 0.599,
+        "framesExcludedNearTeleports": 9
+      },
+      "threshold": "zero frames with the near plane inside a collider; no single-frame pull-in > 1.5 m",
+      "detail": "inside-geometry is a conservative proxy: a solid collider within one near-plane radius of the eye"
+    },
+    {
+      "criterion": "BM-CAMERA-01",
+      "element": "E03-CAMERA",
+      "scenario": "lockon-framing",
+      "method": "interaction-capture",
+      "verdict": "inconclusive",
+      "measured": {
+        "lockedFrames": 0,
+        "bothInCentral80Pct": null,
+        "framesTargetOffScreen": 0
+      },
+      "threshold": "both bodies inside the central 80% for ≥ 95% of the encounter; target never leaves frame",
+      "detail": "lock-on was never held long enough to measure"
+    },
+    {
+      "criterion": "BM-CAMERA-04",
+      "element": "E03-CAMERA",
+      "scenario": "lockon-framing/lockon-noshake",
+      "method": "interaction-capture",
+      "verdict": "inconclusive",
+      "measured": {
+        "pairDivergenceM": 22.55
+      },
+      "threshold": "target centroid moves ≤ 4% of frame width from shake alone",
+      "detail": "the ablation pair did not stay in lockstep, so the difference is not attributable to shake"
+    },
+    {
+      "criterion": "BM-COMBAT-02",
+      "element": "E01-COMBAT",
+      "scenario": "encounters",
+      "method": "instrumented-runtime",
+      "verdict": "inconclusive",
+      "measured": null,
+      "threshold": null,
+      "detail": "scenario did not run"
+    },
+    {
+      "criterion": "BM-AI-03",
+      "element": "E14-AI",
+      "scenario": "encounters",
+      "method": "instrumented-runtime",
+      "verdict": "inconclusive",
+      "measured": null,
+      "threshold": null,
+      "detail": "scenario did not run"
+    },
+    {
+      "criterion": "BM-TOUCH-03",
+      "element": "E10-TOUCH",
+      "scenario": "touch-drags",
+      "method": "interaction-capture",
+      "verdict": "fail",
+      "measured": {
+        "drags": 120,
+        "misfires": 0,
+        "misfireRate": 0,
+        "examples": [],
+        "edgeMargin": {
+          "viewport": {
+            "w": 844,
+            "h": 390
+          },
+          "zones": [
+            {
+              "name": "guard",
+              "mode": "hold",
+              "x": 623.428440113981,
+              "y": 321.8837209302326,
+              "w": 72,
+              "h": 72
+            },
+            {
+              "name": "dodge",
+              "mode": "press",
+              "x": 642.0213959540765,
+              "y": 251.26916487790345,
+              "w": 72,
+              "h": 72
+            },
+            {
+              "name": "special",
+              "mode": "press",
+              "x": 693.1378829776119,
+              "y": 197.40362677831956,
+              "w": 72,
+              "h": 72
+            },
+            {
+              "name": "lockOn",
+              "mode": "press",
+              "x": 763.959900958555,
+              "y": 175.0735302829626,
+              "w": 72,
+              "h": 72
+            },
+            {
+              "name": "pause",
+              "mode": "press",
+              "x": 7.255813953488372,
+              "y": 7.255813953488372,
+              "w": 50,
+              "h": 50
+            }
+          ],
+          "buttons": [
+            {
+              "name": "guard",
+              "cx": 659.428440113981,
+              "cy": 357.8837209302326,
+              "visualRadius": 28.11627906976744,
+              "hitRadius": 36
+            },
+            {
+              "name": "dodge",
+              "cx": 678.0213959540765,
+              "cy": 287.26916487790345,
+              "visualRadius": 28.11627906976744,
+              "hitRadius": 36
+            },
+            {
+              "name": "special",
+              "cx": 729.1378829776119,
+              "cy": 233.40362677831956,
+              "visualRadius": 28.11627906976744,
+              "hitRadius": 36
+            },
+            {
+              "name": "lockOn",
+              "cx": 799.959900958555,
+              "cy": 211.0735302829626,
+              "visualRadius": 28.11627906976744,
+              "hitRadius": 36
+            }
+          ],
+          "smallestVisualDiameterPx": 56.23255813953488,
+          "smallestHitDiameterPx": 72,
+          "zonesInsideEdgeMargin": 2,
+          "edgeMarginBasis": "visible control geometry",
+          "paddedRectsCrossingMargin": 3,
+          "edgeMarginPx": 16
+        }
+      },
+      "threshold": "< 1% of ≥ 100 camera drags produce an unintended slash or press; no gesture starts inside the OS edge margin",
+      "detail": "every drag is authored outside the flick and tap envelopes, so anything it fires is unintended by construction"
+    },
+    {
+      "criterion": "BM-TOUCH-04",
+      "element": "E10-TOUCH",
+      "scenario": "touch-latency",
+      "method": "instrumented-runtime",
+      "verdict": "pass",
+      "measured": {
+        "taps": 60,
+        "registered": 60,
+        "worstDeferralFrames": 0,
+        "histogram": {
+          "0": 60
+        }
+      },
+      "threshold": "a touch event is consumed by game state in the frame it arrives; never deferred more than one frame",
+      "detail": null
+    },
+    {
+      "criterion": "BM-ANIM-01",
+      "element": "E12-ANIMATION",
+      "scenario": "anim-startup",
+      "method": "interaction-capture",
+      "verdict": "fail",
+      "measured": {
+        "attacks": 7,
+        "shortestStartupMs": 17,
+        "medianStartupMs": 50,
+        "idleMotionFloorM": 0.001827
+      },
+      "threshold": "visible startup ≥ 140 ms (EnemyAI REACTION_FLOOR) for every enemy attack",
+      "detail": "startup taken from first frame of weapon-hand motion above 3× the idle floor"
+    },
+    {
+      "criterion": "BM-ANIM-02",
+      "element": "E12-ANIMATION",
+      "scenario": "blade-window",
+      "method": "instrumented-runtime",
+      "verdict": "pass",
+      "measured": {
+        "swings": 12,
+        "worstLeadFrames": 0,
+        "worstLagFrames": 0,
+        "sample": [
+          {
+            "activeStart": 60,
+            "activeEnd": 65,
+            "sweepStart": 60,
+            "sweepEnd": 65,
+            "leadFrames": 0,
+            "lagFrames": 0
+          },
+          {
+            "activeStart": 123,
+            "activeEnd": 131,
+            "sweepStart": 123,
+            "sweepEnd": 131,
+            "leadFrames": 0,
+            "lagFrames": 0
+          },
+          {
+            "activeStart": 179,
+            "activeEnd": 188,
+            "sweepStart": 179,
+            "sweepEnd": 188,
+            "leadFrames": 0,
+            "lagFrames": 0
+          },
+          {
+            "activeStart": 240,
+            "activeEnd": 258,
+            "sweepStart": 240,
+            "sweepEnd": 258,
+            "leadFrames": 0,
+            "lagFrames": 0
+          },
+          {
+            "activeStart": 310,
+            "activeEnd": 319,
+            "sweepStart": 310,
+            "sweepEnd": 319,
+            "leadFrames": 0,
+            "lagFrames": 0
+          }
+        ]
+      },
+      "threshold": "weapon-active frames coincide with the visible blade sweep within one frame at both ends",
+      "detail": null
+    },
+    {
+      "criterion": "BM-STORY-03",
+      "element": "E06-NARRATIVE",
+      "scenario": "control-continuity",
+      "method": "interaction-capture",
+      "verdict": "pass",
+      "measured": {
+        "longestNoControlSeconds": 0,
+        "startedAtFrame": -1,
+        "titleBeatSeconds": 4.2,
+        "playerDisplacementDuringTitleBeatM": 3.41
+      },
+      "threshold": "no non-interactive sequence longer than 5 s outside the title beat; every such beat is skippable",
+      "detail": "measured from a fresh boot with the intro deliberately NOT skipped. A non-zero displacement during the title beat means the beat never took control away, so skippability does not arise for it."
+    },
+    {
+      "criterion": "BM-CHOICE-02",
+      "element": "E08-CHOICE",
+      "scenario": "bell-accident",
+      "method": "interaction-capture",
+      "verdict": "fail",
+      "measured": {
+        "accidentalRingEvents": 0,
+        "deliberateRingEvents": 0,
+        "bellUsedFlagAfterRun": false,
+        "interactablesSeen": [
+          "bell:false",
+          "ema:false",
+          "rest:false"
+        ],
+        "objectiveEventsTotal": 0
+      },
+      "threshold": "the bell cannot be rung by accident during combat movement, and its consequence is signalled before the wave commits",
+      "detail": "the deliberate half of the scenario produced nothing either: the bell was never struck even when the mapped interact intent was pressed, so it is unreachable in play rather than protected"
+    },
+    {
+      "criterion": "BM-EXPLORE-01",
+      "element": "E04-EXPLORATION",
+      "scenario": "landmark-survey",
+      "method": "interaction-capture",
+      "verdict": "fail",
+      "measured": {
+        "points": 8,
+        "anchorsResolved": 4,
+        "pointsWithNoLandmark": 1,
+        "blindPoints": [
+          "east-edge"
+        ],
+        "perPoint": [
+          {
+            "name": "stair-top",
+            "visible": [
+              "great-torii",
+              "honden-roof",
+              "bell-tower",
+              "haiden-roof"
+            ]
+          },
+          {
+            "name": "first-torii",
+            "visible": [
+              "great-torii",
+              "honden-roof",
+              "bell-tower",
+              "haiden-roof"
+            ]
+          },
+          {
+            "name": "second-torii",
+            "visible": [
+              "great-torii",
+              "honden-roof",
+              "bell-tower",
+              "haiden-roof"
+            ]
+          },
+          {
+            "name": "arena",
+            "visible": [
+              "honden-roof",
+              "haiden-roof"
+            ]
+          },
+          {
+            "name": "chozuya",
+            "visible": [
+              "honden-roof",
+              "haiden-roof"
+            ]
+          },
+          {
+            "name": "ema-rack",
+            "visible": [
+              "honden-roof",
+              "bell-tower",
+              "haiden-roof"
+            ]
+          },
+          {
+            "name": "west-edge",
+            "visible": [
+              "honden-roof",
+              "bell-tower",
+              "haiden-roof"
+            ]
+          },
+          {
+            "name": "east-edge",
+            "visible": []
+          }
+        ]
+      },
+      "threshold": "from every spawn and approach point, ≥ 1 navigational landmark is visible",
+      "detail": "visibility = inside the frustum at eye height and not occluded on a ray to the landmark anchor; it does not judge whether the silhouette reads"
+    },
+    {
+      "criterion": "BM-CHAR-02",
+      "element": "E07-CHARACTER",
+      "scenario": "archetype-rim",
+      "method": "frame-measurement",
+      "verdict": "fail",
+      "measured": {
+        "samples": 8,
+        "attempted": 8,
+        "worst": {
+          "archetype": "shinobi",
+          "placement": "shaded",
+          "silhouettePx": 152349,
+          "innerEdgeLuma": 0.2167,
+          "outerEdgeLuma": 0.1856,
+          "edgeLumaDelta": 0.0311,
+          "edgeSamples": {
+            "inside": 96463,
+            "outside": 311075
+          }
+        },
+        "failing": [
+          "oyoroi/sunlit",
+          "ashigaru/shaded",
+          "oyoroi/shaded",
+          "shinobi/shaded"
+        ],
+        "errors": []
+      },
+      "threshold": "a measurable luma step across the enemy edge in sunlit and shaded placement (≥ 0.06 linear luma, the smallest step this rig can separate from dither)",
+      "detail": "threshold is this rig's own floor: ARCHITECTURE.md §5.10 states the requirement but no number, so a stricter one must come from the art contract, not from here"
+    },
+    {
+      "criterion": "BM-AUDIO-03",
+      "element": "E13-AUDIO",
+      "scenario": "audio-peak",
+      "method": "instrumented-runtime",
+      "verdict": "pass",
+      "measured": {
+        "samplePeak": 0.23895,
+        "samplePeakDbfs": -12.43,
+        "oversampledEstimateDbfs": -12.44,
+        "windows": 6,
+        "impacts": [
+          "swordHitFlesh",
+          "swordHitArmor",
+          "swordHitWood",
+          "swordHitStone",
+          "clash"
+        ]
+      },
+      "threshold": "≤ -1 dBFS true peak with five simultaneous impacts plus the full bed",
+      "detail": "this is a SAMPLE peak taken post-limiter through an AnalyserNode, with a 4× interpolated estimate beside it. It is not an ITU-R BS.1770 true-peak meter and must not be recorded as one."
+    },
+    {
+      "criterion": "BM-PERF-05",
+      "element": "E15-PERFORMANCE",
+      "scenario": "js-frame-cost",
+      "method": "instrumented-runtime",
+      "verdict": "fail",
+      "measured": {
+        "msPerFrameNoEnemies": 1.41,
+        "msPerFrameThreeEnemies": 194.223,
+        "ratio": 137.7,
+        "heaviestSystem": {
+          "name": "Ph",
+          "msPerFrame": 181.9767
+        },
+        "narrowphaseChecksNoEnemies": 1338,
+        "narrowphaseChecksThreeEnemies": 209886,
+        "colliders": {
+          "statics": 5,
+          "byKind": {
+            "triangleMesh": 5
+          },
+          "triangleMeshTriangles": 2148
+        }
+      },
+      "threshold": "≤ 5 ms JS per frame at MEDIUM (ARCHITECTURE.md §7)",
+      "detail": "Measured in a container, not on a phone — the absolute milliseconds are not device evidence. What is device-independent is the shape: the whole static world is a handful of triangle-mesh colliders totalling ~2.1k triangles, and three engaged enemies drive hundreds of thousands of narrow-phase triangle tests in a single frame."
+    }
+  ],
+  "summary": {
+    "criteria": 18,
+    "verdicts": {
+      "pass": 5,
+      "fail": 9,
+      "inconclusive": 4
+    },
+    "elements": 12,
+    "elementsCovered": [
+      "E01-COMBAT",
+      "E02-MOVEMENT",
+      "E03-CAMERA",
+      "E04-EXPLORATION",
+      "E06-NARRATIVE",
+      "E07-CHARACTER",
+      "E08-CHOICE",
+      "E10-TOUCH",
+      "E12-ANIMATION",
+      "E13-AUDIO",
+      "E14-AI",
+      "E15-PERFORMANCE"
+    ],
+    "elementsWithAMeasurement": [
+      "E02-MOVEMENT",
+      "E03-CAMERA",
+      "E04-EXPLORATION",
+      "E06-NARRATIVE",
+      "E07-CHARACTER",
+      "E08-CHOICE",
+      "E10-TOUCH",
+      "E12-ANIMATION",
+      "E13-AUDIO",
+      "E15-PERFORMANCE"
+    ]
+  },
+  "errors": [
+    "warning: [.WebGL-0x2f5400137c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently",
+    "warning: Failed to execute 'requestFullscreen' on 'Element': API can only be initiated by a user gesture.",
+    "warning: [.WebGL-0x2f5400137c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "warning: [.WebGL-0x2f5400137c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "warning: [.WebGL-0x2f5400137c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  ]
+}
