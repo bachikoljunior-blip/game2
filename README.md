@@ -140,7 +140,39 @@ Full results and every measured number: `shots/interaction-i1.json` and
 Nothing in that run is a play test, a device measurement, or a comparison against any
 reference title — none of those have happened on this project.
 
-Measured, not asserted. The coherent phone/MEDIUM `r15v1` checkpoint is captured and gated.
+### Round 16, and the defect no screenshot could ever have shown
+
+Round 16 opened **FAIL at 58/100** with 3 blockers and closed with every contract gate held
+on `r16v1` (119 → 120 draw calls, 784,449 → **781,386** triangles, black gate 0/11/0/0/0,
+white gate hero 236 / torii 251). Five owners committed; ten were gated out of the fan-out.
+
+Its largest result was not visual. **TD-010 — three enemies costing 194–850 ms of JS per
+frame — was never a performance defect.** The narrow-phase query AABB was `NaN`, and
+`TriBVH.overlapAABB` culls with six comparisons that are all false against `NaN`, so a
+non-finite box **rejected nothing**: the cull failed open and returned every triangle in the
+collider. The root cause is an ARCHITECTURE §5b violation at `Enemy.js:845`, which hands a
+`Vector3` to `teleport(x, y, z)`. Because `Enemy._integrate` guards with `typeof` and falls
+back to dead reckoning, **the enemies walked, stood and rendered normally while having no
+world collision at all** — a gameplay defect invisible to any still frame, and one the
+interaction rig surfaced only as a timing symptom.
+
+Narrow-phase tests fell **209,886 → 8,062** and the three-enemy JS frame **161.6 → 3.7 ms**,
+inside the 5 ms budget. The `encounters` scenario, previously estimated at ~6 hours, now
+completes 20 encounters and 14,470 frames in **21.9 s**, and BM-AI-03 passes.
+
+On the image: the sky's achromatic-at-golden-hour blocker moved `hero` sunward saturation
+0.031 → **0.228**; the god-ray pass turned out to have **no scattering phase function at
+all**, and adding one cut `rtGodB` visible coverage 89.0% → **39.2%** on `sun`; and the
+sakura canopy's two-hue split was a normals defect — `computeVertexNormals()` on planar
+quads gave every card a single normal, so a constant-shaded polygon under one hard key could
+only take two values. Round 15 had aimed the same fix at the wrong file entirely, which is
+why the defect survived to be re-measured.
+
+Shortfalls are recorded as shortfalls, not softened: `sun` band16 reached 4.72 against 7.0,
+the canopy transition band 0.234 against 0.30, and the **crown silhouette got worse** (23 →
+27 px longest straight run against a ~12 px target).
+
+Measured, not asserted. The coherent phone/MEDIUM `r16v1` checkpoint is captured and gated.
 Round 15 closed **FAIL at 65/100**, 3 blockers from 4, and was mostly a *disproof* round: it
 retired `HANDOFF.md` open item 2 — the finding that file called the most consequential
 unfixed problem on the project — by showing the cool fill was never being eaten and the
@@ -148,12 +180,15 @@ original measurement had simply omitted albedo. It also killed the "no cast shad
 plaza" claim for the third time, with the critic's own probe box measured at **84.6% cast
 shadow**.
 
-> **The round-15 scores are not a trend.** The opening `r15` capture was taken on a tree
-> byte-identical to `r14final`. Round 14 closed at **50**; a fresh critic instance scored the
-> identical pixels **62**. That 12-point gap is inter-critic-instance variance measured
-> directly, and the closing 65 came from a third instance. The instance-independent results
-> are that the detached-sky-dash blocker is gone — confirmed by pixel measurement and by eye
-> — and the blocker count fell 4 → 3.
+> **The scores are not a trend, and round 16 widened the proof.** The opening `r15` capture
+> was taken on a tree byte-identical to `r14final`, and the opening `r16` capture on a tree
+> byte-identical to `r15v1`. Four independent critic instances have now scored essentially
+> the same pixels **50 → 62 → 65 → 58**. That spread is inter-instance variance measured
+> directly, four points wider than the 12 recorded last round, and it means **no
+> round-over-round score delta on this project is evidence of anything** unless it comes from
+> the same instance or is quoted with the variance. What survives instance change is the
+> per-finding pixel measurement, which is why every table here is a region and a number
+> rather than a score.
 
 The one blocker actually closed was closed by a proven mechanism, not a guess: the bamboo
 card atlas was packed 2×2, so bilinear sampling at v=0.5 pulled the deliberately opaque

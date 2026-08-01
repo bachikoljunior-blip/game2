@@ -23,11 +23,18 @@ every texture, mesh, animation and sound is synthesised at boot. `ARCHITECTURE.m
 binding contract that lets independent agents work on it in parallel; read §5 (art
 direction), §7 (perf budget) and §8 (file ownership) before dispatching anything.
 
-> **Last completed round: 14. Active round: none.** Round 14 closed on coherent
-> `r14final`: apparatus and budgets passed, source-blind score improved 44 to 50, and the
-> broad sun-glare major finding cleared. One detached-bamboo blocker plus terrain-scale and
-> courtyard-dressing majors remain. The checkpoint is published and publicly verified;
-> stop and do not activate Round 15 without a new user instruction.
+> **Last completed round: 16. Active round: none.** Round 16 opened FAIL at 58/100 with
+> 3 blockers and closed on coherent `r16v1` with every contract gate held (120 draw calls,
+> 781,386 triangles, black gate 0/11/0/0/0, white gate hero 236 / torii 251). Five owners
+> committed, ten were gated out, and one blocker was re-routed mid-round on a measured
+> disproof. **Round 16 has no closing critic verdict** — the user ended the run at the end
+> of the round, so `r16v1` was gated but never judged. Rounds 17–20 were cancelled, not
+> queued. Do not activate Round 17 without a new user instruction.
+>
+> **This block is the single most-missed staleness trap in this file.** It said "Last
+> completed round: 14" while 15 was finished and 16 was being asked for. `HANDOFF.md` is the
+> authority for the round number; if the two ever disagree, believe `HANDOFF.md` and fix
+> this line in the same commit.
 
 An independent critic has scored it 34 → 48 → 58 → (round 4 unfiled) → (5 and 6 unscored)
 → 44 → **46** → **47 pre-fix in round 9** out of 100 against a *Ghost of Tsushima* /
