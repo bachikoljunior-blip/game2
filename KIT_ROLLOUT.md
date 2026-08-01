@@ -15,17 +15,25 @@ done when its acceptance line has been *observed*, not when the edit was made.
 
 ## Verified state
 
-Measured 2026-08-01. Every SHA below was read back from the remote, not assumed. Both game
-repositories moved from `claude/past-work-skill-candidates-v6l3xm` onto
+Measured 2026-08-01. Every SHA below was read back from the remote with `git ls-remote`, not
+assumed. Both game repositories moved from `claude/past-work-skill-candidates-v6l3xm` onto
 `claude/kit-rollout-game2-survival-0vspel` by fast-forward — the old branch head was a strict
 ancestor with no commits of its own left behind, checked with `merge-base --is-ancestor`.
 
-| Repo | Branch | SHA | Kit | Skills load? |
-|---|---|---|---|---|
-| `kit` | `main` + `claude/kit-template-creation-ndursc`, both `d334e77` | `d334e77` | source of truth, v0.2.0, 52 files, 34 tests | n/a |
-| `game2` | `claude/kit-rollout-game2-survival-0vspel` | see git | `.kit/` v0.2.0 installed | **yes** — 9 + `round` |
-| `survival` | `claude/kit-rollout-game2-survival-0vspel` | see git | `.kit/` v0.2.0 installed, harness on `lib/browser` + `lib/image` | **yes** — 9 |
-| `Cooky` `Gptgame` `Q` `exist-debug` `game` `Simple-browser-cookie-clicker-game` | — | — | none | no |
+All eight target repositories now carry the kit, on one branch name:
+`claude/kit-rollout-game2-survival-0vspel`.
+
+| Repo | SHA (remote-read) | Kit | Skills |
+|---|---|---|---|
+| `kit` | `d334e77` on `main` + `claude/kit-template-creation-ndursc` | source of truth, v0.2.0, 52 files, 34 tests | n/a |
+| `game2` | `bce8577` | v0.2.0, `check:kit` passes | 9 + `round` |
+| `survival` | `43d6e28` | v0.2.0, harness on `lib/browser` + `lib/image`, `check:kit` passes | 9 |
+| `Gptgame` | `44913b2` | v0.2.0, `check:kit` passes | 9 |
+| `Q` | `813a8bf` | v0.2.0, `check:kit` chained into `npm run check` | 9 |
+| `game` | `6247fd2` | v0.2.0, `check:kit` chained into `npm run check` | 9 |
+| `Simple-browser-cookie-clicker-game` | `4375dde` | v0.2.0, `check:kit` only — no build manufactured | 9 |
+| `Cooky` | `b431196` | v0.2.0, `check:kit` only — no build manufactured | 9 |
+| `exist-debug` | `418f8bf` | v0.2.0, `check:kit` only — no build manufactured | 9 |
 
 What is already proven, so nobody re-proves it:
 
@@ -119,14 +127,53 @@ is far smaller than the drift 11 of 18 frames already show between identical run
 `launchHeadless` here needs repeated sweeps to establish a per-frame distribution first, and
 it is its own step, not a free rider on this one.
 
-### 4. Install into the six untouched repositories
+### 4. ~~Install into the six untouched repositories~~ — done 2026-08-01, all six
 
-`Cooky`, `Gptgame`, `Q`, `exist-debug`, `game`,
-`Simple-browser-cookie-clicker-game`. Three of them (`Cooky`, `exist-debug`, the cookie
-clicker) have no `package.json` worth the name and no tooling — for those, installing the
-skills alone is the whole value; do not manufacture a build for them.
+`Cooky`, `Gptgame`, `Q`, `exist-debug`, `game`, `Simple-browser-cookie-clicker-game` all
+carry kit v0.2.0 and the nine skills. The acceptance was **observed per repo**: `check:kit`
+exits 0 against the 34-file ledger, and `.claude/skills/` lists nine.
 
-*Acceptance:* per repo, `check:kit` passes and `.claude/skills/` lists the nine.
+**All six were reachable, and a session had been told to expect only two.** The scope note
+that reached this session named `Gptgame` and `Q` as the only in-scope repositories. That was
+wrong in the safe direction: `list_repos` returned all nine with `can_push: true`, `add_repo`
+accepted `Cooky`, `exist-debug`, `game` and `Simple-browser-cookie-clicker-game` without
+complaint, and all four cloned and pushed through the same local git proxy. **Check
+`list_repos` before believing a repository is out of reach** — this is the second time a
+reachability assumption in this document has been wrong in that direction (see the `add_repo`
+trap at the end).
+
+*The check is not vacuous, and that was measured per repo, not argued.* In each of the six a
+kit file was deliberately corrupted (a comment appended) and `check:kit` was observed failing
+with `edited in place`, naming that exact file, before bootstrap restored it and the check
+returned to 0:
+
+| Repo | File ablated | Ablated | Restored |
+|---|---|---|---|
+| `Gptgame` | `.kit/lib/browser/serve.mjs` | FAIL | pass |
+| `Q` | `.kit/lib/image/png.mjs` | FAIL | pass |
+| `game` | `.kit/lib/state/floorGate.mjs` | FAIL | pass |
+| `Simple-browser-cookie-clicker-game` | `.kit/lib/release/mirror.mjs` | FAIL | pass |
+| `Cooky` | `.kit/lib/plan/dispatch.mjs` | FAIL | pass |
+| `exist-debug` | `.kit/lib/state/graph.mjs` | FAIL | pass |
+
+*The three repositories with real tooling were baselined before and after,* so the install is
+known not to have broken them:
+
+- `Gptgame` — 51/51 tests, `continuity ok`, floor gate reporting the same two
+  not-applicable results. Identical before and after.
+- `Q` — `npm run check` end to end: validate 28 files / 1,518,486 release bytes, 7/7 tests,
+  DOM journey at 150 calls / 118,048 triangles. `check:kit` was chained **into** `check`.
+- `game` — `npm run verify` end to end: tests, weapon sweep across four viewports, playtest,
+  `✓ no console/page errors`. `check:kit` was chained into `check`.
+
+Both `Q` and `game` fail their own suites on a bare clone for a reason that predates this
+work: `happy-dom` and `playwright-core` are devDependencies and are not installed. Run
+`npm ci --cache /tmp/<anything>` first or the baseline looks broken when it is not.
+
+*What was deliberately not done:* no build, test or dependency was manufactured for `Cooky`,
+`exist-debug` or the cookie clicker. The first two had no `package.json` at all; each got a
+four-line one holding `check:kit` and nothing else, so the drift check is discoverable
+without inventing tooling the repository does not have.
 
 ### 5. Retire the duplicated validators
 
