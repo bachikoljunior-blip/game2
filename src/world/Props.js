@@ -1410,7 +1410,13 @@ export class PropFactory {
   get blossomMaterial() {
     if (this._blossom) return this._blossom;
     const m = new MeshStandardMaterial({
-      color: 0xf6e2e4,                 // Foliage's sakura tint: blush, not pink
+      // 0xf6e2e4 was authored as "blush", and it is not: at (246, 226, 228) its
+      // blue sits *above* its green, which is a faintly violet white. Under a
+      // (1, 0.412, 0.134) key that is the wrong way round for the one hue the
+      // review asks this material for — "B should sit below G by at least 8 code
+      // values ... so the mass reads rose rather than salmon", measured at -1.8.
+      // (246, 221, 214) is the same value with the lean reversed.
+      color: 0xf6ddd6,
       roughness: 0.86, metalness: 0,
       map: this.blossomFallbackTexture,
       alphaTest: 0.36,
@@ -1434,6 +1440,50 @@ export class PropFactory {
     const prevCompile = m.onBeforeCompile;
     m.onBeforeCompile = (shader, renderer) => {
       if (prevCompile) prevCompile.call(m, shader, renderer);
+      // Three string replacements follow, and a `String.replace` that matches
+      // nothing is silent. Say so instead: a canopy that quietly keeps three's
+      // face flip is the exact defect this block exists to remove.
+      for (const anchor of ['<normal_fragment_begin>', '<alphamap_fragment>', '<emissivemap_fragment>']) {
+        if (!shader.fragmentShader.includes(`#include ${anchor}`)) {
+          console.warn(`[props] blossom patch anchor missing: ${anchor}`);
+        }
+      }
+
+      // Keep the blob field on both faces. three's DOUBLE_SIDED path multiplies
+      // the interpolated normal by `faceDirection`, which is right for a surface
+      // whose two sides really do face opposite ways and wrong for a petal mass:
+      // the far side of a clump is not the outside of the clump turned inside
+      // out, it is still the far side, and it must stay shaded as such. Undoing
+      // the flip is what lets the crown keep a lit top and a shaded underside
+      // whichever of a card's faces the camera happens to be on — and it is what
+      // makes the blob normals authored in `_blossomCluster` survive to the eye.
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <normal_fragment_begin>', /* glsl */`
+#include <normal_fragment_begin>
+#ifdef DOUBLE_SIDED
+  normal = normalize( vNormal );
+#endif
+      `);
+
+      // Break the quad's own border. The card is alpha-tested against a texture
+      // this file does not own — 'bindFoliageTextures' swaps Foliage's card in at
+      // runtime — so the only place a soft silhouette can be guaranteed is here.
+      // The review's first target is that "no card edge longer than ~12 px should
+      // be straight"; a rounded-rect falloff in the card's own UV drives alpha to
+      // zero at the corners and along the border, so whatever the texture does,
+      // the cut boundary is a curve and never the quad. Clump size went 1.00-1.68
+      // to 1.10-1.82 to pay the coverage back.
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <alphamap_fragment>', /* glsl */`
+#include <alphamap_fragment>
+#ifdef USE_MAP
+{
+  vec2 kgQ = max(abs(vMapUv - 0.5) - 0.13, 0.0);
+  diffuseColor.a *= 1.0 - smoothstep(0.16, 0.35, length(kgQ));
+}
+#endif
+      `);
+
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <emissivemap_fragment>',
         `#include <emissivemap_fragment>
@@ -1465,17 +1515,27 @@ export class PropFactory {
   // than it did". Linear puts that back at the angles that were wrong — an edge-on card
   // goes 0.110 -> 0.151 luma, the sphere mean 0.123 -> 0.151, +22.3% — and leaves the
   // crown (0.233), the underside (0.068) and the 3.42:1 break they make byte-identical.
+  //
+  // The *hue* of both ends moved in round 16 and their levels did not. The
+  // underside floor was (0.052, 0.070, 0.100) — B/R 1.92 — and that, not the
+  // petal, is what made the shaded population read as the violet (127.0, 81.3,
+  // 98.3) the review measured 40 degrees of hue away from the lit side. A shaded
+  // petal is lit by the sky and is therefore *cooler* than the sunlit one; it is
+  // not a different material. B/R goes 1.92 -> 1.45, which keeps the shade cool
+  // against a key whose own B/R is 0.134 while letting the blossom stay blossom.
+  // Luma is held: underside 0.0683 -> 0.0697, crown 0.2331 -> 0.2358, and the
+  // 3.42:1 break they make becomes 3.38:1.
   vec3 kgUpN = normalize(normal * mat3(viewMatrix));
   float kgSkyView = 0.5 + 0.5 * kgUpN.y;
   totalEmissiveRadiance += diffuseColor.rgb *
-    (vec3(0.052, 0.070, 0.100) + vec3(0.150, 0.168, 0.176) * kgSkyView);`,
+    (vec3(0.062, 0.070, 0.090) + vec3(0.158, 0.168, 0.170) * kgSkyView);`,
       );
     };
     this._installWind(m);
     // `_installWind` stamps its own cache key, which other cloth materials share.
     // This one's shader differs, so it needs a key of its own or three can hand
     // it a program compiled for a material without the translucency patch.
-    m.customProgramCacheKey = () => 'kagBlossom3';
+    m.customProgramCacheKey = () => 'kagBlossom4';
     this.ctx?.sky?.applyFog?.(m);
     this._blossom = m;
     this.disposables.push(m);
@@ -4902,9 +4962,30 @@ export class PropFactory {
    *
    * Clump size is the cheap half of crown coverage: it buys silhouette without
    * buying instances, so it is pushed as far as it goes before adding mass.
+   *
+   * 法線 — **the normals are a blob field, not the facings of the quads.** This is
+   * the whole of round 16's canopy blocker, and it is worth being explicit about
+   * because the geometry looks blameless: three crossed quads, tumbled, alpha
+   * tested, one material. The defect was `computeVertexNormals()` on a *planar*
+   * quad, which gives all four of its vertices the same normal — so every card in
+   * the crown was a constant-shaded polygon. A constant-shaded polygon under a
+   * single hard key can only take one of two values: it faces the sun or it does
+   * not. That is exactly what the review measured — a mosaic of flat quads in two
+   * disjoint hue populations, salmon (174.5, 118.9, 117.1) against violet
+   * (127.0, 81.3, 98.3), "with nothing between them". There was nothing between
+   * them because nothing in the crown carried an intermediate normal.
+   *
+   * A petal mass is not a set of planes; it is an approximately convex volume of
+   * scattering material, and it shades like one. Each vertex therefore takes the
+   * direction from the clump's own centre, biased back toward its card's plane so
+   * the middle of a card still reads as that card and the sum at the centre can
+   * never cancel to zero (§5b: a zero-length normal normalizes to NaN). Corner
+   * normals then sit 45-60 degrees off the card, so one quad spans a range of
+   * shading rather than a value, adjacent quads in a clump overlap in normal
+   * space, and the lit-to-shaded transition becomes continuous.
    */
   _blossomCluster(out, cx, cy, cz, rnd) {
-    const s = 1.00 + rnd() * 0.68;
+    const s = 1.10 + rnd() * 0.72;
     const rot = new Matrix4()
       .makeRotationY(rnd() * Math.PI * 2)
       .multiply(new Matrix4().makeRotationX((rnd() - 0.5) * 1.25))
@@ -4926,15 +5007,32 @@ export class PropFactory {
       const g = new BufferGeometry();
       g.setAttribute('position', new BufferAttribute(vs, 3));
       g.setAttribute('uv', new BufferAttribute(new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]), 2));
+      // The blob field. `vs` is still clump-local here, so a vertex position *is*
+      // its offset from the clump centre; the bias is the card's own plane normal
+      // at 0.60 of the clump radius, which is what stops the four corner normals
+      // of a quad summing to zero at its middle.
+      const cn = q === 0 ? [0, 0, 1] : q === 1 ? [1, 0, 0] : [0, 1, 0];
+      const nrm = new Float32Array(12);
+      for (let v = 0; v < 4; v++) {
+        const nx = vs[v * 3] + cn[0] * 0.60 * s;
+        const ny = vs[v * 3 + 1] + cn[1] * 0.60 * s;
+        const nz = vs[v * 3 + 2] + cn[2] * 0.60 * s;
+        const l = Math.hypot(nx, ny, nz) || 1;
+        nrm[v * 3] = nx / l; nrm[v * 3 + 1] = ny / l; nrm[v * 3 + 2] = nz / l;
+      }
+      g.setAttribute('normal', new BufferAttribute(nrm, 3));
       const cc = new Float32Array(12);
       for (let v = 0; v < 4; v++) { cc[v * 3] = cr; cc[v * 3 + 1] = cg; cc[v * 3 + 2] = cb; }
       g.setAttribute('color', new BufferAttribute(cc, 3));
       // Blossom on a thin twig: whippy, and the whole clump moves as one.
       g.setAttribute('aFlutter', new BufferAttribute(new Float32Array([1, 1.3, 1, 1.3, 1, 1.3, 1, 1.3]), 2));
       g.setIndex([0, 1, 2, 0, 2, 3]);
+      // `applyMatrix4` carries the normal attribute through the normal matrix, so
+      // the blob field has to be authored before the tumble, not after — and
+      // `computeVertexNormals()` must not run again afterwards or it overwrites it
+      // with the flat plane normal this whole block exists to replace.
       g.applyMatrix4(rot);
       g.translate(cx, cy, cz);
-      g.computeVertexNormals();
       out.push(g);
     }
   }

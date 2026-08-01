@@ -423,3 +423,309 @@ population hue split — all properties of the cards and their placement — so 
 belongs where it was routed. If [foliage] finds the hue split comes from the
 blossom *tint* rather than from the cards, that half is mine and I did not touch it
 this round.
+
+---
+
+# Round 16 re-route — the sakura canopy blocker (`Props.sacredTree`)
+
+Re-routed from `Foliage.js` after [foliage] proved by projection, by exclusion
+(`_scatterTrees` rejects everything inside r < 95 m) and by ablation (whole
+`FoliageSystem` hidden: crown intact, violet mode 24.9 % → 25.5 %) that the crown
+in `hero` is `Props.sacredTree`. Round 15's `uWarmFill` fix was sized from this same
+measurement and applied to Foliage's leaf material, which cannot draw a pixel of it.
+
+## Apparatus and re-baseline
+
+`e503c95` [sky] and `2314ae8` [foliage] both landed after `6decc1c`, and my own
+commit put a transmission term on `__blossom` (it is in `CLOTH_MATERIALS`). So the
+r16 pixels are no longer the state of the tree. Detached worktree pinned at the
+branch tip `2314ae8`, node_modules symlinked, own `dist/`; the run builds and
+captures **twice inside one rig-mutex hold** — clean tip as `r17base`, then the same
+worktree with only my patch applied as `r17wld` — so the two differ by exactly this
+diff and no queueing happens between them.
+
+Harness `scratchpad/canopy.mjs` imports `stats()`/`region()`/`cut()` from
+`tools/probe.mjs`, and its first run reproduced the critic's three figures to the
+digit on `phone-hero-r16.png`: lit `[174.5, 118.9, 117.1]` sat 0.380, shaded
+`[127.0, 81.3, 98.3]` sat 0.359, frame p99.9 luma 236.2.
+
+Crown-wide population split on `r16`, over the critic's own bounding box
+UV (0.12, 0.10, 0.22, 0.25), counting only pixels carrying chroma (saturation
+≥ 0.10, so sky through the gaps is not counted as blossom):
+
+| band | share |
+|---|---|
+| violet (B − G ≥ +6) | **0.698** |
+| transition (−6 < B − G < +6) | **0.133** |
+| rose (B − G ≤ −6) | 0.169 |
+
+mean B − G +11.5, sd 13.9; low-chroma (sky) 3.2 % of the box; pixels below luma 30,
+0.2 %.
+
+## Mechanism — stated before the fix, and it is not the critic's hypothesis
+
+The critic guessed a front-face/back-face split with "an unlit or wrongly-tinted
+reverse", and asked for a constant-white-albedo render to test it. The source
+answers it without a render, and the answer is neither tint nor sidedness:
+
+`_blossomCluster` built three **planar** quads per clump and called
+`computeVertexNormals()` on each. A planar quad's four vertices all receive the same
+normal, so **every card in the crown was a constant-shaded polygon**. Under one hard
+key a constant-shaded polygon can take exactly one of two values — it faces the sun
+or it does not — and no card can carry an intermediate one. That is precisely the
+measured symptom: a mosaic of flat quads in two disjoint populations "with nothing
+between them". The tint is not the mechanism; a white albedo would have produced the
+same two-population split in greyscale.
+
+## Changes (all in `src/world/Props.js`)
+
+1. **Blob normals.** Each vertex takes the direction from its clump's own centre,
+   biased 0.60 of the clump radius toward its card's plane so a card's middle still
+   reads as that card and the four corner normals can never sum to zero (§5b: a
+   zero-length normal normalizes to NaN). Corners end 45–60° off the card, so one
+   quad spans a *range* of shading and adjacent quads overlap in normal space.
+   Authored before `applyMatrix4`, which carries normals through the normal matrix;
+   `computeVertexNormals()` removed so it cannot overwrite them.
+2. **The DOUBLE_SIDED flip undone** in `blossomMaterial`. three multiplies the
+   interpolated normal by `faceDirection`, which is right for a two-sided surface
+   and wrong for a petal mass — the far side of a clump is still the far side. This
+   is what lets the blob field survive to the eye.
+3. **Rounded-rect alpha falloff** in the card's own UV, so the alpha-test boundary
+   is a curve and never the quad. The map itself is Foliage's (`bindFoliageTextures`
+   swaps it in at runtime), so the shader is the only place a soft silhouette can be
+   guaranteed. Clump size 1.00–1.68 → 1.10–1.82 to pay the coverage back.
+4. **Albedo lean reversed**, `0xf6e2e4` → `0xf6ddd6`. The old value has B *above* G:
+   a faintly violet white, which is the wrong way round for the one hue this
+   material is asked for.
+5. **Sky-floor hue**, underside B/R 1.92 → 1.45 at held luma (0.0683 → 0.0697 under,
+   0.2331 → 0.2358 crown; the 3.42:1 break becomes 3.38:1). The violet population
+   was the floor's own colour, not the petal's.
+
+Plus a warn-once guard on all three shader anchors, because a `String.replace` that
+matches nothing is silent and a canopy that quietly keeps the face flip is the exact
+defect being removed.
+
+## Predictions, stated before the capture
+
+Judged `r17base` → `r17wld`, same boxes:
+
+1. crown transition band 0.133 (at r16) → **≥ 0.30**, violet band → **≤ 0.45**;
+2. lit box (0.28, 0.13, 0.04, 0.05): G − B from +1.8 → **≥ +8**;
+3. shaded box (0.17, 0.20, 0.04, 0.05): B − G from +17 → **≤ +8**, with its
+   saturation within 0.05 of the lit box's;
+4. crown-box `detail` rises from 8.19 — flat quads are gone;
+5. fraction of crown pixels below luma 30 does not rise;
+6. white gate holds: `hero` frame p99.9 ≤ 240 (236.2 at r16), `torii` ≤ 255;
+7. budget unchanged — the change adds no primitives, only normals, size and hue.
+
+## The mechanism, measured offline before any capture
+
+`_blossomCluster` needs no GPU to interrogate: it is a pure geometry method.
+Instantiating `PropFactory.prototype` bare and generating 40 clumps (120 quads) from
+the tree's own seed, then taking the maximum angle between any two vertex normals
+*inside* one quad:
+
+| | median | max | non-finite |
+|---|---|---|---|
+| `HEAD` (`2314ae8`) | **0.000°** | 0.000° | 0 |
+| patched | **129.6°** (p5 122.9, p95 130.2) | — | 0 |
+
+Zero to a third of a turn. That is the defect and the fix in one number: every card
+in the crown carried exactly one normal, so it could only ever take one of two
+values under a single key, and the review's "two disjoint hue populations with
+nothing between them" follows from the geometry alone. All 120 quads' normals are
+unit length and finite (§5b).
+
+## A forward shading model, calibrated against the r16 frame
+
+Because the rig was contended for the whole round, the mechanism was also carried
+through to *pixels* offline. `scratchpad/shade.mjs` runs the real geometry — 200
+clumps, 2,400 vertices, from the tree's own seed — through the actual lighting:
+sun direction (0.86, 0.225, 0.457) and colour (1, 0.412, 0.134) at intensity 3.41
+from `shots/report-r16.json`, the material's own albedo and sky floor, then three's
+own ACES filmic tonemap and sRGB encode at the adaptation multiplier the rig
+reports (1.5). Same B − G banding as the frame measurement.
+
+| | violet (B−G ≥ +6) | transition | rose (B−G ≤ −6) | mean B−G |
+|---|---|---|---|---|
+| model, `HEAD` | 0.798 | **0.053** | 0.148 | +8.6 |
+| **measured, `r16` frame** | **0.698** | **0.133** | 0.169 | +11.5 |
+| model, patched | 0.078 | **0.444** | 0.477 | −11.1 |
+
+The model reproduces the measured baseline to within about ten points on every band
+without being fitted to it, which is the check that makes its prediction worth
+anything: **the transition band goes 0.053 → 0.444 and the violet population
+collapses 0.798 → 0.078.** That is the "nothing between them" complaint answered at
+its source — and note the model's violet share is driven by the *flat* normals, not
+by the tint, since both runs use the same geometry seed and differ in normals,
+albedo lean and floor hue together.
+
+## Re-baseline: the r16 crown numbers are stale, and by a lot
+
+`2314ae8` [foliage] and `e503c95` [sky] both landed after the r16 capture, and the
+crown moved under them. The patched capture must therefore be judged against
+`r17base` — the same worktree, same pin, no patch — and **not** against `r16`.
+`Props.js` is byte-identical between `2314ae8` (the worktree's pin) and `c6d0eb5`
+(branch tip), so `r17base` is a valid base for exactly this patch and nothing else
+in it moves the crown.
+
+Crown box UV (0.12, 0.10, 0.22, 0.25), chroma-carrying pixels only (sat ≥ 0.10):
+
+| band | `r16` | **`r17base`** |
+|---|---|---|
+| violet (B − G ≥ +6) | 0.698 | **0.552** |
+| transition | 0.133 | **0.203** |
+| rose (B − G ≤ −6) | 0.169 | **0.244** |
+| mean B − G | +11.5 | **+5.7** |
+| crown `detail` | — | **7.67** |
+| crown chroma coverage | — | **0.998** |
+
+So roughly a third of the gap the round opened against had already closed before this
+patch existed. Judging the patch against `r16` would have credited it with [foliage]'s
+and [sky]'s work.
+
+**On the coordinator's "[foliage]'s violet mode at ~25% of crown pixels":** that is a
+different statistic, not a different reading of this one. [foliage] took the *mode* of a
+hue histogram over *all* crown pixels; the table above is the *share* of pixels whose
+B − G clears +6, over pixels carrying chroma at all. They are not comparable and
+neither is wrong. The before-number this patch is judged on is **0.552**, measured on
+`r17base` with the harness below.
+
+## Apparatus validation
+
+`scratchpad/compare-canopy.mjs` imports `region()`/`cut()`/`stats()` from
+`tools/probe.mjs` and reproduces it to the digit on the crown box of `r17base` —
+`node tools/probe.mjs stats … 0.12,0.10,0.22,0.25` gives meanRGB [156.3, 99.6, 105.4],
+saturation 0.395, lumaSpread 129.5, detail 7.67, and so does the harness. The gate
+figure is taken from the rig's **own** `measureLuma()` rather than a private float
+sort, so it lands in the same integer bucket the capture gate asserts.
+
+## Correction: prediction 6 was stated against the wrong sense of the white gate
+
+`tools/capture.mjs:645` reads
+
+```js
+h.whiteOk = !HIGHLIGHT_SHOTS.has(sname) || h.p999 > 235;   // HIGHLIGHT_SHOTS = hero, torii, combat, closeup
+```
+
+The highlight gate is a **floor, not a ceiling**: a highlight shot must *keep* a true
+white. Prediction 6 above ("`hero` frame p99.9 ≤ 240") was written as a ceiling and is
+therefore the wrong test — it would have passed a frame that failed the build.
+
+Measured with `measureLuma()`: **`hero` p99.9 = 236, `torii` = 251.** `hero` clears the
+floor by **one code value on an integer bucket.** That is the real risk this patch
+carries and it points the opposite way from the prediction: the rounded-rect alpha
+falloff removes card corners and the crown is a large bright population in `hero`, so
+the failure mode to watch is p99.9 falling to 235 and taking the *build* gate down,
+not a highlight blowing out. Restated:
+
+> **6′. `hero` p99.9 must stay > 235 (from 236), and `torii` > 235 (from 251).**
+
+
+## Measured: `r17base` → `r17wld`, one rig-mutex hold, same worktree
+
+Captured 22:03–22:08 in the detached worktree pinned at `2314ae8`, patch applied
+between the two builds, `--profile=phone --shots=hero,torii`. The two frames differ by
+exactly `scratchpad/blossom-now.patch` and nothing else — `Props.js` is byte-identical
+between `2314ae8` and the branch tip, so no other owner's landed work sits between them.
+
+Crown box UV (0.12, 0.10, 0.22, 0.25), `hero`:
+
+| metric | `r17base` | `r17wld` | prediction | verdict |
+|---|---|---|---|---|
+| violet band (B−G ≥ +6) | 0.552 | **0.328** | ≤ 0.45 | **met** |
+| transition band | 0.203 | **0.234** | ≥ 0.30 | **not met** |
+| rose band (B−G ≤ −6) | 0.244 | **0.438** | — | — |
+| mean B − G | +5.7 | **−2.8** | — | crosses zero |
+| lit box G − B | +7.4 | **+8.8** | ≥ +8 | **met** |
+| shade box B − G | +11.0 | **−0.6** | ≤ +8 | **met** |
+| shade sat − lit sat | 0.017 | **0.113** | ≤ 0.05 | **not met, regressed** |
+| crown `detail` | 7.67 | **7.05** | rises | **not met, fell** |
+| crown chroma coverage | 0.9983 | **0.9980** | — | alpha trim fully repaid |
+| crown pixels below luma 30 | 0.002 | **0.001** | does not rise | **met** |
+| `hero` p99.9 (gate floor 235) | 236 | **236** | > 235 | **met, unchanged** |
+| `torii` p99.9 | 251 | **251** | > 235 | **met, unchanged** |
+
+**The blocker moved and it moved by the predicted mechanism.** The violet population
+lost 40 % of its share, the crown's mean hue crossed from a blue lean to a red one, and
+the shaded sample — the population the critic measured 40° of hue away from the lit one
+— went from +11.0 to −0.6 B − G, i.e. it now sits essentially on the neutral line
+instead of in the violet. Lit and shaded are no longer two hues; they are one hue at two
+levels.
+
+### Three predictions failed, and two of them were the wrong test
+
+- **Transition band 0.203 → 0.234 against a ≥ 0.30 target.** The band is a fixed ±6
+  window, so it only fills if the distribution is *unimodal across it*. A normal fitted
+  to the patched mean and spread (−2.8, sd ≈ 14) would put 0.326 inside ±6; the measured
+  0.234 is below that, so some bimodality remains. Honest reading: the mass moved
+  violet → rose rather than violet → continuum. Better than a 0.552 violet mode, not the
+  smooth gradient the target described.
+- **Crown `detail` fell 7.67 → 7.05, predicted to rise.** The prediction was wrong-signed
+  on reflection: `detail` is a Laplacian, and flat constant-shaded quads are a
+  *maximiser* of it — every card boundary is a step. Replacing steps with gradients and
+  softening the card edge must lower it. The fall is therefore consistent with the
+  mechanism working, but the prediction as written failed and is recorded as a miss, not
+  reinterpreted into a pass.
+- **Shade saturation rose 0.43 → 0.505 while lit fell 0.413 → 0.392**, so the two ends
+  are further apart in saturation (0.017 → 0.113) rather than closer. This is a direct
+  algebraic consequence of the floor change and should have been predicted: sat here is
+  (R − B)/R, so removing the blue floor from the shaded population *raises* its
+  saturation. The shaded petals are now more chromatic than the lit ones, which is
+  defensible (lit surfaces desaturate toward the highlight) but is not what was
+  predicted and is left as an open item.
+
+### Silhouette: not improved
+
+Column-wise topmost blossom edge over x ∈ [0.13, 0.33] of `hero`, discriminator
+R − B ≥ 12 and sat ≥ 0.30 with a 3-pixel run required (the sky carries chroma ≈ 0.23
+after `e503c95`, so saturation alone cannot separate crown from sky; the threshold is
+fixed and identical on both frames, so the delta is valid even where the absolute
+boundary is fuzzy):
+
+| | `r17base` | `r17wld` |
+|---|---|---|
+| longest straight run | 23 px | **27 px** |
+| 2nd-difference RMS | 4.71 | **5.09** |
+| mean edge y | 129.1 | 123.8 |
+
+Against the critic's "no card edge longer than ~12 px straight" the run got *worse*,
+not better. The rounded-rect falloff curves each card's own cut boundary, but the crown
+*outline* is set by which clumps happen to be outermost, and the clump-size bump
+(1.00–1.68 → 1.10–1.82) enlarged them, which lengthens the outer arcs. The edge also
+rose 5 px, consistent with the larger clumps. **The alpha falloff did not buy the
+silhouette target and the size bump partly worked against it.**
+
+Note the crown box itself cannot measure silhouette — its chroma coverage is 0.998, so
+it is entirely interior. That is why this separate edge metric exists.
+
+### Budget
+
+`[phone] budget drawCalls ok — worst 120 against 140`; `budget triangles ok — worst
+756,802 at "hero" against 900,000`. The patch is **primitive-neutral by construction**,
+verified by running the generator's accounting on both revisions: 3 quads per clump,
+4 vertices and 6 triangles per clump, identical at `2314ae8` and patched. Only normal
+*values*, the size scalar and material uniforms changed, so the canopy submits exactly
+the primitives it did before. No draw call was added.
+
+### Apparatus notes
+
+- Both frames come from one lock hold with one build each; the r17base report JSON was
+  lost when the earlier interrupted run was killed mid-Phase-1, so the budget figures
+  above are the patched run's own and the neutrality claim rests on the geometry
+  accounting rather than on a frame-to-frame triangle diff.
+- Boot 34.8 s, `booted=true`, 119 programs, no dead shader program reported — so the
+  three `String.replace` anchors matched and the warn guard stayed silent.
+
+## Open items carried out of round 16 (`world`)
+
+1. **Plaza accumulation weight is shipped but never frame-measured.** `kagBias =
+   0.45 + 0.55 * kagJoint` (`Props.js:1783`) landed in `6decc1c`. It is reasoned — the
+   joint mask measured ≈ 0, so the term was contributing nothing and this lifts it to
+   ≈ 0.45 of its authored weight, a 7–10 % albedo modulation at 1.6 m — but the two-shot
+   `torii` check that would confirm it never ran, because the rig was contended for the
+   whole round. **Treat it as an unverified line, not a claim.**
+2. **Crown silhouette still fails the ~12 px straight-run target** (27 px, up from 23).
+   The size bump works against it; the card-level falloff cannot reach the crown outline.
+3. **Shaded petals are now more saturated than lit ones** (0.505 vs 0.392).
+4. **Transition band 0.234 against a 0.30 target** — residual bimodality.
