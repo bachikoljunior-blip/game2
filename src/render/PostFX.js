@@ -552,10 +552,9 @@ ${GLSL_COMMON}
 ${GLSL_DEPTH}
 uniform sampler2D tDepth;
 uniform sampler2D tScene;
-uniform vec2 uSunUv;
-uniform float uSunRadius;
-uniform float uAspect;
 uniform float uEmitClamp;
+uniform float uAirScale;
+uniform float uAirFloor;
 varying vec2 vUv;
 void main() {
   float d = texture2D(tDepth, vUv).x;
@@ -574,16 +573,19 @@ void main() {
   // reason from "the dome sits at 800 m": if the dome ever started writing depth,
   // 800/6200 = 0.13 would zero the entire emitter. Read back _far before trusting any
   // arithmetic here.
-  float lz = viewZ(min(d, 0.9999999)) / uFar;
+  float z = viewZ(min(d, 0.9999999));
+  float lz = z / uFar;
   float sky = smoothstep(0.70, 0.92, lz);
 
-  vec2 dv = (vUv - uSunUv) * vec2(uAspect, 1.0);
-  float r = length(dv);
-  // Bias toward the solar direction so the march builds shafts rather than a uniform
-  // sky bloom. This is a *weight on real radiance* and nothing else: at 0.26 it spanned
-  // a quarter of the frame, which is wide enough that every march integrates from every
-  // direction and the result is a radially symmetric veil with no legible structure.
-  float prox = exp(-r * r / max(uSunRadius * uSunRadius, 1e-4));
+  // The solar-proximity envelope used to be multiplied in here, and that is what made
+  // this buffer a 10%-coverage emitter (measured, round 15) which the march then had to
+  // smear across 99.9% of the frame to find anything. It is a *sampling weight on the
+  // march*, not a property of the emitting sky, so it now lives in FRAG_GOD_BLUR where
+  // it is divided back out. Two consequences worth knowing before re-measuring this
+  // target: rtGodA's non-zero coverage is now the sky fraction (~40% on the sun shot),
+  // not the 10.2-11.0% round 15 recorded, and its values are well-conditioned radiance
+  // instead of radiance x exp(-r^2/0.0324), which underflowed half-float in the far
+  // field.
 
   // Scatter only light that is actually in the buffer.
   //
@@ -613,35 +615,94 @@ void main() {
   //     has the resolution for it; this pass owns the shafts.
   vec3 src = texture2D(tScene, vUv).rgb;
   float peak = max(max(src.r, src.g), max(src.b, 1e-5));
-  vec3 emit = src * min(1.0, uEmitClamp / peak) * (sky * prox);
-  gl_FragColor = vec4(emit, 1.0);
+  vec3 emit = src * min(1.0, uEmitClamp / peak) * sky;
+
+  // Alpha carries the *receiver's* airlight, and it is the half of this pass that was
+  // missing entirely. The composite added tGod to every pixel with no depth term, so a
+  // stone lantern 30 m away received exactly the same in-scattered column as the sky
+  // 6 km behind it — which is why the mid-field within ~15 deg of the sun measured as a
+  // flat cream card (p50 226.1, detail 0.60, lumaSpread 26.7) with its silhouette gone.
+  // In-scatter integrates along the view ray, so it has to grow with distance:
+  // 1 - exp(-z/uAirScale), lifted off zero by uAirFloor because a real lens still has a
+  // wide-angle Mie halo on a near object. At uAirScale = 300 m and a 0.15 floor, a
+  // foreground upright at 6 m reads 0.17, a prop at 30 m reads 0.23, the far side of
+  // the 220 m playable region reads 0.59, and sky and far heightfield read 1.00 — the
+  // "near objects silhouette, distance fills with light" behaviour the reference has.
+  float air = mix(uAirFloor, 1.0, 1.0 - exp(-z / max(uAirScale, 1.0)));
+  gl_FragColor = vec4(emit, air);
 }
 `;
 
+/**
+ * The march. Two structural changes against the textbook Mitchell radial blur, both
+ * forced by measurement rather than taste — see _passGodRays for the numbers.
+ *
+ * 1. It is a *ratio*, not a sum. `acc/den` divides the accumulated radiance by the same
+ *    weights that were used to gather it, so the result is the mean radiance visible
+ *    along the ray — a visibility in emitter units, between 0 (fully blocked) and
+ *    uEmitClamp — and the pass's radial footprint is then authored explicitly as
+ *    `env`, instead of falling out of the emitter's own Gaussian. A sum cannot do this:
+ *    its magnitude is set by how much emitter happened to be near the ray, so a pixel
+ *    near the sun collects several times what a pixel further out does no matter what
+ *    occludes either, which is a radial ramp with a weak modulation riding on it.
+ *
+ * 2. The march no longer terminates at the sun. `delta = (vUv - uSunUv)/N` makes every
+ *    ray in the frame finish at the sun's UV, so every pixel's last taps sample the
+ *    same unoccludable near-sun core; at the arc radius the critic measures, taps
+ *    inside r = 0.12 carry 41% of the decay-weighted integral and no occluder in that
+ *    sector reaches them. That is the common mode, and it is why a blocked direction
+ *    still retained 67% of an open one. Bounding the march to uMaxMarch takes it to
+ *    17%. The bound is a soft-min, `M*(1 - exp(-d/M))`, because a hard min() puts a
+ *    slope discontinuity in the sampling extent and rings.
+ *
+ * `r` is tracked as a scalar because the march is exactly radial, so the per-tap
+ * envelope costs one exp() and no length().
+ */
 const FRAG_GOD_BLUR = /* glsl */`
 ${GLSL_COMMON}
 uniform sampler2D tSrc;
 uniform vec2 uSunUv;
+uniform float uAspect;
 uniform float uDensity;
+uniform float uMaxMarch;
+uniform float uSunRadius;
+uniform float uGlowRadius;
 uniform float uDecay;
 uniform float uWeight;
 uniform float uNoise;
 varying vec2 vUv;
 void main() {
-  vec2 delta = (vUv - uSunUv) * (uDensity / float(GOD_SAMPLES));
-  vec2 uv = vUv;
-  float illum = 1.0;
-  vec3 acc = vec3(0.0);
+  vec2 toSun = uSunUv - vUv;
+  // Aspect-corrected so a radius is the same physical distance in x and y. In this
+  // metric r is simply (pixels from the sun) / (frame height).
+  float dist = length(toSun * vec2(uAspect, 1.0));
+  float len = uMaxMarch * (1.0 - exp(-(dist * uDensity) / max(uMaxMarch, 1e-4)));
+  float stepR = len / float(GOD_SAMPLES);
+  vec2 stepUv = toSun * (stepR / max(dist, 1e-5));
   // Jitter the march start per pixel: a fixed step count on a low-res buffer bands
   // badly on gradients, and one dither texel of noise costs nothing.
   float j = hash12(vUv * 1024.0 + uNoise);
-  uv -= delta * j;
+  vec2 uv = vUv - stepUv * j;
+  float r = dist + stepR * j;
+  float ks = 1.0 / max(uSunRadius * uSunRadius, 1e-4);
+  float illum = 1.0;
+  vec3 acc = vec3(0.0);
+  float den = 0.0;
   for (int i = 0; i < GOD_SAMPLES; i++) {
-    uv -= delta;
-    acc += texture2D(tSrc, uv).rgb * illum;
+    uv += stepUv;
+    r -= stepR;
+    float w = illum * exp(-r * r * ks);
+    acc += texture2D(tSrc, uv).rgb * w;
+    den += w;
     illum *= uDecay;
   }
-  gl_FragColor = vec4(acc * (uWeight / float(GOD_SAMPLES)), 1.0);
+  // The receiver's own airlight (written to alpha by FRAG_GOD_OCCLUSION) and the
+  // authored radial envelope. den is floored rather than branched on: it is a sum of
+  // non-negative weights, so the floor only binds where every tap underflowed, and
+  // there acc is 0 too — the quotient is finite for every input (ARCHITECTURE 5b).
+  float recv = texture2D(tSrc, vUv).a;
+  float env = exp(-dist * dist / max(uGlowRadius * uGlowRadius, 1e-4));
+  gl_FragColor = vec4(acc * (uWeight * env * recv / max(den, 1e-8)), 1.0);
 }
 `;
 
@@ -1311,22 +1372,16 @@ void main() {
   }
 #endif
 
-#ifdef USE_GODRAYS
-  {
-    // The radial pass necessarily adds a common sky term as well as occlusion
-    // contrast: at MEDIUM its 24-tap kernel reinjects a constant emitter 1.61x before
-    // gain. Contain only the resulting display-referred aureole. The true disc and its
-    // bloom remain untouched inside 26 px at the review resolution, and every framing
-    // with the sun off-screen is an exact identity through uSunGlare = 0.
-    vec2 sd = (vUv - uSunUv) * vec2(uAspect, 1.0);
-    float sr = length(sd);
-    float aureole = smoothstep(0.022, 0.038, sr) * (1.0 - smoothstep(0.28, 0.38, sr));
-    float y = luma(color);
-    float contain = 0.23 * uSunGlare * aureole * smoothstep(0.70, 0.90, y);
-    float glareScale = 1.0 - contain * max(y - 0.68, 0.0) / max(y, 1e-4);
-    color *= glareScale;
-  }
-#endif
+  // A display-space "aureole containment" term used to sit here: inside
+  // 0.022 < r < 0.38 of the sun it scaled bright pixels down by up to 13%, weighted by
+  // smoothstep(0.70, 0.90, luma). Its own comment states its premise — "the radial pass
+  // necessarily adds a common sky term ... reinjects a constant emitter 1.61x before
+  // gain" — and that premise is what this round removed at source, so the compensation
+  // is no longer owed. It also had to go on its own merits: it is a highlight
+  // compressor that pulls the brightest pixels down hardest over exactly the region the
+  // round-16 critic measured as "erased to a flat cream card" at lumaSpread 26.7, so it
+  // was suppressing the very contrast the finding asks for. uSunGlare stays plumbed —
+  // it is the sun's on-screen strength, and a later term may still want it.
 
   color = mix(color, uFlash.rgb, sat(uFlash.a));
 
@@ -2069,15 +2124,18 @@ export class PostFX {
       tScene: { value: black },
       uProjInv: { value: new Matrix4() },
       uNear: { value: 0.1 }, uFar: { value: 900 },
-      uSunUv: { value: new Vector2(0.5, 0.5) },
-      uSunRadius: { value: 0.11 },
-      uAspect: { value: 1.78 },
       uEmitClamp: { value: 120.0 },
+      uAirScale: { value: 300 },
+      uAirFloor: { value: 0.15 },
     });
     this.mGodBlur = this._mat(FRAG_GOD_BLUR, {
       tSrc: { value: black },
       uSunUv: { value: new Vector2(0.5, 0.5) },
+      uAspect: { value: 1.78 },
       uDensity: { value: 0.55 },
+      uMaxMarch: { value: 0.16 },
+      uSunRadius: { value: 0.18 },
+      uGlowRadius: { value: 0.30 },
       uDecay: { value: 0.962 },
       uWeight: { value: 3.0 },
       uNoise: { value: 0 },
@@ -3118,17 +3176,13 @@ export class PostFX {
     ou.tScene.value = colorTex;
     ou.uNear.value = this._near;
     ou.uFar.value = this._far;
-    ou.uSunUv.value.copy(this._sunUv);
-    ou.uAspect.value = this._w / Math.max(1, this._h);
-    // Sized so the emitter actually reaches the things that are supposed to cut it.
-    // A shaft is not a glow: it is the *shadow* an occluder casts inside the emission
-    // field, so an occluder outside that field cannot produce one. On the valley beat
-    // the susuki ridge sits 0.204 UV below the sun; at 0.11 it receives prox = 0.03 and
-    // cuts nothing, which is why that render came back as a clean but featureless
-    // halo. At 0.18 it receives 0.28 and the fan gets its wedges back. This is only
-    // safe now that the emission is real radiance — with the old constant floor, widening
-    // this was what smeared an untextured veil across the quadrant.
-    ou.uSunRadius.value = 0.18;
+    // Airlight scale for the receiver term in alpha. 300 m is authored against WORLD:
+    // the playable region is 220 m across, so a prop on its far side receives 0.59 and
+    // a foreground upright at 6 m receives 0.17, while sky and far heightfield sit at
+    // 1.00. This is the term that decides whether an object near the sun silhouettes or
+    // dissolves, and it did not exist before this round.
+    ou.uAirScale.value = 300;
+    ou.uAirFloor.value = 0.15;
     // A ceiling near the sky, not near the disc — see FRAG_GOD_OCCLUSION. The LDR
     // fallback keeps 1.0 because the scene render already clipped there, so nothing can
     // exceed it and the ceiling never binds.
@@ -3138,15 +3192,34 @@ export class PostFX {
     const bu = this.mGodBlur.uniforms;
     bu.tSrc.value = this.rtGodA.texture;
     bu.uSunUv.value.copy(this._sunUv);
-    // Density and decay are the distance falloff, and marching all the way at 0.970 put
-    // it in the wrong place. Every ray ends at the sun, so with density 1.0 a pixel in
-    // the far corner still collects the bright near-sun emission — at the gain the
-    // shafts need, that is a frame-wide veil, and it is what lifted the `sun` frame's
-    // darkest 0.1% off zero. Stopping 15% short costs nothing near the sun (a ray from
-    // 0.5 UV out still ends at 0.075, well inside the 0.18 envelope) and starves the
-    // far field, and the shorter decay tail does the same. Simulated on the
-    // reconstructed `sun` buffer, the two together hold the frame's p0.1 at the value
-    // it has with the pass switched off entirely, while the near-sun fan is untouched.
+    bu.uAspect.value = this._w / Math.max(1, this._h);
+    // uDensity now only shapes the short-range case; uMaxMarch is what bounds the long
+    // one. The old note here claimed density 0.85 "starves the far field" because a ray
+    // from 0.5 UV out ends at 0.075 — but 0.075 is *inside* the 0.18 envelope at
+    // prox = 0.83, so the far field was not starved at all, it was being handed the
+    // near-sun core at 83% strength. Simulated on the traced `sun` occluder set: with
+    // the old geometry a fully blocked direction on the critic's r = 330 px arc still
+    // returned 67% of an open one (0.395 vs 0.587); bounding the march at 0.16 takes
+    // that to 17% (0.092 vs 0.552), and the arc's relative peak-to-trough goes
+    // 42% -> 188% from the march geometry alone.
+    //
+    // 0.16 is sized on where the occluders are, not on taste: the shide, the shimenawa
+    // and the hanging lantern in `sun` sit between r = 0.17 and r = 0.41, so an arc
+    // pixel at r = 0.282 must reach ~0.12 to cross them and must not reach the 0-0.12
+    // core, which nothing in that sector occludes. 0.16 lands it at 0.122.
+    bu.uMaxMarch.value = 0.16;
+    // The march's per-tap sampling weight. Same 0.18 the emitter used to be multiplied
+    // by, same reason (the susuki ridge on the valley beat sits 0.204 below the sun and
+    // has to be inside the envelope to cut anything) — but it is now divided back out,
+    // so it biases *which* taps decide the visibility instead of setting how bright the
+    // result is.
+    bu.uSunRadius.value = 0.18;
+    // The pass's radial footprint, now authored here rather than inherited from the
+    // emitter. This is the "less spread" knob. At 0.30 the far corner and the
+    // anti-solar sky receive exp(-22) and exp(-16), i.e. exactly zero rather than the
+    // 0.009 and 0.003 they were getting, and the traced-mask coverage above 3% of the
+    // current arc-mean deposit falls 84.2% -> 29.9% of frame area.
+    bu.uGlowRadius.value = 0.30;
     bu.uDensity.value = 0.85;
     // uDecay is a falloff *per march step*, and a step is `uDensity / GOD_SAMPLES` of the
     // way to the sun — so a fixed 0.94 is only a fixed physical falloff at a fixed tap
@@ -3161,8 +3234,19 @@ export class PostFX {
     // 1.5% is the geometric series against its integral, and is below the noise floor
     // of any measurement this pass has ever been judged by. At 24 taps this evaluates
     // to exactly 0.94, so the MEDIUM review set is unchanged by this line alone.
+    //
+    // Still true, and now free: the march divides by its own weight sum, so the tier's
+    // tap count cannot change the output magnitude at all — only how finely the
+    // visibility is sampled. Anchoring the decay keeps the *shape* of that weighting
+    // tier-independent, which is the part normalisation does not do for us.
     bu.uDecay.value = Math.pow(0.94, 24 / this._godSamples);
-    bu.uWeight.value = 3.0;
+    // Sized to hold the open-sky response, NOT to hold the mean — this is deliberately
+    // not the round-7 move. With the sum replaced by a ratio, an unoccluded arc pixel
+    // deposits `1.0 (sky radiance) * env(0.282) = 0.414` per unit of gain against the
+    // old sum's 0.184 per unit, so 3.0 -> 1.34 leaves an open direction on the arc
+    // depositing what it does today and lets every blocked direction fall. Raw gain is
+    // down 55%; what goes up is contrast, which is the whole point.
+    bu.uWeight.value = 1.34;
     bu.uNoise.value = (this._frame & 31) * 0.137;
     this._draw(this.mGodBlur, this.rtGodB);
   }

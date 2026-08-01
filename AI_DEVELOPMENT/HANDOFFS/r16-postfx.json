@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "taskId": "R16-POSTFX",
+  "producer": "postfx-specialist",
+  "consumer": "project-director",
+  "branch": "claude/1-round-execution-kgtb9r",
+  "baseSha": "1a805c9",
+  "objective": "Round 16 blocker 'no volumetric god-ray shafts anywhere; the pass substitutes a common-mode wash that flattens the mid-field to a near-uniform card' (shots/review-r16.json, owner src/render/PostFX.js). Act on the round-15 result that the god-ray finding and the mid-field-wash finding are ONE defect and that the correct direction is LESS SPREAD, NOT MORE GAIN.",
+  "allowedScope": [
+    "src/render/PostFX.js",
+    "AI_DEVELOPMENT/HANDOFFS/r16-postfx.json"
+  ],
+  "prohibitedChanges": [
+    "Do not raise the god-ray gain to force shafts (round-7 regression).",
+    "Do not spend fill rate on GOD_SAMPLES (round 15 measured the march converged by N=48).",
+    "Do not route anything to Cinematic.js (round 15 closed the sun-pose item)."
+  ],
+  "apparatus": {
+    "resolution": "native 2532x1170, shots/phone-*-r16.png, phone profile (844x390 @ dsf 3), TIER.MEDIUM",
+    "arcProfiler": "Scratch, NOT committed (rebuild in 20 lines): import { stats } from tools/probe.mjs and call it on explicit 16x16 pixel rects centred at (1528 + R*cos a, 538 - R*sin a) for a = 55..115 step 5, R = 330 — note y is UP about the disc. Using probe.mjs's own stats() means agreement with 'probe stats' is by construction, not by comparison; it reproduced the critic's 6-point arc 211.8/216.5/231.8/230.8/220.0/190.2 to the digit on the first run, which is what fixed the angle convention.",
+    "simulator": "Scratch, NOT committed. Evaluates the OLD and the NEW march analytically on one identical emitter: a hand-traced occluder set for the sun shot (two torii uprights at native x 1163-1248 and 1688-2070, kasagi 1133-1333 x 0-60, shimenawa rope (1213,30)-(1483,300) half-width 30, four shide strips at x 1303-1323 / 1358-1378 / 1403-1428 / 1468-1503, hanging lanterns 1478-1613 x 55-330 and 1243-1323 x 350-540, far post 1013-1113 x 470-1170) read off 'node tools/probe.mjs crop shots/phone-sun-r16.png 0.40,0.0,0.35,0.60', with the sky at clamped radiance 1.0 and the disc at uEmitClamp 2.0, 8 jitter phases, N=24. Only RATIOS between the two marches are claimed from it; its absolute scale is not calibrated to the frame.",
+    "notRun": "No capture and no browser were launched. Every frame number below is r16 BEFORE; every after-number is a prediction for the coordinator's verification capture."
+  },
+  "measuredBefore": {
+    "arc_r330_55to115_step5_16x16_p50": [
+      173.9,
+      211.8,
+      213.6,
+      216.5,
+      228.5,
+      231.8,
+      233.8,
+      230.8,
+      229.2,
+      220,
+      200,
+      190.2,
+      180.7
+    ],
+    "arc_mean_p50": 212.4,
+    "arc_localMaxima": 1,
+    "arc_localMinima": 0,
+    "midfield_0.55,0.55,0.06,0.04": {
+      "p50": 226.1,
+      "lumaSpread": 26.7,
+      "detail": 0.6,
+      "saturation": 0.191
+    },
+    "cleanSkyControl_0.05,0.03,0.06,0.04": {
+      "p50": 170.1,
+      "lumaSpread": 10.1,
+      "detail": 0.49
+    },
+    "wholeFrame_sun": {
+      "p50": 163.3,
+      "p1": 12.1,
+      "detail": 3.11,
+      "saturation": 0.302
+    }
+  },
+  "diagnosis": [
+    "MEASURED (simulator, identical emitter for both marches) - the common mode is the terminal taps, and it is quantified. `delta = (vUv - uSunUv) * uDensity / N` makes every ray in the frame finish at 0.15x its own radius from the sun. For an arc pixel at r = 0.282 (330 px / frame height, the shader's aspect-corrected metric) the decay-weighted radial weight distributes 9.7% inside r < 0.06, 31.0% in 0.06-0.12, 36.7% in 0.12-0.20 and 22.6% beyond 0.20. Nothing in the critic's 55-115 deg sector occludes inside r = 0.12 - the shide, the shimenawa and the hanging lantern all sit between r = 0.17 and r = 0.41 - so 40.7% of the integral is identical at every angle by construction. Consequence: a FULLY BLOCKED direction on the arc still returned 67% of an open one (0.395 vs 0.587).",
+    "DISPROOF - the old uDensity comment was wrong about what 0.85 buys. It claimed stopping 15% short 'starves the far field' because 'a ray from 0.5 UV out still ends at 0.075, well inside the 0.18 envelope'. 0.075 inside a 0.18 envelope is prox = 0.83, i.e. the far field was being handed the near-sun core at 83% strength, not starved. Simulated frame coverage above 3% of the arc-mean deposit: 84.2% of frame area. That is the 99.9%-non-zero rtGodB round 15 read back, explained.",
+    "DISPROOF - normalising the march does NOT by itself create angular structure, and I nearly shipped believing it would. For a fixed receiver radius the analytic weight sum is the same at every angle, so dividing by it is division by a constant: modelled relative peak-to-trough on the arc was 42% both before and after (checked at four envelope radii). Normalisation flattens the RADIAL profile; only bounding the march changes the ANGULAR contrast. Both are needed and they do different jobs.",
+    "MEASURED - the mid-field wash has a second, independent cause that no march change can reach: the composite added tGod to every receiver with no depth term at all. A stone lantern ~30 m away received the same in-scattered column as the sky 6 km behind it. That is why the critic's mid-field box reads p50 226.1 / detail 0.60 / lumaSpread 26.7 with the silhouette gone, and it is why the reference's 'near-black with a hot rim' was unreachable from any gain or footprint tuning.",
+    "MEASURED - a display-space compensating hack was actively fighting the finding. FRAG_COMPOSITE carried an 'aureole containment' block that scaled bright pixels down by up to 13% inside 0.022 < r < 0.38 of the sun, weighted by smoothstep(0.70,0.90,luma). Its own comment gives its premise as 'the radial pass necessarily adds a common sky term'. It is a highlight compressor acting hardest on the brightest pixels over exactly the region measured at lumaSpread 26.7, so it was suppressing the contrast the finding asks for."
+  ],
+  "shipped": [
+    "FRAG_GOD_BLUR - the march is now a RATIO, not a sum. acc/den divides the accumulated radiance by the same weights that gathered it, so the output is the mean radiance visible along the ray in emitter units (0 = fully blocked, uEmitClamp = ceiling) and the pass's radial footprint is authored explicitly as uGlowRadius instead of falling out of the emitter's Gaussian.",
+    "FRAG_GOD_BLUR - the march no longer terminates at the sun. Length is soft-bounded at uMaxMarch = 0.16 by M*(1 - exp(-d*uDensity/M)) (soft-min, C-infinity; a hard min() would put a slope discontinuity in the sampling extent and ring). 0.16 is sized on where the occluders are: an arc pixel at r = 0.282 must reach ~0.12 to cross the shide/lantern band and must not reach the 0-0.12 core that nothing in that sector occludes. It lands at 0.122.",
+    "FRAG_GOD_OCCLUSION - the solar-proximity envelope moved out of the emitter and into the march as a per-tap sampling weight (same 0.18). rtGodA now holds well-conditioned sky radiance rather than radiance x exp(-r^2/0.0324), which underflowed half-float in the far field. NOTE FOR THE NEXT ROUND: rtGodA's non-zero coverage is now the sky fraction (~40% on `sun`), NOT the 10.2-11.0% round 15 recorded. That number is retired.",
+    "FRAG_GOD_OCCLUSION - alpha now carries the receiver's airlight, mix(uAirFloor, 1, 1 - exp(-viewZ/uAirScale)) at uAirScale = 300 m, uAirFloor = 0.15, and FRAG_GOD_BLUR multiplies the result by it. Authored against WORLD: a 6 m foreground upright reads 0.17, a 30 m prop 0.23, the far side of the 220 m playable region 0.59, sky and far heightfield 1.00.",
+    "uWeight 3.0 -> 1.34, sized to hold the OPEN-SKY response, not the mean. With the sum replaced by a ratio an unoccluded arc pixel deposits 1.0 x env(0.282) = 0.413 per unit of gain against the old sum's 0.184 per unit, so 3.0 -> 1.34 leaves an open direction on the arc depositing what it does today and lets every blocked direction fall. Raw gain is DOWN 55%; what rises is contrast. This is deliberately not the round-7 move.",
+    "FRAG_COMPOSITE - the aureole-containment block removed. uSunGlare stays plumbed."
+  ],
+  "predictions": {
+    "note": "Stated before the verification capture. Three other owners are moving the same frames; the two quantities below that only this file can plausibly move are the clean-sky control's god deposit (now exactly zero by construction) and the mid-field's dependence on receiver depth.",
+    "P1_marchGeometry_simulated": "Blocked/open ratio on the r = 330 px arc 0.67 -> 0.17. Relative peak-to-trough of the marched buffer 42% -> 188% from the bounded march alone, 445% with the airlight term. Local maxima/minima on the 13-point arc 1/1 -> 2/2. This is a simulator result on a traced mask and is the strongest claim I can make without a render.",
+    "P2_spread_simulated": "Frame area receiving above 3% of the current arc-mean deposit: 84.2% -> 29.9%. The far corner (120,1100) goes 0.0096 -> 0.0000 and the clean-sky control centre (203,58) goes 0.0027 -> 0.0000, both exactly zero because env = exp(-1.204^2/0.09) = 1e-7.",
+    "P3_midfield_frame": "shots/phone-sun-r17.png 0.55,0.55,0.06,0.04 - the god deposit there falls x0.20 (if the box's depth is the ~30 m lantern) to x0.38 (if it is the ~120 m treeline). Predicted frame numbers: p50 226.1 -> 205-212, lumaSpread 26.7 -> >= 45, detail 0.60 -> >= 1.8. The critic's targets are <= 205 / >= 60 / >= 3.5; I expect to land short on all three and I am calling that a shortfall in advance, because round 15 measured that switching bloom AND god rays fully off only moves a comparable box to p50 206.4, so the remaining wash is bloom and the scene's own near-sun radiance, neither of which this change touches.",
+    "P4_guard3_frame": "shots/phone-sun-r17.png 0.05,0.03,0.06,0.04 - lumaSpread stays below 15 (currently 10.1) and p50 falls 1-3 code values. GUARD 3 held by construction.",
+    "P5_guard1_PREDICTED_BREACH": "The arc mean will fall below the critic's GUARD 1 floor of 203.9. Simulated arc-mean deposit 0.462 -> 0.120, a 74% cut, because 8 of the 13 arc boxes sit on NEAR GEOMETRY - the right upright at 55-60 deg, the hanging lantern at 75-105 deg, the shimenawa at 110-115 deg - and a differential pass must remove the deposit from exactly those. Predicted arc mean 212.4 -> 198-206.",
+    "P6_perf": "0 draw calls and 0 triangles added (allocation was +2 / +5000). Fill rate is a net saving: the quarter-res blur pass gains one texture fetch per pixel and one exp() per tap at 633x292 = 185k pixels (4.4M exp, ~0.19M extra fetches), while the full-res composite LOSES a length(), two smoothsteps and a divide at 2532x1170 = 2.96M pixels. No new render target, no new pass, no per-frame allocation."
+  },
+  "apparatusFinding": {
+    "severity": "blocker for the round-16 acceptance test, not for the build",
+    "claim": "GUARD 1 and the structure target of the god-ray finding are JOINTLY UNSATISFIABLE by any fix that makes the pass differential, and the guard should be rewritten before r17 is judged against it.",
+    "evidence": [
+      "The acceptance asks for >= 3 local maxima and >= 3 local minima with peak-to-trough >= 18 code values on the 13-box arc, while GUARD 1 pins the arc MEAN to within +/-6% of 216.9 (floor 203.9).",
+      "At least 8 of those 13 boxes sit on near geometry, not sky: 55 deg lands on the right torii upright (native x 1688-2070), 75-105 deg lands on the large hanging lantern (native 1478-1613 x 55-330), 110-115 deg lands on the shimenawa. Verified by cropping the ring: `node tools/probe.mjs crop shots/phone-sun-r16.png 0.534,0.128,0.160,0.250`. The arc's current PEAK (233.8 at 85 deg) is the lantern's own emission plus the wash sitting on it.",
+      "The critic's own statement of the target - 'in the reference, objects near the sun go to near-black with a hot rim; here they go to milk' - REQUIRES the arc mean to fall, because most of the arc is object, not sky. GUARD 1 forbids it falling more than 13 code values from 216.9, and my own measurement of the same arc reads 212.4, only 8.5 above the floor before anything changes.",
+      "Arithmetic: if the removable deposit at the arc is D code values and 8 of 13 boxes lose all of it, the mean falls by 0.62D. ptp >= 18 needs D >= 18, which forces a mean drop >= 11.1 -> 201.3, below the 203.9 floor. The two conditions cannot both hold.",
+      "Independent ceiling on D: round 15 measured that switching bloom AND god rays off moves a near-sun box only 226.3 -> 206.4, so the entire additive post budget near the sun is ~20 code values. D from god rays alone is smaller than that, which means ptp >= 18 is probably not reachable from this file at all - the rest would have to come from the scene near the sun being less blown, which is Sky.js's surface."
+    ],
+    "suggestedReplacement": "Judge the arc on angular MODULATION with the mean free to fall: e.g. (max - min) / mean >= 0.15 over 55-115 deg with >= 2 local maxima and >= 2 local minima, plus a separate guard that the OPEN-SKY boxes only (60-70 deg) stay within +/-6% of their current 213.9 mean. That measures the differential the finding actually asks for and stops rewarding the wash that props the mean up."
+  },
+  "disproved": [
+    "The uDensity = 0.85 'stops 15% short, starves the far field' rationale. A ray from 0.5 UV ends at 0.075, which is prox = 0.83 inside the 0.18 envelope - the far field was receiving the near-sun core at 83% strength. Simulated coverage above 3% of the arc-mean deposit was 84.2% of frame area.",
+    "Normalising the march creates angular structure. It does not: at a fixed receiver radius the weight sum is angle-independent, so the modelled relative peak-to-trough was 42% before and after, at every envelope radius tested (0.22 / 0.26 / 0.30 / 0.36). Only the march bound changes it.",
+    "'rtGodA is 10.2-11.0% non-zero' is retired as a diagnostic, not because it was wrong but because the prox factor that produced it has moved into the march. Anyone re-reading that buffer should now expect roughly the sky fraction."
+  ],
+  "risks": [
+    "Untested at runtime. No browser was launched, so the two edited shaders have NOT been compiled. The blur shader gained four uniforms (uAspect, uMaxMarch, uSunRadius, uGlowRadius) and the occlusion shader lost two (uSunUv, uSunRadius, uAspect) with the JS updated to match; `esbuild --bundle` passes but that only proves the JS parses. FIRST THING to check on the verification build is the browser console for a shader compile error - if the pass fails to link, rtGodB is black and the frame merely loses its god rays rather than erroring, which is exactly the silent-failure mode this project keeps hitting.",
+    "uAirScale = 300 m is authored, not fitted. If the mid-field barely moves, read back the alpha of rtGodA over the critic's box before touching anything else - that isolates whether the receiver term is arriving at all.",
+    "The airlight term applies to every framing, including `valley`, where the bamboo sea at 100-400 m now receives 0.43-0.89 instead of 1.0. If `valley` loses light it is this term and uAirScale should rise, not uWeight.",
+    "Removing the aureole-containment block raises bright near-sun pixels by up to 13%, which pushes the mid-field the wrong way. It is a separately attributable term and can be restored alone if the mid-field regresses."
+  ],
+  "rollback": "git checkout 1a805c9 -- src/render/PostFX.js",
+  "status": "shipped-unverified"
+}
