@@ -120,8 +120,9 @@
     "source-audit": "Read the authored value or structure in source. Evidence that the intent is coded. NOT evidence that it feels right at runtime.",
     "frame-measurement": "tools/probe.mjs and tools/capture.mjs pixel measurement on the coherent five-shot phone/MEDIUM review set. Apparatus exists and is verified.",
     "instrumented-runtime": "Counters, telemetry or offline render read from a running build. Partially exists — capture.mjs collects draw calls, triangles, programs and page errors; nothing measures gameplay state.",
-    "interaction-capture": "Driving the real input surface (touch, pointer, keyboard) and recording the result over time. DOES NOT EXIST. This is the single largest apparatus gap on the project.",
-    "device-test": "A real phone. DOES NOT EXIST in this container and cannot be simulated.",
+    "interaction-capture": "Driving the shipped input surface and recording state over time. Phase 1 is prepared: Playwright WebKit covers target geometry and browser interaction, and Appium/XCUITest covers trusted touch in iPhone SE 3 iOS Simulator Mobile Safari. Target runner evidence is not yet accepted.",
+    "ios-simulator-browser": "Actual iOS Mobile Safari on an iPhone SE (3rd generation) Simulator. Prepared for trusted interaction, screenshot, video, logs and runtime checks; not evidence about physical-phone performance or feel.",
+    "device-test": "A physical phone. Not part of the routine release gate after the user's 2026-08-01 replacement instruction. GPU speed, thermals, memory pressure, reach, haptics, speakers and audio latency remain explicitly unmeasured unless a later concrete device investigation is requested.",
     "hostile-review": "A separate critic instance judging by eye against tools/CRITIC.md. Exists for static frames only."
   },
 
@@ -1159,7 +1160,7 @@
     },
     "criteriaCounts": { "total": 62, "verified": 18, "underReview": 3, "blocked": 4, "proposed": 37 },
     "criteriaCountsNote": "Machine-checked. tools/validate-project-state.mjs recomputes these from the elements array and fails if they drift. 'verified' overwhelmingly means verified BY SOURCE AUDIT — that the intent is correctly coded — not that it was verified in play: only 6 of the 62 criteria carry a frame measurement and only 2 carry a runtime measurement.",
-    "structuralFinding": "The dominant blocker across the product is not any single defect; it is that 'interaction-capture' does not exist. Combat feel, movement, camera behaviour, animation readability, touch misfire rate, AI legibility and soft-lock freedom are all invisible to a still-frame review by construction, and no amount of further art rounds will reveal them. The highest-value next investment for overall quality is the missing apparatus, not another visual round.",
+    "structuralFinding": "The dominant blocker was the absence of interaction capture. Phase 1 is now prepared with target WebKit and iOS Simulator Mobile Safari, but it remains unverified until those target runners pass. Physical performance and feel stay outside this apparatus and must not be inferred from it.",
     "unmeasurableHere": [
       "Real-device frame rate, thermal behaviour and boot time — no phone in this container.",
       "The live public surface — the agent proxy denies github.io by policy.",

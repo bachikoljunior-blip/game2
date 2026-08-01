@@ -3,6 +3,7 @@ dist/
 .vite/
 *.log
 dist-single/
+test-results/
 
 # Captures are large and machine-local, so the directory contents are ignored — but the
 # critic's verdicts are the record of what bar this build was held to, and they were being

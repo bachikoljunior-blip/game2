@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-31T22:32:22Z",
+  "updatedAt": "2026-08-01T11:30:00Z",
   "nodes": [
     {
       "id": "PROJECT",
@@ -377,12 +377,15 @@
       "dependencies": [
         "BENCH-INSTALL"
       ],
-      "status": "deferred",
+      "status": "active",
       "priority": 94,
       "criteria": [
-        "BENCH-002"
+        "BENCH-002",
+        "MOBILE-WEBKIT-001",
+        "MOBILE-IOS-001",
+        "MOBILE-PUBLISH-001"
       ],
-      "reason": "The benchmark pass measured the project's real structural blocker: twelve of sixteen elements have no verification surface at all, because the apparatus is five static screenshots. This outranks another visual round on value, but it is new product work and awaits a user instruction."
+      "reason": "Authorized by the user's 2026-08-01 instructions. Phase 1 prepares WebKit and iOS Simulator Safari interaction evidence and gates Pages publication; the later merge instruction activates target runner verification, PR delivery, merge, and public verification."
     },
     {
       "id": "NEXT16",

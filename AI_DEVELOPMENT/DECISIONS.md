@@ -168,3 +168,19 @@ finding disappeared, but the bamboo blocker remains and the foliage and terrain 
 predictions did not pass. The two requested rounds are complete because both full
 capture-critique-repair-verification loops and their remaining findings are recorded, not
 because the overall visual bar passed. Round 15 stays inactive pending a new user request.
+
+## D-019 — Replace the routine physical-device gate with WebKit plus iOS Simulator Safari
+
+Accepted 2026-08-01 from the user's explicit instruction. Product changes first run
+Playwright WebKit with the built-in iPhone SE (3rd generation) landscape profile at
+`667×375 / DPR 2` and forced MEDIUM. A successful `main` candidate then runs actual Mobile
+Safari on the matching iOS Simulator through Appium/XCUITest. Pages generation is chained
+only after both pass, rejects a superseded source SHA, publishes a source-revision marker,
+and verifies boot through the public surface.
+
+The apparatus records interaction, state, screenshots, video, traces, logs, budgets, and
+blocking errors. It does not claim physical GPU speed, heat, memory-pressure reloads,
+hardware multi-touch, hand reach, haptics, speakers, or audio latency. Those facts remain
+unmeasured but do not block the routine release path. The user's initial hold kept the task
+branch local; the later 2026-08-01 instruction supersedes that hold and authorizes PR checks,
+merge, established Pages publication, and public verification without bypassing any gate.

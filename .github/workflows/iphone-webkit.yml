@@ -1,0 +1,72 @@
+name: iPhone SE 3 WebKit gate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - index.html
+      - package.json
+      - package-lock.json
+      - public/**
+      - src/**
+      - tests/**
+      - tools/test-ios-safari.mjs
+      - tools/test-iphone-webkit.mjs
+      - tools/validate-project-state.mjs
+      - .github/workflows/ios-safari-simulator.yml
+      - .github/workflows/iphone-webkit.yml
+      - .github/workflows/publish-verified-pages.yml
+  push:
+    branches: [main]
+    paths:
+      - index.html
+      - package.json
+      - package-lock.json
+      - public/**
+      - src/**
+      - tests/**
+      - tools/test-ios-safari.mjs
+      - tools/test-iphone-webkit.mjs
+      - tools/validate-project-state.mjs
+      - .github/workflows/ios-safari-simulator.yml
+      - .github/workflows/iphone-webkit.yml
+      - .github/workflows/publish-verified-pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: iphone-webkit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  webkit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Restore exact dependencies
+        run: npm ci
+      - name: Validate persistent project state
+        run: npm run validate:project
+      - name: Install Playwright WebKit
+        run: npx playwright install --with-deps webkit
+      - name: Exercise iPhone SE 3 WebKit surface
+        env:
+          KAGEROU_REQUIRE_BASELINE: "1"
+        run: npm run test:iphone-webkit
+      - name: Preserve screenshots, video, trace, and report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: iphone-se3-webkit-${{ github.sha }}
+          path: test-results/iphone-webkit
+          if-no-files-found: warn
+          retention-days: 14

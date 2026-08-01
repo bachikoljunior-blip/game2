@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-01T02:20:00Z",
-  "selectionMethod": "Round 15 was authorized by an explicit user instruction, executed, measured, and closed at FAIL 65/100. Its checkpoint is integrated and published. The 2026-08-01 instruction then authorized a separate, non-round task: establish per-element reference benchmarks as persistent project information. That is complete and validated. Round 16 remains unactivated.",
+  "updatedAt": "2026-08-01T12:23:00Z",
+  "selectionMethod": "The latest 2026-08-01 instruction activates BENCH-APPARATUS delivery: preserve the completed product rounds, run Playwright WebKit plus iPhone SE 3 iOS Simulator Mobile Safari, gate Pages on both, then merge and verify the public result. Round 16 remains unactivated.",
   "tasks": [
     {
       "id": "R15-PUBLISH",
@@ -36,12 +36,12 @@
     {
       "id": "BENCH-APPARATUS",
       "planNode": "BENCH-APPARATUS",
-      "status": "deferred",
-      "priority": 1,
+      "status": "active",
+      "priority": 0,
       "dependencies": ["BENCH-INSTALL"],
-      "objective": "Build the interaction-capture surface the other twelve elements need before they can be judged at all.",
-      "verification": "Each element under gapSummary.byApparatus.noEvidenceAtAll and sourceAuditOnly gains at least one runnable criterion.",
-      "nextAction": "Await a user instruction. This is now the highest-value unblocked work on the project by final-value contribution - it converts twelve unverifiable elements into measurable ones, where another visual round improves the one element that already has a loop. It is deliberately NOT started autonomously: it is new product work, not a continuation of Round 15."
+      "objective": "Prepare the primary-phone interaction surface with WebKit on every product change and iPhone SE 3 iOS Simulator Mobile Safari before publication.",
+      "verification": "Local project/build and Chromium-surrogate checks pass; target WebKit and iOS Safari reports later pass for one exact revision; Pages cannot publish without them.",
+      "nextAction": "Push agent/iphone-se3-automation, run target WebKit, inspect and promote its first baseline, rerun the PR checks, then merge and verify iOS Safari plus Pages/public delivery."
     }
   ]
 }
