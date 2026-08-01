@@ -24,7 +24,9 @@ art-direction state record; project-wide session, plan and criterion pointers li
 - Logical session: **active** (`2026-07-31-game2-continuation`). It ends only when the user
   explicitly says so.
 - Current working branch: **`claude/game-reference-benchmark-qh0v0q`**, created from `main`
-  at **`1a805c9`**. It carries the per-element benchmark work, no renderer change. The
+  at **`1a805c9`**. It carries the per-element benchmark work, no renderer change, and is
+  **merged into `main` at `0a4fd14`** (inspected on `origin/main`). `src/` and `docs/` are
+  byte-identical to `1a805c9`, so the published Pages artifact was not rebuilt. The
   round-15 branch `claude/1-round-execution-r6rdfs` and the rounds-13–14
   branch `agent/rounds-13-14` are merged and historical. Persistent
   cross-session authorization is active to push verified checkpoints, integrate them into

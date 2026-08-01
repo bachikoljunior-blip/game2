@@ -70,6 +70,7 @@
   "qualityBar": {
     "authority": "AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml",
     "establishedAt": "2026-08-01",
+    "integration": "INSPECTED: merged into main at 0a4fd14dcc565fa7337ce217a6417f2f13bd1148 (branch commit 70af18de6bd960a155a67f36ba57c742e3cd322e, base 1a805c9). origin/main carries the 81,833-byte file and the resume wiring in INDEX.md, CLAUDE.md, PROJECT_OPERATING_PROTOCOL.md, ARCHITECTURE.md, tools/CRITIC.md, HANDOFF.md and README.md. A session starting from the default branch now finds it. src/ and docs/ are byte-identical to 1a805c9, so the published Pages artifact is untouched and needed no rebuild.",
     "conceptUnchanged": true,
     "elements": 16,
     "referenceTitles": ["Ghost of Tsushima (13 elements)", "SEKIRO: Shadows Die Twice (7 elements incl. one secondary)", "Genshin Impact (touch layer and phone performance envelope only)"],

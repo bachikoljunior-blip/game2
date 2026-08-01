@@ -11,7 +11,7 @@
     "baseSha": "1a805c9",
     "activePlanNode": "BENCH",
     "activeTask": null,
-    "lastSuccessfulAction": "BENCH-INSTALL verified: AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml created with 16 elements, 3 reference titles and 62 criteria; wired into the protocol, index, CLAUDE.md, ARCHITECTURE.md and the critic brief; enforced by npm run validate:project, whose new honesty guard was proved to fail a fabricated verification before being restored.",
+    "lastSuccessfulAction": "BENCH-INSTALL verified and integrated. AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml created with 16 elements, 3 reference titles and 62 criteria; wired into the protocol, index, CLAUDE.md, ARCHITECTURE.md, HANDOFF.md, README.md and the critic brief; enforced by npm run validate:project, whose new honesty guard was proved to fail a fabricated verification before being restored. Merged into main at 0a4fd14 on the user's explicit instruction and inspected on origin/main, closing the trap where a new session starting from the default branch would not have seen it.",
     "currentFailingAction": null,
     "currentHypothesis": null,
     "nextAction": "Await a further user instruction. Do not start Round 16 or BENCH-APPARATUS from logical-session state alone. If asked what to do next, the highest-value ready work is BENCH-APPARATUS: twelve of sixteen elements cannot be judged at all until an interaction-capture surface exists.",
