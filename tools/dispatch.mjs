@@ -1,11 +1,12 @@
 /**
  * dispatch.mjs — turn a critic verdict into the exact, minimal set of agents to spawn.
  *
- * The routing logic now lives in `kit/lib/plan/dispatch.mjs`, shared with the other
+ * The routing logic now lives in `.kit/lib/plan/dispatch.mjs`, shared with the other
  * repositories. What stays here is the part that is genuinely KAGEROU's: the team map and
- * the file it is transcribed from. `kit/test/run.mjs` holds a frozen fixture of this tool's
- * output from before the change and asserts the shared implementation reproduces it on all
- * nine real review files, so the substitution is measured rather than assumed.
+ * the file it is transcribed from. The substitution was measured, not assumed:
+ * `AI_DEVELOPMENT/EVIDENCE/dispatch-replacement-baseline.json` freezes this tool's output
+ * from before the change, and the shared implementation reproduces it on all nine real
+ * review files. The kit's own test suite re-checks that against the same baseline.
  *
  * Rounds so far dispatched every owner in ARCHITECTURE §8 regardless of what the critic
  * found. Round 3 measured the cost: the critic named about six areas, fourteen owners were
@@ -25,8 +26,8 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildPlan as buildSharedPlan, formatPlan, DEFAULT_ROUTING } from '../kit/lib/plan/dispatch.mjs';
-import { validateFindings } from '../kit/lib/plan/findings.mjs';
+import { buildPlan as buildSharedPlan, formatPlan, DEFAULT_ROUTING } from '../.kit/lib/plan/dispatch.mjs';
+import { validateFindings } from '../.kit/lib/plan/findings.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -58,7 +59,7 @@ export const TEAMS = {
   ui: ['src/ui/HUD.js', 'src/ui/TouchControls.js', 'src/ui/Menus.js'],
 };
 
-/** The shared defaults, with each role's rationale, are in `kit/lib/plan/dispatch.mjs`. */
+/** The shared defaults, with each role's rationale, are in `.kit/lib/plan/dispatch.mjs`. */
 const ROUTING = DEFAULT_ROUTING;
 
 function loadReview(round) {

@@ -1,7 +1,7 @@
 /**
  * luma.mjs — tonal-range measurement, read from the saved PNG.
  *
- * The decoder and the histogram now live in `kit/lib/image`, shared with the other
+ * The decoder and the histogram now live in `.kit/lib/image`, shared with the other
  * repositories. What stays here is `HUD_MASKS`, which is KAGEROU's screen layout and nobody
  * else's.
  *
@@ -19,8 +19,8 @@
  * numbers being carried over untouched.
  */
 
-export { decodePNG, encodePNG, crc32 } from '../kit/lib/image/png.mjs';
-export { measureLuma, regionStats, region, cut, pixelRegion, compareRegion, loadImage } from '../kit/lib/image/measure.mjs';
+export { decodePNG, encodePNG, crc32 } from '../.kit/lib/image/png.mjs';
+export { measureLuma, regionStats, region, cut, pixelRegion, compareRegion, loadImage } from '../.kit/lib/image/measure.mjs';
 
 /**
  * The HUD regions to mask, in fractional screen coordinates.
@@ -34,7 +34,7 @@ export const HUD_MASKS = [
 ];
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const { measureLuma } = await import('../kit/lib/image/measure.mjs');
+  const { measureLuma } = await import('../.kit/lib/image/measure.mjs');
   for (const f of process.argv.slice(2)) {
     console.log(f, JSON.stringify(measureLuma(f, HUD_MASKS)));
   }
