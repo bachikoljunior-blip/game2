@@ -3477,21 +3477,43 @@ uniform vec3 uRockCool;
  * Read the baked ridgeline. NEAREST + a hand-rolled lerp, because the height is a
  * 16-bit pair and hardware filtering would blend the high and low bytes apart.
  * Returns (metres above base, crest relief, massif id, slope along the horizon).
+ *
+ * THE SLOPE HAS TO BE INTERPOLATED TOO, AND IT WAS NOT. (hb - ha) is one finite
+ * difference held constant across a whole texel and jumping at every texel
+ * boundary — a piecewise-constant function of u. Three of the terms downstream are
+ * driven by it: lit -> face -> the rock's hue *and* its 0.58 + 0.80 * face level,
+ * and the snow shed gate. So a discontinuous derivative was being used as a
+ * *colour*, and a colour that steps at a fixed angular lattice draws hard vertical
+ * lines. RIDGE_W is 2048 over 2pi, and wide covers 92.5 deg of that in 2532 px, so
+ * the step lands every 4.8 review pixels: straight, evenly spaced, in the sky.
+ * Straight lines do not occur in sky.
+ *
+ * Two extra taps make the slope C0 by taking a central difference either side of the
+ * span and interpolating between them, which is what the height already does. The
+ * texture is 2048x4 NEAREST and fully resident, and this adds no draw call and no
+ * triangle. The height, relief and identity channels are byte-identical.
  */
 vec4 kgRidge(float u, float row){
   float p = u * uRidgeCfg.x - 0.5;
   float f = fract(p);
   float x0 = (floor(p) + 0.5) * uRidgeCfg.y;
   float rv = (row + 0.5) * 0.25;
+  vec4 P = texture2D(tRidge, vec2(x0 - uRidgeCfg.y, rv));
   vec4 A = texture2D(tRidge, vec2(x0, rv));
   vec4 B = texture2D(tRidge, vec2(x0 + uRidgeCfg.y, rv));
+  vec4 N = texture2D(tRidge, vec2(x0 + 2.0 * uRidgeCfg.y, rv));
+  float hp = P.r + P.g * (1.0 / 255.0);
   float ha = A.r + A.g * (1.0 / 255.0);
   float hb = B.r + B.g * (1.0 / 255.0);
+  float hn = N.r + N.g * (1.0 / 255.0);
+  // Central difference at each end of the span, then the same lerp the height gets.
+  float sa = (hb - hp) * 0.5;
+  float sb = (hn - ha) * 0.5;
   return vec4(
     uRidgeCfg.z + mix(ha, hb, f) * uRidgeCfg.w,
     mix(A.b, B.b, f),
     mix(A.a, B.a, f),
-    (hb - ha) * uRidgeCfg.w);
+    mix(sa, sb, f) * uRidgeCfg.w);
 }
 
 void kgRank(float row, float u0, float tang, float par, float soft, float haze,

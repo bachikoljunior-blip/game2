@@ -9,7 +9,8 @@
  * forecourt is deliberately a **26 × 20 m combat arena**: flat gravel, cover only
  * at the edges (cairns, lanterns, the bell tower, the chōzuya), and clear
  * sightlines back down the axis so you always read where the next oni came from.
- * A cliff-edge overlook to the south-east frames the bamboo valley.
+ * A terrace to the south-east looks out over the bamboo valley — it is *not* on
+ * the cliff edge, whatever `LAYOUT.overlook` used to be called; see the note there.
  *
  * ## How it is built
  *
@@ -60,9 +61,35 @@ export const LAYOUT = {
   sacredTree: { x: -12.0, z: 19.5, height: 11.0 },
   deadTree: { x: 21.0, z: -3.0, height: 8.0 },
   caskWall: { x: -19.5, z: 30.0 },
+  /**
+   * NOT the cliff edge, and the file header's "cliff-edge overlook" is wrong.
+   * `r` = 50.9, while the built heightfield (ray-marched in round 16 against a
+   * hash-verified field, and again by `core` in round 17) is dead flat at
+   * `PLATEAU_HEIGHT` out to `PLATEAU_RADIUS` 78 and does not finish falling until
+   * r = 112. This terrace stands 61 m inside the drop.
+   *
+   * DELIBERATELY NOT MOVED IN ROUND 17, and the reason is not budget. `core`
+   * re-sited the `valley` camera to r = 112 this round and measured the deck's
+   * landing zone at **r = 118–126** — from a 6 m eye the frame's bottom edge
+   * reaches ground 10.8 m ahead, so anything at or inside 112 sits under the lens.
+   * At r = 122 along `VALLEY_AZIMUTH` the ground is about 786 m, i.e. **26 m below
+   * the plateau on a slope falling roughly 1.3 m per metre**: `_buildOverlook`
+   * levels a terrace and a rail on the assumption of flat ground, so this is a
+   * re-author onto a cliff face, not a translation of two numbers. It also moves
+   * the bridge bearing (`_buildBridge` takes it from arena -> overlook), a patrol
+   * route, an interactable, a spawn point and Terrain's worn route with it. Five
+   * consumers and a new structure, landing in the same round as an unverified
+   * camera re-pose, is how a round ships a regression it cannot attribute.
+   */
   overlook: { x: 36.0, z: 36.0 },
   bridge: { x: 24.0, z: 34.0 },
-  /** Beyond this radius the plateau falls away; also where the guard rail goes. */
+  /**
+   * Where the guard rail goes. The old comment also claimed "beyond this radius
+   * the plateau falls away", and that is false: the flattening holds to
+   * `PLATEAU_RADIUS` 78 and the ground is still within 0.1 m of the plateau at
+   * r = 95. The rail's *placement* is fine — 74 is comfortably inside the flat —
+   * but nothing downstream may read this number as the lip.
+   */
   rimRadius: 74.0,
   approachGapDeg: 15,
 };
@@ -873,9 +900,31 @@ export class Level {
       for (let i = 0; i < 5; i++) { out.push(Math.min(z, 69.4)); z += 4.0 + vary() * 4.6; }
       return out;
     });
+    // Height is drawn over 0.80–1.24, a 55% range, and that is wide enough on
+    // average and not wide enough *pairwise*: measured on the r16v1 build, the two
+    // approach lanterns the critic's `wide` crop 0.42,0.78,0.16,0.20 actually
+    // contains came out at scale 0.925 and 0.886 — 4.4% apart, against a criterion
+    // of 8%. An independent draw per post cannot promise that; two neighbours in
+    // the same row will occasionally land on top of each other. When one does,
+    // fold it into the far end of the range instead, which guarantees at least 10%
+    // between consecutive posts.
+    //
+    // Note the draw order: x comes off `this.rnd` before the scale does, exactly as
+    // the argument list used to evaluate it. The stream is shared and every prop
+    // placed after this one indexes off it, so reordering two draws here would
+    // reshuffle the whole forecourt for a variation fix.
+    const lastS = [0, 0];
     for (let i = 0; i < 5; i++) {
       for (let si = 0; si < 2; si++) {
-        place((si ? 1 : -1) * (5.4 + this.rnd() * 0.9), rowZ[si][i], 0.80 + this.rnd() * 0.44);
+        const x = (si ? 1 : -1) * (5.4 + this.rnd() * 0.9);
+        const u = this.rnd();
+        let s = 0.80 + u * 0.44;
+        const prev = lastS[si];
+        if (prev && Math.abs(s - prev) < prev * 0.10) {
+          s = prev <= 1.02 ? 1.13 + u * 0.11 : 0.80 + u * 0.11;
+        }
+        lastS[si] = s;
+        place(x, rowZ[si][i], s);
       }
     }
     const a = LAYOUT.arena;

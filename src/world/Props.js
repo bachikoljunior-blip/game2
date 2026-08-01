@@ -242,6 +242,67 @@ export function weatherBand(geo, y0, y1, r, g, b, jitter = 0.35) {
 }
 
 /**
+ * Weather **one face** of a prop rather than a level band.
+ *
+ * `weatherBand` runs on height alone, so it wraps the whole circumference: every
+ * lantern in the shrine gets the identical ring of moss at the identical height,
+ * and rotating an instance does not move it. That is half of "the same model at
+ * the same scale with the same texture orientation" — a prop with no *side* has
+ * nothing for a yaw to vary.
+ *
+ * This takes a bearing in the prop's local frame and lays a growth lobe on the
+ * flank facing it, broken by fbm so the edge is organic and by worley so the
+ * lichen reads as discrete rosettes rather than a wash. `Level` already draws a
+ * uniform random yaw per lantern, so one baked lobe scatters across the whole
+ * population for free — no second prototype, no second material, no draw call and
+ * not one triangle. The lobe half-angle is deliberately wide: at 75 deg it covers
+ * 42% of the circumference, so from any one camera it lands on a usable fraction
+ * of the visible half rather than hiding behind the prop as often as not.
+ */
+export function weatherFace(geo, bearing, opts = {}) {
+  const half = opts.half ?? 1.31;                  // 75 deg
+  const y0 = opts.y0 ?? -1e9, y1 = opts.y1 ?? 1e9;
+  const mossC = opts.moss ?? [0.60, 0.84, 0.56];
+  const lichenC = opts.lichen ?? [1.22, 1.20, 1.06];
+  const strength = opts.strength ?? 1;
+  const scale = opts.scale ?? 6.0;
+  const pos = geo.getAttribute('position');
+  let col = geo.getAttribute('color');
+  if (!col) { normalizeGeo(geo); col = geo.getAttribute('color'); }
+  const bx = Math.cos(bearing), bz = Math.sin(bearing);
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const r = Math.hypot(x, z);
+    if (r < 1e-4) continue;
+    // Angular distance from the bearing, broken by a coarse field so the lobe is
+    // not a clean sector. The break is a function of position only, so the
+    // duplicated vertices a hard-edged sweep emits at a profile corner all move
+    // together and the patch stays continuous across the seam.
+    const d = Math.acos(clamp((x * bx + z * bz) / r, -1, 1))
+      + noise.fbm2(x * 2.2, z * 2.2 + y * 1.7, 3) * 0.55;
+    let t = (1 - smoothstep(half * 0.45, half, d)) * strength;
+    // Growth needs damp and shelter: it thins going up, as it does on real stone.
+    t *= 1 - smoothstep(y0, y1, y);
+    if (t <= 0.002) continue;
+    // Lichen sits on top of the moss as bright discrete rosettes; it is the part
+    // that survives at contact-sheet size, because it is the only high-contrast
+    // term on an otherwise low-contrast prop.
+    const w = worley2(x * scale, z * scale + y * scale * 0.6);
+    const ros = (1 - smoothstep(0.10, 0.34, w.f1)) * t;
+    const cr = col.getX(i), cg = col.getY(i), cb = col.getZ(i);
+    const mr = lerp(cr, cr * mossC[0], t), mg = lerp(cg, cg * mossC[1], t), mb = lerp(cb, cb * mossC[2], t);
+    col.setXYZ(
+      i,
+      lerp(mr, mr * lichenC[0], ros * 0.85),
+      lerp(mg, mg * lichenC[1], ros * 0.85),
+      lerp(mb, mb * lichenC[2], ros * 0.85),
+    );
+  }
+  col.needsUpdate = true;
+  return geo;
+}
+
+/**
  * Add the wind attribute consumed by `kagerouBend` (ARCHITECTURE §10):
  * `aFlutter = (h01, stiffness)` where h01 is 0 at the anchor and 1 at the free
  * edge, and stiffness > 1 is rigid (a pole, a rope), < 1 is limp (banner cloth).
@@ -1118,6 +1179,27 @@ const _tintColor = new Color();
 /** Emissive and water surfaces are light, not occluders — they never cast. */
 const NEVER_CASTS = new Set(['__ember', '__glowPool', '__water']);
 
+/**
+ * Blossom clumps emitted per flowering branch and per terminal twig.
+ *
+ * The sacred tree carried 303 clumps of 2.00–3.36 m cards. Crown coverage was
+ * bought entirely with card *size*, and size is what the critic measured as flat
+ * 45–80 px facets. These numbers buy the same coverage with mass instead: 34/43
+ * against 4/5 lands the tree at **2,595 clumps** of 0.68–1.16 m cards.
+ *
+ * Budget, measured on the built buckets rather than estimated, and reconciled to
+ * the r16v1 `drawsByOwner` rollup rather than to a count of the meshes authored
+ * here — round 16's `world` commit under-reported itself by 21k by doing exactly
+ * that. The harness reproduces the old build at 303 clumps × 3 quads × 2 tris =
+ * 1,818 geometry triangles, and the rollup records `__blossom` at calls 3,
+ * triangles 5,454 = 1,818 × 3: alpha-tested surfaces cast for themselves, so this
+ * material submits over the colour pass and both cascades. After: 2,595 × 2 × 2 =
+ * **10,380 geometry, 31,140 submitted, +25,686 against 5,454, and no new draw
+ * call** — inside the +30,000 / +6 allocation with 4,314 triangles left.
+ */
+const BLOSSOM_PER_BRANCH = 34;
+const BLOSSOM_PER_TIP = 43;
+
 // ============================================================= PropFactory
 
 /**
@@ -1536,12 +1618,37 @@ export class PropFactory {
   totalEmissiveRadiance += diffuseColor.rgb *
     (vec3(0.052, 0.070, 0.100) + vec3(0.150, 0.168, 0.176) * kgSkyView);`,
       );
+
+      // Hashed alpha, because a binary cutout is a binary silhouette at every
+      // scale and that is the half of the canopy finding a texture cannot reach.
+      //
+      // `alphaToCoverage` is the textbook answer and it is unavailable: Engine
+      // constructs the renderer with `antialias: false` and resolves in post
+      // (FXAA/CAS), so there is no coverage mask to write into. What is left is
+      // to dither the *threshold* — jitter it per fragment about `alphaTest` so
+      // the boundary becomes a one-pixel stochastic band instead of a staircase,
+      // and let the post AA average it. Interleaved gradient noise on
+      // gl_FragCoord is the standard hash for this: fixed in screen space, so a
+      // still frame is deterministic and a moving one is what FXAA is for.
+      //
+      // The jitter is symmetric about the threshold, so expected coverage — and
+      // therefore the clump's mean colour, which the finding guards to ±8% per
+      // channel — is unchanged by construction. ±0.11 is a little under a third
+      // of the 0.36 cut, which is enough to break a hard edge on a 15–27 px card
+      // and not enough to eat isolated florets whose peak alpha clears 0.47.
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <alphatest_fragment>',
+        `#ifdef USE_ALPHATEST
+  float kgIgn = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
+  if ( diffuseColor.a < alphaTest + (kgIgn - 0.5) * 0.22 ) discard;
+#endif`,
+      );
     };
     this._installWind(m);
     // `_installWind` stamps its own cache key, which other cloth materials share.
     // This one's shader differs, so it needs a key of its own or three can hand
     // it a program compiled for a material without the translucency patch.
-    m.customProgramCacheKey = () => 'kagBlossom3';
+    m.customProgramCacheKey = () => 'kagBlossom4';
     this.ctx?.sky?.applyFog?.(m);
     this._blossom = m;
     this.disposables.push(m);
@@ -2697,6 +2804,12 @@ export class PropFactory {
     // Ground contact for the whole stack, once, after the per-course pass.
     shadeGeo(merged, (x, y) => (y > 0.34 * s ? 1 : lerp(0.64, 1, clamp(y / (0.34 * s), 0, 1))));
     weatherBand(merged, 0, 0.5 * s, 0.72, 0.82, 0.66, 0.3);   // moss creeping up the base
+    // ...and one flank that has not been scrubbed in a generation. The band above
+    // is the same ring on all twenty-four stones; this is the term a yaw can move,
+    // and `Level._buildLanterns` already draws a uniform random yaw per instance.
+    // Reaches to 1.15 m of a 2.05 m lantern, i.e. the plinth, the shaft and the
+    // bottom of the fire box — the part a viewer at eye height actually reads.
+    weatherFace(merged, 2.44, { y0: 0.62 * s, y1: 1.15 * s, strength: 0.92, scale: 7.5 / s });
     PropFactory.add(b, merged, '__lanternStone');
 
     // 宝珠 hōju — the jewel finial, in polished leaf so the low sun finds it.
@@ -4821,6 +4934,7 @@ export class PropFactory {
     const height = opts.height ?? 9.5;
     const depth = clamp(opts.depth ?? 4, 2, 5);
     const rnd = makeRandom(opts.seed ?? 1861);
+    const brnd = makeRandom((opts.seed ?? 1861) ^ 0x5a1c0000);
     const leafy = opts.leafy !== false;
     const b = PropFactory.build();
     const wood = [];
@@ -4859,17 +4973,28 @@ export class PropFactory {
       // covered about 15% of the crown silhouette and read as a diseased tree
       // rather than one in bloom. Every branch from level 2 outward now flowers
       // along its length, and terminal twigs carry a cluster of clumps.
+      // Blossom runs off `brnd`, a stream of its own, so changing how many clumps
+      // a branch carries cannot reshuffle the branch structure it hangs on — and
+      // `grow` indexes off `rnd` for every child branch after this block, so the
+      // shared stream is advanced by exactly what the old loop drew (n × 10: one
+      // t, three jitters and `_blossomCluster`'s six). Without that the tree grows
+      // a different skeleton: measured, dropping the draws moved the clump count
+      // 303 → 309, i.e. a different branch count on a silhouette nobody filed a
+      // finding against. The wood, its AO bake and its moss band are unchanged.
       if (leafy && level >= 1) {
-        const n = terminal ? 5 : 4;
+        for (let k = (terminal ? 5 : 4) * 10; k > 0; k--) rnd();
+        const n = terminal ? BLOSSOM_PER_TIP : BLOSSOM_PER_BRANCH;
         for (let k = 0; k < n; k++) {
-          const t = 0.30 + 0.70 * ((k + rnd() * 0.9) / n);
+          const t = 0.30 + 0.70 * ((k + brnd() * 0.9) / n);
           const si = Math.min(segs, Math.max(0, Math.round(t * segs)));
           const sp = samples[si];
-          const j = len * 0.16;
+          // The jitter has to grow with the clump count or 34 clumps sit on one
+          // point: a card is now 0.92 m, so the spread is sized off the branch.
+          const j = len * 0.42;
           this._blossomCluster(
             leaves,
-            sp.x + (rnd() - 0.5) * j, sp.y + (rnd() - 0.5) * j * 0.7, sp.z + (rnd() - 0.5) * j,
-            rnd,
+            sp.x + (brnd() - 0.5) * j, sp.y + (brnd() - 0.5) * j * 0.7, sp.z + (brnd() - 0.5) * j,
+            brnd,
           );
         }
       }
@@ -4928,11 +5053,29 @@ export class PropFactory {
    * cards. Crossing two planes gives the clump depth from any approach, and the
    * tumble means no two clumps in the crown present the same plane to the camera.
    *
-   * Clump size is the cheap half of crown coverage: it buys silhouette without
-   * buying instances, so it is pushed as far as it goes before adding mass.
+   * **Clump size is not free silhouette, and pushing it was the defect.** At
+   * `s = 1.00 + rnd()*0.68` a card was 2.00–3.36 m on an 11.0 m tree — 22–36% of
+   * the crown diameter — and the critic measured the result at native as 45–80 px
+   * flat facets on a ~700 px crown, i.e. exactly what a card that large has to
+   * look like however good its texture is.
+   *
+   * `s = 0.40 + rnd()*0.12` puts the card at **0.80–1.04 m, mean 0.92** against a
+   * measured 1.56–3.36 m / mean 2.68 — a 2.91× cut on the mean, which is the
+   * figure `Foliage.js`'s re-authored floret scale is matched to. The range is
+   * deliberately *narrower* than the 2.91× scaling of the old one rather than
+   * proportional: scaled proportionally the widest card would still project at
+   * 80 × 1.16/3.36 = 27.6 px, over the finding's 25 px line, while holding the
+   * same mean and tightening the spread lands the whole distribution at
+   * **18.0–24.8 px** with the mean untouched, so the ±8% meanRGB guard and the
+   * 25 px silhouette line are satisfied together instead of traded off.
+   *
+   * The coverage that size used to buy is bought with instances instead:
+   * `BLOSSOM_PER_BRANCH` below. This is one half of a two-owner change — the other
+   * is `Foliage.js`'s re-authored card, whose floret scale is matched to 0.92 m.
+   * Landing either alone makes the canopy worse, which is why round 16 refused to.
    */
   _blossomCluster(out, cx, cy, cz, rnd) {
-    const s = 1.00 + rnd() * 0.68;
+    const s = 0.40 + rnd() * 0.12;
     const rot = new Matrix4()
       .makeRotationY(rnd() * Math.PI * 2)
       .multiply(new Matrix4().makeRotationX((rnd() - 0.5) * 1.25))
@@ -4943,14 +5086,16 @@ export class PropFactory {
     const bone = rnd() * 0.5;
     const cr = k, cg = k * lerp(0.99, 0.94, bone), cb = k * lerp(0.97, 0.90, bone);
 
-    for (let q = 0; q < 3; q++) {
-      const hw = s * (q === 0 ? 1.0 : q === 1 ? 0.86 : 0.78);
-      const hh = s * (q === 0 ? 0.82 : q === 1 ? 0.94 : 0.78);
+    // Two quads, not three. The doc comment above has said "crossed pair" since it
+    // was written; the third, horizontal card was the one that read as a lid from
+    // above and it is what the triangle budget buys the extra clumps with — at
+    // 2,600 clumps the third quad costs +10,400 submitted triangles on its own.
+    for (let q = 0; q < 2; q++) {
+      const hw = s * (q === 0 ? 1.0 : 0.86);
+      const hh = s * (q === 0 ? 0.82 : 0.94);
       const vs = q === 0
         ? new Float32Array([-hw, -hh, 0, hw, -hh, 0, hw, hh, 0, -hw, hh, 0])
-        : q === 1
-          ? new Float32Array([0, -hh, -hw, 0, -hh, hw, 0, hh, hw, 0, hh, -hw])
-          : new Float32Array([-hw, 0, -hh, hw, 0, -hh, hw, 0, hh, -hw, 0, hh]);
+        : new Float32Array([0, -hh, -hw, 0, -hh, hw, 0, hh, hw, 0, hh, -hw]);
       const g = new BufferGeometry();
       g.setAttribute('position', new BufferAttribute(vs, 3));
       g.setAttribute('uv', new BufferAttribute(new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]), 2));
