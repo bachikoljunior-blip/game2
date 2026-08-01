@@ -98,6 +98,15 @@ const VELOCITY_LAYER = 9;
 
 const LUT_SIZE = 32;
 
+/**
+ * Henyey-Greenstein asymmetry for the god-ray pass's scattering phase (see
+ * FRAG_GOD_BLUR). 0.76 is the middle of the Mie range for a hazy atmosphere and is what
+ * puts the fan where the eye expects it: at the review resolution and 58 deg vertical
+ * fov it holds 0.93 at 3 deg off the sun, 0.37 at 14 deg and 0.045 at 39 deg, so the
+ * near-sun fan is untouched while the far field stops receiving a common-mode flood.
+ */
+const GOD_PHASE_G = 0.76;
+
 // ---------------------------------------------------------------------------
 // shared GLSL
 // ---------------------------------------------------------------------------
@@ -626,6 +635,7 @@ uniform float uDensity;
 uniform float uDecay;
 uniform float uWeight;
 uniform float uNoise;
+uniform vec3 uPhase;   // x = Henyey-Greenstein g, y = tan(fovY/2), z = aspect
 varying vec2 vUv;
 void main() {
   vec2 delta = (vUv - uSunUv) * (uDensity / float(GOD_SAMPLES));
@@ -641,7 +651,36 @@ void main() {
     acc += texture2D(tSrc, uv).rgb * illum;
     illum *= uDecay;
   }
-  gl_FragColor = vec4(acc * (uWeight / float(GOD_SAMPLES)), 1.0);
+  // The scattering phase function, on the *view* angle — the term this pass never had.
+  //
+  // The sun is directional, so every point along one pixel's view ray scatters toward
+  // the camera at the same angle to it. The phase function is therefore constant along
+  // the in-scattering integral and factors out as a per-pixel multiplier. It has to be
+  // applied here, at the destination.
+  //
+  // What was here instead was an angular weight at the *source* (prox, in
+  // FRAG_GOD_OCCLUSION), and that is the wrong end of the integral. delta is
+  // (vUv - uSunUv) * uDensity / N, so every march terminates within (1 - uDensity) of
+  // the sun's UV — inside the emitter's uSunRadius envelope for any pixel in the
+  // frame. Weighting the source concentrates the emitter into a blob that every march
+  // runs into, so every pixel collects the same near-sun taps: the pass delivered common
+  // mode, not differential. Measured: rtGodA non-zero on 23.4% of texels against
+  // rtGodB on 99.95%, and — the number that matters — with the pass ablated the sun
+  // review strip's row-averaged lag-16 modulation (band16) is 10.88, with the pass on
+  // it is 1.51. An additive pedestal this large pushes the frame up the tone curve's
+  // shoulder, where its own modulation is compressed away. The pass was costing the
+  // frame 86% of its local contrast in order to add a veil.
+  //
+  // Normalised to 1 at theta = 0, so the near-sun fan keeps exactly its authored gain.
+  // This is a spread change in both directions of the word: it cannot raise the
+  // amplitude anywhere, and round 7's regression (gain raised 4-6x on an unverified
+  // guess) is unreachable from here.
+  vec2 pd = (vUv - uSunUv) * vec2(uPhase.z, 1.0);
+  float tanT = 2.0 * uPhase.y * length(pd);        // screen offset -> tan of the view angle
+  float cosT = inversesqrt(1.0 + tanT * tanT);
+  float g = uPhase.x;
+  float ph = pow((1.0 - g) * (1.0 - g) / max(1.0 + g * g - 2.0 * g * cosT, 1e-4), 1.5);
+  gl_FragColor = vec4(acc * (uWeight / float(GOD_SAMPLES)) * ph, 1.0);
 }
 `;
 
@@ -1422,7 +1461,21 @@ export class PostFX {
     // 1.56 overshoot is what puts the pass back on the number it was sized for, and the
     // rest of the warm veil the round-8 critic filed comes from `uGodTint`, not from
     // here (see below). 1.25 -> 0.80.
-    this.godRayStrength = 0.80;
+    //
+    // Round 16, 0.80 -> 0.44, and this one is an ablation rather than a derivation. The
+    // whole derivation above sizes the pass against a *wedge contrast* target of ~45
+    // code values, and never asks what the unoccluded deposit costs the rest of the
+    // frame. Measured on the r16 tree at phone/MEDIUM: switching the pass off moves the
+    // `valley` mid-field box's luma p50 from 158.8 to 81.2 and its `detail` from 4.13 to
+    // 7.81, and moves the `sun` review strip's row-averaged lag-16 modulation from 1.47
+    // to 10.88. An unoccluded ray was depositing ~0.9 linear onto a sky that is itself
+    // only 0.9-1.4 linear, which pushes the frame onto the tone curve's shoulder and
+    // compresses away the contrast the pass exists to create. Sweeping the gain with the
+    // phase term in place, `sun` strip band16 reads 2.65 / 4.73 / 6.38 / 10.88 at
+    // 0.80 / 0.44 / 0.28 / 0 — so this is not a knob that was merely mistuned, it is one
+    // whose upper half was actively subtractive. 0.44 keeps a visible fan and a wedge
+    // the eye can point at; the frame is legible again either side of it.
+    this.godRayStrength = 0.44;
     this.aoStrength = 0.85;
     this.aoRadius = 0.65;
     this.saturation = 1.06;
@@ -2081,6 +2134,7 @@ export class PostFX {
       uDecay: { value: 0.962 },
       uWeight: { value: 3.0 },
       uNoise: { value: 0 },
+      uPhase: { value: new Vector3(GOD_PHASE_G, 0.554, 1.78) },
     }, { GOD_SAMPLES: this._godSamples });
 
     this.mDofCoc = this._mat(FRAG_DOF_COC, {
@@ -3163,6 +3217,13 @@ export class PostFX {
     // to exactly 0.94, so the MEDIUM review set is unchanged by this line alone.
     bu.uDecay.value = Math.pow(0.94, 24 / this._godSamples);
     bu.uWeight.value = 3.0;
+    // `_projScale` is `|P[5]| * h/2`, so this is exactly `tan(fovY/2)` for whatever
+    // projection the frame is using. It must be read per frame, not authored: Engine
+    // widens the vertical fov on narrow viewports and PlayerCamera drives it between 20
+    // and 100 degrees, and a phase function fed a stale fov puts the fan at the wrong
+    // angular width on every zoom.
+    const tanHalfFov = this._projScale > 1e-6 ? (this._h * 0.5) / this._projScale : 0.554;
+    bu.uPhase.value.set(GOD_PHASE_G, tanHalfFov, this._w / Math.max(1, this._h));
     bu.uNoise.value = (this._frame & 31) * 0.137;
     this._draw(this.mGodBlur, this.rtGodB);
   }
