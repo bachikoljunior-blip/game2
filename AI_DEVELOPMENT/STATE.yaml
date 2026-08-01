@@ -22,13 +22,18 @@ logical_session:
     user statement does.
 
 objective:
-  id: rounds-16-20
+  id: rounds-16-18
   statement: >
-    Execute five consecutive art-direction review rounds (16, 17, 18, 19, 20) on explicit
-    user instruction, each to the full ROUND.md protocol: capture, apparatus check,
-    independent critic, gated dispatch, owner repair, verification capture, close.
+    Execute consecutive art-direction review rounds on explicit user instruction, each to the
+    full ROUND.md protocol: capture, apparatus check, independent critic, gated dispatch,
+    owner repair, verification capture, close.
+    SCOPE REDUCED BY THE USER on 2026-08-01, mid-round-18: originally rounds 16-20
+    ("5ラウンド実行して"), now rounds 16, 17 and 18 only ("今のラウンドで終わらせて / 途中の
+    やつ終わりまで" — finish with the current round, and finish the in-flight one properly).
+    Round 18 is to be completed in full through its close; rounds 19 and 20 are cancelled and
+    were never started.
   status: in_progress
-  authorized_by: "User instruction 5ラウンド実行して (rounds 16-20)"
+  authorized_by: "User instruction 5ラウンド実行して (rounds 16-20), narrowed to rounds 16-18 by 今のラウンドで終わらせて"
   key_requirements:
     - One round is the unit of visual measurement and reporting.
     - Dispatch only the owners the critic actually named (tools/dispatch.mjs).
@@ -39,7 +44,7 @@ objective:
     round_16: "shots/review-r16.json (opening FAIL 61), shots/review-r16-final.json (closing FAIL 54), AI_DEVELOPMENT/EVIDENCE/r16-verification.md"
     round_17: "shots/review-r17.json (opening), shots/review-r17-final.json (closing FAIL 56/100, 4 blockers). Crush regression closed; valley re-pose verified at 319.4 m drop; three blockers carried."
     round_18: "shots/review-r18.json (opening, carried + 2 evidence-backed re-routes to foliage); in progress"
-    rounds_19_20: not_started
+    rounds_19_20: cancelled_by_user_never_started
 
 execution:
   selected_rigor: STANDARD
