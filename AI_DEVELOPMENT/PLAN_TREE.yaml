@@ -376,7 +376,8 @@
    "children": [
     "PHYS-NARROWPHASE",
     "INTERACT-INTENT",
-    "BENCH-COMBAT-SAMPLE"
+    "BENCH-COMBAT-SAMPLE",
+    "ENEMY-TELEPORT-ARGS"
    ],
    "dependencies": [
     "BENCH-INSTALL"
@@ -408,7 +409,7 @@
    "dependencies": [
     "BENCH-APPARATUS"
    ],
-   "status": "ready",
+   "status": "verified",
    "priority": 1,
    "reason": "194 ms of JS per frame with three enemies against a 5 ms budget; bounds both the phone target and the rig's combat coverage."
   },
@@ -432,9 +433,21 @@
    "dependencies": [
     "PHYS-NARROWPHASE"
    ],
-   "status": "blocked",
+   "status": "ready",
    "priority": 1,
    "reason": "BM-COMBAT-02 and BM-AI-03 need >=20 encounters, unaffordable until the narrow-phase cost falls."
+  },
+  {
+   "id": "ENEMY-TELEPORT-ARGS",
+   "title": "Fix the Enemy.js teleport call site (TD-012)",
+   "parent": "BENCH-APPARATUS",
+   "children": [],
+   "dependencies": [
+    "PHYS-NARROWPHASE"
+   ],
+   "status": "ready",
+   "priority": 2,
+   "criteria": []
   }
  ]
 }

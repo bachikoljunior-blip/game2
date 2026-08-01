@@ -1,7 +1,7 @@
 {
  "schemaVersion": 1,
- "updatedAt": "2026-08-01T12:50:00Z",
- "selectionMethod": "BENCH-APPARATUS was authorized by the user's 2026-08-01 instruction, built, self-validated and run. It closed the structural gap that had left twelve of sixteen elements unverifiable, and in doing so found two product defects that no still frame could have shown (TD-010, TD-011). The next selection is now driven by TD-010: it is simultaneously the largest product risk on the phone target and the thing bounding the rig's own coverage.",
+ "updatedAt": "2026-08-01T22:30:00Z",
+ "selectionMethod": "Round 16 was run end to end on user instruction and closed with every contract gate held on r16v1. PHYS-NARROWPHASE ran in parallel and resolved TD-010, which was not a performance defect at all but a NaN query AABB making TriBVH.overlapAABB's cull fail open; its root cause is an ARCHITECTURE 5b violation at Enemy.js:845 that also left enemies with no world collision. The user then explicitly ended the run at the end of this round (\"今途中のラウンドが終わるまでにして\"), so rounds 17-20 were cancelled rather than deferred. Next selection is not made here; it awaits a new user instruction.",
  "tasks": [
   {
    "id": "R15-PUBLISH",
@@ -22,14 +22,14 @@
   {
    "id": "NEXT16",
    "planNode": "NEXT16",
-   "status": "deferred",
+   "status": "superseded",
    "priority": 1,
    "dependencies": [
     "R15-PUBLISH"
    ],
-   "objective": "Preserve the remaining visual work without beginning another product round.",
-   "verification": "No Round 16 implementation or capture starts without a new explicit user instruction.",
-   "nextAction": "Await a future user instruction; do not infer continuation from the active logical-session flag alone. Highest-value ready work when authorized: the god-ray/mid-field-wash pair, which Round 15 proved is ONE defect - rtGodA is ~10% non-zero while the marched rtGodB is 99.9% non-zero, so the pass delivers common mode rather than differential. It must be attacked as less spread, not more gain; more gain is the round-7 regression. Second: the ~10,493 px flat-black plaza patch, which two owners independently attribute to cast shadow crushed to black rather than to any material. Before citing the retained r12ab lantern A/B evidence again, verify that capture.mjs --ab-object does not screenshot after engine.stop() with preserveDrawingBuffer false."
+   "objective": "Superseded by Round 16, which was authorized and run.",
+   "verification": "Round 16 ran: opening set r16 (FAIL 58/100, 3 blockers), verification set r16v1, all gates held.",
+   "nextAction": "Complete. The god-ray/mid-field-wash pair it named was attacked correctly as less spread: PostFX gained a Henyey-Greenstein phase term on the destination angle and rtGodB visible coverage fell 89.0% -> 39.2% on sun. The flat-black plaza patch it named was NOT addressed and remains open. The r12ab lantern A/B caveat it recorded is still unchecked. See HANDOFF.md."
   },
   {
    "id": "BENCH-INSTALL",
@@ -56,14 +56,14 @@
   {
    "id": "PHYS-NARROWPHASE",
    "planNode": "BENCH-APPARATUS",
-   "status": "ready",
+   "status": "verified",
    "priority": 1,
    "dependencies": [
     "BENCH-APPARATUS"
    ],
    "objective": "Find why an enemy capsule step drives near-whole-mesh narrow-phase sets, and fix it. Three engaged enemies cost ~194 ms of JS per frame against a 5 ms budget; 209,886 triangle tests per frame against a static world of 2,148 triangles.",
    "verification": "tools/interaction-capture.mjs --scenarios=__extras_only__ re-measures extras.jsFrameCost on the same profile: msPerFrameThreeEnemies and narrowphaseChecksThreeEnemies must both fall by at least an order of magnitude with the encounters scenario then completing its >=20-encounter sample.",
-   "nextAction": "Owned by [physics]. Start at Physics._closestToMesh and the AABB handed to bvh.overlapAABB from _charStep's _slide / _depenetrate / _probeGround; the CPU profile in AI_DEVELOPMENT/EVIDENCE/interaction-i1.md names the exact path. Do not optimise before the candidate-set size is explained."
+   "nextAction": "Complete in 9330fa8. Not a performance defect: the query AABB was NaN and overlapAABB culls with six comparisons that are all false against NaN, so the cull failed open and returned every triangle. narrowphaseChecksThreeEnemies 209,886 -> 8,062 (26.0x) and msPerFrameThreeEnemies 161.6 -> 3.7 ms (44.2x) back-to-back on one container; no-enemy checks unchanged exactly at 1,338. encounters now completes 20 encounters / 14,470 frames in 21.9 s and BM-AI-03 passes. BM-COMBAT-02 is still inconclusive for a NEW reason: the harness bot scored 0 kills in 20 encounters. Evidence in AI_DEVELOPMENT/EVIDENCE/phys-narrowphase.md."
   },
   {
    "id": "INTERACT-INTENT",
@@ -76,6 +76,30 @@
    "objective": "Make the three authored interactables reachable. Level.interact(), nearestInteractable() and ringBell() have no caller, and Input's 'interact' intent is consumed by nobody, so the bell, the ema and the chozuya — and the bell's wave trigger — cannot be reached in play.",
    "verification": "tools/interaction-capture.mjs --scenarios=bell-accident: the deliberate half must produce a ring (interactables bell.used true) while the bot-driven combat half still produces none.",
    "nextAction": "Owned by [world] plus whichever system should consume the intent. TD-011."
+  },
+  {
+   "id": "ENEMY-TELEPORT-ARGS",
+   "planNode": "BENCH-APPARATUS",
+   "status": "ready",
+   "priority": 2,
+   "dependencies": [
+    "PHYS-NARROWPHASE"
+   ],
+   "objective": "Fix the ARCHITECTURE 5b violation at src/gameplay/Enemy.js:845, which passes a Vector3 to character.teleport(x, y, z). Physics.js now rejects the non-finite input at its own boundary, so the symptom is contained, but the call site is still wrong.",
+   "verification": "tools/interaction-capture.mjs with an explicit tag: narrowphaseChecksThreeEnemies stays at its post-fix value and no capsule position is non-finite at any frame of the encounters scenario.",
+   "nextAction": "Owned by [enemy]. TD-012. Pass components rather than leaning on the tolerant signature."
+  },
+  {
+   "id": "BENCH-COMBAT-SAMPLE",
+   "planNode": "BENCH-COMBAT-SAMPLE",
+   "status": "ready",
+   "priority": 2,
+   "dependencies": [
+    "PHYS-NARROWPHASE"
+   ],
+   "objective": "Sample BM-COMBAT-02 and finish BM-AI-03's siblings now that the encounters scenario is affordable. It completes 20 encounters / 14,470 frames in 21.9 s since 9330fa8, but the harness bot scored 0 kills and 0 posture breaks across all 20, so BM-COMBAT-02 still has no measurement.",
+   "verification": "A run of tools/interaction-capture.mjs --scenarios=encounters with an explicit distinct tag in which the bot resolves a non-zero number of encounters, so BM-COMBAT-02 can be scored at all.",
+   "nextAction": "Determine whether the zero-kill result is a harness-policy limitation (tools/harness/runtime.js) or a real combat-balance finding before changing either. Do not assume the bot is at fault."
   }
  ]
 }

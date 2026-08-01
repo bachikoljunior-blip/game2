@@ -227,9 +227,10 @@
     "BENCH-APPARATUS"
    ],
    "unblocks": [
-    "BENCH-COMBAT-SAMPLE"
+    "BENCH-COMBAT-SAMPLE",
+    "ENEMY-TELEPORT-ARGS"
    ],
-   "status": "ready"
+   "status": "verified"
   },
   {
    "id": "INTERACT-INTENT",
@@ -245,7 +246,15 @@
     "PHYS-NARROWPHASE"
    ],
    "unblocks": [],
-   "status": "blocked"
+   "status": "ready"
+  },
+  {
+   "id": "ENEMY-TELEPORT-ARGS",
+   "dependsOn": [
+    "PHYS-NARROWPHASE"
+   ],
+   "unblocks": [],
+   "status": "ready"
   }
  ]
 }

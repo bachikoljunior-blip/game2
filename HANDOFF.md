@@ -23,15 +23,26 @@ art-direction state record; project-wide session, plan and criterion pointers li
 
 - Logical session: **active** (`2026-07-31-game2-continuation`). It ends only when the user
   explicitly says so.
-- Current working branch: **`claude/game-reference-benchmark-qh0v0q`**, created from `main`
-  at **`1a805c9`**. It carries the per-element benchmark work, no renderer change, and is
-  **merged into `main` at `0a4fd14`** (inspected on `origin/main`). `src/` and `docs/` are
-  byte-identical to `1a805c9`, so the published Pages artifact was not rebuilt. The
-  round-15 branch `claude/1-round-execution-r6rdfs` and the rounds-13–14
-  branch `agent/rounds-13-14` are merged and historical. Persistent
+- Current working branch: **`claude/kagerou-round-16-q5h1ah`**, created from the
+  BENCH-APPARATUS checkpoint `4a53d74` and fast-forwarded onto `main` at **`4811ba0`**.
+  It carries **Round 16** (eight commits) plus the TD-010 physics fix. The
+  benchmark branch `claude/game-reference-benchmark-qh0v0q` is merged at `0a4fd14`, the
+  interaction-capture branch `claude/kagerou-benchmark-verification-7fb2zd` is merged at
+  **`4811ba0`**, and the round-15 branch `claude/1-round-execution-r6rdfs` and the
+  rounds-13–14 branch `agent/rounds-13-14` are merged and historical. Persistent
   cross-session authorization is active to push verified checkpoints, integrate them into
   `main`, and publish GitHub Pages without asking again. Paid, destructive, credential, and
   account actions remain outside that authorization.
+- **Round 16 is COMPLETE.** Opening set `r16`, verification set `r16v1`. Opening verdict
+  **FAIL** at **58/100**, 3 blockers / 4 majors / 1 minor. Four owners were dispatched and
+  ten gated out; one blocker was re-routed mid-round. All contract gates hold on `r16v1`
+  (below). Full measurements: `AI_DEVELOPMENT/EVIDENCE/r16-{sky,world,foliage,postfx}.md`.
+- **Do not read 58 as a fall from round 15's 65.** `src/` at the `r16` capture was
+  byte-identical to the tree the round-15 closing instance scored 65. Four fresh critic
+  instances have now scored essentially the same pixels **50 → 62 → 65 → 58**. That spread
+  is inter-instance variance, measured directly and now four points wide of the 12 recorded
+  last round. **No round-over-round score comparison on this project is evidence of
+  anything** unless it is the same instance or carries the variance with it.
 - **Round 15 is COMPLETE.** Working branch **`claude/1-round-execution-r6rdfs`**, created
   from published `main` at **`8e72e01`**. Opening set `r15`, verification set `r15v1`.
   Verdict **FAIL** at **65/100**, 3 blockers / 5 majors / 3 minors, from 62/100 with
@@ -86,9 +97,14 @@ art-direction state record; project-wide session, plan and criterion pointers li
   `curl` fail before reaching GitHub. **Do not record a Round 15 public browser gate until
   it is actually run from a network that can reach github.io.** The last verified public
   browser gate remains the Rounds 13–14 one at `4a3eff7`.
-- Exact next action: await a future user instruction; do not activate Round 16 from the
-  still-active logical session alone.
-- Current rollback point for round 15: **`8e72e01`** (published `main`, the branch base).
+- Exact next action: await a future user instruction. The user closed Round 16 explicitly
+  ("今途中のラウンドが終わるまでにして") after authorizing five rounds, so **Rounds 17–20
+  were cancelled, not deferred for cost** — do not resume them as if they were queued.
+- Current rollback point for round 16: **`4811ba0`** (the branch base). Owner commits are
+  `e503c95` sky, `6decc1c` world, `2314ae8` foliage, `9330fa8` physics, `b38c71b` postfx,
+  `391c0f4` world (canopy re-route), with `4388b3d` the critique and `c6d0eb5` the debt
+  reconciliation.
+- Previous rollback point for round 15: **`8e72e01`** (published `main`, the branch base).
   Owner commits are `65617e7` foliage, `11c8795` world, `30f20f4` materials, `c8ce3ee` sky,
   `b196bb8` postfx. Previous verified publication implementation checkpoint: **`5fb4c3c`**.
 - Round 8 is six commits: `bc96c3c` (critique), `e9b9717` (postfx), `4a310ed` (foliage),
@@ -218,6 +234,118 @@ from 3 to 60 px); the near mesh plants being the floating culms; and `PostFX.js`
 authored god-ray gain derivation, which claimed an upright removes ~22% of the disc term
 when it removes none — `delta = (vUv − sunUv)/N`, so every pixel's march terminates at the
 sun's UV and collects the disc as its last tap.
+
+## Round 16, measured
+
+Opening `r16` and verification `r16v1`, both phone/MEDIUM, both full captures with nothing
+carried forward. `r16v1` was taken on a clean tree at `391c0f4`, build fingerprint
+`69f5890f…` — not a mixed build.
+
+| | r16 | r16v1 | contract |
+|---|---|---|---|
+| draw calls, worst pose | 119 | **120** (`torii`) | ≤ 140 ✓ |
+| triangles, worst pose | 784,449 | **781,386** (`wide`) | ≤ 900,000 ✓ |
+| black gate p0.1, all five | 0, 11, 0, 1, 5 | **0, 11, 0, 0, 0** | < 15 ✓ |
+| white gate, gated shots | hero 236, torii 251 | **hero 236, torii 251** | > 235 ✓ |
+
+Triangles *fell* by 3,063 across a round in which five owners added visible content.
+
+What each owner measured, on its own regions:
+
+| owner | measurement that moved |
+|---|---|
+| `Sky.js` | `hero` sunward sky R−B **−2.3 → +38.7**, saturation 0.031 → **0.228**, lumaSpread 20.4 → 48.2; pure-sky patches over lumaSpread 45 **0 → 31 of 162** |
+| `Terrain.js`/`Props.js` | far-range saturation 0.119 → **0.145**, snowcap R−B 37.3 → **43.1**, backlit nobori detail 3.09 → **4.62**, plaza path separation 9.5% → **19.5%** |
+| `Foliage.js` | band box G−R −0.1 → **+2.3**; card-owned pixels +5.8 → **+9.1**, card-owned spread 93.6 → **106.3** |
+| `PostFX.js` | `rtGodB` visible coverage `sun` 89.0% → **39.2%**, `valley` 87.8% → **30.1%**; `sun` band16 on the left upright's wedge 5.99 → **15.47**; `valley` mid p50 158.9 → **106.8**, column max:min 1.58 → **2.24** against an ablation ceiling of 2.25 |
+| `Props.js` (canopy) | violet crown population 0.552 → **0.328**, mean B−G **+5.7 → −2.8**, shaded-cluster B−G +11.0 → **−0.6** |
+| `Physics.js` | narrow-phase tests **209,886 → 8,062**; three-enemy JS frame **161.6 → 3.7 ms** |
+
+**Shortfalls, recorded as shortfalls.** `sun` band16 on the r15 strip reached 4.72 against a
+7.0 target (the sweep says gain 0.28 reads 6.38 and gain 0 reads 10.88 — not taken further
+with no review left to judge the trade). The canopy transition band reached 0.234 against
+≥ 0.30, crown `detail` **fell** 7.67 → 7.05 where a rise was predicted, and the **crown
+silhouette got worse**: longest straight run 23 → 27 px against a ~12 px target. All three
+far-range numeric targets were missed, with the levers measured into hard diminishing
+returns (+40% aspect chroma buys +0.009 saturation). `torii`'s sky structure moved only
+11.7 → 14.6 lumaSpread.
+
+**One unverified line, carried deliberately.** `Props.js:1783`'s `kagBias = 0.45 + 0.55 *
+kagJoint` shipped in `6decc1c` and was never frame-measured — the rig was contended all
+round. It is reasoned (the joint mask measures ≈ 0, so the term contributed nothing; this
+lifts it to ≈ 0.45 of authored weight, a 7–10% albedo modulation at 1.6 m) but it is an
+unverified line, not a claim.
+
+## What round 16 disproved — do not re-test these
+
+- **The sakura canopy in `hero` is `Props.sacredTree`, not `Foliage.js`.** Proved three
+  ways: a projection reconstructed from `Cinematic.js` and calibrated against the documented
+  sun-disc UV puts the crown at `hero` UV 0.112–0.337, 0.099–0.346 against the critic's
+  0.12–0.34, 0.10–0.35, with the trunk landing where the frame shows the shimenawa-tied
+  trunk; `_scatterTrees` rejects `plateauMask > 0.5` so the nearest Foliage sakura is
+  87–142 m away and lands on the horizon; and hiding the entire `FoliageSystem` leaves the
+  crown and both hue populations intact (violet mode 24.9% → 25.5%). **Round 15's
+  `uWarmFill` fix was sized from this exact measurement and applied to Foliage's leaf
+  material, which cannot draw a pixel of that crown.** That misroute cost two rounds.
+- **The canopy's two-hue split was a normals defect, not a tint or sidedness defect.**
+  `computeVertexNormals()` on planar quads gave every card a single normal — max intra-quad
+  normal spread **0.000°**, now 129.6°. A constant-shaded polygon under one hard key can
+  only take two values, which is exactly why nothing sat between the populations.
+- **The god-ray pass had no scattering phase function at all.** Its angular weight was at the
+  *source* (`prox`), and since `delta = (vUv − uSunUv)·uDensity/N` every march terminates
+  inside the emitter, so every pixel collected the same near-sun taps. That is the mechanism
+  behind round 15's "common mode, not differential" measurement. Removing `prox` as well is
+  **worse** (`rtGodA` 23.4% → 40.7%, strip band16 2.65 → 1.74) — it stays.
+- **The `sun` mid-field wash is not `PostFX.js`.** Predicted >10 codes of movement on the
+  wash box under full ablation; measured **1.1**. That box is sky. The same ablation moves
+  `valley` mid p50 158.9 → 81.2, so the two framings do not share a cause.
+- **The sun-disc desaturation is neither `Sky.js`'s nor `PostFX.js`'s as scoped.** The disc
+  leaves `Sky.js` at saturation **0.238**, lumaSpread 77.6, >100 px falloff; the frame reads
+  0.036 / 21.9. But at 293 scene-linear the ACES fit returns 255/255/255 before anything
+  additive, and the disc core measures 254.7 flat — the 53× peak cut costed from the sky side
+  returns saturation **0.010**, not 0.25. Only a hue-preserving highlight rolloff fixes it,
+  and that is a whole-frame grade decision nobody currently owns.
+- **The critic's "achromatic sky" mechanism guess was wrong.** Rotating the sun on the
+  *unmodified* dome swings the box 42 code values of R−B, so the gradient always tracked the
+  sun; the defect was that the response was too narrow (only +15.5 at 10.5° from the patch).
+- **The critic's "open ground" box in `wide` is not distant terrain.** Ray-marching puts it on
+  plateau apron at **49.8 m**, where `kgA` evaluates to exactly zero — no aerial term draws
+  those pixels. Its warm/cool split also already passes (+12.1 / −9.0 R−B against +12 / +6);
+  only the mean cancels.
+- **The plaza joint mask cannot be driven off `Props.js`'s normal map**, and `greenFrac` is
+  the wrong metric for moss under a `[1, 0.412, 0.134]` key — a green albedo still comes out
+  R-leading. Two dressing criteria (R9-DRESSING-001 a and b) already pass in `Level.js`,
+  reproduced through its private RNG: spacing ±28.7% / ±31.2%, heights ±21.6%, 6 of 16
+  lanterns leaning, 4 of 16 weathered.
+- **`impostor` uniforms `uTipGlow`, `uBaseAO` and `uGrain` were uploaded every frame and
+  compiled out** — proven at the driver (`getUniformLocation` null before, non-null after).
+  The impostor was the only foliage material with no light model at all.
+
+## Apparatus faults found in round 16 — the rig has now broken ten times
+
+- **An interaction run defaulted to `--tag=i1` and overwrote `shots/interaction-i1.json`**,
+  the committed BENCH-APPARATUS baseline cited by `README.md`, this file and the frontier.
+  Caught by the coordinator, restored from git, and the run's data preserved. Same shape as
+  round 5's per-profile retry erasing the phone baseline mid-round. **Always pass an explicit
+  distinct `--tag` to `interaction-capture.mjs`.**
+- **Container CPU time is not comparable across runs.** The clobbered run measured
+  `noEnemies.msPerFrame` **0.888** against i1's recorded **1.41** on a path nothing had
+  changed, because five agents were sharing four cores. Millisecond baselines from a
+  different container are not valid comparisons; `narrowphaseChecks` is deterministic and is
+  the number to lead with.
+- **A `--ab-object`-style rig returned frames at mean RGB (7.2, 5.8, 5.7)** because
+  `__kagerouStart()` and `skipIntro()` were issued in one `page.evaluate` and the title card
+  was still up. It would have "proved" the canopy routing off two black frames. Caught by
+  [foliage] before it produced a finding; its rig now asserts screenshot p50 > 30 before
+  measuring. Note the obvious in-page check is itself wrong — `drawImage(canvas)` returns
+  black under `preserveDrawingBuffer: false`.
+- **Two owners stalled silently for ~6 hours** with no error and no notification, holding
+  uncommitted edits. Detected by comparing evidence-file mtimes against wall clock and by
+  finding no rig process and no lock held; both were recovered by resuming from transcript.
+  A quiet agent is not a working agent — check mtimes, not elapsed time.
+- **The highlight gate is a floor, not a ceiling.** `capture.mjs:645` tests `p99.9 > 235`.
+  An owner wrote its own acceptance bound as `≤ 240`, the wrong sense, which would have
+  passed a frame that fails the build. It caught and corrected this itself.
 
 ## What round 15 disproved — do not re-test these
 

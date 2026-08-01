@@ -108,6 +108,51 @@ const SKY_KNEE_FAR = 1.10;
 /** Blend band for the two ceilings, in cos(angle to the sun): 0.93 ≈ 21.6°, 0.60 ≈ 53.1°. */
 const KNEE_NEAR_COS = 0.93;
 const KNEE_FAR_COS = 0.60;
+
+/**
+ * The low-sun horizon band — the term that makes this a magic-hour sky rather than a
+ * blue one, and the thing round 16 filed as a blocker over the top 35% of `hero`.
+ *
+ * Preetham is a *single-scattering* model, and its only sun-tinted terms outside the
+ * disc are the aureole lobes: `pow(cos, 2400)`, `pow(cos, 220)` and `pow(cos, 26)`. The
+ * widest of those is half-strength at 13.2° and is 1.5e-6 of its peak by 53°, so past
+ * roughly 25° from the sun the entire dome's colour is the Rayleigh/Mie ratio and the
+ * sun's own hue has left the picture. Evaluated on the shipped grade at 13° of elevation
+ * (JS twin, matched to the fragment to 7e-5), the dome runs R−B **+0.34 at 3° of elevation
+ * on the sun's azimuth** and **−0.08 at 15° / 45° of azimuth** — i.e. the warm band exists
+ * but is confined to the last few degrees above the skyline, and `hero`'s sky sits at
+ * 10–24° of elevation and 50° of azimuth, entirely above and outside it. Measured on
+ * `phone-hero-r16.png`, the sunward sky came out RGB [162.2, 165.0, 163.4], R−B −1.1.
+ *
+ * A real turbid magic-hour atmosphere carries that reddening tens of degrees up and tens
+ * of degrees around, because the light arriving there has scattered more than once. So
+ * the band is a *hue rotation* applied to the graded radiance: normalised to Rec.709
+ * luminance, so it cannot move an exposure, a histogram gate or the probe's level — only
+ * the ratio of red to blue. Its colour is `_sunTransmittance()`, the same extinction the
+ * key light is built from, which is the point: the sky's colour is now a function of the
+ * sun's colour by construction rather than by an artist keeping two constants in step.
+ *
+ * The shape is fitted, not chosen: `1 - y * 1.6` raised to 1.2 is zero above 38.7° of
+ * elevation and `smoothstep(-0.10, 0.75)` on cos(angle to the sun) is zero past 95.7° and
+ * full inside 41.4°. That confinement is what keeps the anti-solar sky cool — the whole
+ * point of the critic's "60 code values of R−B between the two sides": on the r16 boxes the
+ * band alone takes the sunward sky from R−B −2.3 to +36.3 and the near-horizon band from
+ * +3.9 to +71.0 while the anti-solar sky moves −28.9 → −28.7.
+ *
+ * Cosine-weighted over the upper hemisphere, the band alone moves the baked environment
+ * cube's R/B from 0.7396 to 0.8192 at unchanged luminance (0.3007 → 0.3004). The probe's
+ * *level* is therefore untouched — `Lighting` solves `environmentIntensity` against
+ * `probeIrradiance`'s luminance — and so is the hemisphere fill, which `SHADOW_FILL_MAX_RB`
+ * holds on §5's `#4a6b8f` at R/B 0.2493 either way. What does warm is the probe's hue, and
+ * it is declared rather than buried: a sky that is genuinely amber on one side does light
+ * that side amber, but it is a change to the cool half of the rig and the next round should
+ * know it was a choice.
+ */
+const HORIZON_BAND_ALT = 1.6;
+const HORIZON_BAND_POWER = 1.2;
+const HORIZON_BAND_AZ_LO = -0.10;
+const HORIZON_BAND_AZ_HI = 0.75;
+
 /**
  * Undoes the dome's display scale for the cloud deck. `1 / SKY_LUMINANCE` exactly, which is
  * the same correction `uStarStrength` and `uMoonStrength` already apply: the deck's colours
@@ -226,10 +271,20 @@ const _colC = new Color();
 const _colD = new Color();
 const _colE = new Color();
 const _colF = new Color();
+const _colH = new Color();
 const _irr = [0, 0, 0];
 const _skySample = { r: 0, g: 0, b: 0 };
 /** Rec.709 luminance — used to re-hue the ambient without changing its level. */
 const lum = (c) => c.r * 0.2126 + c.g * 0.7152 + c.b * 0.0722;
+/**
+ * JS twin of the shader's horizon band. Returns the 0..1 weight; the caller mixes toward
+ * `horizonTint`. It has to exist here or the fog colours and the ambient hue would be
+ * sampled from a sky that is not the one on screen — `_airColor` fits the aerial
+ * perspective's sunward haze at 1° of elevation, which is exactly where the band is
+ * strongest.
+ */
+const horizonBand = (dy, cosTheta) => Math.pow(clamp(1 - dy * HORIZON_BAND_ALT, 0, 1), HORIZON_BAND_POWER) *
+  smoothstep(HORIZON_BAND_AZ_LO, HORIZON_BAND_AZ_HI, cosTheta);
 /**
  * JS twin of the shader's soft knee. Order 4, so the low and mid sky pass through almost
  * untouched (0.45 loses 1%) and only the forward-scatter lobe gets folded onto the ceiling.
@@ -493,6 +548,7 @@ uniform float uSunE;
 uniform float uSunFade;
 uniform float uMieG;
 uniform vec3  uSkyTint;
+uniform vec3  uHorizonTint;
 uniform float uSkyExposure;
 uniform vec3  uGroundColor;
 uniform float uStarStrength;
@@ -809,6 +865,17 @@ vec3 skyRadiance( vec3 rd, out vec3 FexOut ) {
   vec3 atmos = pow( max( tex, vec3( 0.0 ) ), vec3( 1.0 / ( 1.2 + 1.2 * uSunFade ) ) );
   atmos *= uSkyTint * uSkyExposure;
 
+  // The low-sun horizon band. Preetham's widest sun-tinted term is pow(cosTheta, 26),
+  // 1.5e-6 of its peak by 53 degrees, so outside a 25-degree cap the model has no memory
+  // of the sun's colour at all and the sky goes to the Rayleigh/Mie ratio — which is, as
+  // measured, the whole of the hero framing's sky. This puts the multiply-scattered
+  // reddening back, as a rotation at constant Rec.709 luminance so it can only move red
+  // against blue and never a level. uHorizonTint is the sun's own extinction (solved in
+  // _applyGrade), so the sky's colour cannot drift out of step with the key light's.
+  float band = pow( clamp( 1.0 - rd.y * ${HORIZON_BAND_ALT.toFixed(2)}, 0.0, 1.0 ), ${HORIZON_BAND_POWER.toFixed(2)} )
+             * smoothstep( ${HORIZON_BAND_AZ_LO.toFixed(2)}, ${HORIZON_BAND_AZ_HI.toFixed(2)}, cosTheta );
+  atmos *= mix( vec3( 1.0 ), uHorizonTint, band );
+
   // Soft knee, order 4, on LUMINANCE — never per channel. A per-channel knee is a
   // per-channel *ceiling*: every channel that overshoots lands on the same uSkyKnee, so the
   // 25-degree cap of sky around a low sun converges on neutral grey no matter what colour
@@ -864,7 +931,16 @@ void main() {
   // against a dome capped at uSkyKnee = 0.62, so a quarter of it is still 59x the brightest
   // sky it can be drawn against and clips while nothing around it does. The old 0.12 also
   // clipped, but there is no reason to spend that much of the margin on a cloud tap.
-  col += sunDisc( cosTheta, Fex ) * mix( 1.0, 0.25, cloudAlpha ) * ( 1.0 - below );
+  //
+  // 0.50, not 0.25, since uCloudDensity reached real opacity. That floor was fitted while
+  // the deck's alpha could not exceed 0.61 anywhere in the review set, so the *product* was
+  // what mattered and the floor itself was never reached; on the sun pose the alpha on the
+  // solar ray is now 0.950 against 0.620, and at 0.25 the disc would have lost 46% of the
+  // energy the bloom and god-ray passes work from — ARCHITECTURE §5.4 — as a side effect of
+  // a cloud change. At 0.50 the disc on that ray keeps 0.525 of full against 0.535 before,
+  // and the mean attenuation over the 8-degree cap the god rays are sourced from moves
+  // 0.870 -> 0.849. A magic-hour altocumulus deck is not a light-tight overcast.
+  col += sunDisc( cosTheta, Fex ) * mix( 1.0, 0.50, cloudAlpha ) * ( 1.0 - below );
 
   gl_FragColor = vec4( max( col, vec3( 0.0 ) ), 1.0 );
 
@@ -919,6 +995,12 @@ export class SkySystem {
     this.moonColor = new Color(0x8fa6d8);
     this.skyColor = new Color(0x6f8db8);
     this.groundColor = new Color(0x4c3f31);
+    /**
+     * The horizon band's hue rotation — the sun's own extinction, renormalised to unit
+     * Rec.709 luminance and faded out once the sun is high enough that there is no band.
+     * Solved in `_applyGrade`; read by the dome and by `_evalSky`'s twin.
+     */
+    this.horizonTint = new Color(1, 1, 1);
     this.sunIntensity = 2.35;
     this.ambientIntensity = 0.33;
     /**
@@ -1044,6 +1126,7 @@ export class SkySystem {
       uSunFade: { value: 0.5 },
       uMieG: { value: 0.8 },
       uSkyTint: { value: new Vector3(1, 1, 1) },
+      uHorizonTint: { value: new Vector3(1, 1, 1) },
       uSkyExposure: { value: 1 },
       uGroundColor: { value: new Vector3(0.06, 0.05, 0.04) },
       uStarStrength: { value: 0 },
@@ -1057,7 +1140,34 @@ export class SkySystem {
       uCloudScale: { value: 0.00055 },
       uCloudHeight: { value: 1700 },
       uCloudThickness: { value: 0.42 },
-      uCloudDensity: { value: 1.25 },
+      /**
+       * 2.2, not 1.25 — the deck could not reach opacity, so it could show neither a
+       * silhouette nor its own colour.
+       *
+       * `cloudMass` returns `smoothstep(cov + 0.01, cov + 0.38, f)`, so a solid cloud needs
+       * the driving field at `f = cov + 0.38 = 0.835`. Sampling the shipped field along
+       * `hero`'s sky rays (CPU mirror of this fragment, 1715 rays over the visible sky):
+       * f has **median 0.462 and maximum 0.772** — it never reaches the top of its own ramp
+       * anywhere in the frame, and it starts only 0.003 above the bottom of it. The
+       * resulting alpha runs **p50 0.020, p90 0.255, p99 0.457, max 0.61**. Half the sky had
+       * no deck at all and the rest carried a uniform ~30% veil, which is exactly what round
+       * 16 measured as "not one cloud, not one band, not one wisp — lumaSpread 13.9".
+       *
+       * The multiplier is the right lever rather than a narrower ramp: round 7 measured a
+       * 0.17-wide ramp as an edge "traceable pixel by pixel at native resolution", and the
+       * ramp is untouched here. `dens` clamps at 1, so what changes is only where the top of
+       * the curve lands: alpha now saturates at f = 0.638 instead of 0.705, an effective
+       * 0->1 transition spanning 0.177 of the field against round 7's rejected 0.110 and its
+       * accepted 0.246.
+       *
+       * Measured on its own, on round 16's own 253x140 sunward patch: lumaSpread
+       * **20.4 -> 49.3** and mean R-B **-2.3 -> +9.3**, because an opaque sunward cell is
+       * linear (0.426, 0.231, 0.193) against a sky at (0.383, 0.478, 0.507). It costs 3.3%
+       * of the environment cube's luminance (0.3007 -> 0.2908) and takes its R/B 0.7396 ->
+       * 0.8083; the level loss is not compensated, because `probeIrradiance` is a sky-only
+       * estimate and the deck is not in it.
+       */
+      uCloudDensity: { value: 2.2 },
       uCloudWind: { value: this._cloudWind },
       uCloudLit: { value: new Vector3(1, 0.69, 0.42) },
       uCloudCool: { value: new Vector3(0.53, 0.60, 0.71) },
@@ -1229,6 +1339,28 @@ export class SkySystem {
     this._sunE = sunE;
     this._sunFade = sunFade;
 
+    // --- horizon band hue -------------------------------------------------------
+    // Solved before anything that samples the dome (`_skyIrradiance`, `_airColor`), because
+    // `_evalSky` reads it. The colour is the sun's own extinction — the same term the key
+    // light is built from — renormalised to unit Rec.709 luminance, so mixing toward it is
+    // a pure hue rotation: it cannot move the frame's exposure, either histogram gate, or
+    // the level `Lighting` solves the environment probe against.
+    //
+    // Two fades, both on the sun's height. Below the ridge the extinction model saturates
+    // and would paint a red band across a night sky; above ~38° there is no low-sun band to
+    // draw. At magic hour (sunY 0.2248) both are inert by construction, so the tuned state
+    // is the untouched one.
+    this._sunTransmittance(_colH);
+    const bandW = smoothstep(-0.05, 0.05, sunY) * (1 - smoothstep(0.26, 0.62, sunY));
+    const lTint = Math.max(lum(_colH), 1e-4);
+    _colH.multiplyScalar(1 / lTint);
+    this.horizonTint.setRGB(
+      lerp(1, _colH.r, bandW), lerp(1, _colH.g, bandW), lerp(1, _colH.b, bandW),
+    );
+    if (!Number.isFinite(this.horizonTint.r + this.horizonTint.g + this.horizonTint.b)) {
+      this.horizonTint.setRGB(1, 1, 1);
+    }
+
     if (u) {
       u.uBetaR.value.copy(this._betaR);
       u.uBetaM.value.copy(this._betaM);
@@ -1236,6 +1368,7 @@ export class SkySystem {
       u.uMieG.value = g.mieG;
       u.uSunE.value = sunE;
       u.uSkyTint.value.set(g.tint.r, g.tint.g, g.tint.b);
+      u.uHorizonTint.value.set(this.horizonTint.r, this.horizonTint.g, this.horizonTint.b);
       u.uSkyExposure.value = g.exposure * SKY_LUMINANCE;
       u.uGroundColor.value.set(g.ground.r, g.ground.g, g.ground.b);
       // Stars and the moon are emitters, not atmosphere: undo the dome's display scale
@@ -1464,7 +1597,14 @@ export class SkySystem {
     // skips both, which is the state `_renderEnvironment` bakes the cube in — that is what
     // the PMREM probe actually lights the world with, so it is what Lighting must be told.
     const e = g.exposure * (raw ? 1 : SKY_LUMINANCE);
-    const cr = rgb[0] * g.tint.r * e, cg = rgb[1] * g.tint.g * e, cb = rgb[2] * g.tint.b * e;
+    // The band is inside `raw` too: the environment cube is rendered by this same fragment
+    // with only the display scale and the knee overridden, so the probe really is lit by a
+    // banded sky and `probeIrradiance` has to say so.
+    const hb = horizonBand(dy, cosTheta);
+    const ht = this.horizonTint;
+    const cr = rgb[0] * g.tint.r * e * lerp(1, ht.r, hb);
+    const cg = rgb[1] * g.tint.g * e * lerp(1, ht.g, hb);
+    const cb = rgb[2] * g.tint.b * e * lerp(1, ht.b, hb);
     // cosTheta, because the ceiling is angle-dependent — the twin has to carry that too or
     // the fog target and the ambient hue are sampled from a sky that is not on screen.
     const k = raw ? 1 : kneeScale(cr, cg, cb, cosTheta);
