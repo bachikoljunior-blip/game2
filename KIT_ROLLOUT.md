@@ -26,10 +26,10 @@ All eight target repositories now carry the kit, on one branch name:
 | Repo | SHA (remote-read) | Kit | Skills |
 |---|---|---|---|
 | `kit` | `d334e77` on `main` + `claude/kit-template-creation-ndursc` | source of truth, v0.2.0, 52 files, 34 tests | n/a |
-| `game2` | `bce8577` | v0.2.0, `check:kit` passes | 9 + `round` |
-| `survival` | `43d6e28` | v0.2.0, harness on `lib/browser` + `lib/image`, `check:kit` passes | 9 |
-| `Gptgame` | `44913b2` | v0.2.0, `check:kit` passes | 9 |
-| `Q` | `813a8bf` | v0.2.0, `check:kit` chained into `npm run check` | 9 |
+| `game2` | `e664c4c` | v0.2.0, `check:kit` passes, validator on `lib/state` | 9 + `round` |
+| `survival` | `54c541e` | v0.2.0, harness on `lib/browser` + `lib/image`, validator on `lib/state` | 9 |
+| `Gptgame` | `4586c66` | v0.2.0, validator on `lib/state`, self-test in CI | 9 |
+| `Q` | `1720d47` | v0.2.0, both gates on `lib/state`, self-test in CI | 9 |
 | `game` | `6247fd2` | v0.2.0, `check:kit` chained into `npm run check` | 9 |
 | `Simple-browser-cookie-clicker-game` | `4375dde` | v0.2.0, `check:kit` only — no build manufactured | 9 |
 | `Cooky` | `b431196` | v0.2.0, `check:kit` only — no build manufactured | 9 |
@@ -175,15 +175,75 @@ work: `happy-dom` and `playwright-core` are devDependencies and are not installe
 four-line one holding `check:kit` and nothing else, so the drift check is discoverable
 without inventing tooling the repository does not have.
 
-### 5. Retire the duplicated validators
+### 5. ~~Retire the duplicated validators~~ — done 2026-08-01, all four
 
-`game2/tools/validate-project-state.mjs`, `survival/tools/check_operating_state.mjs`,
-`Gptgame/scripts/verify-continuity.mjs` and `Q/tools/validate-protocol.mjs` are four
-implementations of one job; the last two are roughly 70% the same file, independently
-written. `lib/state` and `template/tools/validate-state.mjs` already cover it.
+All four now wire to `.kit/lib/state/` instead of carrying their own copy.
 
-*Acceptance:* each repo's own validator still passes on its own state after the swap, and at
-least one deliberate breakage per repo is **observed** failing.
+**Read the acceptance line before assuming what this step was.** It says *each repo's own
+validator still passes on its own state* — the repositories keep their own protocols,
+vocabularies and state layouts, and what is retired is the duplicated **implementation**, not
+each project's operating record. The other reading — migrate all four onto
+`template/tools/validate-state.mjs` and its twelve-value schema — would have rewritten the
+live resume state of four active projects, which is exactly what `bootstrap --template`
+refuses to do on purpose ("a repository that already has a protocol has one for a reason").
+The four layouts really are different: `game2` JSON-with-camelCase in eight files,
+`survival` JSON-with-snake_case in two, `Gptgame` one `STATE.yaml`, `Q` five YAML files.
+
+*Acceptance, observed per repo* — each validator passes on its own state, and every one now
+has a `--selftest` whose deliberate breakages were watched failing:
+
+| Repo | Validator | Equivalence measured | Self-test |
+|---|---|---|---|
+| `game2` | `tools/validate-project-state.mjs` | identical output on real state; **28/28** mutations same verdict | 14/14 |
+| `survival` | `tools/check_operating_state.mjs` | identical output on real state; **27/27** mutations same verdict | 17/17 |
+| `Gptgame` | `scripts/verify-continuity.mjs` | identical output on real state; **19/19** mutations same verdict | 15/15 |
+| `Q` | `tools/validate-protocol.mjs` | byte-identical output on branch **and** at `origin/main` | 13/13 |
+| `Q` | `tools/floor-gates.mjs` | **768/768** constructed inputs fire identical rules when configured with the old accepted value | via the three scenarios |
+
+Every self-test includes a control that must **not** fire, because a gate that fires on
+everything is as broken as one that never fires.
+
+*Three real defects fell out, none of them the swap:*
+
+- **`game2` could not detect a dependency cycle.** Given a `PROJECT <-> FOUNDATION` cycle in
+  `PLAN_TREE.yaml` the old validator exits 0; the new one exits 1 naming the trail. The
+  detector is `survival`'s own, generalised — it was the only one of the four that had it.
+- **`survival` never scanned its state for credentials.** An `access_token` field in
+  `PROJECT_STATE.json`: old exits 0, new exits 1.
+- **`Q`'s validator could only pass on `main`.** Its verified-main-context check accepted
+  `HEAD^` only when `HEAD` *was* `origin/main`, so it failed on every feature branch —
+  including in `quality-floor.yml`, which runs on pull requests. Caught by the new control.
+  It now requires any recorded revision to be an ancestor of `HEAD`, which still rejects a
+  fabricated SHA. Recorded in `Q/AI_DEVELOPMENT/DECISIONS.md`.
+
+*Two things this step had to fix in its own wake, both the gates working correctly:* the
+step-4 install commit changed `package.json`, a governed file, in both `Q` and `Gptgame`
+without moving the canonical record, so F2 fired. `Q` resolved it through the state edit step
+6 needed anyway. `Gptgame`'s branch was rebuilt as two commits that each move the record, and
+force-pushed — it held only this session's unmerged work.
+
+Both repositories' CI now proves the gates can fail *before* running them.
+
+### 6. ~~Settle the floor-gate incompatibility~~ — done 2026-08-01
+
+**Adopted: `complete_verified`.** `Gptgame` already required it and is unchanged. `Q` moved
+to it: `AI_DEVELOPMENT/STATE.yaml` and `tools/floor-gates.mjs` both updated, decision recorded
+in `Q/AI_DEVELOPMENT/DECISIONS.md`.
+
+The tie was settled by reading `Q`'s own protocol rather than by preference. `PROTOCOL.md`
+§116 defines the ten-value status vocabulary and **`passed` is not one of them — the word
+occurs zero times in that document.** `Q`'s gate was requiring a value the protocol it
+enforces does not define, while `passed` separately means "this check ran and was green" in
+the gate-result vocabulary, a different claim from "this change was reviewed end to end".
+
+What the change costs, measured over 768 constructed gate inputs: **156 stricter, 534
+unchanged, 78 more permissive** — and every one of the 78 is exactly the intended swap, a
+state reading `review_outcome: complete_verified` that the old gate rejected. No other input
+became more permissive. The refactor is separable from the decision: configured with the old
+value the shared gate differs on 0 of 768.
+
+Rejected: keeping `passed` and changing `Gptgame`. It would have propagated a value neither
+protocol defines into a second repository.
 
 ### 6. Settle the floor-gate incompatibility for real
 
@@ -242,6 +302,22 @@ Every one of these has already cost a session.
   if it did not, delete it.
 - **The kit is vendored, not linked.** Editing anything under `.kit/` in place is caught by
   `check:kit` as `edited in place`. Change it in the kit repository and re-install.
+- **A validator that only ever passes is indistinguishable from one that is inert.** Three
+  real defects in this workstream were found by a `--selftest` control and none by reading the
+  code: `game2` could not see a dependency cycle, `survival` never scanned for credentials,
+  and `Q`'s validator could not pass on any branch. All three had been passing for months.
+- **"Identical output" proves nothing unless the inputs were broken.** Comparing an old and a
+  new validator on healthy state only proves both pass. Every equivalence claim in step 5 was
+  made against deliberate mutations — 28, 27, 27, 19 of them — because that is the only
+  comparison that can fail.
+- **Installing the kit can trip the repository's own floor gate.** `package.json` is a
+  governed file in both `Q` and `Gptgame`, so the install commit changed governed files
+  without moving the canonical record and F2 fired. Plan the state edit into the same commit,
+  or the branch is red before any real work starts.
+- **A module that runs its CLI on import will run it during a differential test.**
+  `Q/tools/floor-gates.mjs` did this — importing the old copy to compare against launched the
+  real gate. Strip the CLI, or export the pure function, before comparing. Same family as the
+  `capture.mjs` trap below.
 - **Do not conclude the kit is unreachable because `add_repo` refuses it.** That was recorded
   on 2026-08-01 and is misleading: a session started with the kit in scope has it already
   cloned at `/home/user/kit` with a working `origin`, and `git push` to it **succeeds** —
