@@ -954,12 +954,74 @@
         "A user instruction authorizing the work"
       ],
       "action": "Build the missing interaction-capture apparatus: drive the real input surface, record state over time, and make combat, movement, camera, animation, touch, audio and AI criteria measurable.",
-      "expected": "Each element currently listed under gapSummary.byApparatus.noEvidenceAtAll and sourceAuditOnly gains at least one criterion that can actually be run.",
-      "threshold": "Not yet attempted. No round, capture, or measurement has been performed against it.",
-      "evidence": [],
+      "expected": "The primary phone path gains runnable WebKit and iOS Simulator Safari interaction evidence; later apparatus phases may extend coverage to every remaining element.",
+      "threshold": "Phase 1 is prepared on the task branch; target WebKit and iOS runners must both exit 0 before this criterion can be verified.",
+      "evidence": [
+        "tools/test-iphone-webkit.mjs",
+        "tools/test-ios-safari.mjs",
+        "AI_DEVELOPMENT/EVIDENCE/iphone-se3-automation.md"
+      ],
       "severity": "blocking",
       "verification": "automated and independent review",
-      "status": "proposed"
+      "status": "active"
+    },
+    {
+      "id": "MOBILE-WEBKIT-001",
+      "sourceRequirement": "User instruction 2026-08-01: replace routine physical-device verification with free automation",
+      "scope": "iPhone SE (3rd generation) landscape Playwright WebKit at 667×375 / DPR 2 / MEDIUM",
+      "preconditions": [
+        "npm ci completed",
+        "A WebKit-generated visual baseline exists"
+      ],
+      "action": "Run npm run test:iphone-webkit.",
+      "expected": "The game boots as iOS mobile, stays inside draw/triangle budgets, accepts movement plus attack and camera touch, pauses/resumes, restores settings, survives automated play, renders a non-flat target frame within visual tolerance, and reports no blocking browser/network error.",
+      "threshold": "Exit code 0; viewport 667×375; DPR 2; MEDIUM; draw calls <= 140; triangles <= 900000; every named interaction/error/visual check passes.",
+      "evidence": [
+        "tools/test-iphone-webkit.mjs",
+        ".github/workflows/iphone-webkit.yml",
+        "AI_DEVELOPMENT/EVIDENCE/iphone-se3-automation.md"
+      ],
+      "severity": "blocking",
+      "verification": "automated target-browser interaction, video, trace, screenshot, and JSON report",
+      "status": "active"
+    },
+    {
+      "id": "MOBILE-IOS-001",
+      "sourceRequirement": "User instruction 2026-08-01: use the closest free automatic replacement for the current physical-device check",
+      "scope": "iPhone SE (3rd generation) iOS Simulator Mobile Safari landscape",
+      "preconditions": [
+        "MOBILE-WEBKIT-001 verified for the same main revision"
+      ],
+      "action": "Run npm run test:ios-safari through Appium/XCUITest on macos-15.",
+      "expected": "Actual Mobile Safari boots the verified revision and trusted W3C touch actions cover simultaneous movement/attack, camera, pause/resume, persistence, budgets, screenshot capture, and runtime-error collection.",
+      "threshold": "Exit code 0 and all JSON checks pass; simulator screenshot, video, Appium log, and report are retained.",
+      "evidence": [
+        "tools/test-ios-safari.mjs",
+        ".github/workflows/ios-safari-simulator.yml",
+        "AI_DEVELOPMENT/EVIDENCE/iphone-se3-automation.md"
+      ],
+      "severity": "blocking",
+      "verification": "automated actual-iOS Mobile Safari interaction",
+      "status": "active"
+    },
+    {
+      "id": "MOBILE-PUBLISH-001",
+      "sourceRequirement": "Publish only after the automatic primary-phone gates pass",
+      "scope": "main-to-docs GitHub Pages publication",
+      "preconditions": [
+        "MOBILE-WEBKIT-001 and MOBILE-IOS-001 verified for one exact source SHA"
+      ],
+      "action": "Run Publish device-verified GitHub Pages from the successful simulator workflow.",
+      "expected": "Only the exact verified main SHA rebuilds docs; a superseded SHA is rejected; the public build-revision marker matches; boot and the primary public journey pass.",
+      "threshold": "No publish job starts after a failed gate; exact sourceSha observed publicly; npm run verify:pages exits 0.",
+      "evidence": [
+        ".github/workflows/publish-verified-pages.yml",
+        "tools/verify-pages.mjs",
+        "AI_DEVELOPMENT/EVIDENCE/iphone-se3-automation.md"
+      ],
+      "severity": "blocking",
+      "verification": "workflow ordering, exact-revision public fetch, and browser start",
+      "status": "active"
     }
   ]
 }

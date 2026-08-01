@@ -21,7 +21,19 @@ npm install
 npm run dev        # http://localhost:5173
 npm run build      # → dist/
 npm run shots      # build, then capture the visual-review screenshot set
+npm run test:iphone-webkit  # iPhone SE 3 landscape WebKit interaction/visual gate
 ```
+
+GitHub Actions runs the WebKit gate at `667×375 / DPR 2`, touch, iOS user agent, and MEDIUM
+for product changes. A passing `main` candidate then runs Appium/XCUITest against Mobile
+Safari on an iPhone SE (3rd generation) iOS Simulator. Only both-pass candidates can rebuild
+the checked-in Pages artifact; screenshots, video, trace, Appium logs, and JSON reports are
+retained as Actions artifacts.
+
+This is the routine primary-phone release evidence. It does not measure a physical phone's
+GPU speed, heat, memory-pressure reloads, actual multi-touch hardware, hand reach, haptics,
+speakers, or audio latency, so those properties remain explicitly unmeasured rather than
+being reported as passes.
 
 ## Controls
 
@@ -81,13 +93,13 @@ enclosed space, and Genshin's sustained thermal behaviour on mid-range Android. 
 only — nothing from any reference's characters, world, layout, UI, staging or music is
 copied, and no reference title is named in the shipped product.
 
-**The honest state of that bar: one element of sixteen has a working review loop.** Visuals
+**The honest state of that bar: one element of sixteen has a completed review loop.** Visuals
 is measured and currently fails. Four more have partial evidence limited to what a still
-frame or a boot-time counter can show. The other twelve — combat feel, movement, camera
-behaviour, animation, touch, audio, AI among them — have never been verified, because five
-static screenshots cannot see them. No side-by-side against real reference footage, no
-real-device frame rate, and no expert or player review has ever been performed, and none is
-claimed anywhere in this repository.
+frame or a boot-time counter can show. The interaction gap now has a prepared WebKit plus
+iOS Simulator Safari apparatus, but its target runners have not yet produced accepted
+evidence. No side-by-side against real reference footage, no physical-device frame rate,
+and no expert or player review has ever been performed, and none is claimed anywhere in
+this repository.
 
 ## Where this build actually stands
 

@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-01T08:20:00Z",
+  "updatedAt": "2026-08-01T12:23:00Z",
   "status": "active",
   "project": {
     "name": "KAGEROU \u967d\u708e",
     "repository": "bachikoljunior-blip/game2",
     "objective": "Continue the mobile-first third-person Japanese sword-action game toward its established visual and interaction bar without external runtime assets or AI APIs.",
     "defaultBranch": "main",
-    "defaultBranchVerifiedSha": "4a3eff701af0f6db52f5b780247e38422d40aad6",
-    "workingBranch": "claude/game-reference-benchmark-qh0v0q",
-    "workingBranchBaseSha": "1a805c9",
+    "defaultBranchVerifiedSha": "72187ac32365259bfc5eb98f7419d58675f988ae",
+    "workingBranch": "agent/iphone-se3-automation",
+    "workingBranchBaseSha": "72187ac32365259bfc5eb98f7419d58675f988ae",
     "previousWorkingBranch": "claude/1-round-execution-r6rdfs",
-    "workingBranchPublicationSha": "b2a7433de7ff72082287d6b5429ca8af54a8642b",
+    "workingBranchPublicationSha": "pending_remote_push",
     "resumedFromRef": "origin/claude/kagerou-round9-measurement-inj5qq",
     "resumedFromSha": "6c4c0933240684ccb25907425d7507826edcc3fa"
   },
@@ -65,6 +65,13 @@
       "command": "npm ci --cache /tmp/game2-npm-cache",
       "note": "The environment's default /root/.npm cache is not writable."
     },
+    "primaryPhoneAutomation": {
+      "status": "complete_unverified",
+      "localHarness": "PASSED with Chromium surrogate at iPhone SE 3 landscape 667×375 / DPR 2: boot, iOS/mobile detection, MEDIUM, budgets, movement plus attack, camera, pause/resume, settings persistence, soak, image sanity, and error checks; this is not target WebKit evidence.",
+      "targetWebKit": "prepared: GitHub Actions workflow and baseline-required gate exist; first WebKit-generated baseline and target run remain pending.",
+      "targetIosSafari": "prepared: macos-15 Appium/XCUITest workflow and Mobile Safari harness exist; target run remains pending.",
+      "publication": "prepared: only successful target WebKit then iOS Safari can trigger docs rebuild and exact public sourceSha verification; the user now authorizes the gated merge/publication path."
+    },
     "round15Verdict": "FAIL at 65/100, 3 blockers from 4. Mostly a disproof round: HANDOFF open item 2 (the cool fill being eaten) is dead with all three named suspects eliminated independently and the original measurement shown to have omitted albedo; the plaza cast-shadow claim is wrong for the third time (the critic's own probe box is 84.6% cast shadow); open items 7 and 11 were stale and are closed. The detached-sky-dash blocker IS closed by a proven mechanism (bamboo atlas 2x2 bilinear bleed; detail 5.95 -> 2.85 against a 2.15 cards-off floor). Scores are confounded: the r15 opening capture was a tree byte-identical to r14final, and a fresh critic instance scored the same pixels 62 against round 14's 50, so 12 points of inter-instance variance were measured directly."
   },
   "qualityBar": {
@@ -75,8 +82,8 @@
     "elements": 16,
     "referenceTitles": ["Ghost of Tsushima (13 elements)", "SEKIRO: Shadows Die Twice (7 elements incl. one secondary)", "Genshin Impact (touch layer and phone performance envelope only)"],
     "criteria": "62 total: 18 verified, 3 under review, 4 blocked, 37 proposed. 'Verified' is overwhelmingly source-audit — the intent is correctly coded — not verified in play.",
-    "headlineGap": "Exactly ONE of 16 elements (映像/visuals) has a working independent review loop, and its honest verdict is FAIL at 65/100 with 3 blockers. Four more have partial evidence limited to what a still frame or a boot-time counter can show. Twelve have never been verified at all.",
-    "structuralBlocker": "'interaction-capture' does not exist. Combat feel, movement, camera behaviour, animation, touch misfire rate, audio and AI legibility are invisible to a still-frame review by construction; no further visual round can reveal them.",
+    "headlineGap": "Exactly ONE of 16 elements (映像/visuals) has a completed independent review loop, and its honest verdict is FAIL at 65/100 with 3 blockers. Interaction-capture Phase 1 is prepared but target WebKit/iOS evidence is not yet accepted.",
+    "structuralBlocker": "The former missing interaction-capture surface now has a prepared WebKit plus iOS Simulator Safari phase. Target runner verification, broader element coverage, and all physical-only performance/feel evidence remain open.",
     "neverPerformed": [
       "Any side-by-side against real reference-title footage. Not fetched, not available, not claimed anywhere.",
       "Any real-device frame-rate, thermal, or boot measurement. SwiftShader capture is not phone evidence.",
@@ -84,13 +91,13 @@
     ]
   },
   "currentWork": {
-    "activeTask": null,
+    "activeTask": "BENCH-APPARATUS",
     "lastCompletedTask": "BENCH-INSTALL — per-element reference benchmarks established, wired into the load order, and machine-checked.",
-    "nextTask": "BENCH-APPARATUS (deferred) or NEXT16 (deferred)",
-    "nextStartingPoint": "Await a future user instruction. Two tasks are ready and neither may start autonomously. BENCH-APPARATUS is the higher-value of the two: build the interaction-capture surface so the twelve unverifiable elements become measurable. NEXT16 is another visual round, which improves the one element that already has a loop; its highest-value target remains the god-ray/mid-field-wash pair, proved to be ONE defect (the pass smears a 10%-coverage emitter across 99.9% of the frame) and to be attacked as less spread, not more gain.",
-    "blockedBy": [],
+    "nextTask": "Finish BENCH-APPARATUS Phase 1 verification",
+    "nextStartingPoint": "Push agent/iphone-se3-automation, run target WebKit, inspect and commit its generated baseline, rerun the PR checks, then merge and verify the main-only iOS Simulator and Pages/public chain.",
+    "blockedBy": ["Target WebKit/iOS runners are unavailable locally", "A WebKit-generated baseline is not committed"],
     "remoteStateChangeAuthorized": true,
-    "remotePolicy": "Across future sessions, push verified checkpoints, integrate them into main, and publish GitHub Pages without asking again. This remains active until the user changes it."
+    "remotePolicy": "Standing delivery permission plus the user's explicit 2026-08-01 merge instruction authorizes task-branch push, PR, passing-check merge, established Pages publication, and public verification."
   },
   "knownUncertainty": [
     "The god-ray and mid-field-haze findings are one defect: rtGodA is ~10% non-zero while rtGodB is 99.9% non-zero, so the pass delivers common mode not differential. More gain is the round-7 regression; the untested lever is less spread.",
@@ -99,6 +106,6 @@
     "UNVERIFIED APPARATUS RISK: capture.mjs --ab-object screenshots after engine.stop(), and preserveDrawingBuffer is false, so the retained r12ab stopped-frame lantern A/B evidence may be black. Re-verify before citing it again.",
     "src/ui/HUD.js permanently stamps the title card into later frames if the HUD is hidden while the intro is live.",
     "The bamboo green target is bounded by the illuminant: the key is (1.0, 0.412, 0.134), so only albedo above g/r 2.43 can be green-dominant when lit.",
-    "Real iPhone and mid-range Android frame rate has not been measured in this Work run."
+    "Physical iPhone and mid-range Android frame rate, thermal behavior, memory pressure, hand reach, haptics, speakers, and audio latency have not been measured; they are explicitly non-blocking for routine release and cannot be inferred from WebKit or the iOS Simulator."
   ]
 }
