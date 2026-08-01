@@ -40,28 +40,53 @@ export const SHOTS = {
   /**
    * The bamboo sea from the overlook — the god-ray and aerial-perspective test.
    *
-   * It is not a cloud-sea shot and it cannot be one, which the previous comment here
-   * asserted and no frame ever showed. Sampling the built heightfield along this ray:
-   * the plateau is dead flat at 812 m out to ~130 m and only then falls (802 at 160 m,
-   * 763 at 230, 679 at 370). From an eye 5.5 m above that floor the lip subtends 2.4°,
-   * so everything past it lands inside 2.4° of the horizon; and the near bamboo —
-   * measured off `phone-valley-r9.png` by back-projecting four culm bases, 41–52 m out
-   * and 10.7–13.0 m tall — stands 15° into that band. The basin and the cloud deck are
-   * occluded, and no camera height reachable from the plateau recovers them: clearing
-   * the lip to see the 730 m floor at 240 m needs an eye at ~894 m ASL, 82 m up.
+   * The pose that stood here saw no valley, and the previous comment's claim that "no
+   * camera height reachable from the plateau recovers" the basin was wrong in the more
+   * useful direction: it is not height that recovers it, it is radius, and the radius
+   * needed is small. Both the old comment and this one are ray-marches of the *built*
+   * heightfield (offline harness running `_buildMacroField` → `_blendEdges` under a stub
+   * ctx; core-field FNV-1a `7e23ca7`, the hash the live page reports), so the difference
+   * is not opinion — the old numbers were sampled along a bearing the shot does not use.
    *
-   * So the frame is composed from what is actually there, in three depths rather than
-   * two stripes. The eye stands 1.9 m south of the terrace at 2.3 m instead of floating
-   * 5.5 m up, and looks 5° off the valley diagonal so the tamagaki's return leg runs
-   * *away* from the lens: the rail enters the bottom-left corner at 2.3 m,
-   * turns at its corner post on the lower-left third intersection, and recedes across
-   * the middle at 8–12 m. That wedge covers 16.4% of the frame by projected footprint
-   * (the 15–25% the composition note asks for), against 4.3% at the old pose where the
-   * same rail was a 126 px band on the bottom edge. The 40–55 m culms carry the
-   * mid-ground, the sun sits 50 px inside the top edge inside the canopy — occluded, so
-   * it makes shafts rather than a naked disc — and the grove and glare close the back.
+   * What the descent actually does, radially from `PLATEAU_CENTER` along this shot's own
+   * bearing: 812.0 m at r = 80, 812.2 at 100, 812.0 at 112, 811.8 at 118, 810.0 at 130,
+   * 798.8 at 160, 771.9 at 200, 721.0 at 300, bottoming at 498 m ASL — a 314 m drop that
+   * crosses `WORLD.WATER_LEVEL` 782 at r ≈ 185.
+   *
+   * The old eye stood at r = 46.04, inside `WORLD.PLATEAU_RADIUS` 78, and the flat floor
+   * carries a 0.2–0.4 m bulge at r = 95–115 that is enough to hide everything past it
+   * from an eye 2.3 m up: the last visible ground was 72 m out at 811.9 m ASL — a
+   * **visible drop of 0.1 m** — with all 1,928 sampled metres beyond it occluded. Sweeping
+   * the eye outward, the visible drop is 0.2 m at r = 78, 0.5 m at r = 95 and **310 m at
+   * r = 100**. It is a cliff in the arithmetic as well as in the ground, and the old pose
+   * sat on the wrong side of it by four metres of radius.
+   *
+   * So the eye moves out to r = 112 and up to 6 m, and **the aim is not touched**: az
+   * 50.00°, pitch −7.00°, fov 44, focus distance 200 m, all identical to three decimal
+   * places. That is deliberate on three counts. The sun is at infinity, so an unchanged
+   * aim leaves the disc exactly where it was — 13° elevation against a +15° top edge,
+   * 53 px inside it, at x-frac 0.622 — and the god-ray and DOF work judged on this frame
+   * is not moved out from under its owners. And a translation that is *forward* relative
+   * to the view axis makes the new frustum a strict subset of the old one for every
+   * world-static object, which is what keeps a re-siting inside §7: with t_par = 65.0 m
+   * along the axis, the perpendicular offsets are 11.7 m vertical against a 26.3 m limit
+   * and 1.9 m lateral against 56.8 m. Raising the eye past ~17.7 m would break that.
+   *
+   * Measured on the new pose, terrain only (foliage stands in part of what is scored as
+   * sky here): visible drop **319.4 m**, lowest visible ground 498.6 m ASL, **18.7% of the
+   * frame below WATER_LEVEL against 0.0% before**, and a left-third distance ladder of
+   * 17 → 20 → 24 → 28 → 1508 → 2116 m from the bottom edge upward, against 6 → 7 → 8 → 9
+   * → 12 → 16 m of dead-flat 812 m floor at the old pose. The 150–600 m ring stays empty
+   * at any eye height the budget allows — the shoulder between r ≈ 130 and r ≈ 500 hides
+   * itself from any nearby eye — so the ladder is near/far, not near/mid/far, and that is
+   * a property of the landform rather than of this pose.
+   *
+   * The tamagaki no longer enters the frame: `LAYOUT.rimRadius` is 74 and the eye is now
+   * 38 m outside it. `LAYOUT.overlook` (r = 50.9) contradicts the built terrain by the
+   * same 60-odd metres, and if `world` moves it out to the real lip it wants to land at
+   * r ≈ 118–126, where it reads across the bottom edge rather than under the camera.
    */
-  valley: { pos: [34.4, 2.3, 30.6], target: [186.47, -22.07, 158.2], fov: 44 },
+  valley: { pos: [83.68, 6.00, 74.44], target: [235.77, -18.37, 202.04], fov: 44 },
 
   /**
    * Straight into the sun through the great torii — the disc and god-ray test.
