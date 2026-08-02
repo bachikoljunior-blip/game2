@@ -4,10 +4,11 @@ Date: 2026-08-02
 Branch: `agent/round-phone-gates`
 Base: `943695effa664ef5984d0e1a0a05932ea93269bf` (`origin/main`, Round 16)
 
-Status: the first target WebKit evidence run is complete and its inspected baseline is
-promoted. The implementation is reconciled onto the published Round 16 tree. The revised
-pull-request WebKit + Mobile Safari run, merge, repeated main run, deployment, and public
-verification remain open.
+Status: the implementation is reconciled onto the published Round 16 tree. PR #9's first
+Round 16 WebKit run passed every interaction/runtime check and rejected the obsolete
+pre-Round-16 baseline; its healthy current frame is now the inspected baseline. The exact
+baseline-bearing WebKit + Mobile Safari rerun, merge, repeated main run, deployment, and
+public verification remain open.
 
 ## Prepared gates
 
@@ -55,6 +56,26 @@ Apache-2.0 and accept Node 22/npm 10+. The existing Playwright 1.56.1 package is
   physical multi-touch.
 - The corrected harness plus promoted baseline passed locally in Chromium surrogate mode
   with zero failures, boot `55927 ms`, autoplay `103617 ms`, and visual diff `0.018533`.
+
+PR #9 run `30726607493` exercised the current Round 16 tree in target WebKit at
+`667×375 / DPR 2`, MEDIUM. All device, movement-plus-attack, camera, pause/resume,
+settings persistence, soak, frame-production, image-health and runtime/network checks
+passed: 91 draw calls, 681,191 submitted triangles, 3.4102 movement, 0.39446 camera
+delta, boot 36.620 s and autoplay 9.035 s. The only failure was a 48.0858% visual
+difference from the old bright courtyard baseline, above the unchanged 35% limit.
+
+The artifact's 1334×750 candidate was visually inspected. It is a healthy current
+Round 16 dark forest/night gameplay frame with the character and complete touch HUD,
+not black or corrupt (mean luma 18.705, standard deviation 19.365, near-black ratio
+0.14534). Round 16 changed sky, foliage, post-processing and world rendering, so the
+pre-Round-16 baseline was superseded by this exact candidate as
+`tests/baselines/iphone-se3-webkit-steady.png`, SHA-256
+`19396aa8e4dfb4a2debfad495ecd7254e1f37ae4dbd6b5b55f76a46d7cec2436`; the visual
+threshold was not relaxed.
+
+Xcode 26.2 WebDriverAgent rejects a delayed second W3C touch source that begins with
+`pause`. The Mobile Safari journey now positions both sources first, then performs the
+simultaneous move/attack hold. A clean exact-head Safari pass is still mandatory.
 
 Chromium is only a local harness surrogate. It is not recorded as Playwright WebKit, Mobile
 Safari, or physical-phone evidence. Runner frame gaps are not physical FPS.

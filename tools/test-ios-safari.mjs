@@ -290,8 +290,8 @@ try {
   const width = device.viewport.width;
   const height = device.viewport.height;
   await performActions([
-    finger('move-thumb', [move(width * 0.14, height * 0.80), down(), move(width * 0.14, height * 0.55, 300), pause(0), pause(0), pause(120), up()]),
-    finger('attack-thumb', [pause(0), pause(0), pause(300), move(gesturePoint.x, gesturePoint.y), down(), pause(120), up()]),
+    finger('move-thumb', [move(width * 0.14, height * 0.80), down(), move(width * 0.14, height * 0.55, 300), pause(120), up()]),
+    finger('attack-thumb', [move(gesturePoint.x, gesturePoint.y), pause(300), down(), pause(120), up()]),
   ]);
   await new Promise((done) => setTimeout(done, 700));
   const after = await execute(`

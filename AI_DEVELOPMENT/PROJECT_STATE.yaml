@@ -67,9 +67,9 @@
   },
   "primaryPhoneAutomation": {
    "status": "complete_unverified",
-   "roundIntegration": "prepared: every non-docs round pull request and main revision run one combined WebKit then iPhone SE 3 Mobile Safari workflow; Pages depends on the successful main run",
-   "targetWebKit": "prepared on the Round 16-based branch with the inspected WebKit baseline; the reconciled target run is pending",
-   "targetIosSafari": "prepared with Xcode 26.2, iOS 26.2, bounded Appium/WDA startup, trusted touch actions, and retained evidence; the reconciled target run is pending",
+   "roundIntegration": "active on PR #9: every non-docs round pull request and main revision run one combined WebKit then iPhone SE 3 Mobile Safari workflow; Pages depends on the successful main run",
+   "targetWebKit": "complete_unverified: run 30726607493 passed every Round 16 device/gameplay/runtime check and rejected only the obsolete pre-Round-16 baseline; the healthy current candidate was visually approved as SHA-256 19396aa8e4dfb4a2debfad495ecd7254e1f37ae4dbd6b5b55f76a46d7cec2436 and the exact-head rerun is pending",
+   "targetIosSafari": "prepared with Xcode 26.2, iOS 26.2, bounded Appium/WDA startup, trusted touch actions whose two sources both begin with pointerMove, and retained evidence; the exact-head target run is pending",
    "publication": "prepared: only the exact both-pass main SHA can rebuild docs and enter public sourceSha/journey verification"
   },
   "round15Verdict": "FAIL at 65/100, 3 blockers from 4. Mostly a disproof round: HANDOFF open item 2 (the cool fill being eaten) is dead with all three named suspects eliminated independently and the original measurement shown to have omitted albedo; the plaza cast-shadow claim is wrong for the third time (the critic's own probe box is 84.6% cast shadow); open items 7 and 11 were stale and are closed. The detached-sky-dash blocker IS closed by a proven mechanism (bamboo atlas 2x2 bilinear bleed; detail 5.95 -> 2.85 against a 2.15 cards-off floor). Scores are confounded: the r15 opening capture was a tree byte-identical to r14final, and a fresh critic instance scored the same pixels 62 against round 14's 50, so 12 points of inter-instance variance were measured directly.",
@@ -125,7 +125,7 @@
   "activeTask": "PHONE-ROUND-GATE",
   "lastCompletedTask": "Round 16 and PHYS-NARROWPHASE are integrated and repository-verified on main 943695e.",
   "nextTask": "Complete PHONE-ROUND-GATE target execution and delivery.",
-  "nextStartingPoint": "Validate the reconciled Round 16-based tree, open its pull request, require WebKit and Xcode 26.2/iOS 26.2 Mobile Safari to pass for that exact revision, merge, then verify the repeated main gate and source-SHA-locked public journey.",
+  "nextStartingPoint": "Require PR #9's exact approved-baseline revision to pass WebKit and Xcode 26.2/iOS 26.2 Mobile Safari, merge, then verify the repeated main gate and source-SHA-locked public journey.",
   "blockedBy": [
    "Target WebKit and iOS Simulator execution require GitHub Actions"
   ],
