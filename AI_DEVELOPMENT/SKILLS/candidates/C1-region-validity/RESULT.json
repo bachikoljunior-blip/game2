@@ -1,0 +1,109 @@
+{
+  "candidate_id": "C1-region-validity",
+  "round": "skill-evolution-1",
+  "evaluated_by": "session-evaluator",
+  "independence_level": "C",
+  "verdict": "adopt",
+  "reasons": [
+    "3/8 case(s) improved, 0 regressions, 0 case(s) still unhandled by both versions"
+  ],
+  "results": [
+    {
+      "id": "F-004-wide-box-without-a-named-subject",
+      "kind": "originating_failure",
+      "expect": "fire",
+      "adopted": false,
+      "candidate": true,
+      "adopted_ok": false,
+      "candidate_ok": true,
+      "error": null
+    },
+    {
+      "id": "F-005-boxes-predating-a-camera-change",
+      "kind": "originating_failure",
+      "expect": "fire",
+      "adopted": false,
+      "candidate": true,
+      "adopted_ok": false,
+      "candidate_ok": true,
+      "error": null
+    },
+    {
+      "id": "F-005-sky-boxes-with-foreground-intrusion",
+      "kind": "originating_failure",
+      "expect": "fire",
+      "adopted": false,
+      "candidate": true,
+      "adopted_ok": false,
+      "candidate_ok": true,
+      "error": null
+    },
+    {
+      "id": "F-004-corrected-canopy-box",
+      "kind": "regression",
+      "expect": "quiet",
+      "adopted": false,
+      "candidate": false,
+      "adopted_ok": true,
+      "candidate_ok": true,
+      "error": null
+    },
+    {
+      "id": "whole-frame-percentile",
+      "kind": "boundary",
+      "expect": "quiet",
+      "adopted": false,
+      "candidate": false,
+      "adopted_ok": true,
+      "candidate_ok": true,
+      "error": null
+    },
+    {
+      "id": "collision-publish-verify-served",
+      "kind": "collision",
+      "expect": "quiet",
+      "adopted": false,
+      "candidate": false,
+      "adopted_ok": true,
+      "candidate_ok": true,
+      "error": null
+    },
+    {
+      "id": "collision-critic-finding",
+      "kind": "collision",
+      "expect": "quiet",
+      "adopted": false,
+      "candidate": false,
+      "adopted_ok": true,
+      "candidate_ok": true,
+      "error": null
+    },
+    {
+      "id": "collision-scan-null-result",
+      "kind": "collision",
+      "expect": "quiet",
+      "adopted": false,
+      "candidate": false,
+      "adopted_ok": true,
+      "candidate_ok": true,
+      "error": null
+    }
+  ],
+  "regressions": [],
+  "improvements": [
+    {
+      "id": "F-004-wide-box-without-a-named-subject",
+      "kind": "originating_failure"
+    },
+    {
+      "id": "F-005-boxes-predating-a-camera-change",
+      "kind": "originating_failure"
+    },
+    {
+      "id": "F-005-sky-boxes-with-foreground-intrusion",
+      "kind": "originating_failure"
+    }
+  ],
+  "still_wrong": [],
+  "evidence_level": "replay"
+}

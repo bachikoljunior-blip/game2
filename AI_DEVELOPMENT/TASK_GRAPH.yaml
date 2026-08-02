@@ -255,6 +255,61 @@
    ],
    "unblocks": [],
    "status": "ready"
+  },
+  {
+   "id": "KIT-SKILL-EXEC",
+   "dependsOn": [],
+   "unblocks": [],
+   "status": "verified"
+  },
+  {
+   "id": "KIT-CRITIC-RECONCILE",
+   "dependsOn": [
+    "KIT-SKILL-EXEC"
+   ],
+   "unblocks": [],
+   "status": "verified"
+  },
+  {
+   "id": "KIT-REFERENCE-SET",
+   "dependsOn": [
+    "KIT-SKILL-EXEC"
+   ],
+   "unblocks": [],
+   "status": "ready"
+  },
+  {
+   "id": "KIT-BASELINE-MEASURE",
+   "dependsOn": [
+    "KIT-REFERENCE-SET"
+   ],
+   "unblocks": [],
+   "status": "ready"
+  },
+  {
+   "id": "KIT-FIRSTREADER",
+   "dependsOn": [
+    "KIT-SKILL-EXEC"
+   ],
+   "unblocks": [],
+   "status": "ready"
+  },
+  {
+   "id": "KIT-VARIANCE",
+   "dependsOn": [
+    "KIT-REFERENCE-SET"
+   ],
+   "unblocks": [],
+   "status": "ready"
+  },
+  {
+   "id": "KIT-SKILL-RECONCILE",
+   "dependsOn": [
+    "KIT-SKILL-EXEC"
+   ],
+   "unblocks": [],
+   "status": "ready"
   }
- ]
+ ],
+ "updatedAt": "2026-08-02T09:10:00Z"
 }

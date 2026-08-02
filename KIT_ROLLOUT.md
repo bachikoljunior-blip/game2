@@ -25,8 +25,8 @@
 > `survival/AI_DEVELOPMENT/EVIDENCE/VANTAGE-LAUNCH-SWAP-SAMPLES.jsonl` に保全済み
 > （`shots/` は git 管理外のため）。
 >
-> 実質的な残件は**スキルが一度も実行されていないこと**で、それが利用者の現在の focus。
-> 詳細は下の「What is still open」。
+> スキル検証は **2026-08-02 に完了**した（9スキルすべて実行、欠陥3件を修正、kit 0.2.1）。
+> 詳細は下の「Skill validation」。残るのは統合判断のみ。
 
 
 This file is the **only** state record for rolling the shared kit across the eight
@@ -346,6 +346,105 @@ was measured, and the SHA was never re-read. Measured this session with `ls-remo
 v0.2.0 and its nine skills"*. `check:kit` exits 0 on it against the 34-file ledger and
 `.claude/skills/` lists nine, so the work itself is intact — only the pointer was wrong.
 
+## Skill validation — done 2026-08-02. Nine skills executed; three defects found and fixed.
+
+**They had been counted, never run.** `kit/test/run.mjs` covered `lib/` with 34 tests and
+nothing covered `.claude/skills/`, so every instruction in the nine documents was an
+unverified claim. By this project's own standard that is `prepared_not_executed`.
+
+`kit/test/skills.mjs` now tests the documents themselves — 30 tests, and `npm test` in the
+kit runs both suites: **64 tests, 64 pass** (`AI_DEVELOPMENT/EVIDENCE/skill-validation-tests.tap`).
+Claims are extracted *mechanically from the SKILL.md text*, so the test cannot drift from the
+document it checks: every `import` must resolve from an installed repository and export every
+symbol it names, and every `node …` command must resolve somewhere real.
+
+**Three defects, every one found by executing an instruction rather than reading it.** This is
+now the fourth, fifth and sixth defect on this workstream found by running a control, against
+zero found by code reading.
+
+| # | Skill | Defect, as measured |
+|---|---|---|
+| 1 | `bootstrap` | Its four commands resolve in **none of the eight** installed repositories — they are kit-repository paths and the skill never said so. Following it in `game2` gives `Cannot find module`, which reads as a broken kit. The vendored `.kit/README.md` had the correct path all along; only the skill was wrong. |
+| 2 | `probe`, `ja-ui-check` | Both tell you to combine `serveStatic` with `launchHeadless` and **neither mentions `proxy: false`**. Measured: HTTP **405 with zero page errors**, so a run proceeds and times out on ready — it reads as a failed boot, not a proxy fault. `proxy: false` → 200. |
+| 3 | `probe` (and `lib`) | `readyExpr` takes an expression; Playwright evaluates the string, so `'() => window.READY === true'` is a truthy **function object** and the wait resolves on the first poll — **21 ms to `booted: true`** against a page where `window.READY` is `undefined`. |
+
+Defect 2 is the instructive one: **the mechanism was already measured and recorded in this
+file during the vantage work, and the skills were never updated.** A trap written down in one
+section and left live in another is how it gets rediscovered.
+
+Defect 3 is fixed in the library, not just the document: `waitForBoot` and `verifyLive` now
+throw on a function source. In `verifyLive` that form would have signed off a publication —
+the boot half of the two orthogonal publish checks, passing on a page that never ran.
+
+*What "executed" means per skill, since the nine are not the same kind of thing:*
+
+| Skill | How it was executed | Negative control that had to fire |
+|---|---|---|
+| `critic` | `validateFindings` against the **documented** contract, extracted from the skill's own prose | each documented field deleted in turn; bad severity/verdict/score/resolution; unknown owner |
+| `dispatch` | `buildPlan`/`formatPlan` on the real 14-team map | two teams claiming one file → throws; unrouted finding surfaced; 12 of 14 teams gated out and named in the output |
+| `resume` | all six `graph.mjs` checks | duplicate id, dangling ref, cycle (with trail), two active, zero active, missing evidence, and each `antiFabrication` branch |
+| `publish` | stamp → mirror → `verifyServed` | **one changed byte rejected**; zero or two meta tags refused; obsolete bundle on the mirror caught |
+| `bootstrap` | install, `--check`, second install, `--skills`, `--template` | in-place edit → `stale`; unshipped file → `orphaned`; template must not overwrite an edited file |
+| `probe` | real Chromium: four diagnostic channels, `waitForBoot`, screenshot → `measureLuma`/`regionStats`/`compareRegion` | 404 asset, console error and page error each caught; clean page reports nothing; byte-identical frames labelled as a failed edit |
+| `ja-ui-check` | shares `probe`'s browser path; the `proxy: false` defect was filed against both | as above |
+| `balance-audit` | **applied for real** — 5 policies × 60 simulated hours against the cookie clicker's 16-tier ladder | 5 of 5 injected defects detected: collapsed ladder, reversed tier, dead upgrade, NaN parameter, saturation to `Infinity` |
+| `findings-run` | the only one with no executable surface | see below |
+
+**`findings-run` is honestly unverified as a mechanism.** It is a commit-discipline process —
+one finding, one commit, the message naming the number that moved — and it has no API and no
+command to run. It was *followed* for the three defects above rather than tested. Do not read
+the row above as an executed gate; it is the one skill still resting on inspection.
+
+*What `balance-audit` actually found, and its scope:* six of sixteen upgrades — `blackHoleMixer`,
+`universeOven`, `godFinger`, `cookieSingularity`, `quantumBakery`, `antimatterOven` — are
+bought by **no policy** in 60 simulated hours, and the longest gap between unlocks is
+~146,360 s (≈40.7 h). **Scope, stated because the simulation cannot see it:** this models the
+base `UPGRADES` ladder only — no prestige multipliers, no `RESEARCH`, no golden-cookie boosts,
+no endless tier. Those accelerate progression, so this is a claim about base play, not about
+the shipped game. Nothing in that repository was modified. Raw data:
+`AI_DEVELOPMENT/EVIDENCE/skill-validation-balance-audit.{json,mjs}`.
+
+**Two apparatus failures in my own validation, caught before they reached a conclusion** —
+recorded because both are the shapes this file already warns about:
+
+- The first `balance-audit` simulator bought *everything affordable* every tick, so four of
+  the five policies returned **byte-identical** traces and the per-policy report was one row
+  printed five times. Fixed to one decision per tick, with the policy allowed to decline.
+- Having fixed it, three policies *still* agreed, and I nearly filed "the policy is not
+  reaching the simulation". **Disproved by replay:** the affordable set has more than one
+  member on 87 of 382 purchases and the three choose differently on 69 of them (18.1%). Play
+  is cost-limited, so a different purchase order converges to the same multiset by 60 h — the
+  endpoints agree while the paths do not. The apparatus check now keys on `firstBought`, the
+  trajectory, which separates all five. A mechanism guess was wrong again; the symptom was real.
+
+Two of my own test cases were also vacuous before they were fixed: an `ARCHITECTURE.md`
+mutation keyed to `src/core/Engine.js` matched nothing (that file is an indented tree entry,
+not a path) and reported a confident pass for a check it never ran, and a "contract fields"
+extractor read one line of a sentence that wraps and silently truncated the contract to five
+of six fields. Both now assert the mutation changed the text first.
+
+### Reconciliation with the parallel session — measured 2026-08-02, and I was first
+
+A second session is working on the same branch with a different remit (`survival/tools/validate.mjs`,
+`survival/AI_DEVELOPMENT/PROTOCOL.md`, `survival/docs/STATE.md`, `game2/CLAUDE.md`,
+`game2/ROUND.md`, and a new evidence location in `survival`). **None of it was on the branch
+when this was written** — `git rev-list --count HEAD..FETCH_HEAD` was **0 in all eight
+repositories**, and the newest ref on any remote was my own push. Checked, not assumed. The
+four reconciliation points are therefore recorded as work, not performed: see
+`KIT-SKILL-RECONCILE` in `AI_DEVELOPMENT/ACTIVE_FRONTIER.yaml`.
+
+One of the four was in my own scope and is done. **`tools/CRITIC.md` and the shared `critic`
+skill were saying the same thing differently, and the difference was live:** CRITIC.md's JSON
+template omitted `round`, `profile`, `tier` and `nativeResolution`, so a critic following the
+brief exactly produced a file that `validateFindings(review, { strict: true })` **rejects** —
+measured against the template as committed at `17ce484`. CRITIC.md now defers to the skill and
+the validator for the schema and keeps only the KAGEROU-specific bar, and a kit test parses
+CRITIC.md's own template and validates it, so the two cannot drift apart silently again.
+
+**Do not force-push this branch.** A rejected push here means the other session pushed first,
+not that the network failed; `--force`/`--force-with-lease` is the only operation that would
+destroy their work irrecoverably. Fetch, merge, re-run both suites, stage the exact paths, push.
+
 ## What is still open — the only list of it
 
 Integration is complete and every numbered step above is ticked, so a session reading
@@ -358,6 +457,9 @@ until 2026-08-02 they existed only in a chat message. They live here now.
 | B | `survival`'s four Chromium launches still carry their own flag arrays | **`vantage.mjs` done and measured.** The other three are open — see below. |
 | C | Per-frame distribution for the vantage sweep | **Closed by measurement, 44 sweeps.** The answer is that this rig cannot tell the configurations apart. |
 | D | `kit`'s default branch | **Closed — measured, not assumed.** See below. |
+| E | The nine skills had never been executed | **Closed 2026-08-02.** 30 tests, three defects fixed, kit 0.2.1. `findings-run` remains process-only — see the Skill validation section. |
+| F | Skill-validation work is **not merged** | Eight branches at `claude/kit-rollout-skill-validation-rsenmi`, pushed and read back. `survival` needs a PR (ruleset). Nothing was merged and no PR was opened — awaiting instruction. |
+| G | `Simple-browser-cookie-clicker-game` carries kit **0.2.0**, not 0.2.1 | Deliberate. Item A excludes it, so it was not re-installed into and holds the older skills, including all three defects. Fix it in the same go-ahead that integrates it. |
 
 **D is done, and the brief that reached this session said it was not.** `git ls-remote --symref
 origin HEAD` in `kit` returns `ref: refs/heads/main` at `d334e77`. The user flipped it from a
@@ -717,6 +819,15 @@ Every one of these has already cost a session.
   act on with `git ls-remote`, and every default branch with `--symref`, before acting.** A
   SHA that fails `git cat-file -e` is the cheap version of this lesson; a SHA that still
   resolves but has moved is the expensive one.
+
+  **It went stale twice more on 2026-08-02**, which is the fourth and fifth time, so treat
+  this as certain rather than likely. The brief handed to the skill-validation session named
+  `game2` `main` at `15d4fd3` and `survival`'s continuation branch at `7d3d449`; `ls-remote`
+  read `22ef064` and `7574ffa`. Both old SHAs still resolve — they are real ancestors, two
+  commits back in each case — so `git cat-file -e` passes and nothing looks wrong. The two
+  missing commits were the ones that *parked* each repository, which is exactly the state a
+  resuming session most needs. Re-read with `ls-remote` before acting, every time; a SHA in
+  this file is a claim about the past.
 - **A before/after split across two collection batches measures elapsed time.** The
   `survival` vantage rig drifts between batches by about as much as a real change moves it
   (+16.9, asymmetry 12, within the baseline alone). Worse, the obvious defence — building a
@@ -727,6 +838,27 @@ Every one of these has already cost a session.
   reach this file.
 - **`game2/tools/capture.mjs` runs on import.** It is a top-level-await module. `import()`ing
   it to test that it resolves starts a real capture. Use `node --check`.
+- **A skill's commands are written for the kit's working directory, not yours.** `bootstrap`
+  said `node tools/bootstrap.mjs`, which resolves in the kit clone and in **none** of the
+  eight installed repositories. From inside an installed repo the vendored copy checks itself
+  with `node .kit/tools/bootstrap.mjs --target=. --check` — and that answers a *different*
+  question: it verifies the copy against its own ledger and **cannot** tell you the version is
+  stale, because it has no kit to compare against.
+- **`readyExpr` is an expression; a function source silently defeats it.** Playwright
+  evaluates the string, so `'() => window.READY === true'` is a truthy function object and
+  `waitForBoot` returns `booted: true` on the first poll — 21 ms against a page that never
+  readied. Write `'window.READY === true'`. Both `waitForBoot` and `verifyLive` now throw on a
+  function source, but any harness pinned to kit ≤ 0.2.0 still accepts it.
+- **A headless run serving its own content on `127.0.0.1` needs `proxy: false`.** This is in
+  the vantage section too, and it stayed live in the `probe` and `ja-ui-check` skills for a
+  whole workstream because the skills were never executed. HTTP 405, **zero page errors**,
+  reads as a failed boot.
+- **A served page that outlives its test keeps the test runner alive.** `serveStatic`'s
+  listener is a live handle: `test/skills.mjs` passed every case and then hung at exit until
+  the server was `unref()`d. It looks exactly like a hung test.
+- **A favicon 404 lands on the console channel, not the HTTP one.** Chromium requests
+  `/favicon.ico` unprompted; the 404 surfaces as a console error while `badResponses` stays
+  at 0. A "clean page" control without an icon fails on noise the page never asked for.
 - **`shots/*.png` is ignored by git.** The frame that proved the measurement swap is gone.
   Re-capture before making any equivalence claim about `lib/image`.
 - **`survival`'s vantage sweep is not deterministic — always run the control.** Two runs of

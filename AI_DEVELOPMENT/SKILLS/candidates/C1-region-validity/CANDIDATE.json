@@ -1,0 +1,48 @@
+{
+  "id": "C1-region-validity",
+  "name": "probe.overlay",
+  "tier": "local",
+  "mode": "improve",
+  "target": "probe",
+  "body": "SKILL.md",
+  "live_path": "AI_DEVELOPMENT/SKILLS/OVERLAYS/probe.md",
+  "authored_by": "session-author",
+  "round": "skill-evolution-1",
+  "evaluated_in": [
+    "game2"
+  ],
+  "why_local": "both occurrences are in this repository and both involve this project's camera; nothing yet shows the rule holds where the camera is not the measured subject, so it stays local. That is a normal ending, not a lesser one.",
+  "record": {
+    "id": "C1-region-validity",
+    "statement": "a fixed image-coordinate region is evidence only when it names the pose and the visible subject it samples, has been revalidated against the camera in force, and has been checked for foreground intrusion",
+    "occurrences": [
+      {
+        "repo": "game2",
+        "ref": "FAILURES.md F-004",
+        "mechanism": "prose gate and probe box drifted from what the executable apparatus applied and from what the framing actually showed"
+      },
+      {
+        "repo": "game2",
+        "ref": "FAILURES.md F-005",
+        "mechanism": "boxes predated a position/target/FOV change and two included foreground geometry"
+      }
+    ],
+    "trigger": {
+      "should_fire": [
+        "a fixed pixel box is used as evidence without naming what it samples",
+        "a region is reused after the camera changed"
+      ],
+      "should_not_fire": [
+        "a region that names its pose and subject and matches the camera in force",
+        "a whole-frame statistic that is not tied to image coordinates"
+      ]
+    },
+    "verification": {
+      "kind": "replay",
+      "can_fail": true
+    },
+    "evidence_kind": "measured",
+    "covered_by": "probe",
+    "has_predicate": true
+  }
+}

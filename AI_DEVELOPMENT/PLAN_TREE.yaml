@@ -14,12 +14,13 @@
     "ROUNDS13_14",
     "RELEASE13_14",
     "NEXT15",
-    "BENCH"
+    "BENCH",
+    "KIT-SKILLS"
    ],
    "dependencies": [],
    "status": "active",
    "priority": 100,
-   "reason": "The exact Rounds 13–14 objective and publication are complete; the overall visual bar remains open but no further product round is authorized."
+   "reason": "The exact Rounds 13\u201314 objective and publication are complete; the overall visual bar remains open but no further product round is authorized."
   },
   {
    "id": "FOUNDATION",
@@ -238,7 +239,7 @@
   },
   {
    "id": "RELEASE13_14",
-   "title": "Publish the verified Rounds 13–14 incremental checkpoint",
+   "title": "Publish the verified Rounds 13\u201314 incremental checkpoint",
    "parent": "PROJECT",
    "children": [
     "REMOTE-PUBLISH-2"
@@ -276,11 +277,11 @@
    ],
    "status": "superseded",
    "priority": 0,
-   "reason": "Superseded on 2026-08-01: the user explicitly instructed one further round (「1ラウンド行ってください」), which authorized Round 15."
+   "reason": "Superseded on 2026-08-01: the user explicitly instructed one further round (\u300c1\u30e9\u30a6\u30f3\u30c9\u884c\u3063\u3066\u304f\u3060\u3055\u3044\u300d), which authorized Round 15."
   },
   {
    "id": "ROUND15",
-   "title": "Round 15 — one authorized art-direction review round",
+   "title": "Round 15 \u2014 one authorized art-direction review round",
    "parent": "PROJECT",
    "children": [
     "R15-ROUND",
@@ -448,6 +449,16 @@
    "status": "ready",
    "priority": 2,
    "criteria": []
+  },
+  {
+   "id": "KIT-SKILLS",
+   "title": "The shared kit and its skills: executed, measured, and reconciled",
+   "parent": "PROJECT",
+   "children": [],
+   "dependencies": [],
+   "status": "active",
+   "priority": 95,
+   "reason": "Owned by the kit/skills workstream (KIT_ROLLOUT.md). The nine skills were installed into eight repositories and executed for the first time on 2026-08-02; what remains is the measurement they were built to make, none of which has been performed."
   }
  ]
 }

@@ -82,10 +82,21 @@ Failures near the top of this list poison everything below them, so fix upward.
 
 ## Output format
 
+**The schema is owned by the `critic` skill (`.claude/skills/critic/SKILL.md`) and enforced by
+`.kit/lib/plan/findings.mjs`, not by this file.** What follows is that contract instantiated
+for KAGEROU; where the two ever disagree, the skill and the validator win and this file is
+wrong. Restating a contract in a second place is how this repository ended up with three
+competing handoff documents, so this section deliberately holds only the KAGEROU-specific
+values — the bar, the elements, the interrogation list above are what this file is *for*.
+
 Return JSON only:
 
 ```json
 {
+  "round": 17,
+  "profile": "phone",
+  "tier": "HIGH",
+  "nativeResolution": "2532x1170",
   "verdict": "PASS" | "FAIL",
   "blindComparison": "<which image a stranger picks and the single specific reason>",
   "score": 0-100,
@@ -96,10 +107,26 @@ Return JSON only:
       "problem": "<what is wrong, specifically and visually>",
       "why": "<why it reads as non-AAA>",
       "owner": "<the file that must change>",
-      "fix": "<the concrete change to make>"
+      "fix": "<the concrete change to make>",
+      "hypothesis": "<optional, and never acted on until proved or disproved>"
     }
   ]
 }
+```
+
+The first four fields are **not bookkeeping, and they are not optional for a new round.** They
+record which build and which framing the verdict was reached against; without them a review
+cannot be compared with the round before it, and four real review files on disk had already
+drifted apart before anything validated this. Measured 2026-08-02: the template this file
+carried until then omitted all four, so a critic following it exactly produced JSON that
+`validateFindings(review, { strict: true })` rejects.
+
+Validate before anything consumes it — the dispatcher routes on `owner` and sorts on
+`severity`, and a finding missing either is one nobody will act on:
+
+```js
+import { validateFindings } from './.kit/lib/plan/findings.mjs';
+validateFindings(review, { strict: true, knownOwners });
 ```
 
 `score` is calibrated so that 100 is the reference title and 70 is "a good indie game".
