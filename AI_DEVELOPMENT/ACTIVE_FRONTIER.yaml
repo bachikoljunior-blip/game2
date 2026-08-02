@@ -125,10 +125,11 @@
   },
   {
    "id": "KIT-REFERENCE-SET",
-   "status": "ready",
+   "status": "blocked",
    "priority": 1,
    "dependencies": [
-    "KIT-SKILL-EXEC"
+    "KIT-SKILL-EXEC",
+    "KIT-VARIANCE"
    ],
    "objective": "Fetch reference material and freeze the comparison set. THIS IS THE ACTUAL WORK; everything above is apparatus that has measured nothing.",
    "verification": "A stored, versioned set of reference frames with each one paired to a named element and one of our shots, so the same pair can be re-judged in a later round and get the same question.",
@@ -161,14 +162,12 @@
   },
   {
    "id": "KIT-VARIANCE",
-   "status": "ready",
-   "priority": 2,
-   "dependencies": [
-    "KIT-REFERENCE-SET"
-   ],
-   "objective": "Measure the run-to-run variance of the judgement itself, so a later before/after can be told from noise.",
+   "status": "active",
+   "priority": 0,
+   "dependencies": [],
+   "objective": "Measure the run-to-run variance of the judgement itself, so a later before/after can be told from noise. Arm 1 is the capture rig; arm 2, the critic's verdict on one unchanged set, is NOT yet collected.",
    "verification": "The same set judged repeatedly under one unchanged build, reported per cell, with a no-change control arm collected as its own later batch.",
-   "nextAction": "Not started. The vantage work already established that this rig drifts between collection batches by as much as a real change moves it (+16.9 within the baseline alone) and that a null built by splitting one baseline CANNOT detect it \u2014 68 of 70 splits interleave the batches. A control arm is mandatory, not optional.",
+   "nextAction": "Arm 1 active 2026-08-02 on claude/ongoing-session-continuation-549b4z. tools/variance.mjs collects 4+4 phone review captures against one frozen dist and reports per-cell spread, the batch shift, and the split null re-run on this rig's own data. The 4+4 shape is deliberate: C(8,4)=70 reproduces the vantage structure, where only 2 splits separate the batches. The dependency on KIT-REFERENCE-SET was INVERTED on the user's direction \u2014 see DECISIONS.md. Two limits: the +16.9 is survival's apparatus and is the reason to measure here, never a measurement of here; and a stable rig is not evidence that a critic's verdict is reproducible.",
    "planNode": "KIT-SKILLS"
   },
   {

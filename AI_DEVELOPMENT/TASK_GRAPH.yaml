@@ -273,10 +273,11 @@
   {
    "id": "KIT-REFERENCE-SET",
    "dependsOn": [
-    "KIT-SKILL-EXEC"
+    "KIT-SKILL-EXEC",
+    "KIT-VARIANCE"
    ],
    "unblocks": [],
-   "status": "ready"
+   "status": "blocked"
   },
   {
    "id": "KIT-BASELINE-MEASURE",
@@ -296,11 +297,11 @@
   },
   {
    "id": "KIT-VARIANCE",
-   "dependsOn": [
+   "dependsOn": [],
+   "unblocks": [
     "KIT-REFERENCE-SET"
    ],
-   "unblocks": [],
-   "status": "ready"
+   "status": "active"
   },
   {
    "id": "KIT-SKILL-RECONCILE",
