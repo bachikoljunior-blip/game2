@@ -1,0 +1,103 @@
+{
+  "upgrades": 16,
+  "hours": 60,
+  "perPolicy": {
+    "efficiency": {
+      "cps": 1199005,
+      "totalOwned": 382,
+      "neverBought": [
+        "blackHoleMixer",
+        "universeOven",
+        "godFinger",
+        "cookieSingularity",
+        "quantumBakery",
+        "antimatterOven"
+      ],
+      "saturatedAt": null,
+      "nanAt": null
+    },
+    "cheapest": {
+      "cps": 1199005,
+      "totalOwned": 382,
+      "neverBought": [
+        "blackHoleMixer",
+        "universeOven",
+        "godFinger",
+        "cookieSingularity",
+        "quantumBakery",
+        "antimatterOven"
+      ],
+      "saturatedAt": null,
+      "nanAt": null
+    },
+    "hoarder": {
+      "cps": 0,
+      "totalOwned": 0,
+      "neverBought": [
+        "finger",
+        "grandma",
+        "oven",
+        "factory",
+        "bank",
+        "spiceRack",
+        "portal",
+        "moonBakery",
+        "timeOven",
+        "galaxyFactory",
+        "blackHoleMixer",
+        "universeOven",
+        "godFinger",
+        "cookieSingularity",
+        "quantumBakery",
+        "antimatterOven"
+      ],
+      "saturatedAt": null,
+      "nanAt": null
+    },
+    "clicker": {
+      "cps": 0,
+      "totalOwned": 73,
+      "neverBought": [
+        "grandma",
+        "oven",
+        "factory",
+        "bank",
+        "spiceRack",
+        "portal",
+        "moonBakery",
+        "timeOven",
+        "galaxyFactory",
+        "blackHoleMixer",
+        "universeOven",
+        "godFinger",
+        "cookieSingularity",
+        "quantumBakery",
+        "antimatterOven"
+      ],
+      "saturatedAt": null,
+      "nanAt": null
+    },
+    "spread": {
+      "cps": 1199005,
+      "totalOwned": 382,
+      "neverBought": [
+        "blackHoleMixer",
+        "universeOven",
+        "godFinger",
+        "cookieSingularity",
+        "quantumBakery",
+        "antimatterOven"
+      ],
+      "saturatedAt": null,
+      "nanAt": null
+    }
+  },
+  "findings": [
+    {
+      "kind": "unreachable-content",
+      "detail": "never bought by any policy: blackHoleMixer, universeOven, godFinger, cookieSingularity, quantumBakery, antimatterOven"
+    }
+  ],
+  "controlsDetected": 5,
+  "controlsTotal": 5
+}
