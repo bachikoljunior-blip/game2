@@ -117,6 +117,44 @@ rewrite functioning systems without evidence, or silently broaden or reduce scop
 - Before risky work, identify the last working state and a recoverable rollback point.
 - Never hide a failed experiment; record its evidence and cause.
 
+### 6a. Integrate at the end of every round — standing, cross-session
+
+Adopted 2026-08-02 on the user's explicit instruction: *"今後セッションを変えてもラウンドの
+終わりにマージするようにすること"*. This binds every session, not the one that received it.
+
+**A round is not finished when its work is verified. It is finished when that work is on
+`main`.** At the end of each round — an art-direction round, or any equivalently bounded unit
+of verified work — the owning session integrates its branch into `main` and pushes, under the
+standing authorization already recorded below. This is not a request for permission; it is the
+closing step of the round.
+
+Why it is a rule rather than a habit: this project routinely runs several sessions at once on
+separate branches. Work that stays on a feature branch is invisible to every other session's
+resume procedure, which reads `main` and the state files. Two sessions have already
+independently solved the same problem here for exactly that reason. Integration is what makes
+parallel work converge instead of diverge.
+
+The step is not unconditional, and these are refusals rather than excuses to defer:
+
+- **Verified first.** Integrate a checkpoint whose gates were observed to pass, never one that
+  merely built. An unverified merge moves the defect to where everyone starts from.
+- **Check what else is in flight before merging.** Read the other active branches and compare
+  changed-file sets. Zero overlap is the normal case and merges cleanly; genuine overlap on a
+  contended file needs the other owner's work reconciled, not overwritten.
+- **Never resolve someone else's conflict by discarding their side.** If the merge is not
+  clean and the conflicting hunk is not yours, stop and say so.
+- **Inspect the result.** Read back the merged SHA on the remote with `ls-remote`, and re-run
+  the state validation on `main` itself. A push that was not inspected is not a merge that
+  happened.
+
+If integration is genuinely blocked, record the blocker and the exact unmerged SHA in
+`SESSION_STATE.yaml` as the next action. Do not close the round silently on a branch.
+
+*Not yet mechanised.* `ROUND.md` carries the executable round procedure and should gain this as
+its closing step, and `tools/validate-project-state.mjs` could refuse a round marked complete
+whose branch is unmerged. Both files were being modified by another session on 2026-08-02 and
+were deliberately left alone; the rule lives here, in the higher authority, until they are free.
+
 The user's request to modify this project authorizes reversible project-scoped file changes,
 local builds, tests, and local commits. On 2026-07-31 the user additionally gave persistent,
 cross-session authorization and direction to push verified work, integrate it into `main`,
