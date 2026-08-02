@@ -102,10 +102,24 @@ async function webdriver(pathname, { method = 'POST', body } = {}) {
 }
 
 let sessionId = '';
+let webToReal = { offsetX: 0, offsetY: 0, pixelRatioX: 1, pixelRatioY: 1 };
 const sessionPath = (suffix = '') => `session/${sessionId}${suffix}`;
 
 async function execute(script, args = []) {
   return webdriver(sessionPath('/execute/sync'), { body: { script, args } });
+}
+
+async function calibrateCoordinates() {
+  const value = await execute('mobile: calibrateWebToRealCoordinatesTranslation', [{}]);
+  const calibrated = {
+    offsetX: Number(value?.offsetX), offsetY: Number(value?.offsetY),
+    pixelRatioX: Number(value?.pixelRatioX), pixelRatioY: Number(value?.pixelRatioY),
+  };
+  if (!Object.values(calibrated).every(Number.isFinite) || calibrated.pixelRatioX <= 0 || calibrated.pixelRatioY <= 0) {
+    throw new Error(`Appium returned an invalid Safari coordinate calibration: ${JSON.stringify(value)}`);
+  }
+  webToReal = calibrated;
+  report.coordinateTransform = calibrated;
 }
 
 async function waitForScript(script, waitMs = 30000) {
@@ -132,7 +146,12 @@ function finger(id, actions) {
   return { type: 'pointer', id, parameters: { pointerType: 'touch' }, actions };
 }
 
-const move = (x, y, duration = 0) => ({ type: 'pointerMove', duration, x: Math.round(x), y: Math.round(y), origin: 'viewport' });
+const move = (x, y, duration = 0) => ({
+  type: 'pointerMove', duration,
+  x: Math.round(webToReal.offsetX + x * webToReal.pixelRatioX),
+  y: Math.round(webToReal.offsetY + y * webToReal.pixelRatioY),
+  origin: 'viewport',
+});
 const down = () => ({ type: 'pointerDown', button: 0 });
 const up = () => ({ type: 'pointerUp', button: 0 });
 const pause = (duration) => ({ type: 'pause', duration });
@@ -201,6 +220,7 @@ try {
   if (!sessionId) throw new Error('Appium did not return a session id');
 
   await webdriver(sessionPath('/orientation'), { body: { orientation: 'LANDSCAPE' } });
+  await calibrateCoordinates();
   const url = new URL(baseUrl);
   url.searchParams.set('autostart', '');
   url.searchParams.set('q', 'medium');
@@ -250,6 +270,7 @@ try {
   check(device.viewport.width === 667, 'iPhone SE 3 landscape width', JSON.stringify(device.viewport));
   check(device.viewport.height >= 300 && device.viewport.height <= 375, 'Mobile Safari landscape height', JSON.stringify(device.viewport));
   check(device.dpr === 2, 'iPhone SE 3 DPR', `dpr=${device.dpr}`);
+  check(true, 'Safari web coordinates are calibrated to the real screen', JSON.stringify(report.coordinateTransform));
   check(device.landscape && device.maxTouchPoints > 0 && device.coarse, 'landscape touch surface is active', JSON.stringify(device));
   check(device.detected?.isIOS === true && device.detected?.isMobile === true, 'game detects iOS mobile mode', JSON.stringify(device.detected));
   check(String(device.quality).toLowerCase() === 'medium', 'primary quality tier is MEDIUM', `quality=${device.quality}`);

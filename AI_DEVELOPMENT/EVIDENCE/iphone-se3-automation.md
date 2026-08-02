@@ -76,9 +76,18 @@ and the harness now requires four engine frames after setting the hero camera an
 magic-hour sky before capture. The rejected dark baseline remains historical failure
 evidence only and is not accepted as the product appearance.
 
+Run `30727684476` then passed the stabilized required-baseline WebKit sequence with the
+restored reviewed image. This closes the transient-capture defect; the final combined
+head must still rerun WebKit because the Mobile Safari harness changes below are part of
+the same indivisible round gate.
+
 Xcode 26.2 WebDriverAgent rejects a delayed second W3C touch source that begins with
 `pause`. The Mobile Safari journey now positions both sources first, then performs the
-simultaneous move/attack hold. A clean exact-head Safari pass is still mandatory.
+simultaneous move/attack hold. WebDriverAgent also consumes real-screen coordinates,
+not web-viewport CSS coordinates, so the harness calls Appium's
+`mobile: calibrateWebToRealCoordinatesTranslation`, records its measured offsets and
+pixel ratios, and transforms every gesture and control target. A clean exact-head Safari
+pass is still mandatory.
 
 Chromium is only a local harness surrogate. It is not recorded as Playwright WebKit, Mobile
 Safari, or physical-phone evidence. Runner frame gaps are not physical FPS.
