@@ -80,6 +80,37 @@ That is the same problem this project already knows from the art loop: telemetry
 `intensity 3.41, castShadow true` while the key light contributed nothing measurable. A number
 that is inside a loose limit is not a number that was checked.
 
+## This is not the variance measurement, and must not become it
+
+A variance pass is starting in this repository, and it also produces timing numbers. The risk
+is not that one of the two is wrong — it is that in six months nobody can say which to believe.
+So the boundary, before either grows into the other:
+
+| | round comparison (this) | variance measurement |
+|---|---|---|
+| runs | one run of this build vs one recorded run of an earlier build | the **same** build, N times |
+| answers | did it get **worse** | how much does it **move on its own** |
+| emits | a per-metric verdict, and a non-zero exit | a spread, and no verdict |
+| tolerance | **declared** in `iphone-se3-round.config.json` | measures what the tolerance should have been |
+
+The seam is concrete: **the variance pass is what should replace the tolerance this gate is
+currently guessing.** `DEFAULT_TOLERANCE` in `.kit/lib/mobile/roundCompare.mjs` is 25% because
+that is loose enough not to flake — and the two verified `survival` runs the comparison was
+built against moved boot time from 11854 ms to 9474 ms with nothing changed between them. That
+is 20% of run-to-run spread from a sample of two, sitting under a 25% gate. The gate is barely
+above a noise floor nobody has measured yet.
+
+So the variance work is not a duplicate of this. It is the missing input. When it lands, the
+tolerances here should stop being defaults and start citing its measurement.
+
+Two rules keep them from colliding:
+
+- **If it re-runs the same build, it is variance measurement — it must not emit a pass/fail.**
+  (`compare-round` already refuses this shape: two runs of one build read as a round compared
+  against itself, and it says so rather than returning a verdict.)
+- **If it compares two different builds, it is a round comparison — it must not invent its own
+  tolerance.**
+
 ## What the comparison refuses to do
 
 - **Compare a round against itself.**
