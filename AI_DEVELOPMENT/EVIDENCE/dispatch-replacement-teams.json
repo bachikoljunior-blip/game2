@@ -1,0 +1,60 @@
+{
+  "core": [
+    "src/main.js",
+    "src/core/Engine.js",
+    "src/core/Quality.js",
+    "src/core/Input.js",
+    "src/core/EventBus.js",
+    "src/core/Noise.js",
+    "src/core/Cinematic.js"
+  ],
+  "audio": [
+    "src/core/Audio.js"
+  ],
+  "materials": [
+    "src/render/Materials.js"
+  ],
+  "sky": [
+    "src/render/Sky.js",
+    "src/render/Lighting.js"
+  ],
+  "postfx": [
+    "src/render/PostFX.js"
+  ],
+  "foliage": [
+    "src/render/Foliage.js"
+  ],
+  "world": [
+    "src/world/Terrain.js",
+    "src/world/Props.js",
+    "src/world/Level.js",
+    "src/world/Constants.js"
+  ],
+  "anim": [
+    "src/anim/Rig.js",
+    "src/anim/Poses.js"
+  ],
+  "physics": [
+    "src/gameplay/Physics.js"
+  ],
+  "player": [
+    "src/gameplay/Player.js",
+    "src/gameplay/PlayerCamera.js"
+  ],
+  "combat": [
+    "src/gameplay/Combat.js"
+  ],
+  "enemy": [
+    "src/gameplay/Enemy.js",
+    "src/gameplay/EnemyAI.js"
+  ],
+  "fx": [
+    "src/fx/Effects.js",
+    "src/fx/Weather.js"
+  ],
+  "ui": [
+    "src/ui/HUD.js",
+    "src/ui/TouchControls.js",
+    "src/ui/Menus.js"
+  ]
+}
