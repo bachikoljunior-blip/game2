@@ -293,14 +293,64 @@ say which remain instead.
 
 ---
 
-## Integration — held back on purpose, 2026-08-01. **Do not merge without re-measuring.**
+## Integration — in progress, 2026-08-02. Started after the hold was lifted.
 
-Every repository's work sits on `claude/kit-rollout-game2-survival-0vspel` and **none of it is
-merged**. That is a decision, not a forgotten step: the user was shown the state and chose to
-wait because **another session was working in these repositories at the same time and still
-is**.
+The rollout itself is finished. Integration is a separate question with a separate answer,
+and this section is where that answer is being worked out. The hold below is kept verbatim
+because it records *why* the numbers had to be retaken.
 
-The rollout itself is finished. Integration is a separate question with a separate answer.
+### Integration state — measured 2026-08-02 04:41 UTC
+
+| Repo | behind `main` | overlap | merge target | state |
+|---|---|---|---|---|
+| `game` | 0 | none | `main` | **merged `6247fd2`, pushed, read back** |
+| `exist-debug` | 0 | none | `main` | **merged `418f8bf`, pushed, read back** |
+| `game2` | 14 | `package.json` | `main` | **merged `b2a201d`, pushed, read back** |
+| `Cooky` | 0 | none | *undecided* | blocked — trunk question, see below |
+| `survival` | 28 | `package.json`, `tools/check_operating_state.mjs` | `main` | rebuild + re-measure, not merged |
+| `Q` | 2 | `AI_DEVELOPMENT/STATE.yaml`, `DECISIONS.md` | `main` | held to last — republishes Pages |
+| `Gptgame` | 1 | 5 files incl. `scripts/verify-continuity.mjs` | `main` | rebuild + re-measure, republishes Pages |
+| `Simple-browser-cookie-clicker-game` | 0 | none | — | **excluded by the user, 2026-08-02. Do not merge.** |
+
+**The other session has stopped, and that is measured rather than assumed.** Every
+`<branch>..origin/main` count above is *identical* to the 2026-08-01 reading — 14 / 28 / 1 /
+2 and four zeroes — and the most recent push to any of the eight remotes was 5.5 hours before
+the check. Nothing moved between the two measurements.
+
+**Two things the 2026-08-01 record got wrong, both corrected by measurement:**
+
+- **`Cooky` does have a `main`.** It is `15ce6ec`, the same SHA as the default branch
+  `claude/roguelike-game-design-nrunz6`. The trunk question is therefore not "create one" but
+  "which of the two identical refs is the trunk" — and the default branch still points at the
+  feature branch, which only the user can change (step 1's proxy limit).
+- **No `main` anywhere carries the kit.** `.kit/` file count on `origin/main` is 0 in all
+  eight. The escape hatch in point 4 below — *"if the other session already routed these
+  through the kit, drop this branch's version"* — **does not apply**. This branch's install is
+  the only one that exists, so `survival` and `Gptgame` must be rebuilt, not dropped.
+
+*Verified on each merged tree, not inherited from the pre-merge branch:*
+
+| Repo | `check:kit` | ablation | own gates |
+|---|---|---|---|
+| `game` | 34 files intact, exit 0 | `.kit/lib/state/graph.mjs` corrupted → `edited in place`, exit 1 | — |
+| `exist-debug` | 34 files intact, exit 0 | same file, same failure, restored to 0 | — |
+| `game2` | 34 files intact, exit 0 | — | `check:ownership` 30 vs 30; `validate:project` PASS on the **new** main's state (52 criteria, 31 plan nodes); `--selftest` **14/14** incl. the control |
+
+`game2`'s validator passing matters more than the other two lines: the other session rewrote
+45 files on that `main`, including the `AI_DEVELOPMENT` records the rewired validator reads.
+It passes against their state, and the self-test still fires on all thirteen deliberate
+mutations, so it is not passing by being inert.
+
+`game` and `exist-debug` were fast-forwards — `origin/main` was a strict ancestor of the
+branch, so no merge commit and no resolution was involved.
+
+---
+
+### The hold, as recorded 2026-08-01 — kept because it explains the re-measurement
+
+Every repository's work sat on `claude/kit-rollout-game2-survival-0vspel` and none of it was
+merged. That was a decision, not a forgotten step: the user was shown the state and chose to
+wait because **another session was working in these repositories at the same time**.
 
 ### What was measured before deciding
 
@@ -342,21 +392,23 @@ support a claim about the current tree. Merging on them would be exactly the fai
 document exists to prevent: asserting something that was true when measured and is not
 measured any more.
 
-### What the next session must do, in order
+### The order this integration is following
 
-1. **Ask, or wait for, the user's go-ahead.** They said they would say when the other session
-   is finished. Do not infer it from a quiet remote.
-2. **`game`, `exist-debug`, `Simple-browser-cookie-clicker-game` are the safe ones** — zero
-   divergence, untouched for five days, one changed file each.
-3. **`game2` and `Q` are light** — the overlap is records and `package.json`, and their
-   validators were not touched on `main`.
+1. ~~**Ask, or wait for, the user's go-ahead.**~~ Given 2026-08-02, and backed by the
+   measurement above rather than by a quiet remote.
+2. ~~**`game`, `exist-debug` are the safe ones**~~ — done. `Simple-browser-cookie-clicker-game`
+   was in this tier and is **now excluded by the user**; it stays on the branch.
+3. ~~**`game2` is light**~~ — done. **`Q` is light** and still open, held to last with
+   `Gptgame` because merging republishes its public site.
 4. **`survival` and `Gptgame` need the work redone, not merged.** Read `c8608a6` and
    `0aa981d` first, rebase onto the new `main`, and **re-run the mutation battery there** —
-   the old numbers are void. If the other session already routed these through the kit, the
-   right answer may be to drop this branch's version rather than reconcile it.
-5. **`Cooky` has no trunk at all.** Its default branch is
-   `claude/roguelike-game-design-nrunz6`; there is no `main`. Decide what its trunk should be
-   before merging anything into it.
+   the old numbers are void. ~~If the other session already routed these through the kit, the
+   right answer may be to drop this branch's version~~ — **measured false on 2026-08-02: no
+   `main` carries `.kit/`. Rebuild is the only option.**
+5. **`Cooky`'s trunk is a real question, but not the one recorded.** `main` exists at
+   `15ce6ec`, byte-identical to the default branch `claude/roguelike-game-design-nrunz6`.
+   Merging into `main` alone would leave the branch the repository actually opens on without
+   the kit. Decide with the user before pushing anything.
 
 *Unverified, recorded so nobody re-derives it:* the three static repositories are probably
 served from their repository root, which would put `.kit/` at a public URL. Every one of these
