@@ -341,6 +341,23 @@ function checkBenchmarks(benchmarks, errors, { checkStatus, ids }) {
     }
   }
 
+  // The count the standing brief quotes, recomputed. The buckets were right and the
+  // sentence beside them said TEN while the criteria said fourteen — prose next to
+  // correct data is still the thing a reader believes.
+  const declaredMeasured = benchmarks.gapSummary?.elementsWithExecutedMeasurement;
+  if (typeof declaredMeasured !== 'number') {
+    errors.push('benchmarks.gapSummary.elementsWithExecutedMeasurement is required — an uncounted headline is how "TEN" survived four extra elements');
+  } else if (declaredMeasured !== measured.size) {
+    errors.push(`benchmarks.gapSummary.elementsWithExecutedMeasurement: says ${declaredMeasured}, actual ${measured.size}`);
+  }
+  const headline = benchmarks.gapSummary?.headline ?? '';
+  const WORDS = { ONE: 1, TWO: 2, THREE: 3, FOUR: 4, FIVE: 5, SIX: 6, SEVEN: 7, EIGHT: 8,
+    NINE: 9, TEN: 10, ELEVEN: 11, TWELVE: 12, THIRTEEN: 13, FOURTEEN: 14, FIFTEEN: 15, SIXTEEN: 16 };
+  const spelled = /\b(ONE|TWO|THREE|FOUR|FIVE|SIX|SEVEN|EIGHT|NINE|TEN|ELEVEN|TWELVE|THIRTEEN|FOURTEEN|FIFTEEN|SIXTEEN)\b/.exec(headline);
+  if (spelled && WORDS[spelled[1]] !== measured.size) {
+    errors.push(`benchmarks.gapSummary.headline says ${spelled[1]} where the criteria give ${measured.size} elements with an executed measurement`);
+  }
+
   const bucketed = Object.values(benchmarks.gapSummary?.byApparatus ?? {}).flat();
   for (const id of bucketed) if (!elementIds.has(id)) errors.push(`benchmarks.gapSummary.byApparatus: unknown element ${id}`);
   if (new Set(bucketed).size !== bucketed.length) errors.push('benchmarks.gapSummary.byApparatus: an element is listed in two buckets');
@@ -444,6 +461,16 @@ export function selfTestCases({ root = ROOT } = {}) {
     {
       name: 'the declared criteria counts drifting from the actual ones',
       evaluate: () => run(patch(BENCH, (d) => { d.gapSummary.criteriaCounts.total += 1; })),
+    },
+    {
+      name: 'the headline count left behind while the elements gained measurements',
+      evaluate: () => run(patch(BENCH, (d) => { d.gapSummary.elementsWithExecutedMeasurement -= 1; })),
+    },
+    {
+      name: 'the headline sentence spelling a number the criteria do not support',
+      evaluate: () => run(patch(BENCH, (d) => {
+        d.gapSummary.headline = d.gapSummary.headline.replace(/\bFOURTEEN\b/, 'TEN');
+      })),
     },
     {
       name: 'an element bucketed as measured after its measurement was withdrawn',

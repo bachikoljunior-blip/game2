@@ -1237,7 +1237,7 @@
  ],
  "gapSummary": {
   "asOf": "2026-08-01",
-  "headline": "Of 16 in-scope elements, TEN now carry at least one executed runtime or frame measurement, against one before 2026-08-01. The interaction-capture apparatus (tools/interaction-capture.mjs, brief in tools/INTERACTION.md) closed the structural gap that had left twelve elements unverifiable. Its first run returned 5 pass, 9 fail and 4 inconclusive over 18 criteria. The honest reading is that the product is now MEASURED, not that it is good: the failures include no foot locking (25.9 cm/frame planted drift against a 2 cm bar), enemy attacks that become damaging 17 ms after first visible motion against their own 140 ms reaction floor, rim separation below the rig's own floor on 4 of 8 archetype placements, and ~194 ms of JS per frame with three enemies engaged against a 5 ms budget.",
+  "headline": "Of 16 in-scope elements, FOURTEEN now carry at least one executed runtime or frame measurement, against one before 2026-08-01. That count is gapSummary.elementsWithExecutedMeasurement and tools/validate-project-state.mjs recomputes it from the criteria and fails if this sentence drifts from it -- it read TEN for a day after the count moved, which is the same rot CLAUDE.md had. The interaction-capture apparatus (tools/interaction-capture.mjs, brief in tools/INTERACTION.md) closed the structural gap that had left twelve elements unverifiable. Its first run returned 5 pass, 9 fail and 4 inconclusive over 18 criteria. The honest reading is that the product is now MEASURED, not that it is good: the failures include no foot locking (25.9 cm/frame planted drift against a 2 cm bar), enemy attacks that become damaging 17 ms after first visible motion against their own 140 ms reaction floor, rim separation below the rig's own floor on 4 of 8 archetype placements, and ~194 ms of JS per frame with three enemies engaged against a 5 ms budget.",
   "byApparatus": {
    "verifiedLoopExists": [
     "E11-VISUALS",
@@ -1263,6 +1263,7 @@
    ],
    "noEvidenceAtAll": []
   },
+  "elementsWithExecutedMeasurement": 14,
   "criteriaCounts": {
    "total": 62,
    "verified": 21,
