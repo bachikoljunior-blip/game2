@@ -306,11 +306,73 @@ because it records *why* the numbers had to be retaken.
 | `game` | 0 | none | `main` | **merged `6247fd2`, pushed, read back** |
 | `exist-debug` | 0 | none | `main` | **merged `418f8bf`, pushed, read back** |
 | `game2` | 14 | `package.json` | `main` | **merged `b2a201d`, pushed, read back** |
-| `Cooky` | 0 | none | *undecided* | blocked — trunk question, see below |
-| `survival` | 28 | `package.json`, `tools/check_operating_state.mjs` | `main` | rebuild + re-measure, not merged |
-| `Q` | 2 | `AI_DEVELOPMENT/STATE.yaml`, `DECISIONS.md` | `main` | held to last — republishes Pages |
-| `Gptgame` | 1 | 5 files incl. `scripts/verify-continuity.mjs` | `main` | rebuild + re-measure, republishes Pages |
+| `Cooky` | 0 | none | `main` **and** default | **merged `b431196`, both refs pushed, read back** |
+| `survival` | 28 | `package.json`, `tools/check_operating_state.mjs` | `main` | **rebuilt, `1156dfb` pushed to branch**; merge pending suite |
+| `Q` | 2 | `AI_DEVELOPMENT/STATE.yaml`, `DECISIONS.md` | `main` | **merged, `2a9ff40` pushed to branch**; held from `main` — republishes Pages |
+| `Gptgame` | 1 | 5 files incl. `scripts/verify-continuity.mjs` | `main` | **rebuilt, `1cf5ef7` pushed to branch**; held from `main` — republishes Pages |
 | `Simple-browser-cookie-clicker-game` | 0 | none | — | **excluded by the user, 2026-08-02. Do not merge.** |
+
+`Cooky`'s trunk was settled by the user: push **both** `main` and the default branch
+`claude/roguelike-game-design-nrunz6`. They were the same SHA, so no divergence was created,
+and whichever ref the repository opens on carries the kit. That avoids needing the default
+branch flipped, which the API proxy refuses (step 1).
+
+The three rebuilt/merged branches all sit on `claude/kit-rollout-integration-a4zihp`, cut
+from each repository's current `main`.
+
+### What the rebuilds actually found — the merge would have been wrong in both
+
+Neither `survival` nor `Gptgame` was a case of "merge would have conflicted". In both, the
+merge would have produced a **worse** tree than either side:
+
+- **`Gptgame` would have been broken outright, not merely risky.** `0aa981d` changed the
+  objective id to `iphone-se3-automation-2026-08-01` and loosened the assertion that had
+  pinned it. The kit branch's rewritten `verify-continuity.mjs` still hardcoded the old id,
+  so the merged gate would have failed on `main`'s own state. main's loosening is adopted.
+- **`survival` would have silently lost eleven checks.** `c8608a6` added an 84-line
+  protocol-2.2 `STATE.yaml` block to `check_operating_state.mjs` while the kit branch was
+  rewriting the same file whole. Every one of those checks is carried over and now has a
+  self-test, which they did not have before.
+
+**Disproved, so nobody re-derives it:** routing `survival`'s `STATE.yaml` block through
+`.kit/lib/state/yaml.mjs` does not work. That parser is strict and rejects folded block
+scalars (`>`); `STATE.yaml` uses them and it throws at line 22 of the real file. Swapping it
+in would have replaced eleven working checks with a crash. `main`'s hand-rolled indentation
+walker is kept verbatim, with only its I/O made injectable so the self-test can drive it.
+
+*Two vacuous assertions fell out of `Gptgame`, neither caused by the swap.* Both used
+`/key:[\s\S]*?field/`, which matches the field **anywhere later in the file**: deleting the
+objective id entirely still satisfied its check, and the logical-session `active: true` check
+could be satisfied by a different key's value. Both are now anchored to their own block,
+keeping main's intent that the id is not pinned to a value. Same shape as the two mislabelled
+mutations caught inside the batteries themselves — see the trap at the end.
+
+### Re-measured equivalence — the old numbers are void and are not reused
+
+Every number below was taken against each repository's **current** `main`, with both
+validators run as **subprocesses**: neither old copy has a CLI guard, so importing one to
+compare would run the real gate instead of the fabricated one.
+
+| Repo | battery | agreement | breakages that fired | self-test |
+|---|---|---|---|---|
+| `survival` | `tools/equivalence_operating_state.mjs` | **46/46** | 43 of 45 (2 are deliberate valid-input controls) | **23/23** incl. control |
+| `Gptgame` | `scripts/equivalence-continuity.mjs` | **33/33** | 31 of 32 (1 is the objective-id change main made legal) | **15/15** incl. control |
+
+The superseded figures — `survival` 27/27, `Gptgame` 19/19 — were measured against the old
+`main` and say nothing about these trees. They are not quoted anywhere as current.
+
+`Q` needed no rebuild: `main` moved to r3 but never touched its validators. Its one real
+conflict was the step-6 vocabulary decision meeting main's newer review record; main's r3
+record is kept whole with `review_outcome` moved `passed` → `complete_verified`, which is the
+decision already recorded in `Q/AI_DEVELOPMENT/DECISIONS.md`.
+
+*Verified per repo on the merged/rebuilt tree, not inherited from the pre-merge branch:*
+
+| Repo | evidence |
+|---|---|
+| `survival` | `check:kit` 34 files intact; validator PASS on main's state; F2 fired on the tooling commits then passed once `STATE.yaml` moved; F3 6/6 steps; `tools/perf.mjs` end to end; `validate`, `check_benchmarks` clean |
+| `Gptgame` | `check:kit` intact; `npm test` **51/51**; `verify-floor` F2+F5 pass after the governed digest was recomputed; `pages.yml` auto-merge kept all 16 of main's SE3 references |
+| `Q` | `check:kit` intact **and observed failing** on a corrupted kit file; `validate-protocol` 13/13; floor gates pass on 44 changed files while **all three** deliberate-failure scenarios (F2, F2_ASSET, F5) still fire; `npm run check` exit 0 end to end |
 
 **The other session has stopped, and that is measured rather than assumed.** Every
 `<branch>..origin/main` count above is *identical* to the 2026-08-01 reading — 14 / 28 / 1 /
@@ -452,6 +514,17 @@ Every one of these has already cost a session.
   rewriting the exact validator this workstream had just replaced. Before merging anything,
   count `<branch>..origin/main` and list the files both sides touched. A measurement taken
   against yesterday's `main` says nothing about today's.
+- **A mutation that changes nothing reports agreement on a check it never ran.** Both
+  re-measured batteries had one. `survival`'s "session status disagrees" replaced the first
+  `status: active` in `STATE.yaml`, which belongs to `project`, not `logical_session`;
+  `Gptgame`'s "logical session no longer active" hit an earlier key's `active: true` the same
+  way. Both printed a confident `ok` for a check they never exercised. Anchor a mutation to
+  the block it claims to break, and assert the text actually changed — `Gptgame`'s battery
+  now throws if a transform is a no-op.
+- **A loosened assertion can loosen to nothing.** `/objective:[\s\S]*?id: "[^"]+"/` reads as
+  "the objective has an id"; `[\s\S]*?` runs past the objective block, so it matches any
+  quoted id later in the file and deleting the objective id outright still satisfies it. Two
+  of these were live in `Gptgame`. Anchor to the block's own first key.
 - **A validator that only ever passes is indistinguishable from one that is inert.** Three
   real defects in this workstream were found by a `--selftest` control and none by reading the
   code: `game2` could not see a dependency cycle, `survival` never scanned for credentials,
