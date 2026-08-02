@@ -324,6 +324,16 @@ So integration there runs through **pull request #10** (`claude/kit-rollout-inte
 → `main`), created on the user's explicit go-ahead. Its three required checks are F2, F3 and
 F5 — the repository's own floor gates.
 
+**PR #10 is green: F2, F3 and F5 all `success`, `mergeable_state: clean`.** It is *not*
+merged — the user was asked for the PR only, and merging is a separate confirmation.
+
+F5 failed on the first attempt and that was correct, not a hiccup: the PR body carried no
+`Floor-Review:` trailer, so the gate refused a delivery with no recorded review level. The
+trailer is `Floor-Review: C / pass`, which is same-agent falsification — the level
+`AI_DEVELOPMENT/STATE.yaml` already records for this run, and the only level available since
+no separate reviewing agent was used. Worth keeping: **F5 reads the pull-request body, not the
+commits**, so it cannot be satisfied from a local run.
+
 ### What the two public sites actually did
 
 The user's concern was that merging `Q` and `Gptgame` would regenerate their public surfaces.
