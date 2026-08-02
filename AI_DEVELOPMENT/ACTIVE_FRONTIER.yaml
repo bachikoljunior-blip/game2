@@ -1,7 +1,7 @@
 {
  "schemaVersion": 1,
- "updatedAt": "2026-08-01T22:30:00Z",
- "selectionMethod": "Round 16 was run end to end on user instruction and closed with every contract gate held on r16v1. PHYS-NARROWPHASE ran in parallel and resolved TD-010, which was not a performance defect at all but a NaN query AABB making TriBVH.overlapAABB's cull fail open; its root cause is an ARCHITECTURE 5b violation at Enemy.js:845 that also left enemies with no world collision. The user then explicitly ended the run at the end of this round (\"今途中のラウンドが終わるまでにして\"), so rounds 17-20 were cancelled rather than deferred. Next selection is not made here; it awaits a new user instruction.",
+ "updatedAt": "2026-08-02T00:30:00Z",
+ "selectionMethod": "The 2026-08-02 instruction activates PHONE-ROUND-GATE: preserve published Round 16, make WebKit plus iPhone SE 3 Mobile Safari one blocking gate in every future round, merge only after the pull-request revision passes, and publish only after the merged revision repeats both.",
  "tasks": [
   {
    "id": "R15-PUBLISH",
@@ -100,6 +100,18 @@
    "objective": "Sample BM-COMBAT-02 and finish BM-AI-03's siblings now that the encounters scenario is affordable. It completes 20 encounters / 14,470 frames in 21.9 s since 9330fa8, but the harness bot scored 0 kills and 0 posture breaks across all 20, so BM-COMBAT-02 still has no measurement.",
    "verification": "A run of tools/interaction-capture.mjs --scenarios=encounters with an explicit distinct tag in which the bot resolves a non-zero number of encounters, so BM-COMBAT-02 can be scored at all.",
    "nextAction": "Determine whether the zero-kill result is a harness-policy limitation (tools/harness/runtime.js) or a real combat-balance finding before changing either. Do not assume the bot is at fault."
+  },
+  {
+   "id": "PHONE-ROUND-GATE",
+   "planNode": "PHONE-ROUND-GATE",
+   "status": "active",
+   "priority": 0,
+   "dependencies": [
+    "BENCH-APPARATUS"
+   ],
+   "objective": "Make the two iPhone SE 3 browser layers the blocking final execution step of each round and the prerequisite for Pages publication.",
+   "verification": "The exact pull-request revision passes WebKit then Xcode 26.2/iOS 26.2 Mobile Safari; after merge the exact main revision passes both again and the public sourceSha/journey verifies.",
+   "nextAction": "Validate the reconciled Round 16-based tree, open the pull request, require both target jobs, merge, and verify the source-SHA-locked publication."
   }
  ]
 }

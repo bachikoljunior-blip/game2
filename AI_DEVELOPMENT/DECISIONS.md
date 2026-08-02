@@ -206,3 +206,16 @@ pipeline, 8.73 s → 2.2 ms per frame) was treated as a hypothesis and measured:
 an identical stimulus, one fully rendered, diverged by exactly 0. The self-check that proves
 it runs before any verdict is believed, and is carried between runs only against an
 identical build fingerprint.
+
+## D-020 — Make both primary-phone browser layers one round-completion gate
+
+Accepted 2026-08-02 from the user's explicit instruction. Every non-generated round change
+now enters one combined workflow: Playwright WebKit first, then Xcode 26.2/iOS 26.2 Mobile
+Safari on the iPhone SE (3rd generation) Simulator. The pull-request revision must pass both
+before merge. The merged revision repeats both before the exact-SHA Pages publisher runs.
+Generated `docs/`-only publication commits are excluded from the trigger to prevent a
+publication loop.
+
+This supersedes the earlier main-only simulator arrangement and the temporary hold on merge.
+It does not convert simulator time into physical-device evidence; GPU speed, thermals,
+memory pressure, hand reach, haptics, speakers, and audio latency remain unmeasured.

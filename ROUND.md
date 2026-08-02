@@ -78,7 +78,7 @@ full list of what rounds 7 and 8 disproved:
 
 ---
 
-## The round, in five steps
+## The round, in six steps
 
 ```bash
 npm ci --cache /tmp/game2-npm-cache              # first Work checkout in this environment
@@ -88,9 +88,17 @@ node tools/contact-sheet.mjs --tag=rN             # 2. tile for the critic
 #                                                   3. critic → shots/review-rN.json
 node tools/dispatch.mjs --round=N                 # 4. who to spawn
 #                                                   5. spawn exactly those, then verify
+# 6. open the round PR; require the combined iPhone SE 3 WebKit + Mobile Safari gate
 ```
 
 Substitute the active round identifier from `HANDOFF.md`; never infer it from ignored PNGs.
+
+Step 6 is blocking for every delivered round. The pull request runs WebKit and then the
+iPhone SE (3rd generation) iOS Simulator's Mobile Safari for the same candidate. Merge only
+after both pass. The merged revision repeats both; Pages publication and its public journey
+verification start only from that successful combined run. Simulator timing is regression
+and hang evidence, not physical-phone FPS, heat, memory-pressure, reach, haptic, or audio
+evidence.
 
 **Capture phone first.** It is the pass/fail profile, and it boots in ~35 s against
 desktop/ULTRA's ~200 s with minutes per 1920x1080 screenshot — a combined

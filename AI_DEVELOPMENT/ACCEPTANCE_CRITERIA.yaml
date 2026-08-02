@@ -966,6 +966,64 @@
    "severity": "blocking",
    "verification": "automated and independent review",
    "status": "under_review"
+  },
+  {
+   "id": "MOBILE-WEBKIT-001",
+   "sourceRequirement": "User instruction 2026-08-02: make primary-phone automation part of every round",
+   "scope": "Every non-generated round pull request and merged main revision; iPhone SE (3rd generation) landscape WebKit at 667x375 / DPR 2 / MEDIUM",
+   "preconditions": [
+    "npm ci completed",
+    "The reviewed WebKit baseline exists"
+   ],
+   "action": "Run npm run test:iphone-webkit in the combined round workflow.",
+   "expected": "The game boots as iOS mobile, holds resource budgets, accepts movement plus attack and camera touch, pauses/resumes, restores settings, survives bounded automatic play, renders within visual tolerance, and reports no blocking runtime or network error.",
+   "threshold": "Exit 0; viewport 667x375; DPR 2; MEDIUM; draw calls <= 140; triangles <= 900000; every interaction, error, and visual assertion passes.",
+   "evidence": [
+    "tools/test-iphone-webkit.mjs",
+    ".github/workflows/iphone-webkit.yml",
+    "AI_DEVELOPMENT/EVIDENCE/iphone-se3-automation.md"
+   ],
+   "severity": "blocking",
+   "verification": "automated target-WebKit interaction, screenshot, video, trace, and JSON report",
+   "status": "active"
+  },
+  {
+   "id": "MOBILE-IOS-001",
+   "sourceRequirement": "User instruction 2026-08-02: make Mobile Safari part of every round before merge",
+   "scope": "The same round candidate on iPhone SE (3rd generation) iOS 26.2 Simulator Mobile Safari",
+   "preconditions": [
+    "MOBILE-WEBKIT-001 passed for the same workflow revision"
+   ],
+   "action": "Run npm run test:ios-safari through Appium/XCUITest after WebKit.",
+   "expected": "Xcode 26.2 and iOS 26.2 Mobile Safari exercise trusted movement plus attack, camera, pause/resume, persistence, budgets, capture, and runtime-error collection.",
+   "threshold": "Exit 0 and every JSON check passes; screenshot, video, Appium log, and report are retained.",
+   "evidence": [
+    "tools/test-ios-safari.mjs",
+    ".github/workflows/iphone-webkit.yml",
+    "AI_DEVELOPMENT/EVIDENCE/iphone-se3-automation.md"
+   ],
+   "severity": "blocking",
+   "verification": "automated actual-iOS Mobile Safari interaction",
+   "status": "active"
+  },
+  {
+   "id": "MOBILE-PUBLISH-001",
+   "sourceRequirement": "Publish a round only after both primary-phone browser layers pass",
+   "scope": "Merged main revision to checked-in docs and GitHub Pages",
+   "preconditions": [
+    "MOBILE-WEBKIT-001 and MOBILE-IOS-001 passed for one exact main SHA"
+   ],
+   "action": "Run Publish device-verified GitHub Pages from the successful combined round workflow.",
+   "expected": "Only the exact verified main SHA rebuilds docs; a superseded SHA is rejected; the public revision marker matches; boot and the primary public journey pass.",
+   "threshold": "No publisher starts after either failed browser layer; exact sourceSha is observed publicly; npm run verify:pages exits 0.",
+   "evidence": [
+    ".github/workflows/publish-verified-pages.yml",
+    "tools/verify-pages.mjs",
+    "AI_DEVELOPMENT/EVIDENCE/iphone-se3-automation.md"
+   ],
+   "severity": "blocking",
+   "verification": "workflow ordering, exact-revision public fetch, and browser start",
+   "status": "active"
   }
  ]
 }

@@ -62,3 +62,25 @@ sets, and post-fix remeasurement. PR #6 was merged at `4a3eff7`; the public GitH
 surface loaded current `index-D_EFhYS4.js` and reached ready/running with zero page, console,
 request, or HTTP errors. No further product round is authorized; await a new user instruction
 without beginning Round 15.
+
+## Primary phone automation authorized 2026-08-01
+
+- Replace the routine physical-device release check with two free automated gates.
+- On each product pull request and main candidate, run Playwright WebKit with the iPhone SE
+  (3rd generation) landscape profile: `667×375`, DPR 2, touch, coarse pointer, iOS user
+  agent, and the forced MEDIUM quality tier.
+- Before a verified main candidate may update GitHub Pages, drive Mobile Safari through
+  Appium/XCUITest on an iPhone SE (3rd generation) iOS Simulator.
+- Exercise boot, movement plus attack, camera, pause/resume, settings persistence, stress
+  play, resource budgets, screenshots, and blocking runtime errors; preserve reports,
+  screenshots, video, traces, and logs as workflow artifacts.
+- Publish only after both target-browser gates pass and verify the exact generated revision
+  on the public surface.
+- Do not claim physical GPU frame rate, heat, memory-pressure reloads, hardware multi-touch,
+  hand reach, haptics, speakers, or audio latency from WebKit emulation or the simulator.
+  Those properties remain explicitly unmeasured and are not routine release blockers.
+- Treat the two browser layers as part of one round: every round pull request must pass
+  WebKit and Mobile Safari before merge; the merged main revision must pass both again
+  before the Pages publisher accepts it.
+- The user's 2026-08-02 instruction authorizes this task branch to merge and publish after
+  those gates pass.

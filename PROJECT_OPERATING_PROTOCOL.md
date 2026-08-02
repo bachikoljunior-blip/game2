@@ -241,3 +241,29 @@ the user surface and relevant performance are checked, failure/recovery behaviou
 records and evidence are current, and no unresolved blocking or high-severity finding
 remains. Never equate generated code, compilation, a screenshot, or one review with
 completion. State remaining uncertainty in proportion to the evidence.
+
+## 15. Primary phone browser gate
+
+The user's 2026-08-01 instruction replaces the routine physical-device release check with a
+two-stage automated gate. Product changes run Playwright WebKit using the iPhone SE (3rd
+generation) landscape descriptor. A main candidate that passes then runs Mobile Safari on
+the matching iOS Simulator through Appium/XCUITest. Only a candidate that passes both may
+enter the established Pages publication and public-surface verification path.
+
+The fast gate records target geometry, touch/pointer interaction, movement plus attack,
+camera, pause/resume, persistence, stress state, resource budgets, screenshots, video,
+trace, and runtime/network failures. The simulator gate repeats the critical flow with
+trusted W3C touch actions in actual iOS Mobile Safari and records screenshot, video, Appium
+log, and JSON evidence.
+
+These two checks are one round's final execution gate, not a separate cleanup task. A round
+cannot be recorded as delivery-ready or merged until its pull-request revision passes both.
+The merged `main` revision repeats the same combined gate, and only that successful run may
+start the source-SHA-locked Pages publisher.
+
+These gates are evidence about browser behavior and relative regressions. They are not
+evidence about a physical phone's GPU speed, thermals, memory pressure, hardware
+multi-touch, hand reach, haptics, speakers, or audio latency. Keep those limitations
+explicit, but do not block routine release on unavailable physical-only evidence. A newer
+explicit user instruction may require a physical check for a specific defect or tuning
+question.

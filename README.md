@@ -21,7 +21,19 @@ npm install
 npm run dev        # http://localhost:5173
 npm run build      # → dist/
 npm run shots      # build, then capture the visual-review screenshot set
+npm run test:iphone-webkit  # iPhone SE 3 landscape interaction/visual gate
 ```
+
+GitHub Actions treats both phone-browser layers as one round-completion gate. Every round
+pull request runs Playwright WebKit at `667×375 / DPR 2`, touch, iOS user agent, and MEDIUM,
+then Appium/XCUITest against Mobile Safari on an iPhone SE (3rd generation) iOS Simulator.
+The merged `main` revision repeats both. Only a both-pass main revision can rebuild the
+checked-in Pages artifact; screenshots, video, trace, Appium logs, and JSON reports are
+retained as Actions artifacts.
+
+This is the routine primary-phone release evidence. It does not measure a physical phone's
+GPU speed, heat, memory-pressure reloads, hardware multi-touch, hand reach, haptics,
+speakers, or audio latency, so those properties remain explicitly unmeasured.
 
 ## Controls
 
