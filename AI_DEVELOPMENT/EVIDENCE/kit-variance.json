@@ -1,0 +1,1946 @@
+{
+  "schemaVersion": 1,
+  "measuredAt": "2026-08-02T12:09:35.049Z",
+  "profile": "phone",
+  "build": {
+    "digest": "bfddbfad8eb8713149aa7ab55a61b864b4c5c996342e0f25b94d6783e13c2f70",
+    "files": 8,
+    "unchangedAfter": true
+  },
+  "runs": [
+    {
+      "tag": "var-a1",
+      "batch": "a",
+      "startedAt": "2026-08-02T11:03:59.417Z",
+      "seconds": 459.8
+    },
+    {
+      "tag": "var-a2",
+      "batch": "a",
+      "startedAt": "2026-08-02T11:11:39.210Z",
+      "seconds": 451.4
+    },
+    {
+      "tag": "var-a3",
+      "batch": "a",
+      "startedAt": "2026-08-02T11:19:10.599Z",
+      "seconds": 466.6
+    },
+    {
+      "tag": "var-a4",
+      "batch": "a",
+      "startedAt": "2026-08-02T11:26:57.200Z",
+      "seconds": 463.6
+    },
+    {
+      "tag": "var-b1",
+      "batch": "b",
+      "startedAt": "2026-08-02T11:34:40.846Z",
+      "seconds": 466.4
+    },
+    {
+      "tag": "var-b2",
+      "batch": "b",
+      "startedAt": "2026-08-02T11:42:27.224Z",
+      "seconds": 463.9
+    },
+    {
+      "tag": "var-b3",
+      "batch": "b",
+      "startedAt": "2026-08-02T11:50:11.090Z",
+      "seconds": 455.6
+    },
+    {
+      "tag": "var-b4",
+      "batch": "b",
+      "startedAt": "2026-08-02T11:57:46.658Z",
+      "seconds": 463.3
+    }
+  ],
+  "refusals": [],
+  "observations": [
+    "80 cell(s) across 5 shot(s) and 8 run(s)",
+    "65 cell(s) never moved; 15 did",
+    "pixel arm: frames differ on 2.088-11.391% of pixels between runs of one unchanged build (worst: valley)",
+    "cross-batch pixel difference exceeds within-batch on 0 of 5 shot(s) — batch drift is NOT detectable on this rig",
+    "split null: 70 splits per cell, 68 of them interleave the two batches",
+    "0 of 15 moving cell(s) put the true batch cut at or above the 90th percentile of their own split null"
+  ],
+  "gateFlips": [],
+  "pixelArm": [
+    {
+      "shot": "hero",
+      "distinctFrames": 7,
+      "withinBatchChangedPct": 4.22,
+      "crossBatchChangedPct": 3.637,
+      "meanAbsDelta": 0.133,
+      "peakDelta": 388,
+      "floatPercentileRange": {
+        "p01": 0,
+        "p50": 0.0029,
+        "p99": 0.0183,
+        "p999": 0
+      }
+    },
+    {
+      "shot": "sun",
+      "distinctFrames": 7,
+      "withinBatchChangedPct": 2.93,
+      "crossBatchChangedPct": 2.516,
+      "meanAbsDelta": 0.0764,
+      "peakDelta": 216,
+      "floatPercentileRange": {
+        "p01": 0,
+        "p50": 0.0358,
+        "p99": 0.0144,
+        "p999": 0
+      }
+    },
+    {
+      "shot": "torii",
+      "distinctFrames": 8,
+      "withinBatchChangedPct": 2.088,
+      "crossBatchChangedPct": 1.795,
+      "meanAbsDelta": 0.0505,
+      "peakDelta": 206,
+      "floatPercentileRange": {
+        "p01": 0,
+        "p50": 0.0055,
+        "p99": 0.0091,
+        "p999": 0.0251
+      }
+    },
+    {
+      "shot": "valley",
+      "distinctFrames": 7,
+      "withinBatchChangedPct": 11.391,
+      "crossBatchChangedPct": 9.842,
+      "meanAbsDelta": 0.7031,
+      "peakDelta": 365,
+      "floatPercentileRange": {
+        "p01": 0,
+        "p50": 0.004,
+        "p99": 0.0052,
+        "p999": 0
+      }
+    },
+    {
+      "shot": "wide",
+      "distinctFrames": 7,
+      "withinBatchChangedPct": 2.346,
+      "crossBatchChangedPct": 2.038,
+      "meanAbsDelta": 0.0577,
+      "peakDelta": 203,
+      "floatPercentileRange": {
+        "p01": 0.0089,
+        "p50": 0.0046,
+        "p99": 0.0175,
+        "p999": 0.0092
+      }
+    }
+  ],
+  "splitNull": [
+    {
+      "cell": "hero.pctBelow16",
+      "splits": 70,
+      "interleaving": 68,
+      "trueDiff": 0.00024999999999941735,
+      "rank": 0,
+      "percentile": 0
+    },
+    {
+      "cell": "hero.pctWarm",
+      "splits": 70,
+      "interleaving": 68,
+      "trueDiff": 0,
+      "rank": 0,
+      "percentile": 0
+    },
+    {
+      "cell": "hero.pctCool",
+      "splits": 70,
+      "interleaving": 68,
+      "trueDiff": 0.0004999999999988347,
+      "rank": 12,
+      "percentile": 17.1
+    },
+    {
+      "cell": "sun.pctWarm",
+      "splits": 70,
+      "interleaving": 68,
+      "trueDiff": 0.0005000000000023874,
+      "rank": 12,
+      "percentile": 17.1
+    },
+    {
+      "cell": "sun.pctCool",
+      "splits": 70,
+      "interleaving": 68,
+      "trueDiff": 0.0004999999999999449,
+      "rank": 24,
+      "percentile": 34.3
+    },
+    {
+      "cell": "torii.pctBelow16",
+      "splits": 70,
+      "interleaving": 68,
+      "trueDiff": 0.0002500000000011937,
+      "rank": 16,
+      "percentile": 22.9
+    },
+    {
+      "cell": "torii.pctAbove240",
+      "splits": 70,
+      "interleaving": 68,
+      "trueDiff": 0.00024999999999997247,
+      "rank": 0,
+      "percentile": 0
+    },
+    {
+      "cell": "torii.pctWarm",
+      "splits": 70,
+      "interleaving": 68,
+      "trueDiff": 0.0002500000000011937,
+      "rank": 12,
+      "percentile": 17.1
+    },
+    {
+      "cell": "torii.pctCool",
+      "splits": 70,
+      "interleaving": 68,
+      "trueDiff": 0.0002500000000011937,
+      "rank": 8,
+      "percentile": 11.4
+    },
+    {
+      "cell": "valley.pctBelow16",
+      "splits": 70,
+      "interleaving": 68,
+      "trueDiff": 0.0015000000000000568,
+      "rank": 32,
+      "percentile": 45.7
+    },
+    {
+      "cell": "valley.pctWarm",
+      "splits": 70,
+      "interleaving": 68,
+      "trueDiff": 0.003250000000008413,
+      "rank": 42,
+      "percentile": 60
+    },
+    {
+      "cell": "valley.pctCool",
+      "splits": 70,
+      "interleaving": 68,
+      "trueDiff": 0.0017500000000003624,
+      "rank": 36,
+      "percentile": 51.4
+    },
+    {
+      "cell": "wide.pctBelow16",
+      "splits": 70,
+      "interleaving": 68,
+      "trueDiff": 0,
+      "rank": 0,
+      "percentile": 0
+    },
+    {
+      "cell": "wide.pctWarm",
+      "splits": 70,
+      "interleaving": 68,
+      "trueDiff": 0.0007500000000035811,
+      "rank": 46,
+      "percentile": 65.7
+    },
+    {
+      "cell": "wide.pctCool",
+      "splits": 70,
+      "interleaving": 68,
+      "trueDiff": 0,
+      "rank": 0,
+      "percentile": 0
+    }
+  ],
+  "cells": [
+    {
+      "cell": "valley.pctWarm",
+      "values": [
+        68.632,
+        68.624,
+        68.621,
+        68.628,
+        68.633,
+        68.624,
+        68.626,
+        68.635
+      ],
+      "min": 68.621,
+      "max": 68.635,
+      "range": 0.014,
+      "mean": 68.6279,
+      "sd": 0.005,
+      "withinBatchRange": 0.011,
+      "batchShift": 0.0033,
+      "constant": false
+    },
+    {
+      "cell": "valley.pctCool",
+      "values": [
+        5.201,
+        5.198,
+        5.198,
+        5.196,
+        5.204,
+        5.198,
+        5.197,
+        5.201
+      ],
+      "min": 5.196,
+      "max": 5.204,
+      "range": 0.008,
+      "mean": 5.1991,
+      "sd": 0.0026,
+      "withinBatchRange": 0.007,
+      "batchShift": 0.0018,
+      "constant": false
+    },
+    {
+      "cell": "valley.pctBelow16",
+      "values": [
+        16.806,
+        16.81,
+        16.81,
+        16.809,
+        16.804,
+        16.81,
+        16.809,
+        16.806
+      ],
+      "min": 16.804,
+      "max": 16.81,
+      "range": 0.006,
+      "mean": 16.808,
+      "sd": 0.0023,
+      "withinBatchRange": 0.006,
+      "batchShift": -0.0015,
+      "constant": false
+    },
+    {
+      "cell": "torii.pctWarm",
+      "values": [
+        49.548,
+        49.551,
+        49.551,
+        49.548,
+        49.548,
+        49.551,
+        49.55,
+        49.548
+      ],
+      "min": 49.548,
+      "max": 49.551,
+      "range": 0.003,
+      "mean": 49.5494,
+      "sd": 0.0015,
+      "withinBatchRange": 0.003,
+      "batchShift": -0.0003,
+      "constant": false
+    },
+    {
+      "cell": "hero.pctBelow16",
+      "values": [
+        8.189,
+        8.19,
+        8.191,
+        8.19,
+        8.193,
+        8.19,
+        8.189,
+        8.189
+      ],
+      "min": 8.189,
+      "max": 8.193,
+      "range": 0.004,
+      "mean": 8.1901,
+      "sd": 0.0014,
+      "withinBatchRange": 0.004,
+      "batchShift": 0.0002,
+      "constant": false
+    },
+    {
+      "cell": "hero.pctWarm",
+      "values": [
+        66.946,
+        66.944,
+        66.944,
+        66.942,
+        66.945,
+        66.944,
+        66.942,
+        66.945
+      ],
+      "min": 66.942,
+      "max": 66.946,
+      "range": 0.004,
+      "mean": 66.944,
+      "sd": 0.0014,
+      "withinBatchRange": 0.004,
+      "batchShift": 0,
+      "constant": false
+    },
+    {
+      "cell": "hero.pctCool",
+      "values": [
+        16.905,
+        16.903,
+        16.903,
+        16.907,
+        16.904,
+        16.903,
+        16.905,
+        16.904
+      ],
+      "min": 16.903,
+      "max": 16.907,
+      "range": 0.004,
+      "mean": 16.9042,
+      "sd": 0.0014,
+      "withinBatchRange": 0.004,
+      "batchShift": -0.0005,
+      "constant": false
+    },
+    {
+      "cell": "sun.pctWarm",
+      "values": [
+        87.519,
+        87.522,
+        87.521,
+        87.522,
+        87.519,
+        87.522,
+        87.521,
+        87.52
+      ],
+      "min": 87.519,
+      "max": 87.522,
+      "range": 0.003,
+      "mean": 87.5207,
+      "sd": 0.0013,
+      "withinBatchRange": 0.003,
+      "batchShift": -0.0005,
+      "constant": false
+    },
+    {
+      "cell": "wide.pctWarm",
+      "values": [
+        62.491,
+        62.489,
+        62.49,
+        62.491,
+        62.49,
+        62.489,
+        62.489,
+        62.49
+      ],
+      "min": 62.489,
+      "max": 62.491,
+      "range": 0.002,
+      "mean": 62.4899,
+      "sd": 0.0008,
+      "withinBatchRange": 0.002,
+      "batchShift": -0.0008,
+      "constant": false
+    },
+    {
+      "cell": "wide.pctCool",
+      "values": [
+        14.17,
+        14.171,
+        14.17,
+        14.171,
+        14.171,
+        14.171,
+        14.171,
+        14.169
+      ],
+      "min": 14.169,
+      "max": 14.171,
+      "range": 0.002,
+      "mean": 14.1705,
+      "sd": 0.0008,
+      "withinBatchRange": 0.002,
+      "batchShift": 0,
+      "constant": false
+    },
+    {
+      "cell": "sun.pctCool",
+      "values": [
+        1.648,
+        1.65,
+        1.649,
+        1.649,
+        1.649,
+        1.65,
+        1.65,
+        1.649
+      ],
+      "min": 1.648,
+      "max": 1.65,
+      "range": 0.002,
+      "mean": 1.6493,
+      "sd": 0.0007,
+      "withinBatchRange": 0.002,
+      "batchShift": 0.0005,
+      "constant": false
+    },
+    {
+      "cell": "torii.pctCool",
+      "values": [
+        34.137,
+        34.136,
+        34.136,
+        34.137,
+        34.137,
+        34.136,
+        34.136,
+        34.138
+      ],
+      "min": 34.136,
+      "max": 34.138,
+      "range": 0.002,
+      "mean": 34.1366,
+      "sd": 0.0007,
+      "withinBatchRange": 0.002,
+      "batchShift": 0.0003,
+      "constant": false
+    },
+    {
+      "cell": "torii.pctBelow16",
+      "values": [
+        8.945,
+        8.944,
+        8.943,
+        8.944,
+        8.945,
+        8.944,
+        8.944,
+        8.944
+      ],
+      "min": 8.943,
+      "max": 8.945,
+      "range": 0.002,
+      "mean": 8.9441,
+      "sd": 0.0006,
+      "withinBatchRange": 0.002,
+      "batchShift": 0.0003,
+      "constant": false
+    },
+    {
+      "cell": "torii.pctAbove240",
+      "values": [
+        0.305,
+        0.304,
+        0.304,
+        0.304,
+        0.305,
+        0.304,
+        0.304,
+        0.305
+      ],
+      "min": 0.304,
+      "max": 0.305,
+      "range": 0.001,
+      "mean": 0.3044,
+      "sd": 0.0005,
+      "withinBatchRange": 0.001,
+      "batchShift": 0.0002,
+      "constant": false
+    },
+    {
+      "cell": "wide.pctBelow16",
+      "values": [
+        0.563,
+        0.564,
+        0.564,
+        0.564,
+        0.563,
+        0.564,
+        0.564,
+        0.564
+      ],
+      "min": 0.563,
+      "max": 0.564,
+      "range": 0.001,
+      "mean": 0.5637,
+      "sd": 0.0005,
+      "withinBatchRange": 0.001,
+      "batchShift": 0,
+      "constant": false
+    },
+    {
+      "cell": "hero.p01",
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "min": 0,
+      "max": 0,
+      "range": 0,
+      "mean": 0,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "hero.p1",
+      "values": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "min": 2,
+      "max": 2,
+      "range": 0,
+      "mean": 2,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "hero.p10",
+      "values": [
+        18,
+        18,
+        18,
+        18,
+        18,
+        18,
+        18,
+        18
+      ],
+      "min": 18,
+      "max": 18,
+      "range": 0,
+      "mean": 18,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "hero.p25",
+      "values": [
+        37,
+        37,
+        37,
+        37,
+        37,
+        37,
+        37,
+        37
+      ],
+      "min": 37,
+      "max": 37,
+      "range": 0,
+      "mean": 37,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "hero.p50",
+      "values": [
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77
+      ],
+      "min": 77,
+      "max": 77,
+      "range": 0,
+      "mean": 77,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "hero.p75",
+      "values": [
+        158,
+        158,
+        158,
+        158,
+        158,
+        158,
+        158,
+        158
+      ],
+      "min": 158,
+      "max": 158,
+      "range": 0,
+      "mean": 158,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "hero.p90",
+      "values": [
+        177,
+        177,
+        177,
+        177,
+        177,
+        177,
+        177,
+        177
+      ],
+      "min": 177,
+      "max": 177,
+      "range": 0,
+      "mean": 177,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "hero.p99",
+      "values": [
+        195,
+        195,
+        195,
+        195,
+        195,
+        195,
+        195,
+        195
+      ],
+      "min": 195,
+      "max": 195,
+      "range": 0,
+      "mean": 195,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "hero.p999",
+      "values": [
+        236,
+        236,
+        236,
+        236,
+        236,
+        236,
+        236,
+        236
+      ],
+      "min": 236,
+      "max": 236,
+      "range": 0,
+      "mean": 236,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "hero.iqr",
+      "values": [
+        121,
+        121,
+        121,
+        121,
+        121,
+        121,
+        121,
+        121
+      ],
+      "min": 121,
+      "max": 121,
+      "range": 0,
+      "mean": 121,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "hero.pctAbove240",
+      "values": [
+        0.049,
+        0.049,
+        0.049,
+        0.049,
+        0.049,
+        0.049,
+        0.049,
+        0.049
+      ],
+      "min": 0.049,
+      "max": 0.049,
+      "range": 0,
+      "mean": 0.049,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "hero.drawCalls",
+      "values": [
+        116,
+        116,
+        116,
+        116,
+        116,
+        116,
+        116,
+        116
+      ],
+      "min": 116,
+      "max": 116,
+      "range": 0,
+      "mean": 116,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "hero.triangles",
+      "values": [
+        756802,
+        756802,
+        756802,
+        756802,
+        756802,
+        756802,
+        756802,
+        756802
+      ],
+      "min": 756802,
+      "max": 756802,
+      "range": 0,
+      "mean": 756802,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "sun.p01",
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "min": 0,
+      "max": 0,
+      "range": 0,
+      "mean": 0,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "sun.p1",
+      "values": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "min": 2,
+      "max": 2,
+      "range": 0,
+      "mean": 2,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "sun.p10",
+      "values": [
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12
+      ],
+      "min": 12,
+      "max": 12,
+      "range": 0,
+      "mean": 12,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "sun.p25",
+      "values": [
+        38,
+        38,
+        38,
+        38,
+        38,
+        38,
+        38,
+        38
+      ],
+      "min": 38,
+      "max": 38,
+      "range": 0,
+      "mean": 38,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "sun.p50",
+      "values": [
+        115,
+        115,
+        115,
+        115,
+        115,
+        115,
+        115,
+        115
+      ],
+      "min": 115,
+      "max": 115,
+      "range": 0,
+      "mean": 115,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "sun.p75",
+      "values": [
+        184,
+        184,
+        184,
+        184,
+        184,
+        184,
+        184,
+        184
+      ],
+      "min": 184,
+      "max": 184,
+      "range": 0,
+      "mean": 184,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "sun.p90",
+      "values": [
+        208,
+        208,
+        208,
+        208,
+        208,
+        208,
+        208,
+        208
+      ],
+      "min": 208,
+      "max": 208,
+      "range": 0,
+      "mean": 208,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "sun.p99",
+      "values": [
+        232,
+        232,
+        232,
+        232,
+        232,
+        232,
+        232,
+        232
+      ],
+      "min": 232,
+      "max": 232,
+      "range": 0,
+      "mean": 232,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "sun.p999",
+      "values": [
+        249,
+        249,
+        249,
+        249,
+        249,
+        249,
+        249,
+        249
+      ],
+      "min": 249,
+      "max": 249,
+      "range": 0,
+      "mean": 249,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "sun.iqr",
+      "values": [
+        146,
+        146,
+        146,
+        146,
+        146,
+        146,
+        146,
+        146
+      ],
+      "min": 146,
+      "max": 146,
+      "range": 0,
+      "mean": 146,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "sun.pctBelow16",
+      "values": [
+        13.088,
+        13.088,
+        13.088,
+        13.088,
+        13.088,
+        13.088,
+        13.088,
+        13.088
+      ],
+      "min": 13.088,
+      "max": 13.088,
+      "range": 0,
+      "mean": 13.088,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "sun.pctAbove240",
+      "values": [
+        0.238,
+        0.238,
+        0.238,
+        0.238,
+        0.238,
+        0.238,
+        0.238,
+        0.238
+      ],
+      "min": 0.238,
+      "max": 0.238,
+      "range": 0,
+      "mean": 0.238,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "sun.drawCalls",
+      "values": [
+        99,
+        99,
+        99,
+        99,
+        99,
+        99,
+        99,
+        99
+      ],
+      "min": 99,
+      "max": 99,
+      "range": 0,
+      "mean": 99,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "sun.triangles",
+      "values": [
+        707058,
+        707058,
+        707058,
+        707058,
+        707058,
+        707058,
+        707058,
+        707058
+      ],
+      "min": 707058,
+      "max": 707058,
+      "range": 0,
+      "mean": 707058,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "torii.p01",
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "min": 0,
+      "max": 0,
+      "range": 0,
+      "mean": 0,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "torii.p1",
+      "values": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "min": 2,
+      "max": 2,
+      "range": 0,
+      "mean": 2,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "torii.p10",
+      "values": [
+        18,
+        18,
+        18,
+        18,
+        18,
+        18,
+        18,
+        18
+      ],
+      "min": 18,
+      "max": 18,
+      "range": 0,
+      "mean": 18,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "torii.p25",
+      "values": [
+        42,
+        42,
+        42,
+        42,
+        42,
+        42,
+        42,
+        42
+      ],
+      "min": 42,
+      "max": 42,
+      "range": 0,
+      "mean": 42,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "torii.p50",
+      "values": [
+        112,
+        112,
+        112,
+        112,
+        112,
+        112,
+        112,
+        112
+      ],
+      "min": 112,
+      "max": 112,
+      "range": 0,
+      "mean": 112,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "torii.p75",
+      "values": [
+        150,
+        150,
+        150,
+        150,
+        150,
+        150,
+        150,
+        150
+      ],
+      "min": 150,
+      "max": 150,
+      "range": 0,
+      "mean": 150,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "torii.p90",
+      "values": [
+        162,
+        162,
+        162,
+        162,
+        162,
+        162,
+        162,
+        162
+      ],
+      "min": 162,
+      "max": 162,
+      "range": 0,
+      "mean": 162,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "torii.p99",
+      "values": [
+        214,
+        214,
+        214,
+        214,
+        214,
+        214,
+        214,
+        214
+      ],
+      "min": 214,
+      "max": 214,
+      "range": 0,
+      "mean": 214,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "torii.p999",
+      "values": [
+        251,
+        251,
+        251,
+        251,
+        251,
+        251,
+        251,
+        251
+      ],
+      "min": 251,
+      "max": 251,
+      "range": 0,
+      "mean": 251,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "torii.iqr",
+      "values": [
+        108,
+        108,
+        108,
+        108,
+        108,
+        108,
+        108,
+        108
+      ],
+      "min": 108,
+      "max": 108,
+      "range": 0,
+      "mean": 108,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "torii.drawCalls",
+      "values": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "min": 120,
+      "max": 120,
+      "range": 0,
+      "mean": 120,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "torii.triangles",
+      "values": [
+        738346,
+        738346,
+        738346,
+        738346,
+        738346,
+        738346,
+        738346,
+        738346
+      ],
+      "min": 738346,
+      "max": 738346,
+      "range": 0,
+      "mean": 738346,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "valley.p01",
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "min": 0,
+      "max": 0,
+      "range": 0,
+      "mean": 0,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "valley.p1",
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "min": 0,
+      "max": 0,
+      "range": 0,
+      "mean": 0,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "valley.p10",
+      "values": [
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "min": 4,
+      "max": 4,
+      "range": 0,
+      "mean": 4,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "valley.p25",
+      "values": [
+        31,
+        31,
+        31,
+        31,
+        31,
+        31,
+        31,
+        31
+      ],
+      "min": 31,
+      "max": 31,
+      "range": 0,
+      "mean": 31,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "valley.p50",
+      "values": [
+        60,
+        60,
+        60,
+        60,
+        60,
+        60,
+        60,
+        60
+      ],
+      "min": 60,
+      "max": 60,
+      "range": 0,
+      "mean": 60,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "valley.p75",
+      "values": [
+        117,
+        117,
+        117,
+        117,
+        117,
+        117,
+        117,
+        117
+      ],
+      "min": 117,
+      "max": 117,
+      "range": 0,
+      "mean": 117,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "valley.p90",
+      "values": [
+        194,
+        194,
+        194,
+        194,
+        194,
+        194,
+        194,
+        194
+      ],
+      "min": 194,
+      "max": 194,
+      "range": 0,
+      "mean": 194,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "valley.p99",
+      "values": [
+        216,
+        216,
+        216,
+        216,
+        216,
+        216,
+        216,
+        216
+      ],
+      "min": 216,
+      "max": 216,
+      "range": 0,
+      "mean": 216,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "valley.p999",
+      "values": [
+        240,
+        240,
+        240,
+        240,
+        240,
+        240,
+        240,
+        240
+      ],
+      "min": 240,
+      "max": 240,
+      "range": 0,
+      "mean": 240,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "valley.iqr",
+      "values": [
+        86,
+        86,
+        86,
+        86,
+        86,
+        86,
+        86,
+        86
+      ],
+      "min": 86,
+      "max": 86,
+      "range": 0,
+      "mean": 86,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "valley.pctAbove240",
+      "values": [
+        0.095,
+        0.095,
+        0.095,
+        0.095,
+        0.095,
+        0.095,
+        0.095,
+        0.095
+      ],
+      "min": 0.095,
+      "max": 0.095,
+      "range": 0,
+      "mean": 0.095,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "valley.drawCalls",
+      "values": [
+        86,
+        86,
+        86,
+        86,
+        86,
+        86,
+        86,
+        86
+      ],
+      "min": 86,
+      "max": 86,
+      "range": 0,
+      "mean": 86,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "valley.triangles",
+      "values": [
+        675963,
+        675963,
+        675963,
+        675963,
+        675963,
+        675963,
+        675963,
+        675963
+      ],
+      "min": 675963,
+      "max": 675963,
+      "range": 0,
+      "mean": 675963,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "wide.p01",
+      "values": [
+        11,
+        11,
+        11,
+        11,
+        11,
+        11,
+        11,
+        11
+      ],
+      "min": 11,
+      "max": 11,
+      "range": 0,
+      "mean": 11,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "wide.p1",
+      "values": [
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17
+      ],
+      "min": 17,
+      "max": 17,
+      "range": 0,
+      "mean": 17,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "wide.p10",
+      "values": [
+        33,
+        33,
+        33,
+        33,
+        33,
+        33,
+        33,
+        33
+      ],
+      "min": 33,
+      "max": 33,
+      "range": 0,
+      "mean": 33,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "wide.p25",
+      "values": [
+        49,
+        49,
+        49,
+        49,
+        49,
+        49,
+        49,
+        49
+      ],
+      "min": 49,
+      "max": 49,
+      "range": 0,
+      "mean": 49,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "wide.p50",
+      "values": [
+        89,
+        89,
+        89,
+        89,
+        89,
+        89,
+        89,
+        89
+      ],
+      "min": 89,
+      "max": 89,
+      "range": 0,
+      "mean": 89,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "wide.p75",
+      "values": [
+        146,
+        146,
+        146,
+        146,
+        146,
+        146,
+        146,
+        146
+      ],
+      "min": 146,
+      "max": 146,
+      "range": 0,
+      "mean": 146,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "wide.p90",
+      "values": [
+        161,
+        161,
+        161,
+        161,
+        161,
+        161,
+        161,
+        161
+      ],
+      "min": 161,
+      "max": 161,
+      "range": 0,
+      "mean": 161,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "wide.p99",
+      "values": [
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200
+      ],
+      "min": 200,
+      "max": 200,
+      "range": 0,
+      "mean": 200,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "wide.p999",
+      "values": [
+        222,
+        222,
+        222,
+        222,
+        222,
+        222,
+        222,
+        222
+      ],
+      "min": 222,
+      "max": 222,
+      "range": 0,
+      "mean": 222,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "wide.iqr",
+      "values": [
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97,
+        97
+      ],
+      "min": 97,
+      "max": 97,
+      "range": 0,
+      "mean": 97,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "wide.pctAbove240",
+      "values": [
+        0.005,
+        0.005,
+        0.005,
+        0.005,
+        0.005,
+        0.005,
+        0.005,
+        0.005
+      ],
+      "min": 0.005,
+      "max": 0.005,
+      "range": 0,
+      "mean": 0.005,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "wide.drawCalls",
+      "values": [
+        116,
+        116,
+        116,
+        116,
+        116,
+        116,
+        116,
+        116
+      ],
+      "min": 116,
+      "max": 116,
+      "range": 0,
+      "mean": 116,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    },
+    {
+      "cell": "wide.triangles",
+      "values": [
+        781386,
+        781386,
+        781386,
+        781386,
+        781386,
+        781386,
+        781386,
+        781386
+      ],
+      "min": 781386,
+      "max": 781386,
+      "range": 0,
+      "mean": 781386,
+      "sd": 0,
+      "withinBatchRange": 0,
+      "batchShift": 0,
+      "constant": true
+    }
+  ]
+}

@@ -7,14 +7,14 @@
   "endedAt": null,
   "endRequiresExplicitUserInstruction": true,
   "objective": "Round 15 is closed and published, and the per-element benchmarks are installed. Instruction of 2026-08-01 was five further art rounds; the user then closed the run at the end of the round in progress (\"今途中のラウンドが終わるまでにして\"). Round 16 was therefore executed in full and rounds 17-20 were cancelled, not deferred. BENCH-APPARATUS and PHYS-NARROWPHASE are complete.",
-  "workingBranch": "claude/kagerou-round-16-q5h1ah",
+  "workingBranch": "claude/ongoing-session-continuation-549b4z",
   "baseSha": "4811ba0",
   "activePlanNode": null,
-  "activeTask": null,
-  "lastSuccessfulAction": "Round 16 complete. Opening set r16: FAIL 58/100, 3 blockers / 4 majors / 1 minor. Four owners dispatched, ten gated out; the sakura-canopy blocker was re-routed mid-round from [foliage] to [world] on a three-way measured disproof. Verification set r16v1 taken on a clean tree at 391c0f4: draw calls 120 <= 140, triangles 781,386 <= 900,000 (DOWN 3,063 across a round that added content), black gate 0/11/0/0/0 < 15, white gate hero 236 and torii 251 > 235, 5/5 shots fresh, no dead shaders, no page errors. In parallel PHYS-NARROWPHASE resolved TD-010: not a performance defect but a NaN query AABB making TriBVH.overlapAABB's cull fail open, rooted in an ARCHITECTURE 5b violation at Enemy.js:845 that also left enemies with no world collision at all. narrowphaseChecks 209,886 -> 8,062; three-enemy JS frame 161.6 -> 3.7 ms; the encounters scenario now completes in 21.9 s against a ~6 h estimate and BM-AI-03 passes.",
+  "activeTask": "KIT-VARIANCE",
+  "lastSuccessfulAction": "KIT-VARIANCE arm 1 complete. Eight phone review captures on one frozen build (bfddbfad8eb8), 4+4 with batch B as the no-change control arm; no run failed, nothing carried forward. This rig is aggregate-stable and pixel-unstable and shows NO batch drift: 65 of 80 published cells never moved (widest, valley.pctWarm, range 0.014 pp) while the frames differ on 2.1-11.4% of their pixels with peak channel deltas near 400. The quantisation explanation was disproved at full float resolution (valley.p999 spans exactly 0.0000). survival's +16.9 does NOT transfer here and must not be quoted about game2. Evidence: AI_DEVELOPMENT/EVIDENCE/kit-variance.md; apparatus tools/variance.mjs.",
   "currentFailingAction": null,
   "currentHypothesis": null,
-  "nextAction": "Await a new user instruction. Rounds 17-20 were cancelled by the user, not queued - do not resume them as if they were. If work is authorized again, the ready frontier is ENEMY-TELEPORT-ARGS (TD-012, the 5b call site), BENCH-COMBAT-SAMPLE (BM-COMBAT-02 is unsampled for a NEW reason: the harness bot scored 0 kills in 20 encounters), and INTERACT-INTENT (TD-011). Open visual items are in HANDOFF.md; the sun-disc desaturation now belongs to nobody and needs an owner decision, since both Sky.js and PostFX.js measured it out of their own scope.",
+  "nextAction": "KIT-VARIANCE arm 2 is what remains: the run-to-run variance of a critic's VERDICT on one unchanged set, which nobody has collected. Arm 1 measured the camera, not the judge, and must not be cited as though it measured the judge. Arm 1 also licenses tight-tolerance before/after on aggregate luma cells and renderer counters with no control arm, and forbids any pixel-level comparison without one (floor 2.1-11.4% of the frame) - which leaves capture.mjs --ab-object and verify-lantern-spill currently uncontrolled. KIT-REFERENCE-SET is unblocked by arm 1.",
   "rollbackPoint": "4811ba0",
   "pendingVerification": [
    "BM-COMBAT-02: the encounters scenario now runs, but the harness bot scored 0 kills and 0 posture breaks in 20 encounters, so the criterion is still unmeasured. Harness-policy limitation versus combat-balance finding is undetermined.",
@@ -24,7 +24,9 @@
    "Public GitHub Pages browser gate for Round 15 and Round 16 - blocked in this container by an agent-proxy policy denial on github.io:443.",
    "Whether capture.mjs --ab-object returns black pairs after engine.stop().",
    "Props.js:1783 kagBias = 0.45 + 0.55*kagJoint, shipped in 6decc1c and never frame-measured because the rig was contended. Reasoned, not verified.",
-   "The r16 owner measurements are source-and-region measurements on their own harnesses; no independent critic has judged the r16v1 frames. Round 16 has no closing verdict."
+   "The r16 owner measurements are source-and-region measurements on their own harnesses; no independent critic has judged the r16v1 frames. Round 16 has no closing verdict.",
+   "KIT-VARIANCE arm 1 covers the phone profile only, on one container, over eight runs. Desktop/ULTRA boots in ~200 s and its floor is unknown - do not assume it equals phone. Eight runs bound the spread; they do not establish a tail.",
+   "kit's lib/mobile/roundCompare.mjs (branch claude/iphone-se3-auto-testing-bu73vn) carries DEFAULT_TOLERANCE {relative: 0.25}, which arm 1 measures as roughly three orders of magnitude too loose for these cells. Substituting the measured floor is kit's call; nothing under .kit/ was changed from this branch."
   ],
   "modifiedFiles": [
    "src/render/Sky.js",
@@ -48,7 +50,11 @@
    "AI_DEVELOPMENT/EVIDENCE/r16-postfx.md",
    "AI_DEVELOPMENT/EVIDENCE/phys-narrowphase.md",
    "shots/review-r16.json",
-   "shots/interaction-i2.json"
+   "shots/interaction-i2.json",
+   "tools/variance.mjs",
+   "AI_DEVELOPMENT/EVIDENCE/kit-variance.md",
+   "AI_DEVELOPMENT/EVIDENCE/kit-variance.json",
+   "AI_DEVELOPMENT/DECISIONS.md"
   ],
   "remotePushPendingAuthorization": false,
   "remoteReleaseAuthorized": true,

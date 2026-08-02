@@ -206,3 +206,36 @@ pipeline, 8.73 s → 2.2 ms per frame) was treated as a hypothesis and measured:
 an identical stimulus, one fully rendered, diverged by exactly 0. The self-check that proves
 it runs before any verdict is believed, and is carried between runs only against an
 identical build fingerprint.
+
+---
+
+## KIT-VARIANCE runs before KIT-REFERENCE-SET, inverting the recorded dependency
+
+Adopted 2026-08-02, on the user's explicit direction.
+
+`TASK_GRAPH.yaml` records `KIT-VARIANCE` as depending on `KIT-REFERENCE-SET`: fetch the
+reference material, then measure how much the judgement of it wobbles. That ordering is
+wrong, and it is wrong in the expensive direction.
+
+**A comparison whose noise floor is unknown is not evidence, so the reference set delivers
+nothing until the floor exists.** `survival` established the shape of the problem on its own
+vantage rig — runs 1-4 against 5-8, nothing changed, differing by +16.9 with asymmetry 12,
+which is as much as a real change moves it — and, more importantly, established that the
+cheap defence fails: a null built by splitting one baseline every possible way cannot detect
+batch drift, because 68 of the 70 splits interleave the batches and cancel it by
+construction. A control arm is mandatory. Collecting reference frames first would mean every
+comparison drawn from them is uninterpretable until this work happens anyway, and the record
+shows this project has already nearly shipped one false finding built exactly that way.
+
+The dependency is therefore inverted: `KIT-REFERENCE-SET` now depends on `KIT-VARIANCE`.
+
+Two limits on this decision, stated so they are not quietly lost:
+
+- **The +16.9 is `survival`'s apparatus, not this one.** It is the reason to measure here,
+  never a measurement of here. game2's review rig has never had its run-to-run spread
+  measured at all. Borrowing the method is correct; borrowing the number would be the same
+  class of error the method exists to prevent.
+- **This measures the capture rig, not the critic.** `KIT-VARIANCE`'s recorded objective is
+  the variance of "the judgement itself", and the frames are only the first of its two arms.
+  How much a critic's verdict moves on one unchanged set is a separate arm that nobody has
+  collected, and a stable rig must not be reported as a reproducible verdict.

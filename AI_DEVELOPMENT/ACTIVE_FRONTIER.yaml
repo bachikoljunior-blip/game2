@@ -125,10 +125,11 @@
   },
   {
    "id": "KIT-REFERENCE-SET",
-   "status": "ready",
+   "status": "blocked",
    "priority": 1,
    "dependencies": [
-    "KIT-SKILL-EXEC"
+    "KIT-SKILL-EXEC",
+    "KIT-VARIANCE"
    ],
    "objective": "Fetch reference material and freeze the comparison set. THIS IS THE ACTUAL WORK; everything above is apparatus that has measured nothing.",
    "verification": "A stored, versioned set of reference frames with each one paired to a named element and one of our shots, so the same pair can be re-judged in a later round and get the same question.",
@@ -161,14 +162,12 @@
   },
   {
    "id": "KIT-VARIANCE",
-   "status": "ready",
-   "priority": 2,
-   "dependencies": [
-    "KIT-REFERENCE-SET"
-   ],
-   "objective": "Measure the run-to-run variance of the judgement itself, so a later before/after can be told from noise.",
+   "status": "active",
+   "priority": 0,
+   "dependencies": [],
+   "objective": "Measure the run-to-run variance of the judgement itself, so a later before/after can be told from noise. Arm 1 is the capture rig; arm 2, the critic's verdict on one unchanged set, is NOT yet collected.",
    "verification": "The same set judged repeatedly under one unchanged build, reported per cell, with a no-change control arm collected as its own later batch.",
-   "nextAction": "Not started. The vantage work already established that this rig drifts between collection batches by as much as a real change moves it (+16.9 within the baseline alone) and that a null built by splitting one baseline CANNOT detect it \u2014 68 of 70 splits interleave the batches. A control arm is mandatory, not optional.",
+   "nextAction": "ARM 1 COMPLETE 2026-08-02, evidence in AI_DEVELOPMENT/EVIDENCE/kit-variance.md. Eight phone review captures on one frozen build (bfddbfad8eb8), 4+4 with batch B as the no-change control. Result: this rig is aggregate-stable and pixel-unstable and does NOT drift between batches. 65 of 80 published cells never moved; the widest, valley.pctWarm, has a range of 0.014 pp. But the frames differ on 2.1-11.4% of their pixels with peak channel deltas near 400, so the cell table alone is false advertising and --analyse now refuses to print it without the pixel arm. The quantisation hypothesis was DISPROVED: at full float resolution valley.p999 spans exactly 0.0000. survival's +16.9 does NOT transfer to game2 and must not be quoted about it; cross-batch pixel difference is lower than within-batch on 5 of 5 shots and 0 of 15 moving cells put the true batch cut in the tail of its own 70-split null. LICENSED: tight-tolerance before/after on aggregate luma cells and renderer counters, no control arm needed. NOT LICENSED: any pixel-level comparison, floor 2.1-11.4% of frame, control arm mandatory \u2014 this covers --ab-object and verify-lantern-spill, neither of which has ever had one. ARM 2, the variance of a critic's verdict on one unchanged set, is NOT collected and is what remains of this task.",
    "planNode": "KIT-SKILLS"
   },
   {
