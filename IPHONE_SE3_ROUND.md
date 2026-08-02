@@ -82,9 +82,9 @@ that is inside a loose limit is not a number that was checked.
 
 ## This is not the variance measurement, and must not become it
 
-A variance pass is starting in this repository, and it also produces timing numbers. The risk
-is not that one of the two is wrong — it is that in six months nobody can say which to believe.
-So the boundary, before either grows into the other:
+`tools/variance.mjs` (KIT-VARIANCE arm 1) is now on `main` and also produces numbers about
+repeated runs. The risk is not that one of the two is wrong — it is that in six months nobody
+can say which to believe. So the boundary:
 
 | | round comparison (this) | variance measurement |
 |---|---|---|
@@ -93,15 +93,28 @@ So the boundary, before either grows into the other:
 | emits | a per-metric verdict, and a non-zero exit | a spread, and no verdict |
 | tolerance | **declared** in `iphone-se3-round.config.json` | measures what the tolerance should have been |
 
-The seam is concrete: **the variance pass is what should replace the tolerance this gate is
-currently guessing.** `DEFAULT_TOLERANCE` in `.kit/lib/mobile/roundCompare.mjs` is 25% because
-that is loose enough not to flake — and the two verified `survival` runs the comparison was
-built against moved boot time from 11854 ms to 9474 ms with nothing changed between them. That
-is 20% of run-to-run spread from a sample of two, sitting under a 25% gate. The gate is barely
-above a noise floor nobody has measured yet.
+`tools/variance.mjs` already states the relationship from its side and it is correct. What
+needs saying from this side is **how far arm 1 actually reaches**, because it is narrower than
+"the variance pass replaces the tolerance":
 
-So the variance work is not a duplicate of this. It is the missing input. When it lands, the
-tolerances here should stop being defaults and start citing its measurement.
+Arm 1 measured this repository's **art capture rig** — eight `capture.mjs --review
+--profile=phone` runs on a frozen build. The phone gate is a different apparatus: Playwright
+WebKit driving `tools/test-iphone-webkit.mjs`. So arm 1 speaks to image-derived cells and
+renderer counters, and says **nothing** about `bootMs` or frame gap. Those tolerances remain
+unmeasured in every repository here; the only datum is the two `survival` runs the comparison
+was built against, which moved boot time from 11854 ms to 9474 ms with nothing changed between
+them — 20% of spread from a sample of two, under a 25% gate.
+
+And arm 1's own rule cuts both ways. It refused to import `survival`'s +16.9 because that was a
+different apparatus; by the same argument its figures must not be imported into the WebKit
+harness. `DEFAULT_TOLERANCE` is therefore **not** being changed on the strength of them.
+
+One finding is worth carrying across as a question rather than an answer: on the capture rig,
+two runs of an unchanged build differ on **2.1%–11.4% of the frame** while every published luma
+percentile stays byte-identical. If the WebKit harness behaves at all similarly, this gate's
+`visualDiffRatio` tolerance of `absolute: 0.01` sits an order of magnitude *below* the noise and
+would report noise as regression. That is the first thing a WebKit variance arm should check —
+and until one exists it stays a hypothesis, labelled as one.
 
 Two rules keep them from colliding:
 
