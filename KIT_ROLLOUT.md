@@ -293,7 +293,57 @@ say which remain instead.
 
 ---
 
-## Integration — in progress, 2026-08-02. Started after the hold was lifted.
+## Integration — **complete, 2026-08-02.** Seven of eight on `main`; one excluded by the user.
+
+Every SHA below was read back with `git ls-remote` after the fact, not assumed.
+
+| Repo | `main` | how |
+|---|---|---|
+| `game` | `6247fd2` | fast-forward |
+| `exist-debug` | `418f8bf` | fast-forward |
+| `game2` | `a7f9987` | merge |
+| `Cooky` | `b431196` | fast-forward, **both `main` and the default branch**, still identical |
+| `Q` | `2a9ff40` | merge |
+| `Gptgame` | `8c952d8` | rebuilt + follow-up fix |
+| `survival` | `325b1e1` | rebuilt, via **PR #10 and #11** — `main` is ruleset-protected |
+| `Simple-browser-cookie-clicker-game` | `640cdaa` | **excluded by the user. Untouched. Do not merge.** |
+
+The cookie clicker's work still sits on `claude/kit-rollout-game2-survival-0vspel` at `4375dde`,
+verified but deliberately unintegrated.
+
+### The bug this session nearly shipped, recorded because it is the most instructive thing here
+
+Both re-measured batteries were, at various points, **reporting agreement on checks they never
+ran.** Four separate instances, none of which announced itself:
+
+1. `survival`'s "session status disagrees" mutation replaced `project.status`, not
+   `logical_session.status`. Printed `ok`.
+2. `Gptgame`'s "logical session no longer active" hit an earlier key's `active: true`. Printed
+   `ok`.
+3. After #10 merged, both batteries' base tracked `origin/main` — which had *become* the new
+   validator. The next run would have compared each file against itself and printed a perfect
+   score. `survival`'s also read the old copy from a hardcoded `/tmp` path that does not
+   survive a session.
+4. The worst one: `Gptgame`'s `logical_session` assertion used
+   `/logical_session:[\s\S]*?active: true/`, which matches that literal **anywhere later in
+   the file** — so the `STATE.yaml` note written to *document* this class of bug contained the
+   string that satisfied the check. **The gate was passing on the text of its own bug report,
+   with the session marked inactive.**
+
+All four are fixed: mutations anchored to the block they claim to break, bases pinned to the
+pre-integration revisions (`02339ce`, `0aa981d`) and read out of git, and both batteries now
+refuse to run when the base resolves to the working tree's own source. `Gptgame`'s battery
+additionally fails any mutation that changes no text, and reports declared strictness gains
+separately from agreement — **and only excuses a divergence that runs in the strict direction.
+A new gate passing where the old one fired is a lost check, and no annotation may excuse it.**
+
+`Gptgame` is 32/33 with 1 declared strictness gain and 0 unexplained divergences, not 33/33.
+That number went *down* because the measurement got honest, which is the only direction that
+matters.
+
+---
+
+## How it got there — the working record for this integration
 
 The rollout itself is finished. Integration is a separate question with a separate answer,
 and this section is where that answer is being worked out. The hold below is kept verbatim
@@ -553,6 +603,15 @@ Every one of these has already cost a session.
   rewriting the exact validator this workstream had just replaced. Before merging anything,
   count `<branch>..origin/main` and list the files both sides touched. A measurement taken
   against yesterday's `main` says nothing about today's.
+- **An equivalence battery whose base tracks `origin/main` goes vacuous the moment it merges.**
+  Both did. After the integration landed, `origin/main` *is* the new implementation, so the
+  battery compares a file against itself and prints a perfect score. Pin the base to the
+  pre-integration revision, read it out of git rather than off the filesystem, and make the
+  battery refuse to run when the base resolves to the working tree's own source.
+- **Prose describing a bug can satisfy the buggy check.** `Gptgame`'s `logical_session`
+  assertion matched `active: true` anywhere after the key, and the `STATE.yaml` note written
+  to document that very defect contained the literal. The gate passed on its own bug report.
+  Anchor assertions, and never assume a state file's free-text fields are inert input.
 - **A mutation that changes nothing reports agreement on a check it never ran.** Both
   re-measured batteries had one. `survival`'s "session status disagrees" replaced the first
   `status: active` in `STATE.yaml`, which belongs to `project`, not `logical_session`;
