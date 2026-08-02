@@ -363,8 +363,10 @@ build hashes.
 
 ### B and C, settled 2026-08-02 — the swap is undetectable, and the finding against it was mine
 
-`tools/vantage.mjs` now calls `launchHeadless`. Six arms of four sweeps against one
-byte-identical `dist/`, plus the eight-sweep baseline — **44 sweeps, 792 frames**. Net luma
+`tools/vantage.mjs` now calls `launchHeadless`. Five arms of four sweeps against one
+byte-identical `dist/`, plus the eight-sweep baseline — **28 sweeps, 504 frames**. The raw
+samples are preserved at `survival/AI_DEVELOPMENT/EVIDENCE/VANTAGE-LAUNCH-SWAP-SAMPLES.jsonl`,
+because `shots/` is gitignored and would not have survived the container. Net luma
 shift against the baseline, with the sign-test asymmetry beside it:
 
 | arm | what it changes | net shift | asymmetry |
@@ -377,14 +379,19 @@ shift against the baseline, with the sign-test asymmetry beside it:
 
 **The control darkened more than the swap did.** `binary` and `flags` sit inside it on both
 measures. The two `kitfull` arms exceed it on *different* measures and each falls inside it on
-the other — noise, since a real effect exceeds the same measure both times. This is not a claim
+the other — noise, since a real effect exceeds the same measure both times.
+
+*Correction:* the commit that first landed this section, and `survival`'s `ab65a46`, say "six
+arms … 44 sweeps, 792 frames". That count was wrong; it is five arms, 28 sweeps, 504 frames,
+counted back out of the sample file. Every per-arm number above is unaffected — only the
+total was miscounted. This is not a claim
 that the frames are identical; it is the measured answer to the question the record asked.
 
 **Three things this settles, so nobody re-derives them:**
 
 - **The binary hypothesis is disproved.** This file recorded the `headless_shell` → full
   `chrome` swap as the likely pixel-mover with the flags as the smaller suspect. The
-  binary-only arm is the **quietest of all six**.
+  binary-only arm is the **quietest of all five**.
 - **`proxy: false` is mandatory, and this one is a real blocker.** `launchHeadless` honours
   `HTTPS_PROXY` by default; Playwright then force-appends `<-loopback>` to
   `--proxy-bypass-list`, which *un*-bypasses loopback. Measured: the default returns **HTTP 405
