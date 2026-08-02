@@ -1,0 +1,398 @@
+TAP version 13
+# Subtest: encodePNG/decodePNG round-trips losslessly over real images
+ok 1 - encodePNG/decodePNG round-trips losslessly over real images
+  ---
+  duration_ms: 687.967252
+  type: 'test'
+  ...
+# Subtest: decodePNG rejects what it cannot honestly read
+ok 2 - decodePNG rejects what it cannot honestly read
+  ---
+  duration_ms: 0.605958
+  type: 'test'
+  ...
+# Subtest: ignoreTransparent is a no-op on an opaque frame and changes a sprite
+ok 3 - ignoreTransparent is a no-op on an opaque frame and changes a sprite
+  ---
+  duration_ms: 3.229391
+  type: 'test'
+  ...
+# Subtest: compareRegion names a byte-identical result as a failed edit
+ok 4 - compareRegion names a byte-identical result as a failed edit
+  ---
+  duration_ms: 1.703158
+  type: 'test'
+  ...
+# Subtest: regionStats reports the warm/cool ratio a shadow argument turns on
+ok 5 - regionStats reports the warm/cool ratio a shadow argument turns on
+  ---
+  duration_ms: 0.425106
+  type: 'test'
+  ...
+# Subtest: a stamped artifact verifies against itself
+ok 6 - a stamped artifact verifies against itself
+  ---
+  duration_ms: 1.243572
+  type: 'test'
+  ...
+# Subtest: verification fires on a one-byte change to the served content
+ok 7 - verification fires on a one-byte change to the served content
+  ---
+  duration_ms: 0.306379
+  type: 'test'
+  ...
+# Subtest: zero or two revision tags are both rejected
+ok 8 - zero or two revision tags are both rejected
+  ---
+  duration_ms: 0.177388
+  type: 'test'
+  ...
+# Subtest: the meta tag name is configurable without changing behaviour
+ok 9 - the meta tag name is configurable without changing behaviour
+  ---
+  duration_ms: 0.887419
+  type: 'test'
+  ...
+# Subtest: verifyServed passes on the published bytes and fails on every corruption
+ok 10 - verifyServed passes on the published bytes and fails on every corruption
+  ---
+  duration_ms: 1.557106
+  type: 'test'
+  ...
+# Subtest: verifyServed retries across propagation and reports how many it took
+ok 11 - verifyServed retries across propagation and reports how many it took
+  ---
+  duration_ms: 10.530374
+  type: 'test'
+  ...
+# Subtest: compareRelease catches a mismatched and a missing id
+ok 12 - compareRelease catches a mismatched and a missing id
+  ---
+  duration_ms: 0.301864
+  type: 'test'
+  ...
+# Subtest: checkMirror detects a stale copy and an obsolete leftover bundle
+ok 13 - checkMirror detects a stale copy and an obsolete leftover bundle
+  ---
+  duration_ms: 5.359426
+  type: 'test'
+  ...
+# Subtest: resolveMirrorSet refuses to publish when the bundle count is not exactly one
+ok 14 - resolveMirrorSet refuses to publish when the bundle count is not exactly one
+  ---
+  duration_ms: 0.756374
+  type: 'test'
+  ...
+# Subtest: the floor gate fires on each violation and stays quiet on a compliant change
+ok 15 - the floor gate fires on each violation and stays quiet on a compliant change
+  ---
+  duration_ms: 1.235865
+  type: 'test'
+  ...
+# Subtest: the two repositories' review_outcome values are genuinely incompatible
+ok 16 - the two repositories' review_outcome values are genuinely incompatible
+  ---
+  duration_ms: 0.208973
+  type: 'test'
+  ...
+# Subtest: an unset independence level is reported as unset, not as a letter
+ok 17 - an unset independence level is reported as unset, not as a letter
+  ---
+  duration_ms: 0.205841
+  type: 'test'
+  ...
+# Subtest: graph integrity: duplicates, dangling refs, cycles, exactly-one
+ok 18 - graph integrity: duplicates, dangling refs, cycles, exactly-one
+  ---
+  duration_ms: 0.461171
+  type: 'test'
+  ...
+# Subtest: anti-fabrication blocks a verified criterion with no evidence
+ok 19 - anti-fabrication blocks a verified criterion with no evidence
+  ---
+  duration_ms: 0.410786
+  type: 'test'
+  ...
+# Subtest: secret scanning catches both a key name and a value shape
+ok 20 - secret scanning catches both a key name and a value shape
+  ---
+  duration_ms: 0.829628
+  type: 'test'
+  ...
+# Subtest: file assertions catch a missing file, an oversized doc and a missing marker
+ok 21 - file assertions catch a missing file, an oversized doc and a missing marker
+  ---
+  duration_ms: 1.54132
+  type: 'test'
+  ...
+# Subtest: invertOwnership refuses a file claimed by two teams
+ok 22 - invertOwnership refuses a file claimed by two teams
+  ---
+  duration_ms: 0.223785
+  type: 'test'
+  ...
+# Subtest: buildPlan spawns only named owners and reports the skips
+ok 23 - buildPlan spawns only named owners and reports the skips
+  ---
+  duration_ms: 0.519727
+  type: 'test'
+  ...
+# Subtest: validateFindings accepts the real review files and strict mode catches their drift
+ok 24 - validateFindings accepts the real review files and strict mode catches their drift
+  ---
+  duration_ms: 2.032451
+  type: 'test'
+  ...
+# Subtest: validateFindings rejects a finding the dispatcher could not route
+ok 25 - validateFindings rejects a finding the dispatcher could not route
+  ---
+  duration_ms: 0.162454
+  type: 'test'
+  ...
+# Subtest: parseOwnershipTree reads the architecture document and the drift check finds real drift
+ok 26 - parseOwnershipTree reads the architecture document and the drift check finds real drift
+  ---
+  duration_ms: 1.398514
+  type: 'test'
+  ...
+# Subtest: kit buildPlan reproduces the original dispatcher exactly
+ok 27 - kit buildPlan reproduces the original dispatcher exactly
+  ---
+  duration_ms: 3.208849
+  type: 'test'
+  ...
+# Subtest: contentHash carries unchanged artefacts forward and re-takes changed ones
+ok 28 - contentHash carries unchanged artefacts forward and re-takes changed ones
+  ---
+  duration_ms: 2.361606
+  type: 'test'
+  ...
+# Subtest: a deleted dependency registers as a change
+ok 29 - a deleted dependency registers as a change
+  ---
+  duration_ms: 0.535538
+  type: 'test'
+  ...
+# Subtest: parseYaml reads every construct the state files use
+ok 30 - parseYaml reads every construct the state files use
+  ---
+  duration_ms: 1.824009
+  type: 'test'
+  ...
+# Subtest: parseYaml refuses what it cannot honestly read, with the line number
+ok 31 - parseYaml refuses what it cannot honestly read, with the line number
+  ---
+  duration_ms: 0.629256
+  type: 'test'
+  ...
+# Subtest: parseYaml round-trips the template state files and they stay snake_case
+ok 32 - parseYaml round-trips the template state files and they stay snake_case
+  ---
+  duration_ms: 1.262658
+  type: 'test'
+  ...
+# Subtest: antiFabrication reads the evidence field it is told to read
+ok 33 - antiFabrication reads the evidence field it is told to read
+  ---
+  duration_ms: 0.194215
+  type: 'test'
+  ...
+# Subtest: the template installs, validates, and proves its own gates can fail
+ok 34 - the template installs, validates, and proves its own gates can fail
+  ---
+  duration_ms: 380.006931
+  type: 'test'
+  ...
+# FAIL kit 0.2.1 is not cleanly installed in /tmp/kit-skill-XWUZ1Y:
+#   - stale .kit/lib/state/graph.mjs
+# FAIL kit 0.2.1 is not cleanly installed in /tmp/kit-skill-XWUZ1Y:
+#   - orphaned .kit/lib/state/ghost.mjs — the kit no longer ships this
+# Subtest: the extractors find the claims they are pointed at (control: no false positives on prose)
+ok 35 - the extractors find the claims they are pointed at (control: no false positives on prose)
+  ---
+  duration_ms: 3.194546
+  type: 'test'
+  ...
+# Subtest: every skill has frontmatter with a name matching its directory, and a description
+ok 36 - every skill has frontmatter with a name matching its directory, and a description
+  ---
+  duration_ms: 1.197442
+  type: 'test'
+  ...
+# Subtest: every module a skill tells you to import resolves, and exports every symbol it names
+ok 37 - every module a skill tells you to import resolves, and exports every symbol it names
+  ---
+  duration_ms: 306.656028
+  type: 'test'
+  ...
+# Subtest: every command a skill tells you to run resolves somewhere, and says where
+ok 38 - every command a skill tells you to run resolves somewhere, and says where
+  ---
+  duration_ms: 1.092002
+  type: 'test'
+  ...
+# Subtest: the working-directory rule is not vacuous — it fails a skill that omits the note
+ok 39 - the working-directory rule is not vacuous — it fails a skill that omits the note
+  ---
+  duration_ms: 0.513799
+  type: 'test'
+  ...
+# Subtest: critic: the finding fields the skill documents as required are the ones enforced
+ok 40 - critic: the finding fields the skill documents as required are the ones enforced
+  ---
+  duration_ms: 1.502958
+  type: 'test'
+  ...
+# Subtest: critic: the top-level fields the skill documents are enforced under strict
+ok 41 - critic: the top-level fields the skill documents are enforced under strict
+  ---
+  duration_ms: 0.504054
+  type: 'test'
+  ...
+# Subtest: critic: malformed values are rejected, not merely missing ones
+ok 42 - critic: malformed values are rejected, not merely missing ones
+  ---
+  duration_ms: 0.420794
+  type: 'test'
+  ...
+# Subtest: critic: the real review files on disk validate as the historical files they are
+ok 43 - critic: the real review files on disk validate as the historical files they are
+  ---
+  duration_ms: 4.853253
+  type: 'test'
+  ...
+# Subtest: the contract extractor reads the whole wrapped sentence, not just its first line
+ok 44 - the contract extractor reads the whole wrapped sentence, not just its first line
+  ---
+  duration_ms: 0.68054
+  type: 'test'
+  ...
+# Subtest: dispatch: the skill's central claim — only named owners are spawned, and skips are reported
+ok 45 - dispatch: the skill's central claim — only named owners are spawned, and skips are reported
+  ---
+  duration_ms: 16.236964
+  type: 'test'
+  ...
+# Subtest: dispatch: a blocker outranks a minor, so the fleet is ordered by severity
+ok 46 - dispatch: a blocker outranks a minor, so the fleet is ordered by severity
+  ---
+  duration_ms: 0.460414
+  type: 'test'
+  ...
+# Subtest: dispatch: an unroutable finding is surfaced, never dropped
+ok 47 - dispatch: an unroutable finding is surfaced, never dropped
+  ---
+  duration_ms: 3.591864
+  type: 'test'
+  ...
+# Subtest: dispatch: a file claimed by two teams is refused, as the skill states
+ok 48 - dispatch: a file claimed by two teams is refused, as the skill states
+  ---
+  duration_ms: 0.71656
+  type: 'test'
+  ...
+# Subtest: dispatch: check-ownership runs, and fails when the contract and the map disagree
+ok 49 - dispatch: check-ownership runs, and fails when the contract and the map disagree
+  ---
+  duration_ms: 161.840664
+  type: 'test'
+  ...
+# Subtest: resume: every mechanical check the skill names fires on the state it claims to catch
+ok 50 - resume: every mechanical check the skill names fires on the state it claims to catch
+  ---
+  duration_ms: 2.621136
+  type: 'test'
+  ...
+# Subtest: resume: antiFabrication stops "verified" from being upgraded by assertion
+ok 51 - resume: antiFabrication stops "verified" from being upgraded by assertion
+  ---
+  duration_ms: 0.571662
+  type: 'test'
+  ...
+# Subtest: publish: the stamp is a fixed point — the served bytes check against themselves
+ok 52 - publish: the stamp is a fixed point — the served bytes check against themselves
+  ---
+  duration_ms: 1.883293
+  type: 'test'
+  ...
+# Subtest: publish: zero or two revision meta tags are refused, as the skill states
+ok 53 - publish: zero or two revision meta tags are refused, as the skill states
+  ---
+  duration_ms: 0.312572
+  type: 'test'
+  ...
+# Subtest: publish: "prove the gate can fail" — one changed byte must be rejected by verifyServed
+ok 54 - publish: "prove the gate can fail" — one changed byte must be rejected by verifyServed
+  ---
+  duration_ms: 1.716281
+  type: 'test'
+  ...
+# Subtest: publish: checkMirror fails on an obsolete bundle left on the public surface
+ok 55 - publish: checkMirror fails on an obsolete bundle left on the public surface
+  ---
+  duration_ms: 3.558164
+  type: 'test'
+  ...
+# Subtest: bootstrap: install, --check, idempotence, in-place edit and orphan all behave as documented
+ok 56 - bootstrap: install, --check, idempotence, in-place edit and orphan all behave as documented
+  ---
+  duration_ms: 503.231394
+  type: 'test'
+  ...
+# Subtest: bootstrap: --skills installs the named subset only
+ok 57 - bootstrap: --skills installs the named subset only
+  ---
+  duration_ms: 76.223618
+  type: 'test'
+  ...
+# Subtest: bootstrap: --template scaffolds, never overwrites, and its validator self-tests
+ok 58 - bootstrap: --template scaffolds, never overwrites, and its validator self-tests
+  ---
+  duration_ms: 225.064483
+  type: 'test'
+  ...
+# Subtest: probe: serving on loopback needs proxy:false — the default returns 405 with zero page errors
+ok 59 - probe: serving on loopback needs proxy:false — the default returns 405 with zero page errors
+  ---
+  duration_ms: 909.168222
+  type: 'test'
+  ...
+# Subtest: probe: the skills that serve on loopback say so, and pass proxy:false in their snippet
+ok 60 - probe: the skills that serve on loopback say so, and pass proxy:false in their snippet
+  ---
+  duration_ms: 0.482934
+  type: 'test'
+  ...
+# Subtest: probe: all four diagnostic channels fire, and stay quiet on a clean page
+ok 61 - probe: all four diagnostic channels fire, and stay quiet on a clean page
+  ---
+  duration_ms: 1581.050997
+  type: 'test'
+  ...
+# Subtest: probe: waitForBoot returns a verdict instead of hanging, and reports the stall
+ok 62 - probe: waitForBoot returns a verdict instead of hanging, and reports the stall
+  ---
+  duration_ms: 3457.064138
+  type: 'test'
+  ...
+# Subtest: probe: measure the saved PNG, and compareRegion labels a byte-identical result
+ok 63 - probe: measure the saved PNG, and compareRegion labels a byte-identical result
+  ---
+  duration_ms: 2032.627421
+  type: 'test'
+  ...
+# Subtest: probe: a function-source readyExpr is refused instead of reporting a dead page as booted
+ok 64 - probe: a function-source readyExpr is refused instead of reporting a dead page as booted
+  ---
+  duration_ms: 2431.617512
+  type: 'test'
+  ...
+1..64
+# tests 64
+# suites 0
+# pass 64
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 11830.972686
