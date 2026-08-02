@@ -321,6 +321,100 @@ function splitNull(values) {
   return { splits: splits.length, interleaving, trueDiff, rank, percentile: rank === null ? null : +(100 * rank / diffs.length).toFixed(1) };
 }
 
+/* ------------------------------------------------------------- pixel arm */
+
+/**
+ * The cell table alone is misleading, and this arm exists so it cannot be read without its
+ * correction.
+ *
+ * On the first collection, 65 of 80 published cells did not move across eight runs. Read
+ * alone that says "the rig is deterministic", and it is false: the frames differ on 1.5-8.5%
+ * of their pixels with peak channel-sum deltas near 400. The aggregate statistics are stable;
+ * the images are not, and a gate built only on the cell table would pass a change that
+ * repainted a twelfth of the frame.
+ *
+ * The obvious explanation was that the integer percentiles round the difference away. That was
+ * measured and is WRONG: recomputed at full float resolution with no rounding, valley's p50
+ * moves 0.0040 and its p99.9 moves 0.0000. The distribution genuinely reproduces; the pixels
+ * genuinely do not, because what varies cancels almost exactly in aggregate. Both halves are
+ * reported here so neither can be quoted without the other.
+ */
+function lumaSorted(img) {
+  const d = img.data;
+  const n = Math.floor(d.length / 4);
+  const L = new Float64Array(n);
+  for (let p = 0; p < n; p += 1) {
+    const o = p * 4;
+    L[p] = 0.2126 * d[o] + 0.7152 * d[o + 1] + 0.0722 * d[o + 2];
+  }
+  L.sort();
+  return L;
+}
+
+function fractionalPercentile(L, q) {
+  const x = (L.length - 1) * q;
+  const i = Math.floor(x);
+  return L[i] + (L[Math.min(i + 1, L.length - 1)] - L[i]) * (x - i);
+}
+
+let pixelArm = null;
+if (argv.pixels !== 'false' && loaded.length >= 4) {
+  const { decodePNG } = await import('../.kit/lib/image/png.mjs');
+  pixelArm = [];
+  for (const shot of shotNames) {
+    const files = loaded.map((r) => r.profile.shots?.[shot]).filter(Boolean);
+    if (files.length !== loaded.length) continue;
+    let images;
+    try { images = files.map((f) => decodePNG(readFileSync(f))); } catch (e) {
+      refusals.push(`pixel arm: could not decode ${shot} — ${e.message}`);
+      continue;
+    }
+    const pairs = [];
+    for (let i = 0; i < images.length; i += 1) {
+      for (let j = i + 1; j < images.length; j += 1) {
+        const A = images[i].data;
+        const B = images[j].data;
+        const n = Math.floor(Math.min(A.length, B.length) / 4);
+        let changed = 0;
+        let sum = 0;
+        let peak = 0;
+        for (let p = 0; p < n; p += 1) {
+          const o = p * 4;
+          const d = Math.abs(A[o] - B[o]) + Math.abs(A[o + 1] - B[o + 1]) + Math.abs(A[o + 2] - B[o + 2]);
+          if (d) { changed += 1; sum += d; if (d > peak) peak = d; }
+        }
+        pairs.push({ changedPct: 100 * changed / n, meanAbs: sum / n, peak,
+          crossBatch: loaded[i].batch !== loaded[j].batch });
+      }
+    }
+    const avg = (xs, f) => (xs.length ? xs.reduce((a, b) => a + f(b), 0) / xs.length : null);
+    const within = pairs.filter((p) => !p.crossBatch);
+    const cross = pairs.filter((p) => p.crossBatch);
+    const sorted = images.map(lumaSorted);
+    const floatSpread = {};
+    for (const [label, q] of [['p01', 0.001], ['p50', 0.5], ['p99', 0.99], ['p999', 0.999]]) {
+      const vs = sorted.map((L) => fractionalPercentile(L, q));
+      floatSpread[label] = +(Math.max(...vs) - Math.min(...vs)).toFixed(4);
+    }
+    pixelArm.push({
+      shot,
+      distinctFrames: new Set(files.map((f) => createHash('sha256').update(readFileSync(f)).digest('hex'))).size,
+      withinBatchChangedPct: +avg(within, (p) => p.changedPct).toFixed(3),
+      crossBatchChangedPct: +avg(cross, (p) => p.changedPct).toFixed(3),
+      meanAbsDelta: +avg(pairs, (p) => p.meanAbs).toFixed(4),
+      peakDelta: Math.max(...pairs.map((p) => p.peak)),
+      floatPercentileRange: floatSpread,
+    });
+  }
+  // A frame that reproduces byte for byte across every run is the shape of a reused capture,
+  // which is the one way this whole measurement can be vacuous. Named, not assumed either way.
+  const frozenShots = pixelArm.filter((p) => p.distinctFrames === 1).map((p) => p.shot);
+  if (frozenShots.length) {
+    refusals.push(`pixel arm: ${frozenShots.join(', ')} produced one identical frame in all ${loaded.length} runs `
+      + '— either the renderer is exactly deterministic there or the capture was reused, and the cell table cannot tell those apart');
+  }
+}
+
 const moving = rows.filter((r) => !r.constant);
 const nulls = moving.map((r) => ({ cell: r.cell, ...(splitNull(r.values) || {}) })).filter((n) => n.splits);
 const tailCells = nulls.filter((n) => n.percentile !== null && n.percentile >= 90);
@@ -337,6 +431,14 @@ for (const shot of shotNames) {
 const constants = rows.filter((r) => r.constant).map((r) => r.cell);
 observations.push(`${rows.length} cell(s) across ${shotNames.length} shot(s) and ${loaded.length} run(s)`);
 observations.push(`${constants.length} cell(s) never moved; ${moving.length} did`);
+if (pixelArm?.length) {
+  const worst = pixelArm.reduce((a, b) => (a.withinBatchChangedPct > b.withinBatchChangedPct ? a : b));
+  const driftier = pixelArm.filter((p) => p.crossBatchChangedPct > p.withinBatchChangedPct).length;
+  observations.push(`pixel arm: frames differ on ${Math.min(...pixelArm.map((p) => p.withinBatchChangedPct))}-`
+    + `${worst.withinBatchChangedPct}% of pixels between runs of one unchanged build (worst: ${worst.shot})`);
+  observations.push(`cross-batch pixel difference exceeds within-batch on ${driftier} of ${pixelArm.length} shot(s) `
+    + `— batch drift is ${driftier ? 'present' : 'NOT detectable'} on this rig`);
+}
 if (gateFlips.length) observations.push(`${gateFlips.length} gate(s) flipped verdict between runs of one unchanged build`);
 if (nulls.length) {
   const inter = nulls[0].interleaving;
@@ -353,6 +455,7 @@ const result = {
   refusals,
   observations,
   gateFlips,
+  pixelArm,
   splitNull: nulls,
   cells: rows.sort((x, y) => y.sd - x.sd),
 };
@@ -363,6 +466,15 @@ for (const o of observations) console.log(`  ${o}`);
 if (gateFlips.length) {
   console.log('\n  GATE FLIPS (one build, nothing changed):');
   for (const g of gateFlips) console.log(`    ${g.shot}.${g.gate}: ${g.values.map((v) => `${v.tag}=${v.value}`).join(' ')}`);
+}
+if (pixelArm?.length) {
+  console.log('\n  PIXEL ARM — the same build photographed twice, compared as images:');
+  for (const p of pixelArm) {
+    console.log(`    ${p.shot.padEnd(8)} changed px within ${String(p.withinBatchChangedPct).padStart(7)}%  cross ${String(p.crossBatchChangedPct).padStart(7)}%`
+      + `  mean |d| ${String(p.meanAbsDelta).padStart(7)}  peak ${String(p.peakDelta).padStart(4)}  distinct frames ${p.distinctFrames}/${loaded.length}`);
+    console.log(`    ${' '.repeat(8)} float percentile range (no rounding): `
+      + Object.entries(p.floatPercentileRange).map(([k, v]) => `${k} ${v}`).join('  '));
+  }
 }
 console.log('\n  widest cells by standard deviation:');
 for (const r of result.cells.slice(0, 12)) {
