@@ -1,0 +1,83 @@
+name: Publish device-verified GitHub Pages
+
+on:
+  workflow_run:
+    workflows: [iPhone SE 3 round gate]
+    types: [completed]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: verified-pages
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out the Safari-verified revision
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Refuse to publish a superseded source revision
+        env:
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          git fetch origin main
+          test "$(git rev-parse origin/main)" = "$VERIFIED_SHA"
+          test "$(git rev-parse HEAD)" = "$VERIFIED_SHA"
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Rebuild the verified Pages artifact
+        env:
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          npm ci
+          npm run validate:project
+          npm run build:pages
+          printf '{"sourceSha":"%s"}\n' "$VERIFIED_SHA" > docs/build-revision.json
+      - name: Commit only the generated Pages artifact
+        env:
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A docs
+          if git diff --cached --quiet; then
+            echo "Pages artifact already matches $VERIFIED_SHA"
+          else
+            git commit -m "Publish device-verified Pages for ${VERIFIED_SHA:0:12}"
+            git push origin HEAD:main
+          fi
+      - name: Wait for the exact revision on the public surface
+        env:
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          for attempt in {1..90}; do
+            served="$(curl --fail --silent --show-error "https://bachikoljunior-blip.github.io/game2/docs/build-revision.json?run=${GITHUB_RUN_ID}-${attempt}" | jq -r .sourceSha 2>/dev/null || true)"
+            if test "$served" = "$VERIFIED_SHA"; then exit 0; fi
+            sleep 4
+          done
+          exit 1
+      - name: Verify boot and primary journey on GitHub Pages
+        run: |
+          npx playwright install --with-deps chromium
+          npm run verify:pages -- --url=https://bachikoljunior-blip.github.io/game2/
+      - name: Preserve public verification report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pages-verification-${{ github.event.workflow_run.head_sha || github.sha }}
+          path: AI_DEVELOPMENT/EVIDENCE/pages-verification.json
+          if-no-files-found: warn
+          retention-days: 30

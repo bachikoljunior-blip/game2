@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "updatedAt": "2026-08-01T12:50:00Z",
+ "updatedAt": "2026-08-02T00:30:00Z",
  "nodes": [
   {
    "id": "PROJECT",
@@ -14,7 +14,8 @@
     "ROUNDS13_14",
     "RELEASE13_14",
     "NEXT15",
-    "BENCH"
+    "BENCH",
+    "PHONE-ROUND-GATE"
    ],
    "dependencies": [],
    "status": "active",
@@ -448,6 +449,23 @@
    "status": "ready",
    "priority": 2,
    "criteria": []
+  },
+  {
+   "id": "PHONE-ROUND-GATE",
+   "title": "Require WebKit and Mobile Safari in every round",
+   "parent": "PROJECT",
+   "children": [],
+   "dependencies": [
+    "BENCH-APPARATUS"
+   ],
+   "status": "active",
+   "priority": 99,
+   "criteria": [
+    "MOBILE-WEBKIT-001",
+    "MOBILE-IOS-001",
+    "MOBILE-PUBLISH-001"
+   ],
+   "reason": "Explicitly authorized 2026-08-02. One combined pull-request workflow runs both layers before merge; main repeats them before exact-SHA Pages publication."
   }
  ]
 }
