@@ -70,10 +70,25 @@ Read your element's entry before you change it, and take principles only: copyin
 reference's characters, world, layout, UI, staging or music is forbidden. The result must
 read as one original game, not a seam of imitations.
 
-That file also records, honestly, that **only one of the sixteen elements has a working
-review loop.** Twelve have never been verified at all, because five static screenshots cannot
-see combat feel, animation, camera behaviour, touch, or audio. Do not mistake a passing
-visual gate for a passing product.
+That file used to record that only one of the sixteen elements had a working review loop and
+twelve had never been verified at all. **That is no longer true, and it was left standing here
+after it stopped being true**, which meant every session opened on a wrong premise. The
+interaction-capture rig (`tools/interaction-capture.mjs`, brief in `tools/INTERACTION.md`)
+closed that gap: it drives the built game through scripted play at a fixed 1/60 s step through
+real pointer and keyboard events, with nothing in `src/` changed to allow it.
+
+Where the sixteen elements actually stand is `gapSummary.byApparatus` in
+`AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml` — **read the buckets there rather than a number
+here**, because a number here is what went stale. As of the last run those buckets are: four
+elements with a working review loop, ten with at least one executed runtime or frame
+measurement, two on source audit alone (`E01-COMBAT` and `E14-AI`, bounded by sampling cost),
+and none with no evidence at all. `tools/validate-project-state.mjs` now fails when an element
+sits in a bucket its criteria do not support, so the buckets cannot drift the way this
+paragraph did.
+
+**Measured is not good.** The rig's first run (`AI_DEVELOPMENT/EVIDENCE/interaction-i1.md`)
+returned 5 pass, 9 fail and 4 inconclusive over 18 criteria, and `inconclusive` is not a pass.
+Do not mistake a passing visual gate — or a populated evidence bucket — for a passing product.
 
 The method is not incidental to the goal; it is the goal's mechanism:
 

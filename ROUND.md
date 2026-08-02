@@ -35,6 +35,11 @@ direction), §7 (perf budget) and §8 (file ownership) before dispatching anythi
 > completed round: 14" while 15 was finished and 16 was being asked for. `HANDOFF.md` is the
 > authority for the round number; if the two ever disagree, believe `HANDOFF.md` and fix
 > this line in the same commit.
+>
+> **That is now a gate, not a request.** `node tools/validate-project-state.mjs` derives the
+> round number from `HANDOFF.md`'s "Round N is COMPLETE" lines and fails when this header
+> disagrees, or when this line is deleted. A warning that a human has to act on had already
+> been in this block when it went stale; the check is what stops it happening a third time.
 
 An independent critic has scored it 34 → 48 → 58 → (round 4 unfiled) → (5 and 6 unscored)
 → 44 → **46** → **47 pre-fix in round 9** out of 100 against a *Ghost of Tsushima* /

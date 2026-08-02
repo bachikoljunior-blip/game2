@@ -179,6 +179,8 @@ export function validate({ root = ROOT, readText } = {}) {
     }
   }
 
+  errors.push(...checkRoundHeader(read));
+
   const summary = checkBenchmarks(benchmarks, errors, { checkStatus, ids });
   return {
     errors,
@@ -190,6 +192,39 @@ export function validate({ root = ROOT, readText } = {}) {
       graphTasks: graphIds.size,
     },
   };
+}
+
+/**
+ * ROUND.md's header round number against HANDOFF.md's.
+ *
+ * ROUND.md carries a one-line summary of where the loop is, and that line is the single
+ * most-missed staleness trap in the repository: it read "Last completed round: 14" while 15
+ * was finished and 16 was being asked for. The file says so about itself, in the same block,
+ * and it went stale anyway — a warning that a human has to act on is not a gate.
+ *
+ * HANDOFF.md is the authority (`CLAUDE.md`: the detailed art-round state lives there). This
+ * derives the number from HANDOFF.md's "Round N is COMPLETE" lines and fails when the header
+ * disagrees, so the two cannot drift apart across a commit.
+ */
+function checkRoundHeader(read) {
+  const errors = [];
+  let round, handoff;
+  try { round = read('ROUND.md'); } catch { return ['ROUND.md: unreadable']; }
+  try { handoff = read('HANDOFF.md'); } catch { return ['HANDOFF.md: unreadable']; }
+
+  const declared = /Last completed round:\s*(\d+)/.exec(round);
+  if (!declared) return ['ROUND.md: no "Last completed round: N" line — the header that tells the next session which round to run is gone'];
+
+  const completed = [...handoff.matchAll(/Round\s+(\d+)\s+is\s+COMPLETE/gi)].map((m) => Number(m[1]));
+  if (!completed.length) {
+    return ['HANDOFF.md: no "Round N is COMPLETE" line, so ROUND.md\'s round number cannot be checked against anything'];
+  }
+  const authority = Math.max(...completed);
+  if (Number(declared[1]) !== authority) {
+    errors.push(`ROUND.md says "Last completed round: ${declared[1]}" but HANDOFF.md records round ${authority} complete — ` +
+                'HANDOFF.md is the authority; fix the ROUND.md header in the same commit');
+  }
+  return errors;
 }
 
 function handoffNames(root) {
@@ -280,6 +315,30 @@ function checkBenchmarks(benchmarks, errors, { checkStatus, ids }) {
   const declared = benchmarks.gapSummary?.criteriaCounts ?? {};
   for (const [key, value] of Object.entries(counts)) {
     if (declared[key] !== value) errors.push(`benchmarks.gapSummary.criteriaCounts.${key}: says ${declared[key]}, actual ${value}`);
+  }
+
+  // The buckets against the criterion records they summarise. `CLAUDE.md` quotes these
+  // buckets to tell a fresh session how much of the product has ever been measured, and a
+  // bucket that drifts from the data teaches every future session a wrong starting premise
+  // — which is exactly what happened: CLAUDE.md carried "only one of sixteen elements has a
+  // working review loop" for a week after the interaction rig closed that gap.
+  const EXECUTED = new Set(['runtime-measured', 'frame-measured']);
+  const measured = new Set((benchmarks.elements ?? [])
+    .filter((e) => (e.criteria ?? []).some((c) => EXECUTED.has(c.evidenceState)))
+    .map((e) => e.id));
+  const anyEvidence = new Set((benchmarks.elements ?? [])
+    .filter((e) => (e.criteria ?? []).some((c) => c.evidenceState && c.evidenceState !== 'none'))
+    .map((e) => e.id));
+  for (const id of benchmarks.gapSummary?.byApparatus?.sourceAuditOnly ?? []) {
+    if (measured.has(id)) errors.push(`benchmarks.gapSummary.byApparatus: ${id} is bucketed sourceAuditOnly but carries an executed measurement`);
+  }
+  for (const id of benchmarks.gapSummary?.byApparatus?.noEvidenceAtAll ?? []) {
+    if (anyEvidence.has(id)) errors.push(`benchmarks.gapSummary.byApparatus: ${id} is bucketed noEvidenceAtAll but carries evidence`);
+  }
+  for (const key of ['verifiedLoopExists', 'partialEvidence']) {
+    for (const id of benchmarks.gapSummary?.byApparatus?.[key] ?? []) {
+      if (!measured.has(id)) errors.push(`benchmarks.gapSummary.byApparatus: ${id} is bucketed ${key} but no criterion on it is runtime- or frame-measured`);
+    }
   }
 
   const bucketed = Object.values(benchmarks.gapSummary?.byApparatus ?? {}).flat();
@@ -385,6 +444,28 @@ export function selfTestCases({ root = ROOT } = {}) {
     {
       name: 'the declared criteria counts drifting from the actual ones',
       evaluate: () => run(patch(BENCH, (d) => { d.gapSummary.criteriaCounts.total += 1; })),
+    },
+    {
+      name: 'an element bucketed as measured after its measurement was withdrawn',
+      evaluate: () => run(patch(BENCH, (d) => {
+        const id = d.gapSummary.byApparatus.partialEvidence[0];
+        for (const c of d.elements.find((e) => e.id === id).criteria ?? []) c.evidenceState = 'source-audit';
+      })),
+    },
+    {
+      name: 'an element left in the source-audit bucket after it gained a real measurement',
+      evaluate: () => run(patch(BENCH, (d) => {
+        const id = d.gapSummary.byApparatus.sourceAuditOnly[0];
+        d.elements.find((e) => e.id === id).criteria[0].evidenceState = 'runtime-measured';
+      })),
+    },
+    {
+      name: 'the ROUND.md header left behind while HANDOFF.md moved on',
+      evaluate: () => run(withEdit('HANDOFF.md', (text) => `${text}\n\n- **Round 99 is COMPLETE.**\n`)),
+    },
+    {
+      name: 'the ROUND.md header line deleted entirely',
+      evaluate: () => run(withEdit('ROUND.md', (text) => text.replace(/Last completed round:\s*\d+/, 'Round status: see HANDOFF'))),
     },
     {
       name: 'a required state file missing',
