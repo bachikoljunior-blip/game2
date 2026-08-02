@@ -56,21 +56,25 @@ What is already proven, so nobody re-proves it:
 
 ## Remaining steps, in order
 
-### 1. Give `kit` a trunk — branch created 2026-08-01, default branch still not flipped
+### 1. ~~Give `kit` a trunk~~ — done 2026-08-01, both halves observed
 
-`main` now exists on the kit remote at `d334e77`, pushed from a session and read back with
-`git ls-remote --heads`. So the first half of the acceptance is observed and a clone can now
-name a trunk.
+`main` exists on the kit remote at `d334e77`, and the default branch now points at it:
 
-*Remaining:* `git ls-remote --symref origin HEAD` still resolves to
-`refs/heads/claude/kit-template-creation-ndursc`, so a bare `git clone` still lands on the
-feature branch. Flipping the default branch is a repository **settings** write, and the
-session's API proxy refuses those explicitly:
+```
+git ls-remote --symref origin HEAD  →  ref: refs/heads/main
+```
+
+A bare `git clone` therefore lands on the trunk. Both halves of the acceptance are observed.
+
+*How the second half got done, because the constraint is permanent and the next session will
+hit it too:* flipping the default branch is a repository **settings** write, and this
+environment's API proxy refuses those —
 `PATCH /repos/bachikoljunior-blip/kit {"default_branch":"main"}` → `403 Repository settings
-writes are not permitted through this proxy`. No MCP tool in this environment exposes it
-either. **This half is not doable from a session — the user flips it in the repository
-settings, or with `gh repo edit bachikoljunior-blip/kit --default-branch main`.** Do not
-spend turns retrying the API.
+writes are not permitted through this proxy`, with no MCP tool exposing it either. **It is not
+doable from a session at all.** The user did it from a phone browser at
+`https://github.com/bachikoljunior-blip/kit/settings` → *Default branch* → ⇄ → `main`
+(the GitHub mobile **app** has no settings screen; it needs the browser). Do not spend turns
+retrying the API for any future settings change.
 
 ### 2. ~~Bring `survival`'s kit up to v0.2.0~~ — done 2026-08-01
 
@@ -262,23 +266,22 @@ decision recorded saying which and why.
 All nine repositories (eight plus `kit`) carry the kit at the same version, `check:kit`
 passes in each, and every replaced tool has a measured before/after — not a plausible diff.
 
-### Where this stands, 2026-08-01
+### Where this stands, 2026-08-01 — **all six steps are closed. The rollout is complete.**
 
-Steps 2, 3, 4, 5 and 6 are closed by measurement. **Step 1 is the only one still open**, and
-its remaining half cannot be done from a session at all: flipping `kit`'s default branch to
-`main` is a repository *settings* write and the API proxy refuses those with
-`403 Repository settings writes are not permitted through this proxy`. `main` exists at
-`d334e77` and was read back from the remote; only the `HEAD` symref still points at
-`claude/kit-template-creation-ndursc`.
+Reported to the user on 2026-08-01, as this section requires.
 
-**The one action left for the user:**
+All nine repositories carry kit v0.2.0. `check:kit` was observed exiting 0 against the
+34-file ledger in each of the eight targets, and in each one a deliberately corrupted kit
+file was watched failing the same check as `edited in place` before being restored — so the
+check is known live, not merely quiet. All four duplicated validators now wire to
+`.kit/lib/state/`, each with equivalence measured against deliberate breakage rather than
+healthy state, and each with a `--selftest` whose control must not fire.
 
-```
-gh repo edit bachikoljunior-blip/kit --default-branch main
-```
+Closed by **measurement**: 2, 3, 4, 5, 6. Closed by **user action outside any session**: 1
+(the default-branch flip, which the API proxy permanently refuses — see step 1).
 
-Do not spend turns retrying the API. Once that lands, `git ls-remote --symref origin HEAD`
-resolves to `refs/heads/main` and the workstream is finished.
+**What is deliberately *not* done: none of this is merged.** See the section below before
+assuming that is an oversight.
 
 **Say so out loud when it is done.** The session that observes the last acceptance line
 reports to the user that the kit-and-skills rollout is complete, and states plainly which
@@ -287,6 +290,78 @@ anything that had to be left to the user's own machine. This workstream has no f
 signal otherwise: each step ticks a box in a file nobody is watching, so it can be finished
 for weeks without anyone knowing. Do not report it complete while any step above is open —
 say which remain instead.
+
+---
+
+## Integration — held back on purpose, 2026-08-01. **Do not merge without re-measuring.**
+
+Every repository's work sits on `claude/kit-rollout-game2-survival-0vspel` and **none of it is
+merged**. That is a decision, not a forgotten step: the user was shown the state and chose to
+wait because **another session was working in these repositories at the same time and still
+is**.
+
+The rollout itself is finished. Integration is a separate question with a separate answer.
+
+### What was measured before deciding
+
+Four of the eight remotes moved *while this session ran* — `origin/main` counted against this
+branch:
+
+| Repo | commits on `main` this branch does not have | `main` last updated |
+|---|---|---|
+| `survival` | **28** | **68 minutes before the check** |
+| `game2` | 14 | 2 hours |
+| `Q` | 2 | 2 hours |
+| `Gptgame` | 1 | 3 hours |
+| `game` `exist-debug` `Simple-browser-cookie-clicker-game` | 0 | 5 days |
+
+And the overlap is not incidental — **the other session edited the very validators this
+workstream replaced**:
+
+| Repo | Files touched by *both* this branch and `main` |
+|---|---|
+| `game2` | `package.json` |
+| `survival` | `package.json`, **`tools/check_operating_state.mjs`** |
+| `Gptgame` | `package.json`, **`scripts/verify-continuity.mjs`**, `AI_DEVELOPMENT/STATE.yaml`, both workflows |
+| `Q` | `AI_DEVELOPMENT/STATE.yaml`, `AI_DEVELOPMENT/DECISIONS.md` |
+
+What those commits are doing:
+
+- `survival` `c8608a6` — *"Migrate the operating protocol to Adaptive 2.2 and install the
+  floor gates"*. That migrates away from the protocol this branch's validator rewrite was
+  built against.
+- `Gptgame` `0aa981d` — *"Add iPhone SE 3 automated release gates (#28)"*. It adds checks to
+  the same file this branch rewrote whole.
+
+### The consequence, stated plainly
+
+**A merge here would not just conflict — a whole-file rewrite can silently delete checks the
+other session added.** And every equivalence number in step 5 for `survival` and `Gptgame`
+(27/27 and 19/19 mutations) was measured **against the old `main`**. Those numbers no longer
+support a claim about the current tree. Merging on them would be exactly the failure this
+document exists to prevent: asserting something that was true when measured and is not
+measured any more.
+
+### What the next session must do, in order
+
+1. **Ask, or wait for, the user's go-ahead.** They said they would say when the other session
+   is finished. Do not infer it from a quiet remote.
+2. **`game`, `exist-debug`, `Simple-browser-cookie-clicker-game` are the safe ones** — zero
+   divergence, untouched for five days, one changed file each.
+3. **`game2` and `Q` are light** — the overlap is records and `package.json`, and their
+   validators were not touched on `main`.
+4. **`survival` and `Gptgame` need the work redone, not merged.** Read `c8608a6` and
+   `0aa981d` first, rebase onto the new `main`, and **re-run the mutation battery there** —
+   the old numbers are void. If the other session already routed these through the kit, the
+   right answer may be to drop this branch's version rather than reconcile it.
+5. **`Cooky` has no trunk at all.** Its default branch is
+   `claude/roguelike-game-design-nrunz6`; there is no `main`. Decide what its trunk should be
+   before merging anything into it.
+
+*Unverified, recorded so nobody re-derives it:* the three static repositories are probably
+served from their repository root, which would put `.kit/` at a public URL. Every one of these
+repositories is already public and the kit is public source, so this was judged harmless — but
+it was not confirmed, and it is cheap to exclude if anyone objects.
 
 ---
 
@@ -320,6 +395,11 @@ Every one of these has already cost a session.
   if it did not, delete it.
 - **The kit is vendored, not linked.** Editing anything under `.kit/` in place is caught by
   `check:kit` as `edited in place`. Change it in the kit repository and re-install.
+- **Another session may be editing the same files right now.** Four of these eight remotes
+  moved *during* the session that wrote this — `survival` by 28 commits, one of them
+  rewriting the exact validator this workstream had just replaced. Before merging anything,
+  count `<branch>..origin/main` and list the files both sides touched. A measurement taken
+  against yesterday's `main` says nothing about today's.
 - **A validator that only ever passes is indistinguishable from one that is inert.** Three
   real defects in this workstream were found by a `--selftest` control and none by reading the
   code: `game2` could not see a dependency cycle, `survival` never scanned for credentials,
