@@ -555,7 +555,7 @@ try {
   check(soak.frameGaps.length >= 8, 'automated play continues producing frames', `samples=${soak.frameGaps.length}`);
   check((report.soak.p95FrameGapMs ?? Infinity) < frameGapHangLimit, 'runner frame-gap hang guard', `p95=${report.soak.p95FrameGapMs}ms, limit=${frameGapHangLimit}ms`);
 
-  await page.evaluate(() => {
+  const visualSetup = await page.evaluate(() => {
     const k = window.__kagerou;
     k?.menus?.skipIntro?.();
     k?.menus?.resume?.();
@@ -563,8 +563,21 @@ try {
     k?.weather?.setPreset?.('petals', true);
     k?.sky?.setTime?.(0.78);
     k?.debugCam?.('hero');
+    return { startFrame: k?.engine?.frame ?? 0 };
   });
-  await page.waitForTimeout(1600);
+  await page.waitForFunction(({ startFrame }) => {
+    const k = window.__kagerou;
+    return k?.engine?.frame >= startFrame + 4
+      && k?.cinematic?.active === 'hero'
+      && Math.abs((k?.sky?.time ?? -1) - 0.78) < 0.0001;
+  }, visualSetup, { timeout: actionTimeout, polling: 100 });
+  report.visualStabilization = await page.evaluate(({ startFrame }) => ({
+    startFrame,
+    capturedFrame: window.__kagerou.engine.frame,
+    camera: window.__kagerou.cinematic?.active || null,
+    skyTime: window.__kagerou.sky?.time ?? null,
+  }), visualSetup);
+  await page.waitForTimeout(250);
   await page.screenshot({ path: actualPath });
   report.screenshots.steady = actualPath.slice(root.length + 1);
   report.visualRegression = compareScreenshot();

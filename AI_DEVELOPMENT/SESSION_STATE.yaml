@@ -11,7 +11,7 @@
     "baseSha": "943695effa664ef5984d0e1a0a05932ea93269bf",
     "activePlanNode": "PHONE-ROUND-GATE",
     "activeTask": "PHONE-ROUND-GATE",
-    "lastSuccessfulAction": "PR #9 run 30726607493 passed every Round 16 WebKit device, input, camera, pause, persistence, soak, rendering and error check, then correctly rejected the pre-Round-16 visual baseline. Its healthy current Round 16 frame was visually inspected and approved without relaxing the threshold; both iOS touch sources now begin with pointerMove for Xcode 26.2 WebDriverAgent compatibility.",
+    "lastSuccessfulAction": "PR #9 runs 30726607493 and 30727382541 passed every Round 16 WebKit device, input, camera, pause, persistence, soak, rendering and error check. Run 6's stable bright hero frame differs only 2.161% from the original reviewed baseline and disproved run 5's dark transient candidate; the original baseline is restored and capture now waits four post-camera frames. Both iOS touch sources also begin with pointerMove for Xcode 26.2 WebDriverAgent compatibility.",
   "currentFailingAction": null,
   "currentHypothesis": null,
     "nextAction": "Require PR #9's exact new-baseline head to pass WebKit and Xcode 26.2/iOS 26.2 Mobile Safari, merge on success, then verify the repeated main gate and exact public sourceSha/journey.",

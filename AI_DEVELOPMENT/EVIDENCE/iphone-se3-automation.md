@@ -64,14 +64,17 @@ passed: 91 draw calls, 681,191 submitted triangles, 3.4102 movement, 0.39446 cam
 delta, boot 36.620 s and autoplay 9.035 s. The only failure was a 48.0858% visual
 difference from the old bright courtyard baseline, above the unchanged 35% limit.
 
-The artifact's 1334×750 candidate was visually inspected. It is a healthy current
-Round 16 dark forest/night gameplay frame with the character and complete touch HUD,
-not black or corrupt (mean luma 18.705, standard deviation 19.365, near-black ratio
-0.14534). Round 16 changed sky, foliage, post-processing and world rendering, so the
-pre-Round-16 baseline was superseded by this exact candidate as
-`tests/baselines/iphone-se3-webkit-steady.png`, SHA-256
-`19396aa8e4dfb4a2debfad495ecd7254e1f37ae4dbd6b5b55f76a46d7cec2436`; the visual
-threshold was not relaxed.
+The run 5 artifact's 1334×750 dark candidate was initially promoted because it was
+non-flat and complete. Required-baseline run `30727382541` then falsified that review:
+after the same hero-camera request it produced the intended bright shrine courtyard,
+and that stable frame differs only `0.021610` (2.161%) from the original reviewed
+baseline, comfortably below the unchanged 35% limit. The dark frame was a transient
+captured before the low-speed WebKit engine had settled the cinematic camera, not a
+Round 16 art change. The original baseline SHA-256
+`214ecd61267398efec20283937f2df49f46cad622fb6b6bdfdec10dbc9a57b9a` is restored,
+and the harness now requires four engine frames after setting the hero camera and
+magic-hour sky before capture. The rejected dark baseline remains historical failure
+evidence only and is not accepted as the product appearance.
 
 Xcode 26.2 WebDriverAgent rejects a delayed second W3C touch source that begins with
 `pause`. The Mobile Safari journey now positions both sources first, then performs the

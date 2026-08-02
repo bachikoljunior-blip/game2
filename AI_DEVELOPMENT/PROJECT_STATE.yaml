@@ -68,7 +68,7 @@
   "primaryPhoneAutomation": {
    "status": "complete_unverified",
    "roundIntegration": "active on PR #9: every non-docs round pull request and main revision run one combined WebKit then iPhone SE 3 Mobile Safari workflow; Pages depends on the successful main run",
-   "targetWebKit": "complete_unverified: run 30726607493 passed every Round 16 device/gameplay/runtime check and rejected only the obsolete pre-Round-16 baseline; the healthy current candidate was visually approved as SHA-256 19396aa8e4dfb4a2debfad495ecd7254e1f37ae4dbd6b5b55f76a46d7cec2436 and the exact-head rerun is pending",
+   "targetWebKit": "complete_unverified: runs 30726607493 and 30727382541 passed every Round 16 device/gameplay/runtime check. Run 6's stable hero frame differs 2.161% from the original reviewed baseline SHA-256 214ecd61267398efec20283937f2df49f46cad622fb6b6bdfdec10dbc9a57b9a; it disproved run 5's dark under-settled candidate. The original baseline is restored and capture waits four post-camera engine frames; exact-head rerun pending",
    "targetIosSafari": "prepared with Xcode 26.2, iOS 26.2, bounded Appium/WDA startup, trusted touch actions whose two sources both begin with pointerMove, and retained evidence; the exact-head target run is pending",
    "publication": "prepared: only the exact both-pass main SHA can rebuild docs and enter public sourceSha/journey verification"
   },
