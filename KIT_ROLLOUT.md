@@ -31,7 +31,7 @@ All eight target repositories now carry the kit, on one branch name:
 | `Gptgame` | `4586c66` | v0.2.0, validator on `lib/state`, self-test in CI | 9 |
 | `Q` | `1720d47` | v0.2.0, both gates on `lib/state`, self-test in CI | 9 |
 | `game` | `6247fd2` | v0.2.0, `check:kit` chained into `npm run check` | 9 |
-| `Simple-browser-cookie-clicker-game` | `4375dde` | v0.2.0, `check:kit` only — no build manufactured | 9 |
+| `Simple-browser-cookie-clicker-game` | `391c2d2` | v0.2.0, `check:kit` only — no build manufactured | 9 |
 | `Cooky` | `b431196` | v0.2.0, `check:kit` only — no build manufactured | 9 |
 | `exist-debug` | `418f8bf` | v0.2.0, `check:kit` only — no build manufactured | 9 |
 
@@ -308,8 +308,58 @@ Every SHA below was read back with `git ls-remote` after the fact, not assumed.
 | `survival` | `325b1e1` | rebuilt, via **PR #10 and #11** — `main` is ruleset-protected |
 | `Simple-browser-cookie-clicker-game` | `640cdaa` | **excluded by the user. Untouched. Do not merge.** |
 
-The cookie clicker's work still sits on `claude/kit-rollout-game2-survival-0vspel` at `4375dde`,
-verified but deliberately unintegrated.
+The cookie clicker's work still sits on `claude/kit-rollout-game2-survival-0vspel`, verified but
+deliberately unintegrated — at **`391c2d2`**, not the `4375dde` this file carried until
+2026-08-02. `4375dde` is **not a valid object in that repository at all**; the branch was
+rebuilt onto the newer `main` at 04:43 UTC, two minutes after the 04:41 integration table above
+was measured, and the SHA was never re-read. Measured this session with `ls-remote`: head
+`391c2d2`, **1 ahead of `main` (`640cdaa`) and 0 behind**, one commit, *"Install the shared kit
+v0.2.0 and its nine skills"*. `check:kit` exits 0 on it against the 34-file ledger and
+`.claude/skills/` lists nine, so the work itself is intact — only the pointer was wrong.
+
+## What is still open — the only list of it
+
+Integration is complete and every numbered step above is ticked, so a session reading
+top-down finds nothing to do and stops. That is wrong: four things outlive the rollout, and
+until 2026-08-02 they existed only in a chat message. They live here now.
+
+| # | Open item | State, measured |
+|---|---|---|
+| A | `Simple-browser-cookie-clicker-game` stays unintegrated | **Not work. A standing instruction.** Excluded by the user; do not merge without a new explicit go-ahead. Verified at `391c2d2`. |
+| B | `survival`'s four Chromium launches still carry their own flag arrays | Open. Blocked on C — see below. |
+| C | Per-frame distribution for the vantage sweep | Open. This is the prerequisite for B, not a nicety. |
+| D | `kit`'s default branch | **Closed — measured, not assumed.** See below. |
+
+**D is done, and the brief that reached this session said it was not.** `git ls-remote --symref
+origin HEAD` in `kit` returns `ref: refs/heads/main` at `d334e77`. The user flipped it from a
+browser (step 1 records how, and why no session can do it). Do not spend a turn retrying the
+API proxy for it, and do not carry it forward as open again.
+
+### B and C, stated so the next session does not do them in the wrong order
+
+The four launches in `tools/{shot,perf,playthrough,vantage}.mjs` do not call
+`.kit/lib/browser/launchHeadless`. Step 3 left them deliberately. The exact delta, read off
+both sides rather than assumed — swapping in `launchHeadless({ noSandbox: true,
+angleSwiftshader: true })` **removes nothing** and **adds five flags**:
+
+`--enable-webgl` (already present in `shot.mjs` only), `--disable-dev-shm-usage`,
+`--hide-scrollbars`, `--mute-audio`, `--force-color-profile=srgb`.
+
+Two of those five can move pixels — `--hide-scrollbars` changes the layout the frame is taken
+of, and `--force-color-profile=srgb` changes how it is encoded. `survival` has never captured
+under either.
+
+**And this rig cannot currently judge whether they did.** The measured noise floor is 11 of 18
+frames differing between two runs of the *unmodified* harness against one byte-identical
+`dist/`. A colour-profile shift is smaller than that. So the order is fixed: **C before B.**
+
+C is not "run the sweep a few more times". The 11-of-18 figure is a *frame-level* verdict, and
+a frame is eleven numbers — nine luma columns plus draws and triangles. If one column wobbles
+and the other ten repeat exactly, ten cells still carry signal. What is needed is the
+distribution **per cell**, which then says exactly which cells a later before/after is allowed
+to be judged on. `survival/tools/vantage_distribution.mjs` does this; it hashes `dist/` around
+every sweep and voids any sample the build moved under, and it refuses to report across two
+build hashes.
 
 ### The bug this session nearly shipped, recorded because it is the most instructive thing here
 
@@ -572,6 +622,14 @@ it was not confirmed, and it is cheap to exclude if anyone objects.
 
 Every one of these has already cost a session.
 
+- **A SHA in this file can stop existing.** `Simple-browser-cookie-clicker-game` was recorded
+  at `4375dde`; that object is not in the repository — the branch was rebuilt two minutes
+  after the table was written and the pointer was never re-read. This is the third time a
+  fact here has gone stale under a session that trusted it (the other two: `Cooky` having no
+  `main`, and `survival` having no branch protection). **Re-read every SHA you are about to
+  act on with `git ls-remote`, and every default branch with `--symref`, before acting.** A
+  SHA that fails `git cat-file -e` is the cheap version of this lesson; a SHA that still
+  resolves but has moved is the expensive one.
 - **`game2/tools/capture.mjs` runs on import.** It is a top-level-await module. `import()`ing
   it to test that it resolves starts a real capture. Use `node --check`.
 - **`shots/*.png` is ignored by git.** The frame that proved the measurement swap is gone.
