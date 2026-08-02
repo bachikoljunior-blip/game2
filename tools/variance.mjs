@@ -129,6 +129,23 @@ if (argv.collect) {
   console.log(`collecting ${BATCHES.length} batches of ${RUNS} at profile "${PROFILE}"\n`);
 
   const runs = [];
+  const manifestFile = join(SHOTS, 'variance-manifest.json');
+  /**
+   * Rewritten after every run rather than once at the end. A collection is an hour of wall
+   * clock in a container that can be reclaimed, and a manifest written only on completion
+   * means an interrupted run leaves eight unreadable reports and no record of which build
+   * they were taken against — the analysis would have to be reconstructed from filenames,
+   * which is exactly the provenance this file refuses to guess at elsewhere.
+   */
+  const writeManifest = (complete) => writeFileSync(manifestFile, JSON.stringify({
+    schemaVersion: 1,
+    profile: PROFILE,
+    runsPerBatch: RUNS,
+    complete,
+    build: { digest: frozen.digest, files: frozen.files, unchangedAfter: distDigest().digest === frozen.digest },
+    runs,
+  }, null, 2));
+
   for (const batch of BATCHES) {
     for (let i = 1; i <= RUNS; i += 1) {
       const tag = `var-${batch}${i}`;
@@ -157,19 +174,12 @@ if (argv.collect) {
       }
       const seconds = Number(process.hrtime.bigint() - t0) / 1e9;
       runs.push({ tag, batch, index: i, startedAt, seconds: +seconds.toFixed(1), failed });
+      writeManifest(false);
       console.log(`[${tag}] ${failed || 'done'} in ${seconds.toFixed(0)}s`);
     }
   }
 
-  const after = distDigest();
-  const manifest = {
-    schemaVersion: 1,
-    profile: PROFILE,
-    runsPerBatch: RUNS,
-    build: { digest: frozen.digest, files: frozen.files, unchangedAfter: after.digest === frozen.digest },
-    runs,
-  };
-  writeFileSync(join(SHOTS, 'variance-manifest.json'), JSON.stringify(manifest, null, 2));
+  writeManifest(true);
   console.log(`\nwrote shots/variance-manifest.json — now run: node tools/variance.mjs --analyse`);
   process.exit(runs.some((r) => r.failed) ? 1 : 0);
 }
@@ -187,6 +197,12 @@ const observations = [];
 
 if (!manifest.build?.unchangedAfter) {
   refusals.push('the build digest differed between the start and end of collection — these runs are not all of one build');
+}
+// Partial is analysable and is not a refusal, but it must be said out loud: a batch cut short
+// is not the balanced 4+4 the split null below assumes, and an unbalanced cut changes what the
+// enumeration means without changing anything it prints.
+if (manifest.complete === false) {
+  observations.push(`the collection was INTERRUPTED after ${manifest.runs.length} run(s) — this is a partial result`);
 }
 
 /** Load each run's profile block, refusing rather than skipping anything that did not measure. */
