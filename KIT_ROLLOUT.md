@@ -326,8 +326,8 @@ until 2026-08-02 they existed only in a chat message. They live here now.
 | # | Open item | State, measured |
 |---|---|---|
 | A | `Simple-browser-cookie-clicker-game` stays unintegrated | **Not work. A standing instruction.** Excluded by the user; do not merge without a new explicit go-ahead. Verified at `391c2d2`. |
-| B | `survival`'s four Chromium launches still carry their own flag arrays | Open. Blocked on C — see below. |
-| C | Per-frame distribution for the vantage sweep | Open. This is the prerequisite for B, not a nicety. |
+| B | `survival`'s four Chromium launches still carry their own flag arrays | **`vantage.mjs` done and measured.** The other three are open — see below. |
+| C | Per-frame distribution for the vantage sweep | **Closed by measurement, 44 sweeps.** The answer is that this rig cannot tell the configurations apart. |
 | D | `kit`'s default branch | **Closed — measured, not assumed.** See below. |
 
 **D is done, and the brief that reached this session said it was not.** `git ls-remote --symref
@@ -360,6 +360,57 @@ distribution **per cell**, which then says exactly which cells a later before/af
 to be judged on. `survival/tools/vantage_distribution.mjs` does this; it hashes `dist/` around
 every sweep and voids any sample the build moved under, and it refuses to report across two
 build hashes.
+
+### B and C, settled 2026-08-02 — the swap is undetectable, and the finding against it was mine
+
+`tools/vantage.mjs` now calls `launchHeadless`. Six arms of four sweeps against one
+byte-identical `dist/`, plus the eight-sweep baseline — **44 sweeps, 792 frames**. Net luma
+shift against the baseline, with the sign-test asymmetry beside it:
+
+| arm | what it changes | net shift | asymmetry |
+|---|---|---|---|
+| **`legacynow`** | **nothing at all — the control** | **−17.4** | **10** |
+| `kitfull` | flags + binary | −14.4 | 20 |
+| `kitfull2` | the same, replicated | −20.6 | 9 |
+| `binary` | binary only | −7.1 | 4 |
+| `flags` | flags only | −16.1 | 6 |
+
+**The control darkened more than the swap did.** `binary` and `flags` sit inside it on both
+measures. The two `kitfull` arms exceed it on *different* measures and each falls inside it on
+the other — noise, since a real effect exceeds the same measure both times. This is not a claim
+that the frames are identical; it is the measured answer to the question the record asked.
+
+**Three things this settles, so nobody re-derives them:**
+
+- **The binary hypothesis is disproved.** This file recorded the `headless_shell` → full
+  `chrome` swap as the likely pixel-mover with the flags as the smaller suspect. The
+  binary-only arm is the **quietest of all six**.
+- **`proxy: false` is mandatory, and this one is a real blocker.** `launchHeadless` honours
+  `HTTPS_PROXY` by default; Playwright then force-appends `<-loopback>` to
+  `--proxy-bypass-list`, which *un*-bypasses loopback. Measured: the default returns **HTTP 405
+  with zero page errors** against the harness's own server, so a run proceeds and times out on
+  `CINDERLINE.ready` — reading as a game boot failure, not a proxy fault. `proxy: false` returns
+  200. **Every harness in every one of these repositories that serves its own content on
+  127.0.0.1 will break the same way.** The kit's default is wrong for that whole class of
+  caller; its own comment says the option exists for reaching *public* URLs.
+- **The rig drifts between collection batches by as much as any change moves it.** Within the
+  baseline alone, runs 1–4 against 5–8 differ by +16.9 with asymmetry 12. Any before/after taken
+  as two separate batches carries that difference regardless of what changed.
+
+**The instructive part is that this file nearly gained a false finding, and it would have been
+mine.** The first `kitfull` arm was reported as a measured directional shift — 31 luma cells
+down against 11 up, "exceeding every one of the 70 baseline splits". The arithmetic was right;
+the null was invalid. **68 of those 70 splits interleave the two baseline collection batches**,
+cancelling batch drift by construction, while every candidate arm *is* a separate later batch.
+A null built by splitting one baseline structurally cannot contain the effect being tested for.
+
+The fix is not a cleverer computed null. It is a **control arm** — the unchanged configuration
+collected as a separate later batch — and it outranks any null derived from the baseline.
+`tools/vantage_distribution.mjs --control` gates the verdict on it now.
+
+*What is still open in B:* `shot.mjs`, `perf.mjs` and `playthrough.mjs` still carry their own
+flag arrays. They are functional harnesses rather than pixel ones, so they do not need this
+apparatus — but any of them adopting `launchHeadless` **must** pass `proxy: false`.
 
 ### The bug this session nearly shipped, recorded because it is the most instructive thing here
 
@@ -630,6 +681,14 @@ Every one of these has already cost a session.
   act on with `git ls-remote`, and every default branch with `--symref`, before acting.** A
   SHA that fails `git cat-file -e` is the cheap version of this lesson; a SHA that still
   resolves but has moved is the expensive one.
+- **A before/after split across two collection batches measures elapsed time.** The
+  `survival` vantage rig drifts between batches by about as much as a real change moves it
+  (+16.9, asymmetry 12, within the baseline alone). Worse, the obvious defence — building a
+  null by splitting the baseline every possible way — *cannot* catch it: 68 of the 70 4/4
+  splits interleave the batches and cancel exactly the effect. **Run a control arm**: the
+  unchanged configuration, collected as its own later batch. On 2026-08-02 the control
+  darkened more than the change under test, which is the only reason a false finding did not
+  reach this file.
 - **`game2/tools/capture.mjs` runs on import.** It is a top-level-await module. `import()`ing
   it to test that it resolves starts a real capture. Use `node --check`.
 - **`shots/*.png` is ignored by git.** The frame that proved the measurement swap is gone.
