@@ -1,0 +1,29 @@
+{
+  "_comment": [
+    "The comparison step of one iPhone SE 3 review round. See .kit/lib/mobile/roundCompare.mjs.",
+    "KAGEROU's harness is still on a branch: PR #8 (agent/iphone-se3-automation) and PR #9",
+    "(agent/round-phone-gates) both add tools/test-iphone-webkit.mjs, and they overlap with each",
+    "other. This file deliberately touches neither, so it merges with whichever lands.",
+    "The paths below are the ones PR #9 emits. PR #8 emits the same shape except that neither",
+    "spells the maximum frame gap the way the other two repositories do — PR #9 writes",
+    "soak.maxFrameGapMs where Gptgame and survival write soak.maximumFrameGapMs. Both spellings",
+    "are declared; the absent one is reported as notMeasured rather than scored as zero.",
+    "Until a harness exists on main, `--bootstrap` will correctly refuse: there is no report to",
+    "record. That refusal is the intended behaviour, not a gap to work around.",
+    "Nothing here is evidence about a physical iPhone SE 3."
+  ],
+  "surface": "landscape",
+  "current": "test-results/iphone-webkit/report.json",
+  "baseline": "tests/baselines/iphone-se3-round.json",
+  "out": "test-results/iphone-webkit/round-comparison.json",
+  "metrics": [
+    { "key": "bootMs", "path": "timings.bootMs", "direction": "lower-is-better", "required": true },
+    { "key": "autoPlayMs", "path": "timings.autoPlayMs", "direction": "lower-is-better", "required": false },
+    { "key": "medianFrameGapMs", "path": "soak.medianFrameGapMs", "direction": "lower-is-better", "required": true },
+    { "key": "p95FrameGapMs", "path": "soak.p95FrameGapMs", "direction": "lower-is-better", "required": true },
+    { "key": "maxFrameGapMs", "path": "soak.maxFrameGapMs", "direction": "lower-is-better", "required": false, "tolerance": { "relative": 0.5 } },
+    { "key": "maximumFrameGapMs", "path": "soak.maximumFrameGapMs", "direction": "lower-is-better", "required": false, "tolerance": { "relative": 0.5 } },
+    { "key": "soakSamples", "path": "soak.samples", "direction": "higher-is-better", "required": false, "tolerance": { "relative": 0.4 } },
+    { "key": "visualDiffRatio", "path": "visualRegression.diffRatio", "direction": "lower-is-better", "required": false, "tolerance": { "relative": 0.5, "absolute": 0.01 } }
+  ]
+}
