@@ -1,7 +1,7 @@
 {
  "schemaVersion": 1,
- "updatedAt": "2026-08-01T22:30:00Z",
- "selectionMethod": "Round 16 was run end to end on user instruction and closed with every contract gate held on r16v1. PHYS-NARROWPHASE ran in parallel and resolved TD-010, which was not a performance defect at all but a NaN query AABB making TriBVH.overlapAABB's cull fail open; its root cause is an ARCHITECTURE 5b violation at Enemy.js:845 that also left enemies with no world collision. The user then explicitly ended the run at the end of this round (\"今途中のラウンドが終わるまでにして\"), so rounds 17-20 were cancelled rather than deferred. Next selection is not made here; it awaits a new user instruction.",
+ "updatedAt": "2026-08-02T09:10:00Z",
+ "selectionMethod": "Round 16 was run end to end on user instruction and closed with every contract gate held on r16v1. PHYS-NARROWPHASE ran in parallel and resolved TD-010, which was not a performance defect at all but a NaN query AABB making TriBVH.overlapAABB's cull fail open; its root cause is an ARCHITECTURE 5b violation at Enemy.js:845 that also left enemies with no world collision. The user then explicitly ended the run at the end of this round (\"\u4eca\u9014\u4e2d\u306e\u30e9\u30a6\u30f3\u30c9\u304c\u7d42\u308f\u308b\u307e\u3067\u306b\u3057\u3066\"), so rounds 17-20 were cancelled rather than deferred. Next selection is not made here; it awaits a new user instruction. || KIT/SKILLS WORKSTREAM (separate owner, added 2026-08-02): the nine shared skills were executed for the first time and three defects were fixed; the KIT-* tasks below are that workstream's, not the art loop's. The art-round selection above is unchanged and still awaits a user instruction. The important entry is KIT-REFERENCE-SET: the skills are apparatus and have measured nothing yet.",
  "tasks": [
   {
    "id": "R15-PUBLISH",
@@ -73,7 +73,7 @@
    "dependencies": [
     "BENCH-APPARATUS"
    ],
-   "objective": "Make the three authored interactables reachable. Level.interact(), nearestInteractable() and ringBell() have no caller, and Input's 'interact' intent is consumed by nobody, so the bell, the ema and the chozuya — and the bell's wave trigger — cannot be reached in play.",
+   "objective": "Make the three authored interactables reachable. Level.interact(), nearestInteractable() and ringBell() have no caller, and Input's 'interact' intent is consumed by nobody, so the bell, the ema and the chozuya \u2014 and the bell's wave trigger \u2014 cannot be reached in play.",
    "verification": "tools/interaction-capture.mjs --scenarios=bell-accident: the deliberate half must produce a ring (interactables bell.used true) while the bot-driven combat half still produces none.",
    "nextAction": "Owned by [world] plus whichever system should consume the intent. TD-011."
   },
@@ -100,6 +100,88 @@
    "objective": "Sample BM-COMBAT-02 and finish BM-AI-03's siblings now that the encounters scenario is affordable. It completes 20 encounters / 14,470 frames in 21.9 s since 9330fa8, but the harness bot scored 0 kills and 0 posture breaks across all 20, so BM-COMBAT-02 still has no measurement.",
    "verification": "A run of tools/interaction-capture.mjs --scenarios=encounters with an explicit distinct tag in which the bot resolves a non-zero number of encounters, so BM-COMBAT-02 can be scored at all.",
    "nextAction": "Determine whether the zero-kill result is a harness-policy limitation (tools/harness/runtime.js) or a real combat-balance finding before changing either. Do not assume the bot is at fault."
+  },
+  {
+   "id": "KIT-SKILL-EXEC",
+   "status": "verified",
+   "priority": 0,
+   "dependencies": [],
+   "objective": "Execute the nine shared skills for the first time and test the documents themselves, not just the library they call.",
+   "verification": "kit `npm test` runs test/run.mjs + test/skills.mjs: 65 tests, 65 pass. Claims are extracted mechanically from each SKILL.md so a test cannot drift from its document. Evidence: AI_DEVELOPMENT/EVIDENCE/skill-validation-tests.tap.",
+   "nextAction": "Complete. Three defects found by executing an instruction rather than reading it: bootstrap's commands resolve in none of the eight installed repositories; probe and ja-ui-check omit `proxy: false` so a loopback run returns HTTP 405 with zero page errors; `readyExpr` accepted a function source, which Playwright evaluates to a truthy function object (booted:true in 21 ms). Kit 0.2.1 installed in seven repositories. See KIT_ROLLOUT.md 'Skill validation'.",
+   "planNode": "KIT-SKILLS"
+  },
+  {
+   "id": "KIT-CRITIC-RECONCILE",
+   "status": "verified",
+   "priority": 0,
+   "dependencies": [
+    "KIT-SKILL-EXEC"
+   ],
+   "objective": "Stop tools/CRITIC.md and the shared critic skill from being two documents that say the same thing differently.",
+   "verification": "kit test 'a repository critic brief emits what the critic skill and the validator require' parses CRITIC.md's own JSON template and runs it through validateFindings(strict). Proved able to fail: the template as committed at 17ce484 is rejected on round, profile, tier and nativeResolution; the current one passes.",
+   "nextAction": "Complete. CRITIC.md now defers to .claude/skills/critic/SKILL.md and .kit/lib/plan/findings.mjs for the schema and keeps only the KAGEROU-specific bar. NOT re-verified against the parallel session's critic work, which was not on this branch when this was written \u2014 see KIT-SKILL-RECONCILE.",
+   "planNode": "KIT-SKILLS"
+  },
+  {
+   "id": "KIT-REFERENCE-SET",
+   "status": "ready",
+   "priority": 1,
+   "dependencies": [
+    "KIT-SKILL-EXEC"
+   ],
+   "objective": "Fetch reference material and freeze the comparison set. THIS IS THE ACTUAL WORK; everything above is apparatus that has measured nothing.",
+   "verification": "A stored, versioned set of reference frames with each one paired to a named element and one of our shots, so the same pair can be re-judged in a later round and get the same question.",
+   "nextAction": "Not started, by anyone. tools/CRITIC.md states plainly that the project has NEVER fetched reference footage and that every blind comparison to date was from memory. Until this exists, no 'blind side-by-side' result in this repository is a measured comparison, and none may be written up as one.",
+   "planNode": "KIT-SKILLS"
+  },
+  {
+   "id": "KIT-BASELINE-MEASURE",
+   "status": "ready",
+   "priority": 1,
+   "dependencies": [
+    "KIT-REFERENCE-SET"
+   ],
+   "objective": "Replace the criterion thresholds that were written by estimation with measured ones.",
+   "verification": "Every threshold quoted in REFERENCE_BENCHMARKS.yaml that a criterion is judged against carries the run that produced it, and antiFabrication passes with the apparatus and measured fields populated rather than asserted.",
+   "nextAction": "Not started. An estimated threshold and a measured one are indistinguishable once written down, which is the exact failure antiFabrication exists to catch; it can only check that a number is present, not that it was measured.",
+   "planNode": "KIT-SKILLS"
+  },
+  {
+   "id": "KIT-FIRSTREADER",
+   "status": "ready",
+   "priority": 2,
+   "dependencies": [
+    "KIT-SKILL-EXEC"
+   ],
+   "objective": "Run the first-reader test for the first time: give the skills to a reader with no context and see whether following them produces the intended result.",
+   "verification": "At least one skill followed end to end by a reader who did not write it, with what they actually did recorded against what the document intended.",
+   "nextAction": "Not started. The 65 tests prove the instructions are executable, NOT that they are followable: every one of them was written by the same session that wrote the fix. Three of this workstream's defects were exactly 'the document is wrong in a way its author could not see'.",
+   "planNode": "KIT-SKILLS"
+  },
+  {
+   "id": "KIT-VARIANCE",
+   "status": "ready",
+   "priority": 2,
+   "dependencies": [
+    "KIT-REFERENCE-SET"
+   ],
+   "objective": "Measure the run-to-run variance of the judgement itself, so a later before/after can be told from noise.",
+   "verification": "The same set judged repeatedly under one unchanged build, reported per cell, with a no-change control arm collected as its own later batch.",
+   "nextAction": "Not started. The vantage work already established that this rig drifts between collection batches by as much as a real change moves it (+16.9 within the baseline alone) and that a null built by splitting one baseline CANNOT detect it \u2014 68 of 70 splits interleave the batches. A control arm is mandatory, not optional.",
+   "planNode": "KIT-SKILLS"
+  },
+  {
+   "id": "KIT-SKILL-RECONCILE",
+   "status": "ready",
+   "priority": 1,
+   "dependencies": [
+    "KIT-SKILL-EXEC"
+   ],
+   "objective": "Reconcile this workstream with the parallel session's, which was NOT on this branch when this was written.",
+   "verification": "All four points checked against the other session's actual commits rather than assumed: (1) tools/CRITIC.md and the shared critic skill say the same thing, with no third document restating either; (2) survival's protocol reference to a fallback names a skill that was actually distributed; (3) the skills are present in every repository that should have them; (4) the evidence location and format can carry BOTH sessions' measurements.",
+   "nextAction": "Measured 2026-08-02 09:0x UTC: remote-ahead-by=0 on claude/kit-rollout-skill-validation-rsenmi in all eight repositories, so I was first and there was nothing to reconcile against. Point 3 already measured: 9 skills in survival, Gptgame, Q, Cooky, game, exist-debug and kit, 10 in game2 (9 + round), 0 in Simple-browser-cookie-clicker-game, whose kit sits unmerged at 0.2.0 under the standing exclusion. Points 1, 2 and 4 need the other session's commits and must be re-checked once they land. Do not force-push; fetch, merge, re-run both test suites, then push.",
+   "planNode": "KIT-SKILLS"
   }
  ]
 }

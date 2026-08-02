@@ -423,6 +423,28 @@ not a path) and reported a confident pass for a check it never ran, and a "contr
 extractor read one line of a sentence that wraps and silently truncated the contract to five
 of six fields. Both now assert the mutation changed the text first.
 
+### Reconciliation with the parallel session — measured 2026-08-02, and I was first
+
+A second session is working on the same branch with a different remit (`survival/tools/validate.mjs`,
+`survival/AI_DEVELOPMENT/PROTOCOL.md`, `survival/docs/STATE.md`, `game2/CLAUDE.md`,
+`game2/ROUND.md`, and a new evidence location in `survival`). **None of it was on the branch
+when this was written** — `git rev-list --count HEAD..FETCH_HEAD` was **0 in all eight
+repositories**, and the newest ref on any remote was my own push. Checked, not assumed. The
+four reconciliation points are therefore recorded as work, not performed: see
+`KIT-SKILL-RECONCILE` in `AI_DEVELOPMENT/ACTIVE_FRONTIER.yaml`.
+
+One of the four was in my own scope and is done. **`tools/CRITIC.md` and the shared `critic`
+skill were saying the same thing differently, and the difference was live:** CRITIC.md's JSON
+template omitted `round`, `profile`, `tier` and `nativeResolution`, so a critic following the
+brief exactly produced a file that `validateFindings(review, { strict: true })` **rejects** —
+measured against the template as committed at `17ce484`. CRITIC.md now defers to the skill and
+the validator for the schema and keeps only the KAGEROU-specific bar, and a kit test parses
+CRITIC.md's own template and validates it, so the two cannot drift apart silently again.
+
+**Do not force-push this branch.** A rejected push here means the other session pushed first,
+not that the network failed; `--force`/`--force-with-lease` is the only operation that would
+destroy their work irrecoverably. Fetch, merge, re-run both suites, stage the exact paths, push.
+
 ## What is still open — the only list of it
 
 Integration is complete and every numbered step above is ticked, so a session reading
