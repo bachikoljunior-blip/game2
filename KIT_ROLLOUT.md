@@ -1,5 +1,20 @@
 # Kit rollout — the single record for this workstream
 
+> ## ⛔ この作業は停止中 — 2026-08-02、利用者の明示指示
+>
+> **利用者の現在の focus は「スキルの検証」であり、この kit ロールアウトではない。**
+> 「続けて」「再開」だけを言われても、**このファイルの作業を再開しないこと。**
+> 何をするかは利用者に確認する。`CLAUDE.md` の「読んだら最高価値のタスクを続けろ、
+> 何をやるか聞くな」条項より、この行が新しく、優先する。
+>
+> 停止時点で未完了・中断による破損なし: 実行中プロセスなし、全リポジトリ clean、
+> 計測の生データは `survival/AI_DEVELOPMENT/EVIDENCE/VANTAGE-LAUNCH-SWAP-SAMPLES.jsonl`
+> に保全済み（`shots/` は git 管理外のため）。
+>
+> 唯一の実質的な残件は**スキルが一度も実行されていないこと**で、それが現在の focus。
+> 詳細は下の「What is still open」を読むこと。
+
+
 This file is the **only** state record for rolling the shared kit across the eight
 repositories. It lives here because `game2` is reliably pushable from a session and already
 has a resume procedure; the kit's *contents* are authoritative in
