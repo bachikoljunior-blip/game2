@@ -307,10 +307,39 @@ because it records *why* the numbers had to be retaken.
 | `exist-debug` | 0 | none | `main` | **merged `418f8bf`, pushed, read back** |
 | `game2` | 14 | `package.json` | `main` | **merged `b2a201d`, pushed, read back** |
 | `Cooky` | 0 | none | `main` **and** default | **merged `b431196`, both refs pushed, read back** |
-| `survival` | 28 | `package.json`, `tools/check_operating_state.mjs` | `main` | **rebuilt, `1156dfb` pushed to branch**; merge pending suite |
-| `Q` | 2 | `AI_DEVELOPMENT/STATE.yaml`, `DECISIONS.md` | `main` | **merged, `2a9ff40` pushed to branch**; held from `main` — republishes Pages |
-| `Gptgame` | 1 | 5 files incl. `scripts/verify-continuity.mjs` | `main` | **rebuilt, `1cf5ef7` pushed to branch**; held from `main` — republishes Pages |
+| `Q` | 2 | `AI_DEVELOPMENT/STATE.yaml`, `DECISIONS.md` | `main` | **merged `2a9ff40`, pushed, read back; Pages verified green** |
+| `Gptgame` | 1 | 5 files incl. `scripts/verify-continuity.mjs` | `main` | **rebuilt `1cf5ef7`, pushed, read back; quality gates green** |
+| `survival` | 28 | `package.json`, `tools/check_operating_state.mjs` | `main` | rebuilt `1156dfb`; **`main` is ruleset-protected — open at PR #10** |
 | `Simple-browser-cookie-clicker-game` | 0 | none | — | **excluded by the user, 2026-08-02. Do not merge.** |
+
+### `survival`'s `main` cannot be pushed to. This is new and permanent.
+
+`git push origin main` is refused: `GH013`, *"Changes must be made through a pull request"*
+and *"3 of 3 required status checks are expected"*. The other session installed that ruleset;
+the record's earlier note that "`main` has no branch protection — every branch reports
+protected=false" is now **out of date for `survival` and only for `survival`**. `Q` and
+`Gptgame` still report `protected: false` and took a direct push.
+
+So integration there runs through **pull request #10** (`claude/kit-rollout-integration-a4zihp`
+→ `main`), created on the user's explicit go-ahead. Its three required checks are F2, F3 and
+F5 — the repository's own floor gates.
+
+### What the two public sites actually did
+
+The user's concern was that merging `Q` and `Gptgame` would regenerate their public surfaces.
+Measured after the fact:
+
+- **`Q` redeployed and verified.** *Verify Pages publication* completed **success** on the
+  merge commit `2a9ff40`.
+- **`Gptgame` did not deploy at all**, and that is not a regression. Its `deploy` job is gated
+  behind `ios-safari`, which fails at *"Exercise Mobile Safari through Appium"* — **and fails
+  identically on `0aa981d`, the commit before this work.** Both runs have the exact same
+  shape: `test` success, `ios-safari` failure at the same step, `deploy` skipped. The gate is
+  doing its job; nothing was published, so nothing about the public surface changed. That
+  matches the repository's own record, which already carries
+  `ios_mobile_safari: prepared_not_executed`.
+- `Gptgame`'s *Project quality gates* passed on the merge commit, including the two steps this
+  work added to the workflow: `verify-continuity --selftest` and `check:kit`.
 
 `Cooky`'s trunk was settled by the user: push **both** `main` and the default branch
 `claude/roguelike-game-design-nrunz6`. They were the same SHA, so no divergence was created,
@@ -541,6 +570,10 @@ Every one of these has already cost a session.
   `Q/tools/floor-gates.mjs` did this — importing the old copy to compare against launched the
   real gate. Strip the CLI, or export the pure function, before comparing. Same family as the
   `capture.mjs` trap below.
+- **`survival`'s `main` refuses direct pushes; the other seven do not.** `GH013` — pull
+  request required, 3 required status checks. Do not read the older "no branch protection
+  anywhere" note as still true; it was measured before the ruleset existed, and it was only
+  ever true of `survival` at that moment. Check per repository, not once.
 - **Do not conclude the kit is unreachable because `add_repo` refuses it.** That was recorded
   on 2026-08-01 and is misleading: a session started with the kit in scope has it already
   cloned at `/home/user/kit` with a working `origin`, and `git push` to it **succeeds** —
