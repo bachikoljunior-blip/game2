@@ -40,8 +40,8 @@
  * collected. Do not report a stable noise floor here as evidence that a review verdict is
  * reproducible.
  *
- * Relationship to `kit`'s `lib/mobile/roundCompare.mjs` (branch
- * `claude/iphone-se3-auto-testing-bu73vn`, kit 0.3.x — not vendored here yet).
+ * Relationship to `.kit/lib/mobile/roundCompare.mjs` (vendored here since kit 0.4.0 landed on
+ * `main` on 2026-08-02; it still carries `DEFAULT_TOLERANCE = { relative: 0.25 }` unchanged).
  *
  * That module is the consumer of this file's output and the two do not overlap. It answers "is
  * this round worse than the last one" for a single pair of runs, and it carries
@@ -50,10 +50,11 @@
  * measured; this file measures what it should be. Its five refusals — self-comparison, a lost
  * metric, a vacuous comparison, a byte-identical copied report, a changed apparatus — are good
  * and are NOT re-implemented here; the checks below are the sixth one it does not have, which is
- * batch drift. When kit 0.3.x lands in this repository, the per-cell numbers written by
- * `--analyse` are what its tolerance should be read from. Do not copy that module into this
- * repository to make that link; this project has already paid once for a second copy of a
- * record.
+ * batch drift. The per-cell numbers written by `--analyse` are what its tolerance should be read
+ * from. Making that substitution is `kit`'s call and is deliberately not done from this
+ * repository — the vendored copy is a mirror of the kit and editing it here would fork it. Do
+ * not copy that module's logic into this file either; this project has already paid once for a
+ * second copy of a record.
  *
  *   node tools/variance.mjs --collect            # 4+4 captures, one frozen build, ~60 min
  *   node tools/variance.mjs --collect --runs=2   # shorter, for checking the apparatus itself
