@@ -7,7 +7,7 @@ Two tiers of automated phone testing, plus the comparison step that turns them i
 | Tier | What it proves | Where it lives here | Status |
 |---|---|---|---|
 | 1 — Playwright WebKit, ubuntu | 667×375 landscape, DPR 2, touch, Mobile Safari UA, layout, two-pointer play, soak, screenshot diff | `tools/test-iphone-webkit.mjs` | **still on a branch** — PR #8 and PR #9 both add it |
-| 2 — iPhone SE 3 simulator + Appium, macOS | the same paths in real iOS Safari with trusted multi-touch | `tools/test-ios-safari.mjs` | **still on a branch** — PR #8 (PR #9 drops it) |
+| 2 — iPhone SE 3 simulator + Appium, macOS | the same paths in real iOS Safari with trusted multi-touch | `tools/test-ios-safari.mjs` | **still on a branch** — both PRs add it; PR #8 runs it from `ios-safari-simulator.yml`, PR #9 from a second job inside `iphone-webkit.yml` |
 | 3 — round comparison | that this round is not **worse** than the last one | `.kit/tools/compare-round.mjs` + `iphone-se3-round.config.json`, run by `.github/workflows/iphone-se3-round.yml` | added on `main` |
 
 Tier 3 was added **without touching a single file either open PR changes**, so it merges with
@@ -26,6 +26,29 @@ Two things to know before picking one:
   `survival` both write `soak.maximumFrameGapMs`. Whichever lands, spelling it the way the
   other two repositories already do is one character of work now and a drift report later.
   The config declares both so the round works either way.
+
+## What the harness on both branches does not check
+
+Audited by listing the actual `check()` names in each branch's `tools/test-iphone-webkit.mjs`,
+against what `Gptgame` and `survival` already assert. Both PRs are identical on all four
+points, so this is a gap in the work, not a reason to prefer one branch:
+
+- **No layout assertion at all.** Neither branch checks `document.scrollWidth` against the
+  viewport, so horizontal page overflow on a 667 px screen passes. Both siblings check it.
+- **No 44 CSS px touch-target floor.** Every control could be 20 px and the gate stays green.
+  `Gptgame`, `survival` and Q's branch all check it; this is the same drift
+  `.kit/lib/mobile/device.mjs` was written to stop, and `touchTargetCheck` there is ready to
+  drop in.
+- **No saved-run restore.** `settings save and restore` is the only persistence check — it
+  covers the options screen, not a run. Both siblings save mid-play, reload, and assert the
+  player came back to the same position.
+- **No Mobile Safari user-agent assertion.** The user agent is read into the report and never
+  checked, so a run that silently fell back to Chromium still reports the phone surface.
+  `deviceChecks()` in the shared module covers all of this.
+
+Fixing these is a change to whichever harness lands, so it is deliberately not done here —
+this file records the finding rather than editing a file two open PRs are already fighting
+over.
 
 ## Running one round, once a harness is on `main`
 
