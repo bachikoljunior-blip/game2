@@ -1325,5 +1325,16 @@
    "titleSetDecision": "Three titles. Ghost of Tsushima and SEKIRO were already the project's stated bar and cover thirteen elements between them. Genshin Impact was added for exactly two elements — touch controls and the mobile performance envelope — because neither console title provides any evidence for a touchscreen or a phone, and leaving those elements without a reference would have meant the primary platform had no bar.",
    "notableScoping": "選択と結果 was deliberately scoped down to in-combat risk/reward and player-triggered escalation, because narrative branching is out of the stated concept. It is not silently dropped: a re-entry trigger is recorded."
   }
- ]
+ ],
+ "selectionAxes": {
+  "set": "user instruction, 2026-08-02",
+  "axes": [
+   "quality of that element in that work, judged on the element alone",
+   "expert and player reception",
+   "long-term reputation",
+   "fit to this concept"
+  ],
+  "notAnAxis": "Device class and production scale. A reference out of reach at this scale is a recorded shortfall, never grounds for a weaker one. This does NOT weaken what the concept itself says about platform: where the concept names a phone and a touchscreen, a reference for those elements must have them, and that is fitToConcept doing the work rather than device availability.",
+  "retiredField": "Each element still carries an `applicability` note from the earlier five-axis form. It is retained as description and is no longer an axis."
+ }
 }

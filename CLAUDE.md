@@ -171,8 +171,9 @@ title for each of the sixteen elements, why it was chosen, and the concrete crit
 becomes — *Ghost of Tsushima* for image, camera, movement, world, UI and audio; *SEKIRO* for
 combat, animation, AI and character legibility; *Genshin Impact* for the touch layer and the
 phone performance envelope, because neither console title says anything about a touchscreen.
-Read your element's entry before you change it, and take principles only: copying any
-reference's characters, world, layout, UI, staging or music is forbidden. The result must
+Read your element's entry before you change it. A reference is the bar this game is measured
+against, and copying its characters, world, layout, UI, staging or music **into the game** is
+forbidden — holding that material and comparing against it is what it is for. The result must
 read as one original game, not a seam of imitations.
 
 That file also records, honestly, that **only one of the sixteen elements has a working
