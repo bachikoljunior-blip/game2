@@ -55,5 +55,10 @@
   "remotePublicationStatus": "repository_verified_public_surface_unverified",
   "publishedMainSha": "e40a1884a57250391dd08bdf50dc2c6cb3837a36",
   "publishedUrl": "https://bachikoljunior-blip.github.io/game2/"
+ },
+ "work": {
+  "unit": "starts on the user's instruction, ends when a blind comparison the agent launched completes",
+  "unitsRequested": 1,
+  "note": "the user's dial. A number, or \"continuous\"."
  }
 }
