@@ -60,5 +60,6 @@
   "unit": "starts on the user's instruction, ends when a blind comparison the agent launched completes",
   "unitsRequested": 1,
   "note": "the user's dial. A number, or \"continuous\"."
- }
+ },
+ "procedureRetired20260803": "PROJECT_OPERATING_PROTOCOL.md, ROUND.md and IPHONE_SE3_ROUND.md moved to AI_DEVELOPMENT/ARCHIVE/PROCEDURE_2026-08-03/ by user instruction. CLAUDE.md is the whole standing instruction. ARCHITECTURE.md, CONSTRAINTS.md, HANDOFF.md and the checks behind npm run check are unaffected."
 }

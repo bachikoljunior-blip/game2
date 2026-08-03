@@ -1302,7 +1302,7 @@
  "conceptChangeProcedure": {
   "trigger": "The user changes any part of the concept.",
   "steps": [
-   "Record the new instruction verbatim in changeLog with its date, and update concept.statement, invariants or outOfConcept to match. The latest explicit user instruction wins (PROJECT_OPERATING_PROTOCOL.md §1).",
+   "Record the new instruction verbatim in changeLog with its date, and update concept.statement, invariants or outOfConcept to match. The latest explicit user instruction wins (CLAUDE.md).",
    "Update only the parts the change actually touches, plus everything downstream of them. Unchanged conditions stay exactly as they are.",
    "For each affected element, re-check whether its reference still fits the changed concept. Change the reference ONLY if it no longer fits — not because a different title is newly interesting.",
    "If a reference must change, the replacement must be at least as strong on the same five selection axes (element quality, expert and player reception, long-term reputation, fit to concept, applicability to this device and production scale). Record the reason.",

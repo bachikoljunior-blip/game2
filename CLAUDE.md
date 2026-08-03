@@ -106,10 +106,6 @@ reasoned, and the reasoning has to satisfy the criterion. It is written as reaso
 a measurement.** **Nothing is ruled permanently out of reach.**
 <!-- /ELEMENT-COMPARISON-RULES -->
 
-Read `PROJECT_OPERATING_PROTOCOL.md` before this file. The protocol is the newest
-project-wide authority; this file remains the standing KAGEROU product and visual-loop brief.
-Where older text below conflicts with the protocol, the protocol wins.
-
 ## Resuming — start here
 
 **Read `AI_DEVELOPMENT/INDEX.md` and its resume sequence, then `HANDOFF.md` and the

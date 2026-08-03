@@ -16,7 +16,7 @@
   "resumedFromSha": "6c4c0933240684ccb25907425d7507826edcc3fa"
  },
  "sourceOfTruth": {
-  "operatingProtocol": "PROJECT_OPERATING_PROTOCOL.md",
+  "operatingProtocol": "CLAUDE.md",
   "architecture": "ARCHITECTURE.md",
   "artReviewState": "HANDOFF.md",
   "artRoundProcedure": "ROUND.md",

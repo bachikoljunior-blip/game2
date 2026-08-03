@@ -5,13 +5,13 @@ visual-round measurements stay in `../HANDOFF.md`; they are referenced, not dupl
 
 ## Load order
 
-1. `../PROJECT_OPERATING_PROTOCOL.md`
+1. `../CLAUDE.md`
 2. `PROJECT_STATE.yaml` and `SESSION_STATE.yaml`
 3. `REQUIREMENTS.md`, `CONSTRAINTS.md`, `REFERENCE_BENCHMARKS.yaml`, and
    `ACCEPTANCE_CRITERIA.yaml`
 4. `ACTIVE_FRONTIER.yaml`, `TASK_GRAPH.yaml`, and relevant branches of `PLAN_TREE.yaml`
 5. Relevant `DECISIONS.md`, `FAILURES.md`, `TECHNICAL_DEBT.md`, handoffs, and evidence
-6. For an art round: `../HANDOFF.md`, `../README.md`, `../ROUND.md`, and
+6. For an art round: `../HANDOFF.md`, `../README.md`, `../CLAUDE.md`, and
    `../tools/CRITIC.md`
 7. Actual git state, source, runtime, and test results
 
@@ -19,7 +19,7 @@ visual-round measurements stay in `../HANDOFF.md`; they are referenced, not dupl
 
 | Category | Authoritative file |
 |---|---|
-| Operating rules and conflict order | `../PROJECT_OPERATING_PROTOCOL.md` |
+| Operating rules and conflict order | `../CLAUDE.md` |
 | Product architecture, owners, art/UX/performance contract | `../ARCHITECTURE.md` |
 | Current concise project state | `PROJECT_STATE.yaml` |
 | Active logical session and exact continuation point | `SESSION_STATE.yaml` |
@@ -33,7 +33,7 @@ visual-round measurements stay in `../HANDOFF.md`; they are referenced, not dupl
 | Known non-blocking liabilities | `TECHNICAL_DEBT.md` |
 | Detailed art-review state and disproved visual hypotheses | `../HANDOFF.md` |
 | Shared-kit rollout across all repositories, and what remains | `../KIT_ROLLOUT.md` |
-| Art-round procedure and number | `../ROUND.md` |
+| Art-round procedure and number | `../CLAUDE.md` |
 | Public verified status | `../README.md` |
 | Specialist contracts | `HANDOFFS/` |
 | Objective outputs | `EVIDENCE/`, `TEST_HISTORY/`, `BENCHMARKS/`, and tracked `../shots/*.json` |
