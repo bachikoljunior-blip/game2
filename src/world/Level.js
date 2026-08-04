@@ -37,10 +37,46 @@ import { makeRandom, clamp, lerp, noise } from '../core/Noise.js';
  * The whole shrine in one table, in plateau-local metres (+Z is the approach,
  * y = 0 is the plateau floor). Everything downstream — spawns, reverb zones,
  * encounters, the cinematic shots — is derived from these numbers.
+ *
+ * ## 立面のヒエラルキー — the vertical hierarchy, and why these numbers are what they are
+ *
+ * Round 17 filed `wide` as having no landmark hierarchy: "the honden roof, the two
+ * vermilion torii, the two pavilions and the bridge all read at roughly the same
+ * apparent height". That was arithmetically forced, and the arithmetic is worth
+ * recording because it is not the flat plateau the review guessed at.
+ *
+ * A hall's total height is `floor + wallH + 0.72 + rise` (see `PropFactory.hall`:
+ * `roofBase = floorY + wallH + 0.72`). Before this round the honden and the haiden
+ * came to **exactly 8.67 m each** — 1.95+2.80+0.72+3.20 and 1.15+3.30+0.72+3.50.
+ * The honden also stands *behind* the haiden, so from the `wide` eye (6, 821.5, 88)
+ * its roof cleared the haiden's roofline by (820.67−821.5)/92.5 − (820.67−821.5)/79.5
+ * = 0.00147 rad — **1.8 px of 1170**. The subject of the level was a two-pixel strip.
+ *
+ * Two consequences drive the numbers below.
+ *
+ * 1. **The honden cannot be the largest thing in frame and there is no point pretending
+ *    otherwise.** It is the furthest hall (92.5 m) and it is partly occluded by the
+ *    haiden (79.5 m). Matching the review's "1.6× the next-tallest man-made element"
+ *    literally, against a torii standing 20 m from the same eye, needs a 22.7 m honden.
+ *    What it *can* be given is the one property no other structure here has: a roof
+ *    that stands **above the camera horizon**, silhouetted against sky rather than
+ *    buried in the treeline. The `wide` eye is at 821.5 m ASL, so any roof above that
+ *    breaks the horizon. 14.62 m of honden puts its ridge at 826.62 — 5.12 m clear,
+ *    which is 66 px above the horizon line and 32 px clear of the great gate's kasagi,
+ *    so the ridge reads against sky rather than against the beam that crosses it.
+ *
+ * 2. **The dominant silhouette therefore has to be authored where the frame can carry
+ *    one**, and that is the middle gate at z = 54, 34 m out and unoccluded. At 10.0 m
+ *    its kasagi lands 0.5 m above the same horizon, it subtends 353 px against the
+ *    outer gate's 201 px (1.75×), and it frames the raised honden between its pillars
+ *    rather than crossing it: pillars at ±4.6 m read ±162 px, the honden's 10.8 m of
+ *    width reads ±70 px. It is deliberately *not* the innermost gate — `torii`, `sun`
+ *    and `hero` are all composed on that one, and `sun`'s disc clearance is fitted to
+ *    its shide and tassels at their current scale.
  */
 export const LAYOUT = {
   axis: 0,
-  honden: { x: 0, z: -4.5, w: 9.0, d: 9.0, floor: 1.95 },
+  honden: { x: 0, z: -4.5, w: 10.8, d: 9.8, floor: 2.20 },
   haiden: { x: 0, z: 8.5, w: 15.0, d: 11.0, floor: 1.15 },
   kagura: { x: -17.0, z: 12.0, w: 8.0, d: 8.0, floor: 0.95 },
   shamusho: { x: 18.0, z: 6.0, w: 9.0, d: 6.5, floor: 0.55 },
@@ -48,9 +84,13 @@ export const LAYOUT = {
   chozuya: { x: -14.5, z: 30.0 },
   /** The fight happens here. 26 × 20, flat, gravel. */
   arena: { x: 0, z: 26.0, hx: 13.0, hz: 10.0 },
+  // `span` is pillar centre to pillar centre and `PropFactory.torii` scales it by
+  // height/5 internally, so the gate stays in proportion when `height` moves; 4.6
+  // widens the great gate's own proportion on top of that, because a 大鳥居 is wider
+  // than tall and 3.6 would have left a 10 m gate only 7.2 m between its pillars.
   torii: [
     { z: 68.0, height: 3.35, span: 2.9 },
-    { z: 54.0, height: 4.20, span: 3.6 },
+    { z: 54.0, height: 10.00, span: 4.6 },
     { z: 38.5, height: 5.60, span: 4.8 },
   ],
   stairTop: 72.0,
@@ -582,13 +622,28 @@ export class Level {
     };
   }
 
+  /**
+   * 本殿 — the sanctuary, and the one roof in `wide` that stands against sky.
+   *
+   * 2.20 + 4.30 + 0.72 + 7.40 = **14.62 m**, against the haiden's unchanged 8.67.
+   * The extra height is deliberately *not* put in `floorY`: `hall` stands the platform
+   * on plain posts, and a 4 m post field under a shrine reads as scaffolding. It goes
+   * into the wall run and the roof, where a steep 檜皮葺 pitch belongs — 7.40 m of rise
+   * over the 5.40 + 2.05 m the roof spans is 45°, which is a shrine roof, not a spire.
+   *
+   * Same `segX`/`segZ`, but not free: `hall` derives its column count from `w / 2.4` and
+   * its bracket rows from `w / 1.55`, so the wider footprint buys them. Counted rather
+   * than assumed — `PropFactory.hall` at the old and new option sets returns 6,448 and
+   * 7,752 triangles, **+1,304**. The great gate really is free: `PropFactory.torii`
+   * returns 5,728 at 4.20 m and 5,728 at 10.00 m, because `height` only scales it.
+   */
   _hondenOpts() {
     const L = LAYOUT.honden;
     return {
       x: L.x, z: L.z, ry: 0,
       hall: {
-        width: L.w, depth: L.d, floorY: L.floor, wallH: 2.8,
-        veranda: 0.85, eaveOut: 1.85, rise: 3.2,
+        width: L.w, depth: L.d, floorY: L.floor, wallH: 4.30,
+        veranda: 0.95, eaveOut: 2.05, rise: 7.40,
         roofMaterial: 'cedar', soffitMaterial: 'cedar', wallMaterial: 'plaster',
         hip: 0.42, seed: 23, segX: 7, segZ: 5,
       },
@@ -600,8 +655,11 @@ export class Level {
     return {
       x: K.x, z: K.z, ry: Math.PI * 0.5,
       hall: {
+        // 瓦 rather than 檜皮 on both flanking pavilions, so 檜皮 is the sanctuary's
+        // own material and the honden roof is separable from its neighbours by value
+        // as well as by height — the review's second target on this finding.
         width: K.w, depth: K.d, floorY: K.floor, wallH: 2.5, open: true,
-        veranda: 0.7, eaveOut: 1.7, rise: 2.7, roofMaterial: 'cedar',
+        veranda: 0.7, eaveOut: 1.7, rise: 2.7, roofMaterial: 'roofTile',
         hip: 0.6, shrineRidge: false, seed: 31, segX: 6, segZ: 5,
       },
     };

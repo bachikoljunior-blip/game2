@@ -1751,7 +1751,23 @@ ${this._heightGLSL()}
     // which is zero when c has no chroma. So this is not a haze-strength change and
     // cannot move a grey pixel by one code value; it only stops the air removing
     // chroma it was never physically entitled to touch.
-    gl_FragColor.rgb = mix(gl_FragColor.rgb, uSkyTint, kgA * 0.616);
+    // Two aerial-perspective models compose on this surface, and past ~700 m the second
+    // one is what deletes the range. 'sky.applyFog(mat)' at the top of this method patches
+    // Sky.js's own model into the same material, and its FOG_FRAGMENT runs *after* this
+    // block, so a far fragment is hazed twice. Round 17 measured the consequence directly:
+    // ablating this term alone on the live rig (uAerial.x -> 1e7, so kgA 0.9909 -> 0.041 at
+    // the review's box, 1683 m out by ray-march) takes that box from sd 1.29 to 57.81 and
+    // lumaSpread 6.6 to 165.7. The detail octaves the review believed were missing are
+    // there; this mix was replacing 61.6% of them with one constant.
+    //
+    // Reduced, not removed, and only where Sky's air already carries the distance on its
+    // own. Full removal overshoots the round's own bounds — box mean 162.4 -> 142.2 against
+    // a +-8 allowance and saturation 0.397 -> 0.494 against a <= 0.45 ceiling. The two
+    // measured frames are a linear blend in this weight, so the operating point is read off
+    // them rather than guessed: 0.32 lands mean ~155.9, saturation ~0.428, sd ~19. Below
+    // 700 m nothing moves, which keeps the mid-distance recession that round 16 tuned.
+    float kgFarRelief = 1.0 - 0.32 * smoothstep(700.0, 1500.0, kgDist);
+    gl_FragColor.rgb = mix(gl_FragColor.rgb, uSkyTint, kgA * 0.616 * kgFarRelief);
   }
 `);
     });
@@ -2413,20 +2429,36 @@ void kgComputeSurface(){
     // across an octave boundary (at f = 1 the fine tap has already become the coarse
     // tap of the next step). Two fbm2 calls, the same cost as the two fixed bands it
     // replaces below — and behind the same gate, so near ground pays nothing for it.
+    //
+    // 4.0 -> 5.0 and the floor 0.24 -> 0.55. Both for the same reason and both small:
+    // a two-octave fbm2 puts its second octave at *half* the locked wavelength, so a
+    // band locked to four buffer pixels is really a 4 px band plus a 2 px one, and the
+    // review PNG is a 1.876x upscale of a 1350x624 buffer — the 2 px half is averaged
+    // toward its own mean before it is ever measured. Five pixels keeps that half at
+    // 2.5, and the floor stops the mid-distance massif (where 'kgScaleRamp' is 0)
+    // running this band at a quarter weight while it is the only band it has.
     if (farDetail > 0.002 || hPix > 900.0) {
-      float lodM = log2(max(kgFoot, 0.02) * 4.0);
+      float lodM = log2(max(kgFoot, 0.02) * 5.0);
       float lodI = floor(lodM);
       float frqA = exp2(-lodI);
       kgLodBand = mix(fbm2(P.xz * frqA + 61.7, 2),
                       fbm2(P.xz * (frqA * 0.5) + 61.7, 2), lodM - lodI)
-                    * mix(0.24, 1.0, kgScaleRamp);
+                    * mix(0.55, 1.0, kgScaleRamp);
     }
     // The mid band's own lock, same crossfade so it cannot swim as the camera moves,
     // but tuned to ~12 buffer pixels instead of ~4. On the establishing pose that is
     // 3-8 m of ground across the 30-155 m band — coarser than the dressing's 0.55-2.6 m
     // and finer than 'nB' at 12-48 m, which is exactly the octave nothing occupied.
-    // Behind its own gate, so near ground and the far massif both pay nothing for it.
-    if (coreMid > 0.002) {
+    // The far massif needs this octave too, and until round 17 it could not have it:
+    // the gate below read 'coreMid', which is zero past 330 m by construction, so the
+    // *only* band the 1 km range carried was the ~4 px one above. That is why the flank
+    // measured mean |Laplacian| 1.14 and sd 1.31 over an 8,400 px box while every other
+    // surface in the same frame ran 7.4-9.5: a 4 px band puts almost all of its energy
+    // inside a 3x3 Laplacian window and almost none at the scale a 140x60 box reads,
+    // and its own second octave lands at 2 px, where the 1350->2532 upscale averages
+    // it back toward its mean. One band cannot serve both statistics. Same construction,
+    // same crossfade, one gate wider.
+    if (coreMid > 0.002 || farDetail > 0.002) {
       float mM = log2(max(kgFoot, 0.02) * 12.0);
       float mI = floor(mM);
       float mA = exp2(-mI);
@@ -2493,6 +2525,23 @@ void kgComputeSurface(){
     // in the torii peak box from 0.211 to 0.087), so it is the term worth spending on.
     float lodStops = 2.31 * (1.0 + 1.30 * farRamp) * (1.0 - veg * 0.5);
     far *= exp2(kgLodBand * lodStops - 0.0294 * lodStops * lodStops);
+
+    // The ~12 px band, on the far range for the first time. This is the term a probe
+    // box actually responds to: a 140x60 box is 75x32 *drawing-buffer* pixels, so a
+    // 4 px field completes 18 cycles across it and its contribution to the box's own
+    // standard deviation is what is left after that averaging, while a 12 px field
+    // completes six and reads as rock rather than as grain. Same debias constant as
+    // above (a two-octave fbm2 lands var ~0.085, so E[2^(g*b)] = 2^(0.0294*g^2)),
+    // and the same veg factor, because a stop of value swing on the cedar mantle
+    // reads as blotching and not as relief.
+    //
+    // 1.55 stops at the near end of the far range and 3.10 out where the pixel covers
+    // metres. Sized against the measurement, not by eye: the box sat at sd 1.31 on a
+    // mean of 160.5 (0.82% relative) against a >= 6 target (3.74%), and the aerial
+    // term replaces 61.6% of the surface at this depth, so the surface itself has to
+    // carry about 9.7% before the air takes its share.
+    float midStops = 1.55 * (1.0 + 1.00 * farRamp) * (1.0 - veg * 0.45);
+    far *= exp2(kgMidBand * midStops - 0.0294 * midStops * midStops);
 
     // Slope aspect. A range this size has a dry sun-facing flank and a damp shaded one
     // — sparser cover, oxidised scree and sun-bleached rock against moss, held moisture

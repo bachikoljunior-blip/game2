@@ -4891,18 +4891,78 @@ export class PropFactory {
       // covered about 15% of the crown silhouette and read as a diseased tree
       // rather than one in bloom. Every branch from level 2 outward now flowers
       // along its length, and terminal twigs carry a cluster of clumps.
+      //
+      // Round 17 then measured the crown as "large flat petal cards with hard aliased
+      // edges ... all at one scale": every clump was `1.10 + rnd()*0.72`, a 1.65:1
+      // linear range, i.e. **2.7:1 in area**, which at the hero framing is a mass of
+      // 40–60 px polygons with nothing finer anywhere in it. A real crown is a size
+      // hierarchy — bunches, spurs, single florets — and it is the small end that
+      // makes the edge read as broken rather than cut.
+      //
+      // 1.42–1.94 / 0.72–1.06 / 0.30–0.50 spans **6.5:1 linear, 42:1 in area**. The
+      // big class is thinned from five clumps to two so the small ones land in real
+      // gaps instead of on top of an already-solid shell; total blossom *coverage* is
+      // held by the count, and the wood behind it becomes visible for the first time.
       if (leafy && level >= 1) {
-        const n = terminal ? 5 : 4;
-        for (let k = 0; k < n; k++) {
-          const t = 0.30 + 0.70 * ((k + rnd() * 0.9) / n);
+        // (scale, count on a terminal twig, count mid-branch, spread × len)
+        const CLASSES = terminal
+          ? [[1.68, 2, 0.16], [0.89, 4, 0.26], [0.40, 7, 0.46]]
+          : [[1.68, 2, 0.18], [0.89, 3, 0.30], [0.40, 5, 0.52]];
+        for (const [scale, n, spread] of CLASSES) {
+          for (let k = 0; k < n; k++) {
+            const t = 0.30 + 0.70 * ((k + rnd() * 0.9) / n);
+            const si = Math.min(segs, Math.max(0, Math.round(t * segs)));
+            const sp = samples[si];
+            const j = len * spread;
+            this._blossomCluster(
+              leaves,
+              sp.x + (rnd() - 0.5) * j, sp.y + (rnd() - 0.5) * j * 0.7, sp.z + (rnd() - 0.5) * j,
+              rnd, scale,
+            );
+          }
+        }
+      }
+
+      // 小枝 — the armature inside the crown.
+      //
+      // The recursion stops at `depth`, so the finest wood in the crown was the
+      // terminal branch itself and the blossom shell hid it: round 17 measured
+      // 2.39% of the crown mass as branch pixels and called it "no twigs, no
+      // branchlets ... the canopy floats as a cloud above a trunk". These are
+      // geometry, not recursion — three or four sprays off the last third of every
+      // terminal branch, at a quarter of its radius, on a four-sided profile.
+      //
+      // Counted, not assumed: `sacredTree({height:11, depth:5, seed:1861})` returns
+      // 3,741 triangles before this round and 7,388 after — the three blossom classes
+      // and these twigs together are **+3,647**, and the dead tree (leafy: false) takes
+      // +335 from the twigs alone. Against a 900k budget carrying 733k.
+      if (terminal && r >= 0.018) {
+        const nT = 3 + (rnd() < 0.5 ? 1 : 0);
+        for (let k = 0; k < nT; k++) {
+          const t = 0.34 + 0.62 * rnd();
           const si = Math.min(segs, Math.max(0, Math.round(t * segs)));
           const sp = samples[si];
-          const j = len * 0.16;
-          this._blossomCluster(
-            leaves,
-            sp.x + (rnd() - 0.5) * j, sp.y + (rnd() - 0.5) * j * 0.7, sp.z + (rnd() - 0.5) * j,
-            rnd,
-          );
+          const a = rnd() * Math.PI * 2;
+          const tilt = 0.55 + rnd() * 0.75;
+          const tl = len * (0.26 + rnd() * 0.26);
+          const tr = r * (0.30 + rnd() * 0.22);
+          let tx = vx + Math.cos(a) * tilt, ty = vy + 0.18, tz = vz + Math.sin(a) * tilt;
+          const tlen = Math.hypot(tx, ty, tz) || 1;
+          tx /= tlen; ty /= tlen; tz /= tlen;
+          const tw = [];
+          for (let i = 0; i <= 2; i++) {
+            const u = i / 2;
+            tw.push({
+              x: sp.x + tx * tl * u,
+              y: sp.y + (ty - 0.10 * u) * tl * u,
+              z: sp.z + tz * tl * u,
+              sx: tr * 2 * (1 - u * 0.62), sy: tr * 2 * (1 - u * 0.62),
+              ao: lerp(0.72, 1.0, u),
+            });
+          }
+          wood.push(sweepProfile(tw, circleProfile(4), {
+            smooth: true, uvScale: 1.1, capStart: false, capEnd: false,
+          }));
         }
       }
 
@@ -4984,8 +5044,10 @@ export class PropFactory {
    * shading rather than a value, adjacent quads in a clump overlap in normal
    * space, and the lit-to-shaded transition becomes continuous.
    */
-  _blossomCluster(out, cx, cy, cz, rnd) {
-    const s = 1.10 + rnd() * 0.72;
+  _blossomCluster(out, cx, cy, cz, rnd, scale = 1.46) {
+    // `scale` is the class centre; the ±16% keeps neighbours inside a class from
+    // sharing a silhouette. Classes are 1.68 / 0.89 / 0.40 — see `sacredTree`.
+    const s = scale * (0.845 + rnd() * 0.31);
     const rot = new Matrix4()
       .makeRotationY(rnd() * Math.PI * 2)
       .multiply(new Matrix4().makeRotationX((rnd() - 0.5) * 1.25))
