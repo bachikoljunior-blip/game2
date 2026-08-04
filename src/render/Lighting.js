@@ -20,7 +20,7 @@
 
 import {
   Color, DirectionalLight, HemisphereLight, MathUtils, Matrix4, PointLight,
-  ShaderChunk, Vector2, Vector3,
+  ShaderChunk, Vector2, Vector3, Vector4,
 } from 'three';
 
 const DEG2RAD = MathUtils.DEG2RAD;
@@ -122,9 +122,11 @@ const _standPos = new Vector3();
 const KAG_SHADOW_PARS = /* glsl */`
 #if defined( KAG_CSM ) && defined( USE_SHADOWMAP ) && ( NUM_DIR_LIGHT_SHADOWS > 0 )
 
-	uniform vec2  kagCascades[ KAG_CASCADES ];
+	// xy = this cascade's (near, far) view depth; zw = the cross-fade band width at each
+	// of those two splits. The bands are properties of the *split*, not of the cascade,
+	// which is what makes the weights a partition of unity — see kagCascadeWeight.
+	uniform vec4  kagCascades[ KAG_CASCADES ];
 	uniform vec2  kagShadowFade;
-	uniform float kagBlendFrac;
 	uniform float kagPcssSearch;
 	uniform float kagPcssScale;
 	uniform float kagPcssMax;
@@ -156,15 +158,17 @@ const KAG_SHADOW_PARS = /* glsl */`
 	}
 
 	/**
-	 * Cascade membership with a symmetric cross-fade band straddling each split, so the
-	 * two neighbouring cascades' weights always sum to 1 across the seam.
+	 * Cascade membership. Both neighbours of a split fade across the *same* two edges, so
+	 * wOut(i) + wIn(i+1) is identically 1 there and the sum over cascades is a partition
+	 * of unity. It used to derive the band from each cascade's own extent, which is not
+	 * the same width on the two sides of a split — see _computeSplits for the frame this
+	 * measurably brightened and darkened.
 	 */
-	float kagCascadeWeight( float d, vec2 sp, int idx ) {
-		float bw = max( ( sp.y - sp.x ) * kagBlendFrac, 0.02 );
+	float kagCascadeWeight( float d, vec4 sp, int idx ) {
 		float wIn = 1.0;
 		float wOut = 1.0;
-		if ( idx > 0 ) wIn = smoothstep( sp.x - bw * 0.5, sp.x + bw * 0.5, d );
-		if ( idx < KAG_CASCADES - 1 ) wOut = 1.0 - smoothstep( sp.y - bw * 0.5, sp.y + bw * 0.5, d );
+		if ( idx > 0 ) wIn = smoothstep( sp.x - sp.z * 0.5, sp.x + sp.z * 0.5, d );
+		if ( idx < KAG_CASCADES - 1 ) wOut = 1.0 - smoothstep( sp.y - sp.w * 0.5, sp.y + sp.w * 0.5, d );
 		return clamp( wIn * wOut, 0.0, 1.0 );
 	}
 
@@ -380,6 +384,7 @@ export class LightingSystem {
     this.ambientReport = { key: 0, probe: 0, hemi: 0, rim: 0, fill: 0 };
 
     this._splits = null;
+    this._band = null;
     this._sphereZ = null;
     this._sphereR = null;
     // Cached camera signature; compared numerically so frameShadows never allocates.
@@ -406,7 +411,7 @@ export class LightingSystem {
 
     this._materials = new Set();
     this._scanTimer = 0;
-    this._patchToken = 'kagcsm1-0';
+    this._patchToken = 'kagcsm2-0';
     this._onMaterialScan = (o) => this._scanObject(o);
 
     // Uniform objects are shared by reference with every patched material, so one
@@ -480,6 +485,10 @@ export class LightingSystem {
     this.csm.lights = this.cascadeLights;
 
     this._splits = new Float32Array(this.cascadeCount + 1);
+    // One band per *split*, so the two cascades either side of a split fade over the same
+    // interval. `band[0]` and `band[n]` stay 0: the outer edges of the outermost cascades
+    // are not seams and must not be padded.
+    this._band = new Float32Array(this.cascadeCount + 1);
     this._sphereZ = new Float32Array(this.cascadeCount);
     this._sphereR = new Float32Array(this.cascadeCount);
     this.csm.splits = this._splits;
@@ -489,9 +498,9 @@ export class LightingSystem {
     // array is ever shorter than KAG_CASCADES — one tier step down, before every
     // material has recompiled, or if an author's `customProgramCacheKey` has dropped
     // our token and a stale program gets reused — it reads past the end and throws
-    // inside the renderer. Padding costs three Vector2s and removes the whole class.
+    // inside the renderer. Padding costs three Vector4s and removes the whole class.
     const arr = [];
-    for (let i = 0; i < MAX_CASCADES; i++) arr.push(new Vector2(0, 1));
+    for (let i = 0; i < MAX_CASCADES; i++) arr.push(new Vector4(0, 1, 0.02, 0.02));
     this._u.kagCascades.value = arr;
     this._fitFov = -1;
 
@@ -551,7 +560,7 @@ export class LightingSystem {
     }
 
     // --- shader ---------------------------------------------------------------
-    this._patchToken = `kagcsm1-${this.cascadeCount}-${this.softShadows ? 1 : 0}-${this._pcfTaps()}`;
+    this._patchToken = `kagcsm2-${this.cascadeCount}-${this.softShadows ? 1 : 0}-${this._pcfTaps()}`;
     for (const m of this._materials) m.needsUpdate = true;
 
     this.frameShadows(this.ctx.camera);
@@ -592,7 +601,6 @@ export class LightingSystem {
 
       shader.uniforms.kagCascades = u.kagCascades;
       shader.uniforms.kagShadowFade = u.kagShadowFade;
-      shader.uniforms.kagBlendFrac = u.kagBlendFrac;
       shader.uniforms.kagPcssSearch = u.kagPcssSearch;
       shader.uniforms.kagPcssScale = u.kagPcssScale;
       shader.uniforms.kagPcssMax = u.kagPcssMax;
@@ -673,10 +681,27 @@ export class LightingSystem {
     const a2 = tanH * tanH + tanV * tanV;
     const blend = this._u.kagBlendFrac.value;
 
+    // The cross-fade band belongs to the split, not to the cascade, and getting that wrong
+    // is not a subtlety — it breaks energy conservation across a band several metres deep.
+    // The old code derived `bw` from each cascade's own extent, so at the single MEDIUM
+    // split the near cascade faded out over 1.69 m while the far cascade faded in over
+    // 6.69 m. Two smoothsteps of different width do not sum to 1. Measured on the phone
+    // review framing (2 cascades, splits 0.12 / 14.24 / 70 m, fov 46, aspect 2.164), the
+    // weights summed to **1.296 at 13.4 m and 0.702 at 15.1 m** — up to 30% too much key
+    // and then 30% too little, in a ~7 m deep band that crosses the plaza in every
+    // framing. Sizing the band off the *narrower* neighbour (so it can never run past
+    // either cascade's own coverage) and handing that one width to both sides makes the
+    // pair sum to exactly 1 at every depth.
+    const band = this._band;
+    band[0] = 0;
+    band[n] = 0;
+    for (let i = 1; i < n; i++) {
+      band[i] = Math.max(Math.min(s[i] - s[i - 1], s[i + 1] - s[i]) * blend, 0.02);
+    }
+
     for (let i = 0; i < n; i++) {
-      const bw = (s[i + 1] - s[i]) * blend * 0.5;
-      const cn = Math.max(near, s[i] - bw);
-      const cf = s[i + 1] + bw;
+      const cn = Math.max(near, s[i] - band[i] * 0.5);
+      const cf = s[i + 1] + band[i + 1] * 0.5;
 
       let zc = (cf + cn) * (a2 + 1) * 0.5;
       if (zc > cf) zc = cf;
@@ -685,7 +710,7 @@ export class LightingSystem {
 
       this._sphereZ[i] = zc;
       this._sphereR[i] = Math.max(rFar, rNear) * 1.02;
-      this._u.kagCascades.value[i].set(s[i], s[i + 1]);
+      this._u.kagCascades.value[i].set(s[i], s[i + 1], band[i], band[i + 1]);
     }
 
     // Fade the shadow contribution out before the last cascade's far edge so the
@@ -1226,7 +1251,7 @@ export class LightingSystem {
     for (const l of this.cascadeLights) l.castShadow = q.shadows;
 
     if (softChanged || distChanged) {
-      this._patchToken = `kagcsm1-${this.cascadeCount}-${this.softShadows ? 1 : 0}-${this._pcfTaps()}`;
+      this._patchToken = `kagcsm2-${this.cascadeCount}-${this.softShadows ? 1 : 0}-${this._pcfTaps()}`;
       for (const m of this._materials) m.needsUpdate = true;
       this._fitFov = -1;
     }
