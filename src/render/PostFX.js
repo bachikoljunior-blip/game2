@@ -997,6 +997,7 @@ uniform vec3 uGain;
 uniform float uContrast;
 uniform vec4 uFilmic;        // x = black point, y = white point, z = toe power, w = shoulder power
 uniform float uFilmicPivot;
+uniform vec2 uHiRolloff;     // x = knee, y = ceiling, both scene-linear post-exposure
 uniform float uVignette;
 uniform float uVignetteScale;
 uniform vec3 uVignetteTint;
@@ -1066,7 +1067,45 @@ vec3 rrtOdtFit(vec3 v) {
   vec3 b = v * (0.983729 * v + 0.432951) + 0.238081;
   return a / b;
 }
+/**
+ * Hue-preserving highlight rolloff, ahead of the fit.
+ *
+ * rrtOdtFit is a per-channel curve with ONE asymptote — it returns 1.0166 for every
+ * channel above about 26 — so a neutral clips to display white at 25.7 scene-linear and
+ * every colour brighter than that maps onto the same white regardless of its chroma.
+ * The transfer function is many-to-one up there, which is why nothing on the input side
+ * can recover the colour: round 16 costed a 53x cut of the disc's radiance from the sky
+ * side and got saturation 0.010, not 0.25, and filed the disc as unfixable from Sky.js.
+ * Measured at this composite's own tone-map input (a debug tap on the value handed to
+ * tonemap()), the sun disc arrives at MEASURED_INPUT — far past the point where the fit
+ * has any chroma left — while the sky 220 px beside it arrives at 1.42 linear and prints
+ * at saturation 0.344. The disc is not desaturated. It is clipped.
+ *
+ * So the radiance has to be brought back into the part of the curve that still separates
+ * channels, and a *scalar* multiply is the only way to do that without touching hue: it
+ * scales (max - min) and (G - B) by the same factor, so HSV hue is exactly invariant.
+ * The knee sits at 2.0 because the brightest thing in the review set that must not move
+ * is the valley sky control box at 2.07 linear (the sun one is at 1.42), and the
+ * exponential approach means everything below the knee is untouched *by construction* —
+ * hero's p99.9 highlight lives at 1.3 linear and is bit-identical through this branch.
+ * The ceiling is 3.2 because that is where the fit still returns a warm disc: at 3.2 the
+ * sun disc prints (251, 236, 189) against the (253, 253, 244) it printed clipped.
+ *
+ * Near-neutral highlights barely move at all — a lantern flame at 10.5 linear is
+ * (255, 255, 255) before and (255, 255, 254) after — because it is the chromatic
+ * highlights, and only those, that the fit was flattening.
+ */
+vec3 highlightRolloff(vec3 c) {
+  float k = uHiRolloff.x, cap = uHiRolloff.y;
+  float peak = max(c.r, max(c.g, c.b));
+  if (cap <= k || peak <= k) return c;
+  float span = cap - k;
+  // Asymptotic, C1 at the knee: f(k) = k, f'(k) = 1, f(inf) = ceil.
+  return c * ((k + span * (1.0 - exp(-(peak - k) / span))) / peak);
+}
+
 vec3 tonemap(vec3 c) {
+  c = highlightRolloff(c);
 #ifdef TONEMAP_NARKOWICZ
   // LOW tier / clipped-LDR fallback: the cheap fit, three fewer matrix multiplies.
   c *= 0.6;
@@ -1538,6 +1577,11 @@ export class PostFX {
     // more gently than it did, rather than being pushed into white.
     this.filmicShoulder = 1.20;
     this.filmicPivot = 0.44;
+    // Hue-preserving highlight rolloff, in scene-linear light ahead of the fit — the
+    // derivation is on `highlightRolloff` in FRAG_COMPOSITE. Set the ceiling at or below
+    // the knee to ablate the pass to an exact identity.
+    this.hiRolloffKnee = 2.0;
+    this.hiRolloffCeiling = 3.2;
     this.vignette = 0.42;
     this.grain = 0.028;
     this.sharpen = 0.55;
@@ -2236,6 +2280,7 @@ export class PostFX {
       uContrast: { value: this.contrast },
       uFilmic: { value: new Vector4(this.filmicBlack, this.filmicWhite, this.filmicToe, this.filmicShoulder) },
       uFilmicPivot: { value: this.filmicPivot },
+      uHiRolloff: { value: new Vector2(this.hiRolloffKnee, this.hiRolloffCeiling) },
       uVignette: { value: this.vignette },
       uVignetteScale: { value: 1.15 },
       uVignetteTint: { value: new Color(0.72, 0.80, 0.95) },
@@ -3353,6 +3398,7 @@ export class PostFX {
     u.uContrast.value = this.contrast;
     u.uFilmic.value.set(this.filmicBlack, this.filmicWhite, this.filmicToe, this.filmicShoulder);
     u.uFilmicPivot.value = this.filmicPivot;
+    u.uHiRolloff.value.set(this.hiRolloffKnee, this.hiRolloffCeiling);
     u.uVignette.value = this.vignette;
     u.uSharpen.value = this.sharpen;
     u.uTime.value = this._time;
