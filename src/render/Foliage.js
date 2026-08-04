@@ -530,6 +530,9 @@ uniform float uGrain;
 uniform float uBroad;
 uniform float uTintAmount;
 uniform vec3  uWarmFill;
+#ifdef KAG_AERIAL
+uniform vec4  uAerial;     // x,y = range over which it blends in; z = desaturation; w = gain
+#endif
 
 varying float vKagFade;
 varying float vKagT;
@@ -651,6 +654,35 @@ const FRAGMENT_SSS = /* glsl */`
   // wrap factor the direct lighting uses so it can only ever add where the sun does not
   // reach.
   outgoingLight += diffuseColor.rgb * uWarmFill * ( 1.0 - wrap );
+
+#ifdef KAG_AERIAL
+  // The distant LOD's own depth response. Opt-in, and only the mid-ground bamboo band
+  // declares it.
+  //
+  // This is NOT a second fog integral and must never become one — Sky.js owns aerial
+  // perspective and every material in this file already goes through applyFog(). What it
+  // is: at 150-280 m one of these cards is 20-40 px of a stand several hundred culms deep,
+  // and the eye is integrating multiple scattering between culms, not one card's own
+  // terminator. Rendering it as a single lit cutout is what makes the band read as a wall
+  // of stamps at full local contrast.
+  //
+  // Sized from the frame, not from taste. On phone-valley-r17.png the band box
+  // (220,200,300x200) reads sRGB 80.6, 77.6, 46.9 = luma 76.02 at saturation 0.417 against
+  // sky (220,120,300x50) at 167.04 / 0.552. Those are post-ACES: inverting the curve puts
+  // the band at scene-linear 0.079 and the sky at 0.58, and since the fog colour Sky
+  // uploads at magic hour is ~0.31 linear, a band at 0.079 total bounds the fog opacity
+  // there at f < 0.25 however dark the band's own radiance is — i.e. the 91-luma step is
+  // not a missing fog term, it is a band that leaves this shader at a twentieth of the
+  // sky's radiance. Reaching the critic's 105 luma needs scene-linear 0.115, +46%, which
+  // is uAerial.w; the saturation target (0.417 -> 0.30) is uAerial.z.
+  {
+    float aerD = distance( cameraPosition, vKagWorld );
+    float aer = smoothstep( uAerial.x, uAerial.y, aerD );
+    float aerL = dot( outgoingLight, vec3( 0.2126, 0.7152, 0.0722 ) );
+    vec3 aerC = mix( outgoingLight, vec3( aerL ), uAerial.z ) * uAerial.w;
+    outgoingLight = mix( outgoingLight, aerC, aer );
+  }
+#endif
 }
 `;
 
@@ -798,11 +830,21 @@ function buildBambooPlantGeometry(sides, internodes, sprays, seed = 0x8B0011) {
     prev = ring;
   }
 
-  // Leaf sprays along the upper third and a little below it — a real culm leafs out over
-  // its top 40-50%, and a tuft on the end of a bare pole is a palm, not bamboo. Successive
-  // sprays step round by the golden angle so the crown has an outline instead of stacking
-  // into a bottle-brush, and the attachment radius grows with height.
-  const leafFrom = 0.54;
+  // Leaf sprays over the upper *two thirds* — a real culm leafs out over its top 40-50%,
+  // and a tuft on the end of a bare pole is a palm, not bamboo. Successive sprays step
+  // round by the golden angle so the crown has an outline instead of stacking into a
+  // bottle-brush, and the attachment radius grows with height.
+  //
+  // 0.54 was measured to fail its own intent in frame. On `phone-valley-r17.png` the
+  // culm zone above the band (x1250-1900, y0-250) carries occluders over 10.21% of the
+  // box at mean RGB 123.5, 88.6, 46.2 — khaki, not leaf — and only 0.4% of those pixels
+  // are green-dominant; the leaf-coloured fraction of the full box by ninth reads
+  // 0 / 0.1 / 0 / 0 / 0.1 / 8.0 / 48.2 / 76.5 / 81.6, i.e. every green pixel in it belongs
+  // to the far band and none to the near culms. Eight sprays over the top 46% of a culm
+  // whose visible length is ~300 px leaves the sprays 40 px apart with bare stem between,
+  // which is exactly the "dark pole with a tuft at the extreme tip" the review filed.
+  // Reaching to 0.30 and carrying more of them is what closes a crown.
+  const leafFrom = 0.30;
   for (let i = 0; i < sprays; i++) {
     const f = i / Math.max(1, sprays - 1);
     const t = leafFrom + f * (1.0 - leafFrom) + (rnd() - 0.5) * 0.03;
@@ -814,8 +856,10 @@ function buildBambooPlantGeometry(sides, internodes, sprays, seed = 0x8B0011) {
     const ax = lean * t * t + dx * branch, az = lean * t * t * 0.35 + dz * branch;
     const ay = t + (rnd() - 0.5) * 0.02;
 
-    // Card size as a fraction of height. A 12 m culm carries sprays about 1.5 m across.
-    const s = (0.105 + rnd() * 0.055) * (0.62 + t * 0.55);
+    // Card size as a fraction of height. A 12 m culm carries sprays about 1.5-2.2 m across;
+    // the lower ones on a mature culm are the biggest, which is why the profile below still
+    // grows with `t` but from a base 19% wider than the round-16 value.
+    const s = (0.125 + rnd() * 0.065) * (0.62 + t * 0.55);
     // paintBambooLeaves hangs its branch from about (0.24, 0.78) of the cell, so shift the
     // card until that point lands on the attachment rather than the card's centre.
     const hw = s * 0.5, hh = s * 0.5;
@@ -1505,7 +1549,21 @@ function drawLeafShape(g, len, wid, colA, colB, veins) {
   }
 }
 
-/** Grass clump silhouette for the far LOD card. */
+/**
+ * Grass clump silhouette for the far LOD card — grass LOD2 and the basin's far cover.
+ *
+ * The root stop is the one number in here that decides whether the layer reads as a plant
+ * or as dirt shadow. Deterministic A/B on the round-17 review build (engine stopped, grain
+ * phase re-seeded, `far-cover` hidden) puts that layer at 5.62% of the critic's `wide` box
+ * with a mean of sRGB 25.0, 25.6, 27.3 — luma 25.6, BLUE-leading — against the rest of the
+ * box at 49.7, 42.9, 41.9. Blue-leading is the tell: at 30-45 m Sky's near-air term is
+ * about 9% opacity over a fog colour near linear 0.3, and the card's own radiance was so
+ * low (root stop 30,44,24 = linear 0.012, 0.027, 0.008, then averaged over the whole card
+ * by the mip chain) that the haze was contributing several times more than the plant. A
+ * card cannot be tinted out of that — KAG_TINT_MODULATE divides the instance tint by its
+ * own luminance, so `shade` here is a pure hue rotation — so the value has to come from
+ * the sheet.
+ */
 function paintGrassClump(size, palette) {
   const c = newCanvas(size, size);
   const g = c.getContext('2d');
@@ -1519,7 +1577,12 @@ function paintGrassClump(size, palette) {
     const lean = (rnd() - 0.5) * size * 0.30;
     const col = palette[(rnd() * palette.length) | 0];
     const grad = g.createLinearGradient(x, size, x + lean, size - h);
-    grad.addColorStop(0, 'rgba(30,44,24,1)');
+    // 30,44,24 -> 62,92,46: still the darkest thing on the sheet and still G-leading by
+    // more than R and B (which is what makes an ambient-lit card come out green under a
+    // key that cannot), but 2.9x the linear radiance, so the near-air haze is a haze over
+    // a plant rather than the plant's dominant light path. The stop at 0.35 is unchanged,
+    // so the blade's own value ramp is untouched above the root.
+    grad.addColorStop(0, 'rgba(62,92,46,1)');
     grad.addColorStop(0.35, col);
     grad.addColorStop(1, col);
     g.fillStyle = grad;
@@ -2643,7 +2706,18 @@ function paintGroundDetail(size) {
  * the instance buffers only care when a tile actually crosses a band.
  */
 const GRASS_LOD_BAND = [0.34, 0.66, 1.0];
-/** Blades (or clump cards) per square metre at `grassDensity` 1.0. */
+/**
+ * Blades (or clump cards) per square metre at `grassDensity` 1.0.
+ *
+ * LOD2 stays at 0.85, and that is a round-17 result rather than an omission. Raising it was
+ * the obvious answer to "the near plain is bare" and it is measurably the wrong layer:
+ * a deterministic A/B over the critic's own `wide` box (engine stopped, grain phase
+ * re-seeded, one mesh hidden) attributes 5.62% of that box to `far-cover` and 0.07% to
+ * `grass-l2` — where 0.07% is the rig's own noise floor, because hiding `ferns` returns the
+ * same 0.07% to three decimal places. The ring is camera-centred and 34 m across at MEDIUM;
+ * the box is 23-45 m out. Density added here would have been paid for in triangles and
+ * would not have drawn a pixel of the finding.
+ */
 const GRASS_LOD_DENSITY = [18.0, 7.0, 0.85];
 /** Per-LOD (height, width) multiplier — coarser LODs grow to keep the same visual mass. */
 const GRASS_LOD_SIZE = [[1.0, 1.0], [1.15, 1.6], [2.0, 24.0]];
@@ -2689,7 +2763,10 @@ const RANGE = {
   // Round 8 raised the ground *shading* past target in both (valley detail 7.57 -> 10.3,
   // wide mid-ground 4.78 -> 6.12) and the frames were still called a uniform plane, which
   // is the expected outcome: shading cannot put a plant where none is instanced.
-  farCover: [28, 118],
+  // The near edge is authored in `_buildFarCover`'s fade window (18 m), not here: this
+  // pair is the *scatter* range and the pack cut, and the layer now deliberately overlaps
+  // the camera-centred grass ring rather than starting where the ring stops.
+  farCover: [18, 118],
 };
 
 const AUTUMN_A = new Color(0x4e6b3c);
@@ -2961,8 +3038,33 @@ export class FoliageSystem {
     if (w <= 0) return 0;
     // Rejecting form: `y < level` is false for NaN and would plant into the stream.
     if (!(y >= WORLD.WATER_LEVEL + 0.35)) return 0;
+    w *= this._coverAt(x, z);
     w *= 1 - smoothstep(0.34, 0.78, this._slopeAt(x, z));
     return clamp(w, 0, 1);
+  }
+
+  /**
+   * The splat's own continuous turf weight, as a density *modulation* — never as a cut.
+   *
+   * `Terrain.coverAt()` was published for this file and, until round 17, nothing called
+   * it. Terrain's own note says why it exists: `surfaceAt` collapses five continuous
+   * weights to one of five names, 83.9% of the plateau the establishing frame sees comes
+   * back as the single name 'grass', and the weight underneath that name is mean 0.613,
+   * sd 0.260, p10 0.039 against p90 0.888. Reading the name alone plants a 23:1 density
+   * range at one flat density — which is exactly the "uniform stochastic scatter, no
+   * clumping, no drift" read, and it is also why the bare parts stay bare when the global
+   * count is raised: raising a flat density raises it everywhere including the swept-looking
+   * ground, and the eye reads the *variance*, not the mean.
+   *
+   * Mapped so cover 0 keeps 0.45 (there is always some scrub) and cover 1 gives 1.45, which
+   * holds the mean at 1.02 of the old flat value over Terrain's measured distribution —
+   * this redistributes density, it does not thin the field. Falls back to 1 if the accessor
+   * or the splat is missing, so nothing depends on Terrain having baked yet.
+   */
+  _coverAt(x, z) {
+    const c = this.ctx.terrain?.coverAt?.(x, z);
+    if (!finite(c)) return 1;
+    return 0.45 + c * 1.0;
   }
 
   // ------------------------------------------------------------------ textures
@@ -3060,6 +3162,9 @@ export class FoliageSystem {
       fadeNear = [-2, -1], fadeFar = [30, 34], size = [1, 1],
       sss = 1.0, sssColor = 0xb8d07a, sssFloor = 0, sssSat = 0.6,
       warmFill = null,
+      // [nearD, farD, desaturation, gain] — the distant LOD's depth response, off unless a
+      // material asks for it. See FRAGMENT_SSS's KAG_AERIAL block.
+      aerial = null,
       tipGlow = 0.16, baseAO = 0.34,
       grain = 0.16, broad = 0.08, sink = false, atlas = null,
       side = DoubleSide, depthWrite = true, tintAmount = 0.85,
@@ -3103,6 +3208,10 @@ export class FoliageSystem {
       // has not been measured. See FRAGMENT_SSS.
       uWarmFill: { value: warmFill ? new Color(warmFill[0], warmFill[1], warmFill[2]) : new Color(0, 0, 0) },
     };
+    // Declared only when asked for: the block that reads it is behind KAG_AERIAL, and an
+    // unused uniform on a material whose program never declares it is exactly the dead
+    // upload round 16 found on the impostor.
+    if (aerial) local.uAerial = { value: new Vector4(aerial[0], aerial[1], aerial[2], aerial[3]) };
     mat.userData.kag = local;
 
     const shared = this.uniforms;
@@ -3129,14 +3238,22 @@ export class FoliageSystem {
           'kagFoliageVertex();\n' + (atlas ? KAG_ATLAS_UV : '') + 'vec3 objectNormal = kagNrmG;')
         .replace('#include <begin_vertex>', 'vec3 transformed = kagPosG;');
 
+      // The `defines` block above is spliced into the VERTEX shader only. KAG_AERIAL is
+      // read in the fragment stage, so it has to be declared there in its own right — an
+      // #ifdef whose define lives in the other stage is silently always-false, which is
+      // the same class of failure as the atlas uniform that compiled out.
       shader.fragmentShader = shader.fragmentShader
-        .replace('#include <common>', '#include <common>\n' + glslNoise + FRAGMENT_PARS)
+        .replace('#include <common>', '#include <common>\n' +
+          (aerial ? '#define KAG_AERIAL\n' : '') + glslNoise + FRAGMENT_PARS)
         .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\n' + FRAGMENT_DITHER)
         .replace('#include <map_fragment>', '#include <map_fragment>\n' + FRAGMENT_TINT)
         .replace('#include <lights_fragment_begin>', '#include <lights_fragment_begin>\n' + FRAGMENT_SHADOW_CAPTURE)
         .replace('#include <envmap_fragment>', FRAGMENT_SSS + '\n#include <envmap_fragment>');
     });
-    chainCacheKey(mat, `kagfol|${mode}|${bendExp}|${whip}|${sink ? 's' : '-'}|${atlasKey(atlas)}|${tintModulate ? 'm' : 'a'}`);
+    // `aerial` is in the key for the reason atlasKey is: two materials that differ only by
+    // a define are indistinguishable to three's program cache, and which one you get then
+    // depends on which compiled first.
+    chainCacheKey(mat, `kagfol|${mode}|${bendExp}|${whip}|${sink ? 's' : '-'}|${atlasKey(atlas)}|${tintModulate ? 'm' : 'a'}|${aerial ? 'ae' : '-'}`);
 
     this.ctx.sky?.applyFog?.(mat);
     this._materials.push(mat);
@@ -3557,7 +3674,11 @@ export class FoliageSystem {
     const hi = q.tier >= 2;
     // One geometry for the whole near plant. Culm and sprays scale together — the
     // scatterer sets width = height so canonical space stays isotropic.
-    const plant = buildBambooPlantGeometry(hi ? 6 : 4, hi ? 13 : 8, hi ? 13 : 8);
+    // Sprays up from 13/8 to 20/15. The culm tube is 128 triangles at MEDIUM and each
+    // spray is two crossed quads = 4, so this is 160 -> 188 triangles per plant: the near
+    // band is a few hundred instances inside a 46 m window, and the crown is the whole
+    // reason the near bamboo is drawn at all.
+    const plant = buildBambooPlantGeometry(hi ? 6 : 4, hi ? 13 : 8, hi ? 20 : 15);
     const card = buildCrossCard(2, 1.0, false, 0.55);
     this._geometries.push(plant, card);
 
@@ -3580,7 +3701,17 @@ export class FoliageSystem {
       // only tints the light coming *through* it. Pulled back from the old leaf-only 1.05
       // because the same term now also lands on the opaque bark strip, and a culm that
       // transmits is a culm that silhouettes brighter than the sky behind it.
-      sss: 0.80, sssColor: 0x5cc233, sssFloor: 0.22, sssSat: 0.88,
+      //
+      // sssSat to 1.0 and the floor to 0.38, measured. `trans = mix(1, sssColor, sssSat) *
+      // uSunColor`, and the key is (1.0, 0.412, 0.134): at 0.88 the transmitted light left
+      // this material at linear g/r 1.13, which is green-dominant by a hair and does not
+      // survive the tone map. In `valley` the near culms stand backlit against the sky with
+      // `forward` near 1 — the one place in the build where transmission is the whole
+      // lighting model — and they measured 0.4% green-dominant pixels against a 25% target.
+      // At sssSat 1.0 the tint is the leaf's own filter (linear g/r 4.85) and the product
+      // with the key is 2.00 rather than 1.13. The floor is what stops that being gated
+      // back to nothing by a dark albedo (see FRAGMENT_SSS).
+      sss: 1.05, sssColor: 0x5cc233, sssFloor: 0.38, sssSat: 1.0,
       // baseAO down from the old culm's 0.28: the sheet now paints its own base-to-tip
       // value ramp, and stacking a second one on top of it drove the lower half of every
       // culm toward black at exactly the distance the culm has to stay readable.
@@ -3634,6 +3765,11 @@ export class FoliageSystem {
       // with 0x3fb520 it is 3.3. That is the only light path on this card that can be
       // green-dominant at all — everything else is albedo times an amber key.
       size: [1, 1], sss: 1.15, sssColor: 0x3fb520, sssFloor: 0.34, sssSat: 1.0,
+      // The band's depth response — see the KAG_AERIAL block in FRAGMENT_SSS for the
+      // derivation and for why this is not a second fog term. Zero inside 70 m (which is
+      // where `valley`'s near ground control box sits, and it must not move), full by
+      // 190 m, 0.62 desaturation and a 1.46 gain.
+      aerial: [70, 190, 0.62, 1.46],
       // `broad` up from 0.20. This is `fbm2(worldXZ * 0.26)`, i.e. ~24 m features — about
       // 145 px across in the `wide` framing at the band's own range, which is the scale a
       // grove is actually patchy at. It was the only value variation in the band that
@@ -3893,7 +4029,23 @@ export class FoliageSystem {
       // Keep the height hierarchy without 30 m outliers. Those outliers exposed one sparse
       // stamp above the shared crown line; the only pixels left visible were its leaf tips,
       // which is how a connected card became detached bars after depth compositing.
-      const h = (7.0 + 9.0 * rF) * spec.hScale * (0.82 + rnd() * 0.36);
+      //
+      // THE FLAT TOP. Height used to be `distance grade x archetype x an INDEPENDENT
+      // +/-18% per card`. A dense band's skyline is the *maximum* over the cards behind
+      // each column, and the maximum of many independent draws from a narrow distribution
+      // concentrates hard: measured on `phone-valley-r17.png`, the sky/canopy boundary
+      // across x200-2300 has a standard deviation of 52.0 px on a band 404 px deep (12.9%)
+      // and ZERO emergent crowns rising more than 25% above their local mean. Per-card
+      // jitter cannot fix that however wide it is made — independence is the defect.
+      //
+      // `stand` is a ~38 m correlated field, so neighbouring cards agree and whole stands
+      // rise and fall together; `emergent` is the 5.5% of culms that overtop a real grove.
+      // Its mean is held at 1.02 of the old value (0.70 + 0.62/2 = 1.01, times 1.039 for
+      // the emergent tail) so this is silhouette, not a taller band.
+      const stand = clamp(noise.fbm2(x * 0.026 + 61.7, z * 0.026 - 22.1, 3) * 0.5 + 0.5, 0, 1);
+      const emergent = rnd() < 0.055 ? 1.45 + rnd() * 0.45 : 1.0;
+      const h = (7.0 + 9.0 * rF) * spec.hScale
+        * (0.70 + stand * 0.62) * (0.86 + rnd() * 0.28) * emergent;
       const green = 0.45 + rnd() * 0.62;
       // Authored against GREEN_RATIO (line 1139), which this member was failing. The tint
       // is applied luminance-normalised, so only the *ratio* matters: the old form sat at
@@ -4816,7 +4968,6 @@ ${WIND_GLSL}
     const density = q.grassDensity || 0;
     if (density <= 0) { this._farCover = null; return; }
 
-    const near = RANGE.farCover[0];
     const far = RANGE.farCover[1];
     const geo = buildCrossCard(2, 1.0, false, 1.0);
     this._geometries.push(geo);
@@ -4827,14 +4978,36 @@ ${WIND_GLSL}
       // `broad` is what keeps value inside the silhouette once the fine grain has mipped
       // away, exactly as on grass LOD2, whose alphaTest this shares for the same reason.
       bendExp: 2.0, bendGain: 0.50, flutter: 0.45, alphaTest: 0.34,
-      fadeNear: [near, near * 1.30], fadeFar: [far * 0.86, far],
+      // THE SEAM. `wide` composes its plain at 23-45 m from its own eye (camera 9.5 m over
+      // the plateau, box rows y820-1000 at 14.4-22.4 degrees of depression, widened by
+      // 1/cos of up to 33.7 degrees of azimuth). The grass ring is camera-centred and ends
+      // at grassRadius = 34 m; this layer used to fade IN over [28, 36.4]. So the far half
+      // of that box was covered by a layer at 0-100% of its strength and the near half by
+      // the ring's outermost LOD at 0.47 cards/m2, and the band where they were supposed to
+      // hand over is exactly where the review measured bare dirt with 2.03% dark specks on
+      // it. Fading in from 18 puts this layer at full strength by 20.7 m, i.e. *inside* the
+      // ring's outer LOD, so the two overlap instead of meeting.
+      fadeNear: [18, 18 * 1.15], fadeFar: [far * 0.86, far],
       size: [1, 1], sink: true,
       sss: 1.0, sssColor: 0xc2d884, sssFloor: 0.50,
-      tipGlow: 0.18, baseAO: 0.36, grain: 0.16, broad: 0.22,
+      // baseAO 0.36 -> 0.20. At a 13-degree sun half of these cards face away from the key
+      // and are lit by the cool #4a6b8f fill and nothing else; the review measured that
+      // population at mean RGB 12.4, 15.7, 19.8 against lit ground at 76.0, 60.4, 53.7 —
+      // "a cool near-black speck four times darker than the surface it sits on". An AO term
+      // that removes another 36% of the only light those fragments get is most of the way
+      // to black before the tone map sees them.
+      tipGlow: 0.18, baseAO: 0.20, grain: 0.16, broad: 0.22,
     };
     const mat = this._makeMaterial(opts);
 
-    const target = Math.round(6500 * clamp(0.6 + density * 0.8, 0.6, 1.5));
+    // 6 500 -> 10 500, which is the smaller half of the change. Deterministic A/B puts this
+    // layer at 5.62% of the critic's `wide` box today; the fade window above is worth about
+    // 1.8x of that on its own (most of the box sits inside the old 28-36.4 m fade-in), the
+    // card area below 1.82x, and this 1.6x — the three multiply, against a 12% target from
+    // 5.62%. The card is four triangles and shares one draw call however many there are, so
+    // the cost is submitted triangles only: 10 920 at MEDIUM, of which `_packOne` was
+    // keeping 79% in range at the `wide` pose, is about 34 500 against 21 340 before.
+    const target = Math.round(10500 * clamp(0.6 + density * 0.8, 0.6, 1.5));
     const a = new Float32Array(target * 4);
     const b = new Float32Array(target * 4);
     const c = new Float32Array(target * 4);
@@ -4873,6 +5046,11 @@ ${WIND_GLSL}
         case 'dirt': w = 0.85; break;
         default: w = 1.0;
       }
+      // The splat's own turf weight, as a modulation — see `_coverAt`. Without it this
+      // scatter is flat inside every named surface, and a flat scatter is what the review
+      // reads as litter: raising the count alone thickens the litter everywhere instead of
+      // massing it where the ground says cover belongs.
+      w *= this._coverAt(x, z);
       if (w <= 0.02 || rnd() > w) continue;
 
       const y = this._plantY(x, z, _plant);
@@ -4890,8 +5068,18 @@ ${WIND_GLSL}
       a[o] = x; a[o + 1] = y; a[o + 2] = z; a[o + 3] = rnd() * Math.PI * 2;
       // Tussock scale: tall enough to break the ground plane at a 6-10 degree grazing
       // angle, short enough that it never silhouettes against the far ridge.
-      b[o] = 0.55 + rnd() * 0.75;                       // height, metres
-      b[o + 1] = 1.05 + rnd() * 1.30;                   // width, metres
+      //
+      // Up from 0.55-1.30 x 1.05-2.35. The dark-component census of the review frame is
+      // the reason: over the critic's own box the vegetation islands run area p10 8 px,
+      // p50 13 px, p90 69 px with a median bounding box of 5 x 6 px, i.e. the layer is
+      // not one stamp (that spread is 8.6:1) — it is a field of things too small to read
+      // as plants at all. Screen area goes as width x height: mean height 0.925 -> 1.346 m
+      // (the 0.72 power has mean 1/1.72, i.e. it skews toward the taller end without moving
+      // either end of the range) and mean width 1.70 -> 2.125 m, so 1.82x the area per card
+      // — silhouette rather than uniform bulk, and the top of the range is unchanged so
+      // nothing here can start silhouetting against the far ridge that did not before.
+      b[o] = 0.62 + Math.pow(rnd(), 0.72) * 1.25;       // height, metres
+      b[o + 1] = 1.25 + rnd() * 1.75;                   // width, metres
       b[o + 2] = 0.55 + rnd() * 0.45;                   // limp, like grass
       b[o + 3] = rnd();
       c[o] = col.r * shade; c[o + 1] = col.g * shade; c[o + 2] = col.b * shade;
@@ -5302,9 +5490,12 @@ vCanopyG = cg;
     if (this._farCover) {
       // The near edge tracks the ring it hands off from, so a tier that shrinks the ring
       // does not open a bare annulus between the two layers.
+      // Overlapping, not abutting: see the fadeNear note in _buildFarCover. The near edge
+      // is held at 18 or below so this layer is at full strength inside the ring's outer
+      // LOD rather than fading in exactly where the ring is fading out.
       const k = this._farCover.mat.userData.kag;
-      const near = Math.min(RANGE.farCover[0], Math.max(16, radius * 0.82));
-      k.uFadeNear.value.set(near, near * 1.30);
+      const near = Math.min(18, Math.max(12, radius * 0.55));
+      k.uFadeNear.value.set(near, near * 1.15);
       k.uFadeFar.value.set(RANGE.farCover[1] * 0.86, RANGE.farCover[1]);
     }
     if (this._canopy) this._canopy.mesh.visible = q.tier > 0;
