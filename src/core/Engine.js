@@ -18,6 +18,7 @@ export class Engine {
     this.systems = [];
     this.running = false;
     this.paused = false;
+    this.contextLost = false;
     this.timeScale = 1;
     this._targetTimeScale = 1;
     this.elapsed = 0;
@@ -86,10 +87,21 @@ export class Engine {
 
     canvas.addEventListener('webglcontextlost', (e) => {
       e.preventDefault();
-      this.running = false;
+      this.contextLost = true;
+      this._resumeAfterContextLoss = this.running;
+      this.stop();
       this.onContextLost?.();
     });
-    canvas.addEventListener('webglcontextrestored', () => { this.onContextRestored?.(); });
+    canvas.addEventListener('webglcontextrestored', () => {
+      this.contextLost = false;
+      this._auditedPrograms = false;
+      this.resize();
+      for (const system of this.systems) system.onContextRestored?.();
+      if (!this.systems.includes(this.pipeline)) this.pipeline?.onContextRestored?.();
+      this.onContextRestored?.();
+      if (this._resumeAfterContextLoss) this.start();
+      this._resumeAfterContextLoss = false;
+    });
 
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) this.clock.getDelta();   // swallow the gap

@@ -1764,6 +1764,11 @@ export class SkySystem {
 
   // ------------------------------------------------------------- environment
 
+  onContextRestored() {
+    // The CPU texture objects survive context loss; their rendered pixels do not.
+    this._renderEnvironment(true);
+  }
+
   /** Cube-render the dome, PMREM it, and hand it to the scene. Never per frame. */
   _renderEnvironment(force = false) {
     if (!this._cubeCamera || !this._pmrem) return;

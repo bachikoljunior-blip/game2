@@ -30,6 +30,7 @@ const HINTS = [
   ['C', '受'],
   ['Q', '敵'],
   ['E', '技'],
+  ['F', '調べる'],
   ['ESC', '休'],
 ];
 
@@ -156,24 +157,20 @@ export class TouchControls {
     // shrink a 56 px target into something a thumb cannot hit.
     const D = Math.max(56, 62 * s);
     const HIT = Math.max(72, 78 * s);
-    // The arc radius is chosen so 29° of separation puts ≥ HIT px between
-    // adjacent centres — the four hit zones must never overlap, or Input's
-    // last-registered-wins resolution would steal presses from guard.
-    const arcR = Math.max(HIT / 0.506 + 6, 150 * s);
-
-    const ax = mirror ? safe.left + 40 * s : w - safe.right - 40 * s;
-    const ay = h - safe.bottom - 34 * s;
+    // Input uses rectangles, not circles. A chord-length check on the old arc
+    // left neighbouring hit rectangles overlapping and outside the OS margin.
+    const gap = HIT + 8;
+    const ax = mirror ? safe.left + HIT * 0.5 + 16 : w - safe.right - HIT * 0.5 - 16;
+    const ay = h - safe.bottom - HIT * 0.5 - 16;
+    const arcX = [2, 2, 1, 0];
+    const arcY = [0, 1, 1.6, 2];
 
     for (let i = 0; i < this.buttons.length; i++) {
       const b = this.buttons[i];
-      const a = mirror ? Math.PI - b.angle : b.angle;
       b.r = D * 0.5;
       b.hit = HIT * 0.5;
-      b.cx = ax + Math.cos(a) * arcR;
-      b.cy = ay + Math.sin(a) * arcR;
-      // Never let a seal escape the safe area on a narrow device.
-      b.cx = Math.min(Math.max(b.cx, safe.left + b.r + 4), w - safe.right - b.r - 4);
-      b.cy = Math.min(Math.max(b.cy, safe.top + b.r + 4), h - safe.bottom - b.r - 4);
+      b.cx = ax + (mirror ? 1 : -1) * arcX[i] * gap;
+      b.cy = ay - arcY[i] * gap;
       b.rect.x = b.cx - b.hit;
       b.rect.y = b.cy - b.hit;
       b.rect.w = b.hit * 2;

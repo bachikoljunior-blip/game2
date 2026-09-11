@@ -1713,6 +1713,14 @@ export class PostFX {
     if (this._ready || this._quadMesh) this._buildTargets(nw, nh);
   }
 
+  onContextRestored() {
+    if (!this._ready) return;
+    this._frame = 0;
+    // Rebuild even at unchanged size: temporal, focus and exposure buffers lost
+    // their contents. _buildTargets preserves the exported depth texture object.
+    this._buildTargets(this._w, this._h);
+  }
+
   dispose() {
     this._disposeTargets();
     this._disposeMaterials();

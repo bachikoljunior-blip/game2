@@ -335,14 +335,14 @@ export class Menus {
 
     // Discreet touch-only pause seal, always in the corner opposite the HUD's
     // objective column (which mirrors with the left-handed layout).
-    const seal = Math.max(34, 34 * s);
+    const seal = Math.max(48, 48 * s);
     const mirror = this.settings.leftHanded;
     this._pauseZoneRect.w = seal + 16;
     this._pauseZoneRect.h = seal + 16;
     this._pauseZoneRect.x = mirror
-      ? this.w - this.safe.right - seal - 8 * s - 8
-      : this.safe.left + 8 * s;
-    this._pauseZoneRect.y = this.safe.top + 8 * s;
+      ? this.w - this.safe.right - this._pauseZoneRect.w - 16
+      : this.safe.left + 16;
+    this._pauseZoneRect.y = this.safe.top + 16;
     this._sealSize = seal;
   }
 
@@ -451,7 +451,7 @@ export class Menus {
     const c = this.ctx;
     if (c.engine) c.engine.paused = flag;
     if (c.input) {
-      c.input.enabled = !flag;
+      c.input.enabled = !flag && !c.engine?.contextLost;
       if (flag) c.input.releaseAll?.();
     }
     c.audio?.setPaused?.(flag);
@@ -618,6 +618,7 @@ export class Menus {
     g.globalAlpha = 1;
 
     if (this._title >= 0) this._advanceIntro(rd);
+    if (hud?.hidden) return;
     if (this._introWash > 0.004 || this._titleA > 0.004) this._drawIntro(g);
     if (this._pauseZoneVisible) this._drawPauseSeal(g);
     if (this._open > 0.004) this._drawPanel(rd, g);

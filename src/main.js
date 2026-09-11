@@ -75,7 +75,20 @@ async function boot() {
     wind: { direction: { x: 0.82, z: 0.57 }, strength: 0.45, gust: 0, time: 0 },
     debug: new URLSearchParams(location.search).has('debug'),
   };
-  window.__kagerou = ctx;
+  const inspectionMode = import.meta.env.DEV || ctx.debug || engine.captureMode;
+  if (inspectionMode) window.__kagerou = ctx;
+  let begun = false;
+  engine.onContextLost = () => {
+    ctx.input.releaseAll();
+    ctx.input.enabled = false;
+    canvas.dataset.state = 'recovering';
+  };
+  engine.onContextRestored = () => {
+    ctx.input.releaseAll();
+    ctx.input.enabled = begun && !engine.paused && ctx.player?.isAlive !== false &&
+      (!ctx.menus || ctx.menus.mode === 'none');
+    if (begun) canvas.dataset.state = 'running';
+  };
 
   // Landscape is the intended framing; portrait phones get the rotate veil.
   if (ctx.quality.device.isMobile) document.body.classList.add('needs-landscape');
@@ -187,7 +200,7 @@ async function boot() {
   applyHandedness();
   ctx.bus.on('settings-changed', applyHandedness);
 
-  installCinematic(ctx);
+  if (inspectionMode) installCinematic(ctx);
 
   engine.resize();
   setProgress(1, 'ready');
@@ -204,11 +217,14 @@ async function boot() {
   if (statusEl) statusEl.textContent = 'ready';
 
   const begin = async () => {
+    if (begun) return;
+    begun = true;
     startEl?.removeEventListener('click', begin);
     bootEl?.classList.add('hidden');
     await ctx.audio?.unlock?.();
     ctx.menus?.onGameStart?.();
     engine.start();
+    canvas.dataset.state = 'running';
     // Autoplay-safe: the first user gesture is also our audio unlock.
     if (ctx.quality.device.isMobile && document.documentElement.requestFullscreen) {
       document.documentElement.requestFullscreen?.().catch(() => {});
@@ -224,7 +240,7 @@ async function boot() {
 
   // Expose a tiny harness the screenshot rig drives.
   window.__kagerouReady = true;
-  window.__kagerouStart = begin;
+  if (inspectionMode) window.__kagerouStart = begin;
 
   return ctx;
 }

@@ -361,6 +361,11 @@ export class HUD {
     this._objLife = 0;
     this._objIn = 0;
     this._objDirty = false;
+    this._interaction = null;
+    this._interactionDrawn = null;
+    this._interactionTouch = false;
+    this._interactionWidth = 0;
+    this._interactionRect = { x: 0, y: 0, w: 0, h: 80 };
 
     // Damage-direction marks (fixed pool: angle, life, strength).
     this._marks = new Float32Array(8 * 3);
@@ -412,6 +417,11 @@ export class HUD {
     this.touch = new TouchControls(this.ctx, this);
     this.ctx.touch = this.touch;
     await this.touch.init();
+    const offInteract = this.ctx.input?.registerZone?.('interact', () => (
+      !this.hidden && this.ctx.input.enabled && this._interaction
+        ? this._interactionRect : null
+    ));
+    if (offInteract) this._bound.push(offInteract);
 
     this._listen();
     this.resize(this.w, this.h);
@@ -966,6 +976,7 @@ export class HUD {
       this._drawStamp();
       this._drawObjective();
       this._drawParry();
+      this._drawInteraction();
       g.globalAlpha = 1;
     }
 
@@ -978,6 +989,82 @@ export class HUD {
   }
 
   // --------------------------------------------------------------- 1. health
+
+  _interactionObstacle(i) {
+    const buttons = this.touch?.buttons;
+    return buttons && i < buttons.length ? buttons[i].rect : this.ctx.menus?._pauseZoneRect;
+  }
+
+  _placeInteraction() {
+    const r = this._interactionRect;
+    r.w = Math.min(240, this.w * 0.34);
+    r.x = (this.w - r.w) * 0.5;
+    const preferred = Math.max(this.safe.top + 88, this.h * 0.34);
+    const buttons = this.touch?.buttons || [];
+    let bestY = -1, bestDistance = Infinity;
+    // Consider the intended position and each actual hit-zone boundary. This
+    // also handles handedness and notches; a fixed percentage overlaps Dodge
+    // on 568px screens. Leave a visible 8px gutter around neighboring controls.
+    for (let i = -2; i <= buttons.length * 2 + 1; i++) {
+      let y = i === -2 ? preferred : this.safe.top + 16;
+      if (i >= 0) {
+        const b = this._interactionObstacle(i >> 1);
+        if (!b || b.w <= 0 || b.h <= 0) continue;
+        y = (i & 1) ? b.y + b.h + 8 : b.y - r.h - 8;
+      }
+      if (y < this.safe.top + 16 || y + r.h > this.h - this.safe.bottom - 16) continue;
+      let clear = true;
+      for (let j = 0; j <= buttons.length; j++) {
+        const b = this._interactionObstacle(j);
+        if (b && b.w > 0 && b.h > 0 && r.x < b.x + b.w + 8 && r.x + r.w + 8 > b.x &&
+            y < b.y + b.h + 8 && y + r.h + 8 > b.y) { clear = false; break; }
+      }
+      const distance = Math.abs(y - preferred);
+      if (clear && distance < bestDistance) { bestY = y; bestDistance = distance; }
+    }
+    if (bestY < 0) return false;
+    r.y = bestY;
+    return true;
+  }
+
+  _drawInteraction() {
+    const player = this.ctx.player;
+    const available = this.ctx.input?.enabled && !this.ctx.engine?.paused && player?.isAlive;
+    const item = available ? this.ctx.level?.nearestInteractable?.(player.position) : null;
+    this._interaction = item;
+    if (!item || !this._placeInteraction()) { this._interaction = null; return; }
+    const r = this._interactionRect;
+    const touch = this.ctx.input?.usingTouch || this.ctx.quality?.device?.isMobile;
+    if (this._interactionDrawn !== item || this._interactionTouch !== touch || this._interactionWidth !== r.w) {
+      this._interactionDrawn = item;
+      this._interactionTouch = touch;
+      this._interactionWidth = r.w;
+      this._sprites.interaction = Ink.sprite(r.w, r.h, this.dpr, (g, w, h) => {
+        g.fillStyle = 'rgba(20,17,16,0.90)';
+        g.fillRect(0, 0, w, h);
+        g.strokeStyle = 'rgba(242,227,207,0.65)';
+        g.strokeRect(1, 1, w - 2, h - 2);
+        g.fillStyle = PALETTE.bone;
+        g.textAlign = 'center';
+        g.textBaseline = 'middle';
+        g.font = `600 16px ${FONT_JP}`;
+        g.fillText(`${touch ? '調' : 'F'}  ${item.prompt}`, w * 0.5, 21, w - 18);
+        g.font = `14px ${FONT_JP}`;
+        g.fillStyle = 'rgba(242,227,207,0.85)';
+        const text = item.consequence || '近づいて、調べる';
+        let line = '', row = 0;
+        for (const ch of text) {
+          if (line && g.measureText(line + ch).width > w - 20) {
+            g.fillText(line, w * 0.5, 45 + row * 18);
+            row++; line = '';
+          }
+          line += ch;
+        }
+        if (row < 2) g.fillText(line, w * 0.5, 45 + row * 18);
+      });
+    }
+    Ink.blit(this.g, this._sprites.interaction, r.x, r.y, 1);
+  }
 
   _drawHealth() {
     const g = this.g, s = this.s, v = this.v, sp = this._sprites;
