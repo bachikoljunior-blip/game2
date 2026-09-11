@@ -223,8 +223,10 @@ async function boot() {
     bootEl?.classList.add('hidden');
     await ctx.audio?.unlock?.();
     ctx.menus?.onGameStart?.();
+    ctx.input.releaseAll();
+    ctx.input.enabled = !engine.contextLost && !engine.paused && ctx.player?.isAlive !== false;
     engine.start();
-    canvas.dataset.state = 'running';
+    canvas.dataset.state = engine.contextLost ? 'recovering' : 'running';
     // Autoplay-safe: the first user gesture is also our audio unlock.
     if (ctx.quality.device.isMobile && document.documentElement.requestFullscreen) {
       document.documentElement.requestFullscreen?.().catch(() => {});

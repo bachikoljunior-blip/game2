@@ -204,6 +204,7 @@ export class Engine {
   }
 
   start() {
+    if (this.contextLost) { this._resumeAfterContextLoss = true; return; }
     if (this.running) return;
     this.running = true;
     this.clock.start();
