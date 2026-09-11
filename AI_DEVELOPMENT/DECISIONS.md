@@ -239,3 +239,18 @@ Two limits on this decision, stated so they are not quietly lost:
   the variance of "the judgement itself", and the frames are only the first of its two arms.
   How much a critic's verdict moves on one unchanged set is a separate arm that nobody has
   collected, and a stable rig must not be reported as a reproducible verdict.
+
+## 2026-09-11 — Resume against existing criteria
+
+The latest user instruction resumes production until the recorded game2 criteria pass,
+replacing the earlier stop at Round 16. Main was inspected at 4e6d23a. Source/runtime
+facts override stale state: TD-010 is already resolved; TD-011, combat callback/timing,
+foot planting, camera collision and progression contracts need repair. Measured gameplay
+findings route only to player, world, anim, enemy and combat; root owns UI/core/integration.
+Audio, materials, sky, postfx, foliage, physics and FX are not dispatched in this gameplay
+pass because no fresh evidence requests changes there. The available agents use the current
+Codex model; the repository's legacy opus/haiku identifiers are not available here.
+
+The local shell cannot start installed Chromium (SIGTRAP); Cloud Browser reaches the public
+release but cannot create a WebGL context. Prepare GitHub Actions with contents:read to run
+the existing capture apparatus without modifying its gates. This is not phone evidence.

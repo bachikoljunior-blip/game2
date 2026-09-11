@@ -54,11 +54,10 @@
   old one unfit.
 - Never weaken a criterion to make the current implementation pass.
 
-## Completed actionable objective
+## Current actionable objective — 2026-09-11
 
-Rounds 13 and 14 were executed from published `main` `51f1807` with coherent phone/MEDIUM
-captures, verified apparatus, source-blind hostile reviews, bounded evidence-backed repair
-sets, and post-fix remeasurement. PR #6 was merged at `4a3eff7`; the public GitHub Pages
-surface loaded current `index-D_EFhYS4.js` and reached ready/running with zero page, console,
-request, or HTTP errors. No further product round is authorized; await a new user instruction
-without beginning Round 15.
+The user explicitly resumed game2 production until the established criteria are achieved,
+with no arbitrary round-count stop. This supersedes the historical Round 16 stopping
+instruction. Preserve completed work and the existing thresholds. A passing focused fix is
+an incremental checkpoint; it does not imply reference quality, real-device performance,
+or human acceptance. Continue the highest-value unblocked task.

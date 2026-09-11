@@ -1,0 +1,59 @@
+name: Game2 criteria evidence
+
+on:
+  push:
+    branches: ['codex/game2-criteria-*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: game2-criteria-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [baseline, candidate]
+    steps:
+      - uses: actions/checkout@v4
+      - run: git fetch origin 4e6d23a40af33bb3ba409b3826e77666262ce353 --depth=1
+      - name: Select unchanged baseline
+        if: matrix.variant == 'baseline'
+        run: |
+          git checkout --detach 4e6d23a40af33bb3ba409b3826e77666262ce353
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - name: Focused behavioral regressions
+        if: matrix.variant == 'candidate'
+        run: node --test tools/check-*-r17.mjs
+      - run: npx playwright install --with-deps chromium
+      - name: Measure the five fixed phone framings
+        run: |
+          node tools/capture.mjs --review --profile=phone --tag=ci-${{ matrix.variant }}
+          node tools/contact-sheet.mjs --tag=ci-${{ matrix.variant }}
+          node tools/gate-capture-report.mjs --tag=ci-${{ matrix.variant }} --profile=phone
+      - name: Measure interaction criteria at the required sample size
+        if: always() && !cancelled()
+        run: node tools/interaction-capture.mjs --tag=ci-${{ matrix.variant }} --encounters=20 --no-pixels
+      - name: Preserve measurements and native visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: game2-${{ matrix.variant }}-${{ github.sha }}
+          path: |
+            shots/report*.json
+            shots/*ci-${{ matrix.variant }}*
+            shots/interaction-ci-${{ matrix.variant }}/
+            AI_DEVELOPMENT/EVIDENCE/r17-*.md
+          if-no-files-found: error
+          retention-days: 14

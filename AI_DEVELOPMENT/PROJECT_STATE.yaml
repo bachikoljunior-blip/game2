@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "updatedAt": "2026-08-01T12:55:00Z",
+ "updatedAt": "2026-09-11T12:55:00Z",
  "status": "active",
  "project": {
   "name": "KAGEROU 陽炎",
@@ -8,12 +8,12 @@
   "objective": "Continue the mobile-first third-person Japanese sword-action game toward its established visual and interaction bar without external runtime assets or AI APIs.",
   "defaultBranch": "main",
   "defaultBranchVerifiedSha": "4a3eff701af0f6db52f5b780247e38422d40aad6",
-  "workingBranch": "claude/kagerou-benchmark-verification-7fb2zd",
-  "workingBranchBaseSha": "72187ac",
+  "workingBranch": "codex/game2-criteria-20260911",
+  "workingBranchBaseSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
   "previousWorkingBranch": "claude/game-reference-benchmark-qh0v0q",
   "workingBranchPublicationSha": "b2a7433de7ff72082287d6b5429ca8af54a8642b",
-  "resumedFromRef": "origin/claude/kagerou-round9-measurement-inj5qq",
-  "resumedFromSha": "6c4c0933240684ccb25907425d7507826edcc3fa"
+  "resumedFromRef": "origin/main",
+  "resumedFromSha": "4e6d23a40af33bb3ba409b3826e77666262ce353"
  },
  "sourceOfTruth": {
   "operatingProtocol": "PROJECT_OPERATING_PROTOCOL.md",
@@ -107,7 +107,7 @@
   ],
   "criteria": "62 total: 21 verified, 4 under review, 14 blocked, 23 proposed. Nine of the verified now carry a runtime or frame measurement; the rest remain source audits. One previously-verified criterion (BM-EXPLORE-02) was withdrawn when the rig showed its authored responses are unreachable in play.",
   "headlineGap": "TEN of 16 elements now carry at least one executed runtime or frame measurement, against ONE before 2026-08-01. That is coverage, not quality: the first interaction run returned 9 failures, including no foot locking (25.9 cm/frame planted drift against 2 cm), enemy attacks damaging 17 ms after first visible motion against their own 140 ms reaction floor, rim separation below the rig's floor on 4 of 8 archetype placements, and ~194 ms of JS per frame with three enemies against a 5 ms budget.",
-  "structuralBlocker": "Replaced. 'interaction-capture does not exist' is resolved. The new bound is TD-010: the physics narrow-phase cost makes the >=20-encounter combat samples unaffordable, which is why E01-COMBAT and E14-AI are the last two elements on source audit alone.",
+  "structuralBlocker": "TD-010 is resolved. The current Work shell cannot start Chromium (SIGTRAP) and Cloud Browser reports no WebGL context. A read-only GitHub Actions evidence workflow is prepared. Physical-device and human benchmark gates still require actual measurements.",
   "neverPerformed": [
    "Any side-by-side against real reference-title footage. Not fetched, not available, not claimed anywhere.",
    "Any real-device frame-rate, thermal, or boot measurement. SwiftShader capture is not phone evidence.",
@@ -115,10 +115,10 @@
   ]
  },
  "currentWork": {
-  "activeTask": null,
-  "lastCompletedTask": "BENCH-APPARATUS — interaction-capture built, self-validated, run, and recorded.",
-  "nextTask": "PHYS-NARROWPHASE (ready) then INTERACT-INTENT (ready); BENCH-COMBAT-SAMPLE is blocked behind PHYS-NARROWPHASE.",
-  "nextStartingPoint": "PHYS-NARROWPHASE is the highest-value ready work by a wide margin: it is simultaneously the largest phone-target risk found so far and the thing bounding the review rig's own combat coverage. Begin at Physics._closestToMesh and the AABB handed to bvh.overlapAABB from _charStep; the CPU profile naming the exact path is in AI_DEVELOPMENT/EVIDENCE/interaction-i1.md. Explain the candidate-set size before optimising anything.",
+  "activeTask": "R17-GAMEPLAY — integrated repair checkpoint; eight focused test files pass; browser CI pending",
+  "lastCompletedTask": "Round 16 / physics narrowphase; see HANDOFF.md and runtime evidence, not stale Round 15 summary.",
+  "nextTask": "R17-GAMEPLAY",
+  "nextStartingPoint": "Repair demonstrated interaction, combat, camera, animation and progression defects; execute the unchanged gates through CI where WebGL is available.",
   "blockedBy": [],
   "remoteStateChangeAuthorized": true,
   "remotePolicy": "Across future sessions, push verified checkpoints, integrate them into main, and publish GitHub Pages without asking again. This remains active until the user changes it."
