@@ -14,7 +14,7 @@
   "lastSuccessfulAction": "Inspected 3633597 CI 34640487523: five-frame technical PASS, 20 encounters with posture resolution 21/30 = 70%, 18 attack onsets >=233 ms; 300 rendered frames preserved and independently reviewed.",
   "currentFailingAction": "Incoming attack coverage failed: 32 startup / 6 active frames, zero enemy-attributable reactions. Black ribbons, primitive characters and combat occlusion remain; three interaction criteria are inconclusive.",
   "currentHypothesis": "Immediate approach moved inside spear minimum range before its active window. Holding position may allow an incoming hit. Black ribbons need stopped-frame god-ray/FX/trail/alpha-particle ablation; the previous god-ray cause was not established.",
-  "nextAction": "Publish apparatus-only [motion-retry] [diagnose] checkpoint using the 3633597 control. Inspect preflight.json and diagnostic.json/PNGs; repair the proven owner, then rerun full rendered evidence and independent review before integrating the checkpoint.",
+  "nextAction": "5cc1897 CI 34653295642 failed before runtime because the shallow motion checkout lacked the combat regression baseline. Publish the prerequisite-fetch correction, then inspect preflight.json and diagnostic.json/PNGs. See r17-diagnostic-progress.md; no diagnostic pixels or new runtime passes exist yet.",
   "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
   "pendingVerification": [
    "Stationary opening rehearsal and an incoming reaction in the actual 300-frame sample.",
@@ -41,7 +41,7 @@
   ],
   "remotePushPendingAuthorization": false,
   "remoteReleaseAuthorized": true,
-  "remotePublicationStatus": "3633597 is published on PR #10; CI 34640487523 completed with a motion-coverage failure and successful evidence job. New apparatus checkpoint awaits publication. main remains 4e6d23a.",
+  "remotePublicationStatus": "5cc1897 is published on PR #10. CI 34653295642 failed in preparation; the workflow prerequisite correction awaits publication. Game source/control stays 3633597. main remains 4e6d23a.",
   "publishedMainSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
   "publishedUrl": "https://bachikoljunior-blip.github.io/game2/",
   "continuationAutomation": {
