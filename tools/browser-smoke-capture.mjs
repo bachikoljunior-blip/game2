@@ -18,6 +18,7 @@ import { waitForBoot } from '../.kit/lib/browser/boot.mjs';
 import { attachPageDiagnostics } from '../.kit/lib/browser/diagnostics.mjs';
 import { acquireLock, releaseOnExit } from '../.kit/lib/browser/lock.mjs';
 import { decodePNG } from '../.kit/lib/image/png.mjs';
+import { loadImage, regionStats, measureLuma, cut } from '../.kit/lib/image/measure.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
@@ -36,8 +37,9 @@ const report = {
   scope: 'Built dist served locally; fresh production and capture contexts; native viewport PNGs.',
   limits: ['Software rendering is not device performance evidence.',
     'Functional pixel checks are not a human visual review or reference-title comparison.'],
-  stages: [], errors: [],
+  stages: [], errors: [], staticResponses: [],
 };
+let activeStage = null, activeContext = 'startup', lossExperimentPhase = 'none';
 
 function gitText(args) {
   try { return execFileSync('git', args, { cwd: ROOT, encoding: 'utf8',
@@ -66,6 +68,7 @@ function check(stage, name, passed, evidence = null) {
 async function stage(name, run) {
   const result = { name, status: 'FAIL', checks: [], screenshots: [] };
   report.stages.push(result);
+  activeStage = name;
   const start = Date.now();
   console.log(`[browser-smoke] ${name}`);
   const progress = setInterval(() => {
@@ -79,17 +82,66 @@ async function stage(name, run) {
     clearInterval(progress);
     result.seconds = (Date.now() - start) / 1000;
     writeFileSync(REPORT, JSON.stringify(report, null, 2) + '\n');
+    activeStage = null;
   }
   return result;
 }
 
+function classifyGLMessage(text, phase) {
+  const lossNotice = /^(?:THREE\.WebGLRenderer:\s*Context Lost\.?|(?:WebGL:\s*)?CONTEXT_LOST(?:_WEBGL)?:\s*(?:loseContext:\s*)?context lost\.?)$/i.test(text);
+  // Only the loss notification itself belongs to the experiment. An invalid
+  // delete/draw/allocation during the same interval remains a product fault.
+  if (lossNotice && ['losing', 'lost', 'restoring'].includes(phase)) return 'expected-context-loss';
+  const fault = /\b(?:GL_)?(?:INVALID_(?:ENUM|VALUE|OPERATION|FRAMEBUFFER_OPERATION)|OUT_OF_MEMORY|CONTEXT_LOST(?:_WEBGL)?|STACK_(?:OVERFLOW|UNDERFLOW))\b/i;
+  return lossNotice || fault.test(text) ? 'gl-error' : null;
+}
+
 function observe(page) {
-  const diagnostic = attachPageDiagnostics(page, { consoleTypes: ['error'] });
-  const warnings = [];
-  page.on('console', (message) => { if (message.type() === 'warning') warnings.push(message.text()); });
-  return () => ({ counts: diagnostic.summary(), consoleErrors: [...diagnostic.consoleErrors],
-    pageErrors: [...diagnostic.pageErrors], requestFailures: [...diagnostic.requestFailures],
-    badResponses: [...diagnostic.badResponses], warnings: [...warnings], total: diagnostic.count() });
+  const diagnostic = attachPageDiagnostics(page, { consoleTypes: [] });
+  const consoleErrors = [], consoleErrorDetails = [], warnings = [], warningDetails = [];
+  const glErrors = [], expectedContextLossNotices = [];
+  const context = activeContext, responseStart = report.staticResponses.length;
+  page.on('console', (message) => {
+    const type = message.type(), text = message.text(), location = message.location();
+    const classification = classifyGLMessage(text, lossExperimentPhase);
+    const detail = { type, text, location, context, stage: activeStage,
+      lossExperimentPhase, classification, at: new Date().toISOString() };
+    if (type === 'error') {
+      const source = location.url
+        ? ` @ ${location.url}:${location.lineNumber + 1}:${location.columnNumber + 1}` : '';
+      consoleErrors.push(`error: ${text}${source}`);
+      consoleErrorDetails.push(detail);
+    }
+    if (type === 'warning') { warnings.push(text); warningDetails.push(detail); }
+    if (classification === 'expected-context-loss') expectedContextLossNotices.push(detail);
+    else if (classification === 'gl-error' && type !== 'error') glErrors.push(detail);
+  });
+  return () => {
+    const serverErrors = report.staticResponses.slice(responseStart)
+      .filter((response) => response.context === context && response.status >= 400);
+    return { counts: { ...diagnostic.summary(), console: consoleErrors.length,
+      gl: glErrors.length, server: serverErrors.length }, consoleErrors: [...consoleErrors],
+    consoleErrorDetails: [...consoleErrorDetails], pageErrors: [...diagnostic.pageErrors],
+    requestFailures: [...diagnostic.requestFailures], badResponses: [...diagnostic.badResponses],
+    serverErrors, glErrors: [...glErrors], warnings: [...warnings], warningDetails: [...warningDetails],
+    expectedContextLossNotices: [...expectedContextLossNotices],
+    total: diagnostic.count() + consoleErrors.length + glErrors.length + serverErrors.length };
+  };
+}
+
+function observeStaticServer(server) {
+  // Chromium sometimes reports browser-owned icon requests only to the console.
+  // Observe the real response finish as an independent record of the requested URL.
+  server.server.prependListener('request', (request, response) => {
+    const context = activeContext, stage = activeStage, started = Date.now();
+    response.once('finish', () => {
+      report.staticResponses.push({ method: request.method, requestUrl: request.url,
+        url: new URL(request.url, server.origin).href, status: response.statusCode,
+        referer: request.headers.referer || null, destination: request.headers['sec-fetch-dest'] || null,
+        contentType: response.getHeader('content-type') || null, context, stage,
+        at: new Date().toISOString(), milliseconds: Date.now() - started });
+    });
+  });
 }
 
 async function wait(page, predicate, arg) {
@@ -118,7 +170,7 @@ async function boot(page, url, result) {
 }
 
 function pixels(png) {
-  let sum = 0, sum2 = 0, lit = 0;
+  let sum = 0, sum2 = 0, lit = 0, below16 = 0, above240 = 0;
   const colours = new Set();
   const n = png.width * png.height;
   for (let i = 0; i < n; i++) {
@@ -126,11 +178,51 @@ function pixels(png) {
     const r = png.data[offset], g = png.data[offset + 1], b = png.data[offset + 2];
     const y = r * 0.2126 + g * 0.7152 + b * 0.0722;
     sum += y; sum2 += y * y; if (y > 8) lit++;
+    if (y < 16) below16++;
+    if (y >= 241) above240++;
     colours.add(((r >> 4) << 8) | ((g >> 4) << 4) | (b >> 4));
   }
   const mean = sum / n;
   return { meanLuma: mean, stdLuma: Math.sqrt(Math.max(0, sum2 / n - mean * mean)),
-    fractionAbove8: lit / n, quantizedColours: colours.size };
+    fractionAbove8: lit / n, quantizedColours: colours.size,
+    pctBelow16: 100 * below16 / n, pctAbove240: 100 * above240 / n };
+}
+
+function crosscheckPixels(path, measurement) {
+  const img = loadImage(path);
+  const box = { x0: 0, y0: 0, w: img.width, h: img.height };
+  const trustedRegion = regionStats(img, box);
+  const trustedHistogram = measureLuma(path, [], { ignoreTransparent: false });
+  const rgb = cut(img, box);
+  let mean = 0, m2 = 0, lit = 0;
+  const colours = new Set(), n = img.width * img.height;
+  // Welford variance on the kit's packed RGB copy checks the direct sum/squares
+  // path independently, including channel stride and nearly uniform lost frames.
+  for (let i = 0; i < n; i++) {
+    const r = rgb[i * 3], g = rgb[i * 3 + 1], b = rgb[i * 3 + 2];
+    const y = 0.2126 * r + 0.7152 * g + 0.0722 * b, delta = y - mean;
+    mean += delta / (i + 1); m2 += delta * (y - mean);
+    if (y > 8) lit++;
+    colours.add(((r >> 4) << 8) | ((g >> 4) << 4) | (b >> 4));
+  }
+  const reference = { meanLuma: mean, stdLuma: Math.sqrt(Math.max(0, m2 / n)),
+    fractionAbove8: lit / n, quantizedColours: colours.size,
+    pctBelow16: trustedHistogram.pctBelow16, pctAbove240: trustedHistogram.pctAbove240 };
+  const roundedRGBMean = 0.2126 * trustedRegion.meanRGB[0] +
+    0.7152 * trustedRegion.meanRGB[1] + 0.0722 * trustedRegion.meanRGB[2];
+  const errors = Object.fromEntries(Object.keys(reference)
+    .map((key) => [key, measurement.pixels[key] - reference[key]]));
+  errors.meanLumaFromRoundedRGB = measurement.pixels.meanLuma - roundedRGBMean;
+  // regionStats rounds RGB means to 0.1; measureLuma rounds percentages to 0.001.
+  const tolerances = { meanLuma: 1e-8, stdLuma: 1e-4, fractionAbove8: 0, quantizedColours: 0,
+    pctBelow16: 0.000500001, pctAbove240: 0.000500001, meanLumaFromRoundedRGB: 0.050000001 };
+  const sha256 = createHash('sha256').update(readFileSync(path)).digest('hex');
+  const samePNG = sha256 === measurement.sha256 && img.width === measurement.width && img.height === measurement.height;
+  return { source: '.kit/lib/image/measure.mjs: loadImage, regionStats, measureLuma, cut',
+    method: 'Whole saved PNG; kit RGB means/histogram and independent Welford variance over kit.cut.',
+    samePNG, sha256, trustedRegion, trustedHistogram, roundedRGBMean, reference, errors, tolerances,
+    passed: samePNG && Object.keys(errors).every((key) =>
+      Number.isFinite(errors[key]) && Math.abs(errors[key]) <= tolerances[key]) };
 }
 
 function difference(a, b) {
@@ -152,11 +244,15 @@ async function screenshot(page, result, name) {
   const png = decodePNG(buffer);
   const measurement = { file: `shots/${filename}`, width: png.width, height: png.height,
     bytes: buffer.length, sha256: createHash('sha256').update(buffer).digest('hex'), pixels: pixels(png) };
+  measurement.crosscheck = crosscheckPixels(join(OUT, filename), measurement);
   result.screenshots.push(measurement);
   check(result, `${name}: native PNG dimensions`,
     png.width === PROFILE.viewport.width * PROFILE.deviceScaleFactor &&
     png.height === PROFILE.viewport.height * PROFILE.deviceScaleFactor,
     { width: png.width, height: png.height });
+  check(result, `${name}: saved PNG metrics agree with kit crosscheck`,
+    measurement.crosscheck.passed, { errors: measurement.crosscheck.errors,
+      tolerances: measurement.crosscheck.tolerances, samePNG: measurement.crosscheck.samePNG });
   return { png, measurement };
 }
 
@@ -166,6 +262,7 @@ function visibleWorld(measurement) {
 }
 
 async function production(browser, origin) {
+  activeContext = 'ordinary-production';
   let context, diagnostics;
   const result = await stage('ordinary-production', async (s) => {
     context = await browser.newContext(PROFILE);
@@ -420,8 +517,10 @@ async function contextRecovery(page, s) {
     check(s, 'actual WEBGL_lose_context extension available',
       await extension.evaluate((ext) => !!ext && typeof ext.loseContext === 'function' &&
         typeof ext.restoreContext === 'function'));
+    lossExperimentPhase = 'losing';
     await extension.evaluate((ext) => ext.loseContext());
     await wait(page, () => window.__kagerou.engine.contextLost && !window.__kagerou.engine.running);
+    lossExperimentPhase = 'lost';
     s.lost = await contextState(page);
     check(s, 'real context loss stops rendering and disables input', s.lost.glLost &&
       s.lost.contextLost && !s.lost.running && !s.lost.inputEnabled && s.lost.canvasState === 'recovering' &&
@@ -436,12 +535,14 @@ async function contextRecovery(page, s) {
       s.resumeWhileLost.moveMag === 0 && s.resumeWhileLost.frame === s.lost.frame &&
       s.resumeWhileLost.dodgeCount === s.before.dodgeCount, s.resumeWhileLost);
     const lost = await screenshot(page, s, 'context-lost');
+    lossExperimentPhase = 'restoring';
     await extension.evaluate((ext) => ext.restoreContext());
     await wait(page, () => {
       const k = window.__kagerou;
       return !k.engine.contextLost && !k.renderer.getContext().isContextLost() &&
         k.engine.running && k.input.enabled && k.engine.canvas.dataset.state === 'running';
     });
+    lossExperimentPhase = 'restored';
     await frames(page);
     s.restored = await contextState(page);
     check(s, 'restore resumes living gameplay and replaces environment texture',
@@ -467,10 +568,11 @@ async function contextRecovery(page, s) {
     check(s, 'restored input executes a real Dodge',
       s.afterRestoredInput.dodgeCount === s.before.dodgeCount + 1 &&
       s.afterRestoredInput.dodgeEntries === s.restored.dodgeEntries + 1, s.afterRestoredInput);
-  } finally { await extension.dispose(); }
+  } finally { lossExperimentPhase = 'none'; await extension.dispose(); }
 }
 
 async function capture(browser, origin) {
+  activeContext = 'capture';
   let context, page, diagnostics;
   const bootResult = await stage('capture-boot', async (s) => {
     context = await browser.newContext(PROFILE);
@@ -514,6 +616,7 @@ try {
   report.gitDirty = gitText(['status', '--short']);
   report.distSha256 = fingerprintTree(DIST);
   server = await serveStatic({ root: DIST });
+  observeStaticServer(server);
   browser = await launchHeadless({ proxy: false, extraArgs: ['--autoplay-policy=no-user-gesture-required'] });
   report.browserVersion = browser.version();
   await production(browser, server.origin);
@@ -528,6 +631,13 @@ try {
 } finally {
   try { await browser?.close(); } catch (error) { report.errors.push(`Browser close: ${error.message}`); }
   try { await server?.close(); } catch (error) { report.errors.push(`Server close: ${error.message}`); }
+  if (server) {
+    const serverErrors = report.staticResponses.filter((response) => response.status >= 400);
+    report.stages.push({ name: 'static-server-responses', status: serverErrors.length ? 'FAIL' : 'PASS',
+      checks: [{ name: 'zero HTTP errors observed at response finish', passed: serverErrors.length === 0,
+        evidence: serverErrors }] });
+    if (serverErrors.length) report.status = 'FAIL';
+  }
   if (report.errors.length) report.status = 'FAIL';
   report.finishedAt = new Date().toISOString();
   report.seconds = (Date.parse(report.finishedAt) - Date.parse(report.startedAt)) / 1000;

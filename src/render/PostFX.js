@@ -1713,6 +1713,14 @@ export class PostFX {
     if (this._ready || this._quadMesh) this._buildTargets(nw, nh);
   }
 
+  onContextLost() {
+    this._disposeTargets();
+    // Keep these JS identities: soft-particle materials retain the exported depth.
+    // Their old GL handles must be released while the context is still lost.
+    this._depthTexture?.dispose();
+    this._rtDepthMirror?.dispose();
+  }
+
   onContextRestored() {
     if (!this._ready) return;
     this._frame = 0;

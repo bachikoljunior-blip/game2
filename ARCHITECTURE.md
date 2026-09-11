@@ -63,6 +63,8 @@ export class MySystem {
   lateUpdate(dt, elapsed, rawDt) {}        // after render — camera/trail cleanup
   resize(w, h, bufW, bufH) {}              // CSS px and drawing-buffer px
   applyQuality(quality) {}                 // tier changed at runtime
+  onContextLost() {}                       // stop using/release invalid GL resources
+  onContextRestored() {}                   // rebuild generated GPU contents
   dispose() {}
 }
 ```
