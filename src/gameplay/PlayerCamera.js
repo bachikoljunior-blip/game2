@@ -20,6 +20,7 @@
 
 import { Vector3, Quaternion, Euler } from 'three';
 import { clamp, damp, lerp, smoothstep, noise } from '../core/Noise.js';
+import { LAYER_SOLID } from './Physics.js';
 
 const DEG = Math.PI / 180;
 
@@ -56,6 +57,8 @@ const LOCK_ACQUIRE_DIST = 19;
 const LOCK_BREAK_DIST = 24;
 const LOCK_CONE = Math.cos(62 * DEG);
 const LOCK_OCCLUDE_TIME = 1.1;
+const LOCK_ORBIT_OFFSETS = [0, -Math.PI / 4, Math.PI / 4, -Math.PI / 2, Math.PI / 2,
+  -Math.PI * 3 / 4, Math.PI * 3 / 4, Math.PI];
 
 // ------------------------------------------------------------- module scratch
 
@@ -121,6 +124,8 @@ export class PlayerCamera {
     this._camPos = new Vector3();
     this._camVel = new Vector3();
     this._desired = new Vector3();
+    this._collisionAnchor = new Vector3();
+    this._castOrigin = new Vector3();
     this._lastGoodPos = new Vector3();
     this._lastGoodQuat = new Quaternion();
     this._lastGoodPivot = new Vector3();
@@ -135,6 +140,7 @@ export class PlayerCamera {
     this._baseFov = 58;
     this._lockBlend = 0;
     this._lockOcclusion = 0;
+    this._lockOrbitOffset = 0;
     this._punch = 0;
     this._punchDecay = 3.2;
     this._cine = false;
@@ -144,7 +150,7 @@ export class PlayerCamera {
     this._snapBoost = 0;
     this._speedNorm = 0;
     this._fade = 1;
-    this._collideMask = undefined;        // Physics decides; undefined = everything
+    this._collideMask = LAYER_SOLID;
 
     // ---- shake --------------------------------------------------------------
     this.trauma = 0;
@@ -238,6 +244,7 @@ export class PlayerCamera {
     this._camVel.set(0, 0, 0);
     this._boomActual = this._boom = this._boomWanted = BOOM_BASE;
     this._orbit(this._camPos, this._pivotSmooth, this._boomActual);
+    this._constrainEye(this._camPos);
     this._lookTarget.copy(this._pivotSmooth);
     this.target.copy(this._lookTarget);
     if (this.camera) {
@@ -295,6 +302,7 @@ export class PlayerCamera {
     this._collide(sdt);
     this._orbit(this._desired, this._pivotSmooth, this._boomActual);
     smoothDampV3(this._camPos, this._desired, this._camVel, 0.075 / boost, sdt);
+    if (this._constrainEye(this._camPos)) this._camVel.set(0, 0, 0);
 
     this._applyPose(rdt);
     this._updateFade(sdt);
@@ -372,6 +380,17 @@ export class PlayerCamera {
     out.lerp(_v3, this._lockBlend);
   }
 
+  _pairLookPoint(out, eye) {
+    const p = this.ctx.player, t = this.lockTarget;
+    _v2.copy(p.position); _v2.y += (Number.isFinite(p.height) ? p.height : 1.75) * 0.55;
+    _v3.copy(t.position); _v3.y += (Number.isFinite(t.height) ? t.height : 1.7) * 0.55;
+    _v2.sub(eye); _v3.sub(eye);
+    const pd = Math.max(0.001, _v2.length()), td = Math.max(0.001, _v3.length());
+    // Equal angular weight keeps the nearer body from dominating the frame.
+    out.copy(_v2).multiplyScalar(1 / pd).addScaledVector(_v3, 1 / td);
+    out.multiplyScalar((pd + td) * 0.25).add(eye);
+  }
+
   _updateFraming(player, dt) {
     // `clamp()` is a comparison chain, so NaN falls through it unchanged — the
     // read has to be validated, not clamped.
@@ -384,17 +403,18 @@ export class PlayerCamera {
     let boom = BOOM_BASE + this._speedNorm * 0.55;
     let pitchGoal = null;
 
-    if (this.lockTarget?.position && this._lockBlend > 0.001 && player.position) {
+    if (isFiniteVec(this.lockTarget?.position) && this._lockBlend > 0.001 && isFiniteVec(player.position)) {
       const dx = this.lockTarget.position.x - player.position.x;
       const dz = this.lockTarget.position.z - player.position.z;
       const sep = Math.hypot(dx, dz);
       // Yaw follows the pair's axis; the player can still fight it with a drag.
       // View direction is (-sin yaw, -cos yaw), hence the negated arguments.
-      const wantYaw = Math.atan2(-dx, -dz);
-      const d = ((wantYaw - this.yaw + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
-      this.yaw += d * (1 - Math.exp(-7 * dt)) * this._lockBlend;
-      // Distance and height open up with separation so both bodies stay framed.
       boom = lerp(boom, BOOM_BASE + clamp(sep * 0.22, 0, 1.9), this._lockBlend);
+      const wantYaw = this._selectLockYaw(Math.atan2(-dx, -dz), boom, sep);
+      const d = ((wantYaw - this.yaw + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+      this.yaw += d * (1 - Math.exp(-12 * dt));
+      // Distance and height open up with separation so both bodies stay framed.
+      boom = this._lockFramingBoom(boom, sep, this._lockOrbitOffset);
       pitchGoal = lerp(this.pitch, (10 + clamp(sep, 0, 12) * 0.9) * DEG, this._lockBlend);
     }
 
@@ -405,7 +425,7 @@ export class PlayerCamera {
     // The execution two-shot sits closer and lower than the fighting camera.
     if (this._cine) boom = Math.min(boom, 2.55);
     this._boomWanted = Math.max(BOOM_MIN, boom);
-    this._boom = damp(this._boom, this._boomWanted, 4.0, dt);
+    this._boom = damp(this._boom, this._boomWanted, this.lockTarget && this._lockOrbitOffset ? 9 : 4, dt);
 
     if (pitchGoal !== null) {
       this.pitch = clamp(damp(this.pitch, pitchGoal, 3.0, dt), PITCH_MIN, PITCH_MAX);
@@ -420,6 +440,72 @@ export class PlayerCamera {
 
   // ---------------------------------------------------------------- collision
 
+  /** A wall behind the player needs a side view of the duel, not a first-person crop. */
+  _selectLockYaw(axis, boom, separation) {
+    if (!this.ctx.physics?.sphereCast) return axis;
+    const clear = Math.min(boom * 0.9, 2.8);
+    if (this._lockClearance(axis, boom) >= clear) {
+      this._lockOrbitOffset = 0;
+      return axis;
+    }
+    const heldBoom = this._lockFramingBoom(boom, separation, this._lockOrbitOffset);
+    if (this._lockOrbitOffset && this._lockClearance(axis + this._lockOrbitOffset, heldBoom) >= heldBoom * 0.92) {
+      return axis + this._lockOrbitOffset;
+    }
+    let best = 0, bestClear = -1;
+    for (let i = 1; i < LOCK_ORBIT_OFFSETS.length; i++) {
+      const offset = LOCK_ORBIT_OFFSETS[i];
+      const wanted = this._lockFramingBoom(boom, separation, offset);
+      const fraction = this._lockClearance(axis + offset, wanted) / wanted;
+      if (fraction > bestClear) { bestClear = fraction; best = offset; }
+      if (fraction >= 0.92) break;
+    }
+    this._lockOrbitOffset = best;
+    return axis + best;
+  }
+
+  _lockFramingBoom(base, separation, offset) {
+    const p = this.ctx.player, t = this.lockTarget;
+    const pr = Number.isFinite(p.radius) ? p.radius : 0.34;
+    const tr = Number.isFinite(t?.radius) ? t.radius : 0.45;
+    const aspect = Number.isFinite(this.camera.aspect) ? this.camera.aspect : 1;
+    const halfHeight = Math.tan(this._baseFov * DEG * 0.5);
+    const halfWidth = halfHeight * aspect;
+    const sideSpan = Math.abs(Math.sin(offset)) * (separation * 0.65 + Math.max(pr, tr));
+    const targetHeight = Number.isFinite(t?.height) ? t.height : 1.75;
+    const targetRoom = targetHeight / Math.max(0.3, halfHeight * 1.5) + 0.35;
+    const lateral = separation * Math.abs(Math.sin(offset));
+    if (Math.cos(offset) < 0 && lateral < targetRoom) {
+      base = Math.max(base, -separation * Math.cos(offset) + Math.sqrt(targetRoom * targetRoom - lateral * lateral));
+    }
+    return Math.max(base, sideSpan / Math.max(0.15, halfWidth * 0.75) + 1.2);
+  }
+
+  _lockClearance(yaw, boom) {
+    const anchor = this._collisionAnchor.copy(this.ctx.player.position);
+    anchor.y += PIVOT_HEIGHT;
+    const cp = Math.cos(this.pitch);
+    _dir.set(Math.sin(yaw) * cp * boom + Math.cos(yaw) * this._shoulder * this.shoulderSide,
+      Math.sin(this.pitch) * boom,
+      Math.cos(yaw) * cp * boom - Math.sin(yaw) * this._shoulder * this.shoulderSide);
+    const len = _dir.length();
+    _dir.multiplyScalar(1 / len);
+    return Math.max(0, this._sphereDistance(anchor, _dir, CAM_RADIUS, len) - 0.025);
+  }
+
+  _sphereDistance(origin, direction, radius, length) {
+    // Physics caps a sweep's sample count. Short segments preserve thin-wall
+    // coverage even when portrait framing needs a long camera arm.
+    for (let distance = 0; distance < length; distance += 2) {
+      const span = Math.min(2, length - distance);
+      this._castOrigin.copy(origin).addScaledVector(direction, distance);
+      const hit = this.ctx.physics.sphereCast(this._castOrigin, direction, radius, span, this._collideMask);
+      const d = typeof hit === 'number' ? hit : (hit?.distance ?? -1);
+      if (hit != null && Number.isFinite(d) && d >= 0 && d <= span) return distance + d;
+    }
+    return length;
+  }
+
   _collide(dt) {
     const phys = this.ctx.physics;
     let hitDist = this._boom;
@@ -429,26 +515,59 @@ export class PlayerCamera {
       const len = _dir.length();
       if (len > 1e-4) {
         _dir.multiplyScalar(1 / len);
-        const hit = phys.sphereCast(this._pivotSmooth, _dir, CAM_RADIUS, len + CAM_RADIUS, this._collideMask);
-        const d = typeof hit === 'number' ? hit : (hit?.distance ?? hit?.t ?? -1);
-        if (hit && d >= 0 && d < len) hitDist = Math.max(BOOM_MIN, d - CAM_RADIUS * 0.5);
+        const d = this._sphereDistance(this._pivotSmooth, _dir, CAM_RADIUS, len);
+        if (d < len) hitDist = Math.max(0, d - 0.025);
       }
     } else if (this.ctx.terrain?.heightAt) {
       // Without Physics, at least never bury the camera in the hillside.
       this._orbit(_v1, this._pivotSmooth, this._boom);
       const h = this.ctx.terrain.heightAt(_v1.x, _v1.z);
-      if (typeof h === 'number' && _v1.y < h + 0.35) {
+      if (Number.isFinite(h) && _v1.y < h + 0.35) {
         const drop = (h + 0.35) - _v1.y;
         const cp = Math.max(0.15, Math.cos(this.pitch));
-        hitDist = Math.max(BOOM_MIN, this._boom - (drop / cp) * 0.8);
+        hitDist = Math.max(0, this._boom - (drop / cp) * 0.8);
       }
     }
 
     // Fast in, slow out. Popping out of a corner is far more noticeable than
     // sliding out of one.
     if (hitDist < this._boomActual) this._boomActual = hitDist;
-    else this._boomActual = damp(this._boomActual, hitDist, 1.8, dt);
-    this._boomActual = clamp(this._boomActual, BOOM_MIN, this._boom);
+    else this._boomActual = damp(this._boomActual, hitDist, this.lockTarget && this._lockOrbitOffset ? 9 : 1.8, dt);
+    this._boomActual = clamp(this._boomActual, 0, this._boom);
+  }
+
+  /** Collision is a hard output constraint, including spring lag and camera shake. */
+  _constrainEye(eye) {
+    const player = this.ctx.player;
+    if (!isFiniteVec(eye) || !isFiniteVec(player?.position)) return false;
+    // The shoulder and its smoothed pivot can cross a wall beside the capsule.
+    // Its chest is the clear origin guaranteed by the character controller.
+    const anchor = this._collisionAnchor.copy(player.position);
+    anchor.y += PIVOT_HEIGHT;
+    const phys = this.ctx.physics;
+    const near = Number.isFinite(this.camera?.near) ? this.camera.near : 0.12;
+    const fov = Number.isFinite(this._fov) ? this._fov : this._baseFov;
+    const aspect = Number.isFinite(this.camera?.aspect) ? this.camera.aspect : 1;
+    const tangent = Math.tan(fov * DEG * 0.5);
+    const radius = Math.max(CAM_RADIUS, near * Math.sqrt(1 + tangent * tangent * (1 + aspect * aspect)));
+    if (phys?.sphereCast) {
+      _dir.copy(eye).sub(anchor);
+      const len = _dir.length();
+      if (len < 1e-5) return false;
+      _dir.multiplyScalar(1 / len);
+      const d = this._sphereDistance(anchor, _dir, radius, len);
+      if (d < len) {
+        eye.copy(anchor).addScaledVector(_dir, Math.max(0, d - 0.025));
+        return true;
+      }
+    } else if (this.ctx.terrain?.heightAt) {
+      const floor = this.ctx.terrain.heightAt(eye.x, eye.z);
+      if (Number.isFinite(floor) && eye.y < floor + radius) {
+        eye.y = floor + radius;
+        return true;
+      }
+    }
+    return false;
   }
 
   /** Fade the character out when the boom is pulled in past the body. */
@@ -467,7 +586,7 @@ export class PlayerCamera {
     const t = this.lockTarget;
     if (t) {
       const player = this.ctx.player;
-      const dead = !t.isAlive || !player?.isAlive;
+      const dead = !t.isAlive || !player?.isAlive || !isFiniteVec(t.position) || !isFiniteVec(player.position);
       const far = (player?.position && t.position)
         ? player.position.distanceTo(t.position) > LOCK_BREAK_DIST
         : false;
@@ -527,12 +646,14 @@ export class PlayerCamera {
     if (!pick || pick === this.lockTarget) { this._releaseLock(); return; }   // toggles off
     this.lockTarget = pick;
     this._lockOcclusion = 0;
+    this._lockOrbitOffset = 0;
     this._evLock.entity = player;
     this._evLock.target = pick;
     this.ctx.bus?.emit?.('lock-on', this._evLock);
   }
 
   _score(e, player) {
+    if (!isFiniteVec(e?.position) || !isFiniteVec(player?.position)) return Infinity;
     const dx = e.position.x - player.position.x;
     const dz = e.position.z - player.position.z;
     const d = Math.hypot(dx, dz);
@@ -548,6 +669,7 @@ export class PlayerCamera {
     if (!this.lockTarget) return;
     this.lockTarget = null;
     this._lockOcclusion = 0;
+    this._lockOrbitOffset = 0;
     this._evLock.entity = this.ctx.player ?? null;
     this._evLock.target = null;
     this.ctx.bus?.emit?.('lock-on', this._evLock);
@@ -595,6 +717,8 @@ export class PlayerCamera {
       if (s >= 0.999) cam.quaternion.copy(_qTmp);
       else cam.quaternion.slerp(_qTmp, s);
     }
+    this._constrainEye(cam.position);
+    this._keepLockVisible();
 
     // Last line of defence. Nothing non-finite leaves this system: Audio, the
     // light rig and the post chain all read `camera.position`, and a single bad
@@ -609,6 +733,40 @@ export class PlayerCamera {
     this._lastGoodPivot.copy(this._pivotSmooth);
     this._hasGoodPose = true;
     cam.updateMatrixWorld();
+  }
+
+  _keepLockVisible() {
+    const t = this.lockTarget, p = this.ctx.player, cam = this.camera;
+    if (!isFiniteVec(t?.position) || !isFiniteVec(p?.position)) return;
+    cam.updateMatrixWorld();
+    if (this._bodyInFrame(p, 0.8) && this._bodyInFrame(t, 0.8)) return;
+    this._pairLookPoint(_v4, cam.position);
+    cam.lookAt(_v4);
+    cam.updateMatrixWorld();
+    // While escaping a corner there may be too little space to include both
+    // bodies. Keep the threat readable until the side orbit has opened up.
+    if (!this._bodyInFrame(t, 0.96)) {
+      _v4.copy(t.position); _v4.y += (Number.isFinite(t.height) ? t.height : 1.7) * 0.55;
+      cam.lookAt(_v4);
+    }
+  }
+
+  _bodyInFrame(entity, margin) {
+    const height = Number.isFinite(entity.height) ? entity.height : 1.75;
+    _v1.copy(entity.position); _v1.y += 0.08;
+    _v1.project(this.camera);
+    if (Math.abs(_v1.x) > margin || Math.abs(_v1.y) > margin || _v1.z < -1 || _v1.z >= 1) return false;
+    _v1.copy(entity.position); _v1.y += height;
+    _v1.project(this.camera);
+    if (Math.abs(_v1.x) > margin || Math.abs(_v1.y) > margin || _v1.z < -1 || _v1.z >= 1) return false;
+    const radius = Number.isFinite(entity.radius) ? entity.radius : 0.34;
+    _right.set(1, 0, 0).applyQuaternion(this.camera.quaternion);
+    for (let side = -1; side <= 1; side += 2) {
+      _v1.copy(entity.position); _v1.y += height * 0.55;
+      _v1.addScaledVector(_right, radius * side).project(this.camera);
+      if (Math.abs(_v1.x) > margin || Math.abs(_v1.y) > margin || _v1.z < -1 || _v1.z >= 1) return false;
+    }
+    return true;
   }
 
   /**

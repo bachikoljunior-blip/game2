@@ -1,0 +1,170 @@
+import assert from 'node:assert/strict';
+import { PerspectiveCamera, Vector2, Vector3 } from 'three';
+import { Input } from '../src/core/Input.js';
+import { Player } from '../src/gameplay/Player.js';
+import { PlayerCamera } from '../src/gameplay/PlayerCamera.js';
+import { PhysicsWorld, LAYER_SOLID } from '../src/gameplay/Physics.js';
+
+// These are deterministic controller/geometry fixtures, not rendered device evidence.
+const results = { movement: [], collision: [], lockOn: [] };
+const round = value => +value.toFixed(4);
+function newInput() {
+  globalThis.window = new EventTarget();
+  globalThis.document = new EventTarget();
+  return new Input(new EventTarget());
+}
+
+function movement(fps, magnitude, sprint) {
+  const ctx = { engine: { frame: 0 }, terrain: { heightAt: () => 812 }, playerCamera: { yaw: 0 } };
+  ctx.input = newInput();
+  ctx.input.usingTouch = true;
+  ctx.input.state.move.set(0, magnitude);
+  ctx.input.state.moveMag = magnitude;
+  ctx.input.state.run = sprint;
+  const player = ctx.player = new Player(ctx);
+  player.position.set(0, 812, 0);
+  player.sheathed = false;
+  player.state = 'idle';
+  const dt = 1 / fps;
+  const tick = () => {
+    ctx.engine.frame++;
+    player.update(dt, ctx.engine.frame * dt, dt);
+    player.lateUpdate();
+  };
+  for (let frame = 0; frame < fps; frame++) tick();
+  const start = player.position.clone();
+  for (let frame = 0; frame < fps; frame++) tick();
+  const speed = player.position.distanceTo(start);
+  ctx.input.state.move.y *= -1;
+  const yaw = player.yaw;
+  let responseMs = null, turn90Ms = null, turn180Ms = null;
+  for (let frame = 1; frame <= fps; frame++) {
+    tick();
+    const angle = Math.abs(Math.atan2(Math.sin(player.yaw - yaw), Math.cos(player.yaw - yaw)));
+    if (responseMs === null && angle > 1e-5) responseMs = frame * dt * 1000;
+    if (turn90Ms === null && angle >= Math.PI * 0.9) turn90Ms = frame * dt * 1000;
+    if (turn180Ms === null && angle >= Math.PI - 1e-5) turn180Ms = frame * dt * 1000;
+    assert.ok(player.position.toArray().every(Number.isFinite));
+  }
+  ctx.input.dispose();
+  const row = { fps, magnitude, sprint, speed: round(speed), responseMs: round(responseMs),
+    turn90Ms: round(turn90Ms), full180Ms: round(turn180Ms) };
+  results.movement.push(row);
+  return row;
+}
+
+for (const fps of [120, 60, 30, 4]) {
+  for (const [mag, sprint, authored] of [[0.55, false, 1.9], [0.92, false, 5.4], [1, true, 7.2]]) {
+    const row = movement(fps, mag, sprint);
+    assert.ok(Math.abs(row.speed - authored) <= authored * 0.05, JSON.stringify(row));
+    if (mag === 0.92) {
+      assert.ok(row.full180Ms <= 250, JSON.stringify(row));
+      if (fps >= 30) assert.ok(row.responseMs <= 100, JSON.stringify(row));
+    }
+  }
+}
+
+function cameraContext(aspect = 844 / 390) {
+  const ctx = { camera: new PerspectiveCamera(58, aspect, 0.12, 900),
+    input: { state: { look: new Vector2() } },
+    player: { position: new Vector3(0, 812, 0), yaw: 0, height: 1.75, radius: 0.34, speed: 0, isAlive: true } };
+  ctx.physics = new PhysicsWorld(ctx);
+  ctx.playerCamera = new PlayerCamera(ctx);
+  ctx.playerCamera.resize(aspect * 390, 390);
+  return ctx;
+}
+
+function wall(ctx, x, z, sx, sz) {
+  ctx.physics.addStatic({ type: 'box', position: new Vector3(x, 814, z), size: new Vector3(sx, 8, sz) });
+}
+
+for (const shape of ['back-wall', 'shoulder-wall', 'pillar', 'shake-wall', 'downward-floor']) {
+  const ctx = cameraContext(), pc = ctx.playerCamera;
+  if (shape === 'shoulder-wall') {
+    wall(ctx, 2, 0, 0.4, 30);
+    ctx.player.position.set(-5, 812, 0);
+  } else if (shape === 'pillar') {
+    wall(ctx, 0.44, 2.8, 0.6, 0.6);
+    pc.yaw = ctx.player.yaw = -1.2;
+  } else if (shape === 'downward-floor') {
+    ctx.physics.addStatic({ type: 'box', position: new Vector3(0, 811.75, 0), size: new Vector3(30, 0.5, 30) });
+    pc.pitch = -0.7;
+  } else {
+    wall(ctx, 0, 2, 30, 0.4);
+    ctx.player.position.z = -5;
+  }
+  let phase = 0;
+  if (shape === 'shake-wall') ctx.fx = { getShakeOffset(pos, quat) {
+    pos.set(Math.sin(phase) * 0.16, 0, 0.16); quat.identity(); return true;
+  } };
+  pc.snap();
+  let overlaps = ctx.physics.overlapSphere(ctx.camera.position, ctx.camera.near * 1.05, LAYER_SOLID) > 0 ? 1 : 0;
+  let worstJump = 0;
+  const previous = ctx.camera.position.clone();
+  for (let frame = 0; frame < 180; frame++) {
+    phase = frame * 0.3;
+    if (shape === 'back-wall' || shape === 'shake-wall') ctx.player.position.z = Math.min(1.4, -5 + frame * 0.09);
+    if (shape === 'shoulder-wall') ctx.player.position.x = Math.min(1.4, -5 + frame * 0.09);
+    if (shape === 'pillar') pc.yaw = -1.2 + frame / 179 * 2.4;
+    pc.update(1 / 60, frame / 60, 1 / 60);
+    overlaps += ctx.physics.overlapSphere(ctx.camera.position, ctx.camera.near * 1.05, LAYER_SOLID) > 0 ? 1 : 0;
+    worstJump = Math.max(worstJump, ctx.camera.position.distanceTo(previous));
+    previous.copy(ctx.camera.position);
+    assert.ok(ctx.camera.position.toArray().every(Number.isFinite));
+  }
+  results.collision.push({ shape, frames: 181, overlaps, worstJumpM: round(worstJump) });
+  assert.equal(overlaps, 0, shape);
+  assert.ok(worstJump <= 1.5, shape);
+}
+
+function screenPoint(ctx, entity, height, side = 0) {
+  const p = entity.position.clone(); p.y += height;
+  if (side) p.add(new Vector3(side, 0, 0).applyQuaternion(ctx.camera.quaternion));
+  return p.project(ctx.camera);
+}
+const within = (point, margin) => Math.abs(point.x) <= margin && Math.abs(point.y) <= margin && point.z >= -1 && point.z < 1;
+function bodyWithin(ctx, e, margin) {
+  return [[0.08, 0], [e.height, 0], [e.height * 0.55, e.radius], [e.height * 0.55, -e.radius]]
+    .every(([height, side]) => within(screenPoint(ctx, e, height, side), margin));
+}
+
+for (const aspect of [844 / 390, 390 / 844]) for (const corner of [false, true]) {
+  const ctx = cameraContext(aspect), pc = ctx.playerCamera;
+  ctx.player.position.set(1.4, 812, 1.4);
+  const target = { id: 99, position: new Vector3(1.4, 812, -2.6), height: 2.15, radius: 0.45, isAlive: true, faction: 'oni' };
+  ctx.enemies = { list: [target] };
+  if (corner) { wall(ctx, 0, 2, 30, 0.4); wall(ctx, 2, 0, 0.4, 30); }
+  ctx.input = newInput();
+  pc.snap();
+  const key = new Event('keydown', { cancelable: true });
+  Object.defineProperty(key, 'code', { value: 'KeyQ' });
+  window.dispatchEvent(key);
+  let locked = 0, centralCenters = 0, centralBodies = 0, targetOff = 0, overlaps = 0, worstJump = 0;
+  const previous = ctx.camera.position.clone();
+  for (let frame = 0; frame < 840; frame++) {
+    ctx.input.update();
+    pc.update(1 / 60, frame / 60, 1 / 60);
+    ctx.input.endFrame();
+    if (pc.lockTarget === target) {
+      locked++;
+      if (within(screenPoint(ctx, ctx.player, ctx.player.height * 0.55), 0.8) && within(screenPoint(ctx, target, target.height * 0.55), 0.8)) centralCenters++;
+      if (bodyWithin(ctx, ctx.player, 0.8) && bodyWithin(ctx, target, 0.8)) centralBodies++;
+      if (!within(screenPoint(ctx, target, target.height * 0.55), 1)) targetOff++;
+    }
+    overlaps += ctx.physics.overlapSphere(ctx.camera.position, ctx.camera.near * 1.05, LAYER_SOLID) > 0 ? 1 : 0;
+    worstJump = Math.max(worstJump, ctx.camera.position.distanceTo(previous));
+    previous.copy(ctx.camera.position);
+  }
+  ctx.input.dispose();
+  const row = { aspect: round(aspect), corner, lockedFrames: locked,
+    centersCentral: centralCenters, bodiesCentral: centralBodies, targetOff, overlaps, worstJumpM: round(worstJump) };
+  results.lockOn.push(row);
+  assert.equal(locked, 840, JSON.stringify(row));
+  assert.ok(centralCenters / locked >= 0.95, JSON.stringify(row));
+  assert.ok(centralBodies / locked >= 0.95, JSON.stringify(row));
+  assert.equal(targetOff, 0, JSON.stringify(row));
+  assert.equal(overlaps, 0, JSON.stringify(row));
+  assert.ok(worstJump <= 1.5, JSON.stringify(row));
+}
+
+console.log(JSON.stringify(results, null, 2));

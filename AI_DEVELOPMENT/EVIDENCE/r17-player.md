@@ -1,0 +1,106 @@
+# R17 player and camera bounded repair
+
+Source baseline: `4e6d23a`. Owned source changes: `src/gameplay/Player.js`,
+`src/gameplay/PlayerCamera.js`. Check: `node tools/check-player-r17.mjs`.
+The command passes using installed Three.js, the real Player/Input/PlayerCamera
+classes, and the real PhysicsWorld queries. No browser, build, capture, or commit
+was run by this owner. These are deterministic simulation results, not rendered
+phone evidence or a complete project PASS.
+
+## Diagnosis before editing
+
+- Read the movement/camera reference entries, `interaction-i1.md`, the i1 result
+  records in `shots/interaction-i1.json`, current metric implementations and
+  scenario stimuli. The raw trace files referenced by that manifest are absent
+  from this checkout, so historical failing frame positions cannot be replayed.
+- The reversal scenario used magnitude 1.0, which Input promotes to sprint.
+  A baseline real-Player fixture reproduced 283.3 ms to 90% heading at sprint,
+  versus 250 ms at run. Full 180-degree completion was 300 ms at sprint and
+  283.3 ms at run. The metric currently calls 90% of a turn a completed reversal.
+  The combat/harness owner was notified to use magnitude 0.92 for the run-speed
+  criterion. The new check independently measures full 180-degree completion.
+- The current baseline `_score` contains no occlusion rejection. Actual Input
+  keydown dispatch, Player update, Camera update and late-update ordering acquired
+  and held a clear 4 m target for 840/840 baseline frames. The historical zero-lock
+  claim was therefore not reproduced as a current acquisition failure. The world
+  owner separately identified the initial player spawn inside the hall.
+- Backing to 0.4 m from a solid wall produced 23 eye overlaps in a 100-frame
+  baseline fixture. The minimum collision boom was 0.55 m, longer than available
+  space; camera-position smoothing and shake also followed the collision solve.
+- Once clipping was corrected, a separate two-wall corner fixture revealed the
+  composition defect the zero-lock trace could not measure: the player center
+  remained outside the central frame for all 840 locked frames. The open-space
+  counterpart had both centers central for 840/840 frames.
+- Long portrait camera arms exposed the Physics sphere-sweep sample cap: a 12 m
+  sweep could skip a 0.4 m wall. Camera queries now split into at-most-2 m sweeps;
+  no Physics source change was made.
+
+## Repair
+
+The movement heading rate now completes a full run reversal within the existing
+250 ms criterion. Walk/run/sprint velocity constants and acceleration, capsule,
+gravity, combat-state and rig semantics are unchanged. At the combat owner's
+request, Player also declares `managesPostureRegen = false`, making the existing
+delegation to Combat explicit; posture tuning is unchanged.
+
+The camera can contract below its aesthetic minimum boom when geometry requires
+it. A sweep from the actual player chest constrains the smoothed eye and the final
+shaken eye, including the entire near-plane corner radius. The collision query
+mask is explicitly the solid world/prop mask.
+
+Under lock-on, a blocked rear view selects a clear side of the pair. Cached side
+selection avoids unnecessary candidate sweeps and oscillation. Candidate clearance
+uses the distance needed for that angle, body size and viewport; portrait therefore
+gets enough horizontal room. A constrained composition keeps the target visible
+while the camera leaves the corner, then frames both bodies by angular weight.
+The safety check includes heads, feet and capsule width, not only centers. FOV
+event tuning is unchanged.
+
+## Current measured results
+
+All authored ground speeds, measured from world-position displacement, are
+1.900 / 5.400 / 7.200 m/s at 120, 60, 30 and 4 Hz (the last is `dt = 0.25`).
+
+| Run-speed reversal | First heading response | Full 180 degrees |
+|---|---:|---:|
+| 120 Hz | 8.3 ms | 225.0 ms |
+| 60 Hz | 16.7 ms | 233.3 ms |
+| 30 Hz | 33.3 ms | 233.3 ms |
+| `dt = 0.25` | 250 ms, one sampled frame | 250 ms |
+
+The 4 Hz row proves bounded stepping and speed preservation; it does not claim
+sub-100 ms input response on a 250 ms sampling interval. Sprint full-turn time is
+250 ms at 60/120 Hz and 266.7 ms at 30 Hz; the binding reversal criterion is at run
+speed. Walking retains its slower turn-in-place behavior.
+
+Camera probes use actual output position/quaternion, PerspectiveCamera projection,
+and PhysicsWorld overlap queries. Bodies are tested independently at head, foot and
+left/right capsule extents. The locked target is 2.15 m tall and 0.45 m in radius.
+Each encounter includes the initial camera transition; no settling frames are
+excluded.
+
+| Locked fixture | Locked frames | Both centers central | Both full bounds central | Target off | Solid overlaps | Worst eye jump |
+|---|---:|---:|---:|---:|---:|---:|
+| 844×390, open | 840 | 840 (100%) | 840 (100%) | 0 | 0 | 0.0124 m |
+| 844×390, corner | 840 | 824 (98.10%) | 821 (97.74%) | 0 | 0 | 0.2916 m |
+| 390×844, open | 840 | 840 (100%) | 840 (100%) | 0 | 0 | 0.0124 m |
+| 390×844, corner | 840 | 814 (96.90%) | 799 (95.12%) | 0 | 0 | 0.5788 m |
+
+Separate back-wall, shoulder-wall, orbiting-pillar, shaken-wall and downward-floor
+fixtures cover 181 samples each, including the initial snap: 0 overlaps in 905
+samples. Their worst single-frame motion is 0.3252 m, below 1.5 m.
+
+## Gates still pending
+
+- Root must build and run the corrected interaction scenarios against the full
+  procedural level. Synthetic wall fixtures do not establish zero collisions
+  everywhere in the playable region, nor rendered silhouette visibility.
+- The corner fixtures use stationary, living targets. Moving enemies, repeated
+  target death/reacquisition, executions and actual shrine occlusion require the
+  integrated encounter capture. Portrait full-body framing has only a small margin
+  above 95% in this fixture; do not generalize it to unmeasured encounters.
+- Side-orbit selection, final framing constraints and segmented casts add camera
+  work. Full-scene JS cost and mobile performance remain for root's profiler/device
+  gates. The local Node runtime is not an Android performance measurement.
+- Camera shake ablation and visual review remain pending. Neither historical
+  benchmark status nor shared project state was marked PASS by this owner.

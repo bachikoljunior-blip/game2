@@ -200,6 +200,7 @@ export class Player {
     this.maxHealth = 100; this.health = 100;
     /** Sekiro-style: posture is *accumulated pressure*, 0 fresh → maxPosture breaks. */
     this.maxPosture = 100; this.posture = 0;
+    this.managesPostureRegen = false;
     this.state = 'sheathed';
     this.invulnerable = false;
     this.hitboxes = [
@@ -970,8 +971,9 @@ export class Player {
 
   _applyFacing(dt) {
     // Angular speed falls off with speed: snappy at a walk, committed at a sprint.
+    // Braking during a run reversal must still finish the full turn within 250 ms.
     const t = clamp(this.speed / SPEED_SPRINT, 0, 1);
-    let rate = lerp(14.0, 5.2, t);
+    let rate = lerp(17.0, 7.2, t);
     if (this.turningInPlace) rate = TURN_IN_PLACE_RATE;
     else if (this.state === 'attack' || this.state === 'drawing') rate = 3.0;
     else if (this.lockTarget) rate = 12.0;
