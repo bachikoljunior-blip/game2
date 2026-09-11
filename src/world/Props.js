@@ -3851,11 +3851,19 @@ export class PropFactory {
           { x: 0, y: bellTop - 0.92, z: rz, sx: 0.045, sy: 0.045, ao: 1.0 },
         ], circleProfile(5), { smooth: true, uvScale: 3 }));
       }
+      // The deck has no entrance stair; a hanging pull lets a visitor ring from the path.
+      ropes.push(sweepProfile([
+        { x: 0, y: bellTop - 0.95, z: h + 1.05, sx: 0.045, sy: 0.045, ao: 0.9 },
+        { x: 0.03, y: 2.2, z: h + 1.08, sx: 0.05, sy: 0.05, ao: 1.0 },
+        { x: 0, y: 1.25, z: h + 1.05, sx: 0.07, sy: 0.07, ao: 0.9 },
+      ], circleProfile(5), { smooth: true, uvScale: 3 }));
       PropFactory.add(b, mergeGeometries(ropes, false), 'rope');
     }
 
     b.anchors.bell = [0, bellTop - bellH * 0.5, 0];
     b.anchors.striker = [0, bellTop - 0.95, h + 1.4];
+    b.anchors.pull = [0, 1.25, h + 1.05];
+    b.anchors.ridge = [0, roof.ridgeY, 0];
     b.bounds = { r: h + 1.7, h: roof.ridgeY + 0.6 };
     return b;
   }

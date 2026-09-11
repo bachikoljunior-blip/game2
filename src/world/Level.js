@@ -127,10 +127,12 @@ export const ENCOUNTERS = [
   {
     id: 'bell',
     trigger: { type: 'event', name: 'bell' },
-    objective: { text: '奥の敵を討て', sub: 'The bell has called them' },
+    objective: { text: '鐘が谷を渡る', sub: '奥から足音が近づく — Footsteps answer from within' },
+    clearObjective: { text: '山に静けさが戻る', sub: 'The shrine is at peace' },
     waves: [
-      { at: 0.5, spawn: [['ronin', 'haiden_l', 1], ['ronin', 'haiden_r', 1]] },
-      { at: 13.0, spawn: [['oni', 'torii_c', 1], ['ashigaru', 'stair', 2]] },
+      { at: 2.0, spawn: [['ronin', 'haiden_l', 1], ['ronin', 'haiden_r', 1]],
+        objective: { text: '奥の敵を討て', sub: 'The bell has called them' } },
+      { at: 13.0, spawn: [['oyoroi', 'torii_c', 1], ['ashigaru', 'stair', 2]] },
     ],
     next: null,
   },
@@ -142,6 +144,8 @@ const _v = new Vector3();
 const _v2 = new Vector3();
 const _m = new Matrix4();
 const _m2 = new Matrix4();
+const BELL_SHAKE = { amount: 0.12, duration: 0.9, freq: 6 };
+const PURIFIED = { text: '身を清めた', sub: '体力が戻った — The mountain water restores you' };
 
 // ============================================================== Level
 
@@ -171,12 +175,14 @@ export class Level {
     this.farMesh = null;
     this.spawnPoints = null;
     this.interactables = [];
+    this.landmarks = [];
     this.spawnQueue = [];
     /** Lantern flames, nearest the arena first — see `_realizeLights`. */
     this.propLights = [];
     this.stats = { drawCalls: 0, triangles: 0, cells: 0, instances: 0 };
 
     this._enc = { active: null, index: -1, t: 0, waveIndex: 0, done: new Set(), cleared: false };
+    this._interactionCooldown = 0;
     this._lodTimer = 0;
     this._foliageBound = false;
     this._bindTries = 0;
@@ -523,6 +529,9 @@ export class Level {
     _m.makeRotationY(0);
     _m.setPosition(0, y, t.z);
     this._emit(build, _m.clone());
+    if (i === LAYOUT.torii.length - 1) {
+      this.landmarks.push({ id: 'great-torii', position: new Vector3(0, y + build.anchors.top[1], t.z) });
+    }
 
     // 注連縄 strung under the nuki of the two larger gates.
     if (i >= 1) {
@@ -562,7 +571,11 @@ export class Level {
       T(`${label} · ${s[0]}`, () => {
         const o = optsFn();
         const build = this.factory.hall(Object.assign({}, o.hall, { stages: s }));
-        this._emit(build, this._ground(o.x, o.z, o.ry || 0));
+        const m = this._ground(o.x, o.z, o.ry || 0);
+        this._emit(build, m);
+        if (s.includes('roof') && (label === 'honden' || label === 'haiden')) {
+          this.landmarks.push({ id: `${label}-roof`, position: new Vector3().fromArray(build.anchors.ridge).applyMatrix4(m) });
+        }
         this._hallAnchors = this._hallAnchors || {};
         this._hallAnchors[label] = build.anchors;
       });
@@ -666,6 +679,10 @@ export class Level {
     this._emit(build, m);
     _v.set(build.anchors.bell[0], build.anchors.bell[1], build.anchors.bell[2]).applyMatrix4(m);
     this._bellPos = _v.clone();
+    // Target the hand-height pull outside the raised deck, not the suspended bronze.
+    _v.fromArray(build.anchors.pull).applyMatrix4(m);
+    this._bellInteractPos = _v.clone();
+    this.landmarks.push({ id: 'bell-tower', position: new Vector3().fromArray(build.anchors.ridge).applyMatrix4(m) });
   }
 
   _buildChozuya() {
@@ -1589,8 +1606,12 @@ export class Level {
     };
   }
 
+  /** Player and retry share the one placement authored in the level. */
+  get playerSpawn() { return this.spawnPoints?.player ?? null; }
+
   _buildInteractables() {
-    const bell = this._bellPos || new Vector3(LAYOUT.bellTower.x, WORLD.PLATEAU_HEIGHT + 2, LAYOUT.bellTower.z);
+    const bell = this._bellInteractPos || this._bellPos
+      || new Vector3(LAYOUT.bellTower.x, WORLD.PLATEAU_HEIGHT + 2, LAYOUT.bellTower.z);
     const ema = this._emaPos || new Vector3(LAYOUT.emaRack.x, WORLD.PLATEAU_HEIGHT + 1.4, LAYOUT.emaRack.z);
     const rest = this.spawnPoints?.rest?.[0]?.position
       || new Vector3(LAYOUT.chozuya.x, WORLD.PLATEAU_HEIGHT, LAYOUT.chozuya.z);
@@ -1598,24 +1619,56 @@ export class Level {
     this.interactables = [
       {
         id: 'bell', kind: 'bell', position: bell.clone(), radius: 2.8,
-        prompt: '鐘を撞く — Ring the bell', used: false,
+        prompt: '鐘を撞く', consequence: '奥の敵を呼び寄せる', used: false,
       },
       {
         id: 'ema', kind: 'read', position: ema.clone(), radius: 2.0,
-        prompt: '絵馬を読む — Read the ema', used: false,
+        prompt: '絵馬を読む', consequence: '残された願いにふれる', used: false,
         lines: [
-          '「息子が無事に帰りますように」',
-          '"Let my son come home."',
-          '「刀が折れませんように」',
-          '"May the blade not break."',
+          { text: '帰りを待つ絵馬', sub: '「息子が無事に帰りますように」 — Let my son come home.' },
+          { text: '刀に託した願い', sub: '「刀が折れませんように」 — May the blade not break.' },
         ],
         cursor: 0,
       },
       {
         id: 'rest', kind: 'rest', position: rest.clone(), radius: 2.4,
-        prompt: '手を清める — Purify your hands', used: false,
+        prompt: '手を清める', consequence: '体力を30回復・一度きり', used: false,
+      },
+      {
+        id: 'omikuji', kind: 'read',
+        position: new Vector3(LAYOUT.omikujiRack.x, this.groundY(LAYOUT.omikujiRack.x, LAYOUT.omikujiRack.z) + 1.2, LAYOUT.omikujiRack.z),
+        radius: 2.0, prompt: '結び文を読む', consequence: '枝に託された言葉を読む', used: false,
+        lines: [{ text: '凶を枝に預ける', sub: '「悪い報せはここに置く。家には持ち帰らぬ」' }],
+        cursor: 0,
       },
     ];
+  }
+
+  _canInteract() {
+    const ctx = this.ctx;
+    const p = ctx?.player;
+    if (!p?.isAlive || !Number.isFinite(p.health) || p.health <= 0
+      || ctx.engine?.paused || ctx.input?.enabled === false) return false;
+    // A simultaneous combat command wins; the dedicated interaction never cancels a defence.
+    const s = ctx.input?.state;
+    if (s?.guard || s?.slashes?.length || s?.pressed?.has('pause')
+      || s?.pressed?.has('attack') || s?.pressed?.has('heavy')
+      || s?.pressed?.has('dodge') || s?.pressed?.has('special')) return false;
+    return p.state === 'sheathed' || p.state === 'idle' || p.state === 'move' || p.state === 'sprint';
+  }
+
+  _interactionAvailable(it) {
+    if (this._interactionCooldown > 0) return false;
+    if (it.kind === 'bell') {
+      const st = this._enc;
+      return !it.used && st.active?.id === 'bell' && !st.armed && this._aliveEnemies() === 0;
+    }
+    if (it.kind === 'rest') {
+      const p = this.ctx.player;
+      return !it.used && this._aliveEnemies() === 0 && Number.isFinite(p.maxHealth)
+        && p.maxHealth > 0 && p.health < p.maxHealth;
+    }
+    return true;
   }
 
   /**
@@ -1623,10 +1676,12 @@ export class Level {
    * runs from the HUD every frame.
    */
   nearestInteractable(position) {
-    if (!position) return null;
+    if (!position || !this._canInteract() || !Number.isFinite(position.x)
+      || !Number.isFinite(position.y) || !Number.isFinite(position.z)) return null;
     let best = null, bestD = Infinity;
     for (let i = 0; i < this.interactables.length; i++) {
       const it = this.interactables[i];
+      if (!this._interactionAvailable(it)) continue;
       const dx = it.position.x - position.x;
       const dy = it.position.y - position.y;
       const dz = it.position.z - position.z;
@@ -1638,21 +1693,33 @@ export class Level {
 
   /** Fire an interactable by id. Returns true if something happened. */
   interact(id) {
-    const it = this.interactables.find((x) => x.id === id);
-    if (!it) return false;
-    if (it.kind === 'bell') return this.ringBell();
+    const it = this.nearestInteractable(this.ctx?.player?.position);
+    if (!it || it.id !== id) return false;
+    if (it.kind === 'bell') {
+      it.used = true;
+      this._interactionCooldown = 0.45;
+      this.ctx?.audio?.play?.('templeBell');
+      this.ctx?.bus?.emit('camera-shake', BELL_SHAKE);
+      this.ctx?.enemies?.alertAll?.(this._bellPos || it.position);
+      this._fireTrigger('bell');
+      return true;
+    }
     if (it.kind === 'read') {
       const line = it.lines[it.cursor % it.lines.length];
       it.cursor++;
-      this.ctx?.bus?.emit('objective', { text: line, sub: '絵馬 — a votive plaque' });
-      this.ctx?.audio?.play?.('uiSoft');
+      it.used = true;
+      this._interactionCooldown = 0.45;
+      this.ctx?.bus?.emit('objective', line);
+      this.ctx?.audio?.play?.('uiConfirm');
       return true;
     }
     if (it.kind === 'rest') {
-      this.ctx?.audio?.play?.('water');
-      this.ctx?.bus?.emit('objective', { text: '身を清めた', sub: 'Purified' });
-      const p = this.ctx?.player;
-      if (p && typeof p.health === 'number') p.health = Math.min(p.maxHealth ?? p.health, p.health + 30);
+      it.used = true;
+      this._interactionCooldown = 0.45;
+      this.ctx?.audio?.play?.('footstep_water');
+      const p = this.ctx.player;
+      p.health = Math.min(p.maxHealth, p.health + 30);
+      this.ctx?.bus?.emit('objective', PURIFIED);
       return true;
     }
     return false;
@@ -1660,13 +1727,42 @@ export class Level {
 
   /** Ringing it is both an audio cue and the trigger for the second wave set. */
   ringBell() {
-    const it = this.interactables.find((x) => x.id === 'bell');
-    if (it) it.used = true;
-    this.ctx?.audio?.play?.('templeBell');
-    this.ctx?.bus?.emit('camera-shake', { amount: 0.12, duration: 0.9, freq: 6 });
-    const em = this.ctx?.enemies;
-    if (em?.alertAll) { try { em.alertAll(this._bellPos); } catch { /* optional */ } }
-    this._fireTrigger('bell');
+    return this.interact('bell');
+  }
+
+  _tickInteraction(dt) {
+    const input = this.ctx?.input;
+    // Level precedes Player in the engine order, so it is now the first consumer.
+    const frame = this.ctx?.engine?.frame ?? 0;
+    if (input && input.__kagPumpFrame !== frame) {
+      input.__kagPumpFrame = frame;
+      input.update?.();
+    }
+    const pressed = input?.consume?.('interact');
+    // Drain rejected intents too; pausing, dying or leaving range must not queue a later ring.
+    if (dt <= 0 || !this._canInteract()) return;
+    this._interactionCooldown = Math.max(0, this._interactionCooldown - dt);
+    if (pressed) {
+      const it = this.nearestInteractable(this.ctx?.player?.position);
+      if (it) this.interact(it.id);
+    }
+  }
+
+  restart() {
+    if (!this._built) return false;
+    const ctx = this.ctx;
+    ctx.enemies?.despawnAll?.();
+    ctx.combat?.reset?.();
+    this.spawnQueue.length = 0;
+    this._interactionCooldown = 0;
+    for (let i = 0; i < this.interactables.length; i++) {
+      this.interactables[i].used = false;
+      if (this.interactables[i].kind === 'read') this.interactables[i].cursor = 0;
+    }
+    this._enc.done.clear();
+    ctx.input?.releaseAll?.();
+    ctx.player?.respawn?.(this.playerSpawn?.position);
+    this._advanceEncounter(0);
     return true;
   }
 
@@ -1734,6 +1830,8 @@ export class Level {
   }
 
   _tickEncounter(dt) {
+    if (dt <= 0 || this.ctx?.engine?.paused || !this.ctx?.player?.isAlive
+      || this.ctx?.input?.enabled === false) return;
     const st = this._enc;
     const e = st.active;
     if (!e) return;
@@ -1765,12 +1863,16 @@ export class Level {
 
     if (st.waveIndex >= e.waves.length && !st.cleared) {
       const alive = this._aliveEnemies();
-      if (alive === 0 && st.t > (e.waves.length ? 1.5 : 0.2)) {
+      if (alive === 0 && this.spawnQueue.length === 0 && st.t > (e.waves.length ? 1.5 : 0.2)) {
         st.cleared = true;
+        st.done.add(e.id);
         if (e.clearObjective) this.ctx?.bus?.emit('objective', e.clearObjective);
         const next = e.next ? ENCOUNTERS.findIndex((x) => x.id === e.next) : -1;
         if (next >= 0) this._advanceEncounter(next);
-        else st.active = null;
+        else {
+          st.active = null;
+          this.ctx?.bus?.emit('victory');
+        }
       }
     }
   }
@@ -1798,29 +1900,32 @@ export class Level {
     _v.z -= Math.sin(p.yaw) * jitter;
     _v.y = this.groundY(_v.x, _v.z);
 
+    const request = { archetype, position: _v.clone(), yaw: p.yaw, spawnPoint: pointId, alerted: true };
     const em = this.ctx?.enemies;
-    const fn = em?.spawn || em?.spawnEnemy || em?.spawnAt;
+    const fn = em?.spawn;
     if (typeof fn === 'function') {
       try {
-        fn.call(em, { archetype, type: archetype, position: _v.clone(), yaw: p.yaw, spawnPoint: pointId });
-        return;
+        if (fn.call(em, archetype, request.position, request)) return;
       } catch (err) { console.error('[level] enemy spawn failed', err); }
     }
-    // EnemyManager not up yet — hold it and drain later.
-    this.spawnQueue.push({ archetype, position: _v.clone(), yaw: p.yaw, spawnPoint: pointId });
+    // A tier's enemy cap may be full when a wave is due. Keep every authored arrival.
+    this.spawnQueue.push(request);
   }
 
   _drainSpawnQueue() {
     if (!this.spawnQueue.length) return;
     const em = this.ctx?.enemies;
-    const fn = em?.spawn || em?.spawnEnemy || em?.spawnAt;
+    const fn = em?.spawn;
     if (typeof fn !== 'function') return;
+    let pending = 0;
     for (let i = 0; i < this.spawnQueue.length; i++) {
       const s = this.spawnQueue[i];
-      try { fn.call(em, { archetype: s.archetype, type: s.archetype, position: s.position, yaw: s.yaw, spawnPoint: s.spawnPoint }); }
+      let spawned = false;
+      try { spawned = !!fn.call(em, s.archetype, s.position, s); }
       catch (err) { console.error('[level] queued spawn failed', err); }
+      if (!spawned) this.spawnQueue[pending++] = s;
     }
-    this.spawnQueue.length = 0;
+    this.spawnQueue.length = pending;
   }
 
   // =====================================================================
@@ -1829,6 +1934,7 @@ export class Level {
 
   update(dt, elapsed, rawDt) {
     if (!this._built) return;
+    dt = Number.isFinite(dt) ? clamp(dt, 0, 0.25) : 0;
 
     // Lantern flame breathing — one uniform write, shared by every firebox.
     const ember = this.factory._ember;
@@ -1848,7 +1954,9 @@ export class Level {
     }
 
     this._tickEncounter(dt);
-    if (this.spawnQueue.length) this._drainSpawnQueue();
+    this._tickInteraction(dt);
+    if (dt > 0 && this.ctx?.player?.isAlive && !this.ctx?.engine?.paused
+      && this.ctx?.input?.enabled !== false && this.spawnQueue.length) this._drainSpawnQueue();
 
     this._lodTimer += rawDt || dt;
     if (this._lodTimer >= 0.13) {
