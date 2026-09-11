@@ -571,6 +571,51 @@ export class CombatDirector {
     this.ctx?.pipeline?.setLetterbox?.(0, 0);
   }
 
+  /** Clear the previous fight before Level respawns its entities for a retry. */
+  reset() {
+    const ex = this._exec;
+    if (ex.active) {
+      if (ex.attacker && ex.attacker.isAlive !== false) this._safeSet(ex.attacker, 'invulnerable', false);
+      if (ex.victim && ex.victim.isAlive !== false) this._safeSet(ex.victim, 'invulnerable', false);
+    }
+    ex.active = false;
+    ex.phase = 0;
+    ex.t = 0;
+    ex.attacker = null;
+    ex.victim = null;
+    this._demo.active = false;
+    this._demo.a = null;
+    this._demo.b = null;
+    for (const [entity, rec] of this._records) {
+      rec.reset(entity);
+      rec.seen = this._frame;
+    }
+    this._tokens.melee.length = 0;
+    this._tokens.ranged.length = 0;
+    this._lastGrantMelee = -999;
+    this._lastGrantRanged = -999;
+    for (let i = 0; i < this._projectiles.length; i++) {
+      this._projectiles[i].alive = false;
+      this._projectiles[i].owner = null;
+    }
+    this._stopUntil = -999;
+    this._stopStart = -999;
+    this._slowUntil = -999;
+    this._stopScale = 1;
+    this._slowScale = 1;
+    this._timeScaleApplied = 1;
+    this._slowGrade = 0;
+    this._spam = 0;
+    this._lastPlayerKind = '';
+    this._lastPlayerSwing = -999;
+    this.parryStreak = 0;
+    this.tension = 0;
+    this.ctx?.engine?.setTimeScale?.(1, true);
+    this.ctx?.pipeline?.setSlowMo?.(0);
+    this.ctx?.pipeline?.setLetterbox?.(0, 0);
+    this.ctx?.playerCamera?.cinematic?.(false, null);
+  }
+
   applyQuality() { /* combat resolution is deliberately tier-independent */ }
 
   /* ══════════════════════════════════════════════════════════════════════════
@@ -1832,8 +1877,8 @@ export class CombatDirector {
 
   /**
    * Slower at low health, faster the longer the entity goes unpressured — but only for
-   * entities that do not already regenerate for themselves. Player and Enemy both do;
-   * we detect their drift and stand down rather than fight them.
+   * entities that do not regenerate for themselves. Explicit ownership also keeps a
+   * one-off reward, such as Player.onParry(), from being mistaken for ongoing regen.
    */
   _regenPosture(entity, rec, rdt, now) {
     if (entity.posture == null) return;
@@ -1841,14 +1886,17 @@ export class CombatDirector {
 
     const drift = entity.posture - rec.postureSeen;
     if (Math.abs(drift) > 1e-4) {
-      // Movement we did not cause. If it is heading away from a break, the entity owns
-      // its own regeneration and we must never write posture on idle frames again.
+      // Older passive entities have no ownership flag, so infer their recovery.
+      // Player explicitly delegates: its parry/kill rewards must not disable regen.
       const towardBreak = rec.postureMode < 0 ? drift < 0 : drift > 0;
-      if (!towardBreak) rec.selfRegen = true;
+      if (!towardBreak && entity.managesPostureRegen == null) rec.selfRegen = true;
       rec.postureSeen = entity.posture;
       if (towardBreak) this._checkBreak(entity, rec, null);
     }
-    if (rec.selfRegen) return;
+    // Enemy's authored recovery delay starts with the first hit. Waiting to infer
+    // ownership from visible regen restores its bar before that delay has elapsed.
+    if (entity.managesPostureRegen === true ||
+      (entity.managesPostureRegen == null && rec.selfRegen)) return;
     if (now < rec.brokenUntil) return;
     if (now - rec.lastPressure < TUNING.POSTURE_REGEN_DELAY) return;
     const pressure = this._pressureOf(entity, rec);
@@ -2472,6 +2520,9 @@ export class CombatDirector {
       rec.seen = this._frame;
       this._records.set(entity, rec);
     }
+    // Capture the resting convention before onDamage/onParried can drain a new
+    // enemy below the classification threshold on its very first contact.
+    this._classifyPosture(entity, rec);
     return rec;
   }
 
