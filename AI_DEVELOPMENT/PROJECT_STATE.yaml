@@ -1,19 +1,21 @@
 {
  "schemaVersion": 1,
- "updatedAt": "2026-09-11T12:55:00Z",
+ "updatedAt": "2026-09-11T15:21:52Z",
  "status": "active",
  "project": {
   "name": "KAGEROU 陽炎",
   "repository": "bachikoljunior-blip/game2",
   "objective": "Continue the mobile-first third-person Japanese sword-action game toward its established visual and interaction bar without external runtime assets or AI APIs.",
   "defaultBranch": "main",
-  "defaultBranchVerifiedSha": "4a3eff701af0f6db52f5b780247e38422d40aad6",
+  "defaultBranchVerifiedSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
   "workingBranch": "codex/game2-criteria-20260911",
   "workingBranchBaseSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
   "previousWorkingBranch": "claude/game-reference-benchmark-qh0v0q",
-  "workingBranchPublicationSha": "b2a7433de7ff72082287d6b5429ca8af54a8642b",
+  "workingBranchPublicationSha": "7c2ed042b0b9cb3eeef5fb5ff99e691eee5fc140",
   "resumedFromRef": "origin/main",
-  "resumedFromSha": "4e6d23a40af33bb3ba409b3826e77666262ce353"
+  "resumedFromSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
+  "recoveryBranch": "codex/game2-smoke-20260911",
+  "recoveryBranchPublicationSha": "bb5c49f1b8ffee0406a2b0e60d520b8c80d40320"
  },
  "sourceOfTruth": {
   "operatingProtocol": "PROJECT_OPERATING_PROTOCOL.md",
@@ -23,32 +25,37 @@
   "publicStatus": "README.md"
  },
  "verifiedState": {
-  "lastCompletedVerifiedRound": 15,
-  "activeRound": null,
+  "lastCompletedVerifiedRound": 16,
+  "activeRound": 17,
   "round9IntegratedVerification": "FAIL at coherent phone/MEDIUM r12v1: apparatus, budgets, tone, and lantern criteria passed; fill, shadow edge, sky, sakura hue, and far-range checks failed; valley semantics are blocked by stale camera probes.",
   "round10Verdict": "FAIL product gate; verification hardened and shadow-filter/toe experiments rejected without shipping them.",
   "round11Verdict": "TARGET PASS: the lantern receiver became visible, horizontal, additive, and surface-following; near/far improved from 1.121 to 2.394.",
   "round12Verdict": "TARGET PASS and OVERALL FAIL: coherent r12v1 passed apparatus, budget, tone, and lantern gates; independent review confirmed those repairs and retained the broader visual blockers.",
   "round13Verdict": "FAIL with measured progress: source-blind score 36 to 43; bamboo skyline and terrain hierarchy improved, blocker count fell from two to one, but detached bamboo fragments remain blocking and four major findings remain.",
   "round14Verdict": "FAIL with measured progress: source-blind score 44 to 50; the sun-glare major finding cleared, but one detached-bamboo blocker and terrain/courtyard majors remain.",
-  "latestVerifiedVisualBaseline": "phone/MEDIUM tag r15v1",
+  "latestVerifiedVisualBaseline": "phone/MEDIUM tag ci-candidate, 7c2ed042; technical gate passed; source-blind K/M critic and separate refuter retained foliage/terrain blockers",
   "capture": {
    "status": "passed",
-   "tag": "r15v1",
+   "tag": "ci-candidate",
    "worstDrawCalls": 119,
-   "worstTriangles": 784449,
+   "worstTriangles": 789214,
    "resolution": "2532x1170",
    "programs": 117,
    "deadShaders": 0,
    "consoleErrors": 0,
-   "limitation": "SwiftShader evidence is not real-device 60 fps evidence."
+   "limitation": "SwiftShader evidence is not real-device 60 fps evidence.",
+   "revision": "7c2ed042b0b9cb3eeef5fb5ff99e691eee5fc140",
+   "buildFingerprint": "6c7515110a97af0f0f0292f5ea5676859d9829c874164ba9426b67a8da6cd4c7",
+   "workflowRun": 34602120671
   },
   "productionBuild": {
    "status": "passed",
-   "command": "npm run build",
-   "checkedAt": "2026-08-01T01:05:00Z",
-   "mainChunkGzipKb": 317.77,
-   "entryChunkGzipKb": 1.13
+   "command": "node node_modules/vite/bin/vite.js build",
+   "checkedAt": "2026-09-11T15:21:52Z",
+   "mainChunkGzipKb": 329.83,
+   "entryChunkGzipKb": 1.13,
+   "totalGzipKb": 491.06,
+   "sourceScope": "integrated local Round 17 candidate; exact remote revision pending publication and rendered CI"
   },
   "publication": {
    "status": "partially_verified",
@@ -91,7 +98,28 @@
     "report": "shots/interaction-i1.json",
     "evidence": "AI_DEVELOPMENT/EVIDENCE/interaction-i1.md"
    },
-   "notCovered": "E01-COMBAT and E14-AI. Their scenario and metrics are wired but unsampled: at 0.2-1.5 simulated fps with three enemies engaged (TD-010), the >=20-encounter sample they require is hours of wall clock. Left unmeasured rather than reduced."
+   "notCovered": "Physical-device/human gates, valid isolated shake ablation, enemy edge pixel survey, true-peak audio and motion-video review remain open. E01-COMBAT and E14-AI now have an actual 20-encounter sample.",
+   "latestRun": {
+    "tag": "ci-candidate",
+    "revision": "7c2ed042b0b9cb3eeef5fb5ff99e691eee5fc140",
+    "encounters": 20,
+    "initialMetricVerdicts": {
+     "pass": 14,
+     "fail": 2,
+     "inconclusive": 2
+    },
+    "selfCheck": "120-frame determinism and render-substitution divergence are both zero. The tagged screenshot counter was not resolved in-run; same-build reports are preserved and associated in the evidence summary. The next capture fixes the filename lookup.",
+    "scope": "Initial metric outputs, not 14 newly verified benchmark entries. Startup idle calibration was contaminated; sample audio peak is not true-peak proof.",
+    "evidence": "AI_DEVELOPMENT/EVIDENCE/r17-ci-summary.json"
+   }
+  },
+  "browserSmoke": {
+   "status": "passed",
+   "revision": "bb5c49f1b8ffee0406a2b0e60d520b8c80d40320",
+   "run": 34605905851,
+   "artifact": 10266976639,
+   "scope": "Two fresh native touch contexts and real WebGL loss/restore at 568x320/MEDIUM; zero page/console/request/HTTP/GL faults; not phone performance or public deployment evidence.",
+   "evidence": "AI_DEVELOPMENT/EVIDENCE/r17-browser-smoke.md"
   }
  },
  "qualityBar": {
@@ -105,34 +133,32 @@
    "SEKIRO: Shadows Die Twice (7 elements incl. one secondary)",
    "Genshin Impact (touch layer and phone performance envelope only)"
   ],
-  "criteria": "62 total: 21 verified, 4 under review, 14 blocked, 23 proposed. Nine of the verified now carry a runtime or frame measurement; the rest remain source audits. One previously-verified criterion (BM-EXPLORE-02) was withdrawn when the rig showed its authored responses are unreachable in play.",
-  "headlineGap": "TEN of 16 elements now carry at least one executed runtime or frame measurement, against ONE before 2026-08-01. That is coverage, not quality: the first interaction run returned 9 failures, including no foot locking (25.9 cm/frame planted drift against 2 cm), enemy attacks damaging 17 ms after first visible motion against their own 140 ms reaction floor, rim separation below the rig's floor on 4 of 8 archetype placements, and ~194 ms of JS per frame with three enemies against a 5 ms budget.",
-  "structuralBlocker": "TD-010 is resolved. The current Work shell cannot start Chromium (SIGTRAP) and Cloud Browser reports no WebGL context. A read-only GitHub Actions evidence workflow is prepared. Physical-device and human benchmark gates still require actual measurements.",
+  "criteria": "62 benchmark entries; legacy status counts remain 21 verified, 4 under review, 14 blocked, 23 proposed until the new evidence is matched to each full threshold. Round 17 measurement coverage is recorded separately; no thresholds were relaxed.",
+  "headlineGap": "Round 17 technical five-frame gate and native input/recovery smoke pass. Reversal is 217 ms; planted-foot p95 drift is zero with worst 0.044 cm; camera traverse has zero collisions across 1896 sampled frames. Twenty encounters last yielded only 5 posture resolutions out of 33 enemy deaths (15.15% against 60%). Duplicate heavy damage and contaminated idle calibration are repaired locally, as are the independently retained foliage/terrain findings, but all require rendered CI remeasurement. AAA art, physical-device and human gates are not passed.",
+  "structuralBlocker": "Local Chromium SIGTRAP and Cloud Browser WebGL limitations are bypassed using the already-authorized GitHub Actions execution surface. Actual capture and smoke evidence are available. Physical-device and human gates still require actual measurements.",
   "neverPerformed": [
-   "Any side-by-side against real reference-title footage. Not fetched, not available, not claimed anywhere.",
-   "Any real-device frame-rate, thermal, or boot measurement. SwiftShader capture is not phone evidence.",
-   "Any expert or player review of KAGEROU."
+   "A matched reference-title gameplay-video or physical-device comparison. Official publisher reference stills were fetched and supplied to a version-blind model critic on 2026-09-11.",
+   "Any real-device frame-rate, thermal, or boot measurement. SwiftShader is not phone evidence.",
+   "Any expert human or player review of KAGEROU."
   ]
  },
  "currentWork": {
-  "activeTask": "R17-GAMEPLAY — integrated repair checkpoint; eight focused test files pass; browser CI pending",
-  "lastCompletedTask": "Round 16 / physics narrowphase; see HANDOFF.md and runtime evidence, not stale Round 15 summary.",
+  "activeTask": "R17-GAMEPLAY",
+  "lastCompletedTask": "Integrated Round 17 local source/build/focused verification; rendered CI is the next gate.",
   "nextTask": "R17-GAMEPLAY",
-  "nextStartingPoint": "Repair demonstrated interaction, combat, camera, animation and progression defects; execute the unchanged gates through CI where WebGL is available.",
+  "nextStartingPoint": "Integrate the reset/shake/combat/calibration repairs and refutation-surviving foliage/terrain work, then run a coherent 20-encounter and 300-rendered-frame candidate. Publish only the verified checkpoint; retain overall FAIL while criteria remain unmet.",
   "blockedBy": [],
   "remoteStateChangeAuthorized": true,
   "remotePolicy": "Across future sessions, push verified checkpoints, integrate them into main, and publish GitHub Pages without asking again. This remains active until the user changes it."
  },
  "knownUncertainty": [
-  "TD-010: three engaged enemies cost ~194 ms of JS per frame (137x the enemy-free frame), 91.6% of it in Physics._closestToMesh. Measured in a container, so the absolute milliseconds are not device evidence — but it is pure JS, not rasterisation, so it is expected to reproduce on a phone.",
-  "TD-011: Level.interact(), nearestInteractable() and ringBell() have no caller and Input's 'interact' intent is consumed by nobody, so three authored interactables and a wave trigger are unreachable in play.",
-  "Lock-on never engaged across 840 frames with three living enemies at 3-5 m and a press every two seconds. Scenario fault versus acquisition defect is UNDETERMINED; PlayerCamera._cycleLock releases when every candidate scores Infinity, which its occlusion test can produce.",
-  "The BM-CAMERA-04 shake ablation is invalid as written: the harness bot steers relative to PlayerCamera.yaw, so shake feeds back into its input and the pair diverged 22.55 m. Needs a shake-independent stimulus.",
-  "The player boots at (0, 8), inside the haiden's footprint, and walks into an interior wall 3.4 m north. Whether that spawn is intended is unexamined.",
-  "The god-ray and mid-field-haze findings are one defect: rtGodA is ~10% non-zero while rtGodB is 99.9% non-zero, so the pass delivers common mode not differential. More gain is the round-7 regression; the untested lever is less spread.",
-  "A ~10,493 px flat-black patch on the hero plaza was routed to Lighting.js and independently predicted to be cast shadow crushed to black. Unconfirmed.",
-  "UNVERIFIED APPARATUS RISK: capture.mjs --ab-object screenshots after engine.stop() with preserveDrawingBuffer false, so retained r12ab lantern evidence may be black.",
-  "src/ui/HUD.js permanently stamps the title card into later frames if the HUD is hidden while the intro is live.",
-  "Real iPhone and mid-range Android frame rate has still not been measured."
+  "BM-COMBAT-02 is 15.15% over 20 encounters. Duplicate heavy damage is fixed locally; the unchanged bot must be rerun before claiming an improved posture fraction.",
+  "BM-ANIM-01 initial 0 ms findings were contaminated by turn/pose transitions in idle calibration. Old raw traces remain unchanged; the new separate same-Rig calibration preserves the 140 ms threshold and needs rendered CI evidence.",
+  "BM-CAMERA-04 shake ablation remains inconclusive: candidate paths diverged 2.508 m.",
+  "BM-CHAR-02 pixel survey was intentionally not run in the first CI and remains unmeasured.",
+  "BM-AUDIO-03 recorded sample peak and an interpolated estimate; this does not verify the true-peak criterion.",
+  "Independent version-blind visual review and separate refutation both retain foliage and terrain blockers; repaired pixels require another independent review.",
+  "Real iPhone and mid-range Android frame rate, boot, thermals and human ergonomics remain unmeasured.",
+  "The revised source has not yet replaced the published Round 16 Pages payload."
  ]
 }

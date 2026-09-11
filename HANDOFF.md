@@ -23,7 +23,31 @@ art-direction state record; project-wide session, plan and criterion pointers li
 
 - Logical session: **active** (`2026-07-31-game2-continuation`). It ends only when the user
   explicitly says so.
-- Current working branch: **`claude/kagerou-round-16-q5h1ah`**, created from the
+- Current working branch: **`codex/game2-criteria-20260911`**, based on inspected main
+  **`4e6d23a40af33bb3ba409b3826e77666262ce353`**. The user's 2026-09-11 request explicitly
+  resumes development until the established criteria are met. Round 17 is active; five
+  gameplay owners' repairs plus integrated UI/recovery changes pass focused Node checks
+  and the production build. The candidate at **`7c2ed042b0b9cb3eeef5fb5ff99e691eee5fc140`**
+  completed [CI capture and 20 encounters](https://github.com/bachikoljunior-blip/game2/actions/runs/34602120671).
+  The technical five-frame gate passed (119 calls / 789,214 triangles). Initial interaction
+  metrics were 14 pass / 2 fail / 2 inconclusive; the exact results and scope corrections
+  are in `AI_DEVELOPMENT/EVIDENCE/r17-ci-summary.json`. Heavy damage was multiplied twice;
+  the correction requires another identical-policy 20-encounter run. Motion-onset calibration
+  now has a separate same-Rig stationary-idle calibration, pending rendered CI. The
+  source-blind K/M critic scored both versions 45/100, FAIL; separate refutation retained the
+  foliage and terrain blockers and narrowed the lantern finding from major to minor. Exact
+  mapping, hashes and limitations are in `AI_DEVELOPMENT/EVIDENCE/r17-visual-review.md`.
+  This is a same-critic tie, not a regression claim against earlier critics' scores.
+  The resulting local repairs remove duplicate heavy damage, pooled-enemy state leakage and
+  recursive shake ownership, and replace the proven crossed foliage cards and folded macro
+  ridge mechanism. All 14 focused Round 17 test files, project checks and the production
+  build pass locally; visual, 20-encounter and 300-frame rendered CI evidence is still pending.
+  Recovery source **`bb5c49f1b8ffee0406a2b0e60d520b8c80d40320`** on
+  `codex/game2-smoke-20260911` passed actual native touch and WebGL recovery in
+  [run 34605905851](https://github.com/bachikoljunior-blip/game2/actions/runs/34605905851).
+  Overall PASS is not established; the public Pages payload still predates these repairs.
+  See `AI_DEVELOPMENT/EVIDENCE/r17-integration.md` for the exact scope and limitations.
+- Previous Round 16 working branch: **`claude/kagerou-round-16-q5h1ah`**, created from the
   BENCH-APPARATUS checkpoint `4a53d74` and fast-forwarded onto `main` at **`4811ba0`**.
   It carries **Round 16** (eight commits) plus the TD-010 physics fix. The
   benchmark branch `claude/game-reference-benchmark-qh0v0q` is merged at `0a4fd14`, the
@@ -108,9 +132,11 @@ art-direction state record; project-wide session, plan and criterion pointers li
   `curl` fail before reaching GitHub. **Do not record a Round 15 public browser gate until
   it is actually run from a network that can reach github.io.** The last verified public
   browser gate remains the Rounds 13–14 one at `4a3eff7`.
-- Exact next action: await a future user instruction. The user closed Round 16 explicitly
-  ("今途中のラウンドが終わるまでにして") after authorizing five rounds, so **Rounds 17–20
-  were cancelled, not deferred for cost** — do not resume them as if they were queued.
+- Exact next action: inspect CI apparatus, five native frames and 20-encounter traces;
+  repair observed failures, obtain an independent critique, and integrate verified
+  checkpoints under the standing authorization. The old Round 16 stop instruction was
+  superseded by the explicit 2026-09-11 request. This does not create a product PASS or
+  erase the outstanding real-device/human evidence requirements.
 - Current rollback point for round 16: **`4811ba0`** (the branch base). Owner commits are
   `e503c95` sky, `6decc1c` world, `2314ae8` foliage, `9330fa8` physics, `b38c71b` postfx,
   `391c0f4` world (canopy re-route), with `4388b3d` the critique and `c6d0eb5` the debt

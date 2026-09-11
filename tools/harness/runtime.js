@@ -481,14 +481,148 @@
       const b = e.rig?.bones?.hand_r || e.rig?.bones?.handR || e.rig?.bones?.weapon_tip || null;
       const attackTime = round(e.attackTime, 5);
       const move = e.currentMove?.id ?? null;
-      if (!b) { row.push([e.id, null, stateId(e.state), e.weapon?.active ? 1 : 0, attackTime, move]); continue; }
+      if (!b) { row.push([e.id, null, stateId(e.state), e.weapon?.active ? 1 : 0, attackTime, move, 0, null, null, null, null, 1, 0]); continue; }
       const w = b.getWorldPosition(scratchA);
       const prev = _emotionPrev.get(e.id);
-      const d = prev ? Math.hypot(w.x - prev[0], w.y - prev[1], w.z - prev[2]) : 0;
-      _emotionPrev.set(e.id, [w.x, w.y, w.z]);
-      row.push([e.id, round(d, 5), stateId(e.state), e.weapon?.active ? 1 : 0, attackTime, move]);
+      const d = prev ? Math.hypot(w.x - prev.x, w.y - prev.y, w.z - prev.z) : 0;
+      e.root?.updateWorldMatrix?.(true, false);
+      const matrix = e.root?.matrixWorld?.elements;
+      const rx = matrix?.[12], ry = matrix?.[13], rz = matrix?.[14];
+      const yaw = matrix ? Math.atan2(matrix[8], matrix[10]) : NaN;
+      const rig = e.rig, base = rig?.layers?.[0], time = rig?.time;
+      let reason = 0;
+      if (!prev || !Number.isFinite(rx) || !Number.isFinite(ry) || !Number.isFinite(rz)
+        || !Number.isFinite(yaw) || !Number.isFinite(time)) reason |= 1;
+      if (e.state !== 'idle' || e.weapon?.active) reason |= 2;
+      if (prev && Math.hypot(rx - prev.rx, ry - prev.ry, rz - prev.rz) > 1e-5) reason |= 4;
+      if (prev && Math.abs(Math.atan2(Math.sin(yaw - prev.yaw), Math.cos(yaw - prev.yaw))) > 1e-5) reason |= 8;
+      const blendIdle = rig?._locoMode && !base?.clip
+        && Number.isFinite(rig?._loco?.forward) && Number.isFinite(rig?._loco?.strafe)
+        && Math.hypot(rig._loco.forward, rig._loco.strafe) <= 1e-5;
+      const clipIdle = base?.clip?.name?.startsWith('idle_') && base.loop;
+      if (!base || (!blendIdle && !clipIdle)) reason |= 16;
+      if (!base || base.blend < 1 || Math.abs(base.weight - base.targetWeight) > 0.0008) reason |= 32;
+      for (let j = 1; j < (rig?.layers?.length || 0); j++) {
+        if (rig.layers[j].weight > 0.0008 || rig.layers[j].targetWeight > 0.0008) reason |= 64;
+      }
+      if (rig?._feetActive && (!rig._footLocked?.[0] || !rig._footLocked?.[1])) reason |= 128;
+      const lx = rig?._look?.x, ly = rig?._look?.y, lz = rig?._look?.z;
+      if (prev && rig?._lookActive && Math.hypot(lx - prev.lx, ly - prev.ly, lz - prev.lz) > 1e-5) reason |= 256;
+      const advanced = prev && Number.isFinite(time) && Number.isFinite(prev.time) && time > prev.time;
+      // The flag is independent of hand displacement. One simulation second of
+      // unchanged root/idle pose outlasts the 0.22 s fades and turn/recoil settling.
+      const quiet = reason === 0 && advanced ? prev.quiet + Math.min(0.25, time - prev.time) : 0;
+      const eligible = quiet >= 1;
+      _emotionPrev.set(e.id, { x: w.x, y: w.y, z: w.z, rx, ry, rz, yaw, time, quiet, lx, ly, lz });
+      // Preserve columns 0..5. New diagnostics: eligible, root XYZ/yaw,
+      // rejection bits, and independently observed quiet simulation seconds.
+      row.push([e.id, round(d, 5), stateId(e.state), e.weapon?.active ? 1 : 0, attackTime, move,
+        eligible ? 1 : 0, round(rx, 6), round(ry, 6), round(rz, 6), round(yaw, 6), reason, round(quiet, 5)]);
     }
     out.emotion.push(row);
+  }
+
+  function animationSubject(e) {
+    return {
+      enemy: e.id, archetype: e.archetype, rig: e.rig?.root?.uuid ?? null,
+      rigScale: round(e.rig?.scale, 8), height: round(e.rig?.height, 8),
+      rootScale: e.root.scale.toArray(), visualScale: e.visual.scale.toArray(),
+    };
+  }
+
+  function recordedSpawn(s) {
+    return {
+      position: s.position.toArray().map(v => round(v, 8)),
+      seed: Number.isInteger(s.opts.seed) ? s.opts.seed : null,
+      alerted: !!s.opts.alerted,
+      faceTarget: s.opts.faceTarget !== false,
+      target: s.opts.target?.id ?? null,
+    };
+  }
+
+  // This is an animation-noise calibration before AI activation, not an AI idle
+  // test. Unaware AI deliberately scans and turns the root continuously.
+  function calibrateEnemyIdle(k, spawned, frames) {
+    const dt = 1 / 60;
+    const list = spawned.map(s => s.entity);
+    const out = {
+      schemaVersion: 1, phase: 'rig-idle-calibration', dtMs: 1000 / 60, stride: 1,
+      frames: Math.max(120, Math.floor(frames || 300)), sampledFrames: [],
+      method: 'same-instance Enemy._updateAnim at 60 Hz before AI activation',
+      limitation: 'Authored idle noise only; AI, FSM, combat and the gameplay/input clock do not advance. This does not validate natural waiting AI.',
+      subjects: spawned.map(s => ({ ...animationSubject(s.entity), spawn: recordedSpawn(s) })),
+      observationSubjects: [], columns: { emotion: [] }, stateNames: [],
+      emotionRowSchema: ['enemyId', 'handTravelM', 'stateId', 'weaponActive', 'attackTimeSeconds', 'moveId',
+        'idleEligible', 'rootWorldX', 'rootWorldY', 'rootWorldZ', 'rootWorldYaw', 'idleRejectionBits', 'quietSimulationSeconds'],
+      enemyAnimUpdates: 0, worldMatrixUpdates: 0,
+      attacks: 0, activeSamples: 0, attackStateSamples: 0, errors: [],
+    };
+    _emotionPrev.clear();
+    try {
+      if (!list.length || list.some(e => !e.rig || typeof e._updateAnim !== 'function')) {
+        throw new Error('every measured enemy must have its real Rig');
+      }
+      const active = new Map();
+      for (let f = 0; f < out.frames; f++) {
+        for (const e of list) { e._updateAnim(dt); out.enemyAnimUpdates++; }
+        k.scene.updateMatrixWorld(true);
+        out.worldMatrixUpdates++;
+        probeEnemyMotion({ enemies: { list } }, out.columns);
+        out.sampledFrames.push(f);
+        for (const e of list) {
+          if (e.weapon.active) {
+            out.activeSamples++;
+            if (!active.get(e.id)) out.attacks++;
+          }
+          if (e.state === 'attack') out.attackStateSamples++;
+          active.set(e.id, !!e.weapon.active);
+        }
+      }
+      if (out.activeSamples || out.attackStateSamples) out.errors.push('an attack occurred during idle calibration');
+    } catch (error) { out.errors.push(String(error.message || error)); }
+    finally {
+      for (const s of spawned) {
+        try {
+          // Re-enter through the product's normal pool lifecycle with the exact
+          // position/options captured from this individual spawn. Enemy.reset owns
+          // Rig/FSM/AI cleanup; the harness must not repair private state itself.
+          s.entity.reset(s.position, s.opts);
+          out.observationSubjects.push({ ...animationSubject(s.entity), spawn: recordedSpawn(s) });
+        } catch (error) { out.errors.push(`reset ${s.entity.id}: ${error.message || error}`); }
+      }
+      _emotionPrev.clear();
+    }
+    out.stateNames = stateNames.slice();
+    out.completedFrames = out.sampledFrames.length;
+    out.resetLifecycle = 'Enemy.reset(position, opts)';
+    return out;
+  }
+
+  function calibratedSpawn(a) {
+    const k = window.__kagerou, manager = k.enemies;
+    const original = manager?.spawn;
+    if (typeof original !== 'function') return false;
+    const own = Object.prototype.hasOwnProperty.call(manager, 'spawn');
+    const spawned = [];
+    manager.spawn = function (archetype, position, opts) {
+      const savedPosition = position.clone(), savedOpts = { ...opts };
+      const entity = original.call(this, archetype, position, opts);
+      if (entity) spawned.push({ entity, position: savedPosition, opts: savedOpts });
+      return entity;
+    };
+    let ok;
+    try { ok = VERBS.call(a); }
+    finally { if (own) manager.spawn = original; else delete manager.spawn; }
+    const eventStart = events.length;
+    run.idleCalibration = calibrateEnemyIdle(k, spawned, run.plan.idleCalibration.frames);
+    // Calibration emissions have their own phase and never inflate combat counts.
+    run.idleCalibration.events = events.splice(eventStart).map(e => ({ ...e, phase: 'rig-idle-calibration' }));
+    run.idleCalibration.beforeObservationFrame = frameIndex;
+    run.idleCalibration.spawnAction = { ...a };
+    if (run.idleCalibration.errors.length) {
+      run.failedActions.push({ f: frameIndex, do: 'idleCalibration', label: run.idleCalibration.errors.join('; ') });
+    }
+    return ok;
   }
 
   function probeFeet(k, out) {
@@ -795,6 +929,7 @@
       stride: Math.max(1, plan.stride || 1),
       sampled: [],
       failedActions: [],
+      idleCalibration: null,
       startedAt: nativeNow(),
     };
     if (!run.layout.gestureSafe) {
@@ -814,7 +949,9 @@
       if (acts) {
         for (const a of acts) {
           const verb = VERBS[a.do];
-          const ok = verb ? verb(a) : false;
+          const calibrate = run.plan.id === 'anim-startup' && run.plan.idleCalibration && !run.idleCalibration
+            && a.do === 'call' && a.target === 'enemies' && a.method === 'spawnWave';
+          const ok = calibrate ? calibratedSpawn(a) : verb ? verb(a) : false;
           if (!ok) run.failedActions.push({ f: frameIndex, do: a.do, label: a.label ?? null });
         }
       }
@@ -859,6 +996,10 @@
       failedActions: run.failedActions,
       stateNames: stateNames.slice(),
       behaviourNames: behaviourNames.slice(),
+      ...(run.plan.idleCalibration ? { idleCalibration: run.idleCalibration,
+        observation: { phase: 'gameplay-observation', frames: frameIndex, calibrationFramesIncluded: 0,
+          seconds: round(frameIndex * run.dt / 1000, 3), authoredFrames: run.plan.authoredFrames ?? run.plan.frames,
+          limitation: 'Pre-activation Rig idle calibration is separate; all authored actions and all observed attacks are retained.' } } : {}),
     };
     setRender(true);
     run = null;

@@ -444,43 +444,127 @@ export function animStartup(trace) {
   const byId = new Map();
   for (let i = 0; i < em.length; i++) {
     for (const r of em[i] || []) {
-      if (!r || r[1] == null) continue;
+      if (!r || r[0] == null) continue;
       const id = r[0];
       if (!byId.has(id)) byId.set(id, []);
-      byId.get(id)[i] = { d: r[1], active: r[3] === 1, state: trace.stateNames?.[r[2]], attackTime: r[4] };
+      byId.get(id)[i] = { d: r[1], active: r[3] === 1, state: trace.stateNames?.[r[2]],
+        attackTime: r[4], move: r[5] ?? null, idleEligible: r[6] === 1,
+        idleRejectionBits: r[11], quietSimulationSeconds: r[12] };
     }
+  }
+  const stride = trace.stride || 1;
+  const sampleSeconds = (Number.isFinite(trace.dtMs) && trace.dtMs > 0 ? trace.dtMs / 1000 : DT) * stride;
+  const requiredIdleSamples = Math.ceil(0.5 / sampleSeconds);
+  const separate = trace.idleCalibration || (trace.observation?.phase === 'gameplay-observation' ? {} : null);
+  const calibrationFaults = [];
+  if (separate) {
+    const seconds = separate.dtMs / 1000;
+    const raw = col(separate, 'emotion');
+    if (separate.phase !== 'rig-idle-calibration' || !Number.isFinite(seconds)
+      || Math.abs(seconds - sampleSeconds) > 1e-8 || separate.stride !== 1) {
+      calibrationFaults.push('calibration phase/sample interval does not match observation');
+    }
+    if (raw.length !== separate.frames || separate.completedFrames !== separate.frames
+      || raw.length * seconds < 2) calibrationFaults.push('fewer than 2 s of complete calibration frames');
+    if (!Array.isArray(separate.subjects) || separate.enemyAnimUpdates !== separate.frames * separate.subjects.length
+      || separate.worldMatrixUpdates !== separate.frames) {
+      calibrationFaults.push('real Enemy._updateAnim/world-matrix update counts are incomplete');
+    }
+    if (trace.observation?.phase !== 'gameplay-observation' || trace.observation.calibrationFramesIncluded !== 0
+      || trace.observation.frames !== trace.frames || trace.frames < 1800) {
+      calibrationFaults.push('gameplay observation is shorter than 1800 separate frames or includes calibration frames');
+    }
+    if (raw.some(rows => !Array.isArray(rows) || rows.some(r => !Array.isArray(r)
+      || r[3] === 1 || separate.stateNames?.[r[2]] === 'attack'))) {
+      calibrationFaults.push('an attack or invalid row occurred in the calibration phase');
+    }
+    if (separate.attacks !== 0 || separate.activeSamples !== 0 || separate.attackStateSamples !== 0
+      || (separate.events || []).some(e => e?.name === 'telegraph')) {
+      calibrationFaults.push('calibration attack counters/events are not zero');
+    }
+    calibrationFaults.push(...(separate.errors || []));
   }
   const floors = [];
   const startups = [];
+  const calibration = [];
   for (const [id, series] of byId) {
-    const idle = series.filter((s) => s && s.state === 'idle' && !s.active).map((s) => s.d).sort((a, b) => a - b);
-    if (!idle.length) continue;
-    const floor = idle[Math.floor(idle.length * 0.5)];
-    floors.push(floor);
-    let prev = null, firstMotion = null, measuredWindow = false;
+    const idle = series.filter((s) => s && s.state === 'idle' && !s.active && Number.isFinite(s.d));
+    // An idle state can still contain braking, turning and a pose crossfade.
+    // The probe independently observes the settled rig/root; hand speed never
+    // chooses its own calibration samples. Legacy traces cannot prove this.
+    let qualified = idle.filter((s) => s.idleEligible && s.idleRejectionBits === 0
+      && s.quietSimulationSeconds >= 1).map((s) => s.d);
+    let calibrationError = null;
+    if (separate) {
+      const subject = separate.subjects?.find(s => s.enemy === id);
+      const observed = separate.observationSubjects?.find(s => s.enemy === id);
+      const validScale = (v) => Array.isArray(v) && v.length === 3 && v.every(n => Number.isFinite(n) && n > 0);
+      const validSpawn = (v) => v && Array.isArray(v.position) && v.position.length === 3
+        && v.position.every(Number.isFinite) && Number.isInteger(v.seed) && typeof v.alerted === 'boolean'
+        && typeof v.faceTarget === 'boolean';
+      const matching = subject && observed && typeof subject.rig === 'string' && subject.rig === observed.rig
+        && typeof subject.archetype === 'string' && subject.archetype === observed.archetype && Number.isFinite(subject.rigScale)
+        && subject.rigScale > 0 && Number.isFinite(subject.height) && subject.height > 0
+        && subject.rigScale === observed.rigScale && subject.height === observed.height
+        && validScale(subject.rootScale) && validScale(subject.visualScale)
+        && JSON.stringify(subject.rootScale) === JSON.stringify(observed.rootScale)
+        && JSON.stringify(subject.visualScale) === JSON.stringify(observed.visualScale)
+        && validSpawn(subject.spawn) && JSON.stringify(subject.spawn) === JSON.stringify(observed.spawn)
+        && separate.resetLifecycle === 'Enemy.reset(position, opts)';
+      calibrationError = calibrationFaults.length ? calibrationFaults.join('; ')
+        : matching ? null : 'calibration Rig/archetype/scale does not match the observed enemy';
+      qualified = calibrationError ? [] : col(separate, 'emotion').flatMap(rows => rows
+        .filter(r => r[0] === id && r[6] === 1 && r[11] === 0 && r[12] >= 1
+          && r[3] !== 1 && separate.stateNames?.[r[2]] === 'idle' && Number.isFinite(r[1]))
+        .map(r => r[1]));
+    }
+    const eligible = qualified.sort((a, b) => a - b);
+    const floor = eligible.length >= requiredIdleSamples ? eligible[Math.floor(eligible.length * 0.5)] : null;
+    if (floor !== null) floors.push(floor);
+    calibration.push({ enemy: id, idleStateSamples: idle.length, eligibleSamples: eligible.length,
+      requiredSamples: requiredIdleSamples, floorM: round(floor, 6),
+      unfilteredIdleMedianM: percentile(idle.map((s) => s.d), 0.5),
+      source: separate ? 'separate same-Rig idle calibration' : 'qualified idle during observation', error: calibrationError });
+    let prev = null, firstMotion = null, tellStart = null, measuredWindow = false;
     for (let i = 0; i < series.length; i++) {
       const s = series[i];
-      if (!s) { prev = null; firstMotion = null; measuredWindow = false; continue; }
+      if (!s) { prev = null; firstMotion = null; tellStart = null; measuredWindow = false; continue; }
       const newTell = s.state === 'attack' && (prev?.state !== 'attack' ||
         (Number.isFinite(s.attackTime) && Number.isFinite(prev?.attackTime) && s.attackTime < prev.attackTime));
-      if (newTell || s.state !== 'attack') { firstMotion = null; measuredWindow = false; }
-      if (s.state === 'attack' && firstMotion === null && !measuredWindow && s.d > floor * 3) firstMotion = i;
+      if (newTell || s.state !== 'attack') {
+        firstMotion = null; measuredWindow = false; tellStart = newTell ? i : null;
+      }
+      if (floor !== null && s.state === 'attack' && firstMotion === null && !measuredWindow
+        && Number.isFinite(s.d) && s.d > floor * 3) firstMotion = i;
       if (s.active && !prev?.active) {
         const lead = !measuredWindow && firstMotion !== null ? i - firstMotion : 0;
-        startups.push({ enemy: id, frame: i, startupMs: Math.round(lead * DT * 1000) });
+        startups.push({ enemy: id, frame: i * stride, move: s.move,
+          tellStartFrame: tellStart === null ? null : tellStart * stride,
+          firstMotionFrame: firstMotion === null ? null : firstMotion * stride,
+          startupMs: floor === null ? null : Math.round(lead * sampleSeconds * 1000),
+          reason: floor === null ? 'insufficient settled-idle calibration' : null });
         measuredWindow = true;
       }
       prev = s;
     }
   }
-  const idleFloor = mean(floors) || 0;
-  const ms = startups.map((s) => s.startupMs);
+  const idleFloor = mean(floors);
+  const ms = startups.map((s) => s.startupMs).filter((v) => v !== null);
   const shortest = ms.length ? Math.min(...ms) : null;
+  const uncalibrated = startups.length - ms.length;
+  const verdict = startups.length < 3 ? 'inconclusive' : shortest !== null && shortest < 140 ? 'fail'
+    : uncalibrated || !ms.length ? 'inconclusive' : 'pass';
   return [result('BM-ANIM-01', 'E12-ANIMATION', 'anim-startup',
-    ms.length < 3 ? 'inconclusive' : (shortest >= 140 ? 'pass' : 'fail'),
-    { attacks: ms.length, shortestStartupMs: shortest, medianStartupMs: percentile(ms, 0.5), idleMotionFloorM: round(idleFloor, 6) },
+    verdict,
+    { attacks: startups.length, measuredAttacks: ms.length, uncalibratedAttacks: uncalibrated,
+      shortestStartupMs: shortest, medianStartupMs: percentile(ms, 0.5), idleMotionFloorM: round(idleFloor, 6),
+      calibration, perAttack: startups,
+      ...(separate ? { calibrationPhase: { method: separate.method, frames: separate.completedFrames,
+        observationFramesIncluded: 0, errors: calibrationFaults, limitation: separate.limitation } } : {}) },
     'visible startup ≥ 140 ms (EnemyAI REACTION_FLOOR) for every enemy attack',
-    ms.length < 3 ? 'not enough enemy attacks were observed to judge' : 'first motion above 3× each enemy idle floor within a new attack episode; held tells count, chained attack-clock resets delimit new tells')];
+    startups.length < 3 ? 'not enough enemy attacks were observed to judge'
+      : uncalibrated ? `${uncalibrated} attacks retained but unmeasurable: at least 0.5 s of independently qualified settled idle is required per enemy`
+        : 'first motion above 3× each enemy settled-idle floor within a new attack episode; held tells count, chained attack-clock resets delimit new tells')];
 }
 
 /** BM-ANIM-02 — the damaging window matches the visible sweep. */
@@ -671,11 +755,18 @@ export function audioPeak(m) {
       '≤ -1 dBFS with five simultaneous impacts plus the full bed', m?.error || 'measurement did not run', 'instrumented-runtime')];
   }
   const db = 20 * Math.log10(Math.max(1e-6, m.peak));
+  const truePeak = m.truePeak;
+  const isItu = truePeak && /^ITU-R BS\.1770(?:-|$)/.test(String(truePeak.standard))
+    && Number.isFinite(truePeak.dbfs);
   return [result('BM-AUDIO-03', 'E13-AUDIO', 'audio-peak',
-    m.samples < 4 ? 'inconclusive' : (db <= -1 ? 'pass' : 'fail'),
-    { samplePeak: round(m.peak, 5), samplePeakDbfs: round(db, 2), oversampledEstimateDbfs: m.truePeakEstimateDb ?? null, windows: m.samples, impacts: m.impacts },
+    m.samples < 4 || !isItu ? 'inconclusive' : (truePeak.dbfs <= -1 ? 'pass' : 'fail'),
+    { samplePeak: round(m.peak, 5), samplePeakDbfs: round(db, 2), oversampledEstimateDbfs: m.truePeakEstimateDb ?? null,
+      truePeak: isItu ? { standard: truePeak.standard, dbfs: round(truePeak.dbfs, 2) } : null,
+      windows: m.samples, impacts: m.impacts },
     '≤ -1 dBFS true peak with five simultaneous impacts plus the full bed',
-    'this is a SAMPLE peak taken post-limiter through an AnalyserNode, with a 4× interpolated estimate beside it. It is not an ITU-R BS.1770 true-peak meter and must not be recorded as one.',
+    isItu
+      ? `true peak measured by ${truePeak.standard}`
+      : 'sample peak and a 4× interpolated estimate were captured post-limiter, but neither is an ITU-R BS.1770 true-peak measurement; the criterion remains inconclusive.',
     'instrumented-runtime')];
 }
 
@@ -713,7 +804,7 @@ export function jsFrameBudget(m) {
       colliders: m.colliders ?? null,
     },
     '≤ 5 ms JS per frame at MEDIUM (ARCHITECTURE.md §7)',
-    'Measured in a container, not on a phone — the absolute milliseconds are not device evidence. What is device-independent is the shape: the whole static world is a handful of triangle-mesh colliders totalling ~2.1k triangles, and three engaged enemies drive hundreds of thousands of narrow-phase triangle tests in a single frame.',
+    `Measured on a container CPU, not a phone — the absolute milliseconds are not device evidence. This run recorded ${m.colliders?.triangleMeshTriangles ?? 'an unknown number of'} triangle-mesh triangles and ${m.threeEnemiesPhysics?.narrowphaseChecks ?? 'an unknown number of'} narrow-phase checks with three enemies; these raw counters describe only this run.`,
     'instrumented-runtime')];
 }
 

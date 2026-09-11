@@ -469,6 +469,39 @@ function smax(a, b, r) {
   return lerp(b, a, h) + r * h * (1 - h);
 }
 
+/** A tapered, rounded ridge along one segment. Scalar-only: `_macro` calls this at bake time. */
+function ridgeShoulder(x, z, ax, az, bx, bz, width) {
+  const vx = bx - ax, vz = bz - az;
+  const ll = vx * vx + vz * vz;
+  const t = clamp(((x - ax) * vx + (z - az) * vz) / ll, 0, 1);
+  const px = ax + vx * t, pz = az + vz * t;
+  const d = Math.hypot(x - px, z - pz) / width;
+  const cross = 1 - smootherstep(0.08, 1.0, d);
+  const taper = smootherstep(0.0, 0.16, t) * smootherstep(1.0, 0.82, t);
+  return cross * cross * taper;
+}
+
+/**
+ * The north-west range's kilometre-scale hierarchy.
+ *
+ * The previous largest term was isotropic ridged noise. It did supply relief, but
+ * every maximum had the same radial construction, so the 450–650 m face in `wide`
+ * resolved as adjacent pyramids with long diagonal joins. These three warped ridge
+ * segments instead share one backbone: two lower branches peel away from a primary
+ * mass and overlap it at different widths. Finer noise below remains surface relief;
+ * it is deliberately not asked to invent the landform silhouette.
+ */
+function northwestMassif(x, z) {
+  const wx = x + noise.fbm2(x * 0.0027 + 19.1, z * 0.0027 - 7.4, 2) * 34;
+  const wz = z + noise.fbm2(x * 0.0031 - 31.7, z * 0.0031 + 12.8, 2) * 28;
+  const primary = ridgeShoulder(wx, wz, -520, -610, 150, -285, 205);
+  const west = ridgeShoulder(wx, wz, -190, -410, -340, -270, 102);
+  const east = ridgeShoulder(wx, wz, -120, -370, 45, -245, 88);
+  // Match the replaced field's practical 0..0.55 range. The hierarchy changes
+  // organisation, not the skyline's altitude or the height texture's contract.
+  return clamp(primary + west * 0.36 + east * 0.30, 0, 1.12) * 0.48;
+}
+
 /** Wrap an angular difference into (-π, π]. */
 function wrapPi(d) {
   const TAU = Math.PI * 2;
@@ -670,7 +703,17 @@ export class Terrain {
     // North-west: rock ridges, then distant peaks behind them.
     const nwT = smootherstep(40, 460, ax);
     h += 120 * nwT;
-    h += noise.ridged2(x * 0.0016, z * 0.0016, 5) * 210 * Math.pow(nwT, 1.1);
+    const foldedMacro = noise.ridged2(x * 0.0016, z * 0.0016, 5);
+    // Replace the repeated radial folds only where the visible north-west massif
+    // stands. The broad blend preserves the rest of the authored world and keeps
+    // the plateau/core hand-off untouched.
+    const hierarchyT = smootherstep(145, 275, ax) * smootherstep(760, 520, ax);
+    // Most field samples are outside this band; do not pay for its two warp
+    // lookups there during boot.
+    const macroMass = hierarchyT > 0.001
+      ? lerp(foldedMacro, northwestMassif(x, z), hierarchyT)
+      : foldedMacro;
+    h += macroMass * 210 * Math.pow(nwT, 1.1);
     h += smootherstep(400, 1500, ax) *
       noise.ridged2(x * 0.00055 + 31.7, z * 0.00055 - 12.3, 4) * 320;
 

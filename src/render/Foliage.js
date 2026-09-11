@@ -953,14 +953,13 @@ const TREE_SPECIES = {
     height: 6.4, trunkRadius: 0.185, depth: 4, segs: 5, sides: 5,
     children: [3, 3, 3, 2], split: 0.62, splitJitter: 0.26, lengthRatio: 0.72,
     radiusRatio: 0.66, upBias: 0.10, gravity: -0.055, wobble: 0.14, trunkFrac: 0.30,
-    // leafFrom 3 + 3 per tip keeps the crown at ~4x overdraw instead of 15x. Past 6x the
-    // alpha holes of neighbouring cards fill each other in and the crown fuses solid.
-    // leafSize down from 1.05 and spread up from 0.62: the crown was a solid convex mass
-    // with no branch visible inside it, and the cross-card above hands back the coverage
-    // that shrinking the cluster costs. The review wants twig structure reading *through*
-    // the blossom, which needs daylight between clusters, not more cards.
-    phyllotaxis: 2.39996, leavesPerTip: 3, leafSize: 0.96, leafSpread: 0.70,
-    leafFrom: 3, wood: 0x4a3a33, foliage: 0xf6e2e4, crossLeaf: true,
+    // Five smaller, separated clusters replace three exact-centre crossed pairs. The old
+    // pair guaranteed a second plane at 90 degrees, but also guaranteed a ruler-straight
+    // intersection through every cluster. Five azimuths keep at least one face readable
+    // while using 405 cards / 810 triangles instead of 486 / 972 and leave more branch
+    // and sky between them. The hostile review still owns the final silhouette judgement.
+    phyllotaxis: 2.39996, leavesPerTip: 5, leafSize: 0.68, leafSpread: 0.94,
+    leafFrom: 3, wood: 0x4a3a33, foliage: 0xf6e2e4, crossLeaf: false,
   },
   momiji: {
     height: 4.6, trunkRadius: 0.145, depth: 4, segs: 4, sides: 5,
@@ -973,9 +972,12 @@ const TREE_SPECIES = {
     height: 13.5, trunkRadius: 0.32, depth: 2, segs: 7, sides: 6,
     children: [3, 2], split: 1.05, splitJitter: 0.18, lengthRatio: 0.42,
     radiusRatio: 0.34, upBias: 0.02, gravity: -0.12, wobble: 0.07, trunkFrac: 1.0,
-    phyllotaxis: 1.2566, leavesPerTip: 3, leafSize: 0.70, leafSpread: 0.36,
+    // Five irregular whorls with two main laterals read as branch tiers instead of four
+    // identical three-armed chevrons. Smaller clusters expose those laterals; four cards
+    // around each tip retain a cluster mass without turning the whole crown opaque.
+    phyllotaxis: 1.2566, leavesPerTip: 4, leafSize: 0.54, leafSpread: 0.52,
     leafFrom: 1, wood: 0x4b3a2c, foliage: 0x2f4a33,
-    whorls: true,
+    whorls: true, whorlCount: 5, whorlBranches: 2, whorlJitter: 0.065,
   },
 };
 
@@ -1075,15 +1077,16 @@ function buildTree(spec, seed) {
 
     if (leader) {
       // Laterals spaced up the trunk, shorter toward the top: the classic sugi cone.
-      const whorlCount = 4;
+      const whorlCount = spec.whorlCount || 4;
       for (let w = 0; w < whorlCount; w++) {
-        const ft = 0.22 + 0.76 * (w / (whorlCount - 1));
+        const ft = clamp(0.20 + 0.77 * (w / Math.max(1, whorlCount - 1)) +
+          (rnd() - 0.5) * (spec.whorlJitter || 0), 0.16, 0.99);
         const anchor = [
           p0[0] + (cur[0] - p0[0]) * ft,
           p0[1] + (cur[1] - p0[1]) * ft,
           p0[2] + (cur[2] - p0[2]) * ft,
         ];
-        const branches = 3;
+        const branches = spec.whorlBranches || 3;
         for (let i = 0; i < branches; i++) {
           const a = (i / branches) * Math.PI * 2 + w * spec.phyllotaxis;
           const outward = Math.sin(spec.split + (rnd() - 0.5) * spec.splitJitter);
@@ -1644,6 +1647,32 @@ const BAMBOO_ARCHETYPES = [
 ];
 
 /**
+ * Vary branch height, reach and departure angle before a spray is rasterised.
+ *
+ * The previous nine exact height bands, all leaving at 32-73 degrees, were easy to see
+ * through instance scale and yaw: the grove became stacked, mirrored chevrons. The three
+ * reach classes make major branch, leaf cluster and crown mass separate at the source;
+ * sub-band jitter prevents neighbouring culms from sharing horizontal tiers. This runs
+ * only while the atlas is painted at boot, never in update().
+ */
+function bambooSprayPlan(spec, phase, rnd) {
+  const bands = 9;
+  const out = [];
+  for (let nI = 1; nI <= bands; nI++) {
+    const base = nI / bands;
+    if (base < spec.leafFrom) continue;
+    const t = clamp(base + (rnd() - 0.5) * (0.68 / bands), 0.06, 1);
+    const level = (nI + Math.floor(phase * 3)) % 3;
+    const reach = level === 0 ? 1.30 : level === 1 ? 0.92 : 0.66;
+    const angle = level === 0
+      ? 0.20 + rnd() * 0.34
+      : level === 1 ? 0.38 + rnd() * 0.46 : 0.58 + rnd() * 0.62;
+    out.push({ t, reach, angle, level });
+  }
+  return out;
+}
+
+/**
  * One archetype cell, painted into a 1:2 (w:h) frame so the card never has to stretch a
  * square texture up a 12 m culm — that stretch is what turned every leaf into a dagger.
  *
@@ -1698,12 +1727,11 @@ function paintBambooClump(w, h, spec, seed) {
   // the culm behind them is depth-occluded, so thousands of crossed cards turn them into
   // detached 2-18 px skyline dashes. Near bamboo still carries explicit node geometry;
   // here the pale culm, vertical rim and attached crown are the readable bamboo cues.
-  // `nI` runs to `sprayBands` inclusive below, so a cluster lands at t = 1.0 — on the tip.
+  // The plan includes its ninth band, so a cluster still lands near t = 1.0 — on the tip.
   // It used to stop at 8/9, leaving the top eleven per cent of every culm a bare pale
   // stroke ending in its own round cap. That is the "flat cut-off tops, no taper, no leaf
   // canopy" the review filed: the tallest thing in the clump, standing against sky, with
   // nothing on it.
-  const sprayBands = 9;
   // The culm is a TAPERED polygon, not a constant-width stroke.
   //
   // Round 15: "short, blunt, disconnected vertical yellow-olive STUBS ... with flat cut-off
@@ -1766,11 +1794,10 @@ function paintBambooClump(w, h, spec, seed) {
 
   for (const cu of culms) {
     strokeCulm(cu, 1);
-    for (let nI = 1; nI <= sprayBands; nI++) {
-      const t = nI / sprayBands;
-      if (t < spec.leafFrom) continue;
-      const p = cu.pts[Math.min(steps, Math.round(t * steps))];
-      spraysAt.push([p[0], p[1], t, cu.shade, cu.phase]);
+    for (const plan of bambooSprayPlan(spec, cu.phase, rnd)) {
+      const p = cu.pts[Math.min(steps, Math.round(plan.t * steps))];
+      spraysAt.push([p[0], p[1], plan.t, cu.shade, cu.phase,
+        plan.reach, plan.angle, plan.level]);
     }
   }
 
@@ -1783,10 +1810,10 @@ function paintBambooClump(w, h, spec, seed) {
   // averaged away and the mass is still above the 0.14 cutoff, so the clump thins toward a
   // leafy silhouette instead of collapsing to bare culms. One pass at either width cannot
   // do both jobs — that is the whole finding.
-  for (const [sx, sy, t, k, phase] of spraysAt) {
+  for (const [sx, sy, t, k, phase, reach, angle, level] of spraysAt) {
     const side = rnd() < 0.5 ? -1 : 1;
-    const a = 0.56 + rnd() * 0.72;
-    const len = h * spec.sprayLen * (0.82 + rnd() * 0.36) * (0.82 + t * 0.30);
+    const a = angle + (rnd() - 0.5) * 0.08;
+    const len = h * spec.sprayLen * reach * (0.88 + rnd() * 0.24) * (0.82 + t * 0.30);
     const shade = k * (0.78 + rnd() * 0.30);
     // g/r of 4.99 and 3.45 in linear — comfortably over GREEN_RATIO's 2.43, so these are
     // the only pixels on the card that can still be green-dominant once the amber key is
@@ -1798,7 +1825,8 @@ function paintBambooClump(w, h, spec, seed) {
       : `rgb(${(102 * shade) | 0},${(194 * shade) | 0},${(74 * shade) | 0})`;
     const mA = `rgb(${(34 * shade) | 0},${(88 * shade) | 0},${(30 * shade) | 0})`;
     const mB = `rgb(${(66 * shade) | 0},${(148 * shade) | 0},${(52 * shade) | 0})`;
-    const leaves = Math.max(4, Math.round(spec.sprays * (0.72 + rnd() * 0.22)));
+    const leaves = Math.max(4, Math.round(spec.sprays *
+      (level === 0 ? 0.88 : level === 1 ? 0.76 : 0.64) * (0.92 + rnd() * 0.16)));
     const anchor = Math.max(2, w * 0.012);
     g.save();
     g.translate(sx + (rnd() - 0.5) * w * 0.006, sy + (rnd() - 0.5) * h * 0.002);
@@ -2135,6 +2163,99 @@ function drawFloret(g, r, edge, mid, throat, rnd, boss = true) {
   }
 }
 
+const BLOSSOM_VOID_COUNT = 5;
+
+/**
+ * Cut a handful of irregular sky pockets through the blossom mass.
+ *
+ * The organic outer mask fixed the card perimeter, but it could not fix the centre: both
+ * the foliage tree and the sacred prop place cards through the same cluster centre. A
+ * fully opaque centre therefore turns their plane intersection into one uninterrupted
+ * straight lighting seam. These voids are deliberately off-axis and stop short of the
+ * perimeter; they interrupt that seam without exposing a rectangular edge or thinning
+ * the crown uniformly. This is texture topology, so it helps the prop without taking
+ * ownership of its geometry.
+ */
+function carveBlossomVoids(canvas, seed = 0xB10550) {
+  const g = canvas.getContext('2d');
+  const rnd = makeRandom(seed);
+  const size = canvas.width;
+  g.save();
+  g.globalCompositeOperation = 'destination-out';
+  g.fillStyle = 'rgba(0,0,0,1)';
+  for (let i = 0; i < BLOSSOM_VOID_COUNT; i++) {
+    const a = ((i + 0.25 + rnd() * 0.45) / BLOSSOM_VOID_COUNT) * Math.PI * 2;
+    const radial = size * (0.10 + rnd() * 0.18);
+    const cx = size * 0.5 + Math.cos(a) * radial;
+    const cy = size * 0.5 + Math.sin(a) * radial;
+    const rx = size * (0.030 + rnd() * 0.025);
+    const ry = size * (0.065 + rnd() * 0.040);
+    g.save();
+    g.translate(cx, cy);
+    g.rotate(a + (rnd() - 0.5) * 0.8);
+    g.beginPath();
+    g.moveTo(-rx, 0);
+    g.bezierCurveTo(-rx * 0.65, -ry, rx * 0.45, -ry * 0.72, rx, -ry * 0.08);
+    g.bezierCurveTo(rx * 0.72, ry * 0.88, -rx * 0.55, ry, -rx, 0);
+    g.closePath();
+    g.fill();
+    g.restore();
+  }
+  g.restore();
+  return canvas;
+}
+
+/**
+ * Structural evidence for the focused Node check. This cannot judge pixels; it only
+ * proves that the exact-centre crossing mechanism is absent, the submitted tree geometry
+ * remains bounded, and the bamboo atlas source contains non-quantised multi-scale plans.
+ * Unused production exports are removed by Rollup.
+ */
+export function foliageStructureAudit() {
+  const cardStats = (geometry) => {
+    const p = geometry.getAttribute('position');
+    const centres = new Map();
+    let coincidentCentres = 0;
+    for (let i = 0; i < p.count; i += 4) {
+      let x = 0, y = 0, z = 0;
+      for (let k = 0; k < 4; k++) { x += p.getX(i + k); y += p.getY(i + k); z += p.getZ(i + k); }
+      const key = `${(x * 250000).toFixed(0)},${(y * 250000).toFixed(0)},${(z * 250000).toFixed(0)}`;
+      const n = centres.get(key) || 0;
+      if (n) coincidentCentres++;
+      centres.set(key, n + 1);
+    }
+    return { cards: p.count / 4, triangles: geometry.index.count / 3, coincidentCentres };
+  };
+  const tree = {};
+  for (const [key, seed] of [['sakura', 0x5A1201], ['cedar', 0x0CED11]]) {
+    const built = buildTree(TREE_SPECIES[key], seed);
+    tree[key] = {
+      ...cardStats(built.leaf),
+      woodTriangles: built.wood.index.count / 3,
+      crownRadius: built.crown.radius,
+    };
+    built.wood.dispose();
+    built.leaf.dispose();
+  }
+  const bamboo = BAMBOO_ARCHETYPES.map((spec, i) => {
+    const plan = bambooSprayPlan(spec, 0.37 + i * 0.11, makeRandom(0xBA1700 + i));
+    return {
+      sprays: plan.length,
+      levels: [...new Set(plan.map((p) => p.level))].sort(),
+      minReach: Math.min(...plan.map((p) => p.reach)),
+      maxReach: Math.max(...plan.map((p) => p.reach)),
+      minAngle: Math.min(...plan.map((p) => p.angle)),
+      maxAngle: Math.max(...plan.map((p) => p.angle)),
+      nonQuantisedBands: plan.filter((p) => Math.abs(p.t * 9 - Math.round(p.t * 9)) > 0.02).length,
+    };
+  });
+  return {
+    tree,
+    bamboo,
+    blossomVoids: { count: BLOSSOM_VOID_COUNT, outerPerimeterUntouched: true },
+  };
+}
+
 /**
  * Sakura at peak (ARCHITECTURE §5). This card is the sacred tree's whole read, and the
  * previous version aimed at "past peak, bone and blush" and landed on lichen: measured off
@@ -2270,6 +2391,7 @@ function paintBlossom(size) {
   }
 
   speckle(g, size, size, 0.16, 5521);
+  carveBlossomVoids(c);
   return c;
 }
 

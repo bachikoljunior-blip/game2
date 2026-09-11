@@ -9,12 +9,12 @@ assets** — every texture, mesh, animation and sound is synthesised in code at 
 
 ## Run it
 
-Play the verified production build on
+Play the published checkpoint on
 [GitHub Pages](https://bachikoljunior-blip.github.io/game2/). The checked-in Pages artifact
-contains the measured Rounds 13–14 checkpoint; this is a runnable incremental checkpoint,
-not a claim that the overall visual gate passes. Remote and browser verification state is
-recorded in `AI_DEVELOPMENT/PROJECT_STATE.yaml`; payload merge `4a3eff7` loaded current
-`index-D_EFhYS4.js` with ready/running true and zero recorded browser/network errors.
+contains the Round 16 checkpoint. Its repository payload is verified; its live-browser gate
+remains unverified. Current repairs are on `codex/game2-criteria-20260911` and are undergoing
+rendered CI verification before publication. Overall product criteria have **not** passed.
+Remote and browser evidence is recorded in `AI_DEVELOPMENT/PROJECT_STATE.yaml`.
 
 ```bash
 npm install
@@ -37,21 +37,20 @@ npm run shots      # build, then capture the visual-review screenshot set
 | 避 | dodge |
 | 技 | special |
 | 敵 | lock on |
+| 調 (near an available object) | interact; the prompt explains the consequence |
 
 **Desktop**
 
 `WASD` move · mouse look (right-drag or click to capture) · `LMB` attack · `Shift+LMB` heavy ·
 `C` guard · `Space` dodge · `Q` lock on · `E` special · `R` sheathe · `1/2/3` stance ·
-`Esc` pause. Gamepads are supported.
+`F` interact · `Esc` pause. Gamepads are supported (View/Select for interaction).
 
 ---
 
 ## Why it looks the way it does
 
-The whole build is procedural, which sounds like a limitation and is actually the point:
-a phone downloads under two megabytes and then spends a few hundred milliseconds
-synthesising a world locally, instead of streaming a hundred megabytes of textures it will
-sample four times.
+The whole build is procedural: the current candidate is about 490kB compressed and generates
+its world locally. Actual phone boot time has not yet been measured.
 
 - **Materials** are evaluated per pixel from domain-warped simplex and worley fields, with
   normals derived by Sobel from the same height field — not faked from albedo luminance.
@@ -81,20 +80,42 @@ enclosed space, and Genshin's sustained thermal behaviour on mid-range Android. 
 only — nothing from any reference's characters, world, layout, UI, staging or music is
 copied, and no reference title is named in the shipped product.
 
-**The honest state of that bar, as of 2026-08-01: ten elements of sixteen now carry at
-least one executed measurement, against one the day before.** That is coverage, not
-quality — the first interaction run returned 5 pass, 9 fail and 4 inconclusive. Visuals is
-measured and currently fails. Combat and AI are the last two elements resting on a source
-audit alone: their scenarios and metrics are wired, but the sample they need is
-unaffordable until the physics cost in TD-010 comes down, and that was recorded rather
-than quietly reduced to a smaller sample. No side-by-side against real reference footage,
-no real-device frame rate, and no expert or player review has ever been performed, and
-none is claimed anywhere in this repository.
+**As of 2026-09-11, the candidate has an executed 20-encounter combat/AI sample, five
+native phone/MEDIUM frames, and a passing production/touch/graphics-recovery smoke.**
+Coverage is not quality: the initial interaction metrics returned 14 pass, 2 fail and 2
+inconclusive. The posture-resolution target remains unmet; attack-motion calibration needs
+a clean idle reference, and sample audio peak does not establish true peak. Independent
+version-blind still review against supplied official reference screenshots judged both
+versions below the visual bar. A separate source-blind refuter retained the foliage and
+terrain blockers and narrowed the lantern issue to minor. No matched reference gameplay,
+real-device performance or human review is claimed.
 
 ## Where this build actually stands
 
 > Picking the work up in a new session? [`HANDOFF.md`](./HANDOFF.md) carries the state
 > the container does not — `shots/` is gitignored and the review images do not survive.
+
+### 2026-09-11 candidate: measured gameplay progress, overall criteria unmet
+
+The current candidate fixes foot planting, attack-window timing, posture pressure, camera
+collision, contextual input, encounter progression and restart. Eight focused behavioral
+test files pass, along with the production build, ownership and project-state checks.
+The small-screen layout also includes context and pause controls in its overlap audit.
+
+[CI run](https://github.com/bachikoljunior-blip/game2/actions/runs/34602120671) captured the
+unchanged main baseline and candidate at phone/MEDIUM, then executed 20 scripted encounters.
+The candidate stayed within 119 draw calls / 789,214 triangles across the five fixed views.
+Reversals completed in 217 ms; planted-foot p95 drift was zero (worst 0.044 cm); the camera
+traverse had zero collider overlaps across 1,896 frames. These are instrumented scenarios.
+The repaired harness records changed stimuli explicitly, so cross-version numbers are not
+identical-input comparisons. Only 5 of 33 enemy deaths followed a posture break, below the
+60% target; a duplicate heavy-damage multiplier is now corrected pending another 20 fights.
+
+[Native input/recovery CI](https://github.com/bachikoljunior-blip/game2/actions/runs/34605905851)
+passed two fresh browser contexts, native Dodge/context touches, real WebGL loss/restoration,
+and resumed gameplay with zero page, console, HTTP or invalid-GL errors. This is not phone
+performance or a public-deployment check. Full scope and limitations:
+[`r17-integration.md`](AI_DEVELOPMENT/EVIDENCE/r17-integration.md).
 
 ### The game is now measured in motion, not only photographed
 

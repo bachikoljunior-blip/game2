@@ -75,6 +75,27 @@ function playerRewardRecovery(Director) {
   return { afterReward, afterOneSecond: player.posture };
 }
 
+function authoredHeavyContact(Director, key, finisher) {
+  const { ctx, combat, enemy } = fixture(Director);
+  const player = new Player(ctx);
+  ctx.player = player;
+  player.state = 'attack';
+  player.sheathed = false;
+  player.position.set(0, 0, 0);
+  player._beginAttack({ key, heavy: true, finisher });
+  const authoredDamage = player.attack.damage;
+  const opts = player._fillSwingOpts(player.attack);
+  combat.beginSwing(player, opts);
+  const rec = combat._records.get(player);
+  rec.base.set(0, 1, -0.7); rec.tip.set(0, 1, -2);
+  rec.prevBase.copy(rec.base); rec.prevTip.copy(rec.tip);
+  rec.bladeValid = true; rec.hasPrev = true;
+  let hit = null;
+  ctx.bus.on('hit', (p) => { hit = { damage: p.damage, posture: p.posture, crit: p.crit }; });
+  const contact = combat._sweepAgainst(rec, player, enemy, 1, combat.time);
+  return { authoredDamage, contact, ...hit, enemyHealth: enemy.health, enemyAlive: enemy.isAlive };
+}
+
 function parryResolution(late) {
   const { combat, enemy, player, events } = fixture();
   combat.update(1 / 60, 0, 1 / 60);
@@ -142,8 +163,8 @@ function retryCleanup() {
 }
 
 const evidence = {
-  baseline: { regen: regenDuringEnemyLock(BaselineCombat), firstContact: firstContactClassification(BaselineCombat), playerRecovery: playerRewardRecovery(BaselineCombat) },
-  current: { regen: regenDuringEnemyLock(CombatDirector), firstContact: firstContactClassification(CombatDirector), playerRecovery: playerRewardRecovery(CombatDirector), perfect: parryResolution(false), late: parryResolution(true), finisher: pressureFinisher(), retry: retryCleanup() },
+  baseline: { regen: regenDuringEnemyLock(BaselineCombat), firstContact: firstContactClassification(BaselineCombat), playerRecovery: playerRewardRecovery(BaselineCombat), heavySlash: authoredHeavyContact(BaselineCombat, 'd_dr', false), heavyFinisher: authoredHeavyContact(BaselineCombat, 'heavy', true) },
+  current: { regen: regenDuringEnemyLock(CombatDirector), firstContact: firstContactClassification(CombatDirector), playerRecovery: playerRewardRecovery(CombatDirector), heavySlash: authoredHeavyContact(CombatDirector, 'd_dr', false), heavyFinisher: authoredHeavyContact(CombatDirector, 'heavy', true), perfect: parryResolution(false), late: parryResolution(true), finisher: pressureFinisher(), retry: retryCleanup() },
   scope: 'Pure Node integration of Combat with real Enemy/EnemyManager callbacks; no renderer, DOM input, AI encounter policy, or BM-COMBAT-02 runtime sample.',
 };
 console.log(JSON.stringify(evidence, null, 2));
@@ -154,6 +175,12 @@ if (!process.argv.includes('--observe')) {
   assert.equal(evidence.current.firstContact.afterPressure, evidence.current.firstContact.afterHit - 10);
   assert.equal(evidence.current.playerRecovery.afterReward, 22);
   assert.ok(evidence.current.playerRecovery.afterOneSecond < evidence.current.playerRecovery.afterReward, 'An onKill reward must not disable ongoing player recovery');
+  for (const heavy of [evidence.current.heavySlash, evidence.current.heavyFinisher]) {
+    assert.equal(heavy.contact, true);
+    assert.equal(heavy.crit, false);
+    assert.equal(heavy.damage, heavy.authoredDamage, 'A swept hit must honor the already-authored heavy damage exactly once');
+    assert.equal(heavy.enemyAlive, true, 'The authored heavy must leave the 70 HP opponent alive for a follow-up');
+  }
   assert.ok(Math.abs(evidence.current.perfect.attackerPressure - TUNING.PARRY_PERFECT_POSTURE * (1 + TUNING.PARRY_STREAK_POSTURE)) < 1e-9);
   assert.equal(evidence.current.perfect.playerHealth, 100);
   assert.equal(evidence.current.late.attackerPressure, TUNING.PARRY_LATE_POSTURE);

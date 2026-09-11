@@ -1764,8 +1764,23 @@ export class SkySystem {
 
   // ------------------------------------------------------------- environment
 
+  onContextLost() {
+    // Dispose old-context framebuffer listeners now, before Three replaces its
+    // caches. The restored environment is a fresh bake with the same sky settings.
+    this._cubeRT?.dispose();
+    this._pmremRT?.dispose();
+    this._pmrem?.dispose();
+    this._cubeRT = this._cubeCamera = this._pmremRT = this._pmrem = null;
+    if (this.ctx.scene.environment === this.envMap) this.ctx.scene.environment = null;
+    this.envMap = null;
+  }
+
   onContextRestored() {
     // The CPU texture objects survive context loss; their rendered pixels do not.
+    if (!this.material) return;
+    this._pmrem = new PMREMGenerator(this.ctx.renderer);
+    this._pmrem.compileCubemapShader();
+    this._makeCubeTarget(this.ctx.quality.envMapSize);
     this._renderEnvironment(true);
   }
 

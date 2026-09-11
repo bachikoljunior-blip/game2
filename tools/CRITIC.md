@@ -34,11 +34,13 @@ game must be its own.
 
 ## The blind comparison
 
-You are comparing against the reference title **from memory**. Say so. The project has never
-fetched reference footage and no side-by-side against a real reference frame has ever been
-performed — do not describe your comparison as anything more than an experienced judgement,
-and never write it up as a measured or verified comparison. Your authority is your eyes on
-*our* frame; that authority is genuine and is enough.
+State the evidence you actually received. On 2026-09-11 the project fetched official
+publisher promotional stills, recorded in `AI_DEVELOPMENT/EVIDENCE/r17-reference-sources.json`,
+for the first comparison grounded in supplied reference images. They are not matched
+camera/weather captures or reference gameplay footage. An independent model prediction of
+viewer preference is not an observed human blind study. Any reference detail recalled beyond
+the supplied stills is **from memory** and must be labelled that way. When no actual reference
+is supplied, the entire reference comparison remains memory-based.
 
 For each shot, do this honestly:
 

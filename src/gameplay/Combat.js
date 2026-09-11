@@ -47,7 +47,7 @@ export const TUNING = {
 
   // ── damage & poise ─────────────────────────────────────────────────────────
   BASE_DAMAGE: 12,              // fallback when weapon.damage is missing
-  HEAVY_MULT: 1.85,             // damage multiplier for a heavy swing
+  HEAVY_MULT: 1.85,             // fallback heavy bonus when no authored damage is supplied
   CRIT_MULT: 1.65,              // backstab / punish-window multiplier
   BACKSTAB_ARC: 1.92,           // rad (~110°) behind the victim that counts as a backstab
   CHIP_RESIDUE: 0.14,           // fraction of blocked damage that still reaches health
@@ -1355,7 +1355,9 @@ export class CombatDirector {
         _vD.normalize();
         _vE.copy(_c2).addScaledVector(_vD, radius);
 
-        const dmg = this._weaponDamage(attacker) * (ra.swingHeavy ? TUNING.HEAVY_MULT : 1);
+        // Player's descriptor already includes its heavy/stance/chain bonuses;
+        // multiplying again turned an authored 49.4 ender into a 91.39 one-shot.
+        const dmg = this._weaponDamage(attacker);
         this._markHit(ra, target, now);
         this._resolveContact(
           attacker, target, _vE, _vD, dmg, ra.swingKind, ra.swingHeavy, false,
@@ -2581,7 +2583,8 @@ export class CombatDirector {
   _weaponDamage(e) {
     const rec = e ? this._records.get(e) : null;
     if (rec?.swingDamage != null) return rec.swingDamage;
-    return e?.weapon?.damage ?? TUNING.BASE_DAMAGE;
+    if (e?.weapon?.damage != null) return e.weapon.damage;
+    return TUNING.BASE_DAMAGE * ((rec?.swingHeavy ?? e?.weapon?.heavy) ? TUNING.HEAVY_MULT : 1);
   }
 
   /** Parry width: difficulty-scaled for the player, archetype-scaled for the AI. */

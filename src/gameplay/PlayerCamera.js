@@ -18,8 +18,8 @@
  * damped SmoothDamp for vectors. No per-frame allocation.
  */
 
-import { Vector3, Quaternion, Euler } from 'three';
-import { clamp, damp, lerp, smoothstep, noise } from '../core/Noise.js';
+import { Vector3, Quaternion } from 'three';
+import { clamp, damp, lerp, smoothstep } from '../core/Noise.js';
 import { LAYER_SOLID } from './Physics.js';
 
 const DEG = Math.PI / 180;
@@ -153,13 +153,8 @@ export class PlayerCamera {
     this._collideMask = LAYER_SOLID;
 
     // ---- shake --------------------------------------------------------------
-    this.trauma = 0;
-    this._traumaDecay = 1.6;
-    this._shakeFreq = 24;
-    this._shakeTime = 0;
     this._shakePos = new Vector3();
     this._shakeQuat = new Quaternion();
-    this._shakeEuler = new Euler();
 
     // Pooled payload — 'lock-on' is not in the §2 table, so nothing is required
     // to listen, but the HUD wants the reticle and pooling keeps emit alloc-free.
@@ -171,9 +166,6 @@ export class PlayerCamera {
   async init() {
     const bus = this.ctx.bus;
     if (bus) {
-      this._offs.push(bus.on('camera-shake', (p) => {
-        this.addShake(p?.amount ?? 0.3, p?.duration ?? 0.3, p?.freq ?? 24);
-      }));
       this._offs.push(bus.on('hitstop', (p) => {
         this._hitstop = Math.max(this._hitstop, p?.duration ?? 0.08);
       }));
@@ -225,18 +217,29 @@ export class PlayerCamera {
     this._punchDecay = 1 / Math.max(0.05, duration);
   }
 
-  /** Fallback shake when Effects does not own it. Trauma is squared on use. */
+  /** Direct-call compatibility; Effects is the sole owner of shake state. */
   addShake(trauma, duration = 0.35, freq = 24) {
-    if (this.ctx.fx?.addShake) { this.ctx.fx.addShake(trauma, duration, freq); return; }
-    this.trauma = clamp(this.trauma + trauma, 0, 1);
-    this._traumaDecay = 1 / Math.max(0.08, duration);
-    this._shakeFreq = freq;
+    this.ctx.fx?.addShake?.(trauma, duration, freq);
   }
 
   /** Drop the camera straight behind the player with no smoothing (spawn/respawn). */
   snap() {
     const p = this.ctx.player;
     if (p && typeof p.yaw === 'number') this.yaw = p.yaw;
+    // Respawn and deterministic teleports are discontinuities, not camera input.
+    // Carrying pitch/FOV transients across them made paired shake ablations begin
+    // from different poses before either run had emitted a shake event.
+    this.pitch = 14 * DEG;
+    this._lockBlend = this.lockTarget ? 1 : 0;
+    this._lockOcclusion = 0;
+    this._lockOrbitOffset = 0;
+    this._punch = 0;
+    this._snapBoost = 0;
+    this._speedNorm = 0;
+    this._hitstop = 0;
+    this._fov = this._baseFov;
+    this._apertureNow = this.aperture;
+    this._fade = 1;
     this._computePivot(this._pivot);
     this._pivotSmooth.copy(this._pivot);
     this._pivotVel.set(0, 0, 0);
@@ -694,11 +697,10 @@ export class PlayerCamera {
     }
 
     const fx = this.ctx.fx;
-    let shaken = false;
+    this._shakePos.set(0, 0, 0);
+    this._shakeQuat.identity();
     if (fx?.getShakeOffset) {
-      this._shakePos.set(0, 0, 0);
-      this._shakeQuat.identity();
-      shaken = fx.getShakeOffset(this._shakePos, this._shakeQuat) !== false;
+      fx.getShakeOffset(this._shakePos, this._shakeQuat);
       // Effects derives shake from impact points, which are derived from bone
       // transforms — another system's arithmetic, so it is checked like any input.
       if (!isFiniteVec(this._shakePos) || !Number.isFinite(this._shakeQuat.w)) {
@@ -706,8 +708,6 @@ export class PlayerCamera {
         this._shakeQuat.identity();
       }
     }
-    if (!shaken) this._localShake(dt);
-
     if (this.shakeScale > 0 && (this._shakePos.lengthSq() > 1e-9 || this._shakeQuat.w < 0.999999)) {
       const s = this.shakeScale;
       // Offset is authored in view space so a lateral shake stays lateral.
@@ -792,7 +792,6 @@ export class PlayerCamera {
     if (!Number.isFinite(this._boom)) this._boom = BOOM_BASE;
     if (!Number.isFinite(this._boomActual)) this._boomActual = BOOM_BASE;
     if (!Number.isFinite(this._fov)) this._fov = this._baseFov;
-    if (!Number.isFinite(this.trauma)) this.trauma = 0;
     if (!Number.isFinite(this._apertureNow)) this._apertureNow = this.aperture;
     // Smoothed scalars poison the next frame's target if left non-finite, which
     // is what turns one bad frame into a permanently frozen camera.
@@ -807,24 +806,6 @@ export class PlayerCamera {
       console.warn('[camera] non-finite transform recovered; holding the last good pose');
     }
     cam.updateMatrixWorld();
-  }
-
-  _localShake(dt) {
-    if (this.trauma <= 0) {
-      this._shakePos.set(0, 0, 0);
-      this._shakeQuat.identity();
-      return;
-    }
-    this.trauma = Math.max(0, this.trauma - this._traumaDecay * dt);
-    this._shakeTime += dt * (this._shakeFreq || 24);
-    const a = this.trauma * this.trauma;      // squared: small traumas stay subtle
-    const t = this._shakeTime;
-    const nx = noise.noise2(t, 0.0);
-    const ny = noise.noise2(0.0, t + 31.7);
-    const nz = noise.noise2(t * 0.7 + 11.3, t * 0.3);
-    this._shakePos.set(nx * 0.16 * a, ny * 0.13 * a, nz * 0.05 * a);
-    this._shakeEuler.set(ny * 0.045 * a, nx * 0.045 * a, nz * 0.06 * a);
-    this._shakeQuat.setFromEuler(this._shakeEuler);
   }
 
   // ------------------------------------------------------------------- focus

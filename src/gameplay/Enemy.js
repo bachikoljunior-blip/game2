@@ -819,6 +819,19 @@ export class Enemy {
     this._footPhase = 0;
     this.moveCooldowns.fill(0);
 
+    const it = this.intent;
+    it.behaviour = 'hold';
+    it.moveDir.set(0, 0, 0);
+    it.moveGain = 0;
+    it.lookAt.set(0, 0, 0);
+    it.hasLook = false;
+    it.attack = null;
+    it.guard = false;
+    it.parry = false;
+    it.dodge = false;
+    it.dodgeDir.set(0, 0, 0);
+    it.taunt = false;
+
     if (position) this.position.set(position.x, position.y, position.z);
     const th = this.ctx.terrain?.heightAt?.(this.position.x, this.position.z);
     if (Number.isFinite(th)) this.position.y = th;
@@ -836,6 +849,7 @@ export class Enemy {
     this.root.rotation.set(0, this.yaw, 0);
     this.root.scale.set(1, 1, 1);
     this.forward.set(-Math.sin(this.yaw), 0, -Math.cos(this.yaw));
+    it.faceDir.copy(this.forward);
     this.visual.position.set(0, 0, 0);
     this.visual.rotation.set(0, 0, 0);
     this.visual.scale.set(1, 1, 1);
@@ -843,6 +857,10 @@ export class Enemy {
     this.active = true;
     this.lod = 0;
     this._animInterval = 0;
+
+    // Pooled enemies keep one Rig instance. Reset it once at the entity lifecycle
+    // boundary so no prior attack layer, look lock or cloth spring reaches idle.
+    try { this.rig?.reset?.(); } catch { /* a proxy or degraded rig still respawns */ }
 
     this._ensureController();
     if (this.controller) {

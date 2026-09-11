@@ -11,22 +11,43 @@
   "baseSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
   "activePlanNode": "R17-GAMEPLAY",
   "activeTask": "R17-GAMEPLAY",
-  "lastSuccessfulAction": "Integrated five owner repairs and input/UI/recovery fixes. Eight focused behavioral test files, project state, ownership, kit integrity and production build passed. Awaiting rendered CI evidence.",
-  "currentFailingAction": "Standalone Chromium exits SIGTRAP before opening; Cloud Browser cannot create a WebGL context on the existing public release.",
+  "lastSuccessfulAction": "Integrated local Round 17 candidate passes npm run check, all 14 focused test files, ownership/state validation and production build. Enemy reset, shake ownership, duplicate heavy damage, idle calibration, foliage, terrain and lantern repairs are ready for rendered CI.",
+  "currentFailingAction": "Overall criteria still fail: the last measured posture-resolution fraction is 5/33; repaired five-frame art, 20 encounters and 300 motion frames have not yet run; real-device/human criteria remain open.",
   "currentHypothesis": null,
-  "nextAction": "Commit and push candidate branch, collect CI baseline/candidate five-shot captures and 20-encounter traces, inspect and repair failures before main integration.",
+  "nextAction": "Publish the exact tested tree to the existing criteria branch with the motion opt-in; inspect five native frames, 20 encounters and 300 motion frames, repair failures, then integrate only verified results.",
   "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
   "pendingVerification": [
-   "Full revised gameplay and 20-encounter DOM-input measurement on the candidate.",
-   "Coherent five-shot phone/MEDIUM visual gate and independent closing critique.",
-   "Release controls absent outside explicit capture/debug mode.",
-   "Real-device performance, thermals, boot time and human usability/reference comparison remain unmeasured."
+   "Same 20-encounter policy after removing duplicate heavy damage.",
+   "Clean idle calibration and real 300-frame motion videos.",
+   "Independent re-review of the repaired foliage, terrain and lantern frames.",
+   "Latest coherent source and public Pages browser verification.",
+   "Physical-device performance/thermals/boot and human quality/ergonomics."
   ],
-  "modifiedFiles": [],
+  "modifiedFiles": [
+   "src/fx/Effects.js",
+   "src/gameplay/Combat.js",
+   "src/gameplay/Enemy.js",
+   "src/gameplay/EnemyAI.js",
+   "src/gameplay/PlayerCamera.js",
+   "src/render/Foliage.js",
+   "src/world/Props.js",
+   "src/world/Terrain.js",
+   "tools/interaction-capture.mjs",
+   "tools/interaction-metrics.mjs",
+   "tools/harness/runtime.js",
+   "tools/motion-capture.mjs",
+   ".github/workflows/game2-criteria.yml",
+   "AI_DEVELOPMENT evidence and active-state documents"
+  ],
   "remotePushPendingAuthorization": false,
   "remoteReleaseAuthorized": true,
-  "remotePublicationStatus": "repository_verified_public_surface_unverified",
-  "publishedMainSha": "e40a1884a57250391dd08bdf50dc2c6cb3837a36",
-  "publishedUrl": "https://bachikoljunior-blip.github.io/game2/"
+  "remotePublicationStatus": "candidate 7c2ed04 and recovery bb5c49f are published; integrated local candidate is tested and awaiting exact-tree publication/CI; main remains 4e6d23a",
+  "publishedMainSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
+  "publishedUrl": "https://bachikoljunior-blip.github.io/game2/",
+  "continuationAutomation": {
+   "enabled": true,
+   "cadence": "hourly",
+   "coordination": "Observe only while another fresh producer/related CI is active; do not create duplicate changes."
+  }
  }
 }

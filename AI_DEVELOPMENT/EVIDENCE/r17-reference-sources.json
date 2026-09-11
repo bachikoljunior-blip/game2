@@ -1,0 +1,46 @@
+{
+  "references": [
+    {
+      "file": "shots/references/official-tsushima-stairs.jpg",
+      "publisherPage": "https://www.playstation.com/en-us/games/ghost-of-tsushima/",
+      "imageURL": "https://gmedia.playstation.com/is/image/SIEPDC/ghost-of-tsushima-directors-cut-screenshot-04-en-22jun21?wid=1920&fmt=jpeg",
+      "downloadedAt": "2026-09-11",
+      "sha256": "22051b94e6b2f191ffa070f53b60fd59d1e999b7f9acdd36eb6090c24148a940",
+      "pixels": [
+        1920,
+        1080
+      ],
+      "scope": "Shrine approach: stone, tree massing, landmark hierarchy. Official image contains PS5 capture label and letterbox."
+    },
+    {
+      "file": "shots/references/official-tsushima-valley.jpg",
+      "publisherPage": "https://www.playstation.com/en-us/games/ghost-of-tsushima/",
+      "imageURL": "https://gmedia.playstation.com/is/image/SIEPDC/ghost-of-tsushima-directors-cut-screenshot-06-en-22jun21?wid=1920&fmt=jpeg",
+      "downloadedAt": "2026-09-11",
+      "sha256": "fc1ff67693902b9ac8d986148752575099367209005d3167f12849939ff26ab0",
+      "pixels": [
+        1920,
+        1080
+      ],
+      "scope": "Vista: foreground character, middle forest/cliff, distant haze. Official image contains PS5 capture label and letterbox."
+    },
+    {
+      "file": "shots/references/official-sekiro-005.jpg",
+      "publisherPage": "https://www.sekiro.jp/movieandimage.html",
+      "imageURL": "https://media.fromsoftware.jp/sekiro/static/img/movieandimage/images/wide/005.jpg",
+      "downloadedAt": "2026-09-11",
+      "sha256": "720abde32abb5a329a9661333707bcac658e413b971ab34ec84b4d7e40fa5c14",
+      "pixels": [
+        1600,
+        900
+      ],
+      "scope": "Snowy cliff: shape legibility, material scale and depth. Different weather/setting, not a matched golden-hour comparator."
+    }
+  ],
+  "limitations": [
+    "Official promotional still images, not a live gameplay capture or frame-time measurement.",
+    "An independent model can inspect these alongside game2 stills; this does not constitute a human blind preference study.",
+    "References are review inputs only; no reference pixels or assets enter src/, dist/ or docs/."
+  ],
+  "comparisonStatus": "reference images inspected; game2 CI images pending"
+}

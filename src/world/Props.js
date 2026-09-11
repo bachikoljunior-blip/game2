@@ -4449,7 +4449,26 @@ export class PropFactory {
     // it — the AO stays in the vertex colour so the ribs still read.
     const body = sweepProfile(samples, circleProfile(14), { smooth: true, uvScale: 1.4, capStart: false, capEnd: false });
     bakeFlutter(body, 3.0, (x, y) => clamp((-y) / (cord + h), 0, 1));
-    PropFactory.add(b, body, '__lanternPaper');
+
+    // Three split-bamboo hoops under the paper. The old sinusoidal radius ripple
+    // could catch a highlight, but it supplied no persistent support silhouette;
+    // in the close sun pose it collapsed into faint wandering seams. These narrow
+    // bands follow the actual belly radius and use the same lit-paper shader with a
+    // lower vertex value, so they stay form-following without adding a material or
+    // a draw call. The paper body and its supports remain one merged part.
+    const paper = [body];
+    for (const t of [0.27, 0.50, 0.73]) {
+      const bulge = Math.sin(t * Math.PI);
+      const rr = lerp(r * 0.42, r, bulge) + 0.004;
+      const y = -cord - t * h;
+      const hoop = sweepProfile([
+        { x: 0, y: y - 0.007, z: 0, sx: rr * 2, sy: rr * 2, ao: 0.52 },
+        { x: 0, y: y + 0.007, z: 0, sx: rr * 2, sy: rr * 2, ao: 0.52 },
+      ], circleProfile(14), { smooth: true, uvScale: 1.4 });
+      bakeFlutter(hoop, 3.0, (x, yy) => clamp((-yy) / (cord + h), 0, 1));
+      paper.push(hoop);
+    }
+    PropFactory.add(b, mergeGeometries(paper.map((g) => normalizeGeo(g, true)), false), '__lanternPaper');
 
     // cord and the cap/base rings — the rings in leaf, for a glint off the metal
     const bits = [];
@@ -4960,13 +4979,14 @@ export class PropFactory {
   }
 
   /**
-   * One clump of blossom: a **crossed pair** of alpha-tested cards, fully tumbled
-   * in yaw, pitch and roll.
+   * One clump of blossom: three staggered, lobed sprays, fully tumbled in yaw,
+   * pitch and roll.
    *
-   * A single quad per tip reads as a card from every angle no matter how good the
-   * texture is, and a set of them that all share an up vector reads as a set of
-   * cards. Crossing two planes gives the clump depth from any approach, and the
-   * tumble means no two clumps in the crown present the same plane to the camera.
+   * Three rectangular planes crossing at their exact centres exposed their long
+   * straight borders as the construction of the hero crown. Each spray is now a
+   * ten-lobed convex fan, and their centres are offset from one another. The same
+   * alpha-tested blossom texture still cuts petals and the same tumble prevents a
+   * shared facing, but there is no full-width card edge for the camera to recover.
    *
    * Clump size is the cheap half of crown coverage: it buys silhouette without
    * buying instances, so it is pushed as far as it goes before adding mass.
@@ -4985,11 +5005,11 @@ export class PropFactory {
    *
    * A petal mass is not a set of planes; it is an approximately convex volume of
    * scattering material, and it shades like one. Each vertex therefore takes the
-   * direction from the clump's own centre, biased back toward its card's plane so
-   * the middle of a card still reads as that card and the sum at the centre can
+   * direction from the spray's own centre, biased toward its supporting plane so
+   * the middle of a spray keeps a stable normal and the sum at the centre can
    * never cancel to zero (§5b: a zero-length normal normalizes to NaN). Corner
-   * normals then sit 45-60 degrees off the card, so one quad spans a range of
-   * shading rather than a value, adjacent quads in a clump overlap in normal
+   * normals then sit 45-60 degrees off that plane, so one fan spans a range of
+   * shading rather than a value, adjacent sprays in a clump overlap in normal
    * space, and the lit-to-shaded transition becomes continuous.
    */
   _blossomCluster(out, cx, cy, cz, rnd) {
@@ -5007,34 +5027,58 @@ export class PropFactory {
     for (let q = 0; q < 3; q++) {
       const hw = s * (q === 0 ? 1.0 : q === 1 ? 0.86 : 0.78);
       const hh = s * (q === 0 ? 0.82 : q === 1 ? 0.94 : 0.78);
-      const vs = q === 0
-        ? new Float32Array([-hw, -hh, 0, hw, -hh, 0, hw, hh, 0, -hw, hh, 0])
-        : q === 1
-          ? new Float32Array([0, -hh, -hw, 0, -hh, hw, 0, hh, hw, 0, hh, -hw])
-          : new Float32Array([-hw, 0, -hh, hw, 0, -hh, hw, 0, hh, -hw, 0, hh]);
+      const SEG = 10;
+      const ox = q === 0 ? -s * 0.12 : q === 1 ? s * 0.15 : s * 0.04;
+      const oy = q === 0 ? s * 0.09 : q === 1 ? -s * 0.06 : s * 0.14;
+      const oz = q === 0 ? s * 0.08 : q === 1 ? s * 0.05 : -s * 0.14;
+      const vs = new Float32Array((SEG + 1) * 3);
+      const uv = new Float32Array((SEG + 1) * 2);
+      const cc = new Float32Array((SEG + 1) * 3);
+      const fl = new Float32Array((SEG + 1) * 2);
+      const idx = new Uint16Array(SEG * 3);
+      const nrm = new Float32Array((SEG + 1) * 3);
+      vs[0] = ox; vs[1] = oy; vs[2] = oz;
+      uv[0] = 0.5; uv[1] = 0.5;
+      const cn = q === 0 ? [0, 0, 1] : q === 1 ? [1, 0, 0] : [0, 1, 0];
+      nrm[0] = cn[0]; nrm[1] = cn[1]; nrm[2] = cn[2];
+      for (let v = 0; v <= SEG; v++) {
+        if (v > 0) {
+          const a = ((v - 1) / SEG) * Math.PI * 2;
+          // Five broad lobes break the outline; the second term prevents paired
+          // sprays from sharing the same scallop even before the common tumble.
+          const edge = 0.82 + 0.12 * Math.sin(a * 5 + q * 1.7)
+            + 0.05 * Math.sin(a * 3 - q * 0.9);
+          const u = Math.cos(a) * hw * edge;
+          const v2 = Math.sin(a) * hh * edge;
+          const dome = s * (0.02 + 0.05 * Math.sin(a * 2 + q));
+          const p = v * 3;
+          if (q === 0) { vs[p] = ox + u; vs[p + 1] = oy + v2; vs[p + 2] = oz - dome; }
+          else if (q === 1) { vs[p] = ox - dome; vs[p + 1] = oy + v2; vs[p + 2] = oz + u; }
+          else { vs[p] = ox + u; vs[p + 1] = oy - dome; vs[p + 2] = oz + v2; }
+          uv[v * 2] = 0.5 + Math.cos(a) * 0.49;
+          uv[v * 2 + 1] = 0.5 + Math.sin(a) * 0.49;
+          const nx = vs[p] - ox + cn[0] * 0.60 * s;
+          const ny = vs[p + 1] - oy + cn[1] * 0.60 * s;
+          const nz = vs[p + 2] - oz + cn[2] * 0.60 * s;
+          const l = Math.hypot(nx, ny, nz) || 1;
+          nrm[p] = nx / l; nrm[p + 1] = ny / l; nrm[p + 2] = nz / l;
+        }
+        cc[v * 3] = cr; cc[v * 3 + 1] = cg; cc[v * 3 + 2] = cb;
+        fl[v * 2] = 1; fl[v * 2 + 1] = 1.3;
+      }
+      for (let v = 0; v < SEG; v++) {
+        idx[v * 3] = 0;
+        idx[v * 3 + 1] = v + 1;
+        idx[v * 3 + 2] = ((v + 1) % SEG) + 1;
+      }
       const g = new BufferGeometry();
       g.setAttribute('position', new BufferAttribute(vs, 3));
-      g.setAttribute('uv', new BufferAttribute(new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]), 2));
-      // The blob field. `vs` is still clump-local here, so a vertex position *is*
-      // its offset from the clump centre; the bias is the card's own plane normal
-      // at 0.60 of the clump radius, which is what stops the four corner normals
-      // of a quad summing to zero at its middle.
-      const cn = q === 0 ? [0, 0, 1] : q === 1 ? [1, 0, 0] : [0, 1, 0];
-      const nrm = new Float32Array(12);
-      for (let v = 0; v < 4; v++) {
-        const nx = vs[v * 3] + cn[0] * 0.60 * s;
-        const ny = vs[v * 3 + 1] + cn[1] * 0.60 * s;
-        const nz = vs[v * 3 + 2] + cn[2] * 0.60 * s;
-        const l = Math.hypot(nx, ny, nz) || 1;
-        nrm[v * 3] = nx / l; nrm[v * 3 + 1] = ny / l; nrm[v * 3 + 2] = nz / l;
-      }
+      g.setAttribute('uv', new BufferAttribute(uv, 2));
       g.setAttribute('normal', new BufferAttribute(nrm, 3));
-      const cc = new Float32Array(12);
-      for (let v = 0; v < 4; v++) { cc[v * 3] = cr; cc[v * 3 + 1] = cg; cc[v * 3 + 2] = cb; }
       g.setAttribute('color', new BufferAttribute(cc, 3));
       // Blossom on a thin twig: whippy, and the whole clump moves as one.
-      g.setAttribute('aFlutter', new BufferAttribute(new Float32Array([1, 1.3, 1, 1.3, 1, 1.3, 1, 1.3]), 2));
-      g.setIndex([0, 1, 2, 0, 2, 3]);
+      g.setAttribute('aFlutter', new BufferAttribute(fl, 2));
+      g.setIndex(new BufferAttribute(idx, 1));
       // `applyMatrix4` carries the normal attribute through the normal matrix, so
       // the blob field has to be authored before the tumble, not after — and
       // `computeVertexNormals()` must not run again afterwards or it overwrites it

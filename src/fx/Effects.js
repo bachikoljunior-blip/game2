@@ -607,7 +607,6 @@ export class EffectsSystem {
     this.trauma = clamp(this.trauma + amount, 0, 1);
     this.traumaDecay = clamp(1 / Math.max(0.05, duration), 0.6, 8);
     this.shakeFreq = freq;
-    this.ctx.playerCamera?.addShake?.(amount, duration, freq);
   }
 
   /**

@@ -1,6 +1,63 @@
-# Round 17 world: reachable interactions and a complete encounter loop
+# Round 17 world: interactions, encounter loop and critic-directed landform/prop repair
 
-Scope: `src/world/Level.js`, `src/world/Props.js`. No terrain, material, lighting or layout retuning. Evidence collected with `node tools/check-world-r17.mjs`; no browser, renderer, production build or phone run was performed by this owner.
+Scope: `src/world/Level.js` from the earlier interaction pass, plus the current owner's
+`src/world/Terrain.js`, `src/world/Props.js`, `tools/check-world-r17.mjs` and this record.
+No lighting, camera, layout or Foliage source was retuned. Evidence collected with
+`node tools/check-world-r17.mjs`; no browser, renderer, production build or phone run was
+performed by this owner.
+
+## Round 17 source-blind critic follow-up
+
+The separate refuter retained the mountain as a blocker, narrowed the close hanging lantern
+to a minor local-legibility issue, and retained the hero sacred-tree symptom. None of the
+source changes below is a visual PASS: the unchanged native framings and 25% views still need
+new rendered capture and independent review.
+
+### Mountain: the visible owner and the repeated-fold mechanism
+
+Rays through the critic's native `wide [800,130,480,165]` mountain-only crop strike the
+macro terrain at **480 / 438 / 410 m** for its top-left, centre and bottom-right samples.
+All are outside the 256 m core but far inside the 1.8 km distant-band hand-off. This proves
+that the visible construction is `Terrain._macro` carried by the clipmap, not the distant
+ridge-band shader and not a missing fine-texture path.
+
+The largest north-west term there was isotropic `ridged2`: every maximum used the same
+radial construction, so adjacent maxima produced the repeated pyramid/fold organisation
+seen beneath the already-measured fine surface ripple. That term is now broadly blended,
+only across the visible north-west massif, into one warped primary ridge plus two lower
+branching shoulders. They share a backbone and different widths instead of forming a row
+of independent cones. The three structural samples are pinned at **1021.94 m** for the
+primary against **914.37 / 917.94 m** outer flanks, **961.07 vs 872.81 m** on the western
+shoulder, and **893.40 vs 843.35 m** on the eastern shoulder. Terrain topology, clipmap
+triangle count, WORLD constants and the core/plateau hand-off are unchanged.
+
+### Hanging lantern: persistent form-following supports
+
+The old sinusoidal belly ripple could affect shading but did not provide a persistent
+support silhouette under strong emission. Three narrow split-bamboo hoops now follow the
+actual body radius at 27%, 50% and 73% of its height. They use the existing lit-paper
+material at lower vertex intensity and are merged with the body: paper remains **one part**,
+while its source geometry changes **504 → 660 triangles**. Each hoop contributes 58 tested
+support vertices. Emissive intensity, colour, flame, spill and the standing tone gate were
+not changed. With nine authored chōchin placements, the conservative all-visible submitted
+increase is 1,404 triangles and zero draw calls; rendered counters remain required.
+
+### Sacred tree: remove the exact-centre plate construction
+
+Source inspection after the critic/refuter pass established that the hero pink landmark is
+`Props.sacredTree`, not `FoliageSystem`: `_blossomCluster` emitted three rectangular cards
+crossing at the same centre. The material already alpha-tested a generated blossom texture,
+but the full-width card boundaries remained available as long straight construction edges.
+
+Each clump now uses three staggered ten-lobed convex fans. Their centres differ, their
+perimeters are scalloped, and their existing common tumble, blob-normal field, generated
+texture, alpha test and wind attributes remain. The depth-5 hero tree still has one merged
+blossom material part/draw; blossom geometry changes **1,818 → 9,090 triangles**. This is
++7,272 submitted triangles at the authored hero tree and no per-frame work or allocation.
+Together with the conservative lantern increase, the previous measured 789,214-triangle
+worst frame would estimate to 797,890 before unrelated concurrent changes, still 102,110
+below the 900,000 MEDIUM limit. That arithmetic is not a renderer measurement; the coherent
+candidate must re-run the actual counter.
 
 ## Mechanisms found
 
@@ -23,7 +80,8 @@ The tower has a 1.71 m raised deck with no entrance stair. A pull rope now hangs
 
 ## Executed checks
 
-Six behavioral groups passed using the actual Input queue and EnemyManager with a flat-ground fixture and no GL:
+Nine Node groups passed. The first six use the actual Input queue and EnemyManager with a
+flat-ground fixture; the final three inspect the real procedural terrain/prop geometry:
 
 | Check | Result |
 |---|---|
@@ -33,6 +91,9 @@ Six behavioral groups passed using the actual Input queue and EnemyManager with 
 | Optional discoveries | Ema, omikuji and purification each emit a distinct authored response; health 55 → 85; repeated purification adds 0 |
 | Spawn contract and capacity | Real ronin/oyoroi archetypes at exact authored coordinates; a request beyond a one-enemy cap is retained and delivered after capacity frees |
 | Encounter completion and retry | Four encounter states, 12 authored arrivals, exactly one victory; retry order `despawnAll → combat.reset → respawn`, clean interactions/queue/encounters, player at `(0,812,73)` with 100 health |
+| Mountain owner and hierarchy | Crop rays hit macro terrain at 410–480 m; one primary mass and two subordinate shoulder samples retain the pinned height separation |
+| Lantern supports | 3 continuous hoop rows, 58 tested support vertices each; 1 paper part; 504 → 660 source triangles |
+| Sacred-tree clumps | 0 rectangular cards; 3 ten-lobed sprays at 3 distinct centres; 1 merged blossom part; depth-5 blossom 1,818 → 9,090 triangles |
 
 The loop test deliberately despawns defeated enemies to check orchestration; it is not combat balance or player-completion evidence. Combat's reset body is independently checked by its owner; the world fixture checks call order rather than duplicating those tests.
 
@@ -50,4 +111,9 @@ Level now supplies the actual torii top, haiden ridge, honden ridge and bell rid
 - Full-terrain landmark survey using the geometry-derived anchors. The old survey also places some eyes on the tops of torii crossbars because its support ray starts above all geometry; a standing-eye survey must not mistake overhead structure for a walkable player surface.
 - Rendered view of the small pull rope and the temple bell interaction; draw/triangle counters on the coherent MEDIUM build.
 - Complete playable encounter behavior with live AI, real defeat/victory/retry and Combat's implemented reset. This owner did not measure combat balance.
+- Native `wide`, `hero` and `sun` recapture plus 25% views. The terrain must lose the
+  conspicuous repeated fold read, the sacred crown must lose its long plate intersections,
+  and all three lantern supports must remain continuous in the actual framing.
+- Standing tonal gate after the lantern change and coherent MEDIUM renderer counters after
+  the estimated +8,676 submitted triangles. No threshold was changed.
 - Real-device performance and independent hostile review remain unmeasured here. No project PASS is claimed.

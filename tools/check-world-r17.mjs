@@ -4,8 +4,12 @@ import { Group, Vector3, Matrix4, PerspectiveCamera } from 'three';
 import { Input } from '../src/core/Input.js';
 import { Level, LAYOUT, ENCOUNTERS } from '../src/world/Level.js';
 import { WORLD } from '../src/world/Constants.js';
+import { Terrain, CORE_HALF, VIEW_DISTANCE } from '../src/world/Terrain.js';
+import { PropFactory } from '../src/world/Props.js';
 import { PhysicsWorld } from '../src/gameplay/Physics.js';
 import { EnemyManager, ARCHETYPES } from '../src/gameplay/Enemy.js';
+import { SHOTS } from '../src/core/Cinematic.js';
+import { makeRandom } from '../src/core/Noise.js';
 
 // Exercise the real input queue and real enemy manager without GL, a DOM or the capture rig.
 globalThis.window = { addEventListener() {}, removeEventListener() {}, innerWidth: 844 };
@@ -247,4 +251,99 @@ function fixture() {
   reports.push({ check: 'landmark diagnosis only', exactColliderCount: physics.statics.length, eye: eye.toArray(), oldAnchors: diagnostic, geometryDerivedAnchors: corrected, reachablePull: bell.position.toArray(), pullHasClearStandingCapsule: true, bellTrianglesBefore: 1626, bellTrianglesAfter: triangles, bellPartsBeforeAndAfter: 16, baselineSurvey: JSON.parse(readFileSync(new URL('../shots/interaction-i1.json', import.meta.url))).extras.landmarks.points.find((p) => p.name === 'east-edge') });
 }
 
-console.log(JSON.stringify({ behavioralChecksPassed: 6, reports, limits: 'Pure Node behavior/geometry evidence. Does not verify real touch dispatch, HUD pixels, full terrain visibility or phone performance.' }, null, 2));
+// Establish which geometry owns the critic's mountain crop. Rays through its native
+// coordinates strike the macro terrain hundreds of metres before the 1.8 km distant
+// band begins, so this is a Terrain._macro landform problem, not a ridge-band shader
+// or a surface-detail absence.
+{
+  const terrain = Object.create(Terrain.prototype);
+  const pose = SHOTS.wide;
+  const camera = new PerspectiveCamera(pose.fov, 2532 / 1170, 0.1, 10000);
+  camera.position.set(pose.pos[0], pose.pos[1] + WORLD.PLATEAU_HEIGHT, pose.pos[2]);
+  camera.lookAt(pose.target[0], pose.target[1] + WORLD.PLATEAU_HEIGHT, pose.target[2]);
+  camera.updateMatrixWorld(true);
+  const hits = [];
+  for (const [px, py] of [[800, 130], [1040, 212], [1280, 295]]) {
+    const ray = new Vector3(px / 2532 * 2 - 1, 1 - py / 1170 * 2, 1)
+      .unproject(camera).sub(camera.position).normalize();
+    let previous = camera.position.y - terrain._macro(camera.position.x, camera.position.z);
+    let hit = null;
+    for (let distance = 2; distance < VIEW_DISTANCE; distance += 2) {
+      const x = camera.position.x + ray.x * distance;
+      const y = camera.position.y + ray.y * distance;
+      const z = camera.position.z + ray.z * distance;
+      const delta = y - terrain._macro(x, z);
+      if (delta <= 0 && previous > 0) { hit = { px, py, distance, x, z }; break; }
+      previous = delta;
+    }
+    assert.ok(hit, `mountain crop ray ${px},${py} must hit macro terrain`);
+    assert.ok(hit.distance > CORE_HALF && hit.distance < VIEW_DISTANCE);
+    hits.push(hit);
+  }
+  const height = (x, z) => terrain._macro(x, z);
+  const hierarchy = {
+    primary: height(-185, -448), primaryFlanks: [height(-95, -633), height(-275, -262)],
+    westShoulder: height(-265, -340), westOuter: height(-175, -245),
+    eastShoulder: height(-38, -308), eastOuter: height(-104, -221),
+  };
+  assert.ok(hierarchy.primary > Math.max(...hierarchy.primaryFlanks) + 80);
+  assert.ok(hierarchy.westShoulder > hierarchy.westOuter + 70);
+  assert.ok(hierarchy.eastShoulder > hierarchy.eastOuter + 40);
+  assert.ok(Object.values(hierarchy).flat().every(Number.isFinite));
+  reports.push({ check: 'mountain owner and hierarchy', cropRayDistances: hits.map((h) => h.distance), hierarchy });
+}
+
+// The close hanging lantern keeps one paper part/draw while gaining three continuous
+// under-paper hoops. Their low vertex values route through the existing emissive
+// material; paper intensity and the standing tone contract are untouched.
+{
+  const factory = new PropFactory({});
+  const lamp = factory.hangingLantern({});
+  const paperParts = lamp.parts.filter((p) => p.material === '__lanternPaper');
+  assert.equal(paperParts.length, 1);
+  const paper = paperParts[0].geometry;
+  const pos = paper.getAttribute('position');
+  const color = paper.getAttribute('color');
+  const hoopRows = [-0.35 - 0.27 * 0.52, -0.35 - 0.50 * 0.52, -0.35 - 0.73 * 0.52];
+  const supportVertices = hoopRows.map((y) => {
+    let n = 0;
+    for (let i = 0; i < pos.count; i++) {
+      if (Math.abs(pos.getY(i) - y) <= 0.008 && color.getX(i) <= 0.53) n++;
+    }
+    return n;
+  });
+  assert.ok(supportVertices.every((n) => n >= 28));
+  assert.equal(lamp.parts.length, 3, 'supports must not add a material part/draw');
+  assert.equal(paper.index.count / 3, 660);
+  reports.push({ check: 'lantern form-following supports', continuousHoops: supportVertices.length, supportVertices, paperParts: paperParts.length, paperTrianglesBefore: 504, paperTrianglesAfter: 660 });
+}
+
+// The sacred tree's previous clump was three four-corner planes sharing one exact
+// centre. Pin the replacement to staggered ten-lobed fans and to the existing single
+// blossom part, without turning the structural check into a visual verdict.
+{
+  const factory = new PropFactory({});
+  const sprays = [];
+  factory._blossomCluster(sprays, 0, 0, 0, makeRandom(123));
+  assert.equal(sprays.length, 3);
+  const centres = sprays.map((g) => {
+    assert.equal(g.getAttribute('position').count, 11);
+    assert.equal(g.index.count / 3, 10);
+    assert.deepEqual(Object.keys(g.attributes).sort(), ['aFlutter', 'color', 'normal', 'position', 'uv']);
+    const p = g.getAttribute('position');
+    return [p.getX(0), p.getY(0), p.getZ(0)];
+  });
+  assert.equal(new Set(centres.map((p) => p.map((v) => v.toFixed(4)).join(','))).size, 3);
+  const tree = factory.sacredTree({ height: 11, depth: 5, seed: 1861, leafy: true });
+  const blossom = tree.parts.filter((p) => p.material === '__blossom');
+  assert.equal(blossom.length, 1, 'crown remains one merged material part/draw');
+  const blossomTriangles = blossom[0].geometry.index.count / 3;
+  assert.equal(blossomTriangles, 9090);
+  assert.ok(blossomTriangles < 10000);
+  const conservativeTriangleDelta = (blossomTriangles - 1818) + (660 - 504) * 9;
+  const estimatedPriorWorst = 789214 + conservativeTriangleDelta;
+  assert.ok(estimatedPriorWorst <= 900000);
+  reports.push({ check: 'sacred-tree clump construction', oldRectangularCardsPerClump: 3, rectangularCardsAfter: 0, lobedSpraysPerClump: sprays.length, distinctSprayCentres: 3, blossomParts: blossom.length, blossomTrianglesBefore: 1818, blossomTrianglesAfter: blossomTriangles, conservativeTriangleDelta, estimatedPriorWorst, rendererMeasurementRequired: true });
+}
+
+console.log(JSON.stringify({ behavioralChecksPassed: 9, reports, limits: 'Pure Node behavior/geometry evidence. Does not verify real touch dispatch, HUD pixels, rendered terrain/lantern/blossom appearance, tonal gates or phone performance.' }, null, 2));

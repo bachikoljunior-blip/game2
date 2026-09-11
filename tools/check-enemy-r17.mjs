@@ -1,12 +1,15 @@
 /** Focused Enemy regressions. Real rigs, pure Node; no browser or renderer. */
 import assert from 'node:assert/strict';
-import { Vector3 } from 'three';
+import { readFileSync } from 'node:fs';
+import vm from 'node:vm';
+import { Group, Scene, Vector3 } from 'three';
 import { Enemy, EnemyManager, ARCHETYPES } from '../src/gameplay/Enemy.js';
 import { PhysicsWorld } from '../src/gameplay/Physics.js';
 import { Rig } from '../src/anim/Rig.js';
 import { EventBus } from '../src/core/EventBus.js';
 import { WORLD } from '../src/world/Constants.js';
 import { animStartup } from './interaction-metrics.mjs';
+import { buildPlans } from './interaction-scenarios.mjs';
 
 const FLOOR = WORLD.PLATEAU_HEIGHT;
 const measureOnly = process.argv.includes('--measure');
@@ -33,6 +36,20 @@ function managerStub() {
   };
 }
 function finite(v) { return Number.isFinite(v.x) && Number.isFinite(v.y) && Number.isFinite(v.z); }
+const harnessSource = readFileSync(new URL('./harness/runtime.js', import.meta.url), 'utf8');
+const probeStart = harnessSource.indexOf('  const _emotionPrev = new Map();');
+const probeEnd = harnessSource.indexOf('  function probeFeet(', probeStart);
+assert.ok(probeStart >= 0 && probeEnd > probeStart);
+const makeMotionProbe = new Function('scratchA', 'round', 'stateId',
+  `${harnessSource.slice(probeStart, probeEnd)}\nreturn probeEnemyMotion;`);
+function motionProbe(states) {
+  return makeMotionProbe(new Vector3(), (v, digits = 3) => Number.isFinite(v) ? +v.toFixed(digits) : null,
+    (state) => {
+      let index = states.indexOf(state);
+      if (index < 0) { index = states.length; states.push(state); }
+      return index;
+    });
+}
 
 check('scalarTeleport', () => {
   const ctx = context();
@@ -137,6 +154,204 @@ check('parryOwnership', () => {
   return { callbacksPerCombatNotification: 1, duplicatePressure: 0, legacyFallbackFraction: 0.22 };
 });
 
+check('pooledResetSensorBoundary', () => {
+  const ctx = context();
+  const e = new Enemy(ctx, 'ronin', managerStub());
+  e.buildVisual(Rig);
+  const seed = 0x5eed17;
+  e.reset(new Vector3(0, FLOOR, 0), { faceTarget: false, seed });
+
+  // Reproduce the prior-life fault directly: steering runs every frame while
+  // perception is staggered, so two cached neighbours move an otherwise idle body.
+  e.ai._tickTimer = 1;
+  e.ai.behaviour = 'hold';
+  e.ai._sepX = 1; e.ai._sepZ = 0; e.ai._sepN = 2;
+  e.ai.s.dist = 8; e.ai.s.toX = 0; e.ai.s.toZ = -1;
+  const staleStart = e.position.clone();
+  e.update(1 / 60, 1 / 60, 2);
+  const staleDisplacementM = Math.hypot(e.position.x - staleStart.x, e.position.z - staleStart.z);
+  assert.ok(staleDisplacementM > 0, 'fixture must reproduce stale-separation first-frame movement');
+  assert.equal(e.intent.moveGain, 0.28);
+
+  let rigResets = 0;
+  const resetRig = e.rig.reset.bind(e.rig);
+  e.rig.reset = (...args) => { rigResets++; return resetRig(...args); };
+  const spawn = new Vector3(11, FLOOR, 7);
+  e.reset(spawn, { faceTarget: false, seed });
+  const personality = JSON.stringify(e.ai.p);
+  assert.ok(e.ai._tickTimer > 1 / 60, 'fixture must exercise steering before the staggered perception tick');
+  assert.equal(e.ai._sepX, 0); assert.equal(e.ai._sepZ, 0); assert.equal(e.ai._sepN, 0);
+  assert.equal(e.ai.s.crowding, 0); assert.equal(e.ai.s.allyCount, 0);
+  assert.equal(e.intent.moveGain, 0); assert.ok(e.intent.moveDir.lengthSq() === 0);
+  assert.equal(rigResets, 1, 'a pooled Rig resets exactly once at the entity lifecycle boundary');
+
+  const cleanStart = e.position.clone();
+  e.update(1 / 60, 1 / 60, 2);
+  const cleanDisplacementM = Math.hypot(e.position.x - cleanStart.x, e.position.z - cleanStart.z);
+  assert.equal(cleanDisplacementM, 0, 'the first pre-perception frame must not inherit movement');
+  assert.equal(e.intent.moveGain, 0);
+
+  const sameSeed = new Enemy(ctx, 'ronin', managerStub());
+  sameSeed.reset(spawn, { faceTarget: false, seed });
+  assert.equal(JSON.stringify(sameSeed.ai.p), personality, 'reset must retain deterministic seed/personality');
+  sameSeed.dispose();
+  e.dispose();
+  return { staleDisplacementM, staleMoveGain: 0.28, cleanDisplacementM,
+    cleanMoveGain: 0, rigResets, deterministicSeed: seed };
+});
+
+check('idleCalibrationProbe', () => {
+  const ctx = context();
+  const e = new Enemy(ctx, 'ronin', managerStub());
+  e.buildVisual(Rig);
+  e.reset(new Vector3(0, FLOOR, 0), { faceTarget: false });
+  e.ai.update = () => {};
+  e._idleTimer = 999;
+  e.rig._breath = e.rig._swayPhase = e._breathPhase = 0;
+  ctx.enemies = { list: [e] };
+  const states = [], out = { emotion: [] }, probe = motionProbe(states);
+  e.intent.moveGain = 1;
+  e.intent.moveDir.set(0, 0, -1);
+  for (let f = 0; f < 120; f++) { e.update(1 / 60, f / 60, 2); probe(ctx, out); }
+  e.intent.moveGain = 0;
+  const stopping = [];
+  for (let f = 0; f < 240; f++) {
+    e.update(1 / 60, (120 + f) / 60, 2);
+    probe(ctx, out);
+    stopping.push(out.emotion.at(-1)[0]);
+  }
+  const early = stopping.slice(0, 30);
+  assert.ok(early.every(r => states[r[2]] === 'idle'));
+  assert.ok(early.every(r => r[6] === 0), 'an idle state still braking/settling cannot calibrate motion');
+  const settled = stopping.slice(-30);
+  assert.ok(settled.every(r => r[6] === 1), 'a real stationary settled idle must remain measurable');
+  const earlyDs = stopping.slice(0, 13).map(r => r[1]).sort((a, b) => a - b);
+  const lateDs = settled.map(r => r[1]).sort((a, b) => a - b);
+  for (let f = 0; f < 60; f++) {
+    const yaw = (f + 1) * 0.02;
+    e.intent.faceDir.set(-Math.sin(yaw), 0, -Math.cos(yaw));
+    e.update(1 / 60, (360 + f) / 60, 2);
+    probe(ctx, out);
+    const row = out.emotion.at(-1)[0];
+    assert.equal(row[6], 0, 'turning without translation is not stationary idle');
+    assert.ok(row[11] & 8, 'the root yaw diagnostic must identify the rejection');
+  }
+  e.dispose();
+  return { idleStateTransitionFramesRejected: early.length, steadyFramesAccepted: settled.length,
+    earlyIdleMedianM: earlyDs[6], steadyIdleMedianM: lateDs[15], stationaryTurnFramesRejected: 60 };
+});
+
+// Exercise the exact driver and injected runtime together, including the ordinary
+// spawn action and its reset boundary. The scene/rig/AI run, without a browser.
+const cosmeticRandom = Math.random;
+try {
+  let seed = 0x2f19;
+  Math.random = () => { seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5; return (seed >>> 0) / 4294967296; };
+  const ctx = context();
+  ctx.scene = new Scene();
+  ctx.physics = { raycast: () => ({ hit: false }) };
+  ctx.player.root = new Group();
+  ctx.player.root.position.copy(ctx.player.position);
+  ctx.player.position = ctx.player.root.position;
+  ctx.player.forward = new Vector3(0, 0, -1);
+  ctx.player.velocity = new Vector3();
+  ctx.player.radius = .35;
+  ctx.player.height = 1.75;
+  ctx.player.health = ctx.player.maxHealth = 100;
+  ctx.player.posture = 0;
+  ctx.player.state = 'idle';
+  ctx.input = { releaseAll() {} };
+  const manager = new EnemyManager(ctx);
+  manager.RigClass = Rig;
+  manager.maxEnemies = 3;
+  manager._lodNear = 40;
+  manager._lodFar = 80;
+  ctx.enemies = manager;
+  let spawned = 0, animationCalls = 0, aiCalls = 0, resets = 0;
+  const originalSpawn = manager.spawn;
+  manager.spawn = function (...args) {
+    const e = originalSpawn.apply(this, args);
+    if (e) {
+      spawned++;
+      const animate = e._updateAnim, think = e.ai.update, reset = e.reset;
+      e._updateAnim = function (...a) { animationCalls++; return animate.apply(this, a); };
+      e.ai.update = function (...a) { aiCalls++; return think.apply(this, a); };
+      e.reset = function (...a) { resets++; return reset.apply(this, a); };
+    }
+    return e;
+  };
+  const spawnWrapper = manager.spawn;
+  const window = { innerWidth: 844, innerHeight: 390, requestAnimationFrame: () => 1,
+    cancelAnimationFrame() {}, dispatchEvent() {}, __kagerou: ctx };
+  const document = { getElementById: () => null };
+  const performance = { now: () => 1000 };
+  vm.runInNewContext(harnessSource, { window, document, performance, console, setTimeout }, { filename: 'tools/harness/runtime.js' });
+  const h = window.__kh;
+  h.lock();
+  let gameplayFrames = 0;
+  window.requestAnimationFrame(function step() {
+    gameplayFrames++;
+    ctx.engine.elapsed += 1 / 60;
+    manager.update(1 / 60, ctx.engine.elapsed, 1 / 60);
+    ctx.scene.updateMatrixWorld(true);
+    window.requestAnimationFrame(step);
+  });
+  const captureSource = readFileSync(new URL('./interaction-capture.mjs', import.meta.url), 'utf8');
+  const driverStart = captureSource.indexOf('async function runPlan(');
+  const driverEnd = captureSource.indexOf('// ------------------------------------------------------------------------ extras', driverStart);
+  assert.ok(driverStart >= 0 && driverEnd > driverStart);
+  const runPlan = new Function('window', 'CHUNK', 'process', 'console',
+    `${captureSource.slice(driverStart, driverEnd)}\nreturn runPlan;`)(window, 300, { stdout: { write() {} } }, { log() {} });
+  const plan = buildPlans(h.layout()).find(p => p.id === 'anim-startup');
+  const originalActions = JSON.stringify(plan.actions), authoredFrames = plan.frames;
+  const trace = await runPlan({ evaluate: (fn, arg) => fn(arg) }, plan);
+  const calibration = trace.idleCalibration;
+  assert.equal(JSON.stringify(plan.actions), originalActions);
+  assert.equal(plan.frames, authoredFrames, 'the authored plan must not be mutated');
+  assert.equal(trace.frames, 1800);
+  assert.equal(gameplayFrames, 1800, 'calibration must not consume observation frames');
+  assert.equal(trace.columns.emotion.length, 1800);
+  assert.equal(calibration.columns.emotion.length, 300);
+  assert.equal(calibration.completedFrames, 300);
+  assert.equal(calibration.dtMs, 1000 / 60);
+  assert.equal(calibration.attacks, 0);
+  assert.equal(calibration.activeSamples, 0);
+  assert.equal(calibration.attackStateSamples, 0);
+  assert.equal(calibration.errors.length, 0);
+  assert.equal(trace.failedActions.length, 0);
+  assert.equal(trace.events.filter(e => e.name === 'frame-error').length, 0);
+  assert.equal(spawned, 3);
+  assert.equal(resets, 3, 'each actual spawned entity must receive its ordinary reset after calibration');
+  assert.equal(manager.spawn, spawnWrapper, 'temporary argument recorder must be removed');
+  assert.equal(aiCalls, (1800 - 6) * 3, 'AI may advance only in the gameplay phase');
+  assert.equal(animationCalls, aiCalls + 300 * 3, 'every calibration step must use real Enemy animation');
+  const eligible = calibration.subjects.map(subject => {
+    const observed = calibration.observationSubjects.find(s => s.enemy === subject.enemy);
+    assert.equal(subject.rig, observed.rig);
+    assert.equal(subject.archetype, observed.archetype);
+    assert.equal(subject.rigScale, observed.rigScale);
+    assert.equal(subject.spawn.alerted, true);
+    assert.ok(Number.isInteger(subject.spawn.seed));
+    return calibration.columns.emotion.flat().filter(r => r[0] === subject.enemy && r[6] === 1).length;
+  });
+  assert.ok(eligible.every(n => n >= 30), 'this real-Rig fixture must yield independently qualified idle samples');
+  const metric = animStartup(trace)[0];
+  let windows = 0;
+  const active = new Map();
+  for (const rows of trace.columns.emotion) for (const row of rows) {
+    if (row[3] === 1 && !active.get(row[0])) windows++;
+    active.set(row[0], row[3] === 1);
+  }
+  assert.equal(metric.measured.attacks, windows, 'every observed active window must be retained');
+  assert.equal(metric.measured.uncalibratedAttacks, 0);
+  results.startupCalibrationPipeline = { cosmeticSeed: 0x2f19, authoredFrames, observationFrames: trace.frames, calibrationFrames: 300,
+    spawned, ordinaryResetsAfterCalibration: resets, calibrationAttacks: 0, aiCallsDuringCalibration: 0,
+    eligibleSamplesPerRig: eligible, observedAttacks: windows, metricVerdict: metric.verdict,
+    shortestStartupMs: metric.measured.shortestStartupMs };
+  manager.dispose();
+} catch (error) { failures.push(`startupCalibrationPipeline: ${error.message}`); }
+finally { Math.random = cosmeticRandom; }
+
 function measureMoves(lod, dt) {
   const measured = [];
   const trace = { stateNames: [], columns: { emotion: [] } };
@@ -158,6 +373,8 @@ function measureMoves(lod, dt) {
       const rows = [];
       const handBone = e.rig.bones.hand_r;
       handBone.getWorldPosition(prev);
+      ctx.enemies = { list: [e] };
+      const probe = motionProbe(trace.stateNames), probeOutput = { emotion: [] };
       let time = 0;
       function step() {
         time += dt;
@@ -167,9 +384,8 @@ function measureMoves(lod, dt) {
         assert.ok(finite(hand) && finite(e.position) && finite(e.weapon.bladeTip));
         const d = hand.distanceTo(prev);
         prev.copy(hand);
-        let state = trace.stateNames.indexOf(e.state);
-        if (state < 0) { state = trace.stateNames.length; trace.stateNames.push(e.state); }
-        const row = [e.id, +d.toFixed(5), state, e.weapon.active ? 1 : 0, +e.attackTime.toFixed(5)];
+        probe(ctx, probeOutput);
+        const row = probeOutput.emotion.at(-1)[0];
         rows.push(row);
         if (dt === 1 / 60) trace.columns.emotion.push([row]);
         return d;
@@ -219,7 +435,13 @@ function measureMoves(lod, dt) {
       e.dispose();
     }
   }
-  return { lod, dt, moves: measured, existingStartupMetric: dt === 1 / 60 ? animStartup(trace)[0] : null };
+  const existingStartupMetric = dt === 1 / 60 ? animStartup(trace)[0] : null;
+  if (!measureOnly && existingStartupMetric) {
+    assert.equal(existingStartupMetric.verdict, 'pass', 'the actual probe must retain every calibrated real-Rig attack');
+    assert.equal(existingStartupMetric.measured.attacks, measured.filter(m => m.firstActiveErrorMs !== null).length);
+    assert.equal(existingStartupMetric.measured.uncalibratedAttacks, 0);
+  }
+  return { lod, dt, moves: measured, existingStartupMetric };
 }
 
 check('moves60Hz', () => measureMoves(0, 1 / 60));
@@ -255,7 +477,13 @@ for (const [name, result] of Object.entries(results)) {
     damageWindows: damaging.reduce((n, m) => n + m.windows.filter(w => w.active).length, 0),
     minimumFirstMotionLeadMs: Math.min(...damaging.map(m => m.visibleStartupMs)),
     maximumAuthoredStartupErrorMs: Math.max(...damaging.map(m => Math.abs(m.firstActiveErrorMs))),
-    existingStartupMetric: result.existingStartupMetric,
+    existingStartupMetric: result.existingStartupMetric ? {
+      verdict: result.existingStartupMetric.verdict,
+      attacks: result.existingStartupMetric.measured.attacks,
+      uncalibratedAttacks: result.existingStartupMetric.measured.uncalibratedAttacks,
+      shortestStartupMs: result.existingStartupMetric.measured.shortestStartupMs,
+      medianStartupMs: result.existingStartupMetric.measured.medianStartupMs,
+    } : null,
   };
 }
 console.log(JSON.stringify({ measurement: 'pure-node Enemy + real Rig; not a rendered interaction capture', results: output, failures }, null, 2));

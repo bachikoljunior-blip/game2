@@ -104,3 +104,41 @@ samples. Their worst single-frame motion is 0.3252 m, below 1.5 m.
   gates. The local Node runtime is not an Android performance measurement.
 - Camera shake ablation and visual review remain pending. Neither historical
   benchmark status nor shared project state was marked PASS by this owner.
+
+## Camera-shake ownership repair
+
+Follow-up source audit found a concrete recursion in the production event path.
+Both `EffectsSystem` and `PlayerCamera` subscribed to `camera-shake`.
+`EffectsSystem.addShake()` then called `PlayerCamera.addShake()`, while that method
+delegated back to `EffectsSystem.addShake()`. A single bus event therefore recursed
+until `EventBus` caught a `RangeError`; Effects trauma saturated at 1 while the
+camera's duplicate local trauma remained zero.
+
+Effects is now the sole owner of trauma, decay, frequency and generated 6-DOF
+offsets. PlayerCamera consumes those offsets after its springs and retains only a
+one-way compatibility method for direct callers. It no longer subscribes to the
+same bus event or carries a fallback trauma generator. The production order
+already creates and initializes Effects before PlayerCamera.
+
+`node tools/check-camera-shake-r17.mjs` uses the real `EventBus`, `EffectsSystem`,
+`PlayerCamera` and `PerspectiveCamera`. One `{ amount: 0.42, duration: 0.4,
+freq: 26 }` event produced exactly 0.42 trauma, a 2.5/s decay and 26 Hz frequency,
+with zero bus errors. Through the actual final-pose application, its greatest
+horizontal centroid displacement over eight 60 Hz samples (133 ms) was 0.1595%
+of frame width, below the 4% local threshold. This deterministic class fixture
+proves routing and authored amplitude; the integrated capture is still required
+to close BM-CAMERA-04.
+
+The existing CI ablation pair also exposed independent reset contamination before
+shake could have caused it. At frame 0 its camera positions were
+`(0.429, 816.556, 74.273)` and `(0.429, 815.528, 75.654)` while the player poses
+matched. Immediately after the same frame-2 teleport, camera X was -3.274 versus
+-4.654: `snap()` had retained pitch and FOV transients from the preceding
+scenario. It now restores the canonical 14-degree pitch and dynamic camera
+transients at respawn/teleport discontinuities.
+
+That source repair is necessary but not sufficient to make the old pair a valid
+ablation. Enemy behaviour already differed at frame 7, before lock-on at frame 20
+and before the first `camera-shake` event at frame 81. The integrated harness must
+also reset or isolate enemy decision state, then demonstrate world-state agreement
+before any BM-CAMERA-04 result can be attributed to shake.

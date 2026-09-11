@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: game2-criteria-${{ github.ref }}
@@ -19,14 +20,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [baseline, candidate]
+        # The unchanged 4e6d23a baseline is already preserved in run 34602120671.
+        variant: [candidate]
     steps:
       - uses: actions/checkout@v4
       - run: git fetch origin 4e6d23a40af33bb3ba409b3826e77666262ce353 --depth=1
-      - name: Select unchanged baseline
-        if: matrix.variant == 'baseline'
-        run: |
-          git checkout --detach 4e6d23a40af33bb3ba409b3826e77666262ce353
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -34,7 +32,6 @@ jobs:
       - run: npm ci
       - run: npm run check
       - name: Focused behavioral regressions
-        if: matrix.variant == 'candidate'
         run: node --test tools/check-*-r17.mjs
       - run: npx playwright install --with-deps chromium
       - name: Measure the five fixed phone framings
@@ -42,6 +39,14 @@ jobs:
           node tools/capture.mjs --review --profile=phone --tag=ci-${{ matrix.variant }}
           node tools/contact-sheet.mjs --tag=ci-${{ matrix.variant }}
           node tools/gate-capture-report.mjs --tag=ci-${{ matrix.variant }} --profile=phone
+      - name: Preserve native frames before the longer interaction run
+        if: always() && !cancelled()
+        uses: actions/upload-artifact@v4
+        with:
+          name: game2-frames-${{ github.sha }}
+          path: shots/*ci-candidate*
+          if-no-files-found: error
+          retention-days: 90
       - name: Measure interaction criteria at the required sample size
         if: always() && !cancelled()
         run: node tools/interaction-capture.mjs --tag=ci-${{ matrix.variant }} --encounters=20 --no-pixels
@@ -56,4 +61,35 @@ jobs:
             shots/interaction-ci-${{ matrix.variant }}/
             AI_DEVELOPMENT/EVIDENCE/r17-*.md
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 90
+
+  motion:
+    # Opt in only when the author requests the expensive 300-frame motion sample.
+    if: contains(github.event.head_commit.message, '[motion]')
+    needs: evidence
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/download-artifact@v4
+        with:
+          name: game2-candidate-${{ github.sha }}
+          path: .
+      - run: npx playwright install --with-deps chromium
+      - run: ffmpeg -version
+      - name: Capture real walking and combat frames
+        run: node tools/motion-capture.mjs --carry-self-check=ci-candidate
+      - name: Preserve motion and apparatus evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: game2-motion-${{ github.sha }}
+          path: shots/motion-r17/
+          if-no-files-found: error
+          retention-days: 90

@@ -90,6 +90,10 @@ export class Engine {
       this.contextLost = true;
       this._resumeAfterContextLoss = this.running;
       this.stop();
+      // Release framebuffer listeners before Three replaces its GL resource caches.
+      // Disposing them after restoration sends obsolete handles to the new context.
+      for (const system of this.systems) system.onContextLost?.();
+      if (!this.systems.includes(this.pipeline)) this.pipeline?.onContextLost?.();
       this.onContextLost?.();
     });
     canvas.addEventListener('webglcontextrestored', () => {
@@ -204,6 +208,7 @@ export class Engine {
   }
 
   start() {
+    if (this.contextLost) { this._resumeAfterContextLoss = true; return; }
     if (this.running) return;
     this.running = true;
     this.clock.start();
