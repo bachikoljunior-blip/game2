@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { deflateSync } from 'node:zlib';
 import { chunk, encodePNG } from '../.kit/lib/image/png.mjs';
-import { inspectMotionPNG, motionPlans } from './motion-capture.mjs';
+import { inspectMotionPNG, motionPlans, combatCoverage } from './motion-capture.mjs';
 
 const PNG_SIG = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 
@@ -91,6 +91,7 @@ test('combat motion plan gets reactions through the validated DOM-input player s
   assert.equal(combat.frames, 180);
   assert.deepEqual(combat.conditions, {
     playerScript: 'aggressive-v2',
+    stationaryOpeningFrames: 60,
     reactionFloorMs: 200,
     inputPath: 'DOM pointer and registered guard zone',
     injectedCombatState: false,
@@ -100,4 +101,27 @@ test('combat motion plan gets reactions through the validated DOM-input player s
   assert.ok(combat.actions.some((action) => action.do === 'bot' && action.on === false));
   assert.equal(combat.actions.some((action) => action.do === 'set'), false,
     'the sample must not inject a combat state');
+});
+
+test('incoming-attack coverage rejects the observed player-only counterattack', () => {
+  const enemy = { id: 9000, state: 'attack', move: { startup: 0.52 }, attackTime: 0.1, weaponActive: false };
+  const frames = [
+    { frame: 0, player: { id: 1 }, enemies: [] },
+    { frame: 7, player: { id: 1 }, enemies: [enemy] },
+    { frame: 38, player: { id: 1 }, enemies: [{ ...enemy, attackTime: 0.52, weaponActive: true }] },
+  ];
+  const outgoing = [
+    { f: 78, name: 'hit', attacker: { id: 1 }, target: { id: 9000 } },
+    { f: 78, name: 'damage-taken', entity: { id: 9000 } },
+  ];
+  const coverage = combatCoverage(frames, outgoing);
+  assert.equal(coverage.enemyStartupFrames, 1);
+  assert.equal(coverage.enemyActiveFrames, 1);
+  assert.equal(coverage.reactionEvents.length, 2);
+  assert.equal(coverage.enemyReactionEvents.length, 0);
+  for (const name of ['hit', 'parry']) {
+    assert.equal(combatCoverage(frames, [{ f: 38, name, attacker: { id: 9000 } }]).enemyReactionEvents.length, 1);
+  }
+  assert.equal(combatCoverage(frames, [{ f: 30, name: 'hit', attacker: { id: 9000 } }]).enemyReactionEvents.length, 0);
+  assert.equal(combatCoverage(frames.slice(0, 2), [{ f: 78, name: 'hit', attacker: { id: 9000 } }]).enemyReactionEvents.length, 0);
 });

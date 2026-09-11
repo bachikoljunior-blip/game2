@@ -348,16 +348,143 @@ export function motionPlans(layout) {
         { f: 1, do: 'call', target: 'enemies', method: 'spawnWave', args: [1,
           { seed: 0x77aa, alerted: true, archetypes: ['ashigaru'], radius: 2.8 }] },
         { f: 2, do: 'lockIfFree' },
-        // The aggressive-v2 script approaches, guards and attacks only through
-        // real DOM input. The prior fixed tap/flick timeline stayed outside an
-        // enemy hit volume and captured no actual combat reaction.
-        { f: 3, do: 'bot', on: true, policy: 'aggressive' },
-        { f: 3, do: 'mark', label: 'scripted-input-combat' },
+        // Hold position for the opening thrust. The previous immediate approach
+        // ran inside the spear's minimum range before its active window, then
+        // killed the enemy before a second attack could land. Preserve that
+        // incoming attack before beginning the same DOM-input counterattack.
+        { f: 3, do: 'mark', label: 'stationary-opening' },
+        { f: 60, do: 'bot', on: true, policy: 'aggressive' },
+        { f: 60, do: 'mark', label: 'scripted-input-counterattack' },
         { f: 178, do: 'bot', on: false }],
-      conditions: { playerScript: 'aggressive-v2', reactionFloorMs: 200,
+      conditions: { playerScript: 'aggressive-v2', stationaryOpeningFrames: 60, reactionFloorMs: 200,
         inputPath: 'DOM pointer and registered guard zone', injectedCombatState: false },
-      description: 'One alerted AI enemy and real lock-on. The aggressive-v2 player script approaches, guards and attacks through DOM input; no attack, hit or reaction state is injected.' },
+      description: 'One alerted AI enemy and real lock-on. Hold position for the opening attack, then the aggressive-v2 player script approaches, guards and attacks through DOM input; no attack, hit or reaction state is injected.' },
   ];
+}
+
+// Same coverage rule for the cheap input rehearsal and the rendered evidence.
+// A player hit on an enemy is not evidence that an incoming enemy attack resolved.
+export function combatCoverage(frames, events) {
+  const firstActive = frames.find((row) => row.enemies.some((enemy) => enemy.weaponActive))?.frame;
+  const enemyIds = new Set(frames.flatMap((row) => row.enemies.map((enemy) => enemy.id)));
+  const reactionEvents = events.filter((event) => ['hit', 'damage-taken', 'parry', 'clash'].includes(event.name));
+  return {
+    enemyStartupFrames: frames.filter((row) => row.enemies.some((e) => e.state === 'attack' && e.move && e.attackTime < e.move.startup)).length,
+    enemyActiveFrames: frames.filter((row) => row.enemies.some((e) => e.weaponActive)).length,
+    reactionEvents,
+    enemyReactionEvents: reactionEvents.filter((event) => firstActive !== undefined && event.f >= firstActive
+      && (enemyIds.has(event.attacker?.id) || enemyIds.has(event.a?.id) || enemyIds.has(event.b?.id)
+        || (event.name === 'damage-taken' && event.entity?.id === frames[0]?.player.id))),
+  };
+}
+
+async function rehearseInputs(page, plans) {
+  const results = [];
+  for (const plan of plans) {
+    const record = await page.evaluate((authored) => {
+      const h = window.__kh, k = window.__kagerou;
+      const begin = h.begin({ ...authored, render: false });
+      if (!begin.ok) throw new Error(begin.error);
+      const frames = [];
+      for (let f = 0; f < authored.frames; f++) {
+        const step = h.advance(1);
+        if (!step.ok || step.frame !== f + 1) throw new Error(`preflight step ${f} failed`);
+        frames.push({ frame: f, player: { id: k.player.id, health: k.player.health },
+          enemies: k.enemies.list.map((e) => ({ id: e.id, state: e.state, health: e.health,
+            weaponActive: !!e.weapon?.active, attackTime: e.attackTime,
+            move: e.currentMove ? { id: e.currentMove.id, startup: e.currentMove.startup } : null })) });
+      }
+      return { plan: authored, frames, trace: h.finish() };
+    }, plan);
+    record.coverage = combatCoverage(record.frames, record.trace.events);
+    results.push(record);
+  }
+  return results;
+}
+
+async function diagnoseFixedFrame(page, plans) {
+  // Replay the recorded failing stimulus, not the new opening. Substitution is
+  // permitted only for setup; the A/A and A/B images below all use the real pipeline.
+  const oldCombat = { ...plans[1], frames: 39, render: false,
+    conditions: { ...plans[1].conditions, stationaryOpeningFrames: 3, diagnosticReplayOf: '3633597 combat frames 0-38' },
+    description: 'Replay the old immediate-approach input solely to reproduce the reported artifact at frame 38.',
+    actions: plans[1].actions.filter((a) => a.do !== 'bot' && a.do !== 'mark').concat([
+      { f: 3, do: 'bot', on: true, policy: 'aggressive' },
+    ]) };
+  const [locomotion] = await rehearseInputs(page, [plans[0]]);
+  const badTrace = (trace) => trace.failedActions.length
+    || trace.events.some((e) => ['frame-error', 'harness-error'].includes(e.name));
+  if (badTrace(locomotion.trace)) throw new Error('Locomotion diagnostic setup failed');
+  const setup = await page.evaluate((plan) => {
+    const h = window.__kh, k = window.__kagerou;
+    const begun = h.begin(plan);
+    if (!begun.ok) throw new Error(begun.error);
+    const step = h.advance(plan.frames);
+    if (!step.ok || step.frame !== 39) throw new Error('Could not replay artifact frame 38');
+    const trace = h.finish();
+    const p = k.pipeline;
+    if (p._taa || p._motionBlur || p._dof) throw new Error('Diagnostic requires MEDIUM without TAA, motion blur or DOF');
+    const scalarState = Object.fromEntries(Object.entries(p).filter(([, v]) => ['number', 'boolean'].includes(typeof v)));
+    const systems = [k.fx._add, k.fx._alpha, k.fx._cards, k.fx._decals, ...k.fx._trailPool].filter(Boolean);
+    window.__motionAblation = { scalarState, systems, visible: systems.map((s) => s.mesh.visible),
+      frame: k.engine.frame, now: h.virtualNow };
+    return { trace, frame: 38, engineFrame: k.engine.frame, virtualNow: h.virtualNow,
+      pipeline: { taa: p._taa, motionBlur: p._motionBlur, dof: p._dof, godRays: p._godRays,
+        autoExposure: p.autoExposure, manualExposure: p.exposure },
+      effects: systems.map((s) => ({ material: s.mat.name, visible: s.mesh.visible, drawRange: s.geo.drawRange })) };
+  }, oldCombat);
+  if (badTrace(setup.trace)) throw new Error('Combat diagnostic setup failed');
+  setup.locomotionTrace = locomotion.trace;
+  // The depth mirror consumes the previous scene depth. Fill both with this
+  // stopped scene before A/A; restore scalar clocks/ping-pong indices each time.
+  setup.warmupRenders = await page.evaluate(() => {
+    const k = window.__kagerou, h = window.__kh, saved = window.__motionAblation;
+    for (let i = 0; i < 2; i++) {
+      Object.assign(k.pipeline, saved.scalarState);
+      k.pipeline.render(0);
+      const gl = k.renderer.getContext(); gl.finish();
+      if (gl.getError() !== gl.NO_ERROR || k.engine.frame !== saved.frame || h.virtualNow !== saved.now)
+        throw new Error('Diagnostic warmup changed simulation or raised a GL error');
+    }
+    return 2;
+  });
+  const captures = [];
+  for (const variant of ['baseline-a', 'baseline-b', 'god-rays-off', 'fx-off', 'trails-off', 'alpha-particles-off', 'baseline-restored']) {
+    const state = await page.evaluate((variant) => {
+      const k = window.__kagerou, h = window.__kh, saved = window.__motionAblation;
+      Object.assign(k.pipeline, saved.scalarState);
+      saved.systems.forEach((s, i) => { s.mesh.visible = saved.visible[i]; });
+      if (variant === 'god-rays-off') k.pipeline.godRayStrength = 0;
+      if (variant === 'fx-off') saved.systems.forEach((s) => { s.mesh.visible = false; });
+      if (variant === 'trails-off') k.fx._trailPool.forEach((s) => { s.mesh.visible = false; });
+      if (variant === 'alpha-particles-off') k.fx._alpha.mesh.visible = false;
+      k.pipeline.render(0);
+      const gl = k.renderer.getContext(); gl.finish();
+      const error = gl.getError();
+      if (error !== gl.NO_ERROR || k.engine.frame !== saved.frame || h.virtualNow !== saved.now)
+        throw new Error('Ablation changed simulation time or raised a GL error');
+      return { engineFrame: k.engine.frame, virtualNow: h.virtualNow, glError: error };
+    }, variant);
+    const row = await sampleFrame(page, 38, 'render-ablation');
+    if (row.faults.length) throw new Error(`Ablation runtime apparatus: ${row.faults.join('; ')}`);
+    const { dataUrl, ...hudMetadata } = row._hudCapture;
+    const hudBytes = Buffer.from(dataUrl.slice('data:image/png;base64,'.length), 'base64');
+    const path = join(OUT, `ablation-${variant}.png`);
+    const bytes = await page.screenshot({ path, type: 'png', scale: 'device', animations: 'allow', timeout: 240000 });
+    const after = await page.evaluate(() => ({ frame: window.__kagerou.engine.frame, now: window.__kh.virtualNow }));
+    if (after.frame !== state.engineFrame || after.now !== state.virtualNow)
+      throw new Error('Diagnostic screenshot advanced simulation');
+    const png = inspectMotionPNG(bytes, { hud: { ...hudMetadata, png: hudBytes } });
+    if (png.faults.length) throw new Error(`Ablation PNG apparatus: ${png.faults.join('; ')}`);
+    const mask = path.replace(/\.png$/, '-hud.png');
+    writeFileSync(mask, hudBytes);
+    captures.push({ variant, ...state, file: rel(path), png,
+      hud: { ...hudMetadata, file: rel(mask), sha256: sha256(hudBytes) } });
+  }
+  return { setup, captures,
+    stableControl: captures[0].png.sha256 === captures[1].png.sha256
+      && captures[0].png.sha256 === captures.at(-1).png.sha256,
+    limitation: 'Stopped-frame mechanism probe after render-substituted setup; not a replacement for 300 consecutive rendered frames. Interpret A/B only if repeated controls match and the baseline reproduces the reported artifact.' };
 }
 
 async function boot(context, base, logs) {
@@ -552,7 +679,7 @@ async function encode(ffmpeg, ffprobe, directory, target, count) {
 
 async function main() {
   mkdirSync(OUT, { recursive: true });
-  const manifestPath = join(OUT, 'manifest.json');
+  const manifestPath = join(OUT, argv['diagnose-only'] ? 'diagnostic.json' : argv['preflight-only'] ? 'preflight.json' : 'manifest.json');
   if (existsSync(manifestPath) && !argv.replace) throw new Error('shots/motion-r17/manifest.json exists; use --replace to replace this exact capture intentionally.');
   const manifest = { schemaVersion: 1, tool: 'tools/motion-capture.mjs', at: new Date().toISOString(), status: 'preflight',
     criterion: 'BM-VIS-04', visualVerdict: 'pending independent critic', profile: PROFILE,
@@ -603,6 +730,33 @@ async function main() {
     temporary = mkdtempSync(join(OUT, '.frames-'));
     const sequences = motionPlans(info.layout);
     if (sequences.reduce((sum, plan) => sum + plan.frames, 0) > FRAME_BUDGET) throw new Error('Plan exceeds 300-frame budget.');
+    if (argv['diagnose-only']) {
+      manifest.mode = 'stopped-frame-render-ablation';
+      manifest.diagnostic = await diagnoseFixedFrame(page, sequences);
+      manifest.status = manifest.diagnostic.stableControl ? 'diagnostic-captured' : 'diagnostic-inconclusive';
+      manifest.visualVerdict = 'Not judged; diagnostic images are not a motion acceptance sample';
+      flush();
+      return;
+    }
+    if (argv['preflight-only']) {
+      manifest.mode = 'input-rehearsal-with-render-substitution';
+      manifest.limitations.push('This rehearsal contains zero captured video frames and cannot pass any visual or motion criterion. Full rendered capture remains mandatory.');
+      const records = await rehearseInputs(page, sequences);
+      for (const record of records) manifest.scenarios[record.plan.id] = record;
+      flush();
+      for (const record of records) {
+        if (record.trace.failedActions.length || record.trace.events.some((e) => ['frame-error', 'harness-error'].includes(e.name)))
+          throw new Error(`${record.plan.id}: input rehearsal failed; inspect preflight.json before spending a rendered capture.`);
+      }
+      const coverage = manifest.scenarios.combat.coverage;
+      console.log('[motion] input rehearsal coverage:', JSON.stringify(coverage));
+      if (!coverage.enemyStartupFrames || !coverage.enemyActiveFrames || !coverage.enemyReactionEvents.length)
+        throw new Error('Input rehearsal missed an incoming attack reaction. No video gate has been passed; repair the plan before rendering.');
+      manifest.status = 'input-rehearsal-passed';
+      manifest.totalRenderedFrames = 0;
+      flush();
+      return;
+    }
     manifest.status = 'capturing'; flush();
     for (const plan of sequences) {
       const directory = join(temporary, plan.id);
@@ -679,11 +833,9 @@ async function main() {
       if (record.trace.failedActions.length) throw new Error(`${plan.id}: ${record.trace.failedActions.length} harness actions failed.`);
       record.wallMs = Date.now() - started;
       record.coverage = {
+        ...combatCoverage(record.frames, record.trace.events),
         playerBodyInFrame: record.frames.filter((row) => row.player.ndcBounds?.inside).length,
         frames: record.frames.length,
-        enemyStartupFrames: record.frames.filter((row) => row.enemies.some((e) => e.state === 'attack' && e.move && e.attackTime < e.move.startup)).length,
-        enemyActiveFrames: record.frames.filter((row) => row.enemies.some((e) => e.weaponActive)).length,
-        reactionEvents: record.trace.events.filter((event) => ['hit', 'damage-taken', 'parry', 'clash'].includes(event.name)),
         enemyActiveClippedFrames: record.frames.filter((row) => row.enemies.some((e) => e.weaponActive && !e.ndcBounds?.inside)).length,
       };
       if (plan.id === 'locomotion') {
@@ -699,12 +851,6 @@ async function main() {
             withinAuthoredFivePercent: Math.abs(median / expected - 1) <= 0.05 };
         });
       }
-      const firstActive = record.frames.find((row) => row.enemies.some((enemy) => enemy.weaponActive))?.frame;
-      const enemyIds = new Set(record.frames.flatMap((row) => row.enemies.map((enemy) => enemy.id)));
-      record.coverage.enemyReactionEvents = record.coverage.reactionEvents.filter((event) =>
-        firstActive !== undefined && event.f >= firstActive && (enemyIds.has(event.attacker?.id)
-          || enemyIds.has(event.a?.id) || enemyIds.has(event.b?.id)
-          || (event.name === 'damage-taken' && event.entity?.id === record.frames[0].player.id)));
       manifest.videos[plan.id] = await encode(ffmpeg, ffprobe, directory, join(OUT, `${plan.id}.mp4`), plan.frames);
       rmSync(directory, { recursive: true, force: true });
       if (record.coverage.playerBodyInFrame !== plan.frames || record.coverage.enemyActiveClippedFrames > 0)

@@ -21,6 +21,26 @@ art-direction state record; project-wide session, plan and criterion pointers li
 
 ## Where the work is
 
+### Latest: 3633597 and the incoming-attack/render diagnostic
+
+Latest inspected working SHA is `3633597b1499d60a25a41a94c4fe02677cdaca35` on PR #10.
+CI `34640487523` completed: five technical frames PASS, 20 encounters with posture
+resolution **21/30 = 70%**, interaction results **15 PASS / 0 FAIL / 3 INCONCLUSIVE**.
+All 300 motion frames and both MP4s exist, but the incoming-attack gate failed: 32 enemy
+startup frames / 6 active frames / 0 enemy-attributable reactions. Player hits at 78/143
+must not be counted as incoming evidence. The independent motion review still finds black
+ribbons, primitive characters and body occlusion; the previous god-ray diagnosis remains
+unproven. See `AI_DEVELOPMENT/EVIDENCE/r17-candidate-363.md` and its JSON reviews.
+
+Next: apparatus-only `[motion-retry] [diagnose]` using the identical 3633597 control.
+Inspect stationary-opening `preflight.json` and fixed-frame `diagnostic.json` with A/A
+controls and god-ray/FX/trail/alpha-particle ablations. Then repair the proven owner and
+rerun the required rendered sample. main/Pages is still `4e6d23a`. Incremental verified
+publication is authorized; overall product FAIL does not itself ban incremental releases,
+but the current unresolved checkpoint gates do block this candidate's acceptance.
+
+### Earlier Round 17 checkpoints (superseded by the latest evidence above)
+
 - Logical session: **active** (`2026-07-31-game2-continuation`). It ends only when the user
   explicitly says so.
 - Current working branch: **`codex/game2-criteria-20260911`**, based on inspected main

@@ -79,7 +79,8 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - run: npm run build
+      - run: npm run check
+      - run: node --test tools/check-*-r17.mjs
       - name: Download same-run control evidence
         if: ${{ !contains(github.event.head_commit.message, '[motion-retry]') }}
         uses: actions/download-artifact@v4
@@ -90,10 +91,10 @@ jobs:
         if: ${{ contains(github.event.head_commit.message, '[motion-retry]') }}
         uses: actions/download-artifact@v4
         with:
-          name: game2-candidate-9a2e0395772315115ab7214475eef74cab3091f1
+          name: game2-candidate-3633597b1499d60a25a41a94c4fe02677cdaca35
           path: .
           github-token: ${{ github.token }}
-          run-id: 34622792639
+          run-id: 34640487523
       - run: npx playwright install --with-deps chromium
       - name: Install and verify video encoder
         run: |
@@ -101,8 +102,14 @@ jobs:
           sudo apt-get install -y ffmpeg
           ffmpeg -version
           ffprobe -version
+      - name: Rehearse input coverage before the expensive rendered sample
+        run: node tools/motion-capture.mjs --carry-self-check=ci-candidate --preflight-only
       - name: Capture real walking and combat frames
+        if: ${{ !contains(github.event.head_commit.message, '[diagnose]') }}
         run: node tools/motion-capture.mjs --carry-self-check=ci-candidate
+      - name: Inspect fixed-frame render ablations
+        if: ${{ always() && !cancelled() && contains(github.event.head_commit.message, '[diagnose]') }}
+        run: node tools/motion-capture.mjs --carry-self-check=ci-candidate --diagnose-only
       - name: Preserve motion and apparatus evidence
         if: always()
         uses: actions/upload-artifact@v4

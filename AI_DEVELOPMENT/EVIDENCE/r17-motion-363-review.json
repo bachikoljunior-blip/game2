@@ -1,0 +1,141 @@
+{
+  "round": 17,
+  "profile": "phone",
+  "tier": "MEDIUM",
+  "nativeResolution": "2532x1170",
+  "candidate": "3633597",
+  "verdict": "FAIL",
+  "score": 42,
+  "scoreScope": "Independent judgment of the supplied visual/motion evidence against the repository's AAA art bar; not a product score, human study, measured performance result, or comparable trend against another critic instance.",
+  "blindComparison": "Prediction, not an observed human blind study: shown unlabelled, a stranger would likely choose the supplied official Tsushima valley or Sekiro cliff still over the candidate for the character's coherent layered clothing and readable body volumes. The candidate's squared dark sleeve/torso masses and planar lower garments look assembled from primitive parts, while recurring opaque black stair-step ribbons interrupt the environment and action. References are official promotional stills of different framing, costume, lighting and weather; they provide no matched motion comparison.",
+  "findings": [
+    {
+      "id": "R17-MOTION-363-001",
+      "severity": "blocker",
+      "shot": "combat.mp4 frame038 at 0.633s; combat-enemy-active-038.png; recurring combat and locomotion frames",
+      "problem": "An opaque, hard-square-edged black ribbon crosses the upper-left scene diagonally to the weapon-tip glow in combat frame038. At native 2532x1170 it occupies approximately x0..1050, y0..500 and covers the roof/tree/banner rather than reading as a blade or a soft luminous trail. Pixel samples from the supplied lossless frame are RGB(0,0,0) at (610,285), RGB(5,5,6) at (900,426), and RGB(1,1,2) at (1040,483). The matching decoded video frame contains the same shape. Related ribbons recur in sampled combat frames006,024,030,036,042 and adjacent044..047; broken black segments remain in074..085 and108..119. Locomotion frame040 also shows a stair-step black streak behind the foot near x870..1120,y930..1170. This is not the yellow broken arc which first appears in the inspected reaction sequence at frame078.",
+      "why": "The recurring large, high-contrast square-edged marks compete with the attack silhouette and visibly cut across otherwise textured space. Their presence in both still and video evidence defeats a single-frame compression explanation and blocks the stated AAA visual acceptance bar.",
+      "owner": "src/fx/Effects.js",
+      "fix": "First isolate the rendering source with a controlled visual ablation; do not assume this routing proves the cause. Acceptance target: 0 screen-crossing opaque square-edged black ribbons or detached black cores around the intended luminous trails in the same 180-frame combat and 120-frame locomotion captures, while preserving authored yellow posture-break feedback. Decode the rerun with `ffmpeg -i combat.mp4 -vsync 0 combat-f%03d.png` and `ffmpeg -i locomotion.mp4 -vsync 0 locomotion-f%03d.png`; inspect the exact native regions and the listed adjacent sequences, then independently recount visible defects.",
+      "hypothesis": "Provisional routing only: Effects.js owns trails/sparks in ARCHITECTURE.md. The screenshot cannot distinguish authored trail geometry, material behavior, or a downstream compositing problem. Confirm or disprove by ablation before changing a mechanism.",
+      "evidence": [
+        "ci-motion-3633597/combat-enemy-active-038.png",
+        "ci-motion-3633597/combat.mp4, zero-based frame038 = decoded combat/f039.png",
+        "ci-motion-3633597/locomotion-walk-040.png",
+        "Native adjacent video crops: combat044..061,074..085,108..119; locomotion every sixth frame"
+      ],
+      "refutation": {
+        "reviewer": "/root/motion_review_363/refute_motion",
+        "disposition": "retained_with_mechanism_unconfirmed",
+        "attempt": "Tested whether it is compression, a single transient frame, or intentional ink styling rather than a substantive visible failure.",
+        "result": "Independently confirmed the same ribbon in native PNG038 and decoded frame038, plus changing segmented trails in other actual frames. Intentional styling is possible but does not remove the distracting screen-spanning silhouette. Shader/transparency diagnoses were explicitly rejected as unsupported. Yellow posture-break marks are a different visible effect."
+      }
+    },
+    {
+      "id": "R17-MOTION-363-002",
+      "severity": "blocker",
+      "shot": "combat000/038/044..061 and locomotion040/100, with native locomotion crops every sixth frame",
+      "problem": "The foreground character repeatedly reads as a smooth oval head over broad squared sleeve/torso masses and long planar lower-garment panels. In combat038, the broad dark sleeve/torso region includes RGB(4,4,5) at (1120,650), with little visible form change inside that mass. In brighter side-on combat044..061, the large flat garment sections remain obvious even as arms and legs articulate. Walking and running samples show a changing sash and bent legs, but the upper garment remains visually slab-like and the lower panels do not establish convincing cloth volume. This is a persistent shape/material appearance complaint, not a claim that animation or cloth motion is absent.",
+      "why": "The player is the main subject at gameplay scale. The supplied Tsushima rear-view character has layered clothing, shaped shoulders, tapered limbs, knee folds and defined boots; even the smaller Sekiro character retains differentiated sleeve/forearm and coat shapes. The candidate's primitive-part appearance persists in multiple views and falls substantially short of the explicit AAA character-art bar.",
+      "owner": "src/anim/Rig.js",
+      "fix": "Acceptance target: 0 retained assembled-primitive character-art blockers in a new independent review of the same six native representative stills plus standing, walking, running and side-on combat sequences. Make shoulder/sleeve transitions, lower-garment volume and limb separation readable at native gameplay scale without relying on a uniform near-black fill. Export review frames using `ffmpeg -i locomotion.mp4 -vsync 0 character-%03d.png` and corresponding native combat044..061; compare garment volumes to the two supplied character references, not facial detail or identical costume.",
+      "hypothesis": "Provisional ownership from the architecture's skeleton/procedural-animation assignment only. Mesh shaping, material response and lighting may all contribute. No cloth-solver, mesh-topology or material implementation was read, so no specific mechanism is asserted.",
+      "evidence": [
+        "ci-motion-3633597/combat-combat-setup-000.png",
+        "ci-motion-3633597/combat-enemy-active-038.png",
+        "ci-motion-3633597/locomotion-walk-040.png",
+        "ci-motion-3633597/locomotion-run-100.png",
+        "Decoded native combat044..061 and locomotion000..114 every6",
+        "shots/references/official-tsushima-valley.jpg",
+        "shots/references/official-sekiro-005.jpg"
+      ],
+      "refutation": {
+        "reviewer": "/root/motion_review_363/refute_motion",
+        "disposition": "retained_narrowed; blocker_against_explicit_AAA_art_bar",
+        "attempt": "Challenged whether dark clothing, sunset backlighting, broad loose sleeves, rear-facing heads, or real visible articulation invalidate the observation or severity. Independently inspected both character reference images.",
+        "result": "The character does animate, bend legs and arms, lean, and change cloth/sash silhouette, so claims of no animation or a featureless face were rejected. Squared sleeve masses and planar garment sections nevertheless persist in brighter side views. The refuter retained blocker severity specifically under the repository's explicit AAA art gate, not as a universal functional blocker or quantitative naturalism metric."
+      }
+    },
+    {
+      "id": "R17-MOTION-363-003",
+      "severity": "major",
+      "shot": "combat approach/guard: native frames007/038 plus sampled012/018/024/030/036/042",
+      "problem": "In the sampled initial frontal approach and guard framing, the enemy aligns behind the player's head and shoulder/torso silhouette. Combat038 puts the enemy near x1160..1250,y460..740 behind a foreground player mass near x1090..1260,y505..850; substantial enemy torso and the weapon-arm origin are obscured. The hat/head, reticle and parts of the blade remain visible, so the target is not wholly invisible. The later side-on frames around050..056 separate the bodies and are counterexamples to any claim that the entire encounter remains occluded.",
+      "why": "A centered reticle is not a readable two-character fight. During the initial attack/defense exchange, the pose needed to understand the incoming action is partly hidden by the player, conflicting with E03's two-body readability principle and E07's silhouette-first combat communication.",
+      "owner": "src/gameplay/PlayerCamera.js",
+      "fix": "Acceptance target for this specific rerun: 0 reviewed approach/guard samples where the player's torso hides the enemy weapon-arm origin and most of its torso. Compose both bodies as a readable two-shot. Export native frames with `ffmpeg -i combat.mp4 -vsync 0 framing-%03d.png` and inspect zero-based007..042, corresponding to exported framing-008.png through framing-043.png. Separately run the existing benchmark's full-encounter central-80%-for-95% test; this short visual sample does not claim to measure that numeric gate.",
+      "hypothesis": "PlayerCamera.js is provisional routing from the architecture's lock-on/TPS camera ownership. No camera state, input, collision or code was read. Relative entity placement and choreography could contribute; verify before changing camera mathematics.",
+      "evidence": [
+        "ci-motion-3633597/combat-enemy-startup-007.png",
+        "ci-motion-3633597/combat-enemy-active-038.png",
+        "Decoded combat timeline every6 frames, with native000/007/038 and adjacent044..061",
+        "Counterevidence: decoded side-on combat050..056 exposes both characters and extended enemy arms/sword"
+      ],
+      "refutation": {
+        "reviewer": "/root/motion_review_363/refute_motion",
+        "disposition": "retained_narrowed_to_sampled_frontal_approach_guard",
+        "attempt": "Looked for visible target features and later framing that separates the combatants, and challenged any full-encounter or numerical lock-on claim.",
+        "result": "Target head, hat, reticle and blade portions remain visible, and later side-on views clearly separate arms and sword. The local initial torso/weapon-origin overlap remains observable. Full invisibility, persistence throughout the encounter, and measured failure of the 95% benchmark were removed."
+      }
+    }
+  ],
+  "shotDescriptions": {
+    "combatInitial": "A black-and-red foreground swordsman faces a lit timber shrine across wet paving. A second swordsman approaches on nearly the same screen axis; a lock reticle and red/yellow bars sit above it. A tree and red banner occupy the left, with touch controls over the lower corners.",
+    "combatLater": "The view rotates around the pair into a sunset torii-facing courtyard. The characters briefly separate sideways, then overlap again. Red edge tint, yellow broken arcs, bright contact flashes, an expanding pale oval and Japanese callouts appear. Later frames add black letterbox bars.",
+    "locomotion": "A single black-and-red swordsman walks and then runs toward a raised bell shelter across strongly textured reflective paving. Warm glare lies to the right, long cool shadows to the left, a tree line across the horizon. Limbs and sash change pose as the player travels."
+  },
+  "motionObservations": [
+    {
+      "element": "E03-CAMERA/E12-ANIMATION",
+      "status": "proposed_discontinuity_finding_refuted",
+      "observation": "The initially suspected shrine-to-torii cut is not retained. Consecutive native crops044..061 show intermediate angles, character overlap and changing background; the broader every6 timeline shows the bell moving past as the torii enters. This supports an orbit, not the proposed late reset. No world-space displacement or intended input was available, so bounded camera responsiveness is not passed.",
+      "refutation": "Separate refuter independently inspected intermediate decoded frames043/046/050/053/056/059/064 and rejected the cut/reset hypothesis."
+    },
+    {
+      "element": "E12-ANIMATION/visible impact communication",
+      "status": "observation_only",
+      "observation": "Native074..085 show red edge tint and yellow broken arcs appearing at078, then brighter contact flashes/white flecks around080..085. Native108..119 show the large pale oval and changing particle/pose silhouettes, and138..145 show the oval gone with later body movement. These are directly visible reaction cues. They do not prove hitstop, damage success, parry timing, animation/hitbox alignment or physical response direction. Their semantics are not inferred from filenames or metadata."
+    },
+    {
+      "element": "E12-ANIMATION/locomotion",
+      "status": "observation_only",
+      "observation": "Every-sixth native locomotion crop shows alternating lifted/bent legs, changing arm pose and red-sash orientation, followed by a smaller faster-travelling figure later in the clip. No absence-of-animation finding is made. This sampling does not measure foot slip, bone angular limits or <=150ms blend duration."
+    }
+  ],
+  "evidence": {
+    "root": "/workspace/scratch/95617fae0578/ci-motion-3633597",
+    "nativeDecodedRoot": "/workspace/scratch/95617fae0578/review363-decoded",
+    "frameIndexConvention": "All review frame numbers are zero-based; ffmpeg f001.png is video frame000. Time = frame/60 seconds. Crops preserve native pixel scale; contact timelines alone were reduced to 633x292 per tile.",
+    "containerProbe": {
+      "combat": "2532x1170, 60/1, 180 frames, 3.000 seconds",
+      "locomotion": "2532x1170, 60/1, 120 frames, 2.000 seconds",
+      "interpretation": "Container frame rate and supplied virtual60Hz capture are not measured real-time device performance."
+    },
+    "reviewerInspected": {
+      "nativeFullDecodedCombatFrames": [0, 7, 38, 78],
+      "nativeFullDecodedLocomotionFrames": [40, 100],
+      "nativeCropCombatInclusiveRanges": [[44, 61], [74, 85], [108, 119], [138, 145]],
+      "nativeCropLocomotionFrames": "0,6,12,18,24,30,36,42,48,54,60,66,72,78,84,90,96,102,108,114",
+      "reducedTimelineCombatFrames": "0 through174 every6",
+      "reducedTimelineLocomotionFrames": "0 through114 every6",
+      "representativePNGs": ["combat-combat-setup-000.png", "combat-enemy-startup-007.png", "combat-enemy-active-038.png", "combat-reaction-078.png", "locomotion-walk-040.png", "locomotion-run-100.png"],
+      "suppliedReferences": ["shots/references/official-tsushima-valley.jpg", "shots/references/official-tsushima-stairs.jpg", "shots/references/official-sekiro-005.jpg"],
+      "referenceProvenance": "AI_DEVELOPMENT/EVIDENCE/r17-reference-sources.json; official publisher promotional stills, not matched reference gameplay footage"
+    },
+    "independence": "Reviewer did not inspect implementation, prior review files, state or git history. Contract and requested benchmark entries were read for acceptance principles; historical measured/status fields in those entries were not used as candidate evidence. Separate refuter did not author this review."
+  },
+  "limitations": [
+    "Review is sequential decoded-frame and native-crop inspection, not a real-time human viewing session. Not every one of the 300 encoded frames was visually inspected.",
+    "No matched reference motion, camera, weather or costume. Reference preference is an independent model prediction, not observed human judgment.",
+    "No real Android/iOS device, touch experience, latency, audio, frame-time or sustained-performance measurement. Virtual60Hz playback metadata does not establish 60fps on target hardware.",
+    "No damaging-frame labels, input trace, hitbox data, bone transforms or world-space camera trajectory were inspected. Startup >=140ms, blade-window alignment, foot planting, camera displacement and blend limits are not measured or passed.",
+    "No inference that event names or representative filenames prove effects occurred. Visible reaction observations come from decoded pixels.",
+    "All owner assignments are provisional source-blind routing hypotheses, not confirmed implementation causes.",
+    "Only this short courtyard locomotion/combat evidence is judged. No full product, archetype set, traversal, narrative, originality or entire-environment pass is implied."
+  ],
+  "validation": {
+    "schema": ".kit/lib/plan/findings.mjs validateFindings(review, {strict:true, knownOwners})",
+    "knownOwners": ["src/fx/Effects.js", "src/anim/Rig.js", "src/gameplay/PlayerCamera.js"],
+    "status": "passed; ok=true, failures=[], warnings=[]"
+  }
+}

@@ -11,17 +11,17 @@
   "baseSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
   "activePlanNode": "R17-GAMEPLAY",
   "activeTask": "R17-GAMEPLAY",
-  "lastSuccessfulAction": "Candidate 9a2 completed five native frames, 20 encounters and all 300 rendered motion frames. Technical gates and BM-ANIM-01 passed; ffmpeg/ffprobe produced frame-count-verified native MP4s and preserved them.",
-  "currentFailingAction": "Overall criteria still fail: corrected BM-COMBAT-02 is 5/16 = 31.25% against 60%; BM-CAMERA-04 and audio/character evidence remain inconclusive; the motion combat clip had zero enemy-attributable impact reactions; real-device/human criteria remain open.",
-  "currentHypothesis": "The 9a2 black staircase is quarter-resolution god-ray occlusion extruding a near fighter toward the sun, not Rig geometry, TAA or motion blur. Posture-per-damage 1.15 projects 14/16 posture-resolved deaths when replayed over the same health-only sequences. Both predictions require fresh runtime evidence.",
-  "nextAction": "Publish the post-9a2 source and apparatus repairs with normal [motion] opt-in, run full five-frame and >=20-encounter evidence plus 300 motion frames, inspect coverage and obtain fresh independent review.",
+  "lastSuccessfulAction": "Inspected 3633597 CI 34640487523: five-frame technical PASS, 20 encounters with posture resolution 21/30 = 70%, 18 attack onsets >=233 ms; 300 rendered frames preserved and independently reviewed.",
+  "currentFailingAction": "Incoming attack coverage failed: 32 startup / 6 active frames, zero enemy-attributable reactions. Black ribbons, primitive characters and combat occlusion remain; three interaction criteria are inconclusive.",
+  "currentHypothesis": "Immediate approach moved inside spear minimum range before its active window. Holding position may allow an incoming hit. Black ribbons need stopped-frame god-ray/FX/trail/alpha-particle ablation; the previous god-ray cause was not established.",
+  "nextAction": "Publish apparatus-only [motion-retry] [diagnose] checkpoint using the 3633597 control. Inspect preflight.json and diagnostic.json/PNGs; repair the proven owner, then rerun full rendered evidence and independent review before integrating the checkpoint.",
   "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
   "pendingVerification": [
-   "Same 20-encounter policy after removing duplicate heavy damage.",
-   "Clean idle calibration and real 300-frame motion videos.",
-   "Independent re-review of the repaired foliage, terrain and lantern frames.",
-   "Latest coherent source and public Pages browser verification.",
-   "Physical-device performance/thermals/boot and human quality/ergonomics."
+   "Stationary opening rehearsal and an incoming reaction in the actual 300-frame sample.",
+   "Black-ribbon A/A and A/B renders, followed by verified owner repair.",
+   "Character/occlusion improvements and fresh independent review.",
+   "main integration and actual public Pages browser verification.",
+   "Physical-device and human criteria."
   ],
   "modifiedFiles": [
    "src/fx/Effects.js",
@@ -41,7 +41,7 @@
   ],
   "remotePushPendingAuthorization": false,
   "remoteReleaseAuthorized": true,
-  "remotePublicationStatus": "candidate 9a2e039 and recovery bb5c49f are published; five-frame, 20-encounter and failed-but-complete motion artifacts are preserved; post-9a2 gameplay/render/apparatus repairs await exact-tree publication and full CI; main remains 4e6d23a",
+  "remotePublicationStatus": "3633597 is published on PR #10; CI 34640487523 completed with a motion-coverage failure and successful evidence job. New apparatus checkpoint awaits publication. main remains 4e6d23a.",
   "publishedMainSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
   "publishedUrl": "https://bachikoljunior-blip.github.io/game2/",
   "continuationAutomation": {

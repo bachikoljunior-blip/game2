@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "updatedAt": "2026-09-11T19:18:00Z",
+ "updatedAt": "2026-09-11T22:11:41.592Z",
  "status": "active",
  "project": {
   "name": "KAGEROU 陽炎",
@@ -11,7 +11,7 @@
   "workingBranch": "codex/game2-criteria-20260911",
   "workingBranchBaseSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
   "previousWorkingBranch": "claude/game-reference-benchmark-qh0v0q",
-  "workingBranchPublicationSha": "9a2e0395772315115ab7214475eef74cab3091f1",
+  "workingBranchPublicationSha": "3633597b1499d60a25a41a94c4fe02677cdaca35",
   "resumedFromRef": "origin/main",
   "resumedFromSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
   "recoveryBranch": "codex/game2-smoke-20260911",
@@ -33,29 +33,30 @@
   "round12Verdict": "TARGET PASS and OVERALL FAIL: coherent r12v1 passed apparatus, budget, tone, and lantern gates; independent review confirmed those repairs and retained the broader visual blockers.",
   "round13Verdict": "FAIL with measured progress: source-blind score 36 to 43; bamboo skyline and terrain hierarchy improved, blocker count fell from two to one, but detached bamboo fragments remain blocking and four major findings remain.",
   "round14Verdict": "FAIL with measured progress: source-blind score 44 to 50; the sun-glare major finding cleared, but one detached-bamboo blocker and terrain/courtyard majors remain.",
-  "latestVerifiedVisualBaseline": "phone/MEDIUM tag ci-candidate, d4941ca; technical gate passed at 119 calls / 804,744 triangles; repaired frames still require fresh independent visual review",
+  "latestVerifiedVisualBaseline": "3633597 phone/MEDIUM: five technical gates passed; motion remains FAIL. See r17-candidate-363.md.",
   "capture": {
    "status": "passed",
    "tag": "ci-candidate",
    "worstDrawCalls": 119,
-   "worstTriangles": 804744,
+   "worstTriangles": 803596,
    "resolution": "2532x1170",
    "programs": 117,
    "deadShaders": 0,
    "consoleErrors": 0,
    "limitation": "SwiftShader evidence is not real-device 60 fps evidence.",
-   "revision": "d4941ca027e805798e02837c0fac6f4158ebc5cd",
-   "buildFingerprint": "1505f579d26626494ea1c94d539a8c64a9ff3658baa35cd11b0148fb86326692",
-   "workflowRun": 34615869197
+   "revision": "3633597b1499d60a25a41a94c4fe02677cdaca35",
+   "buildFingerprint": "688eb51ffa158ec76dd2934faccf3716b32f3213724a1ae01ffaaa4f31efd400",
+   "workflowRun": 34640487523,
+   "counterScope": "Worst captured frame: 803596 triangles. End-of-run stats: 804744 triangles; these are distinct counters."
   },
   "productionBuild": {
    "status": "passed",
    "command": "node node_modules/vite/bin/vite.js build",
-   "checkedAt": "2026-09-11T15:21:52Z",
-   "mainChunkGzipKb": 329.83,
+   "checkedAt": "2026-09-11T22:11:41.593Z",
+   "mainChunkGzipKb": 330.59,
    "entryChunkGzipKb": 1.13,
-   "totalGzipKb": 491.06,
-   "sourceScope": "integrated local Round 17 candidate; exact remote revision pending publication and rendered CI"
+   "totalGzipKb": 491.82,
+   "sourceScope": "Local unchanged 3633597 game source; npm run check and 18 focused tests passed. Build identity must be revalidated against carried CI control."
   },
   "publication": {
    "status": "partially_verified",
@@ -101,16 +102,16 @@
    "notCovered": "Physical-device/human gates, valid isolated shake ablation, enemy edge pixel survey, true-peak audio and motion-video review remain open. E01-COMBAT and E14-AI now have an actual 20-encounter sample.",
    "latestRun": {
     "tag": "ci-candidate",
-    "revision": "9a2e0395772315115ab7214475eef74cab3091f1",
+    "revision": "3633597b1499d60a25a41a94c4fe02677cdaca35",
     "encounters": 20,
     "initialMetricVerdicts": {
-     "pass": 14,
-     "fail": 1,
+     "pass": 15,
+     "fail": 0,
      "inconclusive": 3
     },
     "selfCheck": "120-frame determinism and render-substitution divergence are both zero. The screenshot rig is linked by SHA-256 and identical build fingerprint.",
-    "scope": "Initial metric outputs, not 14 newly verified benchmark entries. Animation calibration is valid; sample audio peak is not true-peak proof. The fresh corrected BM-COMBAT-02 result is 5/16 = 31.25% and remains below 60%.",
-    "evidence": "AI_DEVELOPMENT/EVIDENCE/r17-motion-9a2.md"
+    "scope": "20 encounters; BM-COMBAT-02: 21/30 = 70%, threshold 60%. BM-ANIM-01: 18/18, shortest 233 ms. These are runtime measurements, not a product PASS.",
+    "evidence": "AI_DEVELOPMENT/EVIDENCE/r17-candidate-363.md"
    }
   },
   "browserSmoke": {
@@ -134,7 +135,7 @@
    "Genshin Impact (touch layer and phone performance envelope only)"
   ],
   "criteria": "62 benchmark entries; legacy status counts remain 21 verified, 4 under review, 14 blocked, 23 proposed until the new evidence is matched to each full threshold. Round 17 measurement coverage is recorded separately; no thresholds were relaxed.",
-  "headlineGap": "Round 17 candidate 9a2 passes the technical five-frame gate and valid animation onset measurement (40/40, shortest 233 ms). Its fresh 20-encounter run yields 5 posture-resolved deaths out of 16 (31.25% against 60%). All 300 rendered motion frames and both MP4s were generated, but combat had no impact reaction and independent motion review failed 35/100 on a black radial artifact, body overlap and primitive character construction. The local repair tree addresses posture pressure, near-character god-ray occlusion, disconnected cloth GPU attributes and the DOM-input clip plan; full CI and independent review remain required. Physical-device and human gates are not passed.",
+  "headlineGap": "3633597 passes five technical frames and the 20-encounter posture target (21/30 = 70%). Its 300-frame videos lack an incoming attack reaction. Independent motion review retains black ribbons, primitive character forms and combat occlusion. Input rehearsal and stopped-frame render ablation await CI. Physical-device and human gates remain open.",
   "structuralBlocker": "Local Chromium SIGTRAP and Cloud Browser WebGL limitations are bypassed using the already-authorized GitHub Actions execution surface. Actual capture and smoke evidence are available. Physical-device and human gates still require actual measurements.",
   "neverPerformed": [
    "A matched reference-title gameplay-video or physical-device comparison. Official publisher reference stills were fetched and supplied to a version-blind model critic on 2026-09-11.",
@@ -144,23 +145,21 @@
  },
  "currentWork": {
   "activeTask": "R17-GAMEPLAY",
-  "lastCompletedTask": "Candidate 9a2 completed five native frames, 20 encounters and 300 motion frames; animation passed, combat remained below target, and motion correctly failed for zero impact reactions.",
+  "lastCompletedTask": "Inspected completed CI 34640487523: posture target passed; incoming attack coverage and visual quality failed.",
   "nextTask": "R17-GAMEPLAY",
-  "nextStartingPoint": "Publish the verified post-9a2 repair tree with normal [motion] opt-in because game source changed. Require the full five-frame gate, at least 20 encounters, a real reaction in 300 motion frames, then obtain independent review. Retain overall FAIL and do not publish main/Pages while criteria remain unmet.",
+  "nextStartingPoint": "Run apparatus-only input rehearsal and fixed-frame A/B on identical 3633597 game source. Confirm stable controls and reproduction before assigning the renderer/FX cause. Repair the proven owner, then full five-frame, 20-encounter, 300-frame verification and independent review. Integrate verified bounded checkpoints into main/Pages; overall product PASS is not required for every incremental release, but failed checkpoint gates block acceptance.",
   "blockedBy": [],
   "remoteStateChangeAuthorized": true,
   "remotePolicy": "Across future sessions, push verified checkpoints, integrate them into main, and publish GitHub Pages without asking again. This remains active until the user changes it."
  },
  "knownUncertainty": [
-  "BM-COMBAT-02 is 31.25% (5/16) in the fresh 9a2 20-encounter run after excluding anonymous compatibility death notifications; the unchanged threshold is 60%.",
-  "BM-ANIM-01 passes on 9a2: 40/40 measured, shortest onset 233 ms, with separate same-Rig calibration and the unchanged 140 ms threshold.",
-  "BM-CAMERA-04 shake ablation remains inconclusive: candidate paths diverged 0.794 m.",
-  "BM-CHAR-02 pixel survey was intentionally not run in the first CI and remains unmeasured.",
-  "BM-AUDIO-03 recorded sample peak and an interpolated estimate; this does not verify the true-peak criterion.",
-  "Independent version-blind visual review and separate refutation retained foliage and terrain blockers on the prior frame set; repaired d494 pixels require another independent review.",
-  "The 9a2 motion job produced all 300 frames and two valid MP4s, but zero enemy-attributable impact reactions; aggressive-v2 DOM input replaces the missed fixed tap/flick timeline for the next full-source candidate.",
-  "Independent motion review failed 9a2 at 35/100. Black radial artifacts are blocker; body overlap and primitive character construction are major. A separate refuter retained each symptom with narrower wording.",
-  "Real iPhone and mid-range Android frame rate, boot, thermals and human ergonomics remain unmeasured.",
-  "The revised source has not yet replaced the published Round 16 Pages payload."
+  "BM-COMBAT-02: 21/30 = 70% in 20 encounters; unchanged threshold 60%.",
+  "BM-ANIM-01: 18/18 measured attacks; shortest 233 ms against 140 ms.",
+  "BM-CAMERA-04 remains inconclusive: path divergence 2.118 m.",
+  "BM-CHAR-02 pixel survey and BM-AUDIO-03 true peak remain unverified.",
+  "Motion: 32 enemy startup frames, 6 active frames, zero incoming reactions. Outgoing hits at 78/143 must not count as incoming.",
+  "Black ribbons persist after the near-occluder repair; god-ray cause needs A/B proof. Character forms and body occlusion remain deficient.",
+  "Real-device performance, thermals, boot and human ergonomics remain unmeasured.",
+  "main/Pages remains 4e6d23a; no Round 17 publication yet."
  ]
 }

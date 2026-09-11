@@ -80,13 +80,14 @@ enclosed space, and Genshin's sustained thermal behaviour on mid-range Android. 
 only — nothing from any reference's characters, world, layout, UI, staging or music is
 copied, and no reference title is named in the shipped product.
 
-**As of 2026-09-11, candidate `9a2e039` has an executed 20-encounter combat/AI sample,
+**As of 2026-09-11, candidate `3633597` has an executed 20-encounter combat/AI sample,
 five native phone/MEDIUM frames, 300 rendered motion frames, and a passing
 production/touch/graphics-recovery smoke.**
-Coverage is not quality: the latest interaction metrics returned 14 pass, 1 fail and 3
-inconclusive. Attack-motion onset now validly passes (40/40 attacks, shortest 233 ms), but
-the posture-resolution target remains unmet and sample audio peak does not establish true
-peak. Independent version-blind review of the prior still set judged both versions below
+Coverage is not quality: the latest interaction metrics returned 15 pass, 0 fail and 3
+inconclusive. Attack-motion onset passes (18/18 attacks, shortest 233 ms), and posture
+resolution is 21/30 = 70% against 60%. Incoming-attack video coverage still fails, and sample
+audio peak does not establish true peak. Independent review retains black rendering ribbons,
+primitive character forms and combat occlusion. The prior still-set review judged both versions below
 the visual bar; the repaired frames still need fresh independent review. No matched
 reference gameplay, real-device performance or human review is claimed.
 
@@ -96,6 +97,14 @@ reference gameplay, real-device performance or human review is claimed.
 > the container does not — `shots/` is gitignored and the review images do not survive.
 
 ### 2026-09-11 candidate: measured gameplay progress, overall criteria unmet
+
+Latest [CI](https://github.com/bachikoljunior-blip/game2/actions/runs/34640487523) completed
+on `3633597`; main/Pages remains `4e6d23a`. Five technical frames and the posture target
+passed. The next step is a short input rehearsal and stopped-frame render ablation to
+repair the failed incoming-attack sample and persistent black ribbons. Exact results and
+artifact hashes: [`r17-candidate-363.md`](AI_DEVELOPMENT/EVIDENCE/r17-candidate-363.md).
+
+The following paragraphs retain the earlier checkpoint history.
 
 The current candidate fixes foot planting, attack-window timing, posture pressure, camera
 collision, contextual input, encounter progression and restart. Fourteen focused behavioral

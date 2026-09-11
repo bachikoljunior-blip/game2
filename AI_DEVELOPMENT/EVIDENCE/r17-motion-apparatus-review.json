@@ -1,0 +1,95 @@
+{
+  "round": 17,
+  "profile": "phone",
+  "tier": "medium",
+  "nativeResolution": "2532x1170",
+  "verdict": "PASS",
+  "score": 100,
+  "verdictScope": "Static review of current preflight and stopped-frame diagnostic changes, plus executed Node regressions only; not a preflight, diagnostic execution, rendered capture, visual-quality or product verdict.",
+  "blindComparison": "No blind visual comparison was performed. A code review cannot establish which rendered result a stranger would prefer; the delayed-opening candidate has not been rendered or rehearsed by this reviewer.",
+  "baseline": "3633597b1499d60a25a41a94c4fe02677cdaca35",
+  "reviewedFiles": [
+    "tools/motion-capture.mjs",
+    "tools/check-motion-r17.mjs",
+    ".github/workflows/game2-criteria.yml"
+  ],
+  "reviewedFileSha256": {
+    "tools/motion-capture.mjs": "b39adf0dea464785bc69211f02b3cdebe9d98636f716ca2357145b0939786f34",
+    "tools/check-motion-r17.mjs": "fbc2569f9eec5d349f71ad3b09473db1a8a7d5febddbdba738ec37baffc1e743",
+    ".github/workflows/game2-criteria.yml": "79b2cbd16223656ff4e45319a05b3c8750cd88c334bdffc3e1a9fcf009547a56"
+  },
+  "reviewedThreeFileDiffSha256": "966c5414fe7e225848e0d60feb3ab40f1ab5b1829a6adaa84a394c28563817db",
+  "findings": [],
+  "refutation": {
+    "status": "completed-for-diagnostic-delta",
+    "independentRefuter": "/root/motion_apparatus_review/diagnostic_refuter",
+    "results": [
+      "Disproved auto-exposure accumulation hypothesis: restoring _adaptIdx makes every render read the same immutable source history texture and overwrite only the opposite target. Auto-exposure remains enabled as authored; disabling it was retracted before integration.",
+      "Confirmed minor stale-depth control risk: the mirror copies prior scene depth before scene rendering. Existing stableControl already rejected mismatching controls; current code adds two scalar-reset fixed-frame real renders before capturing controls. This repairs an avoidable inconclusive experiment, not a demonstrated prior false acceptance.",
+      "Confirmed and resolved diagnostic provenance mismatch: oldCombat now records stationaryOpeningFrames 3 and diagnosticReplayOf, matching its frame-3 bot action instead of inheriting the new frame-60 metadata."
+    ]
+  },
+  "checks": [
+    {
+      "command": "node --test tools/check-motion-r17.mjs",
+      "result": "6 passed, 0 failed; rerun against the final diagnostic delta"
+    },
+    {
+      "command": "node --test tools/check-*-r17.mjs",
+      "result": "18 passed, 0 failed before the diagnostic delta; motion-specific six tests rerun after that delta"
+    },
+    {
+      "command": "git diff --check",
+      "result": "passed again after final diagnostic edits, before updating this review"
+    },
+    {
+      "check": "Apply exported combatCoverage to ../ci-motion-3633597/manifest.json combat frames and trace events",
+      "result": {
+        "enemyStartupFrames": 32,
+        "enemyActiveFrames": 6,
+        "enemyActiveFrameRange": [38, 43],
+        "reactionEvents": 3,
+        "enemyReactionEvents": 0,
+        "outgoingHitFrames": [78, 143],
+        "savedManifestStatus": "fail"
+      }
+    },
+    {
+      "check": "Source and carried-control provenance",
+      "result": "HEAD matches the review baseline. Source/runtime remained unchanged; additional coordinator documentation edits are outside this review. Workflow selects the candidate artifact named for this baseline. Saved motion evidence identifies its self-check revision as the same baseline and its screenshot control as shots/report-ci-candidate.json. Current runtime hash matches saved runtime hash exactly. Runtime carrySelfCheck still validates exact dist fingerprint, phone/MEDIUM profile, 120-frame zero-divergence controls, and screenshot source identity.",
+      "savedBuildFingerprint": "688eb51ffa158ec76dd2934faccf3716b32f3213724a1ae01ffaaa4f31efd400",
+      "runtimeSha256": "c26379dc774bb394a909c92f849ec0e1aa708a1fbcd0d94c379fd5f0080b351e"
+    },
+    {
+      "check": "Read-only reconstruction of local dist fingerprint mismatch",
+      "result": "Full local dist contains six stale prior-generation chunks. Applying the unchanged fingerprint algorithm virtually to only the current four assets and root files exactly reproduces the saved CI fingerprint; no files were deleted, rebuilt or rewritten.",
+      "fullLocalDistFingerprint": "6bed83a99ec5e5442051ba9feadbd71b35e80471173a7d28f47d0e3b4f2af09d",
+      "currentGenerationOnlyFingerprint": "688eb51ffa158ec76dd2934faccf3716b32f3213724a1ae01ffaaa4f31efd400",
+      "currentAssets": ["assets/index-BIpFkE-9.js", "assets/main-DHvjjYZC.js", "assets/Rig-h73NJCsA.js", "assets/three-M_y4c4O-.js"],
+      "staleAssets": ["assets/index-DclF3Jpp.js", "assets/index-WAbU7xcv.js", "assets/main-CCskT7C_.js", "assets/main-D61RB9n7.js", "assets/Rig-DaYQkx20.js", "assets/Rig-DFdS_auq.js"],
+      "dependencyObservation": "Local Node v24.19.0 differs from workflow Node 22, but installed vite 6.4.3, terser 5.49.0, rollup 4.62.3 and three 0.180.0 match package-lock. The exact fingerprint reconstruction establishes stale chunks, not a dependency/tool-version explanation."
+    }
+  ],
+  "preservedGates": [
+    "120 locomotion plus 180 combat frames at virtual 60 Hz; combat bot starts at frame 60 and stops at 178.",
+    "Full capture still requires one actual completed render and one native PNG per simulation frame, unchanged simulation during screenshot, valid PNG/HUD-unoccluded image content, and exact native video dimensions/count/timebase.",
+    "Body-framing, active-enemy framing, finite/runtime/shader checks and authored locomotion-speed tolerance remain unchanged.",
+    "Both paths now call the same startup/active/enemy-attributable reaction predicate; the extracted predicate preserves the baseline rule and rejects the saved outgoing-only attacks.",
+    "Preflight writes preflight.json, declares render substitution and zero captured video frames, and does not set captured or visual PASS. Normal motion workflow requires separate full capture after successful rehearsal. The explicit [diagnose] branch skips full video and creates only diagnostic.json plus stopped-frame PNGs; it cannot satisfy the motion gate.",
+    "npm run check still includes the build; replacing the workflow build step does not remove building."
+  ],
+  "diagnosticReview": [
+    "Setup replays 120 locomotion steps then the old frame-3 bot through combat frame 38; both traces reject failed actions and frame/harness errors.",
+    "TAA, motion blur and DOF are rejected. Two fixed-frame real-render warmups populate scene depth and the depth mirror; scalar render clocks and ping-pong indices are reset before each warmup and each variant.",
+    "Each variant restores original FX visibility and scalar state before its single intervention. All selected FX meshes have depthWrite false, so these ablations do not alter the depth source used by later variants.",
+    "Seven native images are produced: two initial baselines, four ablations and a restored baseline. Each uses the real pipeline, verifies GL status and fixed frame/time, runs sampleFrame shader/finite/HUD apparatus checks, inspects HUD-unoccluded PNG pixels, preserves the HUD sidecar, and verifies screenshot time did not advance.",
+    "stableControl requires exact PNG hashes across both initial baselines and restored baseline. A mismatch is explicitly diagnostic-inconclusive. Stable repeated controls alone do not establish reproduction of the reported artifact or causality; the output limitation requires both before A/B interpretation.",
+    "The [diagnose] workflow can collect diagnostic evidence even if input rehearsal fails, while the job retains that failed step and never substitutes diagnostics for the skipped full video."
+  ],
+  "limitations": [
+    "No build, preflight, diagnostic, browser render, remote artifact download, CI run or push was performed by this reviewer. All warmup, fixed-state and output conclusions are source review, not observed runtime success.",
+    "Whether holding position actually produces an incoming impact is unverified. The source comment explaining the old miss is a hypothesis, not a measurement established by this review.",
+    "The carried renderer-substitution control compares player position/yaw/speed, not every combat event. The same plan, timestep, harness stepping and post-step combat samples are used in rehearsal and capture, but exact combat parity remains unmeasured; full rendered coverage is mandatory regardless of preflight success.",
+    "The previous saved capture remains failed incoming-attack evidence. Its player hits must not be relabelled as enemy-caused reactions."
+  ]
+}
