@@ -366,7 +366,8 @@ const idle_gedan_b = derive(idle_gedan, P({
 // ===========================================================================
 // Every locomotion clip is authored as a normalised 1.0-second cycle with the
 // RIGHT foot contacting at phase 0. Rig.js drives the phase from distance
-// travelled, not from wall time, which is the only reliable cure for foot skate.
+// travelled. Rig.js pins the stance ankle in world space and solves the swing
+// separately; synchronising cadence alone cannot make an authored pose stop sliding.
 // Because every cycle shares that convention, the 2D blend space can cross-fade
 // walk↔run↔strafe mid-stride without the feet ever disagreeing about which one
 // is planted.
@@ -2858,10 +2859,10 @@ export function hasClip(name) {
  * pair from this and cross-fades; adding a gait means adding it here, in order.
  */
 export const LOCOMOTION_FORWARD = Object.freeze([
-  { clip: 'idle_drawn_seigan', speed: 0.0, stride: 1.0 },
-  { clip: 'walk', speed: 1.9, stride: 1.34 },
-  { clip: 'run', speed: 5.4, stride: 2.05 },
-  { clip: 'sprint', speed: 7.2, stride: 2.48 },
+  { clip: 'idle_drawn_seigan', speed: 0.0, stride: 1.0, contact: 0.5, lift: 0.12 },
+  { clip: 'walk', speed: 1.9, stride: 1.34, contact: 0.5, lift: 0.12 },
+  { clip: 'run', speed: 5.4, stride: 2.05, contact: 0.34, lift: 0.23 },
+  { clip: 'sprint', speed: 7.2, stride: 2.48, contact: 0.3, lift: 0.30 },
 ]);
 
 export const LOCOMOTION_BACK = Object.freeze({ clip: 'walk_back', speed: 1.7, stride: 1.05 });
