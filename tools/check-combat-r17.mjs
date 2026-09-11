@@ -111,6 +111,55 @@ function parryResolution(late) {
   };
 }
 
+function defensiveContract() {
+  const { combat, enemy, player, events } = fixture();
+  combat.update(1 / 60, 0, 1 / 60);
+
+  combat.grantIFrames(player);
+  const dodged = combat.applyDamage(enemy, player, 15);
+  const healthAfterDodge = player.health;
+  combat.time += TUNING.DODGE_IFRAMES + 0.01;
+
+  enemy.weapon.posture = 12;
+  combat.setGuard(player, true, 1);
+  const guarded = combat.applyDamage(enemy, player, 15);
+  const healthAfterGuard = player.health;
+  const playerPostureAfterGuard = player.posture;
+  const attackerPostureAfterGuard = enemy.posture;
+
+  combat.time += 2;
+  combat.requestParry(player);
+  combat.applyDamage(enemy, player, 15);
+  const punishRemaining = combat._records.get(enemy).punishUntil - combat.time;
+
+  return {
+    perfectWindow: TUNING.PARRY_PERFECT,
+    lateWindow: TUNING.PARRY_LATE,
+    punishWindow: TUNING.PUNISH_WINDOW,
+    dodged, healthAfterDodge,
+    guarded, healthAfterGuard, playerPostureAfterGuard, attackerPostureAfterGuard,
+    punishRemaining,
+    perfectParries: events.filter((e) => e.name === 'parry' && e.perfect).length,
+  };
+}
+
+function defaultPressureRace(archetype, damages) {
+  const { combat, enemy, player, events } = fixture(CombatDirector, archetype);
+  const samples = [];
+  for (const damage of damages) {
+    combat.applyDamage(player, enemy, damage, { ignoreDefence: true, poise: 0 });
+    samples.push({ damage, health: enemy.health, posture: enemy.posture, state: enemy.state });
+    if (enemy.state === 'postureBroken' || enemy.health <= 0) break;
+  }
+  return {
+    archetype,
+    samples,
+    brokeAlive: enemy.state === 'postureBroken' && enemy.health > 0,
+    breaks: events.filter((e) => e.name === 'posture-break').length,
+    deaths: events.filter((e) => e.name === 'death').length,
+  };
+}
+
 function pressureFinisher() {
   const { combat, enemy, player, events } = fixture();
   combat.update(1 / 60, 0, 1 / 60);
@@ -164,7 +213,7 @@ function retryCleanup() {
 
 const evidence = {
   baseline: { regen: regenDuringEnemyLock(BaselineCombat), firstContact: firstContactClassification(BaselineCombat), playerRecovery: playerRewardRecovery(BaselineCombat), heavySlash: authoredHeavyContact(BaselineCombat, 'd_dr', false), heavyFinisher: authoredHeavyContact(BaselineCombat, 'heavy', true) },
-  current: { regen: regenDuringEnemyLock(CombatDirector), firstContact: firstContactClassification(CombatDirector), playerRecovery: playerRewardRecovery(CombatDirector), heavySlash: authoredHeavyContact(CombatDirector, 'd_dr', false), heavyFinisher: authoredHeavyContact(CombatDirector, 'heavy', true), perfect: parryResolution(false), late: parryResolution(true), finisher: pressureFinisher(), retry: retryCleanup() },
+  current: { regen: regenDuringEnemyLock(CombatDirector), firstContact: firstContactClassification(CombatDirector), playerRecovery: playerRewardRecovery(CombatDirector), heavySlash: authoredHeavyContact(CombatDirector, 'd_dr', false), heavyFinisher: authoredHeavyContact(CombatDirector, 'heavy', true), perfect: parryResolution(false), late: parryResolution(true), defence: defensiveContract(), ashigaruRace: defaultPressureRace('ashigaru', [34, 25.5, 49.4]), roninRace: defaultPressureRace('ronin', [24, 17, 25.5, 35.1, 28.5]), finisher: pressureFinisher(), retry: retryCleanup() },
   scope: 'Pure Node integration of Combat with real Enemy/EnemyManager callbacks; no renderer, DOM input, AI encounter policy, or BM-COMBAT-02 runtime sample.',
 };
 console.log(JSON.stringify(evidence, null, 2));
@@ -185,6 +234,26 @@ if (!process.argv.includes('--observe')) {
   assert.equal(evidence.current.perfect.playerHealth, 100);
   assert.equal(evidence.current.late.attackerPressure, TUNING.PARRY_LATE_POSTURE);
   assert.equal(evidence.current.late.playerHealth, 100 - 15 * TUNING.PARRY_LATE_DAMAGE * TUNING.DIFFICULTY.normal.enemyDamage);
+  assert.equal(evidence.current.defence.perfectWindow, 0.130);
+  assert.ok(evidence.current.defence.lateWindow > 0);
+  assert.equal(evidence.current.defence.punishWindow, 0.75);
+  assert.equal(evidence.current.defence.dodged, false);
+  assert.equal(evidence.current.defence.healthAfterDodge, 100);
+  assert.equal(evidence.current.defence.guarded, true);
+  assert.ok(Math.abs(evidence.current.defence.healthAfterGuard -
+    (100 - 15 * TUNING.DIFFICULTY.normal.enemyDamage * TUNING.CHIP_RESIDUE)) < 1e-9);
+  assert.ok(evidence.current.defence.playerPostureAfterGuard > 0,
+    'Guard must convert the incoming blow into posture pressure');
+  assert.ok(evidence.current.defence.attackerPostureAfterGuard < 55,
+    'Guard must return some posture pressure to the attacker');
+  assert.ok(Math.abs(evidence.current.defence.punishRemaining - 0.75) < 1e-9);
+  assert.equal(evidence.current.defence.perfectParries, 1);
+  for (const race of [evidence.current.ashigaruRace, evidence.current.roninRace]) {
+    assert.equal(race.brokeAlive, true,
+      `${race.archetype} must enter a posture-break execution opening before HP depletion`);
+    assert.equal(race.breaks, 1);
+    assert.equal(race.deaths, 0);
+  }
   assert.deepEqual(evidence.current.finisher, { broken: true, healthBeforeExecution: 70, accepted: true, healthAfterExecution: 0, breaks: 1, deaths: 1, phases: ['start', 'impact', 'end'] });
   assert.deepEqual(evidence.current.retry, { projectileCount: 0, executionActive: false, activeTokens: 0, invulnerable: false, healthBefore: 100, healthAfter: 100, timeScale: 1, clockRemainsMonotonic: true });
   console.log('R17 combat checks passed. BM-COMBAT-02 still requires the full encounter capture.');

@@ -11,10 +11,10 @@
   "baseSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
   "activePlanNode": "R17-GAMEPLAY",
   "activeTask": "R17-GAMEPLAY",
-  "lastSuccessfulAction": "Candidate d494 completed five native frames and 20 encounters. Technical gates passed, BM-ANIM-01 validly passed at 233 ms shortest onset, and the raw combat denominator defect was isolated with a regression test.",
-  "currentFailingAction": "Overall criteria still fail: corrected BM-COMBAT-02 is 15/31 = 48.39% against 60%; BM-CAMERA-04 and audio/character evidence remain inconclusive; the motion job stopped before capture because ffmpeg was absent; real-device/human criteria remain open.",
-  "currentHypothesis": "Anonymous compatibility death notifications inflated the combat denominator but are not the full failure; after correction the game still resolves too many enemies through HP before posture.",
-  "nextAction": "Publish the ffmpeg workflow and denominator repair to the existing criteria branch with motion opt-in; inspect the new 20-encounter and 300-frame artifacts, obtain independent visual/motion review, then tune the remaining verified combat failure.",
+  "lastSuccessfulAction": "Candidate 9a2 completed five native frames, 20 encounters and all 300 rendered motion frames. Technical gates and BM-ANIM-01 passed; ffmpeg/ffprobe produced frame-count-verified native MP4s and preserved them.",
+  "currentFailingAction": "Overall criteria still fail: corrected BM-COMBAT-02 is 5/16 = 31.25% against 60%; BM-CAMERA-04 and audio/character evidence remain inconclusive; the motion combat clip had zero enemy-attributable impact reactions; real-device/human criteria remain open.",
+  "currentHypothesis": "The 9a2 black staircase is quarter-resolution god-ray occlusion extruding a near fighter toward the sun, not Rig geometry, TAA or motion blur. Posture-per-damage 1.15 projects 14/16 posture-resolved deaths when replayed over the same health-only sequences. Both predictions require fresh runtime evidence.",
+  "nextAction": "Publish the post-9a2 source and apparatus repairs with normal [motion] opt-in, run full five-frame and >=20-encounter evidence plus 300 motion frames, inspect coverage and obtain fresh independent review.",
   "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
   "pendingVerification": [
    "Same 20-encounter policy after removing duplicate heavy damage.",
@@ -41,7 +41,7 @@
   ],
   "remotePushPendingAuthorization": false,
   "remoteReleaseAuthorized": true,
-  "remotePublicationStatus": "candidate d4941ca and recovery bb5c49f are published; d494 five-frame/20-encounter evidence is preserved, while the ffmpeg apparatus repair awaits exact-tree publication/CI; main remains 4e6d23a",
+  "remotePublicationStatus": "candidate 9a2e039 and recovery bb5c49f are published; five-frame, 20-encounter and failed-but-complete motion artifacts are preserved; post-9a2 gameplay/render/apparatus repairs await exact-tree publication and full CI; main remains 4e6d23a",
   "publishedMainSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
   "publishedUrl": "https://bachikoljunior-blip.github.io/game2/",
   "continuationAutomation": {

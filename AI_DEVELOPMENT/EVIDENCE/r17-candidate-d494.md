@@ -46,14 +46,15 @@ build fingerprint.
   measurement.
 - `BM-PERF-05`: container-only PASS; it is not physical-phone performance evidence.
 
-## Motion job failure and continuation
+## Motion job continuation
 
-The 300-frame motion job did not reach capture. The runner returned exit 127 at
-`ffmpeg -version`; Playwright's private media helper did not provide `ffmpeg`/`ffprobe`
-on `PATH`. The workflow now installs the Ubuntu `ffmpeg` package and verifies both
-binaries before capture. This is apparatus repair only; no motion or visual criterion is
-treated as passed until the new artifact is produced and independently reviewed.
+The first motion attempt did not reach capture because `ffmpeg` was absent. The repaired
+workflow then generated all 300 frames and both MP4s at `9a2e039`, but correctly failed its
+combat-coverage gate because no real impact reaction occurred. The exact hashes, failure
+and replacement player script are recorded in `r17-motion-9a2.md`. No motion or visual
+criterion is treated as passed until a complete replacement artifact is produced and
+independently reviewed.
 
-Next: run the repaired workflow, inspect its 300 consecutive rendered frames, obtain a
-fresh independent visual review, then tune the combat posture/HP balance from the verified
-31-death denominator. Do not merge to `main` or publish Pages while the round remains FAIL.
+Next: verify the post-9a2 gameplay/render repairs recorded in `r17-repairs-after-9a2.md`
+through the full five-frame, 20-encounter and 300-frame CI, then obtain a fresh independent
+visual review. Do not merge to `main` or publish Pages while the round remains FAIL.

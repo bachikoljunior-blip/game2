@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "updatedAt": "2026-09-11T16:38:00Z",
+ "updatedAt": "2026-09-11T19:18:00Z",
  "status": "active",
  "project": {
   "name": "KAGEROU 陽炎",
@@ -11,7 +11,7 @@
   "workingBranch": "codex/game2-criteria-20260911",
   "workingBranchBaseSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
   "previousWorkingBranch": "claude/game-reference-benchmark-qh0v0q",
-  "workingBranchPublicationSha": "d4941ca027e805798e02837c0fac6f4158ebc5cd",
+  "workingBranchPublicationSha": "9a2e0395772315115ab7214475eef74cab3091f1",
   "resumedFromRef": "origin/main",
   "resumedFromSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
   "recoveryBranch": "codex/game2-smoke-20260911",
@@ -101,7 +101,7 @@
    "notCovered": "Physical-device/human gates, valid isolated shake ablation, enemy edge pixel survey, true-peak audio and motion-video review remain open. E01-COMBAT and E14-AI now have an actual 20-encounter sample.",
    "latestRun": {
     "tag": "ci-candidate",
-    "revision": "d4941ca027e805798e02837c0fac6f4158ebc5cd",
+    "revision": "9a2e0395772315115ab7214475eef74cab3091f1",
     "encounters": 20,
     "initialMetricVerdicts": {
      "pass": 14,
@@ -109,8 +109,8 @@
      "inconclusive": 3
     },
     "selfCheck": "120-frame determinism and render-substitution divergence are both zero. The screenshot rig is linked by SHA-256 and identical build fingerprint.",
-    "scope": "Initial metric outputs, not 14 newly verified benchmark entries. Animation calibration is now valid; sample audio peak is not true-peak proof. The raw trace recalculates BM-COMBAT-02 to 15/31 = 48.39% after excluding anonymous compatibility death notifications.",
-    "evidence": "AI_DEVELOPMENT/EVIDENCE/r17-candidate-d494.md"
+    "scope": "Initial metric outputs, not 14 newly verified benchmark entries. Animation calibration is valid; sample audio peak is not true-peak proof. The fresh corrected BM-COMBAT-02 result is 5/16 = 31.25% and remains below 60%.",
+    "evidence": "AI_DEVELOPMENT/EVIDENCE/r17-motion-9a2.md"
    }
   },
   "browserSmoke": {
@@ -134,7 +134,7 @@
    "Genshin Impact (touch layer and phone performance envelope only)"
   ],
   "criteria": "62 benchmark entries; legacy status counts remain 21 verified, 4 under review, 14 blocked, 23 proposed until the new evidence is matched to each full threshold. Round 17 measurement coverage is recorded separately; no thresholds were relaxed.",
-  "headlineGap": "Round 17 candidate d494 passes the technical five-frame gate and valid animation onset measurement (37/37, shortest 233 ms). Its 20-encounter raw trace yields 15 posture-resolved deaths out of 31 (48.39% against 60%) after fixing an anonymous-event denominator bug. Motion capture failed before sampling because the runner lacked ffmpeg; the workflow repair is pending CI. Fresh independent art review, physical-device and human gates are not passed.",
+  "headlineGap": "Round 17 candidate 9a2 passes the technical five-frame gate and valid animation onset measurement (40/40, shortest 233 ms). Its fresh 20-encounter run yields 5 posture-resolved deaths out of 16 (31.25% against 60%). All 300 rendered motion frames and both MP4s were generated, but combat had no impact reaction and independent motion review failed 35/100 on a black radial artifact, body overlap and primitive character construction. The local repair tree addresses posture pressure, near-character god-ray occlusion, disconnected cloth GPU attributes and the DOM-input clip plan; full CI and independent review remain required. Physical-device and human gates are not passed.",
   "structuralBlocker": "Local Chromium SIGTRAP and Cloud Browser WebGL limitations are bypassed using the already-authorized GitHub Actions execution surface. Actual capture and smoke evidence are available. Physical-device and human gates still require actual measurements.",
   "neverPerformed": [
    "A matched reference-title gameplay-video or physical-device comparison. Official publisher reference stills were fetched and supplied to a version-blind model critic on 2026-09-11.",
@@ -144,21 +144,22 @@
  },
  "currentWork": {
   "activeTask": "R17-GAMEPLAY",
-  "lastCompletedTask": "Candidate d494 completed five native frames and 20 encounters; animation passed, combat remained below target, and motion exposed a missing-ffmpeg apparatus fault.",
+  "lastCompletedTask": "Candidate 9a2 completed five native frames, 20 encounters and 300 motion frames; animation passed, combat remained below target, and motion correctly failed for zero impact reactions.",
   "nextTask": "R17-GAMEPLAY",
-  "nextStartingPoint": "Run the ffmpeg-repaired candidate workflow, inspect 300 rendered frames and obtain independent review. Then tune posture/HP balance using the corrected 31-death denominator; retain overall FAIL and do not publish while criteria remain unmet.",
+  "nextStartingPoint": "Publish the verified post-9a2 repair tree with normal [motion] opt-in because game source changed. Require the full five-frame gate, at least 20 encounters, a real reaction in 300 motion frames, then obtain independent review. Retain overall FAIL and do not publish main/Pages while criteria remain unmet.",
   "blockedBy": [],
   "remoteStateChangeAuthorized": true,
   "remotePolicy": "Across future sessions, push verified checkpoints, integrate them into main, and publish GitHub Pages without asking again. This remains active until the user changes it."
  },
  "knownUncertainty": [
-  "BM-COMBAT-02 is 48.39% (15/31) over 20 encounters after excluding anonymous compatibility death notifications; the unchanged threshold is 60%.",
-  "BM-ANIM-01 passes on d494: 37/37 measured, shortest onset 233 ms, with separate same-Rig calibration and the unchanged 140 ms threshold.",
-  "BM-CAMERA-04 shake ablation remains inconclusive: candidate paths diverged 12.581 m.",
+  "BM-COMBAT-02 is 31.25% (5/16) in the fresh 9a2 20-encounter run after excluding anonymous compatibility death notifications; the unchanged threshold is 60%.",
+  "BM-ANIM-01 passes on 9a2: 40/40 measured, shortest onset 233 ms, with separate same-Rig calibration and the unchanged 140 ms threshold.",
+  "BM-CAMERA-04 shake ablation remains inconclusive: candidate paths diverged 0.794 m.",
   "BM-CHAR-02 pixel survey was intentionally not run in the first CI and remains unmeasured.",
   "BM-AUDIO-03 recorded sample peak and an interpolated estimate; this does not verify the true-peak criterion.",
   "Independent version-blind visual review and separate refutation retained foliage and terrain blockers on the prior frame set; repaired d494 pixels require another independent review.",
-  "The d494 motion job produced no frames because ffmpeg/ffprobe were absent from PATH; the workflow now installs them but must rerun before review.",
+  "The 9a2 motion job produced all 300 frames and two valid MP4s, but zero enemy-attributable impact reactions; aggressive-v2 DOM input replaces the missed fixed tap/flick timeline for the next full-source candidate.",
+  "Independent motion review failed 9a2 at 35/100. Black radial artifacts are blocker; body overlap and primitive character construction are major. A separate refuter retained each symptom with narrower wording.",
   "Real iPhone and mid-range Android frame rate, boot, thermals and human ergonomics remain unmeasured.",
   "The revised source has not yet replaced the published Round 16 Pages payload."
  ]

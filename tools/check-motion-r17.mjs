@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { deflateSync } from 'node:zlib';
 import { chunk, encodePNG } from '../.kit/lib/image/png.mjs';
-import { inspectMotionPNG } from './motion-capture.mjs';
+import { inspectMotionPNG, motionPlans } from './motion-capture.mjs';
 
 const PNG_SIG = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 
@@ -78,4 +78,26 @@ test('transparent HUD pixels leave independently varied world evidence', () => {
   assert.deepEqual(result.faults, []);
   assert.equal(result.unoccludedWorld.samples, 64);
   assert.ok(result.unoccludedWorld.uniqueRGB > 2);
+});
+
+test('combat motion plan gets reactions through the validated DOM-input player script', () => {
+  const [locomotion, combat] = motionPlans({
+    gestureSafe: true,
+    gestureCentre: { x: 608, y: 164 },
+    stickOrigin: { x: 177, y: 265 },
+    stickRadius: 56,
+  });
+  assert.equal(locomotion.frames + combat.frames, 300);
+  assert.equal(combat.frames, 180);
+  assert.deepEqual(combat.conditions, {
+    playerScript: 'aggressive-v2',
+    reactionFloorMs: 200,
+    inputPath: 'DOM pointer and registered guard zone',
+    injectedCombatState: false,
+  });
+  assert.ok(combat.actions.some((action) => action.do === 'bot' && action.on === true
+    && action.policy === 'aggressive'));
+  assert.ok(combat.actions.some((action) => action.do === 'bot' && action.on === false));
+  assert.equal(combat.actions.some((action) => action.do === 'set'), false,
+    'the sample must not inject a combat state');
 });

@@ -187,6 +187,24 @@ function git(args) {
   return execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 }
 
+function revisionIdentity() {
+  const status = git(['status', '--porcelain', '--untracked-files=all']);
+  const rows = status ? status.split('\n') : [];
+  // The workflow intentionally downloads its same-build interaction report
+  // before motion capture. That report is untracked because shots/ is evidence,
+  // not source. Preserve it in the identity record without calling the source
+  // revision dirty; every other tracked or untracked change still does.
+  const carriedEvidence = rows.filter((row) => /^\?\? shots\/interaction-[\w.-]+\.json$/.test(row));
+  const unexpected = rows.filter((row) => !carriedEvidence.includes(row));
+  return {
+    sha: git(['rev-parse', 'HEAD']),
+    branch: git(['branch', '--show-current']),
+    dirty: unexpected.length > 0,
+    carriedEvidence: carriedEvidence.map((row) => row.slice(3)),
+    unexpectedStatus: unexpected,
+  };
+}
+
 // Byte-for-byte identical to the identity algorithm in both existing capture tools.
 function fingerprintTree(dir) {
   const hash = createHash('sha256');
@@ -309,13 +327,12 @@ async function serve() {
   return server;
 }
 
-function plans(layout) {
+export function motionPlans(layout) {
   if (!layout.gestureSafe) throw new Error('No safe live gesture area; cannot synthesize a reliable touch sequence.');
   const origin = layout.stickOrigin;
   const stick = (f, magnitude) => ({ f, do: 'touchMove', id: 80, x: origin.x,
     y: origin.y - stickOffset(magnitude, layout.stickRadius) });
   const reset = (yaw) => ({ f: 0, do: 'resetEncounter', x: -5, z: 26, yaw, label: 'motion-fixture' });
-  const gx = layout.gestureCentre.x, gy = layout.gestureCentre.y;
   return [
     { id: 'locomotion', frames: 120, render: true, dtMs: DT_MS,
       probes: ['player', 'input', 'feet', 'camera', 'stats'],
@@ -330,14 +347,16 @@ function plans(layout) {
       actions: [reset(0),
         { f: 1, do: 'call', target: 'enemies', method: 'spawnWave', args: [1,
           { seed: 0x77aa, alerted: true, archetypes: ['ashigaru'], radius: 2.8 }] },
-        { f: 2, do: 'lockIfFree' }, { f: 3, do: 'mark', label: 'observe-enemy-without-defence' },
-        { f: 105, do: 'touchDown', id: 40, x: gx, y: gy },
-        { f: 108, do: 'touchUp', id: 40, x: gx, y: gy },
-        { f: 145, do: 'touchDown', id: 41, x: gx, y: gy },
-        ...Array.from({ length: 6 }, (_, i) => ({ f: 146 + i, do: 'touchMove', id: 41,
-          x: gx + (i + 1) * 18, y: gy + (i + 1) * 3 })),
-        { f: 152, do: 'touchUp', id: 41, x: gx + 108, y: gy + 18 }],
-      description: 'One alerted AI enemy, real lock-on via DOM input, passive first 105 frames, then a tap and flick. No attack or reaction state is injected.' },
+        { f: 2, do: 'lockIfFree' },
+        // The aggressive-v2 script approaches, guards and attacks only through
+        // real DOM input. The prior fixed tap/flick timeline stayed outside an
+        // enemy hit volume and captured no actual combat reaction.
+        { f: 3, do: 'bot', on: true, policy: 'aggressive' },
+        { f: 3, do: 'mark', label: 'scripted-input-combat' },
+        { f: 178, do: 'bot', on: false }],
+      conditions: { playerScript: 'aggressive-v2', reactionFloorMs: 200,
+        inputPath: 'DOM pointer and registered guard zone', injectedCombatState: false },
+      description: 'One alerted AI enemy and real lock-on. The aggressive-v2 player script approaches, guards and attacks through DOM input; no attack, hit or reaction state is injected.' },
   ];
 }
 
@@ -554,8 +573,7 @@ async function main() {
   process.once('SIGINT', interrupt); process.once('SIGTERM', terminate);
   try {
     if (!existsSync(join(DIST, 'index.html'))) throw new Error('dist/index.html missing; build separately before running motion capture.');
-    manifest.revision = { sha: git(['rev-parse', 'HEAD']), branch: git(['branch', '--show-current']),
-      dirty: git(['status', '--porcelain']).length > 0 };
+    manifest.revision = revisionIdentity();
     manifest.build = { fingerprint: fingerprintTree(DIST) };
     manifest.harness = { file: rel(RUNTIME), sha256: sha256(readFileSync(RUNTIME)) };
     manifest.pngApparatus = { decoder: '.kit/lib/image/png.mjs', measurement: '.kit/lib/image/measure.mjs',
@@ -583,7 +601,7 @@ async function main() {
     const { page, info } = await boot(context, `http://127.0.0.1:${server.address().port}`, manifest.errors);
     manifest.boot = info;
     temporary = mkdtempSync(join(OUT, '.frames-'));
-    const sequences = plans(info.layout);
+    const sequences = motionPlans(info.layout);
     if (sequences.reduce((sum, plan) => sum + plan.frames, 0) > FRAME_BUDGET) throw new Error('Plan exceeds 300-frame budget.');
     manifest.status = 'capturing'; flush();
     for (const plan of sequences) {

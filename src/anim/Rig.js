@@ -26,7 +26,7 @@
 
 import {
   Bone, Skeleton, SkinnedMesh, Mesh, Group, Object3D,
-  BufferGeometry, Float32BufferAttribute, Uint16BufferAttribute,
+  BufferAttribute, BufferGeometry, Float32BufferAttribute, Uint16BufferAttribute,
   Vector3, Quaternion, Matrix4, Euler, Color, Sphere,
   MeshStandardMaterial, DoubleSide, FrontSide, DynamicDrawUsage,
 } from 'three';
@@ -1930,9 +1930,18 @@ class ClothBatch {
     const idx = [];
     for (const p of this.patches) p.writeStatic(uv, col, rm, idx);
 
+    // Float32BufferAttribute deliberately clones a supplied typed array. That is
+    // correct for the static attributes below, but fatal for the two arrays the
+    // Verlet solver rewrites: `flush()` would update ClothBatch.pos/nor while the
+    // GPU attributes kept their all-zero construction copies. Use BufferAttribute
+    // for those live arrays and seed them before the first render, so the batch is
+    // neither disconnected from the solver nor a one-frame degenerate mesh at the
+    // rig origin.
+    for (const p of this.patches) p.flush();
+
     const g = new BufferGeometry();
-    g.setAttribute('position', new Float32BufferAttribute(this.pos, 3));
-    g.setAttribute('normal', new Float32BufferAttribute(this.nor, 3));
+    g.setAttribute('position', new BufferAttribute(this.pos, 3));
+    g.setAttribute('normal', new BufferAttribute(this.nor, 3));
     g.setAttribute('uv', new Float32BufferAttribute(uv, 2));
     g.setAttribute('color', new Float32BufferAttribute(col, 3));
     g.setAttribute('aRM', new Float32BufferAttribute(rm, 2));

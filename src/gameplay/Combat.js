@@ -58,7 +58,9 @@ export const TUNING = {
   STAGGER_TIME: 0.42,           // s of a normal directional stagger (420 ms)
 
   // ── posture ────────────────────────────────────────────────────────────────
-  POSTURE_PER_DAMAGE: 0.85,     // posture added per point of damage dealt to health
+  POSTURE_PER_DAMAGE: 1.15,     // posture added per point of damage dealt to health;
+                                // direct pressure must beat HP depletion, even when a
+                                // large authored hit would otherwise empty both at once
   POSTURE_REGEN: 22.0,          // posture/s baseline regeneration
   POSTURE_REGEN_DELAY: 0.55,    // s of no pressure before regeneration starts at all (550 ms)
   POSTURE_REGEN_RAMP: 1.6,      // s of continued calm needed to reach the unpressured rate

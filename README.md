@@ -80,10 +80,11 @@ enclosed space, and Genshin's sustained thermal behaviour on mid-range Android. 
 only — nothing from any reference's characters, world, layout, UI, staging or music is
 copied, and no reference title is named in the shipped product.
 
-**As of 2026-09-11, candidate `d4941ca` has an executed 20-encounter combat/AI sample,
-five native phone/MEDIUM frames, and a passing production/touch/graphics-recovery smoke.**
+**As of 2026-09-11, candidate `9a2e039` has an executed 20-encounter combat/AI sample,
+five native phone/MEDIUM frames, 300 rendered motion frames, and a passing
+production/touch/graphics-recovery smoke.**
 Coverage is not quality: the latest interaction metrics returned 14 pass, 1 fail and 3
-inconclusive. Attack-motion onset now validly passes (37/37 attacks, shortest 233 ms), but
+inconclusive. Attack-motion onset now validly passes (40/40 attacks, shortest 233 ms), but
 the posture-resolution target remains unmet and sample audio peak does not establish true
 peak. Independent version-blind review of the prior still set judged both versions below
 the visual bar; the repaired frames still need fresh independent review. No matched
@@ -110,10 +111,24 @@ The repaired harness records changed stimuli explicitly, so cross-version number
 identical-input comparisons. The stored report initially counted anonymous compatibility
 notifications as enemy deaths. Re-evaluating the unchanged raw trace with authoritative
 entity deaths gives 15 of 31 posture-resolved deaths (48.39%), below the unchanged 60%
-target. The apparatus correction has a regression test. The 300-frame video job did not
-reach capture because its runner lacked ffmpeg; the workflow now installs and verifies
-ffmpeg/ffprobe, pending a fresh run. Exact evidence and artifact hashes:
-[`r17-candidate-d494.md`](AI_DEVELOPMENT/EVIDENCE/r17-candidate-d494.md).
+target. The apparatus correction has a regression test. A fresh corrected run measured
+5 of 16 posture-resolved deaths (31.25%), still below the same target, while all 40 sampled
+attack startups met the 233 ms minimum. The 300-frame job produced valid locomotion and
+combat MP4s, but its combat coverage had no enemy-attributable impact reaction. Independent
+review also rejected the sample for dominant black staircase artifacts, combat-body overlap,
+and primitive character construction. The replacement plan drives the validated aggressive-v2
+bot exclusively through registered DOM pointer/guard input. Exact evidence and artifact hashes:
+[`r17-candidate-d494.md`](AI_DEVELOPMENT/EVIDENCE/r17-candidate-d494.md) and
+[`r17-motion-9a2.md`](AI_DEVELOPMENT/EVIDENCE/r17-motion-9a2.md).
+
+The next local repair tree raises ordinary hit posture pressure only after replaying the
+fresh health-only sequences, removes near-character silhouettes from the quarter-resolution
+god-ray occlusion integral while retaining world occluders, reconnects cloth simulation
+arrays to their GPU attributes, and replaces the missed fixed combat inputs with the
+validated DOM-input aggressive script. Focused checks pass, but none of those repairs count
+until a fresh full CI run, native rendered evidence, and independent review complete. Exact
+diagnosis and verification boundary:
+[`r17-repairs-after-9a2.md`](AI_DEVELOPMENT/EVIDENCE/r17-repairs-after-9a2.md).
 
 [Native input/recovery CI](https://github.com/bachikoljunior-blip/game2/actions/runs/34605905851)
 passed two fresh browser contexts, native Dodge/context touches, real WebGL loss/restoration,

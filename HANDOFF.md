@@ -27,23 +27,34 @@ art-direction state record; project-wide session, plan and criterion pointers li
   **`4e6d23a40af33bb3ba409b3826e77666262ce353`**. The user's 2026-09-11 request explicitly
   resumes development until the established criteria are met. Round 17 is active; five
   gameplay owners' repairs plus integrated UI/recovery changes pass focused Node checks
-  and the production build. Candidate **`d4941ca027e805798e02837c0fac6f4158ebc5cd`**
-  completed [five-frame capture and 20 encounters](https://github.com/bachikoljunior-blip/game2/actions/runs/34615869197).
+  and the production build. Candidate **`9a2e0395772315115ab7214475eef74cab3091f1`**
+  completed [five-frame capture, 20 encounters, and 300 motion frames](https://github.com/bachikoljunior-blip/game2/actions/runs/34622792639).
   The technical five-frame gate passed (119 calls / 804,744 triangles). Initial interaction
-  metrics were 14 pass / 1 fail / 3 inconclusive. `BM-ANIM-01` validly passed with 37/37
+  metrics were 14 pass / 1 fail / 3 inconclusive. `BM-ANIM-01` validly passed with 40/40
   attacks and a 233 ms shortest onset. The stored combat report's 66-death denominator was
-  inflated by anonymous compatibility events; the unchanged raw trace recalculates to 15/31
-  posture-resolved deaths (**48.39%**, still FAIL against 60%). Exact evidence and artifact
-  hashes are in `AI_DEVELOPMENT/EVIDENCE/r17-candidate-d494.md`. The 300-frame motion job
-  stopped before capture because ffmpeg was absent from PATH; the workflow installs and
-  verifies ffmpeg/ffprobe on the next run. The
+  inflated by anonymous compatibility events. The fresh corrected run measured 5/16
+  posture-resolved deaths (**31.25%**, still FAIL against 60%). Exact gameplay evidence and
+  artifact hashes are in `AI_DEVELOPMENT/EVIDENCE/r17-candidate-d494.md`. The motion job
+  produced valid 120-frame locomotion and 180-frame combat MP4s, but the combat clip had
+  zero enemy-attributable impact reactions and therefore failed coverage. A replacement
+  plan uses the already-validated aggressive-v2 bot through registered DOM pointer/guard
+  input, with no game-state injection. Exact motion hashes and failure scope are in
+  `AI_DEVELOPMENT/EVIDENCE/r17-motion-9a2.md`. The
   source-blind K/M critic scored both versions 45/100, FAIL; separate refutation retained the
   foliage and terrain blockers and narrowed the lantern finding from major to minor. Exact
   mapping, hashes and limitations are in `AI_DEVELOPMENT/EVIDENCE/r17-visual-review.md`.
   This is a same-critic tie, not a regression claim against earlier critics' scores.
   resulting repairs remove duplicate heavy damage, pooled-enemy state leakage and recursive
   shake ownership, and replace the proven crossed foliage cards and folded macro ridge
-  mechanism. Fresh independent visual review and 300-frame motion evidence remain pending.
+  mechanism. Fresh independent review of the motion sample failed it at 35/100 because of
+  dominant black staircase artifacts, combat-body overlap, primitive character construction,
+  and missing impact evidence. Corrected motion capture and a fresh independent review remain
+  pending. The post-9a2 local repair tree reconnects cloth solver arrays to their live GPU
+  attributes, excludes only isolated 6–12 m character silhouettes from the quarter-resolution
+  god-ray integral, raises ordinary posture pressure after replaying the fresh health-only
+  sequences, and replaces the missed combat inputs with the validated aggressive-v2 DOM
+  script. Focused checks pass; full five-frame, 20-encounter, 300-frame and independent-review
+  evidence is still required. See `AI_DEVELOPMENT/EVIDENCE/r17-repairs-after-9a2.md`.
   Recovery source **`bb5c49f1b8ffee0406a2b0e60d520b8c80d40320`** on
   `codex/game2-smoke-20260911` passed actual native touch and WebGL recovery in
   [run 34605905851](https://github.com/bachikoljunior-blip/game2/actions/runs/34605905851).
