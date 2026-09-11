@@ -11,10 +11,10 @@
   "baseSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
   "activePlanNode": "R17-GAMEPLAY",
   "activeTask": "R17-GAMEPLAY",
-  "lastSuccessfulAction": "Integrated local Round 17 candidate passes npm run check, all 14 focused test files, ownership/state validation and production build. Enemy reset, shake ownership, duplicate heavy damage, idle calibration, foliage, terrain and lantern repairs are ready for rendered CI.",
-  "currentFailingAction": "Overall criteria still fail: the last measured posture-resolution fraction is 5/33; repaired five-frame art, 20 encounters and 300 motion frames have not yet run; real-device/human criteria remain open.",
-  "currentHypothesis": null,
-  "nextAction": "Publish the exact tested tree to the existing criteria branch with the motion opt-in; inspect five native frames, 20 encounters and 300 motion frames, repair failures, then integrate only verified results.",
+  "lastSuccessfulAction": "Candidate d494 completed five native frames and 20 encounters. Technical gates passed, BM-ANIM-01 validly passed at 233 ms shortest onset, and the raw combat denominator defect was isolated with a regression test.",
+  "currentFailingAction": "Overall criteria still fail: corrected BM-COMBAT-02 is 15/31 = 48.39% against 60%; BM-CAMERA-04 and audio/character evidence remain inconclusive; the motion job stopped before capture because ffmpeg was absent; real-device/human criteria remain open.",
+  "currentHypothesis": "Anonymous compatibility death notifications inflated the combat denominator but are not the full failure; after correction the game still resolves too many enemies through HP before posture.",
+  "nextAction": "Publish the ffmpeg workflow and denominator repair to the existing criteria branch with motion opt-in; inspect the new 20-encounter and 300-frame artifacts, obtain independent visual/motion review, then tune the remaining verified combat failure.",
   "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
   "pendingVerification": [
    "Same 20-encounter policy after removing duplicate heavy damage.",
@@ -41,7 +41,7 @@
   ],
   "remotePushPendingAuthorization": false,
   "remoteReleaseAuthorized": true,
-  "remotePublicationStatus": "candidate 7c2ed04 and recovery bb5c49f are published; integrated local candidate is tested and awaiting exact-tree publication/CI; main remains 4e6d23a",
+  "remotePublicationStatus": "candidate d4941ca and recovery bb5c49f are published; d494 five-frame/20-encounter evidence is preserved, while the ffmpeg apparatus repair awaits exact-tree publication/CI; main remains 4e6d23a",
   "publishedMainSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
   "publishedUrl": "https://bachikoljunior-blip.github.io/game2/",
   "continuationAutomation": {

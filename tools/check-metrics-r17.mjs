@@ -130,8 +130,11 @@ const events = Array.from({ length: 20 }, (_, f) => ({ name: 'mark', label: `enc
 for (let id = 1; id <= 5; id++) {
   events.push({ name: 'execution', phase: 'impact', victim: { id }, f: 30 + id });
   events.push({ name: 'death', entity: { id, faction: 'oni' }, f: 30 + id });
+  events.push({ name: 'death', f: 30 + id }); // anonymous compatibility notification
 }
-assert.equal(postureResolution({ events })[0].measured.postureResolvedFraction, 1, 'execution payload names victim, not entity');
+const executionResolution = postureResolution({ events })[0];
+assert.equal(executionResolution.measured.enemyDeaths, 5, 'anonymous compatibility deaths do not inflate the denominator');
+assert.equal(executionResolution.measured.postureResolvedFraction, 1, 'execution payload names victim, not entity');
 const path = process.argv.find(arg => arg.startsWith('--trace='))?.slice('--trace='.length);
 if (path) {
   const actual = animStartup(JSON.parse(readFileSync(path, 'utf8')))[0];

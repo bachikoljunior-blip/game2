@@ -80,15 +80,14 @@ enclosed space, and Genshin's sustained thermal behaviour on mid-range Android. 
 only — nothing from any reference's characters, world, layout, UI, staging or music is
 copied, and no reference title is named in the shipped product.
 
-**As of 2026-09-11, the candidate has an executed 20-encounter combat/AI sample, five
-native phone/MEDIUM frames, and a passing production/touch/graphics-recovery smoke.**
-Coverage is not quality: the initial interaction metrics returned 14 pass, 2 fail and 2
-inconclusive. The posture-resolution target remains unmet; attack-motion calibration needs
-a clean idle reference, and sample audio peak does not establish true peak. Independent
-version-blind still review against supplied official reference screenshots judged both
-versions below the visual bar. A separate source-blind refuter retained the foliage and
-terrain blockers and narrowed the lantern issue to minor. No matched reference gameplay,
-real-device performance or human review is claimed.
+**As of 2026-09-11, candidate `d4941ca` has an executed 20-encounter combat/AI sample,
+five native phone/MEDIUM frames, and a passing production/touch/graphics-recovery smoke.**
+Coverage is not quality: the latest interaction metrics returned 14 pass, 1 fail and 3
+inconclusive. Attack-motion onset now validly passes (37/37 attacks, shortest 233 ms), but
+the posture-resolution target remains unmet and sample audio peak does not establish true
+peak. Independent version-blind review of the prior still set judged both versions below
+the visual bar; the repaired frames still need fresh independent review. No matched
+reference gameplay, real-device performance or human review is claimed.
 
 ## Where this build actually stands
 
@@ -98,18 +97,23 @@ real-device performance or human review is claimed.
 ### 2026-09-11 candidate: measured gameplay progress, overall criteria unmet
 
 The current candidate fixes foot planting, attack-window timing, posture pressure, camera
-collision, contextual input, encounter progression and restart. Eight focused behavioral
+collision, contextual input, encounter progression and restart. Fourteen focused behavioral
 test files pass, along with the production build, ownership and project-state checks.
 The small-screen layout also includes context and pause controls in its overlap audit.
 
-[CI run](https://github.com/bachikoljunior-blip/game2/actions/runs/34602120671) captured the
-unchanged main baseline and candidate at phone/MEDIUM, then executed 20 scripted encounters.
-The candidate stayed within 119 draw calls / 789,214 triangles across the five fixed views.
+[CI run](https://github.com/bachikoljunior-blip/game2/actions/runs/34615869197) captured
+candidate `d4941ca` at phone/MEDIUM, then executed 20 scripted encounters. The candidate
+stayed within 119 draw calls / 804,744 triangles across the five fixed views.
 Reversals completed in 217 ms; planted-foot p95 drift was zero (worst 0.044 cm); the camera
 traverse had zero collider overlaps across 1,896 frames. These are instrumented scenarios.
 The repaired harness records changed stimuli explicitly, so cross-version numbers are not
-identical-input comparisons. Only 5 of 33 enemy deaths followed a posture break, below the
-60% target; a duplicate heavy-damage multiplier is now corrected pending another 20 fights.
+identical-input comparisons. The stored report initially counted anonymous compatibility
+notifications as enemy deaths. Re-evaluating the unchanged raw trace with authoritative
+entity deaths gives 15 of 31 posture-resolved deaths (48.39%), below the unchanged 60%
+target. The apparatus correction has a regression test. The 300-frame video job did not
+reach capture because its runner lacked ffmpeg; the workflow now installs and verifies
+ffmpeg/ffprobe, pending a fresh run. Exact evidence and artifact hashes:
+[`r17-candidate-d494.md`](AI_DEVELOPMENT/EVIDENCE/r17-candidate-d494.md).
 
 [Native input/recovery CI](https://github.com/bachikoljunior-blip/game2/actions/runs/34605905851)
 passed two fresh browser contexts, native Dodge/context touches, real WebGL loss/restoration,

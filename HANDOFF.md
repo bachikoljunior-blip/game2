@@ -27,21 +27,23 @@ art-direction state record; project-wide session, plan and criterion pointers li
   **`4e6d23a40af33bb3ba409b3826e77666262ce353`**. The user's 2026-09-11 request explicitly
   resumes development until the established criteria are met. Round 17 is active; five
   gameplay owners' repairs plus integrated UI/recovery changes pass focused Node checks
-  and the production build. The candidate at **`7c2ed042b0b9cb3eeef5fb5ff99e691eee5fc140`**
-  completed [CI capture and 20 encounters](https://github.com/bachikoljunior-blip/game2/actions/runs/34602120671).
-  The technical five-frame gate passed (119 calls / 789,214 triangles). Initial interaction
-  metrics were 14 pass / 2 fail / 2 inconclusive; the exact results and scope corrections
-  are in `AI_DEVELOPMENT/EVIDENCE/r17-ci-summary.json`. Heavy damage was multiplied twice;
-  the correction requires another identical-policy 20-encounter run. Motion-onset calibration
-  now has a separate same-Rig stationary-idle calibration, pending rendered CI. The
+  and the production build. Candidate **`d4941ca027e805798e02837c0fac6f4158ebc5cd`**
+  completed [five-frame capture and 20 encounters](https://github.com/bachikoljunior-blip/game2/actions/runs/34615869197).
+  The technical five-frame gate passed (119 calls / 804,744 triangles). Initial interaction
+  metrics were 14 pass / 1 fail / 3 inconclusive. `BM-ANIM-01` validly passed with 37/37
+  attacks and a 233 ms shortest onset. The stored combat report's 66-death denominator was
+  inflated by anonymous compatibility events; the unchanged raw trace recalculates to 15/31
+  posture-resolved deaths (**48.39%**, still FAIL against 60%). Exact evidence and artifact
+  hashes are in `AI_DEVELOPMENT/EVIDENCE/r17-candidate-d494.md`. The 300-frame motion job
+  stopped before capture because ffmpeg was absent from PATH; the workflow installs and
+  verifies ffmpeg/ffprobe on the next run. The
   source-blind K/M critic scored both versions 45/100, FAIL; separate refutation retained the
   foliage and terrain blockers and narrowed the lantern finding from major to minor. Exact
   mapping, hashes and limitations are in `AI_DEVELOPMENT/EVIDENCE/r17-visual-review.md`.
   This is a same-critic tie, not a regression claim against earlier critics' scores.
-  The resulting local repairs remove duplicate heavy damage, pooled-enemy state leakage and
-  recursive shake ownership, and replace the proven crossed foliage cards and folded macro
-  ridge mechanism. All 14 focused Round 17 test files, project checks and the production
-  build pass locally; visual, 20-encounter and 300-frame rendered CI evidence is still pending.
+  resulting repairs remove duplicate heavy damage, pooled-enemy state leakage and recursive
+  shake ownership, and replace the proven crossed foliage cards and folded macro ridge
+  mechanism. Fresh independent visual review and 300-frame motion evidence remain pending.
   Recovery source **`bb5c49f1b8ffee0406a2b0e60d520b8c80d40320`** on
   `codex/game2-smoke-20260911` passed actual native touch and WebGL recovery in
   [run 34605905851](https://github.com/bachikoljunior-blip/game2/actions/runs/34605905851).

@@ -311,7 +311,11 @@ export function shakeAblation(withShake, without) {
 /** BM-COMBAT-02 — posture, not an HP race, resolves fights. */
 export function postureResolution(trace) {
   if (!trace) return [result('BM-COMBAT-02', 'E01-COMBAT', 'encounters', 'inconclusive', null, null, 'scenario did not run', 'instrumented-runtime')];
-  const deaths = eventsNamed(trace, 'death').filter((d) => d.entity?.faction !== 'player');
+  // Effects also emits an anonymous legacy `death` notification for each
+  // authoritative entity death.  Anonymous notifications cannot identify a
+  // victim or faction and must not inflate the denominator.
+  const deaths = eventsNamed(trace, 'death').filter((d) =>
+    d.entity?.id != null && d.entity?.faction != null && d.entity.faction !== 'player');
   const breaks = eventsNamed(trace, 'posture-break');
   const execs = eventsNamed(trace, 'execution');
   const WINDOW = 6 / DT;             // frames — a break has to still be the cause
