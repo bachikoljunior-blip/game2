@@ -320,7 +320,8 @@ export function postureResolution(trace) {
   for (const d of deaths) {
     const id = d.entity?.id ?? null;
     const brokeFirst = breaks.some((b) => (b.entity?.id ?? null) === id && b.f <= d.f && d.f - b.f <= WINDOW);
-    const executed = execs.some((e) => (e.entity?.id ?? null) === id && Math.abs(e.f - d.f) <= WINDOW);
+    const executed = execs.some((e) => (e.victim?.id ?? e.entity?.id ?? null) === id &&
+      (!e.phase || e.phase === 'impact') && Math.abs(e.f - d.f) <= WINDOW);
     if (brokeFirst || executed) postureResolved++;
     per.push({ id, frame: d.f, postureBreakFirst: brokeFirst, executed });
   }
@@ -426,9 +427,9 @@ function histogram(values) {
  * BM-ANIM-01 — attack startup, measured from first visible motion.
  *
  * The criterion is explicit that the state change is not the measurement: it must be
- * taken from when the body actually starts to move. So the metric walks backwards from
- * the first damaging frame through the weapon-hand displacement series until motion
- * falls to the idle floor, and calls that the startup.
+ * taken from when the body actually starts to move. State and the attack clock only
+ * delimit each tell; the first above-idle hand movement starts the measurement. A
+ * held windup remains visible even when its instantaneous velocity falls to zero.
  */
 export function animStartup(trace) {
   if (!trace) return [result('BM-ANIM-01', 'E12-ANIMATION', 'anim-startup', 'inconclusive', null, null, 'scenario did not run')];
@@ -446,36 +447,40 @@ export function animStartup(trace) {
       if (!r || r[1] == null) continue;
       const id = r[0];
       if (!byId.has(id)) byId.set(id, []);
-      byId.get(id)[i] = { d: r[1], active: r[3] === 1 };
+      byId.get(id)[i] = { d: r[1], active: r[3] === 1, state: trace.stateNames?.[r[2]], attackTime: r[4] };
     }
   }
   const floors = [];
-  for (const series of byId.values()) {
-    const ds = series.filter(Boolean).map((s) => s.d).sort((a, b) => a - b);
-    floors.push(ds.length ? ds[Math.floor(ds.length * 0.5)] : 0);
-  }
-  const idleFloor = mean(floors) || 0;
   const startups = [];
   for (const [id, series] of byId) {
-    let prevActive = false;
+    const idle = series.filter((s) => s && s.state === 'idle' && !s.active).map((s) => s.d).sort((a, b) => a - b);
+    if (!idle.length) continue;
+    const floor = idle[Math.floor(idle.length * 0.5)];
+    floors.push(floor);
+    let prev = null, firstMotion = null, measuredWindow = false;
     for (let i = 0; i < series.length; i++) {
       const s = series[i];
-      if (!s) continue;
-      if (s.active && !prevActive) {
-        let j = i;
-        while (j > 0 && series[j - 1] && series[j - 1].d > idleFloor * 3) j--;
-        startups.push({ enemy: id, frame: i, startupMs: Math.round((i - j) * DT * 1000) });
+      if (!s) { prev = null; firstMotion = null; measuredWindow = false; continue; }
+      const newTell = s.state === 'attack' && (prev?.state !== 'attack' ||
+        (Number.isFinite(s.attackTime) && Number.isFinite(prev?.attackTime) && s.attackTime < prev.attackTime));
+      if (newTell || s.state !== 'attack') { firstMotion = null; measuredWindow = false; }
+      if (s.state === 'attack' && firstMotion === null && !measuredWindow && s.d > floor * 3) firstMotion = i;
+      if (s.active && !prev?.active) {
+        const lead = !measuredWindow && firstMotion !== null ? i - firstMotion : 0;
+        startups.push({ enemy: id, frame: i, startupMs: Math.round(lead * DT * 1000) });
+        measuredWindow = true;
       }
-      prevActive = s.active;
+      prev = s;
     }
   }
+  const idleFloor = mean(floors) || 0;
   const ms = startups.map((s) => s.startupMs);
   const shortest = ms.length ? Math.min(...ms) : null;
   return [result('BM-ANIM-01', 'E12-ANIMATION', 'anim-startup',
     ms.length < 3 ? 'inconclusive' : (shortest >= 140 ? 'pass' : 'fail'),
     { attacks: ms.length, shortestStartupMs: shortest, medianStartupMs: percentile(ms, 0.5), idleMotionFloorM: round(idleFloor, 6) },
     'visible startup ≥ 140 ms (EnemyAI REACTION_FLOOR) for every enemy attack',
-    ms.length < 3 ? 'not enough enemy attacks were observed to judge' : 'startup taken from first frame of weapon-hand motion above 3× the idle floor')];
+    ms.length < 3 ? 'not enough enemy attacks were observed to judge' : 'first motion above 3× each enemy idle floor within a new attack episode; held tells count, chained attack-clock resets delimit new tells')];
 }
 
 /** BM-ANIM-02 — the damaging window matches the visible sweep. */

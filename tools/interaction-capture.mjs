@@ -187,9 +187,11 @@ async function resetWorld(page, home, opts = {}) {
     if (!k) return;
     if (skipIntro) { k.menus?.skipIntro?.(); k.menus?.resume?.(); }
     k.enemies?.despawnAll?.();
+    k.combat?.reset?.();
     k.debugCam?.('off');
     k.input?.releaseAll?.();
     if (k.player && h) {
+      k.player.respawn?.({ x: h[0], y: h[1], z: h[2] });
       k.player.root.position.set(h[0], h[1], h[2]);
       k.player.controller?.teleport?.(h[0], h[1], h[2]);
       k.player.controller?.setPosition?.(k.player.root.position);
@@ -316,12 +318,18 @@ async function landmarkSurvey(page) {
     // "no landmark visible from any approach point", which was a fact about the rig.
     const base = k.player?.root?.position?.y ?? 0;
     const ground = (x, z) => {
-      const h = k.physics.raycastDown?.(x, base + 80, z, 400, 17);
+      // Start at walking head height. A ray from above every roof lands on a
+      // torii crossbar and surveys an aerial view no arriving player can have.
+      const terrain = k.terrain?.heightAt?.(x, z);
+      const origin = Number.isFinite(terrain) ? terrain + 1.8 : base + 80;
+      const h = k.physics.raycastDown?.(x, origin, z, 400, 17);
       return h && h.hit ? h.point.y : null;
     };
     // Plateau-local layout numbers from world/Level.js LAYOUT, resolved to world height
     // by raycast so this cannot drift from the terrain.
-    const anchors = [
+    const anchors = k.level?.landmarks?.length
+      ? k.level.landmarks.map((a) => ({ name: a.id, p: a.position.clone() }))
+      : [
       { name: 'great-torii', x: 0, z: 38.5, up: 5.6 },
       { name: 'honden-roof', x: 0, z: -4.5, up: 8.0 },
       { name: 'bell-tower', x: 16.5, z: 27.0, up: 4.6 },

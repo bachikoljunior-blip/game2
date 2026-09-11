@@ -19,25 +19,18 @@ const F = 60;                       // frames per simulated second
 const DEADZONE = 0.14;              // Input.js DEADZONE — must track it, not guess it
 
 /**
- * Why the combat scenarios are short, in one place.
- *
- * Measured, not assumed: with no enemies the harness simulates ~650-850 frames per second
- * of wall clock; with three enemies engaged it manages roughly 1.2. The cost is pure JS in
- * the physics narrow phase (see the BM-PERF-05 result in the report), so a twenty-encounter
- * run at twenty seconds each — what BM-COMBAT-02 asks for — is about six hours of wall
- * clock in this container.
- *
- * The honest response is to run what is affordable and let the metric return
- * `inconclusive` for the criterion whose sample size is not met, rather than quietly
- * redefining twenty encounters as four. Raise these once the physics cost is fixed.
+ * The full encounter sample is now the default. Older traces used four 12 s bouts
+ * because the original physics path was prohibitively expensive. That short horizon
+ * produced no deaths and cannot stand in for the existing >=20-encounter criterion.
+ * Pilot overrides remain possible and the metric must still call them inconclusive.
  */
 const COMBAT = {
   lockOnSeconds: 10,
   startupSeconds: 15,
   bellSeconds: 8,
   swings: 12,
-  encounters: 4,
-  encounterSeconds: 12,
+  encounters: 20,
+  encounterSeconds: 30,
 };
 
 /**
@@ -88,7 +81,7 @@ function mark(out, f, label) { out.push({ f, do: 'mark', label }); }
  * trace so a short run can never again be mistaken for a slow one.
  */
 const ARENA = { x: 0, z: 26, halfX: 13, halfZ: 10 };
-const EAST = Math.PI / 2;               // +X in the game's yaw convention (0 = -Z)
+const EAST = -Math.PI / 2;              // forward = (-sin yaw, -cos yaw), so this is +X
 
 function toArena(out, f, { x = -11, z = ARENA.z, yaw = EAST, label = 'run-up' } = {}) {
   out.push({ f, do: 'teleport', x, z, yaw });
@@ -155,14 +148,14 @@ function moveReversal(layout) {
   toArena(a, f, { x: -6, label: 'reversal-run-up' });
   f += 6;
   stickDown(a, f, layout);
-  stickTo(a, f + 1, layout, 1.0, 0);
+  stickTo(a, f + 1, layout, 0.92, 0);
   f += 2 * F;
   for (let i = 0; i < 4; i++) {
     mark(a, f, `reversal:${i}`);
-    stickTo(a, f, layout, 1.0, Math.PI);
+    stickTo(a, f, layout, 0.92, Math.PI);
     f += Math.round(1.6 * F);
     mark(a, f, `reversal-back:${i}`);
-    stickTo(a, f, layout, 1.0, 0);
+    stickTo(a, f, layout, 0.92, 0);
     f += Math.round(1.6 * F);
   }
   stickUp(a, f, layout);
@@ -173,6 +166,7 @@ function moveReversal(layout) {
     render: false,
     probes: ['player', 'input'],
     setup: ['skipIntro', 'freeCamera'],
+    conditions: { changeFromLegacy: 'Run reversal now uses moveMag 0.92; old moveMag 1.0 requested sprint. Due-east yaw sign corrected.', moveMag: 0.92, yaw: EAST },
     actions: a,
   };
 }
@@ -236,10 +230,9 @@ function cameraTraverse(layout) {
  * E03 — lock-on framing, and the shake ablation.
  *
  * Run twice with identical input: once with the camera's shake authority at its normal
- * value and once at zero. Shake does not feed gameplay, so the two runs stay in
- * lockstep and the per-frame difference in the target's on-screen position *is* the
- * shake contribution. Measuring the shake directly out of the frame is the only way to
- * answer BM-CAMERA-04 without confusing shake with the camera doing its job.
+ * value and once at zero. The bot uses the camera's unshaken yaw for input. The metric
+ * must verify world-state agreement before attributing the projection difference to
+ * shake; identical input is a hypothesis of equivalence, not its proof.
  */
 function lockOn(layout, { shake = 1, id = 'lockon-framing' } = {}) {
   const a = [];
@@ -248,7 +241,8 @@ function lockOn(layout, { shake = 1, id = 'lockon-framing' } = {}) {
   // In the arena, not wherever the player happens to boot. The first run of this scenario
   // fought inside the haiden: `PlayerCamera._score` rejects an occluded candidate, so every
   // target scored as unreachable and lock-on never engaged for a single frame of 840.
-  toArena(a, 2, { x: -2, label: 'lockon-arena' });
+  a.push({ f: 2, do: 'resetEncounter', x: -2, z: ARENA.z, yaw: EAST, label: 'lockon-arena' });
+  a.push({ f: 3, do: 'clearance', yaw: EAST, label: 'lockon-arena' });
   a.push({ f: 6, do: 'call', target: 'enemies', method: 'spawnWave', args: [3, { seed: 0x51ed, alerted: true }] });
   // Lock-on is a toggle that releases when the pick is unchanged, so it is pressed once
   // and then only re-pressed if nothing is held — see the re-arm presses below.
@@ -259,11 +253,11 @@ function lockOn(layout, { shake = 1, id = 'lockon-framing' } = {}) {
   // Re-arm the lock every two seconds: a target dying releases it, and the criterion is
   // about how the camera frames a held lock rather than about how long one target lives.
   for (let t = 2; t < COMBAT.lockOnSeconds; t += 2) {
-    a.push({ f: t * F, do: 'keyDown', code: 'KeyQ' });
-    a.push({ f: t * F + 1, do: 'keyUp', code: 'KeyQ' });
+    a.push({ f: t * F, do: 'lockIfFree' });
   }
   f = COMBAT.lockOnSeconds * F;
   // Back into a corner: the anti-reference case AR-01 names explicitly.
+  a.push({ f, do: 'bot', on: false });
   mark(a, f, 'corner');
   stickDown(a, f, layout);
   stickTo(a, f + 1, layout, 0.92, Math.PI);
@@ -276,6 +270,7 @@ function lockOn(layout, { shake = 1, id = 'lockon-framing' } = {}) {
     render: false,
     probes: ['player', 'camera', 'ndc', 'enemies'],
     setup: ['skipIntro'],
+    conditions: { shakeScale: shake, bot: 'aggressive-v2', movementBasis: 'unshaken playerCamera.yaw', requireWorldStateAgreement: true, changeFromLegacy: 'Full respawn and input reset; guarded lock rearm no longer toggles an existing target off; bot releases before corner movement.' },
     actions: a,
   };
 }
@@ -291,24 +286,21 @@ function lockOn(layout, { shake = 1, id = 'lockon-framing' } = {}) {
  */
 function encounters(layout, { count = COMBAT.encounters, seconds = COMBAT.encounterSeconds } = {}) {
   const a = [];
-  const span = seconds * F;
-  toArena(a, 2, { x: 0, label: 'encounters-arena' });
-  a.push({ f: 5, do: 'bot', on: true, policy: 'aggressive' });
+  const span = Math.round(Math.min(30, seconds) * F);
   for (let i = 0; i < count; i++) {
     const f = 10 + i * span;
-    a.push({ f, do: 'call', target: 'enemies', method: 'despawnAll', args: [] });
-    // Health and posture are restored between encounters so a run of twenty is twenty
-    // encounters rather than one encounter and nineteen corpses. The intervention is in
-    // the timeline, so it cannot be mistaken for the game doing it.
-    a.push({ f: f + 1, do: 'set', target: 'player', prop: 'health', value: 100 });
-    a.push({ f: f + 1, do: 'set', target: 'player', prop: 'posture', value: 0 });
-    a.push({ f: f + 1, do: 'set', target: 'player', prop: 'stamina', value: 100 });
+    // A real respawn clears death/attack FSM, controller and input state as well
+    // as resources. The reset intervention is explicit in both timeline and trace.
+    a.push({ f, do: 'resetEncounter', x: 0, z: ARENA.z, yaw: 0, label: `encounter-reset:${i}` });
+    a.push({ f: f + 1, do: 'clearance', yaw: 0, label: `encounter-clearance:${i}` });
     mark(a, f + 2, `encounter:${i}`);
     a.push({
       f: f + 3, do: 'call', target: 'enemies', method: 'spawnWave',
       args: [3, { seed: (0x51ed + i * 7919) >>> 0, alerted: true }],
     });
+    a.push({ f: f + 5, do: 'bot', on: true, policy: 'aggressive' });
   }
+  a.push({ f: 10 + count * span, do: 'bot', on: false });
   return {
     id: 'encounters',
     criteria: ['BM-COMBAT-02', 'BM-AI-03'],
@@ -317,6 +309,9 @@ function encounters(layout, { count = COMBAT.encounters, seconds = COMBAT.encoun
     stride: 3,
     probes: ['player', 'tokens'],
     setup: ['skipIntro'],
+    conditions: { encounterCount: count, maxEncounterSeconds: span / F, opponentsPerEncounter: 3,
+      expectedDifficulty: 'normal', gameTuningChanged: false, bot: 'aggressive-v2', reactionFloorMs: 200, approachDistanceM: 1.65,
+      changeFromLegacy: '20 x 30 s default replaces 4 x 12 s; each sample resets real player FSM/position/input/combat state and suspends unrelated story waves. One reaction per published cue; corrected camera-relative approach enters execution range.' },
     actions: a,
   };
 }
@@ -470,19 +465,15 @@ function bellAccident(layout) {
   const a = [];
   // The bell's world position is resolved in-page from Level's own record of where it
   // built the tower, so this cannot drift from the layout table.
-  a.push({ f: 2, do: 'teleport', to: 'bell', dx: 2.0, dz: 2.0 });
+  a.push({ f: 2, do: 'prepareBell', label: 'accidental-bell' });
   a.push({ f: 6, do: 'call', target: 'enemies', method: 'spawnWave', args: [2, { seed: 0x9931, alerted: true }] });
   a.push({ f: 10, do: 'bot', on: true, policy: 'aggressive' });
   let f = COMBAT.bellSeconds * F;
   a.push({ f, do: 'bot', on: false });
-  mark(a, f + 1, 'deliberate-interact');
-  const gx = layout.gestureCentre.x, gy = layout.gestureCentre.y;
-  for (let i = 0; i < 6; i++) {
-    a.push({ f: f + 10 + i * 30, do: 'keyDown', code: 'KeyF' });
-    a.push({ f: f + 11 + i * 30, do: 'keyUp', code: 'KeyF' });
-    a.push({ f: f + 20 + i * 30, do: 'touchDown', id: 55, x: gx, y: gy });
-    a.push({ f: f + 21 + i * 30, do: 'touchUp', id: 55, x: gx, y: gy });
-  }
+  a.push({ f: f + 1, do: 'prepareBell', label: 'deliberate-bell' });
+  mark(a, f + 2, 'deliberate-interact');
+  a.push({ f: f + 10, do: 'keyDown', code: 'KeyF' });
+  a.push({ f: f + 11, do: 'keyUp', code: 'KeyF' });
   return {
     id: 'bell-accident',
     criteria: ['BM-CHOICE-02'],
@@ -490,6 +481,9 @@ function bellAccident(layout) {
     render: false,
     probes: ['player'],
     setup: ['skipIntro'],
+    conditions: { bot: 'aggressive-v2', accidentalSeconds: COMBAT.bellSeconds,
+      deliberateInput: 'one KeyF press after full cleanup and actual respawn at the bell interactable',
+      changeFromLegacy: 'Both halves explicitly stage the waiting bell encounter; deliberate half clears enemies/held combat input, revives the player and uses the authored striker position instead of the bronze centre.' },
     actions: a,
   };
 }
