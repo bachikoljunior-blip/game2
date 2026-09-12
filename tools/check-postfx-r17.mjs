@@ -6,6 +6,7 @@ import {
   GOD_RAY_NEAR_OCCLUDER,
   godRayOccluderCompensation,
   godRayOccluderKeep,
+  sanitizeGodRayRadiance,
 } from '../src/render/PostFX.js';
 
 // A fighter at the 4 m follow-camera distance with world depth exposed beside
@@ -38,12 +39,28 @@ assert.equal(
 );
 assert.equal(godRayOccluderCompensation(1, 0), 1);
 
+// CPU contract mirror only: this does not compile or execute GLSL. An additive light
+// path must be monotone: radiance in the authored range is bit-for-bit unchanged, while
+// negative/non-finite reconstruction values cannot darken the source image.
+assert.deepEqual(sanitizeGodRayRadiance([0.25, 2, 120]), [0.25, 2, 120]);
+assert.deepEqual(sanitizeGodRayRadiance([-0.25, Number.NaN, -Infinity]), [0, 0, 0]);
+assert.deepEqual(sanitizeGodRayRadiance([Infinity, 20000, 0]), [16384, 16384, 0]);
+
 // Source guards prevent a future cleanup from silently reverting alpha to a
 // constant or paying one depth fetch for every radial sample.  Depth classification
 // belongs in the quarter-resolution occlusion pass; the blur consumes packed alpha.
 const source = readFileSync(new URL('../src/render/PostFX.js', import.meta.url), 'utf8');
 assert.match(source, /gl_FragColor = vec4\(emit, keep\);/);
 assert.match(source, /keptWeight \+= illum \* sampleValue\.a;/);
+// These are static source guards, not evidence of shader compilation, precision, GPU
+// cost, or pixel correctness. The rendered CI capture owns those claims.
+const radianceHelper = source.match(/vec3 nonNegativeRadiance\(vec3 c\) \{[\s\S]*?\n\}/)?.[0];
+assert.ok(radianceHelper, 'nonNegativeRadiance GLSL helper is missing');
+assert.match(radianceHelper, /c\.r > 0\.0 \? min\(c\.r, 16384\.0\) : 0\.0/);
+assert.match(radianceHelper, /c\.g > 0\.0 \? min\(c\.g, 16384\.0\) : 0\.0/);
+assert.match(radianceHelper, /c\.b > 0\.0 \? min\(c\.b, 16384\.0\) : 0\.0/);
+assert.match(source, /vec3 src = nonNegativeRadiance\(texture2D\(tScene, vUv\)\.rgb\);/);
+assert.match(source, /color \+= nonNegativeRadiance\(texture2D\(tGod, uv\)\.rgb\)/);
 const blur = source.slice(source.indexOf('const FRAG_GOD_BLUR'), source.indexOf('const FRAG_DOF_COC'));
 assert.doesNotMatch(blur, /tDepth/);
 assert.match(source, /if \(this\._godRays && this\.rtGodA\) this\._passGodRays/);

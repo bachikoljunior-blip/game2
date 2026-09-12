@@ -73,3 +73,43 @@ Next: independently review this delta, publish it as an apparatus-only `[motion-
 [diagnose]` checkpoint, then inspect input coverage and native A/A/A-B PNGs. Only after a
 stable control reproduces the black ribbon may an owner be assigned. Main/Pages remains
 `4e6d23a`; no product or visual PASS is claimed.
+
+## 70fe265: apparatus passed and isolated the global ribbon to God Rays
+
+- Published apparatus checkpoint: `70fe26531bd35c035b979622edac8113f3932afc`
+  (tree `3352466e4e2adcb46ce9d241ff446acc260475b2`).
+- [Run 34660985633](https://github.com/bachikoljunior-blip/game2/actions/runs/34660985633),
+  motion job `103463260663`, finished 2026-09-12 00:18 UTC, PASS. Build, project
+  checks and all 19 focused tests passed. The evidence job was intentionally skipped:
+  this was apparatus-only and retained the identical 3633597 game source/control.
+- Input rehearsal passed with the evidence-selected single ronin: 45 startup frames,
+  18 active frames, and an enemy-attributable slash against the player at authored
+  frame 67 (`damage=12.376`, `posture=13`). The full rendered 300-frame sample was
+  intentionally not run under the `[diagnose]` marker and remains required.
+- Fixed-frame A/A/A control was exact. Baseline A, B and restored PNGs share SHA-256
+  `1be3578a75b020c30f57ade9470c3d11922efce8a6f68f6f3ffb66fe0ac48eff`.
+  Each capture used a fresh real render with 115 calls / 749,072 triangles.
+- Only `god-rays-off` removed the global stair-stepped ribbon. It used 113 calls /
+  749,070 triangles and reduced HUD-excluded black pixels from 8,988 to 2,298.
+  `fx-off`, `trails-off`, and `alpha-particles-off` retained the ribbon; trails-off was
+  pixel-identical to baseline. The affected comparison bounds were approximately
+  `1049x507+0+0`. A small local dark blob near the glow remains a separate issue.
+- Motion artifact `10286778937`, archive SHA-256
+  `d91b572e5361e30d91bc920fee78f6e40f1b869e47cdf5cb121d3cfe8d7bd6e0`.
+- Independent native-image review confirms the same isolation and the zero-difference
+  A/A/A control. This proves the owner path, not the exact internal shader operation,
+  physical-device behavior, temporal stability, or product acceptance.
+
+The `[postfx]` owner prepared a minimal falsifiable repair: clamp God Rays' HDR scene input
+and additive composite seam to finite non-negative, WebGL1-mediump-safe radiance. Negative
+or non-finite intermediate HDR values are a hypothesis, not a measured root cause; the
+narrow repair contract is only that an additive-light path cannot subtract scene radiance.
+Valid authored-range shafts, strength, tint and sample count are unchanged. An independent
+hostile code review first rejected the causal wording and the weak distinction between static
+source guards and executed GLSL. After correction and a 65504-to-16384 portability change,
+the follow-up found zero blocker / zero major. It explicitly leaves shader compile/link,
+pixels, physical-device precision and full-screen cost to runtime measurement. Local 19-test,
+state, ownership, vendored-kit, diff and production-build checks pass. A fresh source-changing
+`[motion]` CI must precede any acceptance. That run must repeat five phone frames, all 20
+encounters and the actual 300 rendered frames; its prediction is that the global ribbon
+approaches `god-rays-off` while positive shafts remain. Main/Pages remains `4e6d23a`.

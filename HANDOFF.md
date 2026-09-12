@@ -21,23 +21,25 @@ art-direction state record; project-wide session, plan and criterion pointers li
 
 ## Where the work is
 
-### Latest: 3633597 and the incoming-attack/render diagnostic
+### Latest: 70fe265 proves the God Rays owner path
 
-Latest inspected working SHA is `3633597b1499d60a25a41a94c4fe02677cdaca35` on PR #10.
-CI `34640487523` completed: five technical frames PASS, 20 encounters with posture
-resolution **21/30 = 70%**, interaction results **15 PASS / 0 FAIL / 3 INCONCLUSIVE**.
-All 300 motion frames and both MP4s exist, but the incoming-attack gate failed: 32 enemy
-startup frames / 6 active frames / 0 enemy-attributable reactions. Player hits at 78/143
-must not be counted as incoming evidence. The independent motion review still finds black
-ribbons, primitive characters and body occlusion; the previous god-ray diagnosis remains
-unproven. See `AI_DEVELOPMENT/EVIDENCE/r17-candidate-363.md` and its JSON reviews.
+Latest published working SHA is `70fe26531bd35c035b979622edac8113f3932afc` on PR #10.
+[CI 34660985633](https://github.com/bachikoljunior-blip/game2/actions/runs/34660985633)
+passed all apparatus checks. Its actual-DOM rehearsal captured an enemy-attributable ronin
+hit after 45 startup / 18 active frames. The fixed-frame baseline A/B/restored PNGs are
+byte-identical, and only `god-rays-off` removed the global stair-stepped black ribbon:
+HUD-excluded black pixels fell from 8,988 to 2,298. FX, trail and alpha-particle ablations
+retained it. Independent native-image review confirms the result. This proves the God Rays
+owner path, not physical-device behavior, temporal stability or product acceptance. Exact
+run, artifact and hash details are in `AI_DEVELOPMENT/EVIDENCE/r17-diagnostic-progress.md`.
 
-Next: apparatus-only `[motion-retry] [diagnose]` using the identical 3633597 control.
-Inspect stationary-opening `preflight.json` and fixed-frame `diagnostic.json` with A/A
-controls and god-ray/FX/trail/alpha-particle ablations. Then repair the proven owner and
-rerun the required rendered sample. main/Pages is still `4e6d23a`. Incremental verified
-publication is authorized; overall product FAIL does not itself ban incremental releases,
-but the current unresolved checkpoint gates do block this candidate's acceptance.
+The `[postfx]` owner has prepared a finite non-negative radiance guard at the HDR input and
+additive composite seam. It does not disable or weaken valid positive shafts. Next:
+independently review that source delta, publish it with `[motion]`, then run fresh five-frame,
+20-encounter and actual 300-frame evidence. The earlier 3633597 full motion sample still
+fails incoming-reaction coverage and retains the ribbon; primitive characters and combat
+occlusion remain open. main/Pages is still `4e6d23a`. Incremental verified publication is
+authorized, but unresolved checkpoint gates block this candidate's acceptance.
 
 ### Earlier Round 17 checkpoints (superseded by the latest evidence above)
 

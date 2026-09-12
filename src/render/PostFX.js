@@ -146,6 +146,16 @@ export function godRayOccluderCompensation(totalWeight, keptWeight) {
   return clamp(totalWeight / keptWeight, 1, GOD_RAY_NEAR_OCCLUDER.maxCompensation);
 }
 
+/** CPU mirror of the intended god-ray additive-radiance guard contract. */
+export function sanitizeGodRayRadiance(rgb) {
+  return rgb.map((value) => {
+    if (!(value > 0)) return 0; // negative values, zero and NaN cannot emit light
+    // 16384 is inside WebGL 1's minimum mediump range. The authored God Rays input
+    // is clamped to 2 (1 in LDR), so this only closes non-operational magnitudes.
+    return Math.min(value, 16384);
+  });
+}
+
 // ---------------------------------------------------------------------------
 // shared GLSL
 // ---------------------------------------------------------------------------
@@ -165,6 +175,20 @@ float luma(vec3 c) { return dot(c, LUMA709); }
 float lumaN(vec3 c) { float l = dot(c, vec3(0.299, 0.587, 0.114)); return l / (1.0 + l); }
 float sat(float x) { return clamp(x, 0.0, 1.0); }
 vec3  sat3(vec3 x) { return clamp(x, 0.0, 1.0); }
+// The ablation isolates the artifact to the God Rays path; it does not measure this
+// intermediate target. Negative/non-finite HDR reconstruction is therefore a
+// falsifiable hypothesis. This guard enforces the narrower invariant we need either
+// way: an additive-light path cannot subtract radiance. The ternaries close NaN to
+// zero (NaN > 0.0 is false). 16384 is within the WebGL 1 minimum mediump range and
+// far above this pass's authored <= 2 input; mobile precision and cost remain an
+// actual-device measurement.
+vec3 nonNegativeRadiance(vec3 c) {
+  return vec3(
+    c.r > 0.0 ? min(c.r, 16384.0) : 0.0,
+    c.g > 0.0 ? min(c.g, 16384.0) : 0.0,
+    c.b > 0.0 ? min(c.b, 16384.0) : 0.0
+  );
+}
 float hash12(vec2 p) {
   vec3 p3 = fract(vec3(p.xyx) * 0.1031);
   p3 += dot(p3, p3.yzx + 33.33);
@@ -659,7 +683,11 @@ void main() {
   //     leaves the sky alone and turns the disc into a bright core, not a common-mode
   //     flood. The disc's own glare belongs to the bloom pass, which clamps at 28 and
   //     has the resolution for it; this pass owns the shafts.
-  vec3 src = texture2D(tScene, vUv).rgb;
+  // Negative/non-finite scene reconstruction is a falsifiable explanation for the
+  // God Rays-path artifact, not a measured intermediate value. Enforce additive
+  // monotonicity at this boundary: darkness may block emission but cannot emit
+  // negative light.
+  vec3 src = nonNegativeRadiance(texture2D(tScene, vUv).rgb);
   float peak = max(max(src.r, src.g), max(src.b, 1e-5));
   vec3 emit = src * min(1.0, uEmitClamp / peak) * (sky * prox);
 
@@ -1333,7 +1361,11 @@ void main() {
   color += texture2D(tBloom, uv).rgb * uBloomStrength * uBloomTint;
 #endif
 #ifdef USE_GODRAYS
-  color += texture2D(tGod, uv).rgb * uGodStrength * uGodTint;
+  // Enforce the same additive invariant at the composite seam. Finite non-negative
+  // texels in the authored operating range are unchanged; negative/non-finite input
+  // cannot subtract scene radiance. The rendered artifact response remains a CI
+  // measurement.
+  color += nonNegativeRadiance(texture2D(tGod, uv).rgb) * uGodStrength * uGodTint;
 #endif
 
   // ---- exposure ------------------------------------------------------------
