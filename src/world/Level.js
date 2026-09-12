@@ -1768,7 +1768,7 @@ export class Level {
 
     if (st.waveIndex >= e.waves.length && !st.cleared) {
       const alive = this._aliveEnemies();
-      if (alive === 0 && st.t > (e.waves.length ? 1.5 : 0.2)) {
+      if (alive === 0 && this.spawnQueue.length === 0 && st.t > (e.waves.length ? 1.5 : 0.2)) {
         st.cleared = true;
         if (e.clearObjective) this.ctx?.bus?.emit('objective', e.clearObjective);
         const next = e.next ? ENCOUNTERS.findIndex((x) => x.id === e.next) : -1;
@@ -1801,29 +1801,39 @@ export class Level {
     _v.z -= Math.sin(p.yaw) * jitter;
     _v.y = this.groundY(_v.x, _v.z);
 
+    const request = {
+      archetype,
+      position: _v.clone(),
+      yaw: p.yaw,
+      spawnPoint: pointId,
+      alerted: true,
+    };
     const em = this.ctx?.enemies;
-    const fn = em?.spawn || em?.spawnEnemy || em?.spawnAt;
+    const fn = em?.spawn;
     if (typeof fn === 'function') {
       try {
-        fn.call(em, { archetype, type: archetype, position: _v.clone(), yaw: p.yaw, spawnPoint: pointId });
-        return;
+        if (fn.call(em, archetype, request.position, request)) return;
       } catch (err) { console.error('[level] enemy spawn failed', err); }
     }
-    // EnemyManager not up yet — hold it and drain later.
-    this.spawnQueue.push({ archetype, position: _v.clone(), yaw: p.yaw, spawnPoint: pointId });
+    // EnemyManager may not be ready yet, or the active quality tier may be full.
+    // Retain the authored arrival until the manager accepts it.
+    this.spawnQueue.push(request);
   }
 
   _drainSpawnQueue() {
     if (!this.spawnQueue.length) return;
     const em = this.ctx?.enemies;
-    const fn = em?.spawn || em?.spawnEnemy || em?.spawnAt;
+    const fn = em?.spawn;
     if (typeof fn !== 'function') return;
+    let pending = 0;
     for (let i = 0; i < this.spawnQueue.length; i++) {
       const s = this.spawnQueue[i];
-      try { fn.call(em, { archetype: s.archetype, type: s.archetype, position: s.position, yaw: s.yaw, spawnPoint: s.spawnPoint }); }
+      let spawned = false;
+      try { spawned = !!fn.call(em, s.archetype, s.position, s); }
       catch (err) { console.error('[level] queued spawn failed', err); }
+      if (!spawned) this.spawnQueue[pending++] = s;
     }
-    this.spawnQueue.length = 0;
+    this.spawnQueue.length = pending;
   }
 
   // =====================================================================
