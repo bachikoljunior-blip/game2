@@ -140,11 +140,24 @@ try {
 
   // Stay on the public input surface and demonstrate that the spawned actors are
   // live combatants. Either faction landing a hit is sufficient for this smoke gate.
+  await page.waitForFunction(() => window.__kagerou.menus._title < 0,
+    null, { timeout: 15000, polling: 100 });
   await page.keyboard.press('KeyQ');
+  await page.waitForFunction(() => window.__kagerou.playerCamera.lockTarget?.isAlive === true,
+    null, { timeout: 10000, polling: 50 });
+  await page.keyboard.down('KeyW');
+  await page.waitForFunction(() => {
+    const k = window.__kagerou;
+    const target = k.playerCamera.lockTarget;
+    return target && Math.hypot(target.position.x - k.player.position.x,
+      target.position.z - k.player.position.z) <= 2.15;
+  }, null, { timeout: 10000, polling: 50 });
+  await page.keyboard.up('KeyW');
+  await page.waitForTimeout(150);
   for (let i = 0; i < 18; i++) {
     await page.mouse.click(360, 165);
     if (await page.evaluate(() => window.__normalSpawnEvidence.hits.length > 0)) break;
-    await page.waitForTimeout(220);
+    await page.waitForTimeout(320);
   }
   await page.waitForFunction(() => window.__normalSpawnEvidence.hits.length > 0,
     null, { timeout: 30000, polling: 100 });
