@@ -96,7 +96,7 @@ try {
   assert.ok(report.initial.position[2] > 72.5, 'normal start must begin on the authored approach');
 
   await page.keyboard.down('KeyW');
-  await page.waitForFunction(() => window.__kagerou.level._enc.active?.id === 'forecourt',
+  await page.waitForFunction(() => window.__kagerou.level._enc.active?.id === 'forecourt'\n      && window.__kagerou.level._enc.armed === true,
     null, { timeout: 240000, polling: 50 });
   // Stop at the authored encounter boundary, before its delayed spawn sequence,
   // so the evidence captures the same first-contact view a player receives.
