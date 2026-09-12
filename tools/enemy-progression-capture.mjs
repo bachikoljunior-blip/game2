@@ -96,10 +96,10 @@ try {
   assert.ok(report.initial.position[2] > 72.5, 'normal start must begin on the authored approach');
 
   await page.keyboard.down('KeyW');
-  await page.waitForFunction(() => window.__normalSpawnEvidence.calls.length >= 1,
-    null, { timeout: 240000, polling: 100 });
-  // Stop on first contact. Waiting for the second scheduled spawn while still
-  // holding forward can carry the player through the formation before capture.
+  await page.waitForFunction(() => window.__kagerou.level._enc.active?.id === 'forecourt',
+    null, { timeout: 240000, polling: 50 });
+  // Stop at the authored encounter boundary, before its delayed spawn sequence,
+  // so the evidence captures the same first-contact view a player receives.
   await page.keyboard.up('KeyW');
   await page.waitForFunction(() => window.__normalSpawnEvidence.calls.length >= 2,
     null, { timeout: 30000, polling: 100 });
