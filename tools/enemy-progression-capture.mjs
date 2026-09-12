@@ -169,7 +169,67 @@ try {
   }, null, { timeout: 10000, polling: 50 });
   await page.keyboard.up('KeyW');
   await page.waitForTimeout(150);
-  for (let i = 0; i < 18; i++) {
+  const combatSnapshot = () => page.evaluate(() => {
+    const k = window.__kagerou;
+    const player = k.player;
+    const target = k.playerCamera.lockTarget;
+    const rec = k.combat._records.get(player);
+    const dx = target ? target.position.x - player.position.x : 0;
+    const dz = target ? target.position.z - player.position.z : 0;
+    const distance = target ? Math.hypot(dx, dz) : null;
+    const attack = player.attack;
+    return {
+      frame: k.engine.frame,
+      hits: window.__normalSpawnEvidence.hits.slice(),
+      playerHealth: player.health,
+      playerState: player.state,
+      stateTime: player.stateTime,
+      weaponActive: player.weapon.active,
+      attack: attack ? {
+        key: attack.key,
+        activeAt: attack.activeAt,
+        activeEnd: attack.activeEnd,
+        total: attack.total,
+        opened: attack.opened,
+        closed: attack.closed,
+      } : null,
+      position: player.position.toArray(),
+      forward: player.forward.toArray(),
+      yaw: player.yaw,
+      desiredYaw: player.desiredYaw,
+      targetPosition: target?.position?.toArray?.() || null,
+      targetDistance: distance,
+      targetDot: target && distance > 1e-6
+        ? (player.forward.x * dx + player.forward.z * dz) / distance
+        : null,
+      bladeBase: player.bladeBase.toArray(),
+      bladeTip: player.bladeTip.toArray(),
+      combatRecord: rec ? {
+        swinging: rec.swinging,
+        swingId: rec.swingId,
+        bladeValid: rec.bladeValid,
+        hasPrev: rec.hasPrev,
+        base: rec.base.toArray(),
+        tip: rec.tip.toArray(),
+        prevBase: rec.prevBase.toArray(),
+        prevTip: rec.prevTip.toArray(),
+      } : null,
+      enemies: k.enemies.list.map((enemy) => ({
+        archetype: enemy.archetype,
+        health: enemy.health,
+        state: enemy.state,
+      })),
+    };
+  });
+
+  // A wall-clock click cadence can collapse repeated inputs while software
+  // rendering is still advancing the same attack. Observe complete game-state
+  // transitions so each attempt reaches its authored active window.
+  const attempts = [];
+  for (let i = 0; i < 6; i++) {
+    if (await page.evaluate(() => window.__normalSpawnEvidence.hits.length > 0)) break;
+    await page.waitForFunction(() => !['attack', 'drawing'].includes(window.__kagerou.player.state),
+      null, { timeout: 120000, polling: 100 });
     // Ashigaru will circle and back-step between swings. Re-close through the
     // normal movement input instead of assuming the first approach remains in
     // katana range for the whole exchange.
@@ -189,26 +249,30 @@ try {
       }, null, { timeout: 5000, polling: 50 });
       await page.keyboard.up('KeyW');
     }
+    const attempt = { before: await combatSnapshot(), frames: [] };
     await page.mouse.click(360, 165);
-    if (await page.evaluate(() => window.__normalSpawnEvidence.hits.length > 0)) break;
-    await page.waitForTimeout(320);
+    let entered = false;
+    let lastFrame = -1;
+    const deadline = Date.now() + 120000;
+    while (Date.now() < deadline) {
+      const sample = await combatSnapshot();
+      if (sample.frame !== lastFrame) {
+        attempt.frames.push(sample);
+        lastFrame = sample.frame;
+      }
+      if (sample.playerState === 'attack' || sample.playerState === 'drawing') entered = true;
+      if (sample.hits.length > 0 || (entered && sample.playerState !== 'attack'
+        && sample.playerState !== 'drawing')) break;
+      await page.waitForTimeout(50);
+    }
+    attempt.after = await combatSnapshot();
+    attempt.enteredAttack = entered;
+    attempts.push(attempt);
+    assert.equal(entered, true, `attack ${i + 1} was not accepted by the live input path`);
   }
-  report.combat = await page.evaluate(() => {
-    const k = window.__kagerou;
-    const target = k.playerCamera.lockTarget;
-    return {
-      hits: window.__normalSpawnEvidence.hits.slice(),
-      playerHealth: k.player.health,
-      playerState: k.player.state,
-      targetDistance: target ? Math.hypot(target.position.x - k.player.position.x,
-        target.position.z - k.player.position.z) : null,
-      enemies: k.enemies.list.map((enemy) => ({ archetype: enemy.archetype,
-        health: enemy.health, state: enemy.state })),
-    };
-  });
-  await page.waitForFunction(() => window.__normalSpawnEvidence.hits.length > 0,
-    null, { timeout: 30000, polling: 100 });
+  report.combat = { attempts, final: await combatSnapshot() };
   await page.screenshot({ path: join(out, 'enemy-combat.png') });
+  assert.ok(report.combat.final.hits.length > 0, 'normal input combat must produce a hit event');
   assert.equal(report.errors.length, 0, JSON.stringify(report.errors));
   report.status = 'PASS';
   await context.close();
