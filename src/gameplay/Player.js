@@ -392,8 +392,8 @@ export class Player {
     // windows (names come from EVENT_NAMES in Poses.js). The timers in the FSM are
     // the fallback so everything still resolves with a marker-less rig.
     const on = (name, fn) => { try { this.rig.on?.(name, fn); } catch { /* optional */ } };
-    on('hit-active-start', () => this._setWeaponActive(true));
-    on('hit-active-end', () => this._setWeaponActive(false));
+    on('hit-active-start', () => this._onHitActiveStart());
+    on('hit-active-end', () => this._onHitActiveEnd());
     on('cancel-window-open', () => { this.canCancel = true; });
     on('footstep', (e) => { this._rigFootsteps = true; this._footstep(e?.foot ?? e?.side ?? null); });
     on('iframe-start', () => {
@@ -1271,7 +1271,7 @@ export class Player {
     }
     if (a.opened && !a.closed && t >= a.activeEnd) {
       a.closed = true;
-      this._setWeaponActive(false);
+      this._setWeaponActive(false, true);
     }
     if (t >= a.cancelAt) this.canCancel = true;
 
@@ -1497,7 +1497,23 @@ export class Player {
 
   // ---------------------------------------------------------------- weapon
 
-  _setWeaponActive(on) {
+  /** Rig marker callbacks are methods so their Combat routing can be regressed. */
+  _onHitActiveStart() {
+    // The marker is the timing authority. Start Combat's lunge and metadata on
+    // this edge too, instead of waiting for the fallback clock one frame later.
+    if (this.attack && !this.attack.opened) {
+      this.attack.opened = true;
+      this._setWeaponActive(true);
+      this._startLunge(this.attack);
+    } else this._setWeaponActive(true);
+  }
+
+  _onHitActiveEnd() {
+    if (this.attack) this.attack.closed = true;
+    this._setWeaponActive(false, true);
+  }
+
+  _setWeaponActive(on, afterSample = false) {
     // `draw_iai` also plays as a plain unsheathe, and it carries a hit-active
     // marker; only an actual attack state may open a hitbox.
     if (on && this.state !== 'attack' && this.state !== 'drawing' && this.state !== 'execution') return;
@@ -1511,7 +1527,8 @@ export class Player {
     } else if (this._trailOpen) {
       this._trailOpen = false;
       this.ctx.fx?.endTrail?.(this);
-      this.ctx.combat?.endSwing?.(this);
+      if (afterSample) this.ctx.combat?.endSwingAfterSample?.(this);
+      else this.ctx.combat?.endSwing?.(this);
     }
   }
 

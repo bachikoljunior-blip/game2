@@ -81,7 +81,9 @@ try {
     };
     k.bus.on('hit', (event) => window.__normalSpawnEvidence.hits.push({
       attacker: event?.attacker?.faction || null,
+      attackerId: event?.attacker?.id ?? null,
       target: event?.target?.faction || null,
+      targetId: event?.target?.id ?? null,
       damage: event?.damage || 0,
     }));
   });
@@ -132,6 +134,7 @@ try {
       enemies: k.enemies.list.map((enemy) => {
         const screen = enemy.position.clone().setY(enemy.position.y + enemy.height * 0.55).project(k.camera);
         return {
+          id: enemy.id,
           archetype: enemy.archetype,
           position: enemy.position.toArray(),
           screen: screen.toArray(),
@@ -155,8 +158,9 @@ try {
   assert.ok(report.appearance.drawCalls > 0 && report.appearance.triangles > 0);
   await page.screenshot({ path: join(out, 'enemy-visible.png') });
 
-  // Stay on the public input surface and demonstrate that the spawned actors are
-  // live combatants. Either faction landing a hit is sufficient for this smoke gate.
+  // Stay on the public input surface and prove the player can damage one of the
+  // normally spawned enemies. Enemy-to-player contact is useful telemetry but
+  // must not satisfy this gate.
   await page.keyboard.press('KeyQ');
   await page.waitForFunction(() => window.__kagerou.playerCamera.lockTarget?.isAlive === true,
     null, { timeout: 10000, polling: 50 });
@@ -215,6 +219,7 @@ try {
         prevTip: rec.prevTip.toArray(),
       } : null,
       enemies: k.enemies.list.map((enemy) => ({
+        id: enemy.id,
         archetype: enemy.archetype,
         health: enemy.health,
         state: enemy.state,
@@ -227,7 +232,8 @@ try {
   // transitions so each attempt reaches its authored active window.
   const attempts = [];
   for (let i = 0; i < 6; i++) {
-    if (await page.evaluate(() => window.__normalSpawnEvidence.hits.length > 0)) break;
+    if (await page.evaluate(() => window.__normalSpawnEvidence.hits.some((hit) =>
+      hit.attacker === 'player' && hit.target === 'oni' && hit.damage > 0))) break;
     await page.waitForFunction(() => !['attack', 'drawing'].includes(window.__kagerou.player.state),
       null, { timeout: 120000, polling: 100 });
     // Ashigaru will circle and back-step between swings. Re-close through the
@@ -261,7 +267,8 @@ try {
         lastFrame = sample.frame;
       }
       if (sample.playerState === 'attack' || sample.playerState === 'drawing') entered = true;
-      if (sample.hits.length > 0 || (entered && sample.playerState !== 'attack'
+      if (sample.hits.some((hit) => hit.attacker === 'player' && hit.target === 'oni' && hit.damage > 0)
+        || (entered && sample.playerState !== 'attack'
         && sample.playerState !== 'drawing')) break;
       await page.waitForTimeout(50);
     }
@@ -272,7 +279,13 @@ try {
   }
   report.combat = { attempts, final: await combatSnapshot() };
   await page.screenshot({ path: join(out, 'enemy-combat.png') });
-  assert.ok(report.combat.final.hits.length > 0, 'normal input combat must produce a hit event');
+  const playerHits = report.combat.final.hits.filter((hit) =>
+    hit.attacker === 'player' && hit.target === 'oni' && hit.damage > 0);
+  assert.ok(playerHits.length > 0, 'normal player input must produce a player-to-oni hit event');
+  const initialHealth = new Map(report.appearance.enemies.map((enemy) => [enemy.id, enemy.health]));
+  assert.ok(report.combat.final.enemies.some((enemy) => initialHealth.has(enemy.id)
+    && enemy.health < initialHealth.get(enemy.id)),
+  'a normally spawned enemy must lose health after the player hit');
   assert.equal(report.errors.length, 0, JSON.stringify(report.errors));
   report.status = 'PASS';
   await context.close();

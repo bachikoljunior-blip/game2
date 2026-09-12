@@ -6,13 +6,61 @@ import { PlayerCamera } from '../src/gameplay/PlayerCamera.js';
 import { PhysicsWorld, LAYER_SOLID } from '../src/gameplay/Physics.js';
 
 // These are deterministic controller/geometry fixtures, not rendered device evidence.
-const results = { movement: [], collision: [], lockOn: [] };
+const results = { movement: [], collision: [], lockOn: [], combatWindow: null };
 const round = value => +value.toFixed(4);
 function newInput() {
   globalThis.window = new EventTarget();
   globalThis.document = new EventTarget();
   return new Input(new EventTarget());
 }
+
+function combatMarkerWindow() {
+  const calls = { begin: 0, deferredEnd: 0, immediateEnd: 0 };
+  const ctx = {
+    quality: {},
+    combat: {
+      beginSwing(entity, opts) {
+        calls.begin++;
+        assert.equal(entity, player);
+        assert.equal(opts.entity, player);
+        assert.equal(opts.move, 'h_r');
+      },
+      endSwingAfterSample(entity) { calls.deferredEnd++; assert.equal(entity, player); },
+      endSwing(entity) { calls.immediateEnd++; assert.equal(entity, player); },
+    },
+  };
+  const player = new Player(ctx);
+  player.state = 'attack';
+  player.sheathed = false;
+  player._beginAttack({ key: 'h_r', heavy: false, finisher: false });
+
+  player._onHitActiveStart();
+  const afterStart = {
+    opened: player.attack.opened,
+    active: player.weapon.active,
+    trailOpen: player._trailOpen,
+    calls: { ...calls },
+  };
+  player._onHitActiveStart();
+  player._onHitActiveEnd();
+  const afterEnd = {
+    closed: player.attack.closed,
+    active: player.weapon.active,
+    trailOpen: player._trailOpen,
+    calls: { ...calls },
+  };
+  assert.deepEqual(afterStart, {
+    opened: true, active: true, trailOpen: true,
+    calls: { begin: 1, deferredEnd: 0, immediateEnd: 0 },
+  });
+  assert.deepEqual(afterEnd, {
+    closed: true, active: false, trailOpen: false,
+    calls: { begin: 1, deferredEnd: 1, immediateEnd: 0 },
+  });
+  return { afterStart, afterEnd };
+}
+
+results.combatWindow = combatMarkerWindow();
 
 function movement(fps, magnitude, sprint) {
   const ctx = { engine: { frame: 0 }, terrain: { heightAt: () => 812 }, playerCamera: { yaw: 0 } };

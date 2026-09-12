@@ -97,6 +97,54 @@ function authoredHeavyContact(Director, key, finisher) {
   return { authoredDamage, contact, ...hit, enemyHealth: enemy.health, enemyAlive: enemy.isAlive };
 }
 
+function fallingEdgeSweep() {
+  const { combat, enemy, player, events } = fixture();
+  player.bladeBase = new Vector3(0, 1, -0.25);
+  player.bladeTip = new Vector3(0, 1, -0.8);
+  combat.update(1 / 60, 0, 1 / 60);
+  player.weapon.active = true;
+  combat.beginSwing(player, { damage: 16, kind: 'slash' });
+  combat.update(1 / 60, 0, 1 / 60);
+  assert.equal(enemy.health, 70, 'The pre-contact pose must not hit');
+
+  // The end marker and this final blade pose arrive in the same player frame.
+  // Combat must sweep it once before closing the record.
+  player.bladeBase.set(0, 1, -0.8);
+  player.bladeTip.set(0, 1, -2.0);
+  player.weapon.active = false;
+  combat.endSwingAfterSample(player);
+  combat.update(0.1, 0, 0.1);
+  return {
+    enemyHealth: enemy.health,
+    hits: events.filter((event) => event.name === 'hit').length,
+    swinging: combat._records.get(player).swinging,
+  };
+}
+
+function cancelledEdgeDoesNotSweep() {
+  const { combat, enemy, player, events } = fixture();
+  player.bladeBase = new Vector3(0, 1, -0.25);
+  player.bladeTip = new Vector3(0, 1, -0.8);
+  combat.update(1 / 60, 0, 1 / 60);
+  player.weapon.active = true;
+  combat.beginSwing(player, { damage: 16, kind: 'slash' });
+  combat.update(1 / 60, 0, 1 / 60);
+  assert.equal(enemy.health, 70, 'The pre-contact pose must not hit');
+
+  // A stagger/cancel can update transforms while dropping weapon.active. Since
+  // it did not opt into endSwingAfterSample, the contact-looking final pose must
+  // be discarded before the sweep pass.
+  player.bladeBase.set(0, 1, -0.8);
+  player.bladeTip.set(0, 1, -2.0);
+  player.weapon.active = false;
+  combat.update(0.1, 0, 0.1);
+  return {
+    enemyHealth: enemy.health,
+    hits: events.filter((event) => event.name === 'hit').length,
+    swinging: combat._records.get(player).swinging,
+  };
+}
+
 function parryResolution(late) {
   const { combat, enemy, player, events } = fixture();
   combat.update(1 / 60, 0, 1 / 60);
@@ -246,7 +294,7 @@ function retryCleanup() {
 
 const evidence = {
   baseline: { regen: regenDuringEnemyLock(BaselineCombat), firstContact: firstContactClassification(BaselineCombat), playerRecovery: playerRewardRecovery(BaselineCombat), heavySlash: authoredHeavyContact(BaselineCombat, 'd_dr', false), heavyFinisher: authoredHeavyContact(BaselineCombat, 'heavy', true) },
-  current: { regen: regenDuringEnemyLock(CombatDirector), firstContact: firstContactClassification(CombatDirector), playerRecovery: playerRewardRecovery(CombatDirector), heavySlash: authoredHeavyContact(CombatDirector, 'd_dr', false), heavyFinisher: authoredHeavyContact(CombatDirector, 'heavy', true), perfect: parryResolution(false), late: parryResolution(true), damageFeedback: { plain: damageFeedbackContract('plain'), guard: damageFeedbackContract('guard'), lateParry: damageFeedbackContract('late-parry') }, defence: defensiveContract(), ashigaruRace: defaultPressureRace('ashigaru', [34, 25.5, 49.4]), roninRace: defaultPressureRace('ronin', [24, 17, 25.5, 35.1, 28.5]), finisher: pressureFinisher(), retry: retryCleanup() },
+  current: { regen: regenDuringEnemyLock(CombatDirector), firstContact: firstContactClassification(CombatDirector), playerRecovery: playerRewardRecovery(CombatDirector), heavySlash: authoredHeavyContact(CombatDirector, 'd_dr', false), heavyFinisher: authoredHeavyContact(CombatDirector, 'heavy', true), fallingEdge: fallingEdgeSweep(), cancelledEdge: cancelledEdgeDoesNotSweep(), perfect: parryResolution(false), late: parryResolution(true), damageFeedback: { plain: damageFeedbackContract('plain'), guard: damageFeedbackContract('guard'), lateParry: damageFeedbackContract('late-parry') }, defence: defensiveContract(), ashigaruRace: defaultPressureRace('ashigaru', [34, 25.5, 49.4]), roninRace: defaultPressureRace('ronin', [24, 17, 25.5, 35.1, 28.5]), finisher: pressureFinisher(), retry: retryCleanup() },
   scope: 'Pure Node integration of Combat with real Enemy/EnemyManager callbacks; no renderer, DOM input, AI encounter policy, or BM-COMBAT-02 runtime sample.',
 };
 console.log(JSON.stringify(evidence, null, 2));
@@ -263,6 +311,12 @@ if (!process.argv.includes('--observe')) {
     assert.equal(heavy.damage, heavy.authoredDamage, 'A swept hit must honor the already-authored heavy damage exactly once');
     assert.equal(heavy.enemyAlive, true, 'The authored heavy must leave the 70 HP opponent alive for a follow-up');
   }
+  assert.deepEqual(evidence.current.fallingEdge,
+    { enemyHealth: 54, hits: 1, swinging: false },
+    'The marker-end pose must be swept exactly once before the swing closes');
+  assert.deepEqual(evidence.current.cancelledEdge,
+    { enemyHealth: 70, hits: 0, swinging: false },
+    'An unmarked cancellation must close before sweeping the final pose');
   assert.ok(Math.abs(evidence.current.perfect.attackerPressure - TUNING.PARRY_PERFECT_POSTURE * (1 + TUNING.PARRY_STREAK_POSTURE)) < 1e-9);
   assert.equal(evidence.current.perfect.playerHealth, 100);
   assert.equal(evidence.current.late.attackerPressure, TUNING.PARRY_LATE_POSTURE);

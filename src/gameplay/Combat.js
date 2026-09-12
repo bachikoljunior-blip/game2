@@ -321,6 +321,7 @@ class CombatRecord {
 
     // swing
     this.swinging = false;
+    this.closeAfterSweep = false;
     this.swingId = 0;
     this.swingStart = 0;
     this.swingHeavy = false;
@@ -379,6 +380,7 @@ class CombatRecord {
     this.hasPrev = false;
     this.bladeValid = false;
     this.swinging = false;
+    this.closeAfterSweep = false;
     this.swingId = 0;
     this.swingDamage = null;
     this.swingPoise = null;
@@ -552,6 +554,7 @@ export class CombatDirector {
     this._updateDemo(rdt);
     this._clashPass(now);
     this._sweepPass(now);
+    this._closeEndedSwings();
     this._updateProjectiles(rdt, now);
     this._integrateImpulses(rdt);
     this._updateTokens(now);
@@ -717,12 +720,24 @@ export class CombatDirector {
   /** Close a swing early (animation cancel, stagger interrupt, deflect). */
   endSwing(entity) {
     const rec = this._records.get(entity);
-    if (!rec || !rec.swinging) return;
+    if (!rec) return;
+    rec.closeAfterSweep = false;
+    if (!rec.swinging) return;
     rec.swinging = false;
     rec.hitIds.length = 0;
     rec.hitTimes.length = 0;
     rec.lungeUntil = 0;
     rec.lungeTarget = null;
+  }
+
+  /**
+   * Close after Combat has sampled and swept the current frame's blade pose.
+   * An animation end marker fires during Rig update; Player then exports the new
+   * pose before Combat updates. Closing at the marker would discard that final arc.
+   */
+  endSwingAfterSample(entity) {
+    const rec = this._records.get(entity);
+    if (rec?.swinging) rec.closeAfterSweep = true;
   }
 
   /**
@@ -1180,6 +1195,7 @@ export class CombatDirector {
       if (dead) {
         if (rec.alive) { rec.alive = false; this.releaseToken(e); }
         rec.swinging = false;
+        rec.closeAfterSweep = false;
         continue;
       }
       rec.alive = true;
@@ -1205,8 +1221,16 @@ export class CombatDirector {
 
       // ── swing edge detection ──
       const active = !!e.weapon?.active;
-      if (active && !rec.swinging) this._openSwing(rec, e, null, now);
-      else if (!active && rec.swinging) this.endSwing(e);
+      if (active) {
+        rec.closeAfterSweep = false;
+        if (!rec.swinging) this._openSwing(rec, e, null, now);
+      } else if (rec.swinging && !rec.closeAfterSweep) {
+        // An unmarked falling edge is a cancellation/stagger/death path. Close
+        // immediately so a cancelled enemy attack cannot damage on a stale pose.
+        // Player's natural marker/fallback close explicitly requests one final
+        // sample with endSwingAfterSample().
+        this.endSwing(e);
+      }
 
       // ── window expiry ──
       if (rec.guarding && now > rec.guardUntil && e.state !== 'guard') rec.guarding = false;
@@ -1320,6 +1344,15 @@ export class CombatDirector {
           this._physCandidates.indexOf(t) < 0) continue;
         this._sweepAgainst(ra, a, t, steps, now);
       }
+    }
+  }
+
+  /** Finalise falling edges only after their last exported pose was tested. */
+  _closeEndedSwings() {
+    for (let i = 0; i < this._entities.length; i++) {
+      const e = this._entities[i];
+      const rec = this._records.get(e);
+      if (rec?.closeAfterSweep) this.endSwing(e);
     }
   }
 
@@ -2424,6 +2457,7 @@ export class CombatDirector {
 
   _openSwing(rec, e, opts, now) {
     rec.swinging = true;
+    rec.closeAfterSweep = false;
     rec.swingId = this._swingSeq++;
     rec.swingStart = now;
     rec.hitIds.length = 0;
@@ -2545,7 +2579,12 @@ export class CombatDirector {
     if (!entity) return;
     this.releaseToken(entity);
     const rec = this._records.get(entity);
-    if (rec) { rec.swinging = false; rec.parryEnd = -999; rec.knock.set(0, 0, 0); }
+    if (rec) {
+      rec.swinging = false;
+      rec.closeAfterSweep = false;
+      rec.parryEnd = -999;
+      rec.knock.set(0, 0, 0);
+    }
   }
 
   _archetype(e) {
