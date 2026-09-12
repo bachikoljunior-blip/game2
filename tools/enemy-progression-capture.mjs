@@ -57,7 +57,8 @@ try {
     if (response.status() >= 400) report.errors.push({ type: 'http', url: response.url(), status: response.status() });
   });
 
-  await page.goto(url + '?q=low', { waitUntil: 'load', timeout: 120000 });
+  // debug only exposes the existing runtime for observation; movement and spawning stay on normal production paths.
+  await page.goto(url + '?q=low&debug=1', { waitUntil: 'load', timeout: 120000 });
   report.boot = await waitForBoot(page, {
     readyExpr: 'window.__kagerouReady === true', statusSelector: '#boot-status', timeout: 420000,
   });
