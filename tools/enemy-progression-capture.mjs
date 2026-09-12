@@ -103,8 +103,12 @@ try {
   await page.waitForFunction(() => window.__kagerou.player.position.z < 52,
     null, { timeout: 240000, polling: 50 });
   await page.keyboard.up('KeyW');
+  // The intro is 4.7 simulated seconds, but SwiftShader can advance those
+  // frames much more slowly than wall time on a cold runner. Wait for the
+  // authored state transition instead of imposing a 15-second performance
+  // assumption on this functional progression check.
   await page.waitForFunction(() => window.__kagerou.menus._title < 0,
-    null, { timeout: 15000, polling: 100 });
+    null, { timeout: 120000, polling: 100 });
   for (let step = 0; step < 40; step++) {
     const armed = await page.evaluate(() => window.__kagerou.level._enc.active?.id === 'forecourt'
       && window.__kagerou.level._enc.armed === true);
