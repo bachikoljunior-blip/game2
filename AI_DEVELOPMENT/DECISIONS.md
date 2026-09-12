@@ -239,3 +239,8 @@ Two limits on this decision, stated so they are not quietly lost:
   the variance of "the judgement itself", and the frames are only the first of its two arms.
   How much a critic's verdict moves on one unchanged set is a separate arm that nobody has
   collected, and a stable rig must not be reported as a reproducible verdict.
+
+
+## 2026-09-12 — Prioritize the public start-position hotfix
+
+The user requested 「先にゲーム開始時に閉じ込められてるの直して欲しい」 after authorizing incremental main publication. Reproduced the main spawn API mismatch (authored z=73, actual fallback z=8 inside haiden). Extract the already implemented playerSpawn getter from PR #10 into a bounded main-based hotfix and publish matching docs after targeted verification. Preserve the remaining R17 candidate and all unfinished criteria; the completed candidate CI is not full product acceptance. This supersedes waiting for the entire R17 checkpoint before delivering this specific fix.

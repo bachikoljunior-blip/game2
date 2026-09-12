@@ -1,0 +1,245 @@
+{
+  "schemaVersion": 1,
+  "workstream": "START-SPAWN-HOTFIX",
+  "round": 1,
+  "roundMeaning": "First independent review of the bounded start-position hotfix; this is not a new art round or an R17 closing verdict.",
+  "profile": "Node contract and MEDIUM terrain collision subset",
+  "tier": "MEDIUM",
+  "nativeResolution": "0x0",
+  "nativeResolutionMeaning": "No raster or browser capture was judged. 0x0 is a non-rendered review sentinel for the required schema field.",
+  "verdict": "PASS",
+  "score": 100,
+  "scoreMeaning": "Binary scoped code and contract acceptance only: 100 means no evidence-backed defect survived within the reviewed hotfix scope. It is not a game quality score.",
+  "blindComparison": "Not performed. This is an independent, source-aware review of a three-line spawn-interface fix and its regression check, not a visual reference comparison; no stranger preference is claimed.",
+  "scope": "Determine whether exposing the authored Level.spawnPoints.player as Level.playerSpawn fixes the incorrect new-game and retry location without a source-level regression. Check actual nearby terrain and collision geometry as a supplementary runtime subset. Browser and full-game acceptance remain outside this verdict. Also review the dedicated production-browser capture and CI workflow for concrete apparatus pitfalls; prepared browser assertions are not reported as executed.",
+  "reviewer": {
+    "role": "Independent critic",
+    "authoredPatch": false,
+    "sourceBlind": false,
+    "editedRepository": false
+  },
+  "inspected": {
+    "worktree": "/workspace/scratch/95617fae0578/game2-spawn-hotfix",
+    "baseHead": "4e6d23a40af33bb3ba409b3826e77666262ce353",
+    "sourceDelta": "diff --git a/src/world/Level.js b/src/world/Level.js\nindex 254785e..8bfe271 100644\n--- a/src/world/Level.js\n+++ b/src/world/Level.js\n@@ -1589,6 +1589,9 @@ export class Level {\n     };\n   }\n \n+  /** Player and retry share the one placement authored in the level. */\n+  get playerSpawn() { return this.spawnPoints?.player ?? null; }\n+\n   _buildInteractables() {\n     const bell = this._bellPos || new Vector3(LAYOUT.bellTower.x, WORLD.PLATEAU_HEIGHT + 2, LAYOUT.bellTower.z);\n     const ema = this._emaPos || new Vector3(LAYOUT.emaRack.x, WORLD.PLATEAU_HEIGHT + 1.4, LAYOUT.emaRack.z);\n",
+    "sourceSha256": "41ee60930d0dd1c818196fe4b52bac0ba186d52fff82f6569572eb14b155ad78",
+    "regressionCheck": "tools/check-start-position.mjs",
+    "instructions": [
+      "PROJECT_OPERATING_PROTOCOL.md",
+      ".claude/skills/critic/SKILL.md",
+      "ARCHITECTURE.md",
+      "AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml"
+    ],
+    "criticOverlay": "AI_DEVELOPMENT/SKILLS/OVERLAYS/critic.md does not exist.",
+    "browserApparatus": [
+      {
+        "path": "tools/start-position-capture.mjs",
+        "sha256": "1cf1a1deda7dbbee3f3ffa91f291d9ed09a8834eb59a6037c8f1b7bc5a664de3"
+      },
+      {
+        "path": ".github/workflows/game2-start-position.yml",
+        "sha256": "dff59ba2e43b9ac758597bfdcb3e6ecbb66cb0b663e6d8c4744473f77d0f1723"
+      }
+    ]
+  },
+  "cause": {
+    "observation": "Player.init reads level.playerSpawn or level.spawns.player. The baseline Level exposes only spawnPoints.player. Therefore the authored approach placement is ignored and Player keeps constructor default z=8, inside the haiden footprint z=3..14.",
+    "independentReproduction": "Removed only the new getter from Level.prototype in memory, then imported the unchanged regression check. Actual [0,812,8], authored [0,812,73]; expected assertion failure reports distance 65 versus 0. Repository files were not changed.",
+    "mechanismStatus": "CONFIRMED",
+    "sufficiency": "Getter returns the existing authoritative placement object. Player.init copies its position and yaw, then aligns Y to terrain; it does not mutate the level position. main.js awaits Level.init before Player.init, and Level.init creates spawnPoints before returning."
+  },
+  "findings": [],
+  "evidence": [
+    {
+      "id": "contract-patched",
+      "status": "PASS",
+      "command": "node tools/check-start-position.mjs",
+      "apparatus": "Real Level._buildSpawnPoints, Input keydown/update, Player.init/update/respawn and PhysicsWorld; flat terrain at y812 and omitted rendered body.",
+      "actual": {
+        "start": [
+          0,
+          812,
+          73
+        ],
+        "afterTwoSeconds": [
+          0,
+          812,
+          62.763333333332966
+        ],
+        "forwardMetres": 10.236666666667034,
+        "retry": [
+          0,
+          812,
+          73
+        ]
+      },
+      "limitation": "This repository regression check alone cannot establish that the full authored mountain or render loop is traversable."
+    },
+    {
+      "id": "contract-baseline",
+      "status": "EXPECTED_BASELINE_FAILURE",
+      "apparatus": "Fresh Node process, delete Level.prototype.playerSpawn in memory before importing the same regression check.",
+      "actual": {
+        "authored": [
+          0,
+          812,
+          73
+        ],
+        "start": [
+          0,
+          812,
+          8
+        ],
+        "distance": 65,
+        "assertion": "new game must use the authored approach spawn"
+      },
+      "interpretation": "The test distinguishes precisely the missing interface from the proposed getter."
+    },
+    {
+      "id": "actual-nearby-geometry",
+      "status": "PASS",
+      "apparatus": "Exact production MEDIUM terrain height-data pipeline (macro/core/splines/carve/erosion/finish/blend), terrain registration, all four production approach stair flights, production outer torii and boundary colliders, Input→Player→Physics at 120 fixed 1/60s updates. Actual Menus.prototype.restart is called, with only intro/pause presentation functions stubbed.",
+      "actual": {
+        "start": [
+          0,
+          811.9825668334961,
+          73
+        ],
+        "afterTwoSeconds": [
+          -0.0035683393454336164,
+          811.9924676016805,
+          62.763833969836824
+        ],
+        "forwardMetres": 10.236166030163176,
+        "retry": [
+          0,
+          811.9825668334961,
+          73
+        ]
+      },
+      "interpretation": "The real terrain Y is approximately 811.98257, not the fixture y812. The player crosses the stair head and outer torii and stays finite; the menu retry resets both player and capsule to the authored position.",
+      "limitation": "No rendering, browser scheduling, other world props, enemies, actual menu pointer event or camera update. This narrows the nearby-geometry risk; it is not full-game acceptance.",
+      "reproduce": {
+        "cwd": "/workspace/scratch/95617fae0578/game2-spawn-hotfix",
+        "command": "node --input-type=module",
+        "stdin": "import assert from 'node:assert/strict';\nimport { Scene } from 'three';\nimport { Terrain, CORE_EXTENT } from './src/world/Terrain.js';\nimport { Level } from './src/world/Level.js';\nimport { Player } from './src/gameplay/Player.js';\nimport { PhysicsWorld } from './src/gameplay/Physics.js';\nimport { Input } from './src/core/Input.js';\nimport { Menus } from './src/ui/Menus.js';\nglobalThis.window = new EventTarget(); globalThis.document = new EventTarget();\nconst ctx = { scene: new Scene(), engine: { frame: 0 }, playerCamera: { yaw: 0 }, quality: { tier: 1, terrainSegments: 160 } };\nctx.physics = new PhysicsWorld(ctx); await ctx.physics.init();\nctx.terrain = new Terrain(ctx); const t = ctx.terrain;\nt.gridN = 161; t.cell = CORE_EXTENT / 160; t.height = new Float32Array(t.gridN ** 2); t.flow = new Float32Array(t.gridN ** 2); t.macroHeight = new Float32Array(t.macroN ** 2);\nfor (const method of ['_buildMacroField','_buildCoreField','_buildSplines','_carveFeatures','_erode','_finishCarve','_blendEdges']) await t[method](0, 1);\nt._registerPhysics();\nctx.level = new Level(ctx); ctx.level._probeGround();\nfor (let i = 0; i < 4; i++) for (let half = 0; half < 2; half++) ctx.level._buildStairFlight(i, half);\nctx.level._buildTorii(0); ctx.level._buildBoundary(); ctx.level._realizePhysics(); ctx.level._buildSpawnPoints();\nctx.input = new Input(new EventTarget()); ctx.player = new Player(ctx); ctx.player._createRig = async () => {}; await ctx.player.init();\nconst start = ctx.player.position.toArray(); const expected = ctx.level.playerSpawn.position;\nassert.equal(ctx.player.position.distanceTo(expected), 0);\nconst event = new Event('keydown', { cancelable: true }); Object.defineProperty(event, 'code', { value: 'KeyW' }); window.dispatchEvent(event);\nfor (let frame = 0; frame < 120; frame++) { ctx.engine.frame++; ctx.input.update(); ctx.player.update(1/60, ctx.engine.frame/60, 1/60); ctx.input.endFrame(); }\nconst end = ctx.player.position.toArray(); assert.ok(start[2] - end[2] > 5); assert.ok(end.every(Number.isFinite));\nMenus.prototype.restart.call({ ctx, skipIntro(){}, _setPaused(value){assert.equal(value,false);} });\nassert.equal(ctx.player.position.distanceTo(expected),0); assert.equal(ctx.player.controller.position.distanceTo(expected),0);\nconsole.log(JSON.stringify({start,end,forwardMetres:start[2]-end[2],restart:ctx.player.position.toArray()})); ctx.input.dispose();"
+      }
+    },
+    {
+      "id": "whitespace",
+      "status": "PASS",
+      "command": "git diff --check -- src/world/Level.js tools/check-start-position.mjs"
+    },
+    {
+      "id": "browser-apparatus-local-integrity",
+      "status": "PASS",
+      "revision": "58b1afea66ef845a6786349648144dbe19fafd48a7f48d95210653a51a546f4c",
+      "tamperRejected": true,
+      "matchedFiles": 11,
+      "scope": "Independent local HTTP reproduction of capture integrity gate; no browser was launched."
+    }
+  ],
+  "counterexamplesExamined": [
+    {
+      "claim": "Player initializes before spawnPoints is ready.",
+      "outcome": "REFUTED by sequential awaited level and player boot steps in main.js and _buildSpawnPoints before Level.init returns."
+    },
+    {
+      "claim": "The new player location still lies in the haiden footprint.",
+      "outcome": "REFUTED: z73 is 59m beyond its south edge z14."
+    },
+    {
+      "claim": "Retry chooses a separate unsafe placement.",
+      "outcome": "REFUTED in the current repository: Level has no restart method, so Menus.restart calls Player.respawn; Player copies its init-time spawnPosition. Actual Menus.restart consumer also passed the exact-terrain subset."
+    },
+    {
+      "claim": "The authored spawn is immediately blocked by the stair head, first torii or boundary ring.",
+      "outcome": "REFUTED for these specific production colliders at MEDIUM by 10.236166m forward displacement in the exact-terrain subset."
+    },
+    {
+      "claim": "The authored placement becomes aliased to the moving player.",
+      "outcome": "REFUTED by Player.init copying into independent vectors; after movement the authored spawn and menu retry remain unchanged."
+    }
+  ],
+  "observations": [
+    {
+      "element": "Browser new-game flow",
+      "status": "NOT_JUDGED",
+      "detail": "Coordinator browser evidence is pending. New-game input, full level collision, visible starting framing and user-facing restart should be observed before release completion is claimed."
+    },
+    {
+      "element": "Full restart/encounter progression",
+      "status": "OUT_OF_SCOPE",
+      "detail": "The review verifies safe player placement on existing retry, not a reset of all world and enemy progression."
+    },
+    {
+      "element": "Full product bar and R17 candidate",
+      "status": "OUT_OF_SCOPE",
+      "detail": "No visual-reference, full gameplay, phone performance, five-shot art gate, remote CI or live Pages conclusion is made. Existing candidate work and CI were untouched."
+    }
+  ],
+  "refutation": {
+    "status": "COORDINATOR_PASS_PENDING",
+    "instruction": "Coordinator should independently try to refute any reported finding. There are zero evidence-backed findings to refute; browser evidence must still be assessed separately."
+  },
+  "releaseGate": {
+    "status": "PENDING_BROWSER_EVIDENCE",
+    "scopeVerdictIsNotReleaseApproval": true
+  },
+  "outputs": [
+    "/workspace/scratch/95617fae0578/game2-start-hotfix-review.json"
+  ],
+  "schemaValidation": {
+    "ok": true,
+    "failures": [],
+    "warnings": []
+  },
+  "browserApparatusReview": {
+    "verdict": "PASS",
+    "executionStatus": "PREPARED_NOT_EXECUTED",
+    "scope": "Independent source review plus executed local HTTP integrity check; no browser result is claimed.",
+    "syntax": {
+      "status": "PASS",
+      "command": "node --check tools/start-position-capture.mjs"
+    },
+    "integrity": {
+      "status": "PASS",
+      "revision": "58b1afea66ef845a6786349648144dbe19fafd48a7f48d95210653a51a546f4c",
+      "tamperRejected": true,
+      "matchedFiles": 11,
+      "scope": "Independent local HTTP reproduction of capture integrity gate; no browser was launched."
+    },
+    "inspectedChecks": [
+      "serveStatic.origin includes /game2/docs, matching relative publication paths and the URL constructed by the capture.",
+      "The webdriver autostart trigger is suppressed before boot, and the visible Enter button is clicked/tapped. readyExpr is an expression rather than a truthy function literal.",
+      "Initial player coordinates are sampled after all awaited boot systems and before the engine begins updates. Snapshot z8 versus z73 distinguishes baseline and fixed builds.",
+      "The real Input movement state and world-space travel are both asserted. The touch drag begins on the left movement-stick half and exceeds the deadzone.",
+      "Pause starts at row0; two ArrowDown events select the third row, retry. Existing Menus.restart consumer calls Player.respawn because Level has no restart method.",
+      "A fresh context is created for each keyboard/touch session. Production docs are served unchanged and each local/remote payload hash must match the checked-in file.",
+      "The workflow checks code, installs Chromium, records control on the branch, then runs fixed local docs. Main additionally checks actual Pages bytes and behavior. Artifacts upload even after a failure."
+    ],
+    "pitfallsNotElevatedToFindings": [
+      {
+        "status": "UNOBSERVED_CONDITIONAL",
+        "topic": "Automatic favicon request",
+        "detail": "Current index.html has no explicit rel=icon while icon.svg exists. If Chromium requests an absent favicon.ico, row.errors may contain a nonruntime 404 and the zero-error assertion will fail. Native browser was unavailable, so this is not an observed failure or a reason to alter game source preemptively. Preserve actual request evidence and scope any eventual exception narrowly."
+      },
+      {
+        "status": "SCOPE_LIMIT",
+        "topic": "Quality tier",
+        "detail": "Both browser sessions request LOW at 568x320, deviceScaleFactor1. This is a rendered LOW smoke test, not the primary phone/MEDIUM contract or physical-device performance proof. The independent nonrendered geometry subset above used MEDIUM."
+      },
+      {
+        "status": "SCOPE_LIMIT",
+        "topic": "Touch retry",
+        "detail": "The touch session taps Enter and drives movement by CDP touch, but its pause/retry actions use keyboard. It tests touch movement and menu retry, not a complete touch-only menu path."
+      }
+    ],
+    "recommendation": "The dedicated CI may run to collect the missing browser evidence. Its result and screenshots must be inspected before claiming the published start fix is verified."
+  },
+  "coordinatorRefutation": {
+    "observed": "Independent 11-file served-byte check proved matching HTTP bytes but did not reject three obsolete hashed bundles. Removed those old bundles explicitly using git rm; only 8 runtime files plus .nojekyll remain. HTML artifact revision unchanged.",
+    "sourceCause": "Refuted wrong-initialization-order and retry-different-spawn explanations by source consumers. Existing identical getter in PR #10 confirms no incompatible API is introduced.",
+    "scope": "Review source verdict remains scoped PASS; actual production browser and public publication are pending."
+  }
+}

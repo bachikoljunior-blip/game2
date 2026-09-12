@@ -1,0 +1,49 @@
+name: Game2 start-position hotfix
+on:
+  push:
+    branches: [main, codex/game2-start-position-hotfix]
+    paths:
+      - src/world/Level.js
+      - tools/check-start-position.mjs
+      - tools/start-position-capture.mjs
+      - .github/workflows/game2-start-position.yml
+      - docs/**
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: game2-start-position-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  start:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: node tools/check-start-position.mjs
+      - run: npm run check
+      - run: npx playwright install --with-deps chromium
+      - name: Reproduce the previously published start
+        if: github.ref != 'refs/heads/main'
+        run: |
+          git fetch origin 4e6d23a40af33bb3ba409b3826e77666262ce353 --depth=1
+          mkdir -p control-docs
+          git archive 4e6d23a40af33bb3ba409b3826e77666262ce353 docs | tar -x -C control-docs --strip-components=1
+          node tools/start-position-capture.mjs --root=control-docs --tag=start-before --control=true
+      - name: Verify normal start, keyboard, touch and retry against the publication bytes
+        run: node tools/start-position-capture.mjs --root=docs --tag=start-local
+      - name: Verify the public Pages bytes and playable start
+        if: github.ref == 'refs/heads/main'
+        run: node tools/start-position-capture.mjs --root=docs --url=https://bachikoljunior-blip.github.io/game2/docs/ --tag=start-published
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: game2-start-position-${{ github.sha }}
+          path: shots/start-*
+          if-no-files-found: error
+          retention-days: 14

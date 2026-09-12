@@ -6,16 +6,16 @@
   "startedAt": "2026-07-31T12:54:11Z",
   "endedAt": null,
   "endRequiresExplicitUserInstruction": true,
-  "objective": "Round 15 is closed and published, and the per-element benchmarks are installed. Instruction of 2026-08-01 was five further art rounds; the user then closed the run at the end of the round in progress (\"今途中のラウンドが終わるまでにして\"). Round 16 was therefore executed in full and rounds 17-20 were cancelled, not deferred. BENCH-APPARATUS and PHYS-NARROWPHASE are complete.",
-  "workingBranch": "claude/ongoing-session-continuation-549b4z",
-  "baseSha": "4811ba0",
+  "objective": "Continue game2 until the existing criteria are evidenced. User reprioritized the public start-position trap on 2026-09-12; ship this bounded verified fix to main/Pages first, then resume PR #10.",
+  "workingBranch": "codex/game2-start-position-hotfix",
+  "baseSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
   "activePlanNode": null,
-  "activeTask": "KIT-VARIANCE",
-  "lastSuccessfulAction": "KIT-VARIANCE arm 1 complete. Eight phone review captures on one frozen build (bfddbfad8eb8), 4+4 with batch B as the no-change control arm; no run failed, nothing carried forward. This rig is aggregate-stable and pixel-unstable and shows NO batch drift: 65 of 80 published cells never moved (widest, valley.pctWarm, range 0.014 pp) while the frames differ on 2.1-11.4% of their pixels with peak channel deltas near 400. The quantisation explanation was disproved at full float resolution (valley.p999 spans exactly 0.0000). survival's +16.9 does NOT transfer here and must not be quoted about game2. Evidence: AI_DEVELOPMENT/EVIDENCE/kit-variance.md; apparatus tools/variance.mjs.",
-  "currentFailingAction": null,
+  "activeTask": "START-POSITION-HOTFIX",
+  "lastSuccessfulAction": "tools/check-start-position.mjs failed before fix, passed after: initial73 -> forward62.7633333333 -> retry73. Flat terrain/omitted render rig only. Independent actual MEDIUM terrain, four stair flights, outer torii and boundary: [0,811.9825668334961,73] -> [-0.0035683393454336164,811.9924676016805,62.763833969836824], retry restores player and capsule. This is nonrendered.",
+  "currentFailingAction": "Published main lacks Level.playerSpawn: start falls back inside haiden.",
   "currentHypothesis": null,
-  "nextAction": "KIT-VARIANCE arm 2 is what remains: the run-to-run variance of a critic's VERDICT on one unchanged set, which nobody has collected. Arm 1 measured the camera, not the judge, and must not be cited as though it measured the judge. Arm 1 also licenses tight-tolerance before/after on aggregate luma cells and renderer counters with no control arm, and forbids any pixel-level comparison without one (floor 2.1-11.4% of the frame) - which leaves capture.mjs --ab-object and verify-lantern-spill currently uncontrolled. KIT-REFERENCE-SET is unblocked by arm 1.",
-  "rollbackPoint": "4811ba0",
+  "nextAction": "Run the dedicated production-browser start test on this isolated main-based hotfix, integrate passing source+docs to main, and confirm public Pages bytes/start. Then review completed R17 motion CI 34666329831 on cb4d7d6 and resume PR #10.",
+  "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
   "pendingVerification": [
    "BM-COMBAT-02: the encounters scenario now runs, but the harness bot scored 0 kills and 0 posture breaks in 20 encounters, so the criterion is still unmeasured. Harness-policy limitation versus combat-balance finding is undetermined.",
    "BM-CAMERA-01: lock-on never engaged; scenario fault versus acquisition defect undetermined.",
@@ -60,6 +60,30 @@
   "remoteReleaseAuthorized": true,
   "remotePublicationStatus": "repository_verified_public_surface_unverified",
   "publishedMainSha": "e40a1884a57250391dd08bdf50dc2c6cb3837a36",
-  "publishedUrl": "https://bachikoljunior-blip.github.io/game2/"
+  "publishedUrl": "https://bachikoljunior-blip.github.io/game2/",
+  "startPositionHotfix": {
+   "status": "awaiting_verification",
+   "branch": "codex/game2-start-position-hotfix",
+   "baseSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
+   "requestedFix": "開始時に建物内へ閉じ込められる不具合を最優先で修正",
+   "sourceChange": "Expose existing Level.spawnPoints.player through the playerSpawn getter already present in PR #10. No new spawn coordinates or collision bypass.",
+   "reproduced": "Baseline Player.init chooses [0,812,8] instead of authored [0,812,73], 65m away inside haiden footprint.",
+   "nodeVerification": "tools/check-start-position.mjs failed before fix, passed after: initial73 -> forward62.7633333333 -> retry73. Flat terrain/omitted render rig only.",
+   "geometryReview": "Independent actual MEDIUM terrain, four stair flights, outer torii and boundary: [0,811.9825668334961,73] -> [-0.0035683393454336164,811.9924676016805,62.763833969836824], retry restores player and capsule. This is nonrendered.",
+   "artifactRevision": "58b1afea66ef845a6786349648144dbe19fafd48a7f48d95210653a51a546f4c",
+   "pending": [
+    "Production browser: normal Enter, real keyboard and touch travel, retry",
+    "Fresh remote main integration",
+    "Served-byte identity and actual public browser check"
+   ],
+   "continuingCandidate": {
+    "pr": 10,
+    "branch": "codex/game2-criteria-20260911",
+    "sha": "cb4d7d620e8d704affc26b697f3458c1d953c724",
+    "ci": 34666329831,
+    "ciConclusion": "success",
+    "remaining": "Read/independently review 300-frame artifact; full product not accepted. Do not duplicate the start getter when integrating."
+   }
+  }
  }
 }

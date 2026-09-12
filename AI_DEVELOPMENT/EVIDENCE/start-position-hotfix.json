@@ -1,0 +1,72 @@
+{
+  "checkedAt": "2026-09-12T03:42:59.587267+00:00",
+  "status": "awaiting_verification",
+  "branch": "codex/game2-start-position-hotfix",
+  "baseSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
+  "requestedFix": "開始時に建物内へ閉じ込められる不具合を最優先で修正",
+  "sourceChange": "Expose existing Level.spawnPoints.player through the playerSpawn getter already present in PR #10. No new spawn coordinates or collision bypass.",
+  "reproduced": "Baseline Player.init chooses [0,812,8] instead of authored [0,812,73], 65m away inside haiden footprint.",
+  "nodeVerification": "tools/check-start-position.mjs failed before fix, passed after: initial73 -> forward62.7633333333 -> retry73. Flat terrain/omitted render rig only.",
+  "geometryReview": "Independent actual MEDIUM terrain, four stair flights, outer torii and boundary: [0,811.9825668334961,73] -> [-0.0035683393454336164,811.9924676016805,62.763833969836824], retry restores player and capsule. This is nonrendered.",
+  "artifactRevision": "58b1afea66ef845a6786349648144dbe19fafd48a7f48d95210653a51a546f4c",
+  "pending": [
+    "Production browser: normal Enter, real keyboard and touch travel, retry",
+    "Fresh remote main integration",
+    "Served-byte identity and actual public browser check"
+  ],
+  "continuingCandidate": {
+    "pr": 10,
+    "branch": "codex/game2-criteria-20260911",
+    "sha": "cb4d7d620e8d704affc26b697f3458c1d953c724",
+    "ci": 34666329831,
+    "ciConclusion": "success",
+    "remaining": "Read/independently review 300-frame artifact; full product not accepted. Do not duplicate the start getter when integrating."
+  },
+  "publicationFiles": [
+    {
+      "file": ".nojekyll",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "assets/Rig-COt83z_O.js",
+      "sha256": "f7bae740a01952183fb218d0c874a3efba85fa23a1a4489352ad43bdb8d0738c",
+      "bytes": 120783
+    },
+    {
+      "file": "assets/index-ZyLz2FAV.js",
+      "sha256": "ceac08b4d069db6a66d3171475754c975ff4953b076e17883e61756675ac096e",
+      "bytes": 2225
+    },
+    {
+      "file": "assets/main-VuoEU-KK.js",
+      "sha256": "5eb95cbc4a049e327552494fe9d65adbb6a839ea0c8948282413ea57dcc4620a",
+      "bytes": 976398
+    },
+    {
+      "file": "assets/three-BTL71eav.js",
+      "sha256": "3a0f02e26dae8b4f55c77ddc9f5a41e572e52859b41c295f9414304e5ef43d9f",
+      "bytes": 496059
+    },
+    {
+      "file": "icon.svg",
+      "sha256": "aca958c947d40fa3ed8f1a04d1d3324369e6800cd91fab5b95605b5c814ac5c6",
+      "bytes": 1129
+    },
+    {
+      "file": "index.html",
+      "sha256": "a8c0fe60d6ac581337b3aff67e08ac0a2d11266a017b7f8042c327d23ac6350f",
+      "bytes": 5294
+    },
+    {
+      "file": "manifest.webmanifest",
+      "sha256": "22e7f4477ecd9ee7c280e3cff7301450f38482807b365fa74d2eb6aee5922f1c",
+      "bytes": 470
+    },
+    {
+      "file": "sw.js",
+      "sha256": "a692c4a575471458e3b6019b516514096d7fb77b2a5275d78aaf82990ff2493f",
+      "bytes": 2117
+    }
+  ]
+}
