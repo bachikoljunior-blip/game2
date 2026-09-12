@@ -140,11 +140,12 @@ try {
 
   // Stay on the public input surface and demonstrate that the spawned actors are
   // live combatants. Either faction landing a hit is sufficient for this smoke gate.
-  await page.waitForFunction(() => window.__kagerou.menus._title < 0,
-    null, { timeout: 15000, polling: 100 });
+  // Acquire while the first enemy is still inside the visible lock cone.
   await page.keyboard.press('KeyQ');
   await page.waitForFunction(() => window.__kagerou.playerCamera.lockTarget?.isAlive === true,
     null, { timeout: 10000, polling: 50 });
+  await page.waitForFunction(() => window.__kagerou.menus._title < 0,
+    null, { timeout: 15000, polling: 100 });
   await page.keyboard.down('KeyW');
   await page.waitForFunction(() => {
     const k = window.__kagerou;
