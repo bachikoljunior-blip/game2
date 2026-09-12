@@ -1585,8 +1585,8 @@ export class CombatDirector {
     if (!tookHealth) this._safeSet(target, 'health', Math.max(0, (h0 ?? 0) - damage));
     this.ctx?.bus?.emit?.('hit', hp);
 
-    // Player emits its own `damage-taken` (it returns true to say so); everyone else
-    // relies on us for it.
+    // The entity may explicitly return true only when it already emitted
+    // `damage-taken`; the normal Player and Enemy paths rely on Combat here.
     if (verdict !== true) {
       const dp = this._dmgP();
       dp.entity = target; dp.amount = damage; dp.direction.copy(dir);

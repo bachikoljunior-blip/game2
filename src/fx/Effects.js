@@ -528,7 +528,13 @@ export class EffectsSystem {
     if (!p) return;
     const a = clamp((p.amount || 10) / 30, 0.2, 1.5);
     this.addShake(0.24 * a, 0.42, 15);
-    this.ctx.pipeline?.pulseDamage?.(a);
+    // The red lens rim means that the local player took damage. Enemies also
+    // emit damage-taken for blood, audio and impact shake, so do not attach the
+    // player-only screen cue to those outgoing hits.
+    const player = this.ctx.player;
+    if (!player || !p.entity || p.entity === player) {
+      this.ctx.pipeline?.pulseDamage?.(a);
+    }
     if (p.entity?.position) {
       _v6.copy(p.direction && p.direction.isVector3 ? p.direction : _up).normalize().multiplyScalar(-1);
       _v5.copy(p.entity.position); _v5.y += (p.entity.height || 1.75) * 0.6;

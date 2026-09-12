@@ -6,6 +6,7 @@ import { Group, Vector3 } from 'three';
 import { CombatDirector, TUNING } from '../src/gameplay/Combat.js';
 import { Enemy, EnemyManager } from '../src/gameplay/Enemy.js';
 import { Player } from '../src/gameplay/Player.js';
+import { EffectsSystem } from '../src/fx/Effects.js';
 import { EventBus } from '../src/core/EventBus.js';
 
 const baselineSource = execFileSync('git', ['show', '4e6d23a:src/gameplay/Combat.js'], { encoding: 'utf8' })
@@ -111,6 +112,38 @@ function parryResolution(late) {
   };
 }
 
+function damageFeedbackContract(mode) {
+  const { ctx, combat, enemy } = fixture();
+  const player = new Player(ctx);
+  ctx.player = player;
+  const damageEvents = [];
+  const lensPulses = [];
+  const impactFeedback = { shake: 0, blood: 0 };
+  const fx = {
+    ctx: { player, pipeline: { pulseDamage: (amount) => lensPulses.push(amount) } },
+    addShake() { impactFeedback.shake++; },
+    bloodImpact() { impactFeedback.blood++; },
+  };
+  ctx.bus.on('damage-taken', (p) => {
+    damageEvents.push({ entity: p.entity === player ? 'player' : 'enemy', amount: p.amount });
+    EffectsSystem.prototype._onDamageTaken.call(fx, p);
+  });
+  combat.update(1 / 60, 0, 1 / 60);
+  if (mode === 'guard') combat.setGuard(player, true, 1);
+  if (mode === 'late-parry') {
+    combat.requestParry(player);
+    combat.time += TUNING.PARRY_PERFECT * combat.diff.parryScale + 0.025;
+  }
+  combat.applyDamage(enemy, player, 15, mode === 'plain' ? { ignoreDefence: true, poise: 0 } : undefined);
+  const afterIncoming = { events: damageEvents.slice(), lensPulses: lensPulses.slice(), impactFeedback: { ...impactFeedback }, health: player.health };
+  combat.setGuard(player, false, 1);
+  combat.applyDamage(player, enemy, 10, { ignoreDefence: true, poise: 0 });
+  return {
+    afterIncoming,
+    afterOutgoing: { events: damageEvents.slice(), lensPulses: lensPulses.slice(), impactFeedback: { ...impactFeedback }, enemyHealth: enemy.health },
+  };
+}
+
 function defensiveContract() {
   const { combat, enemy, player, events } = fixture();
   combat.update(1 / 60, 0, 1 / 60);
@@ -213,7 +246,7 @@ function retryCleanup() {
 
 const evidence = {
   baseline: { regen: regenDuringEnemyLock(BaselineCombat), firstContact: firstContactClassification(BaselineCombat), playerRecovery: playerRewardRecovery(BaselineCombat), heavySlash: authoredHeavyContact(BaselineCombat, 'd_dr', false), heavyFinisher: authoredHeavyContact(BaselineCombat, 'heavy', true) },
-  current: { regen: regenDuringEnemyLock(CombatDirector), firstContact: firstContactClassification(CombatDirector), playerRecovery: playerRewardRecovery(CombatDirector), heavySlash: authoredHeavyContact(CombatDirector, 'd_dr', false), heavyFinisher: authoredHeavyContact(CombatDirector, 'heavy', true), perfect: parryResolution(false), late: parryResolution(true), defence: defensiveContract(), ashigaruRace: defaultPressureRace('ashigaru', [34, 25.5, 49.4]), roninRace: defaultPressureRace('ronin', [24, 17, 25.5, 35.1, 28.5]), finisher: pressureFinisher(), retry: retryCleanup() },
+  current: { regen: regenDuringEnemyLock(CombatDirector), firstContact: firstContactClassification(CombatDirector), playerRecovery: playerRewardRecovery(CombatDirector), heavySlash: authoredHeavyContact(CombatDirector, 'd_dr', false), heavyFinisher: authoredHeavyContact(CombatDirector, 'heavy', true), perfect: parryResolution(false), late: parryResolution(true), damageFeedback: { plain: damageFeedbackContract('plain'), guard: damageFeedbackContract('guard'), lateParry: damageFeedbackContract('late-parry') }, defence: defensiveContract(), ashigaruRace: defaultPressureRace('ashigaru', [34, 25.5, 49.4]), roninRace: defaultPressureRace('ronin', [24, 17, 25.5, 35.1, 28.5]), finisher: pressureFinisher(), retry: retryCleanup() },
   scope: 'Pure Node integration of Combat with real Enemy/EnemyManager callbacks; no renderer, DOM input, AI encounter policy, or BM-COMBAT-02 runtime sample.',
 };
 console.log(JSON.stringify(evidence, null, 2));
@@ -234,6 +267,20 @@ if (!process.argv.includes('--observe')) {
   assert.equal(evidence.current.perfect.playerHealth, 100);
   assert.equal(evidence.current.late.attackerPressure, TUNING.PARRY_LATE_POSTURE);
   assert.equal(evidence.current.late.playerHealth, 100 - 15 * TUNING.PARRY_LATE_DAMAGE * TUNING.DIFFICULTY.normal.enemyDamage);
+  for (const [mode, feedback] of Object.entries(evidence.current.damageFeedback)) {
+    assert.deepEqual(feedback.afterIncoming.events.map((x) => x.entity), ['player'],
+      `${mode}: incoming player damage must emit exactly once`);
+    assert.equal(feedback.afterIncoming.lensPulses.length, 1,
+      `${mode}: incoming player damage must pulse the red lens once`);
+    assert.deepEqual(feedback.afterOutgoing.events.map((x) => x.entity), ['player', 'enemy'],
+      `${mode}: outgoing enemy damage must still emit for non-lens consumers`);
+    assert.equal(feedback.afterOutgoing.lensPulses.length, 1,
+      `${mode}: an outgoing hit must not pulse the player damage lens`);
+    assert.deepEqual(feedback.afterIncoming.impactFeedback, { shake: 1, blood: 1 },
+      `${mode}: incoming impact feedback must remain active`);
+    assert.deepEqual(feedback.afterOutgoing.impactFeedback, { shake: 2, blood: 2 },
+      `${mode}: outgoing blood and impact shake must remain active`);
+  }
   assert.equal(evidence.current.defence.perfectWindow, 0.130);
   assert.ok(evidence.current.defence.lateWindow > 0);
   assert.equal(evidence.current.defence.punishWindow, 0.75);

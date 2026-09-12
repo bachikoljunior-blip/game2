@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "sourceSha": "cb4d7d620e8d704affc26b697f3458c1d953c724",
+  "reviewFile": "AI_DEVELOPMENT/EVIDENCE/r17-motion-cb4-review.json",
+  "scope": "Coordinator refutation of the two independent motion-review findings.",
+  "findings": [
+    {
+      "id": "R17-MOTION-001",
+      "status": "SURVIVES_AS_VISUAL_SYMPTOM",
+      "attempt": "Inspected native walk, enemy-active and incoming-reaction images and checked whether the symptom was only a clipped sample, hit effect or old ribbon.",
+      "result": "The mannequin-like forms persist away from the hit effect. Geometry versus shading remains unproven until neutral-material ablation."
+    },
+    {
+      "id": "R17-MOTION-002",
+      "status": "SURVIVES_WITH_OWNER_CORRECTION",
+      "attempt": "Traced HUD, Effects, Combat and Player event paths and executed real Player.onDamage and Effects._onDamageTaken methods with observed incoming/outgoing payloads.",
+      "result": "HUD already filters non-player entities. Effects applied pulseDamage to enemy damage events. Player returned true after reducing health without emitting damage-taken, so Combat suppressed the actual player event. The observed cue reversal is reproduced."
+    }
+  ],
+  "overall": "SCOPED_FAIL: both major symptoms survive. R17-MOTION-002 is the next bounded repair; R17-MOTION-001 follows after its neutral-material diagnosis."
+}

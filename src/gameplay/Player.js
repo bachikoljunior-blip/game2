@@ -1664,8 +1664,10 @@ export class Player {
       } else if (payload.parried) {
         this._setState('parry', null, true);
       }
-      // Health, posture, stagger, death and the events are Combat's from here.
-      return true;
+      // Combat owns the authoritative damage-taken event (ARCHITECTURE §2).
+      // Returning undefined tells it to emit once after observing this health
+      // change; true is reserved for handlers that already emitted the event.
+      return;
     }
 
     const frontal = -(dir.x * this.forward.x + dir.z * this.forward.z);   // 1 = from the front

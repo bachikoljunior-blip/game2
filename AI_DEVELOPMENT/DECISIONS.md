@@ -254,3 +254,6 @@ Codex model; the repository's legacy opus/haiku identifiers are not available he
 The local shell cannot start installed Chromium (SIGTRAP); Cloud Browser reaches the public
 release but cannot create a WebGL context. Prepare GitHub Actions with contents:read to run
 the existing capture apparatus without modifying its gates. This is not phone evidence.
+## 2026-09-12 — Prioritize the public start-position hotfix
+
+The user requested 「先にゲーム開始時に閉じ込められてるの直して欲しい」 after authorizing incremental main publication. Reproduced the main spawn API mismatch (authored z=73, actual fallback z=8 inside haiden). Extract the already implemented playerSpawn getter from PR #10 into a bounded main-based hotfix and publish matching docs after targeted verification. Preserve the remaining R17 candidate and all unfinished criteria; the completed candidate CI is not full product acceptance. This supersedes waiting for the entire R17 checkpoint before delivering this specific fix.

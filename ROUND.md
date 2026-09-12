@@ -23,7 +23,11 @@ every texture, mesh, animation and sound is synthesised at boot. `ARCHITECTURE.m
 binding contract that lets independent agents work on it in parallel; read §5 (art
 direction), §7 (perf budget) and §8 (file ownership) before dispatching anything.
 
-> **Last completed round: 16. Active round: 17, verification in progress.** Round 16 opened FAIL at 58/100 with
+> **Last completed round: 16. Active round: 17, verification in progress.** The current
+> continuation point is PR #10 after `cb4d7d6`: its 300-frame review retained the character
+> silhouette and reversed damage-lens majors. The start trap is separately published at
+> main `f7aa1d9`; the damage-lens repair is next and still requires fresh `[motion]` evidence.
+> Round 16 opened FAIL at 58/100 with
 > 3 blockers and closed on coherent `r16v1` with every contract gate held (120 draw calls,
 > 781,386 triangles, black gate 0/11/0/0/0, white gate hero 236 / torii 251). Five owners
 > committed, ten were gated out, and one blocker was re-routed mid-round on a measured

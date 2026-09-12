@@ -21,25 +21,35 @@ art-direction state record; project-wide session, plan and criterion pointers li
 
 ## Where the work is
 
-### Latest: 70fe265 proves the God Rays owner path
+### Latest: start trap published; damage-feedback repair next
 
-Latest published working SHA is `70fe26531bd35c035b979622edac8113f3932afc` on PR #10.
-[CI 34660985633](https://github.com/bachikoljunior-blip/game2/actions/runs/34660985633)
-passed all apparatus checks. Its actual-DOM rehearsal captured an enemy-attributable ronin
-hit after 45 startup / 18 active frames. The fixed-frame baseline A/B/restored PNGs are
-byte-identical, and only `god-rays-off` removed the global stair-stepped black ribbon:
-HUD-excluded black pixels fell from 8,988 to 2,298. FX, trail and alpha-particle ablations
-retained it. Independent native-image review confirms the result. This proves the God Rays
-owner path, not physical-device behavior, temporal stability or product acceptance. Exact
-run, artifact and hash details are in `AI_DEVELOPMENT/EVIDENCE/r17-diagnostic-progress.md`.
+The bounded start-position hotfix is on main/Pages at
+`f7aa1d9382f2b4f938c8ffb3bbd5af5c16b687b8`. Public
+[CI 34672160985](https://github.com/bachikoljunior-blip/game2/actions/runs/34672160985)
+matched the eight served artifact files exactly, reported zero browser/HTTP/GL faults, moved
+16.3176 m by keyboard and 19.6615 m by touch, and restored z=72.9995 on retry. This closes
+the user's immediate start-trap request; it does not establish overall product acceptance.
 
-The `[postfx]` owner has prepared a finite non-negative radiance guard at the HDR input and
-additive composite seam. It does not disable or weaken valid positive shafts. Next:
-independently review that source delta, publish it with `[motion]`, then run fresh five-frame,
-20-encounter and actual 300-frame evidence. The earlier 3633597 full motion sample still
-fails incoming-reaction coverage and retains the ribbon; primitive characters and combat
-occlusion remain open. main/Pages is still `4e6d23a`. Incremental verified publication is
-authorized, but unresolved checkpoint gates block this candidate's acceptance.
+PR #10's latest verified source is
+`cb4d7d620e8d704affc26b697f3458c1d953c724`. Its
+[CI 34666329831](https://github.com/bachikoljunior-blip/game2/actions/runs/34666329831)
+passed all five technical/tone frames (119 draw calls / 802,472 triangles), measured
+27/35 posture resolutions in 20 encounters (77.14% against 60%), and produced 300 unique
+rendered motion frames containing both hit directions. Independent review no longer observed
+the global black ribbon, but returned FAIL 55 with two majors: primitive character/cloth
+silhouettes, and a reversed damage lens that appeared on outgoing enemy damage instead of
+incoming player damage. Exact evidence and refutation are in
+`AI_DEVELOPMENT/EVIDENCE/r17-motion-cb4-{review,refutation}.json`.
+
+The reversed lens was reproduced in the event path. `Combat` is the authoritative
+`damage-taken` emitter, but `Player` returned `true` without emitting after applying combat
+damage; `Effects` also pulsed the red lens for every entity. The prepared repair restores one
+player event for plain/guard/late-parry damage and restricts the lens to exact local-player
+identity while preserving blood, shake and enemy audio. All 19 focused tests, production
+build and independent code review pass (blocker 0 / major 0). Next: publish this source delta
+with `[motion]`, re-run five frames, 20 encounters and 300 rendered frames, and independently
+inspect incoming/outgoing event frames. Then diagnose the remaining `Rig.js` major with
+neutral materials. Physical-device and human gates remain open.
 
 ### Earlier Round 17 checkpoints (superseded by the latest evidence above)
 

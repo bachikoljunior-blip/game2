@@ -1,19 +1,19 @@
 {
  "schemaVersion": 1,
- "updatedAt": "2026-09-12T01:47:34Z",
+ "updatedAt": "2026-09-12T05:25:07Z",
  "status": "active",
  "project": {
   "name": "KAGEROU 陽炎",
   "repository": "bachikoljunior-blip/game2",
   "objective": "Continue the mobile-first third-person Japanese sword-action game toward its established visual and interaction bar without external runtime assets or AI APIs.",
   "defaultBranch": "main",
-  "defaultBranchVerifiedSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
+  "defaultBranchVerifiedSha": "f7aa1d9382f2b4f938c8ffb3bbd5af5c16b687b8",
   "workingBranch": "codex/game2-criteria-20260911",
-  "workingBranchBaseSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
+  "workingBranchBaseSha": "f7aa1d9382f2b4f938c8ffb3bbd5af5c16b687b8",
   "previousWorkingBranch": "claude/game-reference-benchmark-qh0v0q",
-  "workingBranchPublicationSha": "70fe26531bd35c035b979622edac8113f3932afc",
+  "workingBranchPublicationSha": "cb4d7d620e8d704affc26b697f3458c1d953c724",
   "resumedFromRef": "origin/main",
-  "resumedFromSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
+  "resumedFromSha": "f7aa1d9382f2b4f938c8ffb3bbd5af5c16b687b8",
   "recoveryBranch": "codex/game2-smoke-20260911",
   "recoveryBranchPublicationSha": "bb5c49f1b8ffee0406a2b0e60d520b8c80d40320"
  },
@@ -33,40 +33,40 @@
   "round12Verdict": "TARGET PASS and OVERALL FAIL: coherent r12v1 passed apparatus, budget, tone, and lantern gates; independent review confirmed those repairs and retained the broader visual blockers.",
   "round13Verdict": "FAIL with measured progress: source-blind score 36 to 43; bamboo skyline and terrain hierarchy improved, blocker count fell from two to one, but detached bamboo fragments remain blocking and four major findings remain.",
   "round14Verdict": "FAIL with measured progress: source-blind score 44 to 50; the sun-glare major finding cleared, but one detached-bamboo blocker and terrain/courtyard majors remain.",
-  "latestVerifiedVisualBaseline": "3633597 phone/MEDIUM: five technical gates passed; motion remains FAIL. 70fe265's exact fixed-frame diagnosis isolates its global black ribbon to God Rays. See r17-candidate-363.md and r17-diagnostic-progress.md.",
+  "latestVerifiedVisualBaseline": "cb4d7d6 phone/MEDIUM: five technical gates and 300 unique rendered frames passed apparatus. Independent motion review FAIL 55 retained primitive character/cloth readability and reversed damage-lens majors; the prior screen-crossing ribbon was not observed. See r17-motion-cb4-review.json.",
   "capture": {
    "status": "passed",
    "tag": "ci-candidate",
    "worstDrawCalls": 119,
-   "worstTriangles": 803596,
+   "worstTriangles": 802472,
    "resolution": "2532x1170",
    "programs": 117,
    "deadShaders": 0,
    "consoleErrors": 0,
    "limitation": "SwiftShader evidence is not real-device 60 fps evidence.",
-   "revision": "3633597b1499d60a25a41a94c4fe02677cdaca35",
-   "buildFingerprint": "688eb51ffa158ec76dd2934faccf3716b32f3213724a1ae01ffaaa4f31efd400",
-   "workflowRun": 34640487523,
-   "counterScope": "Worst captured frame: 803596 triangles. End-of-run stats: 804744 triangles; these are distinct counters."
+   "revision": "cb4d7d620e8d704affc26b697f3458c1d953c724",
+   "buildFingerprint": "d0232b7421e1861acb9ee108bb500ef70f06635daf3813af02e922347d96c5e8",
+   "workflowRun": 34666329831,
+   "counterScope": "Worst captured frame: 802472 triangles. SwiftShader confirms render correctness and budgets, not physical-device frame rate."
   },
   "productionBuild": {
    "status": "passed",
    "command": "node node_modules/vite/bin/vite.js build",
-   "checkedAt": "2026-09-11T22:11:41.593Z",
-   "mainChunkGzipKb": 330.59,
+   "checkedAt": "2026-09-12T05:28:46Z",
+   "mainChunkGzipKb": 331.17,
    "entryChunkGzipKb": 1.13,
-   "totalGzipKb": 491.82,
-   "sourceScope": "Local unchanged 3633597 game source; npm run check and 18 focused tests passed. Build identity must be revalidated against carried CI control."
+   "totalGzipKb": 492.4,
+   "sourceScope": "Local damage-feedback repair plus cb4 source: npm run check and all 19 focused tests passed. Fresh remote render identity remains pending."
   },
   "publication": {
-   "status": "partially_verified",
-   "round15MainMergeSha": "e40a1884a57250391dd08bdf50dc2c6cb3837a36",
-   "round15BranchSha": "56382d8d1e445fa35fbc5dfeb257e054d5715617",
+   "status": "start_hotfix_published_and_verified",
+   "latestMainSha": "f7aa1d9382f2b4f938c8ffb3bbd5af5c16b687b8",
+   "latestBranchSha": "b3be53f597926ff19e8771c4c9d62baa6049b21b",
    "publicUrl": "https://bachikoljunior-blip.github.io/game2/",
    "runtimeUrl": "https://bachikoljunior-blip.github.io/game2/docs/",
-   "repositoryVerified": "INSPECTED: origin/main is e40a188; docs/assets carries index-BoUb9vMW.js, main-0qGNkpyh.js, Rig-DmfyOsEa.js and three-BTL71eav.js, docs/index.html references assets/index-BoUb9vMW.js, and the superseded index-D_EFhYS4.js / main-Ctu2PmB7.js / Rig-DXuvNL97.js are removed.",
-   "browserGate": "NOT VERIFIED IN THIS RUN. The agent proxy denies bachikoljunior-blip.github.io:443 by policy (403 on CONNECT, confirmed at $HTTPS_PROXY/__agentproxy/status), so neither npm run verify:pages nor curl can reach the live surface from this container. Do not record a public browser gate for Round 15 until it is actually run from a network that can reach github.io. The Rounds 13-14 browser gate at 4a3eff7 remains the last verified one.",
-   "checkedAt": "2026-08-01T02:45:00Z"
+   "repositoryVerified": "main f7aa1d9 has tree 9999e95; its Pages payload matches the eight expected artifact files byte-for-byte.",
+   "browserGate": "CI 34672160985 passed the public surface: served revision 90c08965, zero page/console/request/HTTP/GL faults, keyboard moved 16.3176 m, touch moved 19.6615 m and retry restored z=72.9995.",
+   "checkedAt": "2026-09-12T04:12:39Z"
   },
   "dependencyRestore": {
    "status": "passed",
@@ -102,7 +102,7 @@
    "notCovered": "Physical-device/human gates, valid isolated shake ablation, enemy edge pixel survey, true-peak audio and motion-video review remain open. E01-COMBAT and E14-AI now have an actual 20-encounter sample.",
    "latestRun": {
     "tag": "ci-candidate",
-    "revision": "3633597b1499d60a25a41a94c4fe02677cdaca35",
+    "revision": "cb4d7d620e8d704affc26b697f3458c1d953c724",
     "encounters": 20,
     "initialMetricVerdicts": {
      "pass": 15,
@@ -110,8 +110,8 @@
      "inconclusive": 3
     },
     "selfCheck": "120-frame determinism and render-substitution divergence are both zero. The screenshot rig is linked by SHA-256 and identical build fingerprint.",
-    "scope": "20 encounters; BM-COMBAT-02: 21/30 = 70%, threshold 60%. BM-ANIM-01: 18/18, shortest 233 ms. These are runtime measurements, not a product PASS.",
-    "evidence": "AI_DEVELOPMENT/EVIDENCE/r17-candidate-363.md"
+    "scope": "20 encounters; BM-COMBAT-02: 27/35 = 77.14%, threshold 60%. BM-ANIM-01 passed. These are runtime measurements, not a product PASS.",
+    "evidence": "AI_DEVELOPMENT/EVIDENCE/r17-motion-cb4-review.json"
    }
   },
   "browserSmoke": {
@@ -121,6 +121,33 @@
    "artifact": 10266976639,
    "scope": "Two fresh native touch contexts and real WebGL loss/restore at 568x320/MEDIUM; zero page/console/request/HTTP/GL faults; not phone performance or public deployment evidence.",
    "evidence": "AI_DEVELOPMENT/EVIDENCE/r17-browser-smoke.md"
+  },
+  "startPositionHotfix": {
+   "status": "published_and_verified",
+   "branch": "codex/game2-start-position-hotfix",
+   "baseSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
+   "requestedFix": "開始時に建物内へ閉じ込められる不具合を最優先で修正",
+   "sourceChange": "Expose existing Level.spawnPoints.player through playerSpawn; explicit relative link to the existing icon.svg. Both deltas already exist in PR #10. No new spawn coordinates or collision bypass.",
+   "reproduced": "Baseline Player.init chooses [0,812,8] instead of authored [0,812,73], 65m away inside haiden footprint.",
+   "nodeVerification": "tools/check-start-position.mjs failed before fix, passed after: initial73 -> forward62.7633333333 -> retry73. Flat terrain/omitted render rig only.",
+   "geometryReview": "Independent actual MEDIUM terrain, four stair flights, outer torii and boundary: [0,811.9825668334961,73] -> [-0.0035683393454336164,811.9924676016805,62.763833969836824], retry restores player and capsule. This is nonrendered.",
+   "artifactRevision": "90c089650ed6188af5dac6395d028a72e07bc113d1a45f6404bb99fa5d13b32a",
+   "mainSha": "f7aa1d9382f2b4f938c8ffb3bbd5af5c16b687b8",
+   "publicRun": 34672160985,
+   "publicResult": "Exact served bytes, real keyboard and touch movement, retry and zero-fault gates passed.",
+   "continuingCandidate": {
+    "pr": 10,
+    "branch": "codex/game2-criteria-20260911",
+    "sha": "cb4d7d620e8d704affc26b697f3458c1d953c724",
+    "ci": 34666329831,
+    "ciConclusion": "success",
+     "remaining": "Damage-feedback repair requires a fresh [motion] run; primitive character readability remains major."
+   },
+   "firstBrowserRun": {
+    "run": 34671373601,
+    "conclusion": "FAIL: two console404s after successful keyboard movement/retry; touch did not run",
+    "nextFix": "Point the document icon to the existing icon.svg (same link already in PR10) and record exact console/server URLs. This is a hypothesis for the404s until the new run. Keep zero-error assertion. Reuse the unchanged4e baseline; rerun both fresh candidate boots."
+   }
   }
  },
  "qualityBar": {
@@ -135,7 +162,7 @@
    "Genshin Impact (touch layer and phone performance envelope only)"
   ],
   "criteria": "62 benchmark entries; legacy status counts remain 21 verified, 4 under review, 14 blocked, 23 proposed until the new evidence is matched to each full threshold. Round 17 measurement coverage is recorded separately; no thresholds were relaxed.",
-  "headlineGap": "3633597 passes five technical frames and the 20-encounter posture target (21/30 = 70%). 70fe265 passed an actual-DOM incoming-hit rehearsal and a stable stopped-frame ablation isolated the global black ribbon to God Rays. The existing 300-frame sample still lacks an incoming reaction, and primitive character forms/combat occlusion remain. Physical-device and human gates remain open.",
+  "headlineGap": "cb4d7d6 passes five technical frames, 20 encounters (27/35 posture resolutions = 77.14%) and 300 unique rendered frames. Independent review no longer observes the global black ribbon, but retains primitive character/cloth readability and reversed damage-lens majors. Physical-device and human gates remain open.",
   "structuralBlocker": "Local Chromium SIGTRAP and Cloud Browser WebGL limitations are bypassed using the already-authorized GitHub Actions execution surface. Actual capture and smoke evidence are available. Physical-device and human gates still require actual measurements.",
   "neverPerformed": [
    "A matched reference-title gameplay-video or physical-device comparison. Official publisher reference stills were fetched and supplied to a version-blind model critic on 2026-09-11.",
@@ -145,21 +172,21 @@
  },
  "currentWork": {
   "activeTask": "R17-GAMEPLAY",
-  "lastCompletedTask": "70fe265 CI 34660985633 passed the corrected input rehearsal and exact A/A/A-B apparatus; independent image review isolated the global black ribbon to God Rays.",
+  "lastCompletedTask": "The start-position trap is fixed on main/Pages at f7aa1d9 and publicly verified. Independent cb4 motion review cleared the global ribbon but reproduced reversed damage-lens feedback; its code repair passed independent review with blocker 0 / major 0.",
   "nextTask": "R17-GAMEPLAY",
-  "nextStartingPoint": "Independently review the [postfx] finite non-negative God Rays radiance repair, then publish it as a source-changing [motion] checkpoint. Require fresh five-frame, 20-encounter and actual 300-frame verification plus independent review. Integrate verified bounded checkpoints into main/Pages; overall product PASS is not required for every incremental release, but failed checkpoint gates block acceptance.",
+  "nextStartingPoint": "Publish the damage-feedback repair on PR #10 with [motion], then require fresh five-frame, 20-encounter and actual 300-frame verification plus independent incoming/outgoing frame review. Next diagnose the Rig.js character major with neutral materials. Integrate verified bounded checkpoints into main/Pages.",
   "blockedBy": [],
   "remoteStateChangeAuthorized": true,
   "remotePolicy": "Across future sessions, push verified checkpoints, integrate them into main, and publish GitHub Pages without asking again. This remains active until the user changes it."
  },
  "knownUncertainty": [
-  "BM-COMBAT-02: 21/30 = 70% in 20 encounters; unchanged threshold 60%.",
+  "BM-COMBAT-02: 27/35 = 77.14% in 20 encounters; unchanged threshold 60%.",
   "BM-ANIM-01: 18/18 measured attacks; shortest 233 ms against 140 ms.",
   "BM-CAMERA-04 remains inconclusive: path divergence 2.118 m.",
   "BM-CHAR-02 pixel survey and BM-AUDIO-03 true peak remain unverified.",
-  "Motion: old 3633597 full sample has 32 enemy startup frames, 6 active frames and zero incoming reactions; 70fe265 preflight captured a valid incoming ronin hit but the actual fresh 300-frame sample remains required.",
-  "Black ribbons persist in 3633597. Exact A/A/A-B at 70fe265 isolates the global ribbon to the God Rays path; the prepared source repair remains unverified in native pixels. Character forms and body occlusion remain deficient.",
+  "Motion: cb4 has 300 unique rendered frames and both incoming and outgoing hits. Its damage lens is reversed; the independently reviewed repair still needs fresh rendered evidence.",
+  "No screen-crossing black ribbon was observed in the cb4 300-frame capture. Primitive character forms and combat-body/weapon readability remain a major pending neutral-material diagnosis.",
   "Real-device performance, thermals, boot and human ergonomics remain unmeasured.",
-  "main/Pages remains 4e6d23a; no Round 17 publication yet."
+  "main/Pages is f7aa1d9 with the verified start-position hotfix; broader Round 17 source remains on PR #10."
  ]
 }
