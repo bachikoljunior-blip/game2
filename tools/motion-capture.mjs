@@ -346,19 +346,20 @@ export function motionPlans(layout) {
       probes: ['player', 'input', 'feet', 'camera', 'enemies', 'emotion', 'blade', 'stats'],
       actions: [reset(0),
         { f: 1, do: 'call', target: 'enemies', method: 'spawnWave', args: [1,
-          { seed: 0x77aa, alerted: true, archetypes: ['ashigaru'], radius: 2.8 }] },
+          { seed: 0x77aa, alerted: true, archetypes: ['ronin'], radius: 2.8 }] },
         { f: 2, do: 'lockIfFree' },
-        // Hold position for the opening thrust. The previous immediate approach
-        // ran inside the spear's minimum range before its active window, then
-        // killed the enemy before a second attack could land. Preserve that
-        // incoming attack before beginning the same DOM-input counterattack.
+        // Existing 20-encounter evidence contains ronin reactions by frames 39/45,
+        // while both single-ashigaru attempts produced active spear frames without
+        // contact. Hold position through the opening sword attack, then begin the
+        // same DOM-input counterattack. This changes the evidence fixture, not combat.
         { f: 3, do: 'mark', label: 'stationary-opening' },
         { f: 60, do: 'bot', on: true, policy: 'aggressive' },
         { f: 60, do: 'mark', label: 'scripted-input-counterattack' },
         { f: 178, do: 'bot', on: false }],
-      conditions: { playerScript: 'aggressive-v2', stationaryOpeningFrames: 60, reactionFloorMs: 200,
+      conditions: { playerScript: 'aggressive-v2', enemyArchetype: 'ronin', stationaryOpeningFrames: 60, reactionFloorMs: 200,
+        fixtureSelection: 'Existing 20-encounter trace had ronin reactions by authored frames 39 and 45; single-ashigaru attempts had none.',
         inputPath: 'DOM pointer and registered guard zone', injectedCombatState: false },
-      description: 'One alerted AI enemy and real lock-on. Hold position for the opening attack, then the aggressive-v2 player script approaches, guards and attacks through DOM input; no attack, hit or reaction state is injected.' },
+      description: 'One alerted ronin AI enemy and real lock-on. Hold position for the opening attack, then the aggressive-v2 player script approaches, guards and attacks through DOM input; no attack, hit or reaction state is injected.' },
   ];
 }
 
@@ -376,6 +377,22 @@ export function combatCoverage(frames, events) {
       && (enemyIds.has(event.attacker?.id) || enemyIds.has(event.a?.id) || enemyIds.has(event.b?.id)
         || (event.name === 'damage-taken' && event.entity?.id === frames[0]?.player.id))),
   };
+}
+
+export function diagnosticCombatPlan(combatPlan) {
+  const actions = combatPlan.actions
+    .filter((action) => action.do !== 'bot' && action.do !== 'mark' && action.method !== 'spawnWave')
+    .concat([
+      { f: 1, do: 'call', target: 'enemies', method: 'spawnWave', args: [1,
+        { seed: 0x77aa, alerted: true, archetypes: ['ashigaru'], radius: 2.8 }] },
+      { f: 3, do: 'bot', on: true, policy: 'aggressive' },
+    ])
+    .sort((a, b) => a.f - b.f);
+  return { ...combatPlan, frames: 39, render: false, actions,
+    conditions: { ...combatPlan.conditions, enemyArchetype: 'ashigaru', stationaryOpeningFrames: 3,
+      fixtureSelection: 'Exact reported 3633597 single-ashigaru fixture.',
+      diagnosticReplayOf: '3633597 combat frames 0-38' },
+    description: 'Replay the old immediate-approach single-ashigaru input solely to reproduce the reported artifact at frame 38.' };
 }
 
 async function rehearseInputs(page, plans) {
@@ -405,12 +422,7 @@ async function rehearseInputs(page, plans) {
 async function diagnoseFixedFrame(page, plans) {
   // Replay the recorded failing stimulus, not the new opening. Substitution is
   // permitted only for setup; the A/A and A/B images below all use the real pipeline.
-  const oldCombat = { ...plans[1], frames: 39, render: false,
-    conditions: { ...plans[1].conditions, stationaryOpeningFrames: 3, diagnosticReplayOf: '3633597 combat frames 0-38' },
-    description: 'Replay the old immediate-approach input solely to reproduce the reported artifact at frame 38.',
-    actions: plans[1].actions.filter((a) => a.do !== 'bot' && a.do !== 'mark').concat([
-      { f: 3, do: 'bot', on: true, policy: 'aggressive' },
-    ]) };
+  const oldCombat = diagnosticCombatPlan(plans[1]);
   const [locomotion] = await rehearseInputs(page, [plans[0]]);
   const badTrace = (trace) => trace.failedActions.length
     || trace.events.some((e) => ['frame-error', 'harness-error'].includes(e.name));
@@ -419,8 +431,14 @@ async function diagnoseFixedFrame(page, plans) {
     const h = window.__kh, k = window.__kagerou;
     const begun = h.begin(plan);
     if (!begun.ok) throw new Error(begun.error);
-    const step = h.advance(plan.frames);
-    if (!step.ok || step.frame !== 39) throw new Error('Could not replay artifact frame 38');
+    // Renderer substitution intentionally avoids the expensive first 38 renders, but
+    // Engine owns the authoritative draw/triangle counters. Render the inspected frame
+    // through Engine so the runtime gate observes this frame rather than a stale zero.
+    const setupStep = h.advance(plan.frames - 1);
+    if (!setupStep.ok || setupStep.frame !== 38 || !h.setRender(true))
+      throw new Error('Could not prepare artifact frame 38');
+    const renderedStep = h.advance(1);
+    if (!renderedStep.ok || renderedStep.frame !== 39) throw new Error('Could not render artifact frame 38');
     const trace = h.finish();
     const p = k.pipeline;
     if (p._taa || p._motionBlur || p._dof) throw new Error('Diagnostic requires MEDIUM without TAA, motion blur or DOF');
@@ -454,16 +472,27 @@ async function diagnoseFixedFrame(page, plans) {
       const k = window.__kagerou, h = window.__kh, saved = window.__motionAblation;
       Object.assign(k.pipeline, saved.scalarState);
       saved.systems.forEach((s, i) => { s.mesh.visible = saved.visible[i]; });
-      if (variant === 'god-rays-off') k.pipeline.godRayStrength = 0;
+      if (variant === 'god-rays-off') {
+        k.pipeline._godRays = false;
+      }
       if (variant === 'fx-off') saved.systems.forEach((s) => { s.mesh.visible = false; });
       if (variant === 'trails-off') k.fx._trailPool.forEach((s) => { s.mesh.visible = false; });
       if (variant === 'alpha-particles-off') k.fx._alpha.mesh.visible = false;
+      const defines = k.pipeline._compositeDefines();
+      if (JSON.stringify(k.pipeline.mComposite.defines) !== JSON.stringify(defines)) {
+        k.pipeline.mComposite.defines = defines;
+        k.pipeline.mComposite.needsUpdate = true;
+      }
+      k.renderer.info.reset();
       k.pipeline.render(0);
       const gl = k.renderer.getContext(); gl.finish();
       const error = gl.getError();
+      const variantRender = { drawCalls: k.renderer.info.render.calls, triangles: k.renderer.info.render.triangles };
+      if (variantRender.drawCalls <= 0 || variantRender.triangles <= 0)
+        throw new Error(`${variant}: direct render produced no geometry`);
       if (error !== gl.NO_ERROR || k.engine.frame !== saved.frame || h.virtualNow !== saved.now)
         throw new Error('Ablation changed simulation time or raised a GL error');
-      return { engineFrame: k.engine.frame, virtualNow: h.virtualNow, glError: error };
+      return { engineFrame: k.engine.frame, virtualNow: h.virtualNow, glError: error, variantRender };
     }, variant);
     const row = await sampleFrame(page, 38, 'render-ablation');
     if (row.faults.length) throw new Error(`Ablation runtime apparatus: ${row.faults.join('; ')}`);

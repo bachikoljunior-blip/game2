@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { deflateSync } from 'node:zlib';
 import { chunk, encodePNG } from '../.kit/lib/image/png.mjs';
-import { inspectMotionPNG, motionPlans, combatCoverage } from './motion-capture.mjs';
+import { inspectMotionPNG, motionPlans, combatCoverage, diagnosticCombatPlan } from './motion-capture.mjs';
 
 const PNG_SIG = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 
@@ -91,11 +91,14 @@ test('combat motion plan gets reactions through the validated DOM-input player s
   assert.equal(combat.frames, 180);
   assert.deepEqual(combat.conditions, {
     playerScript: 'aggressive-v2',
+    enemyArchetype: 'ronin',
     stationaryOpeningFrames: 60,
     reactionFloorMs: 200,
+    fixtureSelection: 'Existing 20-encounter trace had ronin reactions by authored frames 39 and 45; single-ashigaru attempts had none.',
     inputPath: 'DOM pointer and registered guard zone',
     injectedCombatState: false,
   });
+  assert.equal(combat.actions.find((action) => action.method === 'spawnWave')?.args?.[1]?.archetypes?.[0], 'ronin');
   assert.ok(combat.actions.some((action) => action.do === 'bot' && action.on === true
     && action.policy === 'aggressive'));
   assert.ok(combat.actions.some((action) => action.do === 'bot' && action.on === false));
@@ -124,4 +127,22 @@ test('incoming-attack coverage rejects the observed player-only counterattack', 
   }
   assert.equal(combatCoverage(frames, [{ f: 30, name: 'hit', attacker: { id: 9000 } }]).enemyReactionEvents.length, 0);
   assert.equal(combatCoverage(frames.slice(0, 2), [{ f: 78, name: 'hit', attacker: { id: 9000 } }]).enemyReactionEvents.length, 0);
+});
+
+test('black-ribbon diagnostic keeps the reported ashigaru fixture isolated from the motion plan', () => {
+  const [, combat] = motionPlans({
+    gestureSafe: true,
+    gestureCentre: { x: 608, y: 164 },
+    stickOrigin: { x: 177, y: 265 },
+    stickRadius: 56,
+  });
+  const diagnostic = diagnosticCombatPlan(combat);
+  assert.equal(combat.conditions.enemyArchetype, 'ronin');
+  assert.equal(diagnostic.conditions.enemyArchetype, 'ashigaru');
+  assert.equal(diagnostic.conditions.stationaryOpeningFrames, 3);
+  assert.equal(diagnostic.frames, 39);
+  assert.equal(diagnostic.render, false);
+  assert.equal(diagnostic.actions.filter((action) => action.method === 'spawnWave').length, 1);
+  assert.equal(diagnostic.actions.find((action) => action.method === 'spawnWave').args[1].archetypes[0], 'ashigaru');
+  assert.equal(diagnostic.actions.some((action) => action.do === 'bot' && action.f === 3), true);
 });

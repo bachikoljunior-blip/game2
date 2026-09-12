@@ -12,9 +12,9 @@
   "activePlanNode": "R17-GAMEPLAY",
   "activeTask": "R17-GAMEPLAY",
   "lastSuccessfulAction": "Inspected 3633597 CI 34640487523: five-frame technical PASS, 20 encounters with posture resolution 21/30 = 70%, 18 attack onsets >=233 ms; 300 rendered frames preserved and independently reviewed.",
-  "currentFailingAction": "Incoming attack coverage failed: 32 startup / 6 active frames, zero enemy-attributable reactions. Black ribbons, primitive characters and combat occlusion remain; three interaction criteria are inconclusive.",
-  "currentHypothesis": "Immediate approach moved inside spear minimum range before its active window. Holding position may allow an incoming hit. Black ribbons need stopped-frame god-ray/FX/trail/alpha-particle ablation; the previous god-ray cause was not established.",
-  "nextAction": "5cc1897 CI 34653295642 failed before runtime because the shallow motion checkout lacked the combat regression baseline. Publish the prerequisite-fetch correction, then inspect preflight.json and diagnostic.json/PNGs. See r17-diagnostic-progress.md; no diagnostic pixels or new runtime passes exist yet.",
+  "currentFailingAction": "ccdbda4 CI 34653461432: stationary single-ashigaru rehearsal had 60 startup / 14 active frames but zero enemy-attributable reactions. Fixed-frame diagnosis then hit an apparatus false failure because direct pipeline renders did not update Engine draw counters; no diagnostic PNG exists.",
+  "currentHypothesis": "Existing 20-encounter evidence contains ronin reactions by authored frames 39 and 45, so a stationary single-ronin fixture may cover an incoming reaction. Black ribbons still require stable stopped-frame god-ray/FX/trail/alpha-particle ablation; no renderer cause is established.",
+  "nextAction": "Independently review and publish the apparatus-only delta that renders frame 38 once through Engine, switches the actual god-ray shader define, and uses the evidence-selected ronin fixture. Run [motion-retry] [diagnose], then inspect preflight coverage and native A/A/A-B PNGs. See r17-diagnostic-progress.md.",
   "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
   "pendingVerification": [
    "Stationary opening rehearsal and an incoming reaction in the actual 300-frame sample.",
@@ -41,7 +41,7 @@
   ],
   "remotePushPendingAuthorization": false,
   "remoteReleaseAuthorized": true,
-  "remotePublicationStatus": "5cc1897 is published on PR #10. CI 34653295642 failed in preparation; the workflow prerequisite correction awaits publication. Game source/control stays 3633597. main remains 4e6d23a.",
+  "remotePublicationStatus": "ccdbda4 is published on PR #10. CI 34653461432 reached runtime but both input rehearsal and fixed-frame apparatus failed; the correction is under local review. Game source/control stays 3633597. main remains 4e6d23a.",
   "publishedMainSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
   "publishedUrl": "https://bachikoljunior-blip.github.io/game2/",
   "continuationAutomation": {
