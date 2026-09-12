@@ -161,22 +161,49 @@ try {
     const k = window.__kagerou;
     const target = k.playerCamera.lockTarget;
     return target && Math.hypot(target.position.x - k.player.position.x,
-      target.position.z - k.player.position.z) <= 2.15;
+      target.position.z - k.player.position.z) <= 1.60;
   }, null, { timeout: 10000, polling: 50 });
   await page.keyboard.up('KeyW');
   await page.waitForTimeout(150);
   for (let i = 0; i < 18; i++) {
+    // Ashigaru will circle and back-step between swings. Re-close through the
+    // normal movement input instead of assuming the first approach remains in
+    // katana range for the whole exchange.
+    const distance = await page.evaluate(() => {
+      const k = window.__kagerou;
+      const target = k.playerCamera.lockTarget;
+      return target ? Math.hypot(target.position.x - k.player.position.x,
+        target.position.z - k.player.position.z) : Infinity;
+    });
+    if (distance > 1.65) {
+      await page.keyboard.down('KeyW');
+      await page.waitForFunction(() => {
+        const k = window.__kagerou;
+        const target = k.playerCamera.lockTarget;
+        return target && Math.hypot(target.position.x - k.player.position.x,
+          target.position.z - k.player.position.z) <= 1.55;
+      }, null, { timeout: 5000, polling: 50 });
+      await page.keyboard.up('KeyW');
+    }
     await page.mouse.click(360, 165);
     if (await page.evaluate(() => window.__normalSpawnEvidence.hits.length > 0)) break;
     await page.waitForTimeout(320);
   }
+  report.combat = await page.evaluate(() => {
+    const k = window.__kagerou;
+    const target = k.playerCamera.lockTarget;
+    return {
+      hits: window.__normalSpawnEvidence.hits.slice(),
+      playerHealth: k.player.health,
+      playerState: k.player.state,
+      targetDistance: target ? Math.hypot(target.position.x - k.player.position.x,
+        target.position.z - k.player.position.z) : null,
+      enemies: k.enemies.list.map((enemy) => ({ archetype: enemy.archetype,
+        health: enemy.health, state: enemy.state })),
+    };
+  });
   await page.waitForFunction(() => window.__normalSpawnEvidence.hits.length > 0,
     null, { timeout: 30000, polling: 100 });
-  report.combat = await page.evaluate(() => ({
-    hits: window.__normalSpawnEvidence.hits.slice(),
-    playerHealth: window.__kagerou.player.health,
-    enemies: window.__kagerou.enemies.list.map((enemy) => ({ archetype: enemy.archetype, health: enemy.health, state: enemy.state })),
-  }));
   await page.screenshot({ path: join(out, 'enemy-combat.png') });
   assert.equal(report.errors.length, 0, JSON.stringify(report.errors));
   report.status = 'PASS';
