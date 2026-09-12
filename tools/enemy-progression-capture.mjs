@@ -95,13 +95,26 @@ try {
   }));
   assert.ok(report.initial.position[2] > 72.5, 'normal start must begin on the authored approach');
 
+  // Clear the opening card and most of the approach at normal speed, then tap
+  // through the final metres. Software rendering can block the test-side poll
+  // for several game frames; holding W all the way to the trigger would carry
+  // the player through the waiting formation before key-up is delivered.
   await page.keyboard.down('KeyW');
+  await page.waitForFunction(() => window.__kagerou.player.position.z < 52,
+    null, { timeout: 240000, polling: 50 });
+  await page.keyboard.up('KeyW');
+  await page.waitForFunction(() => window.__kagerou.menus._title < 0,
+    null, { timeout: 15000, polling: 100 });
+  for (let step = 0; step < 40; step++) {
+    const armed = await page.evaluate(() => window.__kagerou.level._enc.active?.id === 'forecourt'
+      && window.__kagerou.level._enc.armed === true);
+    if (armed) break;
+    await page.keyboard.press('KeyW', { delay: 90 });
+    await page.waitForTimeout(60);
+  }
   await page.waitForFunction(() => window.__kagerou.level._enc.active?.id === 'forecourt'
       && window.__kagerou.level._enc.armed === true,
-    null, { timeout: 240000, polling: 50 });
-  // Stop at the authored encounter boundary, before its delayed spawn sequence,
-  // so the evidence captures the same first-contact view a player receives.
-  await page.keyboard.up('KeyW');
+    null, { timeout: 10000, polling: 50 });
   await page.waitForFunction(() => window.__normalSpawnEvidence.calls.length >= 2,
     null, { timeout: 30000, polling: 100 });
   await page.waitForTimeout(100);
@@ -140,12 +153,9 @@ try {
 
   // Stay on the public input surface and demonstrate that the spawned actors are
   // live combatants. Either faction landing a hit is sufficient for this smoke gate.
-  // Acquire while the first enemy is still inside the visible lock cone.
   await page.keyboard.press('KeyQ');
   await page.waitForFunction(() => window.__kagerou.playerCamera.lockTarget?.isAlive === true,
     null, { timeout: 10000, polling: 50 });
-  await page.waitForFunction(() => window.__kagerou.menus._title < 0,
-    null, { timeout: 15000, polling: 100 });
   await page.keyboard.down('KeyW');
   await page.waitForFunction(() => {
     const k = window.__kagerou;
