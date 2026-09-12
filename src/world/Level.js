@@ -1589,6 +1589,9 @@ export class Level {
     };
   }
 
+  /** Player and retry share the one placement authored in the level. */
+  get playerSpawn() { return this.spawnPoints?.player ?? null; }
+
   _buildInteractables() {
     const bell = this._bellPos || new Vector3(LAYOUT.bellTower.x, WORLD.PLATEAU_HEIGHT + 2, LAYOUT.bellTower.z);
     const ema = this._emaPos || new Vector3(LAYOUT.emaRack.x, WORLD.PLATEAU_HEIGHT + 1.4, LAYOUT.emaRack.z);

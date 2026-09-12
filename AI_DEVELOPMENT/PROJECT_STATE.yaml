@@ -1,15 +1,15 @@
 {
  "schemaVersion": 1,
- "updatedAt": "2026-08-01T12:55:00Z",
+ "updatedAt": "2026-09-12T03:42:59.587267+00:00",
  "status": "active",
  "project": {
   "name": "KAGEROU 陽炎",
   "repository": "bachikoljunior-blip/game2",
   "objective": "Continue the mobile-first third-person Japanese sword-action game toward its established visual and interaction bar without external runtime assets or AI APIs.",
   "defaultBranch": "main",
-  "defaultBranchVerifiedSha": "4a3eff701af0f6db52f5b780247e38422d40aad6",
-  "workingBranch": "claude/kagerou-benchmark-verification-7fb2zd",
-  "workingBranchBaseSha": "72187ac",
+  "defaultBranchVerifiedSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
+  "workingBranch": "codex/game2-start-position-hotfix",
+  "workingBranchBaseSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
   "previousWorkingBranch": "claude/game-reference-benchmark-qh0v0q",
   "workingBranchPublicationSha": "b2a7433de7ff72082287d6b5429ca8af54a8642b",
   "resumedFromRef": "origin/claude/kagerou-round9-measurement-inj5qq",
@@ -92,6 +92,35 @@
     "evidence": "AI_DEVELOPMENT/EVIDENCE/interaction-i1.md"
    },
    "notCovered": "E01-COMBAT and E14-AI. Their scenario and metrics are wired but unsampled: at 0.2-1.5 simulated fps with three enemies engaged (TD-010), the >=20-encounter sample they require is hours of wall clock. Left unmeasured rather than reduced."
+  },
+  "startPositionHotfix": {
+   "status": "awaiting_verification",
+   "branch": "codex/game2-start-position-hotfix",
+   "baseSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
+   "requestedFix": "開始時に建物内へ閉じ込められる不具合を最優先で修正",
+   "sourceChange": "Expose existing Level.spawnPoints.player through playerSpawn; explicit relative link to the existing icon.svg. Both deltas already exist in PR #10. No new spawn coordinates or collision bypass.",
+   "reproduced": "Baseline Player.init chooses [0,812,8] instead of authored [0,812,73], 65m away inside haiden footprint.",
+   "nodeVerification": "tools/check-start-position.mjs failed before fix, passed after: initial73 -> forward62.7633333333 -> retry73. Flat terrain/omitted render rig only.",
+   "geometryReview": "Independent actual MEDIUM terrain, four stair flights, outer torii and boundary: [0,811.9825668334961,73] -> [-0.0035683393454336164,811.9924676016805,62.763833969836824], retry restores player and capsule. This is nonrendered.",
+   "artifactRevision": "90c089650ed6188af5dac6395d028a72e07bc113d1a45f6404bb99fa5d13b32a",
+   "pending": [
+    "Production browser: normal Enter, real keyboard and touch travel, retry",
+    "Fresh remote main integration",
+    "Served-byte identity and actual public browser check"
+   ],
+   "continuingCandidate": {
+    "pr": 10,
+    "branch": "codex/game2-criteria-20260911",
+    "sha": "cb4d7d620e8d704affc26b697f3458c1d953c724",
+    "ci": 34666329831,
+    "ciConclusion": "success",
+    "remaining": "Read/independently review 300-frame artifact; full product not accepted. Do not duplicate the start getter when integrating."
+   },
+   "firstBrowserRun": {
+    "run": 34671373601,
+    "conclusion": "FAIL: two console404s after successful keyboard movement/retry; touch did not run",
+    "nextFix": "Point the document icon to the existing icon.svg (same link already in PR10) and record exact console/server URLs. This is a hypothesis for the404s until the new run. Keep zero-error assertion. Reuse the unchanged4e baseline; rerun both fresh candidate boots."
+   }
   }
  },
  "qualityBar": {

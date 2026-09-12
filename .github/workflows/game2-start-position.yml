@@ -1,0 +1,46 @@
+name: Game2 start-position hotfix
+on:
+  push:
+    branches: [main, codex/game2-start-position-hotfix]
+    paths:
+      - src/world/Level.js
+      - index.html
+      - tools/check-start-position.mjs
+      - tools/start-position-capture.mjs
+      - .github/workflows/game2-start-position.yml
+      - docs/**
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: game2-start-position-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  start:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: node tools/check-start-position.mjs
+      - run: npm run check
+      - run: npx playwright install --with-deps chromium
+      # Immutable 4e6d23a control was rendered in run 34671373601/artifact10291380051:
+      # start z8, forward input accepted, only0.4277m gained before being blocked.
+      # Reuse that baseline; the changed candidate still gets two fresh rendered boots.
+      - name: Verify normal start, keyboard, touch and retry against the publication bytes
+        run: node tools/start-position-capture.mjs --root=docs --tag=start-local
+      - name: Verify the public Pages bytes and playable start
+        if: github.ref == 'refs/heads/main'
+        run: node tools/start-position-capture.mjs --root=docs --url=https://bachikoljunior-blip.github.io/game2/docs/ --tag=start-published
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: game2-start-position-${{ github.sha }}
+          path: shots/start-*
+          if-no-files-found: error
+          retention-days: 14
