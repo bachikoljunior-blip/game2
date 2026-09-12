@@ -4,6 +4,7 @@ on:
     branches: [main, codex/game2-start-position-hotfix]
     paths:
       - src/world/Level.js
+      - index.html
       - tools/check-start-position.mjs
       - tools/start-position-capture.mjs
       - .github/workflows/game2-start-position.yml
@@ -28,13 +29,9 @@ jobs:
       - run: node tools/check-start-position.mjs
       - run: npm run check
       - run: npx playwright install --with-deps chromium
-      - name: Reproduce the previously published start
-        if: github.ref != 'refs/heads/main'
-        run: |
-          git fetch origin 4e6d23a40af33bb3ba409b3826e77666262ce353 --depth=1
-          mkdir -p control-docs
-          git archive 4e6d23a40af33bb3ba409b3826e77666262ce353 docs | tar -x -C control-docs --strip-components=1
-          node tools/start-position-capture.mjs --root=control-docs --tag=start-before --control=true
+      # Immutable 4e6d23a control was rendered in run 34671373601/artifact10291380051:
+      # start z8, forward input accepted, only0.4277m gained before being blocked.
+      # Reuse that baseline; the changed candidate still gets two fresh rendered boots.
       - name: Verify normal start, keyboard, touch and retry against the publication bytes
         run: node tools/start-position-capture.mjs --root=docs --tag=start-local
       - name: Verify the public Pages bytes and playable start

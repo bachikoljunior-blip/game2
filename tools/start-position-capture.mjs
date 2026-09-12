@@ -32,7 +32,15 @@ const files = (base, rel = '') => readdirSync(join(base, rel), { withFileTypes: 
   .flatMap(e => e.isDirectory() ? files(base, join(rel, e.name)) : [join(rel, e.name)]);
 
 try {
-  if (!opts.url) server = await serveStatic({ root, basePath: '/game2/docs' });
+  if (!opts.url) {
+    server = await serveStatic({ root, basePath: '/game2/docs' });
+    report.serverErrors = [];
+    server.server.prependListener('request', (request, response) => {
+      response.once('finish', () => {
+        if (response.statusCode >= 400) report.serverErrors.push({ url: request.url, status: response.statusCode });
+      });
+    });
+  }
   const url = (opts.url || server.origin).replace(/\/$/, '') + '/';
   report.url = url;
   if (!control) {
@@ -71,7 +79,7 @@ try {
     const page = await context.newPage();
     page.on('pageerror', e => row.errors.push({ type: 'pageerror', text: e.message }));
     page.on('console', m => {
-      if (m.type() === 'error') row.errors.push({ type: 'console', text: m.text() });
+      if (m.type() === 'error') row.errors.push({ type: 'console', text: m.text(), location: m.location() });
       if (m.type() === 'warning') row.warnings.push(m.text());
     });
     page.on('requestfailed', r => row.errors.push({ type: 'request', url: r.url(), text: r.failure()?.errorText }));

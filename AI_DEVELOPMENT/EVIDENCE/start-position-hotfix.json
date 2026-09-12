@@ -4,11 +4,11 @@
   "branch": "codex/game2-start-position-hotfix",
   "baseSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
   "requestedFix": "開始時に建物内へ閉じ込められる不具合を最優先で修正",
-  "sourceChange": "Expose existing Level.spawnPoints.player through the playerSpawn getter already present in PR #10. No new spawn coordinates or collision bypass.",
+  "sourceChange": "Expose existing Level.spawnPoints.player through playerSpawn; explicit relative link to the existing icon.svg. Both deltas already exist in PR #10. No new spawn coordinates or collision bypass.",
   "reproduced": "Baseline Player.init chooses [0,812,8] instead of authored [0,812,73], 65m away inside haiden footprint.",
   "nodeVerification": "tools/check-start-position.mjs failed before fix, passed after: initial73 -> forward62.7633333333 -> retry73. Flat terrain/omitted render rig only.",
   "geometryReview": "Independent actual MEDIUM terrain, four stair flights, outer torii and boundary: [0,811.9825668334961,73] -> [-0.0035683393454336164,811.9924676016805,62.763833969836824], retry restores player and capsule. This is nonrendered.",
-  "artifactRevision": "58b1afea66ef845a6786349648144dbe19fafd48a7f48d95210653a51a546f4c",
+  "artifactRevision": "90c089650ed6188af5dac6395d028a72e07bc113d1a45f6404bb99fa5d13b32a",
   "pending": [
     "Production browser: normal Enter, real keyboard and touch travel, retry",
     "Fresh remote main integration",
@@ -55,8 +55,8 @@
     },
     {
       "file": "index.html",
-      "sha256": "a8c0fe60d6ac581337b3aff67e08ac0a2d11266a017b7f8042c327d23ac6350f",
-      "bytes": 5294
+      "sha256": "918b5e84b1a314720c6ad12e8046a4fe1f59c58f47289d7e0978dafd1d86e8f1",
+      "bytes": 5353
     },
     {
       "file": "manifest.webmanifest",
@@ -68,5 +68,286 @@
       "sha256": "a692c4a575471458e3b6019b516514096d7fb77b2a5275d78aaf82990ff2493f",
       "bytes": 2117
     }
-  ]
+  ],
+  "firstBrowserRun": {
+    "run": 34671373601,
+    "job": 103493222855,
+    "sha": "6a97ef3fe2fc5b5854e18830f6ec3115b4e8991d",
+    "artifact": 10291380051,
+    "archiveSha256": "f564a8c2b3eb14b8cf2eb17ff211a99ec8bd9ae2e8c44f29fa3aec87b00486f4",
+    "conclusion": "FAIL: two console404s after successful keyboard movement/retry; touch did not run",
+    "observed": {
+      "start-before": {
+        "surface": "keyboard",
+        "initial": {
+          "position": [
+            0,
+            812.0005493164062,
+            8
+          ],
+          "capsule": [
+            0,
+            812.0005493164062,
+            8
+          ],
+          "authored": [
+            0,
+            811.9690971374512,
+            73
+          ],
+          "frame": 0,
+          "running": false,
+          "paused": false,
+          "alive": true,
+          "inputEnabled": true,
+          "moveMag": 0,
+          "drawCalls": 0,
+          "triangles": 0,
+          "menu": "none",
+          "terrainY": 812.0005493164062
+        },
+        "beforeInput": {
+          "position": [
+            -0.0014446962356979094,
+            812.0025489173515,
+            8.002566846921502
+          ],
+          "capsule": [
+            -0.0014446962356979094,
+            812.0025489173515,
+            8.002566846921502
+          ],
+          "authored": [
+            0,
+            811.9690971374512,
+            73
+          ],
+          "frame": 11,
+          "running": true,
+          "paused": false,
+          "alive": true,
+          "inputEnabled": true,
+          "moveMag": 0,
+          "drawCalls": 63,
+          "triangles": 416062,
+          "menu": "none",
+          "terrainY": 812.0005489143355
+        },
+        "acceptedInput": {
+          "position": [
+            -0.001968324590480858,
+            812.0026070441381,
+            7.579119077875472
+          ],
+          "capsule": [
+            -0.001968324590480858,
+            812.0026070441381,
+            7.579119077875472
+          ],
+          "authored": [
+            0,
+            811.9690971374512,
+            73
+          ],
+          "frame": 15,
+          "running": true,
+          "paused": false,
+          "alive": true,
+          "inputEnabled": true,
+          "moveMag": 1,
+          "drawCalls": 64,
+          "triangles": 416068,
+          "menu": "none",
+          "terrainY": 812.0006070409177
+        },
+        "afterWalk": {
+          "position": [
+            -0.013053883337520191,
+            812.0026072078957,
+            7.574860144483129
+          ],
+          "capsule": [
+            -0.013053883337520191,
+            812.0026072078957,
+            7.574860144483129
+          ],
+          "authored": [
+            0,
+            811.9690971374512,
+            73
+          ],
+          "frame": 103,
+          "running": true,
+          "paused": false,
+          "alive": true,
+          "inputEnabled": true,
+          "moveMag": 0,
+          "drawCalls": 65,
+          "triangles": 416430,
+          "menu": "none",
+          "terrainY": 812.0006072046774
+        },
+        "afterRetry": null,
+        "errors": [
+          {
+            "type": "console",
+            "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+          },
+          {
+            "type": "console",
+            "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+          }
+        ]
+      },
+      "start-local": {
+        "surface": "keyboard",
+        "initial": {
+          "position": [
+            0,
+            811.9690971374512,
+            73
+          ],
+          "capsule": [
+            0,
+            811.9690971374512,
+            73
+          ],
+          "authored": [
+            0,
+            811.9690971374512,
+            73
+          ],
+          "frame": 0,
+          "running": false,
+          "paused": false,
+          "alive": true,
+          "inputEnabled": true,
+          "moveMag": 0,
+          "drawCalls": 0,
+          "triangles": 0,
+          "menu": "none",
+          "terrainY": 811.9690971374512
+        },
+        "beforeInput": {
+          "position": [
+            0.003585894992661042,
+            811.9690929595839,
+            72.99877413027913
+          ],
+          "capsule": [
+            0.003585894992661042,
+            811.9690929595839,
+            72.99877413027913
+          ],
+          "authored": [
+            0,
+            811.9690971374512,
+            73
+          ],
+          "frame": 11,
+          "running": true,
+          "paused": false,
+          "alive": true,
+          "inputEnabled": true,
+          "moveMag": 0,
+          "drawCalls": 87,
+          "triangles": 544288,
+          "menu": "none",
+          "terrainY": 811.9690840085452
+        },
+        "acceptedInput": {
+          "position": [
+            0.005442496259542046,
+            811.9584798240138,
+            68.94816258169966
+          ],
+          "capsule": [
+            0.005442496259542046,
+            811.9584798240138,
+            68.94816258169966
+          ],
+          "authored": [
+            0,
+            811.9690971374512,
+            73
+          ],
+          "frame": 15,
+          "running": true,
+          "paused": false,
+          "alive": true,
+          "inputEnabled": true,
+          "moveMag": 1,
+          "drawCalls": 88,
+          "triangles": 544294,
+          "menu": "none",
+          "terrainY": 811.9566280515124
+        },
+        "afterWalk": {
+          "position": [
+            0.010025813950562543,
+            811.9918747921937,
+            59.38012033131534
+          ],
+          "capsule": [
+            0.010025813950562543,
+            811.9918747921937,
+            59.38012033131534
+          ],
+          "authored": [
+            0,
+            811.9690971374512,
+            73
+          ],
+          "frame": 23,
+          "running": true,
+          "paused": false,
+          "alive": true,
+          "inputEnabled": true,
+          "moveMag": 0,
+          "drawCalls": 70,
+          "triangles": 516803,
+          "menu": "none",
+          "terrainY": 811.9908313778469
+        },
+        "afterRetry": {
+          "position": [
+            0.001433777952191201,
+            811.9690954674799,
+            72.99950960374197
+          ],
+          "capsule": [
+            0.001433777952191201,
+            811.9690954674799,
+            72.99950960374197
+          ],
+          "authored": [
+            0,
+            811.9690971374512,
+            73
+          ],
+          "frame": 61,
+          "running": true,
+          "paused": false,
+          "alive": true,
+          "inputEnabled": true,
+          "moveMag": 0,
+          "drawCalls": 87,
+          "triangles": 544298,
+          "menu": "none",
+          "terrainY": 811.9690918867626
+        },
+        "errors": [
+          {
+            "type": "console",
+            "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+          },
+          {
+            "type": "console",
+            "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+          }
+        ]
+      }
+    },
+    "nextFix": "Point the document icon to the existing icon.svg (same link already in PR10) and record exact console/server URLs. This is a hypothesis for the404s until the new run. Keep zero-error assertion. Reuse the unchanged4e baseline; rerun both fresh candidate boots."
+  }
 }

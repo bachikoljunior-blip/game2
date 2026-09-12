@@ -66,11 +66,11 @@
    "branch": "codex/game2-start-position-hotfix",
    "baseSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
    "requestedFix": "開始時に建物内へ閉じ込められる不具合を最優先で修正",
-   "sourceChange": "Expose existing Level.spawnPoints.player through the playerSpawn getter already present in PR #10. No new spawn coordinates or collision bypass.",
+   "sourceChange": "Expose existing Level.spawnPoints.player through playerSpawn; explicit relative link to the existing icon.svg. Both deltas already exist in PR #10. No new spawn coordinates or collision bypass.",
    "reproduced": "Baseline Player.init chooses [0,812,8] instead of authored [0,812,73], 65m away inside haiden footprint.",
    "nodeVerification": "tools/check-start-position.mjs failed before fix, passed after: initial73 -> forward62.7633333333 -> retry73. Flat terrain/omitted render rig only.",
    "geometryReview": "Independent actual MEDIUM terrain, four stair flights, outer torii and boundary: [0,811.9825668334961,73] -> [-0.0035683393454336164,811.9924676016805,62.763833969836824], retry restores player and capsule. This is nonrendered.",
-   "artifactRevision": "58b1afea66ef845a6786349648144dbe19fafd48a7f48d95210653a51a546f4c",
+   "artifactRevision": "90c089650ed6188af5dac6395d028a72e07bc113d1a45f6404bb99fa5d13b32a",
    "pending": [
     "Production browser: normal Enter, real keyboard and touch travel, retry",
     "Fresh remote main integration",
@@ -83,6 +83,11 @@
     "ci": 34666329831,
     "ciConclusion": "success",
     "remaining": "Read/independently review 300-frame artifact; full product not accepted. Do not duplicate the start getter when integrating."
+   },
+   "firstBrowserRun": {
+    "run": 34671373601,
+    "conclusion": "FAIL: two console404s after successful keyboard movement/retry; touch did not run",
+    "nextFix": "Point the document icon to the existing icon.svg (same link already in PR10) and record exact console/server URLs. This is a hypothesis for the404s until the new run. Keep zero-error assertion. Reuse the unchanged4e baseline; rerun both fresh candidate boots."
    }
   }
  }

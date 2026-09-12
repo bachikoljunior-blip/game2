@@ -241,5 +241,10 @@
     "observed": "Independent 11-file served-byte check proved matching HTTP bytes but did not reject three obsolete hashed bundles. Removed those old bundles explicitly using git rm; only 8 runtime files plus .nojekyll remain. HTML artifact revision unchanged.",
     "sourceCause": "Refuted wrong-initialization-order and retry-different-spawn explanations by source consumers. Existing identical getter in PR #10 confirms no incompatible API is introduced.",
     "scope": "Review source verdict remains scoped PASS; actual production browser and public publication are pending."
+  },
+  "followup": {
+    "scope": "Independent reviewer read first browser reports and reviewed icon link, diagnostic logging and immutable baseline reuse. Source/harness change review PASS; zero-error assertion retained. Actual new browser run still pending.",
+    "nativeObserved": "Start control0.4277067m vs fixed13.6186538m movement; retry72.9995096; two console404s; no recorded pageerror.",
+    "faviconHypothesis": "Resource identity was not recorded by first run. New relative icon link and exact request-location logging will resolve the remaining uncertainty."
   }
 }
