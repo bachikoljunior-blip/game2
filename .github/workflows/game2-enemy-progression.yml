@@ -3,6 +3,9 @@ on:
   push:
     branches: [main, codex/game2-criteria-20260911, codex/game2-enemy-spawn-hotfix-20260912]
     paths:
+      - src/gameplay/Combat.js
+      - src/gameplay/Physics.js
+      - src/gameplay/Player.js
       - src/world/Level.js
       - tools/check-enemy-progression.mjs
       - tools/enemy-progression-capture.mjs
@@ -14,7 +17,7 @@ permissions:
   contents: read
 concurrency:
   group: game2-enemy-progression-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   normal-progression:
     runs-on: ubuntu-latest

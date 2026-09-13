@@ -16,8 +16,9 @@ concurrency:
 jobs:
   evidence:
     # A motion-retry changes only capture tooling/docs and reuses the already
-    # preserved same-build control below; do not spend another 20 encounters.
-    if: ${{ !contains(github.event.head_commit.message, '[motion-retry]') }}
+    # preserved same-build control below. A normal-only commit exists to run the
+    # dedicated real-input progression gate without spending another 20 encounters.
+    if: ${{ !contains(github.event.head_commit.message, '[motion-retry]') && !contains(github.event.head_commit.message, '[normal-only]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 55
     strategy:
@@ -68,7 +69,7 @@ jobs:
 
   motion:
     # Opt in only when the author requests the expensive 300-frame motion sample.
-    if: ${{ always() && (contains(github.event.head_commit.message, '[motion]') || contains(github.event.head_commit.message, '[motion-retry]')) && (needs.evidence.result == 'success' || needs.evidence.result == 'skipped') }}
+    if: ${{ always() && !contains(github.event.head_commit.message, '[normal-only]') && (contains(github.event.head_commit.message, '[motion]') || contains(github.event.head_commit.message, '[motion-retry]')) && (needs.evidence.result == 'success' || needs.evidence.result == 'skipped') }}
     needs: evidence
     runs-on: ubuntu-latest
     timeout-minutes: 90
