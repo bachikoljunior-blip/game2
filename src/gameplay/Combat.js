@@ -108,7 +108,8 @@ export const TUNING = {
   SLOWMO_BREAK: 0.28,           // time scale of the posture-break dip
   SLOWMO_BREAK_TIME: 0.55,      // s the dip holds (550 ms)
   SLOWMO_EXEC: 0.42,            // time scale during an execution wind-up
-  LUNGE_SPEED: 3.2,             // m/s the attacker drifts into their target while swinging
+  LUNGE_SPEED: 3.2,             // m/s enemy drift toward its target while swinging
+  PLAYER_LUNGE_RESPONSE: 18,    // 1/s response after the target's current AI step
   LUNGE_MIN_GAP: 0.95,          // m; stop lunging here so bodies never interpenetrate
   LUNGE_MAX: 0.30,              // s of lunge per swing (300 ms)
   KNOCKBACK_LIGHT: 2.1,         // m/s impulse away from a light hit
@@ -1272,9 +1273,26 @@ export class CombatDirector {
           const dist = _vA.length();
           if (dist > TUNING.LUNGE_MIN_GAP) {
             _vA.divideScalar(dist);
-            const step = Math.min(TUNING.LUNGE_SPEED * rdt, dist - TUNING.LUNGE_MIN_GAP);
-            sp.addScaledVector(_vA, step);
-            e.root?.position?.copy?.(sp);
+            const remaining = dist - TUNING.LUNGE_MIN_GAP;
+            if (e === this.ctx?.player && typeof e.applyCombatLunge === 'function') {
+              const budget = Math.max(0, e._combatLungeRemaining || 0);
+              const requested = Math.min(budget,
+                remaining * (1 - Math.exp(-TUNING.PLAYER_LUNGE_RESPONSE * rdt)));
+              // Spend the request even when collision blocks it, so a held
+              // attack cannot store movement and burst through a wall later.
+              e._combatLungeRemaining = Math.max(0, budget - requested);
+              const applied = e.applyCombatLunge(_vA, requested);
+              if (rec.bladeValid && applied
+                && Number.isFinite(applied.x) && Number.isFinite(applied.y)
+                && Number.isFinite(applied.z) && applied.lengthSq() > 0) {
+                rec.base.add(applied);
+                rec.tip.add(applied);
+              }
+            } else {
+              const step = Math.min(TUNING.LUNGE_SPEED * rdt, remaining);
+              sp.addScaledVector(_vA, step);
+              e.root?.position?.copy?.(sp);
+            }
           }
         }
       }

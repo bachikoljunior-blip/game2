@@ -264,7 +264,7 @@ export class Player {
 
     this.attackInfo = {                // opts object handed to combat.beginSwing, reused
       entity: this, move: 'h_r', clip: 'slash_horizontal_r', damage: 16, poise: 12,
-      kind: 'slash', reach: 2.15, heavy: false, finisher: false, stance: 'seigan',
+      kind: 'slash', reach: 2.15, lunge: 1.25, heavy: false, finisher: false, stance: 'seigan',
       combo: 0, base: this.bladeBase, tip: this.bladeTip,
     };
 
@@ -314,6 +314,10 @@ export class Player {
     this._warnedNaN = false;
     this._warnedBladeNaN = false;
     this._lungeVel = new Vector3();
+    this._combatLungeTarget = null;
+    this._combatLungeRemaining = 0;
+    this._combatLungeMove = new Vector3();
+    this._combatLungeApplied = new Vector3();
     this._dodgeDir = new Vector3();
     this._lookAt = new Vector3();
   }
@@ -611,6 +615,8 @@ export class Player {
         this.attack = null;
         this.canCancel = false;
         this._lungeVel.set(0, 0, 0);
+        this._combatLungeTarget = null;
+        this._combatLungeRemaining = 0;
         break;
       case 'dodge':
         this.invulnerable = false;
@@ -845,7 +851,6 @@ export class Player {
       this._disp.x += this._lungeVel.x * dt;
       this._disp.z += this._lungeVel.z * dt;
     }
-
     const wasGrounded = this.grounded;
     const fallSpeed = -this.velocity.y;
     let gi = null;
@@ -916,6 +921,28 @@ export class Player {
     this.speed = Math.hypot(this.velocity.x, this.velocity.z);
   }
 
+  /** Move a Combat-requested lunge through static collision; returns the actual delta. */
+  applyCombatLunge(direction, distance) {
+    const applied = this._combatLungeApplied.set(0, 0, 0);
+    if (!(distance > 0) || !isFiniteVec(direction)) return applied;
+    const len = Math.hypot(direction.x, direction.z);
+    if (!(len > 1e-6)) return applied;
+    const sx = this.position.x, sy = this.position.y, sz = this.position.z;
+    this._combatLungeMove.set(direction.x / len * distance, 0,
+      direction.z / len * distance);
+    if (this.controller?.moveHorizontal) {
+      const cp = this.controller.position;
+      if (cp?.copy && (Math.abs(cp.x - this.position.x) > 1e-4
+        || Math.abs(cp.y - this.position.y) > 1e-4
+        || Math.abs(cp.z - this.position.z) > 1e-4)) cp.copy(this.position);
+      this.controller.moveHorizontal(this._combatLungeMove);
+      if (isFiniteVec(this.controller.position)) this.position.copy(this.controller.position);
+    } else {
+      this.position.add(this._combatLungeMove);
+    }
+    return applied.set(this.position.x - sx, this.position.y - sy, this.position.z - sz);
+  }
+
   /**
    * The player's transform is read by the camera, which is read by the audio
    * listener, the light rig and the post chain — a single non-finite frame here
@@ -934,6 +961,8 @@ export class Player {
     this.velocity.set(0, 0, 0);
     this.speed = 0;
     this._lungeVel.set(0, 0, 0);
+    this._combatLungeTarget = null;
+    this._combatLungeRemaining = 0;
     this._landDip = 0;
     this._landDipVel = 0;
     if (!Number.isFinite(this.yaw)) this.yaw = this.desiredYaw = 0;
@@ -1252,6 +1281,16 @@ export class Player {
     this.weapon.heavy = a.heavy;
     this.weapon.multiHit = false;
     this.weapon.arc = a.heavy ? 2.6 : 2.0;
+    // Preserve the full authored budget during startup. Combat consumes it at
+    // the hit marker, after the target's current AI step is known.
+    if (this.ctx.combat?.beginSwing && this._assistTarget?.position
+      && this._assistTarget.isAlive !== false) {
+      this._combatLungeTarget = this._assistTarget;
+      this._combatLungeRemaining = a.lunge;
+    } else {
+      this._combatLungeTarget = null;
+      this._combatLungeRemaining = 0;
+    }
     this._play(a.clip, 0.07, a.rate, false);
     this._clearBuffer();
   }
@@ -1293,8 +1332,9 @@ export class Player {
 
   /**
    * Open the swing with Combat and close the gap so cuts connect (§5).
-   * CombatDirector runs its own lunge off `beginSwing` (TUNING.LUNGE_*), so we
-   * only drive our own when it is absent — otherwise the player double-lunges.
+   * With Combat present, pursuit is budgeted here and Combat applies it through
+   * `applyCombatLunge` after the target's AI step. The legacy no-Combat fallback
+   * keeps its velocity nudge so a bare gameplay fixture still degrades gracefully.
    */
   _startLunge(a) {
     const combat = this.ctx.combat;
@@ -1321,7 +1361,7 @@ export class Player {
     i.entity = this; i.move = a.key; i.clip = a.clip;
     i.damage = a.damage; i.poise = a.poise; i.kind = a.kind; i.heavy = a.heavy;
     i.multiHit = false;
-    i.reach = a.reach; i.finisher = a.finisher; i.stance = this.stance;
+    i.reach = a.reach; i.lunge = a.lunge; i.finisher = a.finisher; i.stance = this.stance;
     i.combo = this.comboCount;
     i.base = this.bladeBase; i.tip = this.bladeTip;
     return i;
@@ -1897,6 +1937,8 @@ export class Player {
     this._iframe = 0;
     this.velocity.set(0, 0, 0);
     this._lungeVel.set(0, 0, 0);
+    this._combatLungeTarget = null;
+    this._combatLungeRemaining = 0;
     this.speed = 0;
     this.sheathed = true;
     this.guarding = false;

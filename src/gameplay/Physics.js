@@ -1765,6 +1765,7 @@ export class PhysicsWorld {
       },
 
       move(displacement, dt) { return world._moveCharacter(ch, displacement, dt); },
+      moveHorizontal(displacement) { return world._moveCharacterHorizontal(ch, displacement); },
       jump(speed) { ch.velocity.y = speed; ch.grounded = false; ch.coyote = 0; ch.groundInfo.grounded = false; },
       canJump() { return ch.grounded || ch.coyote > 0; },
       /**
@@ -1856,6 +1857,31 @@ export class PhysicsWorld {
     ch.smoothPosition.z = ch.position.z;
     const dyv = ch.position.y - ch.smoothPosition.y;
     ch.smoothPosition.y += Math.abs(dyv) > 0.55 ? dyv : dyv * k;
+    return ch.groundInfo;
+  }
+
+  /**
+   * Collision-safe horizontal correction outside the regular locomotion tick.
+   * Combat uses this after enemy AI has moved but before its blade sweep. It
+   * deliberately does not advance gravity, coyote time, or controller velocity.
+   */
+  _moveCharacterHorizontal(ch, displacement) {
+    if (!ch.enabled || !displacement) return ch.groundInfo;
+    if (!finite3(ch.position.x, ch.position.y, ch.position.z))
+      return this._restoreCharacter(ch);
+    let dx = displacement.x, dz = displacement.z;
+    if (!Number.isFinite(dx) || !Number.isFinite(dz)) { dx = 0; dz = 0; }
+    const sx = ch.position.x, sy = ch.position.y, sz = ch.position.z;
+    this._slide(sx, sy, sz, this._segLo(ch), this._segHi(ch), ch.radius,
+      dx, 0, dz, ch.collisionMask, ch.cosSlope, _slideA);
+    ch.position.set(_slideA.x, _slideA.y, _slideA.z);
+    if (!finite3(ch.position.x, ch.position.y, ch.position.z))
+      return this._restoreCharacter(ch);
+    ch.lastDisplacement.x += ch.position.x - sx;
+    ch.lastDisplacement.y += ch.position.y - sy;
+    ch.lastDisplacement.z += ch.position.z - sz;
+    ch.smoothPosition.copy(ch.position);
+    ch._gx = ch.position.x; ch._gy = ch.position.y; ch._gz = ch.position.z;
     return ch.groundInfo;
   }
 
