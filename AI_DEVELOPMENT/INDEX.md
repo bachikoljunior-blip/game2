@@ -1,3 +1,14 @@
+# Current execution direction — 2026-09-13
+
+Read `FIXED_INSTRUCTIONS.md`, then `REBUILD_STATE.yaml` and `SESSION_STATE.yaml`.
+Latest user clarification: 「作り直しは必要であればでいいよ」. Rebuilding is optional.
+Active implementation: `codex/game2-criteria-20260911`, PR #10. The optional rebuild
+branch contains routing records, not a newly implemented game. Do not discard working
+systems to fulfill a nonexistent mandatory-rewrite condition.
+The fixed instructions and explicit user directives govern; plans and tests are tools.
+
+---
+
 # AI development index
 
 This directory is the concise, reloadable control plane for the whole project. Detailed

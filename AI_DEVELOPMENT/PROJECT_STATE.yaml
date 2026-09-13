@@ -1,193 +1,165 @@
 {
- "schemaVersion": 1,
- "updatedAt": "2026-09-13T04:05:00Z",
- "status": "active",
- "project": {
-  "name": "KAGEROU 陽炎",
-  "repository": "bachikoljunior-blip/game2",
-  "objective": "Continue the mobile-first third-person Japanese sword-action game toward its established visual and interaction bar without external runtime assets or AI APIs.",
-  "defaultBranch": "main",
-  "defaultBranchVerifiedSha": "86512c3bfdc69e03b5b490d9b0d79ec9da141343",
-  "workingBranch": "codex/game2-criteria-20260911",
-  "workingBranchBaseSha": "f7aa1d9382f2b4f938c8ffb3bbd5af5c16b687b8",
-  "previousWorkingBranch": "claude/game-reference-benchmark-qh0v0q",
-  "workingBranchPublicationSha": "886f4f3c97c0a3f7e8024ed34b912d1de0c51e44",
-  "resumedFromRef": "origin/main",
-  "resumedFromSha": "f7aa1d9382f2b4f938c8ffb3bbd5af5c16b687b8",
-  "recoveryBranch": "codex/game2-smoke-20260911",
-  "recoveryBranchPublicationSha": "bb5c49f1b8ffee0406a2b0e60d520b8c80d40320"
- },
- "sourceOfTruth": {
-  "operatingProtocol": "PROJECT_OPERATING_PROTOCOL.md",
-  "architecture": "ARCHITECTURE.md",
-  "artReviewState": "HANDOFF.md",
-  "artRoundProcedure": "ROUND.md",
-  "publicStatus": "README.md"
- },
- "verifiedState": {
-  "lastCompletedVerifiedRound": 16,
-  "activeRound": 17,
-  "round9IntegratedVerification": "FAIL at coherent phone/MEDIUM r12v1: apparatus, budgets, tone, and lantern criteria passed; fill, shadow edge, sky, sakura hue, and far-range checks failed; valley semantics are blocked by stale camera probes.",
-  "round10Verdict": "FAIL product gate; verification hardened and shadow-filter/toe experiments rejected without shipping them.",
-  "round11Verdict": "TARGET PASS: the lantern receiver became visible, horizontal, additive, and surface-following; near/far improved from 1.121 to 2.394.",
-  "round12Verdict": "TARGET PASS and OVERALL FAIL: coherent r12v1 passed apparatus, budget, tone, and lantern gates; independent review confirmed those repairs and retained the broader visual blockers.",
-  "round13Verdict": "FAIL with measured progress: source-blind score 36 to 43; bamboo skyline and terrain hierarchy improved, blocker count fell from two to one, but detached bamboo fragments remain blocking and four major findings remain.",
-  "round14Verdict": "FAIL with measured progress: source-blind score 44 to 50; the sun-glare major finding cleared, but one detached-bamboo blocker and terrain/courtyard majors remain.",
-  "latestVerifiedVisualBaseline": "cb4d7d6 phone/MEDIUM: five technical gates and 300 unique rendered frames passed apparatus. Independent motion review FAIL 55 retained primitive character/cloth readability and reversed damage-lens majors; the prior screen-crossing ribbon was not observed. See r17-motion-cb4-review.json.",
-  "capture": {
-   "status": "passed",
-   "tag": "ci-candidate",
-   "worstDrawCalls": 119,
-   "worstTriangles": 802472,
-   "resolution": "2532x1170",
-   "programs": 117,
-   "deadShaders": 0,
-   "consoleErrors": 0,
-   "limitation": "SwiftShader evidence is not real-device 60 fps evidence.",
-   "revision": "cb4d7d620e8d704affc26b697f3458c1d953c724",
-   "buildFingerprint": "d0232b7421e1861acb9ee108bb500ef70f06635daf3813af02e922347d96c5e8",
-   "workflowRun": 34666329831,
-   "counterScope": "Worst captured frame: 802472 triangles. SwiftShader confirms render correctness and budgets, not physical-device frame rate."
+  "schemaVersion": 1,
+  "updatedAt": "2026-09-13T12:00:10Z",
+  "status": "active",
+  "project": {
+    "name": "KAGEROU 陽炎",
+    "repository": "bachikoljunior-blip/game2",
+    "objective": "Continue the mobile-first third-person Japanese sword-action game toward its established visual and interaction bar without external runtime assets or AI APIs.",
+    "defaultBranch": "main",
+    "defaultBranchVerifiedSha": "ec2480166809f57fa623929bec0fbcb4d5a623a2",
+    "workingBranch": "codex/game2-criteria-20260911",
+    "workingBranchBaseSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
+    "previousWorkingBranch": "claude/game-reference-benchmark-qh0v0q",
+    "workingBranchPublicationSha": "8811b8c1f56f000f9fd6be0069652887e487a86b",
+    "resumedFromRef": "origin/claude/kagerou-round9-measurement-inj5qq",
+    "resumedFromSha": "6c4c0933240684ccb25907425d7507826edcc3fa"
   },
-  "productionBuild": {
-   "status": "passed",
-   "command": "node node_modules/vite/bin/vite.js build",
-   "checkedAt": "2026-09-13T04:04:00Z",
-   "revision": "886f4f3c97c0a3f7e8024ed34b912d1de0c51e44",
-   "mainChunkGzipKb": 331.84,
-   "entryChunkGzipKb": 1.13,
-   "totalGzipKb": 493.07,
-   "sourceScope": "Clean 886f4f3 worktree: npm run check, all 19 focused tests and the normal progression contract passed. CI 34736414976 separately passed the fresh-dist rendered hit path. Exact-revision full evidence remains pending."
+  "sourceOfTruth": {
+    "operatingProtocol": "PROJECT_OPERATING_PROTOCOL.md",
+    "architecture": "ARCHITECTURE.md",
+    "artReviewState": "HANDOFF.md",
+    "artRoundProcedure": "ROUND.md",
+    "publicStatus": "README.md",
+    "fixedInstructions": "AI_DEVELOPMENT/FIXED_INSTRUCTIONS.md",
+    "implementationDecision": "AI_DEVELOPMENT/REBUILD_STATE.yaml"
   },
-  "publication": {
-   "status": "enemy_progression_published_and_verified",
-   "latestMainSha": "86512c3bfdc69e03b5b490d9b0d79ec9da141343",
-   "latestBranchSha": "886f4f3c97c0a3f7e8024ed34b912d1de0c51e44",
-   "publicUrl": "https://bachikoljunior-blip.github.io/game2/",
-   "runtimeUrl": "https://bachikoljunior-blip.github.io/game2/docs/",
-   "repositoryVerified": "Main 86512c3 contains the authored enemy-progression repair and a revision-stamped Pages payload. CI 34713093118 verified its main-based build and exact served bytes.",
-   "browserGate": "CI 34713093118 passed the public boot, movement and retry path with zero reported page/console/request/HTTP/GL faults. This does not establish the still-unpublished PR 886f4f3 contact delta.",
-   "checkedAt": "2026-09-13T04:05:00Z"
-  },
-  "dependencyRestore": {
-   "status": "passed",
-   "command": "npm ci --cache /tmp/game2-npm-cache",
-   "note": "The environment's default /root/.npm cache is not writable."
-  },
-  "round15Verdict": "FAIL at 65/100, 3 blockers from 4. Mostly a disproof round: HANDOFF open item 2 (the cool fill being eaten) is dead with all three named suspects eliminated independently and the original measurement shown to have omitted albedo; the plaza cast-shadow claim is wrong for the third time (the critic's own probe box is 84.6% cast shadow); open items 7 and 11 were stale and are closed. The detached-sky-dash blocker IS closed by a proven mechanism (bamboo atlas 2x2 bilinear bleed; detail 5.95 -> 2.85 against a 2.15 cards-off floor). Scores are confounded: the r15 opening capture was a tree byte-identical to r14final, and a fresh critic instance scored the same pixels 62 against round 14's 50, so 12 points of inter-instance variance were measured directly.",
-  "interactionApparatus": {
-   "status": "built, self-validated, and run",
-   "tools": [
-    "tools/interaction-capture.mjs",
-    "tools/harness/runtime.js",
-    "tools/interaction-scenarios.mjs",
-    "tools/interaction-metrics.mjs",
-    "tools/interaction-score.mjs",
-    "tools/harness/diagnose.mjs",
-    "tools/harness/profile-cpu.mjs",
-    "tools/INTERACTION.md"
-   ],
-   "srcChanges": "NONE. The page-side half is injected with page.addInitScript and cannot exist in a release load (ARCHITECTURE.md §0 rule 5c).",
-   "selfCheck": "Determinism divergence 0; render-substitution divergence 0; 8.73 s per rendered frame against 2.2 ms simulated (tag sc1, carried forward against an identical build fingerprint).",
-   "firstRun": {
-    "tag": "i1",
-    "verdicts": {
-     "pass": 5,
-     "fail": 9,
-     "inconclusive": 4
+  "verifiedState": {
+    "lastCompletedVerifiedRound": 15,
+    "activeRound": null,
+    "round9IntegratedVerification": "FAIL at coherent phone/MEDIUM r12v1: apparatus, budgets, tone, and lantern criteria passed; fill, shadow edge, sky, sakura hue, and far-range checks failed; valley semantics are blocked by stale camera probes.",
+    "round10Verdict": "FAIL product gate; verification hardened and shadow-filter/toe experiments rejected without shipping them.",
+    "round11Verdict": "TARGET PASS: the lantern receiver became visible, horizontal, additive, and surface-following; near/far improved from 1.121 to 2.394.",
+    "round12Verdict": "TARGET PASS and OVERALL FAIL: coherent r12v1 passed apparatus, budget, tone, and lantern gates; independent review confirmed those repairs and retained the broader visual blockers.",
+    "round13Verdict": "FAIL with measured progress: source-blind score 36 to 43; bamboo skyline and terrain hierarchy improved, blocker count fell from two to one, but detached bamboo fragments remain blocking and four major findings remain.",
+    "round14Verdict": "FAIL with measured progress: source-blind score 44 to 50; the sun-glare major finding cleared, but one detached-bamboo blocker and terrain/courtyard majors remain.",
+    "latestVerifiedVisualBaseline": "phone/MEDIUM tag r15v1",
+    "capture": {
+      "status": "passed",
+      "tag": "r15v1",
+      "worstDrawCalls": 119,
+      "worstTriangles": 784449,
+      "resolution": "2532x1170",
+      "programs": 117,
+      "deadShaders": 0,
+      "consoleErrors": 0,
+      "limitation": "SwiftShader evidence is not real-device 60 fps evidence."
     },
-    "elementsWithAnExecutedMeasurement": 10,
-    "report": "shots/interaction-i1.json",
-    "evidence": "AI_DEVELOPMENT/EVIDENCE/interaction-i1.md"
-   },
-   "notCovered": "Physical-device/human gates, valid isolated shake ablation, enemy edge pixel survey, true-peak audio and motion-video review remain open. E01-COMBAT and E14-AI now have an actual 20-encounter sample.",
-   "latestRun": {
-    "tag": "ci-candidate",
-    "revision": "cb4d7d620e8d704affc26b697f3458c1d953c724",
-    "encounters": 20,
-    "initialMetricVerdicts": {
-     "pass": 15,
-     "fail": 0,
-     "inconclusive": 3
+    "productionBuild": {
+      "status": "passed",
+      "command": "npm run build",
+      "checkedAt": "2026-08-01T01:05:00Z",
+      "mainChunkGzipKb": 317.77,
+      "entryChunkGzipKb": 1.13
     },
-    "selfCheck": "120-frame determinism and render-substitution divergence are both zero. The screenshot rig is linked by SHA-256 and identical build fingerprint.",
-    "scope": "20 encounters; BM-COMBAT-02: 27/35 = 77.14%, threshold 60%. BM-ANIM-01 passed. These are runtime measurements, not a product PASS.",
-    "evidence": "AI_DEVELOPMENT/EVIDENCE/r17-motion-cb4-review.json"
-   }
+    "publication": {
+      "status": "partially_verified",
+      "round15MainMergeSha": "e40a1884a57250391dd08bdf50dc2c6cb3837a36",
+      "round15BranchSha": "56382d8d1e445fa35fbc5dfeb257e054d5715617",
+      "publicUrl": "https://bachikoljunior-blip.github.io/game2/",
+      "runtimeUrl": "https://bachikoljunior-blip.github.io/game2/docs/",
+      "repositoryVerified": "INSPECTED: origin/main is e40a188; docs/assets carries index-BoUb9vMW.js, main-0qGNkpyh.js, Rig-DmfyOsEa.js and three-BTL71eav.js, docs/index.html references assets/index-BoUb9vMW.js, and the superseded index-D_EFhYS4.js / main-Ctu2PmB7.js / Rig-DXuvNL97.js are removed.",
+      "browserGate": "NOT VERIFIED IN THIS RUN. The agent proxy denies bachikoljunior-blip.github.io:443 by policy (403 on CONNECT, confirmed at $HTTPS_PROXY/__agentproxy/status), so neither npm run verify:pages nor curl can reach the live surface from this container. Do not record a public browser gate for Round 15 until it is actually run from a network that can reach github.io. The Rounds 13-14 browser gate at 4a3eff7 remains the last verified one.",
+      "checkedAt": "2026-08-01T02:45:00Z"
+    },
+    "dependencyRestore": {
+      "status": "passed",
+      "command": "npm ci --cache /tmp/game2-npm-cache",
+      "note": "The environment's default /root/.npm cache is not writable."
+    },
+    "round15Verdict": "FAIL at 65/100, 3 blockers from 4. Mostly a disproof round: HANDOFF open item 2 (the cool fill being eaten) is dead with all three named suspects eliminated independently and the original measurement shown to have omitted albedo; the plaza cast-shadow claim is wrong for the third time (the critic's own probe box is 84.6% cast shadow); open items 7 and 11 were stale and are closed. The detached-sky-dash blocker IS closed by a proven mechanism (bamboo atlas 2x2 bilinear bleed; detail 5.95 -> 2.85 against a 2.15 cards-off floor). Scores are confounded: the r15 opening capture was a tree byte-identical to r14final, and a fresh critic instance scored the same pixels 62 against round 14's 50, so 12 points of inter-instance variance were measured directly.",
+    "interactionApparatus": {
+      "status": "built, self-validated, and run",
+      "tools": [
+        "tools/interaction-capture.mjs",
+        "tools/harness/runtime.js",
+        "tools/interaction-scenarios.mjs",
+        "tools/interaction-metrics.mjs",
+        "tools/interaction-score.mjs",
+        "tools/harness/diagnose.mjs",
+        "tools/harness/profile-cpu.mjs",
+        "tools/INTERACTION.md"
+      ],
+      "srcChanges": "NONE. The page-side half is injected with page.addInitScript and cannot exist in a release load (ARCHITECTURE.md §0 rule 5c).",
+      "selfCheck": "Determinism divergence 0; render-substitution divergence 0; 8.73 s per rendered frame against 2.2 ms simulated (tag sc1, carried forward against an identical build fingerprint).",
+      "firstRun": {
+        "tag": "i1",
+        "verdicts": {
+          "pass": 5,
+          "fail": 9,
+          "inconclusive": 4
+        },
+        "elementsWithAnExecutedMeasurement": 10,
+        "report": "shots/interaction-i1.json",
+        "evidence": "AI_DEVELOPMENT/EVIDENCE/interaction-i1.md"
+      },
+      "notCovered": "E01-COMBAT and E14-AI. Their scenario and metrics are wired but unsampled: at 0.2-1.5 simulated fps with three enemies engaged (TD-010), the >=20-encounter sample they require is hours of wall clock. Left unmeasured rather than reduced."
+    },
+    "startPositionHotfix": {
+      "status": "awaiting_verification",
+      "branch": "codex/game2-start-position-hotfix",
+      "baseSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
+      "requestedFix": "開始時に建物内へ閉じ込められる不具合を最優先で修正",
+      "sourceChange": "Expose existing Level.spawnPoints.player through playerSpawn; explicit relative link to the existing icon.svg. Both deltas already exist in PR #10. No new spawn coordinates or collision bypass.",
+      "reproduced": "Baseline Player.init chooses [0,812,8] instead of authored [0,812,73], 65m away inside haiden footprint.",
+      "nodeVerification": "tools/check-start-position.mjs failed before fix, passed after: initial73 -> forward62.7633333333 -> retry73. Flat terrain/omitted render rig only.",
+      "geometryReview": "Independent actual MEDIUM terrain, four stair flights, outer torii and boundary: [0,811.9825668334961,73] -> [-0.0035683393454336164,811.9924676016805,62.763833969836824], retry restores player and capsule. This is nonrendered.",
+      "artifactRevision": "90c089650ed6188af5dac6395d028a72e07bc113d1a45f6404bb99fa5d13b32a",
+      "pending": [
+        "Production browser: normal Enter, real keyboard and touch travel, retry",
+        "Fresh remote main integration",
+        "Served-byte identity and actual public browser check"
+      ],
+      "continuingCandidate": {
+        "pr": 10,
+        "branch": "codex/game2-criteria-20260911",
+        "sha": "cb4d7d620e8d704affc26b697f3458c1d953c724",
+        "ci": 34666329831,
+        "ciConclusion": "success",
+        "remaining": "Read/independently review 300-frame artifact; full product not accepted. Do not duplicate the start getter when integrating."
+      },
+      "firstBrowserRun": {
+        "run": 34671373601,
+        "conclusion": "FAIL: two console404s after successful keyboard movement/retry; touch did not run",
+        "nextFix": "Point the document icon to the existing icon.svg (same link already in PR10) and record exact console/server URLs. This is a hypothesis for the404s until the new run. Keep zero-error assertion. Reuse the unchanged4e baseline; rerun both fresh candidate boots."
+      }
+    }
   },
-  "browserSmoke": {
-   "status": "passed",
-   "revision": "bb5c49f1b8ffee0406a2b0e60d520b8c80d40320",
-   "run": 34605905851,
-   "artifact": 10266976639,
-   "scope": "Two fresh native touch contexts and real WebGL loss/restore at 568x320/MEDIUM; zero page/console/request/HTTP/GL faults; not phone performance or public deployment evidence.",
-   "evidence": "AI_DEVELOPMENT/EVIDENCE/r17-browser-smoke.md"
+  "qualityBar": {
+    "authority": "AI_DEVELOPMENT/FIXED_INSTRUCTIONS.md",
+    "establishedAt": "2026-08-01",
+    "integration": "INSPECTED: merged into main at 0a4fd14dcc565fa7337ce217a6417f2f13bd1148 (branch commit 70af18de6bd960a155a67f36ba57c742e3cd322e, base 1a805c9). origin/main carries the 81,833-byte file and the resume wiring in INDEX.md, CLAUDE.md, PROJECT_OPERATING_PROTOCOL.md, ARCHITECTURE.md, tools/CRITIC.md, HANDOFF.md and README.md. A session starting from the default branch now finds it. src/ and docs/ are byte-identical to 1a805c9, so the published Pages artifact is untouched and needed no rebuild.",
+    "conceptUnchanged": true,
+    "elements": 16,
+    "referenceTitles": [
+      "Ghost of Tsushima (13 elements)",
+      "SEKIRO: Shadows Die Twice (7 elements incl. one secondary)",
+      "Genshin Impact (touch layer and phone performance envelope only)"
+    ],
+    "criteria": "62 total: 21 verified, 4 under review, 14 blocked, 23 proposed. Nine of the verified now carry a runtime or frame measurement; the rest remain source audits. One previously-verified criterion (BM-EXPLORE-02) was withdrawn when the rig showed its authored responses are unreachable in play.",
+    "headlineGap": "Current 20-encounter results are 14 pass / 1 fail / 3 inconclusive. BM-COMBAT-02 is 59.375% against 60%; independent current camera/character review and all fixed-instruction element verdicts remain incomplete.",
+    "structuralBlocker": "No measured need for a full rewrite. Comparative reference material and several rendered/runtime validations remain unfinished.",
+    "neverPerformed": [
+      "Any side-by-side against real reference-title footage. Not fetched, not available, not claimed anywhere.",
+      "Any real-device frame-rate, thermal, or boot measurement. SwiftShader capture is not phone evidence.",
+      "Any expert or player review of KAGEROU."
+    ]
   },
-  "startPositionHotfix": {
-   "status": "published_and_verified",
-   "branch": "codex/game2-start-position-hotfix",
-   "baseSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
-   "requestedFix": "開始時に建物内へ閉じ込められる不具合を最優先で修正",
-   "sourceChange": "Expose existing Level.spawnPoints.player through playerSpawn; explicit relative link to the existing icon.svg. Both deltas already exist in PR #10. No new spawn coordinates or collision bypass.",
-   "reproduced": "Baseline Player.init chooses [0,812,8] instead of authored [0,812,73], 65m away inside haiden footprint.",
-   "nodeVerification": "tools/check-start-position.mjs failed before fix, passed after: initial73 -> forward62.7633333333 -> retry73. Flat terrain/omitted render rig only.",
-   "geometryReview": "Independent actual MEDIUM terrain, four stair flights, outer torii and boundary: [0,811.9825668334961,73] -> [-0.0035683393454336164,811.9924676016805,62.763833969836824], retry restores player and capsule. This is nonrendered.",
-   "artifactRevision": "90c089650ed6188af5dac6395d028a72e07bc113d1a45f6404bb99fa5d13b32a",
-   "mainSha": "f7aa1d9382f2b4f938c8ffb3bbd5af5c16b687b8",
-   "publicRun": 34672160985,
-   "publicResult": "Exact served bytes, real keyboard and touch movement, retry and zero-fault gates passed.",
-   "continuingCandidate": {
-    "pr": 10,
-    "branch": "codex/game2-criteria-20260911",
-    "sha": "cb4d7d620e8d704affc26b697f3458c1d953c724",
-    "ci": 34666329831,
-    "ciConclusion": "success",
-     "remaining": "Damage-feedback repair requires a fresh [motion] run; primitive character readability remains major."
-   },
-   "firstBrowserRun": {
-    "run": 34671373601,
-    "conclusion": "FAIL: two console404s after successful keyboard movement/retry; touch did not run",
-    "nextFix": "Point the document icon to the existing icon.svg (same link already in PR10) and record exact console/server URLs. This is a hypothesis for the404s until the new run. Keep zero-error assertion. Reuse the unchanged4e baseline; rerun both fresh candidate boots."
-   }
-  }
- },
- "qualityBar": {
-  "authority": "AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml",
-  "establishedAt": "2026-08-01",
-  "integration": "INSPECTED: merged into main at 0a4fd14dcc565fa7337ce217a6417f2f13bd1148 (branch commit 70af18de6bd960a155a67f36ba57c742e3cd322e, base 1a805c9). origin/main carries the 81,833-byte file and the resume wiring in INDEX.md, CLAUDE.md, PROJECT_OPERATING_PROTOCOL.md, ARCHITECTURE.md, tools/CRITIC.md, HANDOFF.md and README.md. A session starting from the default branch now finds it. src/ and docs/ are byte-identical to 1a805c9, so the published Pages artifact is untouched and needed no rebuild.",
-  "conceptUnchanged": true,
-  "elements": 16,
-  "referenceTitles": [
-   "Ghost of Tsushima (13 elements)",
-   "SEKIRO: Shadows Die Twice (7 elements incl. one secondary)",
-   "Genshin Impact (touch layer and phone performance envelope only)"
-  ],
-  "criteria": "62 benchmark entries; legacy status counts remain 21 verified, 4 under review, 14 blocked, 23 proposed until the new evidence is matched to each full threshold. Round 17 measurement coverage is recorded separately; no thresholds were relaxed.",
-  "headlineGap": "Exact 9f7b70b passes five technical frames, 20 encounters and 300 rendered frames in CI 34737095560. Independent review clears the black ribbon and reversed damage lens but returns FAIL 58: axial combat-camera overlap and primitive character/cloth readability remain major. Physical-device and human gates remain open.",
-  "structuralBlocker": "Local Chromium SIGTRAP and Cloud Browser WebGL limitations are bypassed using the already-authorized GitHub Actions execution surface. Actual capture and smoke evidence are available. Physical-device and human gates still require actual measurements.",
-  "neverPerformed": [
-   "A matched reference-title gameplay-video or physical-device comparison. Official publisher reference stills were fetched and supplied to a version-blind model critic on 2026-09-11.",
-   "Any real-device frame-rate, thermal, or boot measurement. SwiftShader is not phone evidence.",
-   "Any expert human or player review of KAGEROU."
+  "currentWork": {
+    "activeTask": "R17-GAMEPLAY",
+    "lastCompletedTask": "Mandatory-rebuild routing withdrawn following the user clarification; no runtime deletion or rewrite occurred.",
+    "nextTask": "R17-GAMEPLAY",
+    "nextStartingPoint": "Continue from the latest PR #10 implementation and existing local work. Review the 3ad18ce rendered camera/character evidence, resolve the measured posture-pressure failure and complete the concept/reference audit. Reassess a rewrite if a concrete limitation prevents progress.",
+    "blockedBy": [],
+    "remoteStateChangeAuthorized": true,
+    "remotePolicy": "Across future sessions, push verified checkpoints, integrate them into main, and publish GitHub Pages without asking again. This remains active until the user changes it."
+  },
+  "knownUncertainty": [
+    "3ad18ce BM-COMBAT-02: 19/32=59.375% across 20 encounters, threshold 60%.",
+    "CI completion is not overall benchmark acceptance.",
+    "Current camera offset has rendered evidence but independent visual confirmation is pending.",
+    "Primitive character/cloth and vegetation presentation need observed, cause-tested improvement.",
+    "No fixed-instruction element has a verified whole-element source-blind pass.",
+    "SwiftShader timing is not physical-device performance."
   ]
- },
- "currentWork": {
-  "activeTask": "R17-GAMEPLAY",
-  "lastCompletedTask": "Exact PR candidate 9f7b70b completed five-frame, 20-encounter and 300-frame CI evidence. Independent review cleared the ribbon and damage-lens regressions but retained two visual majors.",
-  "nextTask": "R17-GAMEPLAY",
-  "nextStartingPoint": "Run one [motion] checkpoint for the independently code-reviewed 30 degree mirrored duel-camera offset. Require fresh rendered separation before publication, then diagnose the remaining Rig.js character major with neutral materials.",
-  "blockedBy": [],
-  "remoteStateChangeAuthorized": true,
-  "remotePolicy": "Across future sessions, push verified checkpoints, integrate them into main, and publish GitHub Pages without asking again. This remains active until the user changes it."
- },
- "knownUncertainty": [
-  "BM-COMBAT-02: 27/35 = 77.14% in 20 encounters; unchanged threshold 60%.",
-  "BM-ANIM-01: 18/18 measured attacks; shortest 233 ms against 140 ms.",
-  "BM-CAMERA-04 remains inconclusive: path divergence 2.118 m.",
-  "BM-CHAR-02 pixel survey and BM-AUDIO-03 true peak remain unverified.",
-  "Motion: exact 9f7b70b has 300 rendered frames and both hit directions. Independent review confirms the red lens only on incoming damage and no black-ribbon recurrence.",
-  "The 9f7 review retains two majors: primitive character/cloth forms and combat-body/weapon overlap caused by frontal lock framing. A camera repair is locally verified but not yet rendered.",
-  "Real-device performance, thermals, boot and human ergonomics remain unmeasured.",
-  "main/Pages is 86512c3 with verified start and enemy progression; broader Round 17 source remains unpublished on PR #10 at 9f7b70b."
- ]
 }

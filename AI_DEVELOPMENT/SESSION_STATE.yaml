@@ -1,77 +1,96 @@
 {
- "schemaVersion": 1,
- "logicalSession": {
-  "id": "2026-07-31-game2-continuation",
-  "active": true,
-  "startedAt": "2026-07-31T12:54:11Z",
-  "endedAt": null,
-  "endRequiresExplicitUserInstruction": true,
-  "objective": "Continue game2 until the existing criteria are evidenced. The user authorized verified incremental main/Pages publication and prioritized the start trap, which is now published and browser-verified.",
-  "workingBranch": "codex/game2-criteria-20260911",
-  "baseSha": "f7aa1d9382f2b4f938c8ffb3bbd5af5c16b687b8",
-  "activePlanNode": "R17-GAMEPLAY",
-  "activeTask": "R17-CAMERA-FRAMING",
-  "lastSuccessfulAction": "Exact PR candidate 9f7b70b passed CI 34737095560 with five phone frames, 20 encounters and 300 rendered frames. Independent review cleared the black ribbon and reversed damage lens, but returned FAIL 58 with two majors and one minor.",
-  "currentFailingAction": "The combat camera aligns the enemy behind the player through startup, active and hit frames, and primitive character/cloth construction remains major. The exact 9f7 motion review is preserved in r17-motion-9f7-review.json.",
-  "currentHypothesis": "Source inspection confirmed that an unobstructed lock selected the exact player-target axis before any side orbit. A bounded 30 degree mirrored duel offset plus a non-overlap projection contract passes locally; rendered proof is pending.",
-  "nextAction": "Push the independently code-reviewed camera repair as one [motion] checkpoint. Require five fixed frames, 20 encounters and 300 rendered frames, then independently inspect startup, active and both hit windows. Do not publish unless the camera major is cleared.",
-  "rollbackPoint": "86512c3bfdc69e03b5b490d9b0d79ec9da141343",
-  "pendingVerification": [
-   "Fresh five-frame, 20-encounter and actual 300-frame evidence for the duel-camera source delta after 9f7b70b.",
-   "Independent native-frame confirmation that both fighters and their weapons separate through startup, active and hit windows.",
-   "Rig.js neutral-material diagnosis, character/cloth readability repair and fresh independent review.",
-   "Physical-device and human criteria."
-  ],
-  "modifiedFiles": [
-   "src/fx/Effects.js",
-   "src/gameplay/Combat.js",
-   "src/gameplay/Player.js",
-   "src/gameplay/Enemy.js",
-   "src/gameplay/EnemyAI.js",
-   "src/gameplay/PlayerCamera.js",
-   "src/render/Foliage.js",
-   "src/render/PostFX.js",
-   "src/world/Props.js",
-   "src/world/Terrain.js",
-   "src/world/Level.js",
-   "tools/interaction-capture.mjs",
-   "tools/interaction-metrics.mjs",
-   "tools/harness/runtime.js",
-   "tools/motion-capture.mjs",
-   "tools/check-postfx-r17.mjs",
-   ".github/workflows/game2-criteria.yml",
-   "AI_DEVELOPMENT evidence and active-state documents"
-  ],
-  "remotePushPendingAuthorization": false,
-  "remoteReleaseAuthorized": true,
-  "remotePublicationStatus": "Main/Pages remains 86512c3. PR #10 at 9f7b70b has complete CI evidence but failed independent visual review; publication is withheld while the camera and character majors are repaired.",
-  "publishedMainSha": "86512c3bfdc69e03b5b490d9b0d79ec9da141343",
-  "publishedUrl": "https://bachikoljunior-blip.github.io/game2/",
-  "startPositionHotfix": {
-   "status": "published_and_verified",
-   "branch": "codex/game2-start-position-hotfix",
-   "baseSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
-   "requestedFix": "開始時に建物内へ閉じ込められる不具合を最優先で修正",
-   "sourceChange": "Expose existing Level.spawnPoints.player through playerSpawn; explicit relative link to the existing icon.svg. Both deltas already exist in PR #10. No new spawn coordinates or collision bypass.",
-   "reproduced": "Baseline Player.init chooses [0,812,8] instead of authored [0,812,73], 65m away inside haiden footprint.",
-   "nodeVerification": "tools/check-start-position.mjs failed before fix, passed after: initial73 -> forward62.7633333333 -> retry73. Flat terrain/omitted render rig only.",
-   "geometryReview": "Independent actual MEDIUM terrain, four stair flights, outer torii and boundary: [0,811.9825668334961,73] -> [-0.0035683393454336164,811.9924676016805,62.763833969836824], retry restores player and capsule. This is nonrendered.",
-   "artifactRevision": "90c089650ed6188af5dac6395d028a72e07bc113d1a45f6404bb99fa5d13b32a",
-   "mainSha": "f7aa1d9382f2b4f938c8ffb3bbd5af5c16b687b8",
-   "publicRun": 34672160985,
-   "publicResult": "Exact eight-file served payload, keyboard/touch forward movement and retry passed with zero faults.",
-   "firstBrowserRun": {
-    "run": 34671373601,
-    "conclusion": "FAIL: two console404s after successful keyboard movement/retry; touch did not run",
-    "nextFix": "Point the document icon to the existing icon.svg (same link already in PR10) and record exact console/server URLs. This is a hypothesis for the404s until the new run. Keep zero-error assertion. Reuse the unchanged4e baseline; rerun both fresh candidate boots."
-   }
+  "schemaVersion": 1,
+  "logicalSession": {
+    "id": "2026-07-31-game2-continuation",
+    "active": true,
+    "startedAt": "2026-07-31T12:54:11Z",
+    "endedAt": null,
+    "endRequiresExplicitUserInstruction": true,
+    "objective": "Continue game2 until the existing criteria are evidenced. User reprioritized the public start-position trap on 2026-09-12; ship this bounded verified fix to main/Pages first, then resume PR #10.",
+    "workingBranch": "codex/game2-criteria-20260911",
+    "baseSha": "08c746498d35bb7aa430ae272b6984c5c2a765e5",
+    "activePlanNode": "R17-GAMEPLAY",
+    "activeTask": "R17-GAMEPLAY",
+    "lastSuccessfulAction": "Fixed instructions synchronized. The user clarified that rebuilding is necessary only if justified. Existing 3ad18ce source has 5 rendered frames, 20 encounters and 300 motion frames in CI 34743372587.",
+    "currentFailingAction": "Current 20-encounter results are 14 pass / 1 fail / 3 inconclusive. BM-COMBAT-02 is 59.375% against 60%; independent current camera/character review and all fixed-instruction element verdicts remain incomplete.",
+    "currentHypothesis": "Existing working paths support targeted improvement first. There is no measured whole-runtime limitation requiring a full rewrite.",
+    "nextAction": "Continue from the latest PR #10 implementation and existing local work. Review the 3ad18ce rendered camera/character evidence, resolve the measured posture-pressure failure and complete the concept/reference audit. Reassess a rewrite if a concrete limitation prevents progress.",
+    "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
+    "pendingVerification": [
+      "Independent review of current rendered camera/character evidence.",
+      "Before/after posture-pressure repair and >=20 encounters with unchanged 60% threshold.",
+      "Concept coverage, four-axis reference evidence and actual source-blind comparisons.",
+      "Closest-available physical-use validation; measurements and inference distinguished."
+    ],
+    "modifiedFiles": [
+      "src/render/Sky.js",
+      "src/render/Foliage.js",
+      "src/render/PostFX.js",
+      "src/world/Terrain.js",
+      "src/world/Props.js",
+      "src/gameplay/Physics.js",
+      "HANDOFF.md",
+      "README.md",
+      "ROUND.md",
+      "AI_DEVELOPMENT/ACTIVE_FRONTIER.yaml",
+      "AI_DEVELOPMENT/PLAN_TREE.yaml",
+      "AI_DEVELOPMENT/TASK_GRAPH.yaml",
+      "AI_DEVELOPMENT/TECHNICAL_DEBT.md",
+      "AI_DEVELOPMENT/SESSION_STATE.yaml",
+      "AI_DEVELOPMENT/PROJECT_STATE.yaml",
+      "AI_DEVELOPMENT/EVIDENCE/r16-sky.md",
+      "AI_DEVELOPMENT/EVIDENCE/r16-world.md",
+      "AI_DEVELOPMENT/EVIDENCE/r16-foliage.md",
+      "AI_DEVELOPMENT/EVIDENCE/r16-postfx.md",
+      "AI_DEVELOPMENT/EVIDENCE/phys-narrowphase.md",
+      "shots/review-r16.json",
+      "shots/interaction-i2.json",
+      "tools/variance.mjs",
+      "AI_DEVELOPMENT/EVIDENCE/kit-variance.md",
+      "AI_DEVELOPMENT/EVIDENCE/kit-variance.json",
+      "AI_DEVELOPMENT/DECISIONS.md"
+    ],
+    "remotePushPendingAuthorization": false,
+    "remoteReleaseAuthorized": true,
+    "remotePublicationStatus": "Public gameplay payload remains the previously verified build. New game source is not published by these instruction-only commits.",
+    "publishedMainSha": "e40a1884a57250391dd08bdf50dc2c6cb3837a36",
+    "publishedUrl": "https://bachikoljunior-blip.github.io/game2/",
+    "startPositionHotfix": {
+      "status": "awaiting_verification",
+      "branch": "codex/game2-start-position-hotfix",
+      "baseSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
+      "requestedFix": "開始時に建物内へ閉じ込められる不具合を最優先で修正",
+      "sourceChange": "Expose existing Level.spawnPoints.player through playerSpawn; explicit relative link to the existing icon.svg. Both deltas already exist in PR #10. No new spawn coordinates or collision bypass.",
+      "reproduced": "Baseline Player.init chooses [0,812,8] instead of authored [0,812,73], 65m away inside haiden footprint.",
+      "nodeVerification": "tools/check-start-position.mjs failed before fix, passed after: initial73 -> forward62.7633333333 -> retry73. Flat terrain/omitted render rig only.",
+      "geometryReview": "Independent actual MEDIUM terrain, four stair flights, outer torii and boundary: [0,811.9825668334961,73] -> [-0.0035683393454336164,811.9924676016805,62.763833969836824], retry restores player and capsule. This is nonrendered.",
+      "artifactRevision": "90c089650ed6188af5dac6395d028a72e07bc113d1a45f6404bb99fa5d13b32a",
+      "pending": [
+        "Production browser: normal Enter, real keyboard and touch travel, retry",
+        "Fresh remote main integration",
+        "Served-byte identity and actual public browser check"
+      ],
+      "continuingCandidate": {
+        "pr": 10,
+        "branch": "codex/game2-criteria-20260911",
+        "sha": "cb4d7d620e8d704affc26b697f3458c1d953c724",
+        "ci": 34666329831,
+        "ciConclusion": "success",
+        "remaining": "Read/independently review 300-frame artifact; full product not accepted. Do not duplicate the start getter when integrating."
+      },
+      "firstBrowserRun": {
+        "run": 34671373601,
+        "conclusion": "FAIL: two console404s after successful keyboard movement/retry; touch did not run",
+        "nextFix": "Point the document icon to the existing icon.svg (same link already in PR10) and record exact console/server URLs. This is a hypothesis for the404s until the new run. Keep zero-error assertion. Reuse the unchanged4e baseline; rerun both fresh candidate boots."
+      }
+    },
+    "continuationAutomation": {
+      "enabled": true,
+      "cadence": "hourly",
+      "coordination": "Check recent commits and running CI; if another producer is active, read only. No force push or duplicate work.",
+      "activeBranch": "codex/game2-criteria-20260911"
+    }
   },
-  "continuationAutomation": {
-   "enabled": true,
-   "cadence": "hourly",
-   "coordination": "Observe only while another fresh producer/related CI is active; do not create duplicate changes."
-  }
- },
   "work": {
     "units_requested": "continuous",
     "fixed_instructions": "AI_DEVELOPMENT/FIXED_INSTRUCTIONS.md",
@@ -80,6 +99,7 @@
     "completion": "All concept elements satisfied by evidenced blind comparison.",
     "current_unit": "2026-09-13-fixed-instructions-initial-application",
     "unit_status": "active",
-    "first_action": "Audit concept coverage and four-axis reference selection on the latest working branch; preserve valid implementation and evidence."
+    "first_action": "Continue from the latest PR #10 implementation and existing local work. Review the 3ad18ce rendered camera/character evidence, resolve the measured posture-pressure failure and complete the concept/reference audit. Reassess a rewrite if a concrete limitation prevents progress.",
+    "implementation_strategy": "AI choice; rebuild only if evidence warrants it"
   }
 }
