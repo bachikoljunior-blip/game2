@@ -128,18 +128,18 @@
         "E03-CAMERA"
       ],
       "nameJa": "第三者視点での移動・視点操作",
-      "reference": "GT",
+      "reference": "MGSV",
       "referenceSelection": {
         "axes": {
           "elementQuality": {
-            "assessment": "substantiation incomplete",
-            "finding": "第三者視点の移動体験を保持する参照。",
+            "assessment": "supported selection rationale; not a game verdict",
+            "finding": "左スティックの速度制御、右スティックの独立カメラ、肩越し左右切替、走行から伏せ・しゃがみへの連続遷移、壁際の覗き込みを一つの第三者視点移動系として扱う。専門批評は応答の速さ、姿勢遷移の連続性、直感的な身体操作を具体的に評価している。",
             "sources": [
-              "GT-C"
+              "MGSV-MANUAL",
+              "MGSV-C-GZ",
+              "MGSV-C-TPP"
             ],
-            "unresolved": [
-              "移動とカメラを一体で評価した具体的根拠が不足。"
-            ]
+            "unresolved": []
           },
           "fitToConcept": {
             "assessment": "supported selection rationale; not a game verdict",
@@ -154,37 +154,38 @@
               ],
               "inference": true
             },
-            "finding": "入力から身体移動・カメラ追従・視認性までを含む第三者視点の移動体験。C02とC03を同じ連続素材で一体比較する。",
-            "sources": [],
+            "finding": "C02の境界である入力、身体移動、追従視点、壁際の視認性を同じ連続操作で解く第三者視点作品であり、仮参照GTと同じ問題範囲を覆う。銃器中心で剣戟ロックオンとタッチ操作を持たない差は、参照範囲を移動・カメラに限定し、C01とC07の基準や新作側のタッチ検証を代用しないことで分離する。",
+            "sources": [
+              "MGSV-MANUAL",
+              "MGSV-C-GZ"
+            ],
             "unresolved": []
           },
           "longevity": {
-            "assessment": "substantiation incomplete",
-            "finding": "2024年批評は4年後も美術を評価する一方、技術面の古さを指摘。",
+            "assessment": "supported selection rationale; not a game verdict",
+            "finding": "2015年発売時の操作評価に加え、2025年の10周年批評がゲームプレイを主因として傑作と再評価し、2026年時点のSteam英語レビューも91%肯定を維持している。",
             "sources": [
-              "GT-C"
+              "MGSV-C-TPP",
+              "MGSV-L",
+              "MGSV-P-STEAM"
             ],
-            "unresolved": [
-              "当該要素が長期にわたり基準とされる根拠が不足。"
-            ]
+            "unresolved": []
           },
           "reception": {
-            "assessment": "substantiation incomplete",
-            "finding": "専門批評と個別プレイヤー投稿を区別。美術の評価と反復への批判を併記。",
+            "assessment": "supported selection rationale; not a game verdict",
+            "finding": "専門批評は応答性と直感的な姿勢遷移を評価し、発売5年後のプレイヤー議論も操作・機動・アニメーションを具体的に支持する。Steam集計は作品全体の評価としてのみ扱う。複雑な同時入力、キーボード時の旋回、カメラが意図せず動くという反例も保持する。",
             "sources": [
-              "GT-C",
-              "GT-P"
+              "MGSV-C-GZ",
+              "MGSV-C-TPP",
+              "MGSV-P-STEAM",
+              "MGSV-P-LATE",
+              "MGSV-P-COUNTER"
             ],
-            "unresolved": [
-              "当該要素単独のプレイヤー評価を追加確認する。"
-            ]
+            "unresolved": []
           }
         },
-        "decision": "既存参照を保持。初回選定の根拠を補強中であり、全4軸が確定したとは扱わない。",
+        "decision": "初回選定中の仮参照GTをMGSVへ変更する。GTは剣戟設定への適合は高いが、移動・カメラ要素単独では後発ロックオンを含め壁際・集団戦の視認性と同時操作に継続的な反証があり、品質・長期評価を確定できない。MGSVはC02に限定すれば同じ第三者視点移動問題を覆い、要素品質・専門家とプレイヤー評価・11年の長期評価がGT以上である。剣戟・タッチへの不足を別要素の代用には使わない。候補変更は新作の比較結果を見る前に行い、合格させるための基準移動ではない。",
         "unresolved": [
-          "移動とカメラを一体で評価した具体的根拠が不足。",
-          "当該要素単独のプレイヤー評価を追加確認する。",
-          "当該要素が長期にわたり基準とされる根拠が不足。",
           "実際の同目的資料を取得し出所を推定できない独立評価を行う。レビューは実比較の代用ではない。"
         ]
       },
@@ -1527,11 +1528,12 @@
     "complete": false,
     "conceptChanged": false,
     "extraction": "10 coherent comparison units proposed after two explicit merge tests. Structural coverage verified; largest-comparable semantic review still open. No new quality verdict.",
-    "selection": "Incomplete four-axis substantiation is explicitly recorded; no references replaced because of candidate results."
+    "selection": "Incomplete four-axis substantiation is explicitly recorded. C02's provisional GT reference was replaced by MGSV during initial selection, before candidate comparison, after documenting all-four-axis equality or improvement and GT camera counterevidence."
   },
   "references": {
     "GI": "Genshin Impact (2020)",
     "GT": "Ghost of Tsushima / Director's Cut (2020/2021; PC 2024)",
+    "MGSV": "METAL GEAR SOLID V: THE PHANTOM PAIN (2015)",
     "SK": "SEKIRO: Shadows Die Twice (2019)"
   },
   "runtime": {
@@ -1560,6 +1562,78 @@
       "observation": "景観・剣戟への賛否と、探索の反復・限られた敵の種類への批判が併存。",
       "published": null,
       "url": "https://www.reddit.com/r/patientgamers/comments/18vkygc/just_finished_ghost_of_tsushima_ps5_directors_cut/"
+    },
+    {
+      "accessed": "2026-09-13",
+      "id": "MGSV-MANUAL",
+      "kind": "primary official control manual for the shared Ground Zeroes control system; not independent reception or blind evidence",
+      "limitation": "操作の割当と選択肢を示す一次資料。応答性、快適さ、カメラ衝突時の品質を証明しない。The Phantom Pain単独の取扱説明ではなく、同系統のGround Zeroes公式マニュアル。",
+      "observation": "左スティック移動とダッシュ、右スティックの独立カメラ、肩越し左右切替、4種類の操作タイプを明示。",
+      "published": null,
+      "url": "https://www.konami.com/mg/mgs5/gz/webmanual/ps4/en/p0050.html"
+    },
+    {
+      "accessed": "2026-09-13",
+      "id": "MGSV-C-GZ",
+      "kind": "independent professional review of the shared movement/control foundation; not blind evidence",
+      "limitation": "The Phantom Painの前作Ground ZeroesのPC版評価。パッド前提の速度制御を評価する一方、複雑な同時入力とキーボード操作の弱点も報告。",
+      "observation": "操作を引き締まり応答が速いと評価。走行・歩行から伏せ／しゃがみへ連続遷移し、壁際で覗き込み、アナログ量で速度を変える身体移動を直感的と具体化。",
+      "published": "2014-12-18",
+      "url": "https://www.pcgamer.com/metal-gear-solid-v-ground-zeroes-review/"
+    },
+    {
+      "accessed": "2026-09-13",
+      "id": "MGSV-C-TPP",
+      "kind": "independent professional release review; not blind evidence",
+      "limitation": "操作系全体への評価で、壁際カメラや入力遅延を独立測定した資料ではない。メニューのマウス非対応という弱点もある。",
+      "observation": "PC Gamer 93点の発売時評価は操作の良さを戦況変化を楽しめる根拠として明記し、リマップとゲームパッド対応も確認。",
+      "published": "2015-09-07",
+      "url": "https://www.pcgamer.com/metal-gear-solid-5-review/"
+    },
+    {
+      "accessed": "2026-09-13",
+      "id": "MGSV-P-STEAM",
+      "kind": "current storefront player-review aggregate and publisher description; not element-specific or blind evidence",
+      "limitation": "作品全体の英語レビュー集計で、C02単独の品質を証明しない。出版社の説明とユーザー集計を区別して扱う。",
+      "observation": "2015年発売後、2026年9月13日時点で英語レビュー42,252件の91%が肯定、直近449件も87%肯定。公開されたオープンワールド移動・操作体験が継続利用されている背景証拠。",
+      "published": "2015-09-01",
+      "url": "https://store.steampowered.com/app/287700/METAL_GEAR_SOLID_V_THE_PHANTOM_PAIN/"
+    },
+    {
+      "accessed": "2026-09-13",
+      "id": "MGSV-P-LATE",
+      "kind": "five-year-later player discussion; not population consensus or blind evidence",
+      "limitation": "個別投稿群で選択偏りがある。物語・反復・運営要素への不満もあり、作品全体の無条件な支持ではない。",
+      "observation": "2021年の完走後議論で操作、機動、アニメーションを具体的に高く評価し、別参加者もこの種のゲーム向けに操作が引き締まり良く機能すると支持。",
+      "published": "2021-01-07",
+      "url": "https://www.reddit.com/r/patientgamers/comments/ksmrr4/metal_gear_solid_v_the_phantom_pain_and_a_brief/"
+    },
+    {
+      "accessed": "2026-09-13",
+      "id": "MGSV-P-COUNTER",
+      "kind": "pre-release PC player control discussion; counterevidence, not population consensus or blind evidence",
+      "limitation": "個別ユーザーのPC入力に関する事前体験で、製品版全環境を代表しない。",
+      "observation": "キーボードとマウスでは狭い場所の微細な急旋回で身体の旋回半径が意図に合わず、パッドを望む場面があると報告。",
+      "published": "2015-08-12",
+      "url": "https://www.reddit.com/r/metalgearsolid/comments/3gpd5b/pc_users_do_you_like_playing_mgsv_better_with/"
+    },
+    {
+      "accessed": "2026-09-13",
+      "id": "MGSV-L",
+      "kind": "independent ten-year retrospective; not blind evidence",
+      "limitation": "専門記者一人の回顧。ゲームプレイ全体の再評価であり、カメラ単独の長期測定ではない。",
+      "observation": "2025年の10周年記事は、発売時の高評価と受賞の主因をゲームプレイに置き、プレイヤーの意図へ応じる自由な操作と反応を現在も傑作と評価。",
+      "published": "2025-09-01",
+      "url": "https://www.gamesradar.com/games/metal-gear/10-years-later-metal-gear-solid-5-remains-a-masterpiece-that-was-never-going-to-live-up-to-its-own-hype/"
+    },
+    {
+      "accessed": "2026-09-13",
+      "id": "GT-CAMERA-P",
+      "kind": "four-year-later player discussion used as rejected-candidate counterevidence; not population consensus or blind evidence",
+      "limitation": "作品コミュニティ内の個別投稿群で選択偏りがある。通常カメラを支持し問題を軽微とする反論も同じ議論内に存在する。",
+      "observation": "後発ロックオンでも対象選択、壁越し対象、狭所の遮蔽、集団戦の把握に不満が継続。通常カメラを支持し慣れで解消するという反例も保持。",
+      "published": "2024-06-24",
+      "url": "https://www.reddit.com/r/ghostoftsushima/comments/1dngg1z/the_camera_and_lock_on_in_this_game_is_total_bs/"
     },
     {
       "accessed": "2026-09-13",
@@ -1756,6 +1830,6 @@
     }
   ],
   "status": "not measured",
-  "updatedAt": "2026-09-13T20:10:29Z",
+  "updatedAt": "2026-09-13T22:10:32Z",
   "adoptionReview": "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-catalog-review.json"
 }
