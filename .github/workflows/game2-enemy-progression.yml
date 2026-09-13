@@ -34,7 +34,9 @@ jobs:
       - run: npm run check
       - run: npx playwright install --with-deps chromium
       - name: Walk from the normal start until enemies appear and fight
-        run: node tools/enemy-progression-capture.mjs --root=docs --tag=enemy-local
+        # npm run check builds dist immediately above. Exercise those candidate
+        # bytes, not the last checked-in Pages payload in docs/.
+        run: node tools/enemy-progression-capture.mjs --root=dist --tag=enemy-local
       - name: Verify the same flow on published Pages
         if: github.ref == 'refs/heads/main'
         run: node tools/enemy-progression-capture.mjs --root=docs --url=https://bachikoljunior-blip.github.io/game2/docs/ --tag=enemy-published

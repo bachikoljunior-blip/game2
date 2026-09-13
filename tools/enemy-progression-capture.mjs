@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { serveStatic } from '../.kit/lib/browser/serve.mjs';
 import { launchHeadless } from '../.kit/lib/browser/launch.mjs';
 import { waitForBoot } from '../.kit/lib/browser/boot.mjs';
@@ -12,7 +13,12 @@ import { revision } from '../.kit/lib/release/revision.mjs';
 import { verifyServed } from '../.kit/lib/release/verifyServed.mjs';
 
 const opts = Object.fromEntries(process.argv.slice(2).map((x) => x.replace(/^--/, '').split('=')));
-const root = resolve(opts.root || 'docs');
+const localBuildRoot = resolve('dist');
+const root = resolve(opts.root || 'dist');
+if (!opts.url) {
+  assert.equal(root, localBuildRoot,
+    'local progression evidence must exercise the fresh Vite build in dist');
+}
 const tag = opts.tag || 'enemy-progression';
 assert.match(tag, /^[a-zA-Z0-9_-]+$/);
 const out = resolve('shots', tag);
@@ -33,10 +39,22 @@ try {
   if (!opts.url) server = await serveStatic({ root, basePath: '/game2/docs' });
   const url = (opts.url || server.origin).replace(/\/$/, '') + '/';
   report.url = url;
-  const expectedRevision = revision.verify(readFileSync(join(root, 'index.html'), 'utf8'));
+  const candidateHtml = readFileSync(join(root, 'index.html'), 'utf8');
+  // A local candidate is the fresh Vite output, which intentionally has no
+  // publish-only artifact-revision tag. Its bytes are served directly by the
+  // in-process server, so marker checks are sufficient here. Published Pages
+  // must retain the stronger self-verifying revision check against docs/.
+  const expectedRevision = opts.url ? revision.verify(candidateHtml) : null;
+  report.candidate = {
+    root,
+    indexSha256: createHash('sha256').update(candidateHtml).digest('hex'),
+    identity: opts.url ? 'published-artifact-revision' : 'fresh-vite-build',
+    expectedRevision,
+  };
   const served = await verifyServed({
     url,
     expectedRevision,
+    codec: opts.url ? revision : null,
     attempts: opts.url ? 36 : 1,
     markers: ['id="game-canvas"', 'assets/index-'],
     onAttempt: (attempt, failures) => console.log('[enemy-progression] served attempt', attempt, failures),
