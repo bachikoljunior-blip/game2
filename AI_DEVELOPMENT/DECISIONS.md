@@ -257,3 +257,19 @@ the existing capture apparatus without modifying its gates. This is not phone ev
 ## 2026-09-12 — Prioritize the public start-position hotfix
 
 The user requested 「先にゲーム開始時に閉じ込められてるの直して欲しい」 after authorizing incremental main publication. Reproduced the main spawn API mismatch (authored z=73, actual fallback z=8 inside haiden). Extract the already implemented playerSpawn getter from PR #10 into a bounded main-based hotfix and publish matching docs after targeted verification. Preserve the remaining R17 candidate and all unfinished criteria; the completed candidate CI is not full product acceptance. This supersedes waiting for the entire R17 checkpoint before delivering this specific fix.
+
+
+## 2026-09-13 — user-confirmed fixed instruction
+
+The user designated the complete revised Japanese element/reference/blind-comparison rules
+as the fixed instruction and requested work from element extraction and reference selection,
+keeping the one-week deadline. `FIXED_INSTRUCTIONS.md` is now the first-loaded authority.
+The old common instruction block is archived, not an active game2 authority. The product
+concept remains in CLAUDE/ARCHITECTURE; no new production-scale paragraph was added.
+The deleted element-count sentence, blanket device/scale exclusion, and two unattainable-
+reference sentences were not retained. The named phone tools are candidates; the user
+requires the closest available actual-use conditions and explicit measurement/inference.
+Technical evidence remains valid within its measured scope; it is not a blind verdict.
+The existing continuation was updated with this same full text, without changing its
+schedule or enabled state. Human intervention is not a dependency. Deadline remains
+2026-09-20T07:51:53Z.

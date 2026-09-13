@@ -71,5 +71,15 @@
    "cadence": "hourly",
    "coordination": "Observe only while another fresh producer/related CI is active; do not create duplicate changes."
   }
- }
+ },
+  "work": {
+    "units_requested": "continuous",
+    "fixed_instructions": "AI_DEVELOPMENT/FIXED_INSTRUCTIONS.md",
+    "deadline": "2026-09-20T07:51:53Z",
+    "human_intervention_required": false,
+    "completion": "All concept elements satisfied by evidenced blind comparison.",
+    "current_unit": "2026-09-13-fixed-instructions-initial-application",
+    "unit_status": "active",
+    "first_action": "Audit concept coverage and four-axis reference selection on the latest working branch; preserve valid implementation and evidence."
+  }
 }

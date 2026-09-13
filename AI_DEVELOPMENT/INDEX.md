@@ -5,6 +5,7 @@ visual-round measurements stay in `../HANDOFF.md`; they are referenced, not dupl
 
 ## Load order
 
+0. `FIXED_INSTRUCTIONS.md` — the full user-confirmed fixed instruction; conflicts resolve here.
 1. `../PROJECT_OPERATING_PROTOCOL.md`
 2. `PROJECT_STATE.yaml` and `SESSION_STATE.yaml`
 3. `REQUIREMENTS.md`, `CONSTRAINTS.md`, `REFERENCE_BENCHMARKS.yaml`, and
@@ -19,13 +20,14 @@ visual-round measurements stay in `../HANDOFF.md`; they are referenced, not dupl
 
 | Category | Authoritative file |
 |---|---|
-| Operating rules and conflict order | `../PROJECT_OPERATING_PROTOCOL.md` |
+| Fixed instruction and completion definition | `FIXED_INSTRUCTIONS.md` |
+| Changeable execution procedure | `../PROJECT_OPERATING_PROTOCOL.md` |
 | Product architecture, owners, art/UX/performance contract | `../ARCHITECTURE.md` |
 | Current concise project state | `PROJECT_STATE.yaml` |
 | Active logical session and exact continuation point | `SESSION_STATE.yaml` |
 | Requirements and constraints | `REQUIREMENTS.md`, `CONSTRAINTS.md` |
 | Per-element reference titles, why each was chosen, and the bar it sets | `REFERENCE_BENCHMARKS.yaml` |
-| Testable completion conditions | `ACCEPTANCE_CRITERIA.yaml` |
+| Supporting technical gates (not substitutes for element blind verdicts) | `ACCEPTANCE_CRITERIA.yaml` |
 | Complete plan and current actionable work | `PLAN_TREE.yaml`, `ACTIVE_FRONTIER.yaml` |
 | Dependencies between tasks | `TASK_GRAPH.yaml` |
 | Accepted and superseded decisions | `DECISIONS.md` |
@@ -37,6 +39,12 @@ visual-round measurements stay in `../HANDOFF.md`; they are referenced, not dupl
 | Public verified status | `../README.md` |
 | Specialist contracts | `HANDOFFS/` |
 | Objective outputs | `EVIDENCE/`, `TEST_HISTORY/`, `BENCHMARKS/`, and tracked `../shots/*.json` |
+
+## Element verdicts
+
+Use only `satisfied`, `not satisfied`, or `not measured` for the fixed-rule element
+comparison result. Task statuses and technical benchmark results below describe different
+things. A CI success, screenshot score, or unavailable comparison cannot establish `satisfied`.
 
 ## Status vocabulary
 

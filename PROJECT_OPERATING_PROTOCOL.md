@@ -1,6 +1,6 @@
 # Project-wide persistent autonomous development protocol
 
-Status: active  
+Status: active; subordinate to `AI_DEVELOPMENT/FIXED_INSTRUCTIONS.md`
 Adopted: 2026-07-31  
 Scope: the entire `bachikoljunior-blip/game2` project
 
@@ -13,7 +13,8 @@ latest explicit instructions.
 
 Resolve conflicts in this order:
 
-1. The user's latest explicit instruction.
+1. The user's latest explicit instruction, including the complete fixed rules in
+   `AI_DEVELOPMENT/FIXED_INSTRUCTIONS.md` (confirmed 2026-09-13).
 2. Active project requirements and constraints.
 3. Verified repository files, runtime behaviour, and test results.
 4. Accepted decisions that have not been superseded.
@@ -23,6 +24,13 @@ Resolve conflicts in this order:
 When a conflict is found, record it in `AI_DEVELOPMENT/DECISIONS.md`, state what was
 replaced, update affected plans and criteria, and preserve still-valid completed work.
 Never turn an assumption into a fact by repetition.
+
+The fixed rules define a work unit as ending at an AI-initiated blind comparison.
+A technical/art round below is a subordinate procedure, not a different definition of
+completion. All concept elements must be `satisfied` in actual blind comparisons.
+Preserve valid technical thresholds and evidence; do not turn their PASS into that verdict.
+Named phone verification tools are candidates, not mandatory exclusive methods. Choose the
+closest available conditions to actual use, distinguishing measurement from inference.
 
 ## 2. Existing sources of truth
 
@@ -51,7 +59,8 @@ wins and both records are reconciled.
 
 At the start of every Work run or project chat:
 
-1. Read this file and `AI_DEVELOPMENT/INDEX.md`.
+1. Read `AI_DEVELOPMENT/FIXED_INSTRUCTIONS.md`, then this file and
+   `AI_DEVELOPMENT/INDEX.md`.
 2. Read `PROJECT_STATE.yaml` and `SESSION_STATE.yaml`.
 3. Read requirements, constraints, criteria, the active frontier, and task graph.
 4. Read relevant decisions, failures, technical debt, and reusable workflows.
