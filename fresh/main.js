@@ -1,10 +1,13 @@
 import './styles.css';
+import './mission.css';
 import {createWorld,advance} from './simulation.js';
 import {createPresentation} from './presentation.js';
 import {createInput} from './input.js';
+import {INTRO,ENDING,objectiveText,canLightSignal} from './mission.js';
 const canvas=document.querySelector('#scene'),menu=document.querySelector('#menu'),hud=document.querySelector('#hud'),
-  message=document.querySelector('#message'),start=document.querySelector('#start'),notice=document.querySelector('#notice');
+  message=document.querySelector('#message'),start=document.querySelector('#start'),notice=document.querySelector('#notice'),objective=document.querySelector('#objective');
 let view,world=createWorld(),running=false,paused=false,last=0,audio=null,lastSound=-1,contextLost=false;
+message.textContent=INTRO;
 function pause(){if(!running)return;running=false;paused=true;input.setActive(false);menu.hidden=false;message.textContent='風の中で、ひと息。';start.textContent='続ける';audio?.suspend();}
 const input=createInput(canvas,pause);
 try{view=createPresentation(canvas);}catch(e){message.textContent='描画を開始できませんでした。WebGLが利用可能なブラウザで再読み込みしてください。';start.disabled=true;throw e;}
@@ -23,13 +26,15 @@ function frame(now){
   if(running){if(advance(world,dt,input.sample()))input.consume();
     document.querySelector('#health i').style.width=world.player.hp+'%';
     document.querySelector('#posture i').style.width=Math.min(100,world.player.posture)+'%';
-    const near=world.enemies.filter(e=>e.hp>0).sort((a,b)=>Math.hypot(a.x-world.player.x,a.z-world.player.z)-Math.hypot(b.x-world.player.x,b.z-world.player.z))[0];
     const locked=world.enemies.find(e=>e.id===world.locked);
     document.querySelector('#enemy').textContent=locked?`対峙　${locked.hp} / 100`:'';
-    document.querySelector('#objective').textContent=world.totals.kills?'社へ進む　残る剣士 '+(3-world.totals.kills):world.player.z<10?'構えを読む。弾いて、斬る。':'鳥居の先へ進む';
+    const newObjective=objectiveText(world);
+    if(objective.textContent!==newObjective)objective.textContent=newObjective;
+    const lockButton=document.querySelector('[data-action=lock]'),label=canLightSignal(world)?'灯す':'注視';
+    if(lockButton.textContent!==label)lockButton.textContent=label;
     const e=world.events.at(-1);if(e&&e.time>lastSound){lastSound=e.time;sound(e.type);notice.textContent=e.type==='parry'?'弾き':e.type==='block'?'受け':e.type==='death'?'決着':'';}
     if(!e)notice.textContent='';
-    if(world.mode!=='playing'){running=false;paused=false;input.setActive(false);menu.hidden=false;message.textContent=world.mode==='victory'?'刃を納める。山の風が戻る。':'倒れた先にも、道は続く。';start.textContent='もう一度';}
+    if(world.mode!=='playing'){running=false;paused=false;input.setActive(false);menu.hidden=false;message.textContent=world.mode==='victory'?ENDING:'灯はまだ消えている。もう一度、山道へ。';start.textContent='もう一度';}
   }
   if(!contextLost)view.render(world,dt,input.orbit);
 }

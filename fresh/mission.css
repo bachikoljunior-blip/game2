@@ -1,0 +1,4 @@
+/* Keep the original mission brief readable on short and narrow viewports. */
+#message{max-width:36em;line-height:1.8;overflow-wrap:anywhere}
+#objective{max-width:min(28em,75vw);line-height:1.7;text-shadow:0 1px 4px #16252b}
+@media(max-height:500px){#menu{overflow-y:auto;justify-content:safe center;padding:12px}#message{margin:6px 0;font-size:13px;max-width:42em}}

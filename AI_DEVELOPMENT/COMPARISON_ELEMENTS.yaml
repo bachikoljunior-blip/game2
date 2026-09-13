@@ -224,7 +224,8 @@
       ],
       "freshDesignClauses": [
         "D01",
-        "D05"
+        "D05",
+        "D07"
       ],
       "id": "C04",
       "legacyElements": [
@@ -358,9 +359,10 @@
         "K00",
         "K06"
       ],
-      "currentGap": "新作 afc8bcd は基本動作の技術試作。要素全体の比較は未実施。旧ゲームの測定を新作の証拠には使用しない。",
+      "currentGap": "独自の目的・社への到着・灯・結末の新規制作差分を追加。単体検査と実入力の確認は専用チェックポイントに記録する。機能追加はC05品質達成や物語全体の十分さの証拠ではなく、全要素は未測定。",
       "freshDesignClauses": [
-        "D01"
+        "D01",
+        "D07"
       ],
       "id": "C05",
       "legacyElements": [
@@ -371,15 +373,13 @@
       "referenceSelection": {
         "axes": {
           "elementQuality": {
-            "assessment": "substantiation incomplete",
-            "finding": "行動の目的と場所の意味が伝わる物語体験を比較する。",
+            "assessment": "supported selection rationale; not a game verdict",
+            "finding": "主筋の目的と場所・人物の主題的一貫性について個別の裏付けを得た。人物の掘り下げ不足、進行による会話の見逃しは反証として保持。",
             "sources": [
-              "SK-C",
-              "SK-L"
+              "SK-STORY-C",
+              "SK-STORY-L"
             ],
-            "unresolved": [
-              "場所・物語単独の品質評価と実資料を補う。"
-            ]
+            "unresolved": []
           },
           "fitToConcept": {
             "assessment": "supported selection rationale; not a game verdict",
@@ -399,33 +399,29 @@
           },
           "longevity": {
             "assessment": "substantiation incomplete",
-            "finding": "2024年の後年批評を追加。剣戟への継続評価と他要素の未確認を区別。",
+            "finding": "2024年の批評と2025年の主題分析で後年の検討は確認した。ただし継続的に物語の比較基準とされる強い根拠までは得ていない。",
             "sources": [
-              "SK-L"
+              "SK-STORY-C",
+              "SK-STORY-L"
             ],
             "unresolved": [
-              "当該要素が長期にわたり基準とされる根拠が不足。"
+              "C05単独が長期にわたり比較基準とされる根拠の不足を解消する。"
             ]
           },
           "reception": {
-            "assessment": "substantiation incomplete",
-            "finding": "批評とプレイヤー意見を別々に記録。戦闘への支持と難度への不満を併記。",
+            "assessment": "supported selection rationale; not a game verdict",
+            "finding": "専門批評の物語評価とプレイヤーのNG+評価を分離して取得。どちらも初回の人物理解に不足が残る可能性を示し、好評の総意とは扱わない。",
             "sources": [
-              "SK-C",
-              "SK-L",
-              "SK-P"
+              "SK-STORY-C",
+              "SK-STORY-P"
             ],
-            "unresolved": [
-              "当該要素単独のプレイヤー評価を追加確認する。"
-            ]
+            "unresolved": []
           }
         },
-        "decision": "既存参照を保持。初回選定の根拠を補強中であり、全4軸が確定したとは扱わない。",
+        "decision": "SKを保持。目的・場所・人物の結び付きを調査したが長期的な基準性は未確定。戦闘の名声で不足を埋めず、参照を弱める変更もしない。",
         "unresolved": [
-          "場所・物語単独の品質評価と実資料を補う。",
-          "当該要素単独のプレイヤー評価を追加確認する。",
-          "当該要素が長期にわたり基準とされる根拠が不足。",
-          "実際の同目的資料を取得し出所を推定できない独立評価を行う。レビューは実比較の代用ではない。"
+          "C05単独が長期にわたり比較基準とされる根拠の不足を解消する。",
+          "実際の連続資料と新作による有効な独立ブラインド比較は未実施。"
         ]
       },
       "status": "not measured",
@@ -543,7 +539,8 @@
       "currentGap": "新作 afc8bcd は基本動作の技術試作。要素全体の比較は未実施。旧ゲームの測定を新作の証拠には使用しない。",
       "freshDesignClauses": [
         "D03",
-        "D04"
+        "D04",
+        "D07"
       ],
       "id": "C08",
       "legacyElements": [
@@ -882,7 +879,8 @@
       "currentGap": "新作 afc8bcd は基本動作の技術試作。要素全体の比較は未実施。旧ゲームの測定を新作の証拠には使用しない。",
       "freshDesignClauses": [
         "D02",
-        "D04"
+        "D04",
+        "D07"
       ],
       "id": "C12",
       "legacyElements": [
@@ -1109,6 +1107,18 @@
       ],
       "authority": "chosen fresh design, not an additional owner-fixed rule",
       "source": "AI_DEVELOPMENT/FRESH_DESIGN.md / simulation"
+    },
+    {
+      "id": "D07",
+      "authority": "chosen fresh design, not an additional owner-fixed rule",
+      "source": "AI_DEVELOPMENT/FRESH_DESIGN.md / C05 制作断面の目的と結末",
+      "requirement": "谷へ山道開通を知らせるため社の灯をともす。目的提示、交戦、戦闘後の到着、改めて灯す操作、灯と結末を連動。再挑戦は初期化。",
+      "comparisonElements": [
+        "C04",
+        "C05",
+        "C08",
+        "C12"
+      ]
     }
   ],
   "groupingDecisions": [
@@ -1541,7 +1551,12 @@
     "branch": "codex/game2-rebuild-20260913",
     "formalEvidence": null,
     "legacyEvidenceReusableAsCurrent": false,
-    "revision": "afc8bcdb0ddb869c93228c45b845c90d48a17083"
+    "revision": "afc8bcdb0ddb869c93228c45b845c90d48a17083",
+    "pendingCandidate": {
+      "baseRevision": "0f5a37f9dc8ca7fe657e51f51933559118e77eb3",
+      "checkpoint": "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-mission.json",
+      "note": "revision/basicEvidence above describe the prior smoke-tested runtime only, not this mission change."
+    }
   },
   "schemaVersion": 1,
   "sources": [
@@ -1827,9 +1842,36 @@
       "observation": "ヘッドホン時の音響、3D音響、映像と音の統合への支持と、音楽が希薄・戦闘前音が反復的・他作品の方が優れるという反例が併存。",
       "published": "2021-10-15",
       "url": "https://www.reddit.com/r/PS5/comments/q8xwi0/ghost_of_tsushima_wins_best_sound_design_in/"
+    },
+    {
+      "id": "SK-STORY-C",
+      "url": "https://rpgamer.com/review/sekiro-shadows-die-twice-review/",
+      "published": "2024-12-16",
+      "accessed": "2026-09-13",
+      "kind": "professional retrospective, not coordinator gameplay or blind evidence",
+      "observation": "目的と歴史・神話の舞台を魅力的と評価する一方、人物描写の少なさと竜咳による会話・進行阻害を批判。",
+      "limitation": "高い戦闘評価を物語の優位に転用しない。作品全体の点数はC05の点数ではない。"
+    },
+    {
+      "id": "SK-STORY-P",
+      "url": "https://rpgamer.com/review/sekiro-shadows-die-twice-review/#comments",
+      "published": "2024-12-20",
+      "accessed": "2026-09-13",
+      "kind": "self-described platinum player's comment, not population consensus",
+      "observation": "WaifuSlayerはNG+で物語と人物が開けると述べる一方、初回レビューの批判が変わるとは限らず、反復を望まない人もいると留保。",
+      "limitation": "本人申告のプレイ歴。単一コメントであり初見の理解や総意は証明しない。"
+    },
+    {
+      "id": "SK-STORY-L",
+      "url": "https://abstractinggames.com/2025/07/13/on-storytelling-sekiro-shadows-die-twice/",
+      "published": "2025-07-13",
+      "accessed": "2026-09-13",
+      "kind": "later authored narrative analysis, not gameplay evidence",
+      "observation": "明瞭な主筋と、人物・地域・死の仕組みを同じ主題で結ぶ手法を分析。主題を見落とす可能性と別結末の発見の難しさも論じる。",
+      "limitation": "個人の解釈。6年後にも分析される証拠ではあるが、物語要素が広く最高水準の基準とされることの証明ではない。"
     }
   ],
   "status": "not measured",
-  "updatedAt": "2026-09-13T22:10:32Z",
+  "updatedAt": "2026-09-13T23:58:13.688Z",
   "adoptionReview": "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-catalog-review.json"
 }

@@ -95,7 +95,7 @@ function updateActualHud(world) {
   const source = readFileSync(new URL('./main.js', import.meta.url), 'utf8');
   // Execute the actual target-selection + HUD-assignment block, not a copied implementation.
   // Keep this boundary explicit: it must fail visibly if a refactor moves the block.
-  const block = source.match(/const near=[\s\S]*?(?=\s*document\.querySelector\('#objective'\))/);
+  const block = source.match(/const locked=[\s\S]*?(?=\s*const newObjective=)/);
   assert.ok(block, 'Could not locate current main.js enemy-HUD block; update extraction after refactoring');
   const target = { textContent: '' };
   const document = { querySelector(selector) { assert.equal(selector, '#enemy'); return target; } };

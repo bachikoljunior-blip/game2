@@ -1,6 +1,7 @@
 import * as T from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { OBSTACLES } from './simulation.js';
+import { SIGNAL } from './mission.js';
 
 const clamp = T.MathUtils.clamp;
 export function createPresentation(canvas) {
@@ -67,6 +68,14 @@ export function createPresentation(canvas) {
   for(let i=0;i<8000;i++){const x=(random()<.5?-1:1)*(3+random()*30),z=-38+random()*67;q.setFromAxisAngle(T.Object3D.DEFAULT_UP,random()*Math.PI);matrix.compose(pos.set(x,0,z),q,s.setScalar(.5+random()));grass.setMatrixAt(i,matrix);}
   grass.instanceMatrix.needsUpdate=true;scene.add(grass);
   const rigs=new Map();
+  // The hanging signal sits on the existing shrine wall, outside the walking path.
+  const signalMaterial=material('#74624a');
+  const signalLamp=new T.Mesh(new T.CylinderGeometry(.3,.27,.65,12),signalMaterial);
+  signalLamp.position.set(SIGNAL.x,2.3,SIGNAL.z);scene.add(signalLamp);
+  const signalCap=new T.Mesh(new T.ConeGeometry(.43,.24,8),roof);
+  signalCap.position.set(SIGNAL.x,2.75,SIGNAL.z);scene.add(signalCap);
+  const signalLight=new T.PointLight('#ffbb66',0,8,2);
+  signalLight.position.set(SIGNAL.x,2.3,SIGNAL.z+.5);scene.add(signalLight);
   function mesh(parent,geom,mat,x,y,z){const m=new T.Mesh(geom,mat);m.position.set(x,y,z);m.castShadow=true;parent.add(m);return m;}
   function rig(id){
     const root=new T.Group();scene.add(root);const cloth=material(id==='player'?'#344c62':'#7c463a');
@@ -102,6 +111,9 @@ export function createPresentation(canvas) {
   resize();
   function render(world,dt,orbit=0){
     wind.value=world.time;
+    signalMaterial.emissive.set(world.signalLit?'#ffb84f':'#000000');
+    signalMaterial.emissiveIntensity=world.signalLit?2:0;
+    signalLight.intensity=world.signalLit?14:0;
     for(const a of [world.player,...world.enemies]){
       const r=rigs.get(a.id)||rig(a.id);r.root.position.set(a.x,0,a.z);r.root.rotation.y=-a.yaw;
       r.body.rotation.z=a.hp<=0?-Math.PI/2:0;r.body.position.y=a.hp<=0?-.65:0;

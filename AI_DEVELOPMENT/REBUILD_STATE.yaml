@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-13T22:10:32Z",
-  "phase": "fresh-initial-comparison-audit",
+  "updatedAt": "2026-09-13T23:58:13.688Z",
+  "phase": "fresh-mission-verification",
   "userInstruction": "一旦ゲーム自体はゼロから作り直してくれる？",
   "activeBranch": "codex/game2-rebuild-20260913",
   "fixedInstructions": "AI_DEVELOPMENT/FIXED_INSTRUCTIONS.md",
@@ -15,7 +15,7 @@
     "oldPr": 10,
     "optionalRebuildRouting": "ec2480166809f57fa623929bec0fbcb4d5a623a2"
   },
-  "continuation": "Continue fresh/ at runtime afc8bcd. C02 now uses MGSV after a documented all-four-axis initial-selection check against provisional GT and retained camera counterevidence. C04 primary/supplementary, C08 and C10 also have recorded four-axis evidence. Every formal game element remains not measured. Complete the five remaining incomplete per-element reference axes, next C05 narrative coherence. Acquire actual matched media, improve fresh generated presentation/audio, then run an independent source-blind comparison. No old result transfer. Preserve public payload; deadline remains 2026-09-20T07:51:53Z.",
+  "continuation": "Read EVIDENCE/20260913-fresh-mission.json and latest branch head. Inspect the automatically triggered Fresh game verification for that exact mission commit, including real-input victory, signal action, retry, mobile inputs and WebGL recovery. Local browser exited SIGTRAP before any frame. Do not transfer afc8bcd evidence to this change or publish it before rendered verification. C05 reference longevity remains unresolved; continue remaining five reference selections (C05/C06/C09/C11/C12) and actual blind media. No blind unit has finished. Deadline 2026-09-20T07:51:53Z.",
   "status": "not measured",
   "publication": "Keep old Pages until a verified replacement is ready. Fresh runtime is a work-branch candidate, not public product acceptance.",
   "procedureAuthority": "Fixed instructions and explicit user directives govern. Tests, task plans and architecture documents are tools chosen by the AI, not additional fixed rules.",
@@ -25,5 +25,6 @@
   "verifiedRuntime": "afc8bcdb0ddb869c93228c45b845c90d48a17083",
   "verificationScope": "Basic browser smoke, not whole-game acceptance",
   "comparisonCatalog": "AI_DEVELOPMENT/COMPARISON_ELEMENTS.yaml",
-  "referenceSelectionComplete": false
+  "referenceSelectionComplete": false,
+  "pendingCandidate": "Mission implementation checkpoint; old verifiedRuntime is historical basic smoke only."
 }

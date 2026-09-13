@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-13T14:19:53.817Z",
+  "updatedAt": "2026-09-13T23:58:13.688Z",
   "status": "active",
   "project": {
     "name": "KAGEROU 陽炎",
@@ -146,9 +146,9 @@
     ]
   },
   "currentWork": {
-    "activeTask": "FRESH-FOUNDATION",
-    "lastCompletedTask": "Mandatory-rebuild routing withdrawn following the user clarification; no runtime deletion or rewrite occurred.",
-    "nextTask": "Continue the fresh/ implementation on codex/game2-rebuild-20260913. Read FRESH_DESIGN.md and REUSE_LOG.md. Inspect fresh verification CI and code review, fix observed failures, then complete concept coverage/reference selection and compare actual new frames. Do not resume old PR #10 as the implementation path.",
+    "activeTask": "FRESH-MISSION-VERIFICATION",
+    "lastCompletedTask": "Original mission implementation and 30 passing node tests; rendered verification pending.",
+    "nextTask": "Read EVIDENCE/20260913-fresh-mission.json and latest branch head. Inspect the automatically triggered Fresh game verification for that exact mission commit, including real-input victory, signal action, retry, mobile inputs and WebGL recovery. Local browser exited SIGTRAP before any frame. Do not transfer afc8bcd evidence to this change or publish it before rendered verification. C05 reference longevity remains unresolved; continue remaining five reference selections (C05/C06/C09/C11/C12) and actual blind media. No blind unit has finished. Deadline 2026-09-20T07:51:53Z.",
     "nextStartingPoint": "AI_DEVELOPMENT/FRESH_DESIGN.md",
     "blockedBy": [],
     "remoteStateChangeAuthorized": true,

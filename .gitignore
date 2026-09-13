@@ -1,5 +1,6 @@
 node_modules/
 dist/
+fresh-dist/
 .vite/
 *.log
 dist-single/

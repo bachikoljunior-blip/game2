@@ -10,17 +10,16 @@
     "workingBranch": "codex/game2-rebuild-20260913",
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
-    "activeTask": "FRESH-REFERENCE-AND-COMPARISON",
-    "lastSuccessfulAction": "2026-09-13: C02 movement/camera reference was changed from provisional GT to MGSV during initial selection. All four axes and the replacement comparison are recorded; GT camera and MGSV input limitations are retained. Structural validator preserves 10 units, all 62 legacy criteria and unchanged fixed text.",
-    "currentFailingAction": "All formal elements remain not measured. Five elements still have incomplete reference axes; actual matched source-blind material and fresh presentation/complete play-loop production remain.",
+    "activeTask": "FRESH-MISSION-VERIFICATION",
+    "lastSuccessfulAction": "Original mission implemented from a recorded fresh design: purpose, combat, arrival, a separate signal action, visual lamp, ending and retry. 30 node tests pass. Independent review identified a same-tick last-kill completion and repetitive aria-live updates; both corrected. No fresh rendered result yet.",
+    "currentFailingAction": "Local Chromium exits SIGTRAP before page creation. Mission real-input/rendered verification and all formal blind comparisons remain unmeasured. C05 has additional narrative/player sources but unresolved longevity; five selections remain incomplete.",
     "currentHypothesis": null,
-    "nextAction": "Continue fresh/ at runtime afc8bcd. Read COMPARISON_ELEMENTS.yaml and 20260913-reference-selection-c02.json first. Complete the five remaining incomplete per-element reference axes, next C05 narrative coherence. Acquire actual matched media, improve fresh generated presentation/audio, then independent source-blind comparison. Every formal element remains not measured. Preserve public payload; deadline remains 2026-09-20T07:51:53Z.",
+    "nextAction": "Read EVIDENCE/20260913-fresh-mission.json and latest branch head. Inspect the automatically triggered Fresh game verification for that exact mission commit, including real-input victory, signal action, retry, mobile inputs and WebGL recovery. Local browser exited SIGTRAP before any frame. Do not transfer afc8bcd evidence to this change or publish it before rendered verification. C05 reference longevity remains unresolved; continue remaining five reference selections (C05/C06/C09/C11/C12) and actual blind media. No blind unit has finished. Deadline 2026-09-20T07:51:53Z.",
     "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
     "pendingVerification": [
-      "Largest-comparable semantic review of proposed10units",
-      "Remaining reference-selection axes identified per element",
-      "New/reference uninterrupted audiovisual sequence X01",
-      "Full new-game victory via real input and closest available smartphone environment"
+      "Exact mission revision CI and real-input full victory/retry",
+      "Small portrait and landscape mission text, lamp visibility and touch signal action",
+      "Remaining reference selection and independent source-blind comparisons"
     ],
     "modifiedFiles": [
       "AI_DEVELOPMENT/COMPARISON_ELEMENTS.yaml",
@@ -78,7 +77,8 @@
       "AI_DEVELOPMENT/EVIDENCE/20260913-reference-selection-c04-c10.json",
       "AI_DEVELOPMENT/EVIDENCE/20260913-reference-selection-c04-sk.json",
       "AI_DEVELOPMENT/EVIDENCE/20260913-reference-selection-c08.json",
-      "AI_DEVELOPMENT/EVIDENCE/20260913-reference-selection-c02.json"
+      "AI_DEVELOPMENT/EVIDENCE/20260913-reference-selection-c02.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-mission.json"
     ],
     "publicRuntimeRevision": "86512c3bfdc69e03b5b490d9b0d79ec9da141343"
   },
@@ -90,7 +90,7 @@
     "completion": "All concept elements satisfied by evidenced blind comparison.",
     "current_unit": "2026-09-13-fresh-design",
     "unit_status": "active",
-    "first_action": "Continue fresh/ at runtime afc8bcd. Read COMPARISON_ELEMENTS.yaml and 20260913-reference-selection-c02.json first. Complete the five remaining incomplete per-element reference axes, next C05 narrative coherence. Acquire actual matched media, improve fresh generated presentation/audio, then independent source-blind comparison. Every formal element remains not measured. Preserve public payload; deadline remains 2026-09-20T07:51:53Z.",
+    "first_action": "Read EVIDENCE/20260913-fresh-mission.json and latest branch head. Inspect the automatically triggered Fresh game verification for that exact mission commit, including real-input victory, signal action, retry, mobile inputs and WebGL recovery. Local browser exited SIGTRAP before any frame. Do not transfer afc8bcd evidence to this change or publish it before rendered verification. C05 reference longevity remains unresolved; continue remaining five reference selections (C05/C06/C09/C11/C12) and actual blind media. No blind unit has finished. Deadline 2026-09-20T07:51:53Z.",
     "implementation_strategy": "Fresh design and implementation; needs-before-reuse, per latest direct user instruction.",
     "unitEndReason": null
   }

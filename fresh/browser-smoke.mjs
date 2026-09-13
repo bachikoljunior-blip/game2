@@ -1,6 +1,7 @@
 import { chromium } from 'playwright';
 import { mkdir, writeFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
+import { playthroughAction } from './playthrough-policy.mjs';
 const out=new URL('../AI_DEVELOPMENT/EVIDENCE/fresh-20260913/',import.meta.url);
 await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
@@ -30,6 +31,34 @@ try{
  report.checks.push('WebGL loss/restore and resume');
  await page.waitForFunction(()=>freshDiagnostics().world.mode==='defeat',{},{timeout:120000});await page.click('#start');
  const retry=await page.evaluate(()=>freshDiagnostics());assert.equal(retry.world.player.hp,100);assert.equal(retry.world.player.z,18);report.checks.push('death and real retry restore player');
+ // Complete the newly authored objective with real input, never diagnostic mutations.
+ const held=new Set(),fullDeadline=Date.now()+180000;
+ report.mission={before:retry.world,checkpoints:[]};let lastKills=-1;
+ while(Date.now()<fullDeadline){
+  const w=await page.evaluate(()=>freshDiagnostics().world);
+  if(w.totals.kills!==lastKills){report.mission.checkpoints.push(w);lastKills=w.totals.kills;}
+  if(w.mode!=='playing')break;
+  const a=playthroughAction(w),wanted=new Set();
+  if(a.x)wanted.add(a.x>0?'KeyD':'KeyA');if(a.z)wanted.add(a.z>0?'KeyS':'KeyW');
+  for(const key of held)if(!wanted.has(key)){await page.keyboard.up(key);held.delete(key);}
+  for(const key of wanted)if(!held.has(key)){await page.keyboard.down(key);held.add(key);}
+  if(a.lock)await page.keyboard.press('KeyE');
+  if(a.attack)await page.mouse.click(800,360);
+  await page.waitForTimeout(100);
+ }
+ for(const key of held)await page.keyboard.up(key);
+ report.mission.after=await page.evaluate(()=>freshDiagnostics().world);
+ assert.equal(report.mission.after.mode,'victory');assert.equal(report.mission.after.signalLit,true);
+ assert.equal(report.mission.after.totals.kills,3);
+ assert.ok(report.mission.checkpoints.some(w=>w.totals.kills===3&&w.mode==='playing'),'last kill must leave the arrival objective active');
+ assert.match(await page.locator('#message').innerText(),/社の灯がともった/);
+ await page.screenshot({path:new URL('mission-victory.png',out).pathname});
+ await page.click('#start');
+ const clean=await page.evaluate(()=>freshDiagnostics().world);
+ assert.equal(clean.signalLit,false);assert.equal(clean.pathCleared,false);assert.equal(clean.totals.kills,0);
+ assert.equal(clean.player.hp,100);assert.equal(clean.player.z,18);assert.ok(clean.enemies.every(e=>e.hp===100));
+ await page.waitForFunction(()=>document.querySelector('#objective').textContent==='谷へ合図を送るため、鳥居の先へ');
+ report.checks.push('real-input full combat, postcombat arrival, signal, ending and clean retry');
  assert.deepEqual(errors,[]);report.result='passed';
 }catch(e){report.result='failed';report.failure=String(e);report.failureState=await page.evaluate(()=>window.freshDiagnostics?.()).catch(()=>null);process.exitCode=1;await page.screenshot({path:new URL('failure.png',out).pathname}).catch(()=>{});}
 const phone=await browser.newContext({viewport:{width:844,height:390},isMobile:true,hasTouch:true,deviceScaleFactor:1});

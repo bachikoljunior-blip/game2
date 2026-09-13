@@ -1,4 +1,5 @@
 // Fresh implementation. This module has no rendering, browser or legacy imports.
+import { canLightSignal } from './mission.js';
 export const STEP = 1 / 60;
 export const OBSTACLES = [
   { x: -3.5, z: 7, w: .55, d: .55, h: 4.5 },
@@ -13,7 +14,7 @@ const actor = (id, x, z) => ({ id, x, z, yaw: 0, hp: 100, posture: 0,
 export function createWorld() {
   return { time: 0, remainder: 0, ticks: 0, mode: 'playing', player: actor('player', 0, 18),
     enemies: [actor('sentinel', 0, 1), actor('retainer', -3, -9), actor('warden', 3, -16)],
-    locked: null, events: [], totals: { hits: 0, received: 0, parries: 0, kills: 0 } };
+    locked: null, pathCleared: false, signalLit: false, events: [], totals: { hits: 0, received: 0, parries: 0, kills: 0 } };
 }
 function enter(a, state) { a.state = state; a.age = 0; a.hit = []; }
 function move(a, dx, dz) {
@@ -116,7 +117,13 @@ export function stepWorld(w, input = {}) {
     }
   }
   if (p.hp <= 0) w.mode = 'defeat';
-  else if (w.enemies.every(e => e.hp <= 0)) w.mode = 'victory';
+  else if (w.enemies.every(e => e.hp <= 0)) {
+    // A final strike (even at the lamp) never doubles as the postcombat signal action.
+    if (w.pathCleared && input.lock && canLightSignal(w)) {
+      w.signalLit = true; w.mode = 'victory'; event(w, 'signal', p, p);
+    }
+    w.pathCleared = true;
+  }
 }
 export function advance(w, seconds, input = {}) {
   w.remainder += Math.min(.25, Math.max(0, seconds));
