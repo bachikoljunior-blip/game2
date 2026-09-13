@@ -96,6 +96,18 @@ reference gameplay, real-device performance or human review is claimed.
 > Picking the work up in a new session? [`HANDOFF.md`](./HANDOFF.md) carries the state
 > the container does not — `shots/` is gitignored and the review images do not survive.
 
+### 2026-09-13 candidate: normal enemy contact passes; full evidence pending
+
+Main/Pages `86512c3` publicly restores the authored start and first enemy wave. PR #10
+candidate `886f4f3` additionally passes the fresh-build normal path from start through two
+rendered ashigaru, keyboard lock/approach and a real-click 17-damage hit in
+[CI 34736414976](https://github.com/bachikoljunior-blip/game2/actions/runs/34736414976).
+This candidate intentionally ran only the bounded progression gate. Before integration it
+still requires an exact-revision rerun of five phone frames, 20 encounters and 300 rendered
+frames, followed by independent visual review and a fresh revision-stamped Pages build.
+Physical-device performance and human review remain unmeasured. Exact evidence and hashes:
+[`r17-enemy-contact.md`](AI_DEVELOPMENT/EVIDENCE/r17-enemy-contact.md).
+
 ### 2026-09-11 candidate: measured gameplay progress, overall criteria unmet
 
 Latest [CI](https://github.com/bachikoljunior-blip/game2/actions/runs/34640487523) completed

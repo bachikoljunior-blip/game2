@@ -1,17 +1,17 @@
 {
  "schemaVersion": 1,
- "updatedAt": "2026-09-12T05:25:07Z",
+ "updatedAt": "2026-09-13T04:05:00Z",
  "status": "active",
  "project": {
   "name": "KAGEROU 陽炎",
   "repository": "bachikoljunior-blip/game2",
   "objective": "Continue the mobile-first third-person Japanese sword-action game toward its established visual and interaction bar without external runtime assets or AI APIs.",
   "defaultBranch": "main",
-  "defaultBranchVerifiedSha": "f7aa1d9382f2b4f938c8ffb3bbd5af5c16b687b8",
+  "defaultBranchVerifiedSha": "86512c3bfdc69e03b5b490d9b0d79ec9da141343",
   "workingBranch": "codex/game2-criteria-20260911",
   "workingBranchBaseSha": "f7aa1d9382f2b4f938c8ffb3bbd5af5c16b687b8",
   "previousWorkingBranch": "claude/game-reference-benchmark-qh0v0q",
-  "workingBranchPublicationSha": "cb4d7d620e8d704affc26b697f3458c1d953c724",
+  "workingBranchPublicationSha": "886f4f3c97c0a3f7e8024ed34b912d1de0c51e44",
   "resumedFromRef": "origin/main",
   "resumedFromSha": "f7aa1d9382f2b4f938c8ffb3bbd5af5c16b687b8",
   "recoveryBranch": "codex/game2-smoke-20260911",
@@ -52,21 +52,22 @@
   "productionBuild": {
    "status": "passed",
    "command": "node node_modules/vite/bin/vite.js build",
-   "checkedAt": "2026-09-12T05:28:46Z",
-   "mainChunkGzipKb": 331.17,
+   "checkedAt": "2026-09-13T04:04:00Z",
+   "revision": "886f4f3c97c0a3f7e8024ed34b912d1de0c51e44",
+   "mainChunkGzipKb": 331.84,
    "entryChunkGzipKb": 1.13,
-   "totalGzipKb": 492.4,
-   "sourceScope": "Local damage-feedback repair plus cb4 source: npm run check and all 19 focused tests passed. Fresh remote render identity remains pending."
+   "totalGzipKb": 493.07,
+   "sourceScope": "Clean 886f4f3 worktree: npm run check, all 19 focused tests and the normal progression contract passed. CI 34736414976 separately passed the fresh-dist rendered hit path. Exact-revision full evidence remains pending."
   },
   "publication": {
-   "status": "start_hotfix_published_and_verified",
-   "latestMainSha": "f7aa1d9382f2b4f938c8ffb3bbd5af5c16b687b8",
-   "latestBranchSha": "b3be53f597926ff19e8771c4c9d62baa6049b21b",
+   "status": "enemy_progression_published_and_verified",
+   "latestMainSha": "86512c3bfdc69e03b5b490d9b0d79ec9da141343",
+   "latestBranchSha": "886f4f3c97c0a3f7e8024ed34b912d1de0c51e44",
    "publicUrl": "https://bachikoljunior-blip.github.io/game2/",
    "runtimeUrl": "https://bachikoljunior-blip.github.io/game2/docs/",
-   "repositoryVerified": "main f7aa1d9 has tree 9999e95; its Pages payload matches the eight expected artifact files byte-for-byte.",
-   "browserGate": "CI 34672160985 passed the public surface: served revision 90c08965, zero page/console/request/HTTP/GL faults, keyboard moved 16.3176 m, touch moved 19.6615 m and retry restored z=72.9995.",
-   "checkedAt": "2026-09-12T04:12:39Z"
+   "repositoryVerified": "Main 86512c3 contains the authored enemy-progression repair and a revision-stamped Pages payload. CI 34713093118 verified its main-based build and exact served bytes.",
+   "browserGate": "CI 34713093118 passed the public boot, movement and retry path with zero reported page/console/request/HTTP/GL faults. This does not establish the still-unpublished PR 886f4f3 contact delta.",
+   "checkedAt": "2026-09-13T04:05:00Z"
   },
   "dependencyRestore": {
    "status": "passed",
@@ -162,7 +163,7 @@
    "Genshin Impact (touch layer and phone performance envelope only)"
   ],
   "criteria": "62 benchmark entries; legacy status counts remain 21 verified, 4 under review, 14 blocked, 23 proposed until the new evidence is matched to each full threshold. Round 17 measurement coverage is recorded separately; no thresholds were relaxed.",
-  "headlineGap": "cb4d7d6 passes five technical frames, 20 encounters (27/35 posture resolutions = 77.14%) and 300 unique rendered frames. Independent review no longer observes the global black ribbon, but retains primitive character/cloth readability and reversed damage-lens majors. Physical-device and human gates remain open.",
+  "headlineGap": "886f4f3 passes the fresh-dist normal start to rendered-enemy to real-click-hit path in CI 34736414976. The previous da4535c candidate passed five technical frames and 20 encounters, but the final contact delta still needs a fresh five-frame, 20-encounter and 300-frame run. Character/cloth readability, physical-device and human gates remain open.",
   "structuralBlocker": "Local Chromium SIGTRAP and Cloud Browser WebGL limitations are bypassed using the already-authorized GitHub Actions execution surface. Actual capture and smoke evidence are available. Physical-device and human gates still require actual measurements.",
   "neverPerformed": [
    "A matched reference-title gameplay-video or physical-device comparison. Official publisher reference stills were fetched and supplied to a version-blind model critic on 2026-09-11.",
@@ -172,9 +173,9 @@
  },
  "currentWork": {
   "activeTask": "R17-GAMEPLAY",
-  "lastCompletedTask": "The start-position trap is fixed on main/Pages at f7aa1d9 and publicly verified. Independent cb4 motion review cleared the global ribbon but reproduced reversed damage-lens feedback; its code repair passed independent review with blocker 0 / major 0.",
+  "lastCompletedTask": "Main/Pages 86512c3 publicly restores the authored start and enemy progression. PR 886f4f3 passes fresh-dist normal movement, enemy rendering, lock/approach and a real-click 17-damage hit in CI 34736414976.",
   "nextTask": "R17-GAMEPLAY",
-  "nextStartingPoint": "Publish the damage-feedback repair on PR #10 with [motion], then require fresh five-frame, 20-encounter and actual 300-frame verification plus independent incoming/outgoing frame review. Next diagnose the Rig.js character major with neutral materials. Integrate verified bounded checkpoints into main/Pages.",
+  "nextStartingPoint": "Publish one PR #10 [motion] evidence checkpoint from 886f4f3. Require fresh five-frame, 20-encounter and actual 300-frame verification plus independent review; then integrate and verify main/Pages. Next diagnose the Rig.js character major with neutral materials.",
   "blockedBy": [],
   "remoteStateChangeAuthorized": true,
   "remotePolicy": "Across future sessions, push verified checkpoints, integrate them into main, and publish GitHub Pages without asking again. This remains active until the user changes it."
@@ -187,6 +188,6 @@
   "Motion: cb4 has 300 unique rendered frames and both incoming and outgoing hits. Its damage lens is reversed; the independently reviewed repair still needs fresh rendered evidence.",
   "No screen-crossing black ribbon was observed in the cb4 300-frame capture. Primitive character forms and combat-body/weapon readability remain a major pending neutral-material diagnosis.",
   "Real-device performance, thermals, boot and human ergonomics remain unmeasured.",
-  "main/Pages is f7aa1d9 with the verified start-position hotfix; broader Round 17 source remains on PR #10."
+  "main/Pages is 86512c3 with verified start and enemy progression; broader Round 17 source and the contact repair remain on PR #10 at 886f4f3."
  ]
 }

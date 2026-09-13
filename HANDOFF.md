@@ -21,7 +21,26 @@ art-direction state record; project-wide session, plan and criterion pointers li
 
 ## Where the work is
 
-### Latest: start trap published; damage-feedback repair next
+### Latest: normal enemy contact passes; full Round 17 rerun next
+
+Main/Pages is `86512c3bfdc69e03b5b490d9b0d79ec9da141343`: the authored start and
+enemy progression fixes are publicly verified. PR #10 is now at
+`886f4f3c97c0a3f7e8024ed34b912d1de0c51e44`. Its fresh-dist normal-progression
+[CI 34736414976](https://github.com/bachikoljunior-blip/game2/actions/runs/34736414976)
+walked from the normal start, rendered both forecourt ashigaru, locked and approached by
+real keyboard input, then registered a real mouse-click hit for 17 damage (HP 70 → 53).
+The retained render reported 100 draw calls / 511,418 triangles on SwiftShader; this is not
+phone-performance evidence. Exact hashes, the failing control and limitations are in
+`AI_DEVELOPMENT/EVIDENCE/r17-enemy-contact.md`.
+
+The previous full [CI 34730003799](https://github.com/bachikoljunior-blip/game2/actions/runs/34730003799)
+passed five frames and 20 encounters at `da4535c`, before the final contact tolerance. The
+latest commit intentionally ran only the dedicated normal path, so a new `[motion]`
+checkpoint must still repeat five frames, 20 encounters and all 300 rendered frames before
+PR #10 can be integrated. Independent visual review, character/cloth readability,
+physical-device and human gates remain open; overall product acceptance is not established.
+
+### Superseded checkpoint: start trap published; damage-feedback repair next
 
 The bounded start-position hotfix is on main/Pages at
 `f7aa1d9382f2b4f938c8ffb3bbd5af5c16b687b8`. Public
