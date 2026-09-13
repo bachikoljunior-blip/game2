@@ -37,6 +37,7 @@ export const TUNING = {
   // ── swept hit detection ────────────────────────────────────────────────────
   SWEEP_SUBSTEPS: 4,            // blade positions tested between last frame and this one (3–5)
   SWEEP_PAD: 0.055,             // m of "blade thickness"; a graze should still read as a hit
+  PLAYER_CONTACT_ASSIST: 0.15,  // m at full aim assist; closes low-frame/mobile near-misses
   BROAD_SLACK: 0.75,            // m of extra radius on the cheap broadphase reject
   MULTIHIT_INTERVAL: 0.20,      // s before a `weapon.multiHit` swing may hit one target again
   SWING_MERGE: 0.12,            // s in which a beginSwing() call refines the swing the
@@ -1385,16 +1386,22 @@ export class CombatDirector {
       _p0.lerpVectors(ra.prevBase, ra.base, u);
       _p1.lerpVectors(ra.prevTip, ra.tip, u);
 
-      // h === count is the body-capsule fallback, used only when not one bone-driven
-      // hitbox could be resolved (rig not ready, or an entity authored without one).
-      let resolved = 0;
+      // Bone capsules add limb/head detail, but they must not replace the core
+      // body capsule. Sparse point-like bones leave gaps large enough for a
+      // visibly intersecting katana to miss, especially at low frame rates.
+      // h === count always tests that core body envelope after the detailed set.
       for (let h = 0; h <= count; h++) {
-        if (h === count && resolved > 0) break;
         const hb = (h < count && boxes) ? boxes[h] : null;
         const radius = this._hitboxSegment(target, hb, _hbA, _hbB);
         if (radius <= 0) continue;
-        if (h < count) resolved++;
-        const total = radius + TUNING.SWEEP_PAD;
+        // The camera/turn assist already bends the player's authored swing toward
+        // a lock target. Give that same mobile-facing difficulty scalar a small
+        // contact tolerance so a sampled 4 fps arc cannot miss by a few centimetres.
+        // Enemy weapons never receive this forgiveness.
+        const playerAssist = attacker === this.ctx?.player
+          ? TUNING.PLAYER_CONTACT_ASSIST * (this.diff?.aimAssist ?? 0)
+          : 0;
+        const total = radius + TUNING.SWEEP_PAD + playerAssist;
         const d2 = segmentSegment(_p0, _p1, _hbA, _hbB, _c1, _c2);
         if (d2 > total * total) continue;
 

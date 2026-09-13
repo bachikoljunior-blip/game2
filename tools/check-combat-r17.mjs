@@ -121,6 +121,61 @@ function fallingEdgeSweep() {
   };
 }
 
+function bodyCapsuleCompletesBoneGaps() {
+  const { combat, enemy, player, events } = fixture();
+  // Resolve one legitimate but deliberately remote bone capsule. Previously,
+  // resolving any bone suppressed the body capsule entirely, so a blade passing
+  // through the torso could miss through the gaps between sparse bone spheres.
+  enemy.rig = {
+    getBoneWorldPosition(_name, out) { out.set(0, 3.2, -1.7); return true; },
+  };
+  enemy.hitboxes = [{ bone: 'head', offset: new Vector3(), radius: 0.12 }];
+  player.weapon.active = true;
+  combat.beginSwing(player, { damage: 16, kind: 'slash' });
+  const rec = combat._records.get(player);
+  rec.base.set(0, 1, -1.0); rec.tip.set(0, 1, -2.0);
+  rec.prevBase.copy(rec.base); rec.prevTip.copy(rec.tip);
+  rec.bladeValid = true; rec.hasPrev = true;
+  const contact = combat._sweepAgainst(rec, player, enemy, 1, combat.time);
+  return {
+    contact,
+    enemyHealth: enemy.health,
+    hits: events.filter((event) => event.name === 'hit').length,
+  };
+}
+
+function playerContactAssistIsOneWay() {
+  const playerCase = fixture();
+  const { combat, enemy, player } = playerCase;
+  enemy.rig = {
+    getBoneWorldPosition(_name, out) { out.set(0, 3.2, -1.7); return true; },
+  };
+  enemy.hitboxes = [{ bone: 'head', offset: new Vector3(), radius: 0.12 }];
+  player.weapon.active = true;
+  combat.beginSwing(player, { damage: 16, kind: 'slash' });
+  const playerRec = combat._records.get(player);
+  playerRec.base.set(0.48, 1, -1.0); playerRec.tip.set(0.48, 1, -2.0);
+  playerRec.prevBase.copy(playerRec.base); playerRec.prevTip.copy(playerRec.tip);
+  playerRec.bladeValid = true; playerRec.hasPrev = true;
+  const playerContact = combat._sweepAgainst(playerRec, player, enemy, 1, combat.time);
+
+  const enemyCase = fixture();
+  enemyCase.enemy.weapon.active = true;
+  enemyCase.combat.beginSwing(enemyCase.enemy, { damage: 16, kind: 'slash' });
+  const enemyRec = enemyCase.combat._records.get(enemyCase.enemy);
+  enemyRec.base.set(0.48, 1, -0.5); enemyRec.tip.set(0.48, 1, 0.5);
+  enemyRec.prevBase.copy(enemyRec.base); enemyRec.prevTip.copy(enemyRec.tip);
+  enemyRec.bladeValid = true; enemyRec.hasPrev = true;
+  const enemyContact = enemyCase.combat._sweepAgainst(
+    enemyRec, enemyCase.enemy, enemyCase.player, 1, enemyCase.combat.time,
+  );
+  return {
+    normalAssistM: TUNING.PLAYER_CONTACT_ASSIST * TUNING.DIFFICULTY.normal.aimAssist,
+    playerContact,
+    enemyContact,
+  };
+}
+
 function cancelledEdgeDoesNotSweep() {
   const { combat, enemy, player, events } = fixture();
   player.bladeBase = new Vector3(0, 1, -0.25);
@@ -294,7 +349,7 @@ function retryCleanup() {
 
 const evidence = {
   baseline: { regen: regenDuringEnemyLock(BaselineCombat), firstContact: firstContactClassification(BaselineCombat), playerRecovery: playerRewardRecovery(BaselineCombat), heavySlash: authoredHeavyContact(BaselineCombat, 'd_dr', false), heavyFinisher: authoredHeavyContact(BaselineCombat, 'heavy', true) },
-  current: { regen: regenDuringEnemyLock(CombatDirector), firstContact: firstContactClassification(CombatDirector), playerRecovery: playerRewardRecovery(CombatDirector), heavySlash: authoredHeavyContact(CombatDirector, 'd_dr', false), heavyFinisher: authoredHeavyContact(CombatDirector, 'heavy', true), fallingEdge: fallingEdgeSweep(), cancelledEdge: cancelledEdgeDoesNotSweep(), perfect: parryResolution(false), late: parryResolution(true), damageFeedback: { plain: damageFeedbackContract('plain'), guard: damageFeedbackContract('guard'), lateParry: damageFeedbackContract('late-parry') }, defence: defensiveContract(), ashigaruRace: defaultPressureRace('ashigaru', [34, 25.5, 49.4]), roninRace: defaultPressureRace('ronin', [24, 17, 25.5, 35.1, 28.5]), finisher: pressureFinisher(), retry: retryCleanup() },
+  current: { regen: regenDuringEnemyLock(CombatDirector), firstContact: firstContactClassification(CombatDirector), playerRecovery: playerRewardRecovery(CombatDirector), heavySlash: authoredHeavyContact(CombatDirector, 'd_dr', false), heavyFinisher: authoredHeavyContact(CombatDirector, 'heavy', true), fallingEdge: fallingEdgeSweep(), bodyCapsule: bodyCapsuleCompletesBoneGaps(), contactAssist: playerContactAssistIsOneWay(), cancelledEdge: cancelledEdgeDoesNotSweep(), perfect: parryResolution(false), late: parryResolution(true), damageFeedback: { plain: damageFeedbackContract('plain'), guard: damageFeedbackContract('guard'), lateParry: damageFeedbackContract('late-parry') }, defence: defensiveContract(), ashigaruRace: defaultPressureRace('ashigaru', [34, 25.5, 49.4]), roninRace: defaultPressureRace('ronin', [24, 17, 25.5, 35.1, 28.5]), finisher: pressureFinisher(), retry: retryCleanup() },
   scope: 'Pure Node integration of Combat with real Enemy/EnemyManager callbacks; no renderer, DOM input, AI encounter policy, or BM-COMBAT-02 runtime sample.',
 };
 console.log(JSON.stringify(evidence, null, 2));
@@ -314,6 +369,12 @@ if (!process.argv.includes('--observe')) {
   assert.deepEqual(evidence.current.fallingEdge,
     { enemyHealth: 54, hits: 1, swinging: false },
     'The marker-end pose must be swept exactly once before the swing closes');
+  assert.deepEqual(evidence.current.bodyCapsule,
+    { contact: true, enemyHealth: 54, hits: 1 },
+    'Resolved bone detail must not suppress a torso intersection');
+  assert.deepEqual(evidence.current.contactAssist,
+    { normalAssistM: 0.105, playerContact: true, enemyContact: false },
+    'Normal aim assist must close a near-miss for the player without extending enemy reach');
   assert.deepEqual(evidence.current.cancelledEdge,
     { enemyHealth: 70, hits: 0, swinging: false },
     'An unmarked cancellation must close before sweeping the final pose');
