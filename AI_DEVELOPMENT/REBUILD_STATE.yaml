@@ -1,22 +1,26 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-13T11:56:40Z",
-  "phase": "fresh-implementation",
+  "updatedAt": "2026-09-13T12:00:10Z",
+  "phase": "targeted-improvement",
   "userInstruction": "一旦ゲーム自体はゼロから作り直してくれる？",
-  "activeBranch": "codex/game2-rebuild-20260913",
+  "activeBranch": "codex/game2-criteria-20260911",
   "fixedInstructions": "AI_DEVELOPMENT/FIXED_INSTRUCTIONS.md",
   "deadline": "2026-09-20T07:51:53Z",
   "humanInterventionRequired": false,
-  "sourcePolicy": "New game runtime, built from scratch. Old code/evidence retained in git history; old measurements do not certify the rebuild.",
+  "sourcePolicy": "Rebuild only when evidence justifies it. Choose targeted repair, subsystem replacement or full rewrite as appropriate; preserve recoverable versions. No runtime was changed during this routing discussion.",
   "preserved": {
     "main": "08c746498d35bb7aa430ae272b6984c5c2a765e5",
     "oldWorkingBranch": "codex/game2-criteria-20260911",
     "oldWorkingSha": "8811b8c1f56f000f9fd6be0069652887e487a86b",
-    "oldPr": 10
+    "oldPr": 10,
+    "optionalRebuildRouting": "ec2480166809f57fa623929bec0fbcb4d5a623a2"
   },
-  "continuation": "Fetch latest active branch. Implement and verify fresh start, movement, sword combat, touch input and retry. Do not restart or merge old PR #10.",
+  "continuation": "Continue from the latest PR #10 implementation and existing local work. Review the 3ad18ce rendered camera/character evidence, resolve the measured posture-pressure failure and complete the concept/reference audit. Reassess a rewrite if a concrete limitation prevents progress.",
   "status": "not measured",
-  "publication": "Existing Pages stays intact until a verified replacement is ready.",
-  "procedureAuthority": "Only user fixed instructions and explicit user directives are fixed. Old implementation contracts, 62 test entries and work plans are supporting material, not extra owner rules.",
-  "coordination": "Check recent commits and running CI; if another producer is active, read only. No force push or duplicate work."
+  "publication": "Public gameplay payload remains the previously verified build. New game source is not published by these instruction-only commits.",
+  "procedureAuthority": "Fixed instructions and explicit user directives govern. Tests, task plans and architecture documents are tools chosen by the AI, not additional fixed rules.",
+  "coordination": "Check recent commits and running CI; if another producer is active, read only. No force push or duplicate work.",
+  "latestUserInstruction": "作り直しは必要であればでいいよ",
+  "optionalBranch": "codex/game2-rebuild-20260913",
+  "decisionEvidence": "AI_DEVELOPMENT/EVIDENCE/20260913-implementation-choice.md"
 }

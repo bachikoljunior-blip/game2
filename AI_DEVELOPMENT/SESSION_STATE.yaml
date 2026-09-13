@@ -7,18 +7,20 @@
     "endedAt": null,
     "endRequiresExplicitUserInstruction": true,
     "objective": "Continue game2 until the existing criteria are evidenced. User reprioritized the public start-position trap on 2026-09-12; ship this bounded verified fix to main/Pages first, then resume PR #10.",
-    "workingBranch": "codex/game2-rebuild-20260913",
+    "workingBranch": "codex/game2-criteria-20260911",
     "baseSha": "08c746498d35bb7aa430ae272b6984c5c2a765e5",
-    "activePlanNode": "REBUILD",
-    "activeTask": "REBUILD-FOUNDATION",
-    "lastSuccessfulAction": "Fixed instructions published and old implementation preserved; user authorized a new runtime from scratch.",
-    "currentFailingAction": "The new runtime has not been built or measured yet.",
-    "currentHypothesis": null,
-    "nextAction": "Fetch latest active branch. Implement and verify fresh start, movement, sword combat, touch input and retry. Do not restart or merge old PR #10.",
+    "activePlanNode": "R17-GAMEPLAY",
+    "activeTask": "R17-GAMEPLAY",
+    "lastSuccessfulAction": "Fixed instructions synchronized. The user clarified that rebuilding is necessary only if justified. Existing 3ad18ce source has 5 rendered frames, 20 encounters and 300 motion frames in CI 34743372587.",
+    "currentFailingAction": "Current 20-encounter results are 14 pass / 1 fail / 3 inconclusive. BM-COMBAT-02 is 59.375% against 60%; independent current camera/character review and all fixed-instruction element verdicts remain incomplete.",
+    "currentHypothesis": "Existing working paths support targeted improvement first. There is no measured whole-runtime limitation requiring a full rewrite.",
+    "nextAction": "Continue from the latest PR #10 implementation and existing local work. Review the 3ad18ce rendered camera/character evidence, resolve the measured posture-pressure failure and complete the concept/reference audit. Reassess a rewrite if a concrete limitation prevents progress.",
     "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
     "pendingVerification": [
-      "New runtime boot, movement, combat, touch, retry and recovery.",
-      "All concept-element reference comparisons."
+      "Independent review of current rendered camera/character evidence.",
+      "Before/after posture-pressure repair and >=20 encounters with unchanged 60% threshold.",
+      "Concept coverage, four-axis reference evidence and actual source-blind comparisons.",
+      "Closest-available physical-use validation; measurements and inference distinguished."
     ],
     "modifiedFiles": [
       "src/render/Sky.js",
@@ -50,7 +52,7 @@
     ],
     "remotePushPendingAuthorization": false,
     "remoteReleaseAuthorized": true,
-    "remotePublicationStatus": "Existing Pages stays intact until a verified replacement is ready.",
+    "remotePublicationStatus": "Public gameplay payload remains the previously verified build. New game source is not published by these instruction-only commits.",
     "publishedMainSha": "e40a1884a57250391dd08bdf50dc2c6cb3837a36",
     "publishedUrl": "https://bachikoljunior-blip.github.io/game2/",
     "startPositionHotfix": {
@@ -86,7 +88,7 @@
       "enabled": true,
       "cadence": "hourly",
       "coordination": "Check recent commits and running CI; if another producer is active, read only. No force push or duplicate work.",
-      "activeBranch": "codex/game2-rebuild-20260913"
+      "activeBranch": "codex/game2-criteria-20260911"
     }
   },
   "work": {
@@ -95,8 +97,9 @@
     "deadline": "2026-09-20T07:51:53Z",
     "human_intervention_required": false,
     "completion": "All concept elements satisfied by evidenced blind comparison.",
-    "current_unit": "2026-09-13-rebuild",
+    "current_unit": "2026-09-13-fixed-instructions-initial-application",
     "unit_status": "active",
-    "first_action": "Fetch latest active branch. Implement and verify fresh start, movement, sword combat, touch input and retry. Do not restart or merge old PR #10."
+    "first_action": "Continue from the latest PR #10 implementation and existing local work. Review the 3ad18ce rendered camera/character evidence, resolve the measured posture-pressure failure and complete the concept/reference audit. Reassess a rewrite if a concrete limitation prevents progress.",
+    "implementation_strategy": "AI choice; rebuild only if evidence warrants it"
   }
 }

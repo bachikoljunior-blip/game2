@@ -1,10 +1,12 @@
 # KAGEROU 陽炎 — current direction
 
 Read `AI_DEVELOPMENT/FIXED_INSTRUCTIONS.md` first, then `AI_DEVELOPMENT/REBUILD_STATE.yaml`.
-The user requested on 2026-09-13: 「一旦ゲーム自体はゼロから作り直してくれる？」.
+The latest clarification on 2026-09-13 is 「作り直しは必要であればでいいよ」.
+Rebuilding is optional, based on evidence; it is not the objective.
 
-The active implementation is **codex/game2-rebuild-20260913**. Fetch its latest head.
-Old PR #10 and its branch are preserved history; do not resume or merge the old runtime.
+The active implementation remains **codex/game2-criteria-20260911**, PR #10. Fetch its
+latest head. **codex/game2-rebuild-20260913** is an optional evaluation branch containing
+routing documents only. No runtime rewrite has been performed.
 `AI_DEVELOPMENT/SESSION_STATE.yaml` names the exact next work. Preserve other writers.
 Deadline: **2026-09-20T07:51:53Z**. No human intervention or response waiting.
 
@@ -24,8 +26,8 @@ technical CI PASS is not completion. Do not copy reference content into the game
 
 The fixed instructions and the user's explicit deadline, no-human-intervention and
 concurrency directives govern. Implementation, tooling and order of work are the AI's
-choice. Old architecture, 62 technical tests, round machinery and plans are supporting
-history, not additional fixed instructions. Rebuild source and architecture as needed.
+choice. Architecture, 62 technical tests, round machinery and plans are supporting
+material, not additional fixed instructions. Choose repair or reimplementation as needed.
 Do not claim old implementation evidence or simulated hardware timing for the new game.
 
 Standing authorization covers verified checkpoints, main integration and GitHub Pages
