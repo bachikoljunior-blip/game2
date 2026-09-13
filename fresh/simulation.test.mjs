@@ -1,0 +1,36 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createWorld,stepWorld,advance,STEP,OBSTACLES} from './simulation.js';
+const ticks=(w,n,i={})=>{for(let t=0;t<n;t++)stepWorld(w,i);};
+test('normal movement goes towards the torii, fresh retry restores state',()=>{
+ const w=createWorld();ticks(w,120,{z:-1});assert.ok(w.player.z<11);assert.equal(createWorld().player.z,18);
+});
+test('obstacle separation does not trap a player embedded at its centre',()=>{
+ const w=createWorld(),o=OBSTACLES[0];w.player.x=o.x;w.player.z=o.z;stepWorld(w,{x:0});assert.ok(Math.abs(w.player.x-o.x)>.5||Math.abs(w.player.z-o.z)>.5);
+});
+test('one swing hits a nearby target exactly once, never a rear target',()=>{
+ const w=createWorld();w.enemies[0].z=16.5;w.enemies[0].cooldown=10;
+ stepWorld(w,{attack:true});ticks(w,30);assert.equal(w.enemies[0].hp,66);assert.equal(w.totals.hits,1);
+ const b=createWorld();b.enemies[0].z=19.5;b.enemies[0].cooldown=10;stepWorld(b,{attack:true});ticks(b,30);assert.equal(b.enemies[0].hp,100);
+});
+test('new guard deflects a frontal strike and held guard only blocks',()=>{
+ for(const [age,kind]of [[0,'parry'],[.4,'block']]){
+  const w=createWorld(),e=w.enemies[0];e.z=16.5;e.yaw=Math.PI;e.state='attack';e.age=.17;
+  w.player.state='guard';w.player.guardAge=age;stepWorld(w,{guard:true});assert.ok(w.events.some(e=>e.type===kind));assert.equal(w.player.hp,100);
+ }
+});
+test('dodge protects during its active interval',()=>{
+ const w=createWorld(),e=w.enemies[0];e.z=16.5;e.yaw=Math.PI;e.state='attack';e.age=.17;
+ w.player.state='dodge';w.player.age=.1;stepWorld(w);assert.equal(w.player.hp,100);assert.ok(w.events.some(e=>e.type==='evade'));
+});
+test('60Hz and quarter-second frame delivery yield identical simulation',()=>{
+ const a=createWorld(),b=createWorld();for(let i=0;i<600;i++)advance(a,STEP,{z:-1});for(let i=0;i<40;i++)advance(b,.25,{z:-1});
+ assert.equal(a.ticks,b.ticks);assert.deepEqual(a.player,b.player);assert.deepEqual(a.totals,b.totals);
+});
+test('low render interval retains input and cannot repeat one attack pulse',()=>{
+ const w=createWorld();assert.equal(advance(w,.001,{attack:true}),false);assert.equal(advance(w,.02,{attack:true}),true);assert.equal(w.player.state,'attack');
+});
+test('terminal states stop simulation; no absent measurement is counted',()=>{
+ const w=createWorld();w.enemies.forEach(e=>e.hp=0);stepWorld(w);assert.equal(w.mode,'victory');const t=w.time;ticks(w,50);assert.equal(w.time,t);
+ const dead=createWorld();dead.player.hp=0;stepWorld(dead);assert.equal(dead.mode,'defeat');
+});

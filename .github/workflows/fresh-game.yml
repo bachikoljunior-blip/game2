@@ -1,0 +1,36 @@
+name: Fresh game verification
+on:
+  push:
+    branches: [codex/game2-rebuild-20260913]
+    paths: ['fresh/**', '.github/workflows/fresh-game.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: fresh-game-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  fresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node --test fresh/simulation.test.mjs
+      - run: node node_modules/vite/bin/vite.js build --config fresh/vite.config.mjs
+      - run: npx playwright install --with-deps chromium
+      - name: Real browser inputs and WebGL recovery
+        run: |
+          node node_modules/vite/bin/vite.js preview --config fresh/vite.config.mjs --host 127.0.0.1 --port 4178 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID"' EXIT
+          node fresh/browser-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fresh-game-${{ github.sha }}
+          path: AI_DEVELOPMENT/EVIDENCE/fresh-20260913/
