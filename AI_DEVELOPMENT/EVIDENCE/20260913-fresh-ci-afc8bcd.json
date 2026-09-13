@@ -1,0 +1,135 @@
+{
+  "sourceRevision": "afc8bcdb0ddb869c93228c45b845c90d48a17083",
+  "run": 34762915839,
+  "url": "https://github.com/bachikoljunior-blip/game2/actions/runs/34762915839",
+  "artifact": {
+    "archive_download_url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10318888873/zip",
+    "created_at": "2026-09-13T14:34:10Z",
+    "digest": "sha256:635d8497c1a292d687194fe24d482d7b0ae44740de27fcb8d12b6779b8d63b0c",
+    "expired": false,
+    "expires_at": "2026-12-12T14:31:35Z",
+    "id": 10318888873,
+    "name": "fresh-game-afc8bcdb0ddb869c93228c45b845c90d48a17083",
+    "size_in_bytes": 1555801,
+    "updated_at": "2026-09-13T14:34:10Z",
+    "url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10318888873",
+    "workflow_run": {
+      "head_branch": "codex/game2-rebuild-20260913",
+      "head_repository_id": 1316876624,
+      "head_sha": "afc8bcdb0ddb869c93228c45b845c90d48a17083",
+      "id": 34762915839,
+      "repository_id": 1316876624
+    }
+  },
+  "report": {
+    "checks": [
+      "real start and keyboard movement through torii",
+      "real click causes enemy HP loss",
+      "pause freezes simulation and resumes",
+      "WebGL loss/restore and resume",
+      "death and real retry restore player",
+      "mobile simultaneous guard/lock release preserves guard; cancel releases",
+      "mobile joystick movement and cancel stop"
+    ],
+    "combat": {
+      "contextLost": false,
+      "paused": false,
+      "render": {
+        "calls": 92,
+        "frame": 40,
+        "lines": 0,
+        "points": 0,
+        "triangles": 67142
+      },
+      "running": true,
+      "world": {
+        "enemies": [
+          {
+            "age": 0.3,
+            "cooldown": 0,
+            "guardAge": 99,
+            "hit": [],
+            "hp": 66,
+            "id": "sentinel",
+            "posture": 20,
+            "state": "stagger",
+            "stride": 4.319999999999991,
+            "x": 0,
+            "yaw": 3.141592653589793,
+            "z": 5.3199999999999985
+          },
+          {
+            "age": 4.29999999999999,
+            "cooldown": 0,
+            "guardAge": 99,
+            "hit": [],
+            "hp": 100,
+            "id": "retainer",
+            "posture": 0,
+            "state": "idle",
+            "stride": 0,
+            "x": -3,
+            "yaw": 0,
+            "z": -9
+          },
+          {
+            "age": 4.29999999999999,
+            "cooldown": 0,
+            "guardAge": 99,
+            "hit": [],
+            "hp": 100,
+            "id": "warden",
+            "posture": 0,
+            "state": "idle",
+            "stride": 0,
+            "x": 3,
+            "yaw": 0,
+            "z": -16
+          }
+        ],
+        "events": [
+          {
+            "source": "player",
+            "target": "sentinel",
+            "time": 3.9999999999999907,
+            "type": "hit",
+            "x": 0,
+            "z": 5.3199999999999985
+          }
+        ],
+        "locked": "sentinel",
+        "mode": "playing",
+        "player": {
+          "age": 0.4833333333333333,
+          "cooldown": 0,
+          "guardAge": 99,
+          "hit": [
+            "sentinel"
+          ],
+          "hp": 100,
+          "id": "player",
+          "posture": 0,
+          "state": "attack",
+          "stride": 11.109999999999967,
+          "x": 0,
+          "yaw": 0,
+          "z": 6.8900000000001125
+        },
+        "remainder": 9.367506770274758e-16,
+        "ticks": 258,
+        "time": 4.29999999999999,
+        "totals": {
+          "hits": 1,
+          "kills": 0,
+          "parries": 0,
+          "received": 0
+        }
+      }
+    },
+    "date": "2026-09-13T14:32:44.024Z",
+    "environment": "Chromium / SwiftShader; not physical-device performance",
+    "errors": [],
+    "result": "passed"
+  },
+  "formalElementStatus": "not measured"
+}

@@ -11,15 +11,16 @@
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
     "activeTask": "FRESH-FOUNDATION",
-    "lastSuccessfulAction": "Fresh CI34762474176 rendered the new game and verified actual start, torii traversal, click damage100->66, pause/resume and WebGL recovery. Independent review fixes have 17 focused cases; 9 simulation tests and build pass locally.",
-    "currentFailingAction": "Fresh CI3727d78 failed death/retry timeout and multi-touch guard persistence. Lunge crossing reproduced; stop distance fixed and Node regression passes. CDP partial touch release corrected; new CI needed.",
+    "lastSuccessfulAction": "Fresh CI34762915839 at afc8bcd: 26 tests, production build, desktop and mobile-input browser smoke passed with zero errors.",
+    "currentFailingAction": "No complete concept element has a formal blind-comparison pass. The new presentation is a primitive prototype; reference selection/coverage audit, visual/animation/audio/content production and full game victory playthrough remain.",
     "currentHypothesis": null,
-    "nextAction": "Read the latest Fresh game verification run on codex/game2-rebuild-20260913. At 3727d78 start/movement/real click hit/pause/WebGL recovery passed; death/retry and multi-touch failed. Current lunge stop-distance and CDP remaining-contact fixes need new-render confirmation. Then finish concept coverage/four-axis reference selection and improve the fresh characters, foliage and environment from actual frames; no old-code-first reuse.",
+    "nextAction": "Fresh CI34762915839 at afc8bcd passed 26 Node tests, build, actual start/movement/click hit/pause/WebGL recovery/death-retry/multi-touch/cancel. Continue fresh/ rather than restarting it. Finish the initial concept coverage and four-axis reference audit, then improve character/cloth, bamboo vegetation, terrain/shrine/light/audio from actual new frames and run independent source-blind comparisons. All formal elements remain not measured. Preserve old public docs until the new presentation and full play loop are ready; no old-game-first reuse.",
     "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
     "pendingVerification": [
-      "New revision real browser death/retry and multi-touch",
-      "Whole-element blind comparison remains not measured",
-      "Concept coverage and four-axis reference selection incomplete"
+      "Whole-concept coverage and four-axis references",
+      "Full new-game victory through real inputs",
+      "Independent animation/art/audio comparisons",
+      "Closest available smartphone environment beyond this Chromium emulation"
     ],
     "modifiedFiles": [
       "fresh/",
@@ -69,7 +70,8 @@
     "evidence": [
       "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-checkpoint.md",
       "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-ci-3727d78.json",
-      "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-code-review.json"
+      "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-code-review.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-ci-afc8bcd.json"
     ]
   },
   "work": {
@@ -80,7 +82,7 @@
     "completion": "All concept elements satisfied by evidenced blind comparison.",
     "current_unit": "2026-09-13-fresh-design",
     "unit_status": "active",
-    "first_action": "Read the latest Fresh game verification run on codex/game2-rebuild-20260913. At 3727d78 start/movement/real click hit/pause/WebGL recovery passed; death/retry and multi-touch failed. Current lunge stop-distance and CDP remaining-contact fixes need new-render confirmation. Then finish concept coverage/four-axis reference selection and improve the fresh characters, foliage and environment from actual frames; no old-code-first reuse.",
+    "first_action": "Fresh CI34762915839 at afc8bcd passed 26 Node tests, build, actual start/movement/click hit/pause/WebGL recovery/death-retry/multi-touch/cancel. Continue fresh/ rather than restarting it. Finish the initial concept coverage and four-axis reference audit, then improve character/cloth, bamboo vegetation, terrain/shrine/light/audio from actual new frames and run independent source-blind comparisons. All formal elements remain not measured. Preserve old public docs until the new presentation and full play loop are ready; no old-game-first reuse.",
     "implementation_strategy": "Fresh design and implementation; needs-before-reuse, per latest direct user instruction."
   }
 }
