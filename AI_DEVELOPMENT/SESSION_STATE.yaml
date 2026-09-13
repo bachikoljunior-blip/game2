@@ -90,5 +90,15 @@
     "nextFix": "Point the document icon to the existing icon.svg (same link already in PR10) and record exact console/server URLs. This is a hypothesis for the404s until the new run. Keep zero-error assertion. Reuse the unchanged4e baseline; rerun both fresh candidate boots."
    }
   }
- }
+ },
+  "work": {
+    "units_requested": "continuous",
+    "fixed_instructions": "AI_DEVELOPMENT/FIXED_INSTRUCTIONS.md",
+    "deadline": "2026-09-20T07:51:53Z",
+    "human_intervention_required": false,
+    "completion": "All concept elements satisfied by evidenced blind comparison.",
+    "current_unit": "2026-09-13-fixed-instructions-initial-application",
+    "unit_status": "active",
+    "first_action": "Audit concept coverage and four-axis reference selection on the latest working branch; preserve valid implementation and evidence."
+  }
 }
