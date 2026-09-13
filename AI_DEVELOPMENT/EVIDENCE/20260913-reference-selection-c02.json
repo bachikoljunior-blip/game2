@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "kind": "reference-selection research checkpoint",
+  "recordedAt": "2026-09-13T22:10:32Z",
+  "candidateRevision": "afc8bcdb0ddb869c93228c45b845c90d48a17083",
+  "catalogBaseRevision": "a1a3016ba2080318b1ff0d30d85cfc4a839816ae",
+  "scope": [
+    "C02 reference: third-person movement, camera following and visibility"
+  ],
+  "method": "The provisional Ghost of Tsushima reference was checked before any candidate blind result. Its later lock-on and camera counterevidence was retained. METAL GEAR SOLID V was then evaluated only for the C02 input-body-camera boundary using an official control record, release criticism, current player aggregate, later player discussion, ten-year criticism and negative input reports.",
+  "result": {
+    "element": "C02",
+    "reference": "MGSV",
+    "selection": "four axes substantiated during initial selection",
+    "replacementCheck": {
+      "previousProvisionalReference": "GT",
+      "elementQuality": "MGSV has specific evidence for responsive movement, continuous stance changes, wall interaction and independent camera control; GT has persistent wall, group-combat and target-selection camera counterevidence.",
+      "expertAndPlayerReception": "MGSV has element-specific professional and later player support with counterevidence retained; GT evidence for this merged element remains mixed and camera-specific criticism is substantial.",
+      "longevity": "MGSV has a ten-year professional retrospective and current 2026 player aggregate; GT is four to six years old and the same camera issues remain reported after Director's Cut.",
+      "fit": "Both solve third-person body movement and camera visibility. MGSV is restricted to this element. Its gun focus and lack of touch controls do not substitute for C01 sword combat or C07 touch-input evidence."
+    },
+    "positiveBasis": [
+      "The official control record separates variable-speed movement from independent camera control and supports shoulder switching.",
+      "Professional criticism describes responsive controls, intuitive movement and seamless run, walk, crouch and crawl transitions.",
+      "The 2015 full-game review explicitly attributes moment-to-moment combat recovery to the quality of the controls.",
+      "A 2025 retrospective still attributes the work's standing primarily to gameplay and player-world interaction."
+    ],
+    "counterevidence": [
+      "Complex simultaneous controller inputs can be awkward.",
+      "Keyboard movement can produce an undesirable turning radius in tight spaces.",
+      "The game is gun-led and has no mobile touch control or sword lock-on equivalent; those claims cannot be inferred from this reference.",
+      "Ghost of Tsushima is a closer samurai setting, but its later lock-on can require repeated activation and camera/target visibility problems remain reported."
+    ],
+    "remaining": [
+      "Acquire actual matched MGSV and fresh-game continuous movement/camera material.",
+      "Perform a valid source-blind comparison; reviews and control documentation cannot assign the element verdict.",
+      "Complete the five remaining incomplete four-axis selections."
+    ]
+  },
+  "formalVerdict": "not measured",
+  "formalVerdictReason": "No candidate/reference source-blind comparison was performed. Reference-selection research cannot assign a game-element verdict.",
+  "sources": [
+    "https://www.konami.com/mg/mgs5/gz/webmanual/ps4/en/p0050.html",
+    "https://www.pcgamer.com/metal-gear-solid-v-ground-zeroes-review/",
+    "https://www.pcgamer.com/metal-gear-solid-5-review/",
+    "https://store.steampowered.com/app/287700/METAL_GEAR_SOLID_V_THE_PHANTOM_PAIN/",
+    "https://www.reddit.com/r/patientgamers/comments/ksmrr4/metal_gear_solid_v_the_phantom_pain_and_a_brief/",
+    "https://www.reddit.com/r/metalgearsolid/comments/3gpd5b/pc_users_do_you_like_playing_mgsv_better_with/",
+    "https://www.gamesradar.com/games/metal-gear/10-years-later-metal-gear-solid-5-remains-a-masterpiece-that-was-never-going-to-live-up-to-its-own-hype/",
+    "https://caniplaythat.com/2021/08/19/ghost-of-tsushima-directors-cut-accessibility-review-can-i-play-that/",
+    "https://www.reddit.com/r/ghostoftsushima/comments/1dngg1z/the_camera_and_lock_on_in_this_game_is_total_bs/"
+  ],
+  "verification": {
+    "command": "node tools/check-fresh-catalog.mjs",
+    "result": "PASS: 10 units, 16 legacy groups, 62 legacy criteria, six negative checks, fixed instruction text unchanged"
+  }
+}
