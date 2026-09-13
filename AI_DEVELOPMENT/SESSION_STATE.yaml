@@ -10,27 +10,27 @@
     "workingBranch": "codex/game2-rebuild-20260913",
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
-    "activeTask": "FRESH-FOUNDATION",
-    "lastSuccessfulAction": "Fresh CI34762915839 at afc8bcd: 26 tests, production build, desktop and mobile-input browser smoke passed with zero errors.",
-    "currentFailingAction": "No complete concept element has a formal blind-comparison pass. The new presentation is a primitive prototype; reference selection/coverage audit, visual/animation/audio/content production and full game victory playthrough remain.",
+    "activeTask": "FRESH-REFERENCE-AND-COMPARISON",
+    "lastSuccessfulAction": "2026-09-13: Independent concept audit with separate refutation; fresh catalog records 10 proposed coherent units, 8 source records and separate current-concept/design/history authority. Structural validator preserves all 62 legacy criteria and unchanged fixed text.",
+    "currentFailingAction": "All formal elements not measured; initial maximum-grouping and four-axis selection still incomplete. Actual matched source-blind material and fresh presentation/complete play-loop production remain.",
     "currentHypothesis": null,
-    "nextAction": "Fresh CI34762915839 at afc8bcd passed 26 Node tests, build, actual start/movement/click hit/pause/WebGL recovery/death-retry/multi-touch/cancel. Continue fresh/ rather than restarting it. Finish the initial concept coverage and four-axis reference audit, then improve character/cloth, bamboo vegetation, terrain/shrine/light/audio from actual new frames and run independent source-blind comparisons. All formal elements remain not measured. Preserve old public docs until the new presentation and full play loop are ready; no old-game-first reuse.",
+    "nextAction": "Continue fresh/ at runtime afc8bcd. Read COMPARISON_ELEMENTS.yaml and the independently refuted catalog audit first. Complete initial maximum-grouping review and unresolved per-element reference axes, starting C04 actual navigation/environment-response material and C10 post-release player/longevity audio evidence. Capture an unbroken quiet-approach -> tension -> sword exchange -> postcombat-wind sequence (X01) for new game and references; no old result transfer. Improve generated bamboo/terrain/shrine, character/cloth and responsive audio against that material, then independent source-blind comparison. Every formal element remains not measured. Preserve public payload; deadline remains 2026-09-20T07:51:53Z.",
     "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
     "pendingVerification": [
-      "Whole-concept coverage and four-axis references",
-      "Full new-game victory through real inputs",
-      "Independent animation/art/audio comparisons",
-      "Closest available smartphone environment beyond this Chromium emulation"
+      "Largest-comparable semantic review of proposed10units",
+      "Remaining reference-selection axes identified per element",
+      "New/reference uninterrupted audiovisual sequence X01",
+      "Full new-game victory via real input and closest available smartphone environment"
     ],
     "modifiedFiles": [
-      "fresh/",
-      "AI_DEVELOPMENT/FRESH_DESIGN.md",
-      "AI_DEVELOPMENT/REUSE_LOG.md"
+      "AI_DEVELOPMENT/COMPARISON_ELEMENTS.yaml",
+      "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-catalog-review.json",
+      "tools/check-fresh-catalog.mjs"
     ],
     "remotePushPendingAuthorization": false,
     "remoteReleaseAuthorized": true,
     "remotePublicationStatus": "Old public runtime remains intact. Fresh runtime is a separate unaccepted work-branch candidate.",
-    "publishedMainSha": "e40a1884a57250391dd08bdf50dc2c6cb3837a36",
+    "publishedMainSha": "44799485360f30f93db6ebd2577a7eec23396e49",
     "publishedUrl": "https://bachikoljunior-blip.github.io/game2/",
     "startPositionHotfix": {
       "status": "awaiting_verification",
@@ -71,8 +71,12 @@
       "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-checkpoint.md",
       "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-ci-3727d78.json",
       "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-code-review.json",
-      "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-ci-afc8bcd.json"
-    ]
+      "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-ci-afc8bcd.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-concept-audit.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-catalog-review.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-catalog-checkpoint.md"
+    ],
+    "publicRuntimeRevision": "86512c3bfdc69e03b5b490d9b0d79ec9da141343"
   },
   "work": {
     "units_requested": "continuous",
@@ -82,7 +86,8 @@
     "completion": "All concept elements satisfied by evidenced blind comparison.",
     "current_unit": "2026-09-13-fresh-design",
     "unit_status": "active",
-    "first_action": "Fresh CI34762915839 at afc8bcd passed 26 Node tests, build, actual start/movement/click hit/pause/WebGL recovery/death-retry/multi-touch/cancel. Continue fresh/ rather than restarting it. Finish the initial concept coverage and four-axis reference audit, then improve character/cloth, bamboo vegetation, terrain/shrine/light/audio from actual new frames and run independent source-blind comparisons. All formal elements remain not measured. Preserve old public docs until the new presentation and full play loop are ready; no old-game-first reuse.",
-    "implementation_strategy": "Fresh design and implementation; needs-before-reuse, per latest direct user instruction."
+    "first_action": "Continue fresh/ at runtime afc8bcd. Read COMPARISON_ELEMENTS.yaml and the independently refuted catalog audit first. Complete initial maximum-grouping review and unresolved per-element reference axes, starting C04 actual navigation/environment-response material and C10 post-release player/longevity audio evidence. Capture an unbroken quiet-approach -> tension -> sword exchange -> postcombat-wind sequence (X01) for new game and references; no old result transfer. Improve generated bamboo/terrain/shrine, character/cloth and responsive audio against that material, then independent source-blind comparison. Every formal element remains not measured. Preserve public payload; deadline remains 2026-09-20T07:51:53Z.",
+    "implementation_strategy": "Fresh design and implementation; needs-before-reuse, per latest direct user instruction.",
+    "unitEndReason": null
   }
 }

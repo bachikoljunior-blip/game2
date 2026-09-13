@@ -1,0 +1,1642 @@
+{
+  "audit": "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-concept-audit.json",
+  "authority": "Fixed text and current explicit user directives govern. This is the first-application working comparison catalog, not an amendment to owner instructions.",
+  "blindProtocol": {
+    "copyright": "No reference content in game payload. Acquire and use comparison media only within applicable rights.",
+    "independence": "Evaluators receive no game identity, role mapping, repo or production history. Maintain concealed source mapping outside evaluator material.",
+    "material": "Actual candidate/reference media only; source-labelled reviews are selection research, not comparison substitutes.",
+    "outcome": "Only a valid source-blind comparison can assign satisfied/not satisfied. No technical CI, pixel proxy or review aggregate creates a verdict.",
+    "recognition": "Ask for source identification/confidence. If either source is identified, comparison invalid and status remains not measured; do not merely hide the known title in the answer."
+  },
+  "comparisonElements": [
+    {
+      "comparisonBoundary": "攻撃・防御・体幹・危険攻撃・相手の応答を含む一連の交戦。同じ戦闘を切り離すと駆け引きの比較にならないため統合する。",
+      "comparisonMethod": "通常入力による接敵から勝敗までの映像と音、入力・状態の対応記録。単体と複数の交戦を含め、既存20戦以上の数値検証を併記する。",
+      "conceptClauses": [
+        "K00",
+        "K01"
+      ],
+      "currentGap": "新作 afc8bcd は基本動作の技術試作。要素全体の比較は未実施。旧ゲームの測定を新作の証拠には使用しない。",
+      "freshDesignClauses": [
+        "D01",
+        "D02",
+        "D06"
+      ],
+      "id": "C01",
+      "legacyElements": [
+        "E01-COMBAT",
+        "E08-CHOICE",
+        "E14-AI"
+      ],
+      "nameJa": "剣戟の駆け引きと相手の応答",
+      "reference": "SK",
+      "referenceSelection": {
+        "axes": {
+          "elementQuality": {
+            "assessment": "supported selection rationale; not a game verdict",
+            "finding": "弾き・攻撃・敵の応答が結びつく剣戟を基準とする。",
+            "sources": [
+              "SK-C",
+              "SK-L"
+            ],
+            "unresolved": []
+          },
+          "fitToConcept": {
+            "assessment": "supported selection rationale; not a game verdict",
+            "basis": {
+              "conceptClauses": [
+                "K00",
+                "K01"
+              ],
+              "freshDesignClauses": [
+                "D01",
+                "D02",
+                "D06"
+              ],
+              "inference": true
+            },
+            "finding": "攻撃・防御・体幹・危険攻撃・相手の応答を含む一連の交戦。同じ戦闘を切り離すと駆け引きの比較にならないため統合する。",
+            "sources": [],
+            "unresolved": []
+          },
+          "longevity": {
+            "assessment": "supported selection rationale; not a game verdict",
+            "finding": "2024年の後年批評を追加。剣戟への継続評価と他要素の未確認を区別。",
+            "sources": [
+              "SK-L"
+            ],
+            "unresolved": []
+          },
+          "reception": {
+            "assessment": "supported selection rationale; not a game verdict",
+            "finding": "批評とプレイヤー意見を別々に記録。戦闘への支持と難度への不満を併記。",
+            "sources": [
+              "SK-C",
+              "SK-L",
+              "SK-P"
+            ],
+            "unresolved": []
+          }
+        },
+        "decision": "既存参照を保持。初回選定の根拠を補強中であり、全4軸が確定したとは扱わない。",
+        "unresolved": [
+          "実際の同目的資料を取得し出所を推定できない独立評価を行う。レビューは実比較の代用ではない。"
+        ]
+      },
+      "status": "not measured",
+      "supportingCriteria": [
+        "BM-COMBAT-01",
+        "BM-COMBAT-02",
+        "BM-COMBAT-03",
+        "BM-COMBAT-04",
+        "BM-CHOICE-01",
+        "BM-CHOICE-02",
+        "BM-AI-01",
+        "BM-AI-02",
+        "BM-AI-03",
+        "BM-AI-04"
+      ],
+      "verdictEvidence": null
+    },
+    {
+      "comparisonBoundary": "入力から身体移動・カメラ追従・視認性までを含む第三者視点の移動体験。C02とC03を同じ連続素材で一体比較する。",
+      "comparisonMethod": "キー／ポインタとタッチそれぞれの開始・停止・旋回・斜面・壁際・接敵・注視を連続記録。入力の時点を匿名共通表示し、身体応答と画面内の読め方を一体で評価。足接地とカメラは診断項目として残す。",
+      "conceptClauses": [
+        "K00",
+        "K01",
+        "K02"
+      ],
+      "currentGap": "新作 afc8bcd は基本動作の技術試作。要素全体の比較は未実施。旧ゲームの測定を新作の証拠には使用しない。",
+      "diagnosticFacets": [
+        {
+          "id": "C02",
+          "method": "入力開始・停止・反転と斜面移動の連続映像。入力時点を匿名の共通表示で示し、速度・足接地・応答の既存測定を添える。",
+          "nameJa": "地形上の移動と操作応答"
+        },
+        {
+          "id": "C03",
+          "method": "通常移動と接敵、壁際、旋回、ロック中の実プレイ映像。攻撃開始・有効時間・被弾を両者で見せる。",
+          "nameJa": "プレイ中のカメラと視認性"
+        }
+      ],
+      "freshDesignClauses": [
+        "D02"
+      ],
+      "id": "C02",
+      "legacyElements": [
+        "E02-MOVEMENT",
+        "E03-CAMERA"
+      ],
+      "nameJa": "第三者視点での移動・視点操作",
+      "reference": "GT",
+      "referenceSelection": {
+        "axes": {
+          "elementQuality": {
+            "assessment": "substantiation incomplete",
+            "finding": "第三者視点の移動体験を保持する参照。",
+            "sources": [
+              "GT-C"
+            ],
+            "unresolved": [
+              "移動とカメラを一体で評価した具体的根拠が不足。"
+            ]
+          },
+          "fitToConcept": {
+            "assessment": "supported selection rationale; not a game verdict",
+            "basis": {
+              "conceptClauses": [
+                "K00",
+                "K01",
+                "K02"
+              ],
+              "freshDesignClauses": [
+                "D02"
+              ],
+              "inference": true
+            },
+            "finding": "入力から身体移動・カメラ追従・視認性までを含む第三者視点の移動体験。C02とC03を同じ連続素材で一体比較する。",
+            "sources": [],
+            "unresolved": []
+          },
+          "longevity": {
+            "assessment": "substantiation incomplete",
+            "finding": "2024年批評は4年後も美術を評価する一方、技術面の古さを指摘。",
+            "sources": [
+              "GT-C"
+            ],
+            "unresolved": [
+              "当該要素が長期にわたり基準とされる根拠が不足。"
+            ]
+          },
+          "reception": {
+            "assessment": "substantiation incomplete",
+            "finding": "専門批評と個別プレイヤー投稿を区別。美術の評価と反復への批判を併記。",
+            "sources": [
+              "GT-C",
+              "GT-P"
+            ],
+            "unresolved": [
+              "当該要素単独のプレイヤー評価を追加確認する。"
+            ]
+          }
+        },
+        "decision": "既存参照を保持。初回選定の根拠を補強中であり、全4軸が確定したとは扱わない。",
+        "unresolved": [
+          "移動とカメラを一体で評価した具体的根拠が不足。",
+          "当該要素単独のプレイヤー評価を追加確認する。",
+          "当該要素が長期にわたり基準とされる根拠が不足。",
+          "実際の同目的資料を取得し出所を推定できない独立評価を行う。レビューは実比較の代用ではない。"
+        ]
+      },
+      "status": "not measured",
+      "supportingCriteria": [
+        "BM-MOVE-01",
+        "BM-MOVE-02",
+        "BM-MOVE-03",
+        "BM-CAMERA-01",
+        "BM-CAMERA-02",
+        "BM-CAMERA-03",
+        "BM-CAMERA-04"
+      ],
+      "verdictEvidence": null
+    },
+    {
+      "comparisonBoundary": "地形・導線・見通し・建築・植生・光・風がつくる一つの場所の体験。C04とC07を統合し、経路の分かりやすさと環境表現を落とさない。",
+      "comparisonMethod": "実際の進入→ランドマーク→分岐→社の連続映像と固定5画面。風・植生・霞・光の時間変化と地形の読み方を一体比較。補助参照SKのコンパクトな場所構成も維持。",
+      "conceptClauses": [
+        "K00",
+        "K03",
+        "K06"
+      ],
+      "currentGap": "新作 afc8bcd は基本動作の技術試作。要素全体の比較は未実施。旧ゲームの測定を新作の証拠には使用しない。",
+      "diagnosticFacets": [
+        {
+          "id": "C04",
+          "method": "初見での進入からランドマーク・分岐・応答を含む連続探索映像と匿名の経路説明。C05の物語理解とは評価する問いを分ける。",
+          "nameJa": "場所の構成と探索"
+        },
+        {
+          "id": "C07",
+          "method": "固定5画面を維持し、実際の参照画像と匿名で比較する。さらに風が草・竹・旗・布・花弁を通過する連続映像を比較する。",
+          "nameJa": "環境映像と時間変化の一体感"
+        }
+      ],
+      "freshDesignClauses": [
+        "D01",
+        "D05"
+      ],
+      "id": "C04",
+      "legacyElements": [
+        "E04-EXPLORATION",
+        "E05-WORLD",
+        "E11-VISUALS"
+      ],
+      "nameJa": "山の社と竹の谷の場所体験",
+      "reference": "GT",
+      "referenceSelection": {
+        "axes": {
+          "elementQuality": {
+            "assessment": "substantiation incomplete",
+            "finding": "景観、風と地形・建築が一体になった場所を基準とする。探索の反復と静的環境への批判も保存。",
+            "sources": [
+              "GT-C",
+              "GT-P"
+            ],
+            "unresolved": [
+              "景観・風の評価根拠はあるが、統合した導線・経路理解・環境への応答の評価は未完了。"
+            ]
+          },
+          "fitToConcept": {
+            "assessment": "supported selection rationale; not a game verdict",
+            "basis": {
+              "conceptClauses": [
+                "K00",
+                "K03",
+                "K06"
+              ],
+              "freshDesignClauses": [
+                "D01",
+                "D05"
+              ],
+              "inference": true
+            },
+            "finding": "地形・導線・見通し・建築・植生・光・風がつくる一つの場所の体験。C04とC07を統合し、経路の分かりやすさと環境表現を落とさない。",
+            "sources": [],
+            "unresolved": []
+          },
+          "longevity": {
+            "assessment": "substantiation incomplete",
+            "finding": "2024年批評は4年後も美術を評価する一方、技術面の古さを指摘。",
+            "sources": [
+              "GT-C"
+            ],
+            "unresolved": [
+              "景観・風の評価根拠はあるが、統合した導線・経路理解・環境への応答の評価は未完了。"
+            ]
+          },
+          "reception": {
+            "assessment": "substantiation incomplete",
+            "finding": "専門批評と個別プレイヤー投稿を区別。美術の評価と反復への批判を併記。",
+            "sources": [
+              "GT-C",
+              "GT-P"
+            ],
+            "unresolved": [
+              "導線・経路理解・環境応答に対する専門家とプレイヤー両方の具体的評価は追加確認が必要。"
+            ]
+          }
+        },
+        "decision": "既存参照を保持。初回選定の根拠を補強中であり、全4軸が確定したとは扱わない。",
+        "unresolved": [
+          "景観・風の評価根拠はあるが、統合した導線・経路理解・環境への応答の評価は未完了。",
+          "景観・風の評価根拠はあるが、統合した導線・経路理解・環境への応答の評価は未完了。",
+          "導線・経路理解・環境応答に対する専門家とプレイヤー両方の具体的評価は追加確認が必要。",
+          "実際の同目的資料を取得し出所を推定できない独立評価を行う。レビューは実比較の代用ではない。"
+        ]
+      },
+      "status": "not measured",
+      "supplementaryReference": {
+        "axes": {
+          "elementQuality": {
+            "assessment": "substantiation incomplete",
+            "finding": "SKの場所構成単独の根拠を追加する。",
+            "sources": [
+              "SK-C",
+              "SK-L"
+            ],
+            "unresolved": [
+              "補助参照の当該軸の裏付けを完了する。"
+            ]
+          },
+          "fitToConcept": {
+            "assessment": "substantiation incomplete",
+            "finding": "局所的な社・道・見通しという場所構成の比較。マップ全体の規模を転用しない。",
+            "sources": [
+              "SK-C",
+              "SK-L"
+            ],
+            "unresolved": [
+              "補助参照の当該軸の裏付けを完了する。"
+            ]
+          },
+          "longevity": {
+            "assessment": "substantiation incomplete",
+            "finding": "SKの場所構成単独の根拠を追加する。",
+            "sources": [
+              "SK-C",
+              "SK-L"
+            ],
+            "unresolved": [
+              "補助参照の当該軸の裏付けを完了する。"
+            ]
+          },
+          "reception": {
+            "assessment": "substantiation incomplete",
+            "finding": "SKの場所構成単独の根拠を追加する。",
+            "sources": [
+              "SK-C",
+              "SK-L"
+            ],
+            "unresolved": [
+              "補助参照の当該軸の裏付けを完了する。"
+            ]
+          }
+        },
+        "id": "SK",
+        "scope": "Existing E05 compact-space secondary reference retained; not silently substituted for GT. Requires actual traversal material and four-axis substantiation."
+      },
+      "supportingCriteria": [
+        "BM-EXPLORE-01",
+        "BM-EXPLORE-02",
+        "BM-EXPLORE-03",
+        "BM-WORLD-01",
+        "BM-WORLD-02",
+        "BM-WORLD-03",
+        "BM-WORLD-04",
+        "BM-VIS-01",
+        "BM-VIS-02",
+        "BM-VIS-03",
+        "BM-VIS-04"
+      ],
+      "verdictEvidence": null
+    },
+    {
+      "comparisonBoundary": "目的・出来事・場所の意味を理解できるか。景観の好みでは理解を判断できないため、探索の映像美とは別の比較単位にする。",
+      "comparisonMethod": "同じ長さの実際の開始・探索・出来事の資料を提示し、評価者が理解した目的と因果を匿名で説明する。台詞・文章がある場合は実文を用いる。",
+      "conceptClauses": [
+        "K00",
+        "K06"
+      ],
+      "currentGap": "新作 afc8bcd は基本動作の技術試作。要素全体の比較は未実施。旧ゲームの測定を新作の証拠には使用しない。",
+      "freshDesignClauses": [
+        "D01"
+      ],
+      "id": "C05",
+      "legacyElements": [
+        "E06-NARRATIVE"
+      ],
+      "nameJa": "物語と場所の意味の伝わり方",
+      "reference": "SK",
+      "referenceSelection": {
+        "axes": {
+          "elementQuality": {
+            "assessment": "substantiation incomplete",
+            "finding": "行動の目的と場所の意味が伝わる物語体験を比較する。",
+            "sources": [
+              "SK-C",
+              "SK-L"
+            ],
+            "unresolved": [
+              "場所・物語単独の品質評価と実資料を補う。"
+            ]
+          },
+          "fitToConcept": {
+            "assessment": "supported selection rationale; not a game verdict",
+            "basis": {
+              "conceptClauses": [
+                "K00",
+                "K06"
+              ],
+              "freshDesignClauses": [
+                "D01"
+              ],
+              "inference": true
+            },
+            "finding": "目的・出来事・場所の意味を理解できるか。景観の好みでは理解を判断できないため、探索の映像美とは別の比較単位にする。",
+            "sources": [],
+            "unresolved": []
+          },
+          "longevity": {
+            "assessment": "substantiation incomplete",
+            "finding": "2024年の後年批評を追加。剣戟への継続評価と他要素の未確認を区別。",
+            "sources": [
+              "SK-L"
+            ],
+            "unresolved": [
+              "当該要素が長期にわたり基準とされる根拠が不足。"
+            ]
+          },
+          "reception": {
+            "assessment": "substantiation incomplete",
+            "finding": "批評とプレイヤー意見を別々に記録。戦闘への支持と難度への不満を併記。",
+            "sources": [
+              "SK-C",
+              "SK-L",
+              "SK-P"
+            ],
+            "unresolved": [
+              "当該要素単独のプレイヤー評価を追加確認する。"
+            ]
+          }
+        },
+        "decision": "既存参照を保持。初回選定の根拠を補強中であり、全4軸が確定したとは扱わない。",
+        "unresolved": [
+          "場所・物語単独の品質評価と実資料を補う。",
+          "当該要素単独のプレイヤー評価を追加確認する。",
+          "当該要素が長期にわたり基準とされる根拠が不足。",
+          "実際の同目的資料を取得し出所を推定できない独立評価を行う。レビューは実比較の代用ではない。"
+        ]
+      },
+      "status": "not measured",
+      "supportingCriteria": [
+        "BM-STORY-01",
+        "BM-STORY-02",
+        "BM-STORY-03"
+      ],
+      "verdictEvidence": null
+    },
+    {
+      "comparisonBoundary": "体形、装束、素材、刀、姿勢、遷移、重心、布の動きを一体として読む人物表現。",
+      "comparisonMethod": "実描画の全身・近接・戦闘映像。待機、移動、攻撃、防御、被弾、布と刀の動きを確認する。読みやすさだけで自然さを代用しない。",
+      "conceptClauses": [
+        "K00",
+        "K01",
+        "K03",
+        "K06"
+      ],
+      "currentGap": "新作 afc8bcd は基本動作の技術試作。要素全体の比較は未実施。旧ゲームの測定を新作の証拠には使用しない。",
+      "freshDesignClauses": [
+        "D01",
+        "D05",
+        "D06"
+      ],
+      "id": "C06",
+      "legacyElements": [
+        "E07-CHARACTER",
+        "E12-ANIMATION"
+      ],
+      "nameJa": "人物と刀の造形・演技・動き",
+      "reference": "SK",
+      "referenceSelection": {
+        "axes": {
+          "elementQuality": {
+            "assessment": "substantiation incomplete",
+            "finding": "刀の重さと敵の応答を含む人物の動きが候補の根拠。",
+            "sources": [
+              "SK-L"
+            ],
+            "unresolved": [
+              "造形・布・演技を含む人物全体への裏付けが不足。"
+            ]
+          },
+          "fitToConcept": {
+            "assessment": "supported selection rationale; not a game verdict",
+            "basis": {
+              "conceptClauses": [
+                "K00",
+                "K01",
+                "K03",
+                "K06"
+              ],
+              "freshDesignClauses": [
+                "D01",
+                "D05",
+                "D06"
+              ],
+              "inference": true
+            },
+            "finding": "体形、装束、素材、刀、姿勢、遷移、重心、布の動きを一体として読む人物表現。",
+            "sources": [],
+            "unresolved": []
+          },
+          "longevity": {
+            "assessment": "substantiation incomplete",
+            "finding": "2024年の後年批評を追加。剣戟への継続評価と他要素の未確認を区別。",
+            "sources": [
+              "SK-L"
+            ],
+            "unresolved": [
+              "当該要素が長期にわたり基準とされる根拠が不足。"
+            ]
+          },
+          "reception": {
+            "assessment": "substantiation incomplete",
+            "finding": "批評とプレイヤー意見を別々に記録。戦闘への支持と難度への不満を併記。",
+            "sources": [
+              "SK-C",
+              "SK-L",
+              "SK-P"
+            ],
+            "unresolved": [
+              "当該要素単独のプレイヤー評価を追加確認する。"
+            ]
+          }
+        },
+        "decision": "既存参照を保持。初回選定の根拠を補強中であり、全4軸が確定したとは扱わない。",
+        "unresolved": [
+          "造形・布・演技を含む人物全体への裏付けが不足。",
+          "当該要素単独のプレイヤー評価を追加確認する。",
+          "当該要素が長期にわたり基準とされる根拠が不足。",
+          "実際の同目的資料を取得し出所を推定できない独立評価を行う。レビューは実比較の代用ではない。"
+        ]
+      },
+      "status": "not measured",
+      "supportingCriteria": [
+        "BM-CHAR-01",
+        "BM-CHAR-02",
+        "BM-CHAR-03",
+        "BM-ANIM-01",
+        "BM-ANIM-02",
+        "BM-ANIM-03",
+        "BM-ANIM-04"
+      ],
+      "verdictEvidence": null
+    },
+    {
+      "comparisonBoundary": "HUD、状態の伝達、開始・設定・中断・再挑戦を通じた情報の読みやすさと案内。",
+      "comparisonMethod": "実際の画面と操作フローの記録を比較。読めた状態・次の操作を独立評価者が回答する。スマートフォンとデスクトップの両方を対象にする。 日本語の最小限の案内・safe-areaで状態と次の行動が理解できるかを含める。",
+      "conceptClauses": [
+        "K00",
+        "K02"
+      ],
+      "currentGap": "新作 afc8bcd は基本動作の技術試作。要素全体の比較は未実施。旧ゲームの測定を新作の証拠には使用しない。",
+      "freshDesignClauses": [
+        "D03",
+        "D04"
+      ],
+      "id": "C08",
+      "legacyElements": [
+        "E09-UI"
+      ],
+      "nameJa": "画面情報と操作案内",
+      "reference": "GT",
+      "referenceSelection": {
+        "axes": {
+          "elementQuality": {
+            "assessment": "substantiation incomplete",
+            "finding": "既存の画面案内参照を保持する。",
+            "sources": [
+              "GT-C"
+            ],
+            "unresolved": [
+              "HUDと案内の要素単独の専門評価が不足。"
+            ]
+          },
+          "fitToConcept": {
+            "assessment": "supported selection rationale; not a game verdict",
+            "basis": {
+              "conceptClauses": [
+                "K00",
+                "K02"
+              ],
+              "freshDesignClauses": [
+                "D03",
+                "D04"
+              ],
+              "inference": true
+            },
+            "finding": "HUD、状態の伝達、開始・設定・中断・再挑戦を通じた情報の読みやすさと案内。",
+            "sources": [],
+            "unresolved": []
+          },
+          "longevity": {
+            "assessment": "substantiation incomplete",
+            "finding": "2024年批評は4年後も美術を評価する一方、技術面の古さを指摘。",
+            "sources": [
+              "GT-C"
+            ],
+            "unresolved": [
+              "当該要素が長期にわたり基準とされる根拠が不足。"
+            ]
+          },
+          "reception": {
+            "assessment": "substantiation incomplete",
+            "finding": "専門批評と個別プレイヤー投稿を区別。美術の評価と反復への批判を併記。",
+            "sources": [
+              "GT-C",
+              "GT-P"
+            ],
+            "unresolved": [
+              "当該要素単独のプレイヤー評価を追加確認する。"
+            ]
+          }
+        },
+        "decision": "既存参照を保持。初回選定の根拠を補強中であり、全4軸が確定したとは扱わない。",
+        "unresolved": [
+          "HUDと案内の要素単独の専門評価が不足。",
+          "当該要素単独のプレイヤー評価を追加確認する。",
+          "当該要素が長期にわたり基準とされる根拠が不足。",
+          "実際の同目的資料を取得し出所を推定できない独立評価を行う。レビューは実比較の代用ではない。"
+        ]
+      },
+      "status": "not measured",
+      "supportingCriteria": [
+        "BM-UI-01",
+        "BM-UI-02",
+        "BM-UI-03",
+        "BM-UI-04"
+      ],
+      "verdictEvidence": null
+    },
+    {
+      "comparisonBoundary": "指で移動・視点・攻防・注視の意図を正確に伝え、同時操作・取消・持ち方の変化にも対応できるスマートフォン操作体験。ジェスチャーやボタン数は手段であり固定しない。",
+      "comparisonMethod": "同時タッチで移動・防御・回避・視点・攻撃を操作し、取消・画面回転・フォーカス喪失まで連続記録。ボタン数やフリック方式は固定しない。実機に最も近い利用可能な条件、実測と推論の境界を明記して匿名比較する。",
+      "conceptClauses": [
+        "K00",
+        "K02"
+      ],
+      "currentGap": "新作 afc8bcd は基本動作の技術試作。要素全体の比較は未実施。旧ゲームの測定を新作の証拠には使用しない。",
+      "freshDesignClauses": [
+        "D02",
+        "D03"
+      ],
+      "id": "C09",
+      "legacyElements": [
+        "E10-TOUCH"
+      ],
+      "nameJa": "スマートフォンでの実入力と操作補助",
+      "reference": "GI",
+      "referenceSelection": {
+        "axes": {
+          "elementQuality": {
+            "assessment": "substantiation incomplete",
+            "finding": "携帯端末の直接タッチで三人称アクションを扱う点で選定根拠がある。",
+            "sources": [
+              "GI-C"
+            ],
+            "unresolved": [
+              "小型端末での使いやすさは未確認。"
+            ]
+          },
+          "fitToConcept": {
+            "assessment": "supported selection rationale; not a game verdict",
+            "basis": {
+              "conceptClauses": [
+                "K00",
+                "K02"
+              ],
+              "freshDesignClauses": [
+                "D02",
+                "D03"
+              ],
+              "inference": true
+            },
+            "finding": "指で移動・視点・攻防・注視の意図を正確に伝え、同時操作・取消・持ち方の変化にも対応できるスマートフォン操作体験。ジェスチャーやボタン数は手段であり固定しない。",
+            "sources": [],
+            "unresolved": []
+          },
+          "longevity": {
+            "assessment": "substantiation incomplete",
+            "finding": "発売時だけでなく後年の当該要素の評価が必要。",
+            "sources": [
+              "GI-P"
+            ],
+            "unresolved": [
+              "当該要素が長期にわたり基準とされる根拠が不足。"
+            ]
+          },
+          "reception": {
+            "assessment": "substantiation incomplete",
+            "finding": "タッチ操作の専門批評はあるが総合ユーザー評価を入力・性能の個別評価に転用しない。",
+            "sources": [
+              "GI-C",
+              "GI-P"
+            ],
+            "unresolved": [
+              "当該要素単独のプレイヤー評価を追加確認する。"
+            ]
+          }
+        },
+        "decision": "既存参照を保持。初回選定の根拠を補強中であり、全4軸が確定したとは扱わない。",
+        "unresolved": [
+          "小型端末での使いやすさは未確認。",
+          "当該要素単独のプレイヤー評価を追加確認する。",
+          "当該要素が長期にわたり基準とされる根拠が不足。",
+          "実際の同目的資料を取得し出所を推定できない独立評価を行う。レビューは実比較の代用ではない。"
+        ]
+      },
+      "status": "not measured",
+      "supportingCriteria": [
+        "BM-TOUCH-01",
+        "BM-TOUCH-02",
+        "BM-TOUCH-03",
+        "BM-TOUCH-04",
+        "BM-TOUCH-05"
+      ],
+      "verdictEvidence": null
+    },
+    {
+      "comparisonBoundary": "空間、天候、戦闘の状態を伝える音と音楽の統合。合成方式から表現の品質上限を決めない。",
+      "comparisonMethod": "実際の環境音・通常戦闘・緊張遷移を同じ再生条件で匿名聴取する。音量の扱いを明記し、真ピーク等の数値ゲートも維持する。 D01の接近→緊張→剣戟→風の静けさを切らずに聴取・視聴する。",
+      "conceptClauses": [
+        "K00",
+        "K03",
+        "K06"
+      ],
+      "currentGap": "新作 afc8bcd は基本動作の技術試作。要素全体の比較は未実施。旧ゲームの測定を新作の証拠には使用しない。",
+      "freshDesignClauses": [
+        "D01",
+        "D05"
+      ],
+      "id": "C10",
+      "legacyElements": [
+        "E13-AUDIO"
+      ],
+      "nameJa": "音響・音楽と戦闘環境への反応",
+      "reference": "GT",
+      "referenceSelection": {
+        "axes": {
+          "elementQuality": {
+            "assessment": "supported selection rationale; not a game verdict",
+            "finding": "音響設計・フォーリー・音楽の技術的創造性が専門団体の受賞で裏付けられる。",
+            "sources": [
+              "GT-A"
+            ],
+            "unresolved": []
+          },
+          "fitToConcept": {
+            "assessment": "supported selection rationale; not a game verdict",
+            "basis": {
+              "conceptClauses": [
+                "K00",
+                "K03",
+                "K06"
+              ],
+              "freshDesignClauses": [
+                "D01",
+                "D05"
+              ],
+              "inference": true
+            },
+            "finding": "空間、天候、戦闘の状態を伝える音と音楽の統合。合成方式から表現の品質上限を決めない。",
+            "sources": [],
+            "unresolved": []
+          },
+          "longevity": {
+            "assessment": "substantiation incomplete",
+            "finding": "2024年批評は4年後も美術を評価する一方、技術面の古さを指摘。",
+            "sources": [
+              "GT-C"
+            ],
+            "unresolved": [
+              "当該要素が長期にわたり基準とされる根拠が不足。"
+            ]
+          },
+          "reception": {
+            "assessment": "substantiation incomplete",
+            "finding": "専門批評と個別プレイヤー投稿を区別。美術の評価と反復への批判を併記。",
+            "sources": [
+              "GT-C",
+              "GT-P",
+              "GT-A"
+            ],
+            "unresolved": [
+              "当該要素単独のプレイヤー評価を追加確認する。"
+            ]
+          }
+        },
+        "decision": "既存参照を保持。初回選定の根拠を補強中であり、全4軸が確定したとは扱わない。",
+        "unresolved": [
+          "当該要素が長期にわたり基準とされる根拠が不足。",
+          "当該要素単独のプレイヤー評価を追加確認する。",
+          "実際の同目的資料を取得し出所を推定できない独立評価を行う。レビューは実比較の代用ではない。"
+        ]
+      },
+      "status": "not measured",
+      "supportingCriteria": [
+        "BM-AUDIO-01",
+        "BM-AUDIO-02",
+        "BM-AUDIO-03",
+        "BM-AUDIO-04",
+        "BM-AUDIO-05"
+      ],
+      "verdictEvidence": null
+    },
+    {
+      "comparisonBoundary": "読込から継続操作までの待ち時間・応答・滑らかさ。生成時負荷と品質設定も含める。",
+      "comparisonMethod": "最も実機に近い利用可能な条件で起動と10分以上の継続操作を記録し匿名比較する。実測と校正根拠のある推論を区別。旧数値ゲートを併用する場合は同じ閾値とサンプル数を用い、環境差を記録する。",
+      "conceptClauses": [
+        "K00",
+        "K02",
+        "K03"
+      ],
+      "currentGap": "新作 afc8bcd は基本動作の技術試作。要素全体の比較は未実施。旧ゲームの測定を新作の証拠には使用しない。",
+      "freshDesignClauses": [
+        "D04"
+      ],
+      "id": "C11",
+      "legacyElements": [
+        "E15-PERFORMANCE"
+      ],
+      "nameJa": "読込と継続プレイの性能",
+      "reference": "GI",
+      "referenceSelection": {
+        "axes": {
+          "elementQuality": {
+            "assessment": "substantiation incomplete",
+            "finding": "携帯端末で三人称アクションを継続実行する条件を比較できる。",
+            "sources": [
+              "GI-C"
+            ],
+            "unresolved": [
+              "起動と長時間性能の優位を示す測定が不足。"
+            ]
+          },
+          "fitToConcept": {
+            "assessment": "supported selection rationale; not a game verdict",
+            "basis": {
+              "conceptClauses": [
+                "K00",
+                "K02",
+                "K03"
+              ],
+              "freshDesignClauses": [
+                "D04"
+              ],
+              "inference": true
+            },
+            "finding": "読込から継続操作までの待ち時間・応答・滑らかさ。生成時負荷と品質設定も含める。",
+            "sources": [],
+            "unresolved": []
+          },
+          "longevity": {
+            "assessment": "substantiation incomplete",
+            "finding": "発売時だけでなく後年の当該要素の評価が必要。",
+            "sources": [
+              "GI-P"
+            ],
+            "unresolved": [
+              "当該要素が長期にわたり基準とされる根拠が不足。"
+            ]
+          },
+          "reception": {
+            "assessment": "substantiation incomplete",
+            "finding": "タッチ操作の専門批評はあるが総合ユーザー評価を入力・性能の個別評価に転用しない。",
+            "sources": [
+              "GI-C",
+              "GI-P"
+            ],
+            "unresolved": [
+              "当該要素単独のプレイヤー評価を追加確認する。"
+            ]
+          }
+        },
+        "decision": "既存参照を保持。初回選定の根拠を補強中であり、全4軸が確定したとは扱わない。",
+        "unresolved": [
+          "起動と長時間性能の優位を示す測定が不足。",
+          "当該要素単独のプレイヤー評価を追加確認する。",
+          "当該要素が長期にわたり基準とされる根拠が不足。",
+          "実際の同目的資料を取得し出所を推定できない独立評価を行う。レビューは実比較の代用ではない。"
+        ]
+      },
+      "status": "not measured",
+      "supportingCriteria": [
+        "BM-PERF-01",
+        "BM-PERF-02",
+        "BM-PERF-03",
+        "BM-PERF-04",
+        "BM-PERF-05"
+      ],
+      "verdictEvidence": null
+    },
+    {
+      "comparisonBoundary": "開始、継続、画面回転、中断、復帰、文脈喪失、再挑戦、公開版利用をつなぐ中断のない体験。",
+      "comparisonMethod": "同じ利用目的の実際の操作・復旧記録を匿名提示する。異なるOS固有操作は対応関係を記録し、ブラウザ専用のWebGL復旧も独自契約として実測する。",
+      "conceptClauses": [
+        "K00",
+        "K02"
+      ],
+      "currentGap": "新作 afc8bcd は基本動作の技術試作。要素全体の比較は未実施。旧ゲームの測定を新作の証拠には使用しない。",
+      "freshDesignClauses": [
+        "D02",
+        "D04"
+      ],
+      "id": "C12",
+      "legacyElements": [
+        "E16-STABILITY"
+      ],
+      "nameJa": "中断・復旧を含むプレイの安定性",
+      "reference": "GT",
+      "referenceSelection": {
+        "axes": {
+          "elementQuality": {
+            "assessment": "substantiation incomplete",
+            "finding": "PCレビュー中のクラッシュなしという限定された観察がある。",
+            "sources": [
+              "GT-C"
+            ],
+            "unresolved": [
+              "中断復旧まで含む実記録が不足。"
+            ]
+          },
+          "fitToConcept": {
+            "assessment": "supported selection rationale; not a game verdict",
+            "basis": {
+              "conceptClauses": [
+                "K00",
+                "K02"
+              ],
+              "freshDesignClauses": [
+                "D02",
+                "D04"
+              ],
+              "inference": true
+            },
+            "finding": "開始、継続、画面回転、中断、復帰、文脈喪失、再挑戦、公開版利用をつなぐ中断のない体験。",
+            "sources": [],
+            "unresolved": []
+          },
+          "longevity": {
+            "assessment": "substantiation incomplete",
+            "finding": "2024年批評は4年後も美術を評価する一方、技術面の古さを指摘。",
+            "sources": [
+              "GT-C"
+            ],
+            "unresolved": [
+              "当該要素が長期にわたり基準とされる根拠が不足。"
+            ]
+          },
+          "reception": {
+            "assessment": "substantiation incomplete",
+            "finding": "専門批評と個別プレイヤー投稿を区別。美術の評価と反復への批判を併記。",
+            "sources": [
+              "GT-C",
+              "GT-P"
+            ],
+            "unresolved": [
+              "当該要素単独のプレイヤー評価を追加確認する。"
+            ]
+          }
+        },
+        "decision": "既存参照を保持。初回選定の根拠を補強中であり、全4軸が確定したとは扱わない。",
+        "unresolved": [
+          "中断復旧まで含む実記録が不足。",
+          "当該要素単独のプレイヤー評価を追加確認する。",
+          "当該要素が長期にわたり基準とされる根拠が不足。",
+          "実際の同目的資料を取得し出所を推定できない独立評価を行う。レビューは実比較の代用ではない。"
+        ]
+      },
+      "status": "not measured",
+      "supportingCriteria": [
+        "BM-STAB-01",
+        "BM-STAB-02",
+        "BM-STAB-03",
+        "BM-STAB-04",
+        "BM-STAB-05"
+      ],
+      "verdictEvidence": null
+    }
+  ],
+  "conceptClauses": [
+    {
+      "authority": "current product concept",
+      "comparisonElements": [
+        "C01",
+        "C02",
+        "C04",
+        "C05",
+        "C06",
+        "C08",
+        "C09",
+        "C10",
+        "C11",
+        "C12"
+      ],
+      "id": "K00",
+      "requirement": "発売済みAAA級タイトルに劣らないゲーム品質。",
+      "source": "CLAUDE.md / Product concept"
+    },
+    {
+      "authority": "current product concept",
+      "comparisonElements": [
+        "C01",
+        "C02",
+        "C06"
+      ],
+      "id": "K01",
+      "requirement": "第三者視点の日本的な剣戟アクション。",
+      "source": "CLAUDE.md / Product concept"
+    },
+    {
+      "authority": "current product concept",
+      "comparisonElements": [
+        "C02",
+        "C08",
+        "C09",
+        "C11",
+        "C12"
+      ],
+      "id": "K02",
+      "requirement": "スマートフォン優先、デスクトップにも対応。",
+      "source": "CLAUDE.md / Product concept"
+    },
+    {
+      "authority": "current product concept",
+      "comparisonElements": [
+        "C04",
+        "C06",
+        "C10",
+        "C11"
+      ],
+      "id": "K03",
+      "requirement": "Three.js。素材・モデル・アニメーション・音は起動時生成、外部実行時素材なし。",
+      "source": "CLAUDE.md / Product concept"
+    },
+    {
+      "authority": "current product concept",
+      "comparisonElements": [
+        "C04",
+        "C05",
+        "C06",
+        "C10"
+      ],
+      "id": "K06",
+      "requirement": "山の社、竹の谷、秋のmagic hourという舞台。",
+      "source": "CLAUDE.md / Product concept"
+    }
+  ],
+  "crossElementEvidence": {
+    "design": "D01",
+    "elements": [
+      "C01",
+      "C04",
+      "C05",
+      "C06",
+      "C10"
+    ],
+    "id": "X01",
+    "method": "同じ無編集の接近→戦闘→終息映像・音声を各要素の資料に含める。別々に成功した断片をつないで一連の体験の成功としない。",
+    "status": "not measured"
+  },
+  "fixedInstructions": "AI_DEVELOPMENT/FIXED_INSTRUCTIONS.md",
+  "freshDesignClauses": [
+    {
+      "authority": "chosen fresh design, not an additional owner-fixed rule",
+      "comparisonElements": [
+        "C01",
+        "C04",
+        "C05",
+        "C06",
+        "C10"
+      ],
+      "id": "D01",
+      "requirement": "静かな接近→短い緊張→刀の重さ→戦闘後の風の静けさをつなぐ。",
+      "source": "AI_DEVELOPMENT/FRESH_DESIGN.md"
+    },
+    {
+      "authority": "chosen fresh design, not an additional owner-fixed rule",
+      "comparisonElements": [
+        "C01",
+        "C02",
+        "C09",
+        "C12"
+      ],
+      "id": "D02",
+      "requirement": "移動・視点・斬撃・防御・回避・注視をキー／ポインタ／複数タッチから操作できる。取消・フォーカス喪失で押下を解放。",
+      "source": "AI_DEVELOPMENT/FRESH_DESIGN.md"
+    },
+    {
+      "authority": "chosen fresh design, not an additional owner-fixed rule",
+      "comparisonElements": [
+        "C08",
+        "C09"
+      ],
+      "id": "D03",
+      "requirement": "日本語の最小限の案内、状態表示とセーフエリア。",
+      "source": "AI_DEVELOPMENT/FRESH_DESIGN.md"
+    },
+    {
+      "authority": "chosen fresh design, not an additional owner-fixed rule",
+      "comparisonElements": [
+        "C08",
+        "C11",
+        "C12"
+      ],
+      "id": "D04",
+      "requirement": "開始・停止・再開・死亡・勝利・再挑戦・回転・WebGL復旧。",
+      "source": "AI_DEVELOPMENT/FRESH_DESIGN.md"
+    },
+    {
+      "authority": "chosen fresh design, not an additional owner-fixed rule",
+      "comparisonElements": [
+        "C04",
+        "C06",
+        "C10"
+      ],
+      "id": "D05",
+      "requirement": "地形・社殿・植生・人体・布・刀の生成。状態と演出の対応、風の一貫性。",
+      "source": "AI_DEVELOPMENT/FRESH_DESIGN.md"
+    },
+    {
+      "id": "D06",
+      "requirement": "敵の予備動作と攻撃の準備・有効・回復、体力・体幹・弾き・回避を読める形で連動。攻撃の表示と判定は同じ位相で、1振りの同一対象への多重命中を防ぐ。",
+      "comparisonElements": [
+        "C01",
+        "C06"
+      ],
+      "authority": "chosen fresh design, not an additional owner-fixed rule",
+      "source": "AI_DEVELOPMENT/FRESH_DESIGN.md / simulation"
+    }
+  ],
+  "groupingDecisions": [
+    {
+      "decision": "merge proposed",
+      "droppedObligations": [],
+      "from": [
+        "C02",
+        "C03"
+      ],
+      "reason": "同じGTの連続移動・接敵資料で入力、身体、追従、視認性を一体比較でき、切り分ける必要がない。両方の診断項目は保持。",
+      "to": "C02"
+    },
+    {
+      "decision": "merge proposed",
+      "droppedObligations": [],
+      "from": [
+        "C04",
+        "C07"
+      ],
+      "reason": "地形の導線と植生・光・風は同じ場所を構成し、連続探索と静止画を一つの資料組にできる。GT主参照、SK補助参照および旧E04/E05/E11の診断を保持。",
+      "to": "C04"
+    }
+  ],
+  "historicalDiagnostics": {
+    "clauses": [
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C01",
+          "C02",
+          "C04",
+          "C05",
+          "C06",
+          "C08",
+          "C09",
+          "C10",
+          "C11",
+          "C12"
+        ],
+        "currentOutcomeLinks": [
+          "K00"
+        ],
+        "id": "K00",
+        "requirement": "発売済みAAA級タイトルに劣らないゲーム品質。",
+        "source": "CLAUDE.md: The goal, unchanged"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C01",
+          "C02",
+          "C06"
+        ],
+        "currentOutcomeLinks": [
+          "K01"
+        ],
+        "id": "K01",
+        "requirement": "三人称の日本的な剣戟アクション。",
+        "source": "CLAUDE.md: The goal, unchanged"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C02",
+          "C08",
+          "C09",
+          "C11",
+          "C12"
+        ],
+        "currentOutcomeLinks": [
+          "K02"
+        ],
+        "id": "K02",
+        "requirement": "スマートフォンを主対象としデスクトップも支援。",
+        "source": "CLAUDE.md: The goal, unchanged; ARCHITECTURE.md §0/§6"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C06",
+          "C04",
+          "C10",
+          "C11"
+        ],
+        "currentOutcomeLinks": [
+          "K03"
+        ],
+        "id": "K03",
+        "requirement": "Three.js、起動時に全素材・モデル・動き・音を生成、外部実行時素材なし。品質の上限ではなく実装条件。",
+        "source": "CLAUDE.md: The goal, unchanged; ARCHITECTURE.md §0"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C01",
+          "C06",
+          "C08",
+          "C10"
+        ],
+        "currentOutcomeLinks": [],
+        "id": "K04",
+        "requirement": "防御・弾き・回避・体幹崩しと読める敵の行動。",
+        "source": "ARCHITECTURE.md §3"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C02",
+          "C06"
+        ],
+        "currentOutcomeLinks": [],
+        "id": "K05",
+        "requirement": "実寸の身体と接地、歩行1.9・走行5.4・疾走7.2m/s。",
+        "source": "ARCHITECTURE.md §4"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C04",
+          "C05",
+          "C10"
+        ],
+        "currentOutcomeLinks": [
+          "K06"
+        ],
+        "id": "K06",
+        "requirement": "山の社、竹の海、秋のmagic hour、谷の霧、朱鳥居、古い杉、濡れた石、落花と残り火。",
+        "source": "ARCHITECTURE.md §5 setting"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C06",
+          "C04",
+          "C08"
+        ],
+        "currentOutcomeLinks": [],
+        "id": "K07",
+        "requirement": "暖色光と寒色影、指定素材色を持つ一貫したパレット。",
+        "source": "ARCHITECTURE.md §5 palette"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C04"
+        ],
+        "currentOutcomeLinks": [],
+        "id": "V01",
+        "requirement": "空・空気遠近・太陽円盤。",
+        "source": "ARCHITECTURE.md §5.1"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C04"
+        ],
+        "currentOutcomeLinks": [],
+        "id": "V02",
+        "requirement": "カスケード影と近景の接触硬化。",
+        "source": "ARCHITECTURE.md §5.2"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C06",
+          "C04"
+        ],
+        "currentOutcomeLinks": [],
+        "id": "V03",
+        "requirement": "AOと隙間の接触感。",
+        "source": "ARCHITECTURE.md §5.3"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C04"
+        ],
+        "currentOutcomeLinks": [],
+        "id": "V04",
+        "requirement": "鳥居と竹を通す体積光。",
+        "source": "ARCHITECTURE.md §5.4"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C06",
+          "C04"
+        ],
+        "currentOutcomeLinks": [],
+        "id": "V05",
+        "requirement": "草・竹・旗・布を連続して動かす突風。",
+        "source": "ARCHITECTURE.md §5.5"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C01",
+          "C06",
+          "C04"
+        ],
+        "currentOutcomeLinks": [],
+        "id": "V06",
+        "requirement": "異方性の刀身反射とリボン状軌跡。",
+        "source": "ARCHITECTURE.md §5.6"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C04"
+        ],
+        "currentOutcomeLinks": [],
+        "id": "V07",
+        "requirement": "柔らかい広いブルーム、フィルム調色、控えめな粒子と周辺減光。",
+        "source": "ARCHITECTURE.md §5.7"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C01",
+          "C06",
+          "C04",
+          "C10"
+        ],
+        "currentOutcomeLinks": [],
+        "id": "V08",
+        "requirement": "ヒットストップ、揺れ、火花、血煙、痕跡を伴う衝撃。",
+        "source": "ARCHITECTURE.md §5.8"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C06",
+          "C04"
+        ],
+        "currentOutcomeLinks": [],
+        "id": "V09",
+        "requirement": "すべての表面に素材の粒度がある。",
+        "source": "ARCHITECTURE.md §5.9"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C01",
+          "C02",
+          "C06",
+          "C04"
+        ],
+        "currentOutcomeLinks": [],
+        "id": "V10",
+        "requirement": "背景から常に読める敵の輪郭。",
+        "source": "ARCHITECTURE.md §5.10"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C09"
+        ],
+        "currentOutcomeLinks": [],
+        "id": "U01",
+        "requirement": "左親指の初回接触点を原点とする可動スティック。",
+        "source": "ARCHITECTURE.md §6"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C01",
+          "C02",
+          "C09"
+        ],
+        "currentOutcomeLinks": [],
+        "id": "U02",
+        "requirement": "右親指のドラッグでカメラ、フリック方向で斬撃、タップで軽攻撃。",
+        "source": "ARCHITECTURE.md §6"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C01",
+          "C08",
+          "C09"
+        ],
+        "currentOutcomeLinks": [],
+        "id": "U03",
+        "requirement": "ガード/弾きの長押し・回避・特殊・ロックの4ボタン。",
+        "source": "ARCHITECTURE.md §6"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C08",
+          "C09"
+        ],
+        "currentOutcomeLinks": [],
+        "id": "U04",
+        "requirement": "safe-area対応、48CSSpx以上と64pxヒット領域。",
+        "source": "ARCHITECTURE.md §6"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C08",
+          "C11"
+        ],
+        "currentOutcomeLinks": [],
+        "id": "U05",
+        "requirement": "HUDはcanvas2d overlay。",
+        "source": "ARCHITECTURE.md §6"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C01",
+          "C09"
+        ],
+        "currentOutcomeLinks": [],
+        "id": "U06",
+        "requirement": "最寄り敵への自動正対補助を既定で有効。片手に近い操作を支援。",
+        "source": "ARCHITECTURE.md §6"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C11"
+        ],
+        "currentOutcomeLinks": [],
+        "id": "P01",
+        "requirement": "MEDIUM、Adreno640級Androidで60fps。デスクトップの高品質設定も支援。",
+        "source": "ARCHITECTURE.md §0 rule 2"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C11"
+        ],
+        "currentOutcomeLinks": [],
+        "id": "P02",
+        "requirement": "1280x720で140draw calls・900k triangles・5ms JS・48MB textures・1.6MB gzip以下。",
+        "source": "ARCHITECTURE.md §7"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C12"
+        ],
+        "currentOutcomeLinks": [],
+        "id": "S01",
+        "requirement": "有限値の境界、可変dtで安定、通常起動に診断副作用なし。",
+        "source": "ARCHITECTURE.md §0 rules 3-5c"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C12"
+        ],
+        "currentOutcomeLinks": [],
+        "id": "S02",
+        "requirement": "初期化、更新、破棄、WebGL喪失復旧と再挑戦で破綻しない。",
+        "source": "ARCHITECTURE.md §1/§8; AI_DEVELOPMENT/CONSTRAINTS.md"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C04"
+        ],
+        "currentOutcomeLinks": [],
+        "id": "W01",
+        "requirement": "220mの固定プレイ領域と山・谷・稜線・参道の統合。4戦を最大コンテンツ数とは扱わない。",
+        "source": "ARCHITECTURE.md §9"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C06",
+          "C04",
+          "C10"
+        ],
+        "currentOutcomeLinks": [],
+        "id": "W02",
+        "requirement": "単一の突風場が草・竹・旗・布・花弁を一緒に動かす。",
+        "source": "ARCHITECTURE.md §10"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C01",
+          "C04",
+          "C05",
+          "C06",
+          "C08",
+          "C10",
+          "C11",
+          "C12"
+        ],
+        "currentOutcomeLinks": [],
+        "id": "N01",
+        "requirement": "探索・世界・物語・人物・選択・UI・音・AI・性能・安定性をコンセプト全体で評価。",
+        "source": "ARCHITECTURE.md introduction; AI_DEVELOPMENT/REQUIREMENTS.md"
+      },
+      {
+        "authority": "historical/supporting diagnostic; not a user-fixed clause",
+        "comparisonElements": [
+          "C08",
+          "C12"
+        ],
+        "currentOutcomeLinks": [],
+        "id": "N02",
+        "requirement": "開始、ポーズ、設定を含む利用可能なゲームの流れ。",
+        "source": "ARCHITECTURE.md §8 Menus ownership; CLAUDE.md shipped game goal"
+      }
+    ],
+    "path": "AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml",
+    "policy": "Entire legacy file preserved byte-for-byte. Its 16 groups/62 criteria, numerical thresholds and old results remain historical/supporting, not fresh-runtime verdicts or additional fixed instructions.",
+    "sha256": "80104bcecc69145badf68272d3d8cb8d8b60ec29f261179d04715f5ca4846e67"
+  },
+  "initialApplication": {
+    "complete": false,
+    "conceptChanged": false,
+    "extraction": "10 coherent comparison units proposed after two explicit merge tests. Structural coverage verified; largest-comparable semantic review still open. No new quality verdict.",
+    "selection": "Incomplete four-axis substantiation is explicitly recorded; no references replaced because of candidate results."
+  },
+  "references": {
+    "GI": "Genshin Impact (2020)",
+    "GT": "Ghost of Tsushima / Director's Cut (2020/2021; PC 2024)",
+    "SK": "SEKIRO: Shadows Die Twice (2019)"
+  },
+  "runtime": {
+    "basicEvidence": "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-ci-afc8bcd.json",
+    "branch": "codex/game2-rebuild-20260913",
+    "formalEvidence": null,
+    "legacyEvidenceReusableAsCurrent": false,
+    "revision": "afc8bcdb0ddb869c93228c45b845c90d48a17083"
+  },
+  "schemaVersion": 1,
+  "sources": [
+    {
+      "accessed": "2026-09-13",
+      "id": "GT-C",
+      "kind": "public review/reception research; not coordinator gameplay or blind evidence",
+      "limitation": "筆者のPC体験。カメラ・音・復旧の長期優位や全環境での無故障は証明しない。",
+      "observation": "4年後も美術を評価。一方で平坦な光、静的な環境、人物表現の古さを指摘。レビュー中はクラッシュなし、遠景描画不具合1件。",
+      "published": "2024-05-21",
+      "url": "https://www.pcgamer.com/games/action/ghost-of-tsushima-directors-cut-review/"
+    },
+    {
+      "accessed": "2026-09-13",
+      "id": "GT-P",
+      "kind": "public review/reception research; not coordinator gameplay or blind evidence",
+      "limitation": "個別の投稿群でありプレイヤー全体の合意ではない。投稿時刻は相対表示のため正確な日時の検証は保留。",
+      "observation": "景観・剣戟への賛否と、探索の反復・限られた敵の種類への批判が併存。",
+      "published": null,
+      "url": "https://www.reddit.com/r/patientgamers/comments/18vkygc/just_finished_ghost_of_tsushima_ps5_directors_cut/"
+    },
+    {
+      "accessed": "2026-09-13",
+      "id": "SK-C",
+      "kind": "public review/reception research; not coordinator gameplay or blind evidence",
+      "limitation": "台詞がある作品。無音声で同等の物語体験を達成済みとは推論しない。",
+      "observation": "攻防と体幹の関係、対応を学ぶ戦闘、弾きの手応えを具体的に評価。",
+      "published": "2019-03-25",
+      "url": "https://www.pcgamer.com/sekiro-review/"
+    },
+    {
+      "accessed": "2026-09-13",
+      "id": "SK-L",
+      "kind": "public review/reception research; not coordinator gameplay or blind evidence",
+      "limitation": "専門家1名の後年評価で、音・人物・物語すべての長期優位の証明ではない。",
+      "observation": "発売から5年後の批評でも剣戟の質、攻撃の重さと敵の応答を評価。",
+      "published": "2024-12-16",
+      "url": "https://rpgamer.com/review/sekiro-shadows-die-twice-review/"
+    },
+    {
+      "accessed": "2026-09-13",
+      "id": "SK-P",
+      "kind": "public review/reception research; not coordinator gameplay or blind evidence",
+      "limitation": "個別プレイヤーの意見。総意や全要素への評価には広げない。正確な投稿日時は保留。",
+      "observation": "弾き中心の戦闘・学習後の満足への支持と、難しさが合わなかったという声を確認。",
+      "published": null,
+      "url": "https://www.reddit.com/r/ShouldIbuythisgame/comments/1bexh6t/should_i_buy_sekiro_shadows_die_twice/"
+    },
+    {
+      "accessed": "2026-09-13",
+      "id": "GI-C",
+      "kind": "public review/reception research; not coordinator gameplay or blind evidence",
+      "limitation": "2021年の使用感。現在の小型端末や持続60fpsの測定ではない。",
+      "observation": "Galaxy S10でタッチ操作の応答を評価。慣れを要し、小型・旧型端末では難しくなり得ると指摘。",
+      "published": null,
+      "url": "https://www.androidcentral.com/genshin-impact-review",
+      "lastUpdated": "2021-06-15",
+      "dateType": "Page byline says last updated; original publication not verified."
+    },
+    {
+      "accessed": "2026-09-13",
+      "id": "GI-P",
+      "kind": "public review/reception research; not coordinator gameplay or blind evidence",
+      "limitation": "総合評価を入力・読み込み・安定性能の個別評価に転用しない。現在の要素単独の長期評価は未確認。",
+      "observation": "公開レビューと評価集計を閲覧。",
+      "published": null,
+      "url": "https://apps.apple.com/us/app/genshin-impact/id1517783697"
+    },
+    {
+      "accessed": "2026-09-13",
+      "id": "GT-A",
+      "kind": "primary professional awards record; not blind evidence",
+      "limitation": "発売翌年の専門評価。音の長期評価やプレイヤー評価、実際の比較音声を代替しない。",
+      "observation": "Ghost of TsushimaはSound Design of the Yearを同時受賞し、Best Game FoleyとCreative and Technical Achievement in Musicも受賞。",
+      "published": "2021-06-01",
+      "url": "https://www.audiogang.org/game-audio-network-guild-announces-19th-annual-g-a-n-g-award-winners/"
+    }
+  ],
+  "status": "not measured",
+  "updatedAt": "2026-09-13",
+  "adoptionReview": "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-catalog-review.json"
+}

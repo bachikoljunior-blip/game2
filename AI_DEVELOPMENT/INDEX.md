@@ -8,6 +8,11 @@ Old PR #10, architecture and round entries below are preserved history, not the
 current runtime task. Earlier optional-rebuild routing is superseded.
 The fixed instructions and explicit user directives govern; plans and tests are tools.
 
+Read `COMPARISON_ELEMENTS.yaml` for the fresh first-application comparison catalog,
+current concept provenance, reference research gaps and fresh-only verdicts. Its
+grouping/selection remains under review. `REFERENCE_BENCHMARKS.yaml` is preserved
+historical/supporting material; its old measured results do not describe `fresh/`.
+
 ---
 
 # AI development index
@@ -34,11 +39,12 @@ visual-round measurements stay in `../HANDOFF.md`; they are referenced, not dupl
 |---|---|
 | Fixed instruction and completion definition | `FIXED_INSTRUCTIONS.md` |
 | Changeable execution procedure | `../PROJECT_OPERATING_PROTOCOL.md` |
-| Product architecture, owners, art/UX/performance contract | `../ARCHITECTURE.md` |
+| Historical/supporting architecture and technical contracts, subordinate to current instructions | `../ARCHITECTURE.md` |
 | Current concise project state | `PROJECT_STATE.yaml` |
 | Active logical session and exact continuation point | `SESSION_STATE.yaml` |
 | Requirements and constraints | `REQUIREMENTS.md`, `CONSTRAINTS.md` |
-| Per-element reference titles, why each was chosen, and the bar it sets | `REFERENCE_BENCHMARKS.yaml` |
+| Fresh concept-derived comparison catalog and reference-selection evidence | `COMPARISON_ELEMENTS.yaml` |
+| Preserved legacy technical criteria and historical results, not fresh verdicts | `REFERENCE_BENCHMARKS.yaml` |
 | Supporting technical gates (not substitutes for element blind verdicts) | `ACCEPTANCE_CRITERIA.yaml` |
 | Complete plan and current actionable work | `PLAN_TREE.yaml`, `ACTIVE_FRONTIER.yaml` |
 | Dependencies between tasks | `TASK_GRAPH.yaml` |
