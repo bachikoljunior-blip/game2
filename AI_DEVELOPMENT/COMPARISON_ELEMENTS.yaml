@@ -236,15 +236,16 @@
       "referenceSelection": {
         "axes": {
           "elementQuality": {
-            "assessment": "substantiation incomplete",
-            "finding": "景観、風と地形・建築が一体になった場所を基準とする。探索の反復と静的環境への批判も保存。",
+            "assessment": "supported selection rationale; not a game verdict",
+            "finding": "専門批評は、風で目的地を示し、鳥・狐が社等へ導き、天候・景観・音楽が場所の感情を作る一体性を具体的に評価した。制作側の設計説明は、植生・布・粒子が風へ応答して誘導と映画的緊張を同じ環境表現で担うことを示す。後年批評の静的環境への批判も品質上限として保存する。",
             "sources": [
               "GT-C",
-              "GT-P"
+              "GT-P",
+              "GT-WORLD-D",
+              "GT-WORLD-C",
+              "GT-WORLD-P"
             ],
-            "unresolved": [
-              "景観・風の評価根拠はあるが、統合した導線・経路理解・環境への応答の評価は未完了。"
-            ]
+            "unresolved": []
           },
           "fitToConcept": {
             "assessment": "supported selection rationale; not a game verdict",
@@ -265,32 +266,29 @@
             "unresolved": []
           },
           "longevity": {
-            "assessment": "substantiation incomplete",
-            "finding": "2024年批評は4年後も美術を評価する一方、技術面の古さを指摘。",
-            "sources": [
-              "GT-C"
-            ],
-            "unresolved": [
-              "景観・風の評価根拠はあるが、統合した導線・経路理解・環境への応答の評価は未完了。"
-            ]
-          },
-          "reception": {
-            "assessment": "substantiation incomplete",
-            "finding": "専門批評と個別プレイヤー投稿を区別。美術の評価と反復への批判を併記。",
+            "assessment": "supported selection rationale; not a game verdict",
+            "finding": "2024年批評が美術を継続評価し、2025年の続編取材でも風による誘導は前作の記憶に残る中核として継承された。一方、前作の直線誘導が崖等を回避しない弱点も明示され、新作側ではそれを合格ラインとして再現せず超える。",
             "sources": [
               "GT-C",
-              "GT-P"
+              "GT-WORLD-L"
             ],
-            "unresolved": [
-              "導線・経路理解・環境応答に対する専門家とプレイヤー両方の具体的評価は追加確認が必要。"
-            ]
+            "unresolved": []
+          },
+          "reception": {
+            "assessment": "supported selection rationale; not a game verdict",
+            "finding": "専門批評は誘導・天候・景観の一体性を高く評価。プレイヤー投稿群は、画面隅の地図を見ず世界を読める点を支持する一方、実際の目標探索で迷う、通常の目印を好むという反例も含む。個別投稿を総意には拡張しない。",
+            "sources": [
+              "GT-C",
+              "GT-P",
+              "GT-WORLD-C",
+              "GT-WORLD-P",
+              "GT-WORLD-P-COUNTER"
+            ],
+            "unresolved": []
           }
         },
-        "decision": "既存参照を保持。初回選定の根拠を補強中であり、全4軸が確定したとは扱わない。",
+        "decision": "GTをC04の主参照として確定。全4軸の選定根拠は揃ったが、これはゲーム判定ではない。風と環境の一体性を基準とし、直線誘導・探索迷子・静的環境という既知の弱点は再現せず超える。補助参照SKの初回選定と実資料比較は別途未完了。",
         "unresolved": [
-          "景観・風の評価根拠はあるが、統合した導線・経路理解・環境への応答の評価は未完了。",
-          "景観・風の評価根拠はあるが、統合した導線・経路理解・環境への応答の評価は未完了。",
-          "導線・経路理解・環境応答に対する専門家とプレイヤー両方の具体的評価は追加確認が必要。",
           "実際の同目的資料を取得し出所を推定できない独立評価を行う。レビューは実比較の代用ではない。"
         ]
       },
@@ -763,32 +761,28 @@
             "unresolved": []
           },
           "longevity": {
-            "assessment": "substantiation incomplete",
-            "finding": "2024年批評は4年後も美術を評価する一方、技術面の古さを指摘。",
+            "assessment": "supported selection rationale; not a game verdict",
+            "finding": "2021年の専門賞、2022年の環境録音技術記録、2025年の続編音響取材が継続して参照可能。続編側は前作の剣戟の物理感とミックスの情緒的連続性を継承しつつ、静的ループ・固定音源・単一衝撃音を改善対象にした。",
             "sources": [
-              "GT-C"
+              "GT-A",
+              "GT-AUDIO-D",
+              "GT-AUDIO-L"
             ],
-            "unresolved": [
-              "当該要素が長期にわたり基準とされる根拠が不足。"
-            ]
+            "unresolved": []
           },
           "reception": {
-            "assessment": "substantiation incomplete",
-            "finding": "専門批評と個別プレイヤー投稿を区別。美術の評価と反復への批判を併記。",
+            "assessment": "supported selection rationale; not a game verdict",
+            "finding": "専門団体は音響設計・フォーリー・音楽を受賞対象とし、専門批評も音楽を高く評価。プレイヤー投稿群ではヘッドホン時の音響・3D音響への支持と、音楽の希薄さ・戦闘前音の反復・他作品の方が優れるという反例が併存する。個別投稿を総意には拡張しない。",
             "sources": [
-              "GT-C",
-              "GT-P",
-              "GT-A"
+              "GT-A",
+              "GT-WORLD-C",
+              "GT-AUDIO-P"
             ],
-            "unresolved": [
-              "当該要素単独のプレイヤー評価を追加確認する。"
-            ]
+            "unresolved": []
           }
         },
-        "decision": "既存参照を保持。初回選定の根拠を補強中であり、全4軸が確定したとは扱わない。",
+        "decision": "GTをC10の参照として確定。全4軸の選定根拠は揃ったが、これはゲーム判定ではない。剣戟の物理感、環境の正確さ、場面間の情緒的連続性を基準とし、静的ループ・固定音源・反復する戦闘前音は再現せず超える。",
         "unresolved": [
-          "当該要素が長期にわたり基準とされる根拠が不足。",
-          "当該要素単独のプレイヤー評価を追加確認する。",
           "実際の同目的資料を取得し出所を推定できない独立評価を行う。レビューは実比較の代用ではない。"
         ]
       },
@@ -1634,9 +1628,81 @@
       "observation": "Ghost of TsushimaはSound Design of the Yearを同時受賞し、Best Game FoleyとCreative and Technical Achievement in Musicも受賞。",
       "published": "2021-06-01",
       "url": "https://www.audiogang.org/game-audio-network-guild-announces-19th-annual-g-a-n-g-award-winners/"
+    },
+    {
+      "accessed": "2026-09-13",
+      "id": "GT-WORLD-D",
+      "kind": "primary developer design record; not independent reception or blind evidence",
+      "limitation": "制作側が意図と手法を説明した資料。完成品質やプレイヤーの理解を独立に証明しない。",
+      "observation": "場所を自然美と人工的秩序で構成し、風に植生・布・粒子を反応させて誘導と映画的緊張を一体化した設計を説明。",
+      "published": "2020-07-09",
+      "url": "https://blog.playstation.com/2020/07/09/crafting-the-world-of-tsushima/"
+    },
+    {
+      "accessed": "2026-09-13",
+      "id": "GT-WORLD-C",
+      "kind": "independent professional review/reception research; not blind evidence",
+      "limitation": "発売時の専門批評1件。初見経路理解の成功率や長期評価を単独では証明しない。",
+      "observation": "風による目的地誘導、鳥・狐による社等への誘導、天候・景観・音楽が場所の感情を作る一体性を具体的に高く評価。",
+      "published": "2020-07-14",
+      "url": "https://gameinformer.com/review/ghost-of-tsushima/ghost-of-tsushima-review-a-most-honorable-epic"
+    },
+    {
+      "accessed": "2026-09-13",
+      "id": "GT-WORLD-P",
+      "kind": "player discussion/reception research; not population consensus or blind evidence",
+      "limitation": "作品コミュニティ内の個別投稿群で、プレイヤー全体を代表しない。発売時期の反応で長期評価ではない。",
+      "observation": "風が画面隅の地図から視線を戻し、景観と空間方向を読ませる点への支持が複数ある。一部は視認・認知上の案内不足や通常の目印を好む反例を示す。",
+      "published": "2020-11-28",
+      "url": "https://www.reddit.com/r/ghostoftsushima/comments/k2koqx/openworld_game_devs_should_learn_something_from/"
+    },
+    {
+      "accessed": "2026-09-13",
+      "id": "GT-WORLD-P-COUNTER",
+      "kind": "post-completion player review/reception counterevidence; not population consensus or blind evidence",
+      "limitation": "個別プレイヤーの完走後評価。正確な公開日はページの相対表示のため未確定。",
+      "observation": "風誘導の独自性を認める一方、ミニマップ不在で敵拠点内の目標探索に長時間迷ったと批判。景観・最適化への初期評価が長時間では薄れたとも述べる。",
+      "published": null,
+      "url": "https://www.reddit.com/r/patientgamers/comments/110actu/short_impressions_on_ghost_of_tsushima_directors/"
+    },
+    {
+      "accessed": "2026-09-13",
+      "id": "GT-WORLD-L",
+      "kind": "five-year-later developer interview with independent publication; not blind evidence",
+      "limitation": "続編取材であり独立した再評価ではない。記憶性の表現は質問者、設計差は開発者説明として区別する。",
+      "observation": "2025年取材で風誘導は前作の中核・記憶に残る要素として扱われ続編へ継承。一方、前作の直線誘導は崖など大障害物を回避しないため続編で改良したと説明。",
+      "published": "2025-07-17",
+      "url": "https://gameinformer.com/interview/2025/07/17/ghost-of-yotei-directors-share-philosophy-on-balancing-freedom-with-story"
+    },
+    {
+      "accessed": "2026-09-13",
+      "id": "GT-AUDIO-D",
+      "kind": "primary developer audio-production record; not independent reception or blind evidence",
+      "limitation": "音響担当者の制作記録。実装意図・素材由来を示すが、聴取品質や優位性を独立に証明しない。",
+      "observation": "日本各地で鳥、川、風などを録音し、実在種と環境に対応する正確なアンビエンスを制作した経緯を記録。",
+      "published": "2022-09-10",
+      "url": "https://bradleymeyer.com/wp-core/2022/09/10/the-sound-design-of-ghost-of-tsushima-crafting-the-ambience/"
+    },
+    {
+      "accessed": "2026-09-13",
+      "id": "GT-AUDIO-L",
+      "kind": "five-year-later specialist interview with original audio team; not blind evidence",
+      "limitation": "後継作の制作側インタビューで独立レビューではない。前作の長所と改善点を同じ証言から得ている。",
+      "observation": "前作の剣戟の物理感と場面間の情緒的ミックスを継承対象とする一方、静的ループ、固定位置の環境音、単一衝撃音を改善対象と明記。",
+      "published": "2025-11-06",
+      "url": "https://www.asoundeffect.com/ghost-of-yotei-game-audio/"
+    },
+    {
+      "accessed": "2026-09-13",
+      "id": "GT-AUDIO-P",
+      "kind": "player discussion/reception research; not population consensus or blind evidence",
+      "limitation": "受賞を扱うコミュニティ内の個別投稿群で選択偏りがある。発売翌年の反応で長期評価ではない。",
+      "observation": "ヘッドホン時の音響、3D音響、映像と音の統合への支持と、音楽が希薄・戦闘前音が反復的・他作品の方が優れるという反例が併存。",
+      "published": "2021-10-15",
+      "url": "https://www.reddit.com/r/PS5/comments/q8xwi0/ghost_of_tsushima_wins_best_sound_design_in/"
     }
   ],
   "status": "not measured",
-  "updatedAt": "2026-09-13",
+  "updatedAt": "2026-09-13T17:30:51Z",
   "adoptionReview": "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-catalog-review.json"
 }
