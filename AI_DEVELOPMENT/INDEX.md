@@ -1,3 +1,13 @@
+# Rebuild entrypoint — 2026-09-13
+
+Read `FIXED_INSTRUCTIONS.md`, then `REBUILD_STATE.yaml` and `SESSION_STATE.yaml`.
+Active branch: `codex/game2-rebuild-20260913`. The user requested a fresh game runtime.
+The older plan and round entries below describe preserved implementation history;
+they must not restart old PR #10 or substitute old test results for rebuild evidence.
+The current runtime work has priority over historical round tasks.
+
+---
+
 # AI development index
 
 This directory is the concise, reloadable control plane for the whole project. Detailed
