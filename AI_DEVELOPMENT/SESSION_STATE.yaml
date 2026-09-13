@@ -11,10 +11,10 @@
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
     "activeTask": "FRESH-REFERENCE-AND-COMPARISON",
-    "lastSuccessfulAction": "2026-09-13: C04 place/navigation/environment and C10 audio primary GT references now have four-axis selection evidence with contrary evidence retained. Catalog has 16 source records; structural validator preserves 10 units, all 62 legacy criteria and unchanged fixed text.",
-    "currentFailingAction": "All formal elements remain not measured. C04 supplementary SK and other per-element axes are incomplete; actual matched source-blind material and fresh presentation/complete play-loop production remain.",
+    "lastSuccessfulAction": "2026-09-13: C04 supplementary SK compact-place reference now has four-axis selection evidence with contrary evidence retained. Together with C04/C10 primary GT selection, catalog has 19 source records; structural validator preserves 10 units, all 62 legacy criteria and unchanged fixed text.",
+    "currentFailingAction": "All formal elements remain not measured. Other per-element axes are incomplete; actual matched source-blind material and fresh presentation/complete play-loop production remain.",
     "currentHypothesis": null,
-    "nextAction": "Continue fresh/ at runtime afc8bcd. Read COMPARISON_ELEMENTS.yaml and 20260913-reference-selection-c04-c10.json first. Complete C04 supplementary SK and remaining incomplete per-element reference axes. Acquire actual matched media for unbroken X01 quiet-approach -> tension -> sword exchange -> postcombat-wind, improve fresh generated presentation/audio, then independent source-blind comparison. Every formal element remains not measured. Preserve public payload; deadline remains 2026-09-20T07:51:53Z.",
+    "nextAction": "Continue fresh/ at runtime afc8bcd. Read COMPARISON_ELEMENTS.yaml plus 20260913-reference-selection-c04-c10.json and 20260913-reference-selection-c04-sk.json first. Complete remaining incomplete per-element reference axes. Acquire actual matched media for unbroken X01 quiet-approach -> tension -> sword exchange -> postcombat-wind, improve fresh generated presentation/audio, then independent source-blind comparison. Every formal element remains not measured. Preserve public payload; deadline remains 2026-09-20T07:51:53Z.",
     "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
     "pendingVerification": [
       "Largest-comparable semantic review of proposed10units",
@@ -75,7 +75,8 @@
       "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-concept-audit.json",
       "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-catalog-review.json",
       "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-catalog-checkpoint.md",
-      "AI_DEVELOPMENT/EVIDENCE/20260913-reference-selection-c04-c10.json"
+      "AI_DEVELOPMENT/EVIDENCE/20260913-reference-selection-c04-c10.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260913-reference-selection-c04-sk.json"
     ],
     "publicRuntimeRevision": "86512c3bfdc69e03b5b490d9b0d79ec9da141343"
   },
@@ -87,7 +88,7 @@
     "completion": "All concept elements satisfied by evidenced blind comparison.",
     "current_unit": "2026-09-13-fresh-design",
     "unit_status": "active",
-    "first_action": "Continue fresh/ at runtime afc8bcd. Read COMPARISON_ELEMENTS.yaml and 20260913-reference-selection-c04-c10.json first. Complete C04 supplementary SK and remaining incomplete per-element reference axes. Acquire actual matched media for unbroken X01 quiet-approach -> tension -> sword exchange -> postcombat-wind, improve fresh generated presentation/audio, then independent source-blind comparison. Every formal element remains not measured. Preserve public payload; deadline remains 2026-09-20T07:51:53Z.",
+    "first_action": "Continue fresh/ at runtime afc8bcd. Read COMPARISON_ELEMENTS.yaml plus 20260913-reference-selection-c04-c10.json and 20260913-reference-selection-c04-sk.json first. Complete remaining incomplete per-element reference axes. Acquire actual matched media for unbroken X01 quiet-approach -> tension -> sword exchange -> postcombat-wind, improve fresh generated presentation/audio, then independent source-blind comparison. Every formal element remains not measured. Preserve public payload; deadline remains 2026-09-20T07:51:53Z.",
     "implementation_strategy": "Fresh design and implementation; needs-before-reuse, per latest direct user instruction.",
     "unitEndReason": null
   }

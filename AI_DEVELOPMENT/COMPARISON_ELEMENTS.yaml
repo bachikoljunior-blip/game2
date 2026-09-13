@@ -287,7 +287,7 @@
             "unresolved": []
           }
         },
-        "decision": "GTをC04の主参照として確定。全4軸の選定根拠は揃ったが、これはゲーム判定ではない。風と環境の一体性を基準とし、直線誘導・探索迷子・静的環境という既知の弱点は再現せず超える。補助参照SKの初回選定と実資料比較は別途未完了。",
+        "decision": "GTをC04の主参照として確定。全4軸の選定根拠は揃ったが、これはゲーム判定ではない。風と環境の一体性を基準とし、直線誘導・探索迷子・静的環境という既知の弱点は再現せず超える。補助参照SKも局所的な場所構成に限定して4軸を確認した。実資料比較は別途未完了。",
         "unresolved": [
           "実際の同目的資料を取得し出所を推定できない独立評価を行う。レビューは実比較の代用ではない。"
         ]
@@ -296,52 +296,44 @@
       "supplementaryReference": {
         "axes": {
           "elementQuality": {
-            "assessment": "substantiation incomplete",
-            "finding": "SKの場所構成単独の根拠を追加する。",
+            "assessment": "supported selection rationale; not a game verdict",
+            "finding": "独立批評は、大きく分離された各区域を、主経路外の秘密、木・屋根をつなぐ鉤縄、同時に選べる複数の探索経路を備えた密に絡む構造として評価した。ただし序盤の景観は単調で、後半ほど多様になるという弱点も保持する。",
             "sources": [
-              "SK-C",
-              "SK-L"
+              "SK-WORLD-C",
+              "SK-WORLD-P"
             ],
-            "unresolved": [
-              "補助参照の当該軸の裏付けを完了する。"
-            ]
+            "unresolved": []
           },
           "fitToConcept": {
-            "assessment": "substantiation incomplete",
-            "finding": "局所的な社・道・見通しという場所構成の比較。マップ全体の規模を転用しない。",
+            "assessment": "supported selection rationale; not a game verdict",
+            "finding": "遠景の目印、分岐、近道、高低差を組み合わせ、社・道・見通しを一つの局所空間として読ませる部分だけをC04の補助基準にする。戦闘品質や作品全体の規模はこの選定理由へ転用しない。",
             "sources": [
-              "SK-C",
-              "SK-L"
+              "SK-WORLD-C",
+              "SK-WORLD-P"
             ],
-            "unresolved": [
-              "補助参照の当該軸の裏付けを完了する。"
-            ]
+            "unresolved": []
           },
           "longevity": {
-            "assessment": "substantiation incomplete",
-            "finding": "SKの場所構成単独の根拠を追加する。",
+            "assessment": "supported selection rationale; not a game verdict",
+            "finding": "発売後年のプレイヤー議論でも、平田屋敷・葦名・金剛山・水生村・源の宮を通る経路、遠景で結ばれた目印、垂直方向を含む相互接続が具体的に再評価されている。一方で、場所によって強弱があり迷いやすいという反例も残す。",
             "sources": [
-              "SK-C",
-              "SK-L"
+              "SK-WORLD-L"
             ],
-            "unresolved": [
-              "補助参照の当該軸の裏付けを完了する。"
-            ]
+            "unresolved": []
           },
           "reception": {
-            "assessment": "substantiation incomplete",
-            "finding": "SKの場所構成単独の根拠を追加する。",
+            "assessment": "supported selection rationale; not a game verdict",
+            "finding": "専門批評は密な区域構造と探索経路を評価し、プレイヤー投稿は遠景の訪問可能な目印、分岐、近道、複数の進入方法を支持する。後半は直線的、場所によって退屈、迷いやすいという反対意見も同じ選定記録へ含め、個別投稿を総意にしない。",
             "sources": [
-              "SK-C",
-              "SK-L"
+              "SK-WORLD-C",
+              "SK-WORLD-P",
+              "SK-WORLD-L"
             ],
-            "unresolved": [
-              "補助参照の当該軸の裏付けを完了する。"
-            ]
+            "unresolved": []
           }
         },
         "id": "SK",
-        "scope": "Existing E05 compact-space secondary reference retained; not silently substituted for GT. Requires actual traversal material and four-axis substantiation."
+        "scope": "C04の局所空間構成だけを補う参照として4軸を確認済み。GTの代替ではなく、作品全体の規模・戦闘・物語へ拡張しない。実際の同目的移動資料による出所盲検は未実施。"
       },
       "supportingCriteria": [
         "BM-EXPLORE-01",
@@ -1602,6 +1594,34 @@
     },
     {
       "accessed": "2026-09-13",
+      "id": "SK-WORLD-C",
+      "kind": "independent professional review/reception research; not blind evidence",
+      "limitation": "発売時の専門批評1件。序盤の景観を単調とも評価しており、全区域の均一な品質や初見経路理解を証明しない。",
+      "observation": "分離された大区域の密に絡む構造、主経路外の秘密、木や屋根を結ぶ鉤縄、同時に選べる複数の探索経路を評価。序盤は同系色で単調だが後半に多様化するとも記録。",
+      "published": "2019-03-25",
+      "url": "https://www.pcgamer.com/sekiro-review/"
+    },
+    {
+      "accessed": "2026-09-13",
+      "id": "SK-WORLD-P",
+      "kind": "release-period player discussion/reception research; not population consensus or blind evidence",
+      "limitation": "個別プレイヤーの議論であり総意ではない。後半は直線的、場所によって退屈という反例を同じ記録に保持する。",
+      "observation": "遠景に訪問可能な目印が見え、分岐、近道、複数の進入方法で場所同士が結ばれる点を具体的に支持。後半の線形化や一部区域への否定も併存。",
+      "published": "2019-03-29",
+      "url": "https://steamcommunity.com/app/814380/discussions/0/1771511442687637699/"
+    },
+    {
+      "accessed": "2026-09-13",
+      "id": "SK-WORLD-L",
+      "kind": "later player discussion/reception research; not population consensus or blind evidence",
+      "limitation": "コミュニティ内の個別投稿群。ページの相対日時しか確認できず正確な公開日は保留。場所による品質差と迷いやすさの反例を含む。",
+      "observation": "発売後年にも平田屋敷、葦名、金剛山、水生村、源の宮の移動、遠景の目印、複数経路と垂直方向の相互接続、日本的景観が具体的に論じられている。",
+      "published": null,
+      "url": "https://www.reddit.com/r/Sekiro/comments/1j3hhuq/sekiro_has_fantastic_level_design_and_people_that/",
+      "dateType": "Page exposes relative age only; exact publication date not treated as verified."
+    },
+    {
+      "accessed": "2026-09-13",
       "id": "GI-C",
       "kind": "public review/reception research; not coordinator gameplay or blind evidence",
       "limitation": "2021年の使用感。現在の小型端末や持続60fpsの測定ではない。",
@@ -1703,6 +1723,6 @@
     }
   ],
   "status": "not measured",
-  "updatedAt": "2026-09-13T17:30:51Z",
+  "updatedAt": "2026-09-13T18:50:32Z",
   "adoptionReview": "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-catalog-review.json"
 }

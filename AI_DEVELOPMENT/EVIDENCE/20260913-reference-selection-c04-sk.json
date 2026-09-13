@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "kind": "reference-selection research checkpoint",
+  "recordedAt": "2026-09-13T18:50:32Z",
+  "candidateRevision": "afc8bcdb0ddb869c93228c45b845c90d48a17083",
+  "catalogBaseRevision": "4323517bf41c88eb3f1e2d4419f06c58a7a601d6",
+  "scope": [
+    "C04 supplementary reference: compact place structure, sightlines and traversal"
+  ],
+  "method": "The supplementary reference was evaluated only for C04 compact-place structure. Independent professional criticism, release-period player discussion and later player discussion were separated. Contrary evidence was retained. No combat, narrative or whole-product quality was transferred into this selection.",
+  "result": {
+    "element": "C04",
+    "reference": "SK",
+    "selection": "four axes substantiated for the supplementary reference",
+    "positiveBasis": [
+      "Independent criticism identifies knotted separate zones, off-critical-path secrets, grapple-connected trees and rooftops, and multiple simultaneous exploration avenues.",
+      "Release-period player discussion identifies visitable distant landmarks, branching routes, shortcuts and multiple approaches.",
+      "Later player discussion still specifically evaluates traversal across named areas, sightline-connected landmarks, verticality and interconnection."
+    ],
+    "counterevidence": [
+      "The professional review describes the first ten hours as visually bland and samey before later variety opens.",
+      "Player discussion says some later areas become linear or uninteresting.",
+      "Later discussion includes disagreement about environment quality and reports of getting lost."
+    ],
+    "fitBoundary": "Use only as a supplement for one compact shrine/path/sightline/vertical-traversal place. Do not substitute it for C04 primary GT or transfer whole-world scale, combat or story quality.",
+    "remaining": [
+      "Acquire actual matched same-purpose traversal media and perform a valid source-blind comparison.",
+      "Complete the remaining incomplete four-axis selections for other elements."
+    ]
+  },
+  "formalVerdict": "not measured",
+  "formalVerdictReason": "No candidate/reference source-blind comparison was performed. Reference-selection research cannot assign a game-element verdict.",
+  "sources": [
+    "https://www.pcgamer.com/sekiro-review/",
+    "https://steamcommunity.com/app/814380/discussions/0/1771511442687637699/",
+    "https://www.reddit.com/r/Sekiro/comments/1j3hhuq/sekiro_has_fantastic_level_design_and_people_that/"
+  ],
+  "verification": {
+    "command": "node tools/check-fresh-catalog.mjs",
+    "result": "PASS: 10 units, 16 legacy groups, 62 legacy criteria, six negative checks, fixed instruction text unchanged"
+  }
+}

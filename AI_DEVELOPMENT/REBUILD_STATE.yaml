@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-13T17:30:51Z",
+  "updatedAt": "2026-09-13T18:50:32Z",
   "phase": "fresh-initial-comparison-audit",
   "userInstruction": "一旦ゲーム自体はゼロから作り直してくれる？",
   "activeBranch": "codex/game2-rebuild-20260913",
@@ -15,7 +15,7 @@
     "oldPr": 10,
     "optionalRebuildRouting": "ec2480166809f57fa623929bec0fbcb4d5a623a2"
   },
-  "continuation": "Continue fresh/ at runtime afc8bcd. C04 and C10 primary GT references now have recorded four-axis selection evidence plus counterevidence; this is selection research only and every formal game element remains not measured. Complete C04 supplementary SK and the remaining incomplete per-element reference axes. In parallel with eligible later runs, acquire actual matched media for an unbroken quiet-approach -> tension -> sword exchange -> postcombat-wind sequence (X01), improve fresh generated presentation/audio, then run an independent source-blind comparison. No old result transfer. Preserve public payload; deadline remains 2026-09-20T07:51:53Z.",
+  "continuation": "Continue fresh/ at runtime afc8bcd. C04 primary GT, C04 supplementary SK and C10 primary GT now have recorded four-axis selection evidence with counterevidence retained; this is selection research only and every formal game element remains not measured. Complete the remaining incomplete per-element reference axes. In parallel with eligible later runs, acquire actual matched media for an unbroken quiet-approach -> tension -> sword exchange -> postcombat-wind sequence (X01), improve fresh generated presentation/audio, then run an independent source-blind comparison. No old result transfer. Preserve public payload; deadline remains 2026-09-20T07:51:53Z.",
   "status": "not measured",
   "publication": "Keep old Pages until a verified replacement is ready. Fresh runtime is a work-branch candidate, not public product acceptance.",
   "procedureAuthority": "Fixed instructions and explicit user directives govern. Tests, task plans and architecture documents are tools chosen by the AI, not additional fixed rules.",
