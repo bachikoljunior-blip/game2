@@ -104,7 +104,13 @@ export function stepWorld(w, input = {}) {
   }
   for (const a of actors) {
     if (a.state !== 'attack') continue;
-    if (a.age < .18) move(a, Math.sin(a.yaw)*STEP*1.8, -Math.cos(a.yaw)*STEP*1.8);
+    if (a.age < .18) {
+      // A lunge closes distance; it must not carry the attacker through its target.
+      const targets=(a===p?w.enemies:[p]).filter(b=>b.hp>0 && Math.abs(angleDelta(face(a,b),a.yaw))<.95);
+      const gap=targets.length?Math.min(...targets.map(b=>distance(a,b))):Infinity;
+      const travel=Math.min(STEP*1.8,Math.max(0,gap-1.1));
+      move(a, Math.sin(a.yaw)*travel, -Math.cos(a.yaw)*travel);
+    }
     if (a.age >= .18 && a.age <= .34) {
       for (const b of a === p ? w.enemies : [p]) strike(w,a,b);
     }

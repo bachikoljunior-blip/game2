@@ -11,16 +11,15 @@
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
     "activeTask": "FRESH-FOUNDATION",
-    "lastSuccessfulAction": "Design recorded before new code. New isolated fresh runtime: simulation, input, procedural presentation, lifecycle. Eight node tests and production build passed locally.",
-    "currentFailingAction": "Local Chromium launch exits SIGTRAP before browser creation. Real rendered/input evidence must be obtained in fresh CI. No blind comparison has passed.",
+    "lastSuccessfulAction": "Fresh CI34762474176 rendered the new game and verified actual start, torii traversal, click damage100->66, pause/resume and WebGL recovery. Independent review fixes have 17 focused cases; 9 simulation tests and build pass locally.",
+    "currentFailingAction": "Fresh CI3727d78 failed death/retry timeout and multi-touch guard persistence. Lunge crossing reproduced; stop distance fixed and Node regression passes. CDP partial touch release corrected; new CI needed.",
     "currentHypothesis": null,
-    "nextAction": "Continue the fresh/ implementation on codex/game2-rebuild-20260913. Read FRESH_DESIGN.md and REUSE_LOG.md. Inspect fresh verification CI and code review, fix observed failures, then complete concept coverage/reference selection and compare actual new frames. Do not resume old PR #10 as the implementation path.",
+    "nextAction": "Read the latest Fresh game verification run on codex/game2-rebuild-20260913. At 3727d78 start/movement/real click hit/pause/WebGL recovery passed; death/retry and multi-touch failed. Current lunge stop-distance and CDP remaining-contact fixes need new-render confirmation. Then finish concept coverage/four-axis reference selection and improve the fresh characters, foliage and environment from actual frames; no old-code-first reuse.",
     "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
     "pendingVerification": [
-      "Fresh real-browser start/move/combat/pause/context recovery/retry",
-      "Fresh touch simultaneous controls and cancellation",
-      "Independent code review and actual frame review",
-      "Concept coverage, four-axis reference selection and whole-element blind comparisons"
+      "New revision real browser death/retry and multi-touch",
+      "Whole-element blind comparison remains not measured",
+      "Concept coverage and four-axis reference selection incomplete"
     ],
     "modifiedFiles": [
       "fresh/",
@@ -66,7 +65,12 @@
       "cadence": "hourly",
       "coordination": "Check recent commits and running CI; if another producer is active, read only. No force push or duplicate work.",
       "activeBranch": "codex/game2-rebuild-20260913"
-    }
+    },
+    "evidence": [
+      "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-checkpoint.md",
+      "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-ci-3727d78.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-code-review.json"
+    ]
   },
   "work": {
     "units_requested": "continuous",
@@ -76,7 +80,7 @@
     "completion": "All concept elements satisfied by evidenced blind comparison.",
     "current_unit": "2026-09-13-fresh-design",
     "unit_status": "active",
-    "first_action": "Continue the fresh/ implementation on codex/game2-rebuild-20260913. Read FRESH_DESIGN.md and REUSE_LOG.md. Inspect fresh verification CI and code review, fix observed failures, then complete concept coverage/reference selection and compare actual new frames. Do not resume old PR #10 as the implementation path.",
+    "first_action": "Read the latest Fresh game verification run on codex/game2-rebuild-20260913. At 3727d78 start/movement/real click hit/pause/WebGL recovery passed; death/retry and multi-touch failed. Current lunge stop-distance and CDP remaining-contact fixes need new-render confirmation. Then finish concept coverage/four-axis reference selection and improve the fresh characters, foliage and environment from actual frames; no old-code-first reuse.",
     "implementation_strategy": "Fresh design and implementation; needs-before-reuse, per latest direct user instruction."
   }
 }

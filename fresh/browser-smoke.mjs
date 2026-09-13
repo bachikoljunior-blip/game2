@@ -31,7 +31,7 @@ try{
  await page.waitForFunction(()=>freshDiagnostics().world.mode==='defeat',{},{timeout:120000});await page.click('#start');
  const retry=await page.evaluate(()=>freshDiagnostics());assert.equal(retry.world.player.hp,100);assert.equal(retry.world.player.z,18);report.checks.push('death and real retry restore player');
  assert.deepEqual(errors,[]);report.result='passed';
-}catch(e){report.result='failed';report.failure=String(e);process.exitCode=1;await page.screenshot({path:new URL('failure.png',out).pathname}).catch(()=>{});}
+}catch(e){report.result='failed';report.failure=String(e);report.failureState=await page.evaluate(()=>window.freshDiagnostics?.()).catch(()=>null);process.exitCode=1;await page.screenshot({path:new URL('failure.png',out).pathname}).catch(()=>{});}
 const phone=await browser.newContext({viewport:{width:844,height:390},isMobile:true,hasTouch:true,deviceScaleFactor:1});
 const mobile=await phone.newPage();mobile.on('pageerror',e=>errors.push(String(e)));
 try{
@@ -42,7 +42,9 @@ try{
  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...g,id:1}]});
  await mobile.waitForFunction(()=>freshDiagnostics().world.player.state==='guard');
  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...g,id:1},{...l,id:2}]});
- await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[{...g,id:1}]});
+ // CDP touchEnd terminates all contacts; touchMove with the remaining active list
+ // releases only the removed contact. https://chromedevtools.github.io/devtools-protocol/tot/Input/#method-dispatchTouchEvent
+ await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{...g,id:1}]});
  await mobile.waitForTimeout(350);assert.equal(await mobile.evaluate(()=>freshDiagnostics().world.player.state),'guard');
  await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});await mobile.waitForFunction(()=>freshDiagnostics().world.player.state==='idle');
  report.checks.push('mobile simultaneous guard/lock release preserves guard; cancel releases');
@@ -55,5 +57,5 @@ try{
  assert.equal(await mobile.evaluate(()=>freshDiagnostics().world.player.z),stopped);report.checks.push('mobile joystick movement and cancel stop');
  await mobile.screenshot({path:new URL('mobile.png',out).pathname});
  assert.deepEqual(errors,[]);
-}catch(e){report.result='failed';report.mobileFailure=String(e);process.exitCode=1;}
+}catch(e){report.result='failed';report.mobileFailure=String(e);report.mobileFailureState=await mobile.evaluate(()=>window.freshDiagnostics?.()).catch(()=>null);process.exitCode=1;}
 await writeFile(new URL('browser-report.json',out),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));await browser.close();

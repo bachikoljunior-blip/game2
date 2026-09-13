@@ -34,3 +34,9 @@ test('terminal states stop simulation; no absent measurement is counted',()=>{
  const w=createWorld();w.enemies.forEach(e=>e.hp=0);stepWorld(w);assert.equal(w.mode,'victory');const t=w.time;ticks(w,50);assert.equal(w.time,t);
  const dead=createWorld();dead.player.hp=0;stepWorld(dead);assert.equal(dead.mode,'defeat');
 });
+test('enemy lunge preserves fighting distance and finishes an undefended player',()=>{
+ const w=createWorld();w.player.z=6.89;w.enemies[0].z=5.53;w.enemies[0].hp=66;
+ for(let i=0;i<1200;i++)advance(w,STEP);
+ assert.equal(w.mode,'defeat');assert.equal(w.player.hp,0);assert.equal(w.totals.received,5);
+ assert.ok(Math.hypot(w.player.x-w.enemies[0].x,w.player.z-w.enemies[0].z)>=1.1-1e-8);
+});

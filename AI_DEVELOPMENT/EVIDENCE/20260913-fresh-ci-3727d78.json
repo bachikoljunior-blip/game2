@@ -1,0 +1,117 @@
+{
+  "sourceRevision": "3727d7871f99c467e0f0b8904dee125972c5a525",
+  "run": 34762474176,
+  "url": "https://github.com/bachikoljunior-blip/game2/actions/runs/34762474176",
+  "artifact": 10319970741,
+  "artifactSha256": "4b948f4518316773f42e8e0bdf8a9f1a2f21173f3c607b10dbba4dce152b68aa",
+  "report": {
+    "date": "2026-09-13T14:22:55.964Z",
+    "environment": "Chromium / SwiftShader; not physical-device performance",
+    "checks": [
+      "real start and keyboard movement through torii",
+      "real click causes enemy HP loss",
+      "pause freezes simulation and resumes",
+      "WebGL loss/restore and resume"
+    ],
+    "errors": [],
+    "combat": {
+      "world": {
+        "time": 4.34999999999999,
+        "remainder": 0.016600000000001305,
+        "ticks": 261,
+        "mode": "playing",
+        "player": {
+          "id": "player",
+          "x": 6.928001892318856e-19,
+          "z": 6.8900000000001125,
+          "yaw": 2.0993945128238956e-18,
+          "hp": 100,
+          "posture": 0,
+          "state": "attack",
+          "age": 0.2833333333333333,
+          "guardAge": 99,
+          "hit": [
+            "sentinel"
+          ],
+          "cooldown": 0,
+          "stride": 11.109999999999967
+        },
+        "enemies": [
+          {
+            "id": "sentinel",
+            "x": 3.67394039744206e-18,
+            "z": 5.53,
+            "yaw": -3.141592653589793,
+            "hp": 66,
+            "posture": 20,
+            "state": "stagger",
+            "age": 0.09999999999999999,
+            "guardAge": 99,
+            "hit": [],
+            "cooldown": 0,
+            "stride": 4.529999999999993
+          },
+          {
+            "id": "retainer",
+            "x": -3,
+            "z": -9,
+            "yaw": 0,
+            "hp": 100,
+            "posture": 0,
+            "state": "idle",
+            "age": 4.34999999999999,
+            "guardAge": 99,
+            "hit": [],
+            "cooldown": 0,
+            "stride": 0
+          },
+          {
+            "id": "warden",
+            "x": 3,
+            "z": -16,
+            "yaw": 0,
+            "hp": 100,
+            "posture": 0,
+            "state": "idle",
+            "age": 4.34999999999999,
+            "guardAge": 99,
+            "hit": [],
+            "cooldown": 0,
+            "stride": 0
+          }
+        ],
+        "locked": "sentinel",
+        "events": [
+          {
+            "type": "hit",
+            "time": 4.24999999999999,
+            "source": "player",
+            "target": "sentinel",
+            "x": 3.67394039744206e-18,
+            "z": 5.53
+          }
+        ],
+        "totals": {
+          "hits": 1,
+          "received": 0,
+          "parries": 0,
+          "kills": 0
+        }
+      },
+      "running": true,
+      "paused": false,
+      "contextLost": false,
+      "render": {
+        "frame": 37,
+        "calls": 92,
+        "triangles": 67142,
+        "points": 0,
+        "lines": 0
+      }
+    },
+    "result": "failed",
+    "failure": "TimeoutError: page.waitForFunction: Timeout 120000ms exceeded.",
+    "mobileFailure": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n'idle' !== 'guard'\n"
+  },
+  "formalElementStatus": "not measured"
+}
