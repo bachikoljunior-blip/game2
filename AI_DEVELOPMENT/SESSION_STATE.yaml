@@ -6,53 +6,30 @@
     "startedAt": "2026-07-31T12:54:11Z",
     "endedAt": null,
     "endRequiresExplicitUserInstruction": true,
-    "objective": "Continue game2 until the existing criteria are evidenced. User reprioritized the public start-position trap on 2026-09-12; ship this bounded verified fix to main/Pages first, then resume PR #10.",
-    "workingBranch": "codex/game2-criteria-20260911",
-    "baseSha": "08c746498d35bb7aa430ae272b6984c5c2a765e5",
-    "activePlanNode": "R17-GAMEPLAY",
-    "activeTask": "R17-GAMEPLAY",
-    "lastSuccessfulAction": "Fixed instructions synchronized. The user clarified that rebuilding is necessary only if justified. Existing 3ad18ce source has 5 rendered frames, 20 encounters and 300 motion frames in CI 34743372587.",
-    "currentFailingAction": "Current 20-encounter results are 14 pass / 1 fail / 3 inconclusive. BM-COMBAT-02 is 59.375% against 60%; independent current camera/character review and all fixed-instruction element verdicts remain incomplete.",
-    "currentHypothesis": "Existing working paths support targeted improvement first. There is no measured whole-runtime limitation requiring a full rewrite.",
-    "nextAction": "Continue from the latest PR #10 implementation and existing local work. Review the 3ad18ce rendered camera/character evidence, resolve the measured posture-pressure failure and complete the concept/reference audit. Reassess a rewrite if a concrete limitation prevents progress.",
+    "objective": "Build game2 from a fresh design until all concept elements satisfy the user fixed instructions.",
+    "workingBranch": "codex/game2-rebuild-20260913",
+    "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
+    "activePlanNode": "FRESH",
+    "activeTask": "FRESH-FOUNDATION",
+    "lastSuccessfulAction": "Design recorded before new code. New isolated fresh runtime: simulation, input, procedural presentation, lifecycle. Eight node tests and production build passed locally.",
+    "currentFailingAction": "Local Chromium launch exits SIGTRAP before browser creation. Real rendered/input evidence must be obtained in fresh CI. No blind comparison has passed.",
+    "currentHypothesis": null,
+    "nextAction": "Continue the fresh/ implementation on codex/game2-rebuild-20260913. Read FRESH_DESIGN.md and REUSE_LOG.md. Inspect fresh verification CI and code review, fix observed failures, then complete concept coverage/reference selection and compare actual new frames. Do not resume old PR #10 as the implementation path.",
     "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
     "pendingVerification": [
-      "Independent review of current rendered camera/character evidence.",
-      "Before/after posture-pressure repair and >=20 encounters with unchanged 60% threshold.",
-      "Concept coverage, four-axis reference evidence and actual source-blind comparisons.",
-      "Closest-available physical-use validation; measurements and inference distinguished."
+      "Fresh real-browser start/move/combat/pause/context recovery/retry",
+      "Fresh touch simultaneous controls and cancellation",
+      "Independent code review and actual frame review",
+      "Concept coverage, four-axis reference selection and whole-element blind comparisons"
     ],
     "modifiedFiles": [
-      "src/render/Sky.js",
-      "src/render/Foliage.js",
-      "src/render/PostFX.js",
-      "src/world/Terrain.js",
-      "src/world/Props.js",
-      "src/gameplay/Physics.js",
-      "HANDOFF.md",
-      "README.md",
-      "ROUND.md",
-      "AI_DEVELOPMENT/ACTIVE_FRONTIER.yaml",
-      "AI_DEVELOPMENT/PLAN_TREE.yaml",
-      "AI_DEVELOPMENT/TASK_GRAPH.yaml",
-      "AI_DEVELOPMENT/TECHNICAL_DEBT.md",
-      "AI_DEVELOPMENT/SESSION_STATE.yaml",
-      "AI_DEVELOPMENT/PROJECT_STATE.yaml",
-      "AI_DEVELOPMENT/EVIDENCE/r16-sky.md",
-      "AI_DEVELOPMENT/EVIDENCE/r16-world.md",
-      "AI_DEVELOPMENT/EVIDENCE/r16-foliage.md",
-      "AI_DEVELOPMENT/EVIDENCE/r16-postfx.md",
-      "AI_DEVELOPMENT/EVIDENCE/phys-narrowphase.md",
-      "shots/review-r16.json",
-      "shots/interaction-i2.json",
-      "tools/variance.mjs",
-      "AI_DEVELOPMENT/EVIDENCE/kit-variance.md",
-      "AI_DEVELOPMENT/EVIDENCE/kit-variance.json",
-      "AI_DEVELOPMENT/DECISIONS.md"
+      "fresh/",
+      "AI_DEVELOPMENT/FRESH_DESIGN.md",
+      "AI_DEVELOPMENT/REUSE_LOG.md"
     ],
     "remotePushPendingAuthorization": false,
     "remoteReleaseAuthorized": true,
-    "remotePublicationStatus": "Public gameplay payload remains the previously verified build. New game source is not published by these instruction-only commits.",
+    "remotePublicationStatus": "Old public runtime remains intact. Fresh runtime is a separate unaccepted work-branch candidate.",
     "publishedMainSha": "e40a1884a57250391dd08bdf50dc2c6cb3837a36",
     "publishedUrl": "https://bachikoljunior-blip.github.io/game2/",
     "startPositionHotfix": {
@@ -88,7 +65,7 @@
       "enabled": true,
       "cadence": "hourly",
       "coordination": "Check recent commits and running CI; if another producer is active, read only. No force push or duplicate work.",
-      "activeBranch": "codex/game2-criteria-20260911"
+      "activeBranch": "codex/game2-rebuild-20260913"
     }
   },
   "work": {
@@ -97,9 +74,9 @@
     "deadline": "2026-09-20T07:51:53Z",
     "human_intervention_required": false,
     "completion": "All concept elements satisfied by evidenced blind comparison.",
-    "current_unit": "2026-09-13-fixed-instructions-initial-application",
+    "current_unit": "2026-09-13-fresh-design",
     "unit_status": "active",
-    "first_action": "Continue from the latest PR #10 implementation and existing local work. Review the 3ad18ce rendered camera/character evidence, resolve the measured posture-pressure failure and complete the concept/reference audit. Reassess a rewrite if a concrete limitation prevents progress.",
-    "implementation_strategy": "AI choice; rebuild only if evidence warrants it"
+    "first_action": "Continue the fresh/ implementation on codex/game2-rebuild-20260913. Read FRESH_DESIGN.md and REUSE_LOG.md. Inspect fresh verification CI and code review, fix observed failures, then complete concept coverage/reference selection and compare actual new frames. Do not resume old PR #10 as the implementation path.",
+    "implementation_strategy": "Fresh design and implementation; needs-before-reuse, per latest direct user instruction."
   }
 }

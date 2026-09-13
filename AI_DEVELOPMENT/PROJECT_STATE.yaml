@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-13T12:00:10Z",
+  "updatedAt": "2026-09-13T14:19:53.817Z",
   "status": "active",
   "project": {
     "name": "KAGEROU 陽炎",
@@ -8,7 +8,7 @@
     "objective": "Continue the mobile-first third-person Japanese sword-action game toward its established visual and interaction bar without external runtime assets or AI APIs.",
     "defaultBranch": "main",
     "defaultBranchVerifiedSha": "ec2480166809f57fa623929bec0fbcb4d5a623a2",
-    "workingBranch": "codex/game2-criteria-20260911",
+    "workingBranch": "codex/game2-rebuild-20260913",
     "workingBranchBaseSha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
     "previousWorkingBranch": "claude/game-reference-benchmark-qh0v0q",
     "workingBranchPublicationSha": "8811b8c1f56f000f9fd6be0069652887e487a86b",
@@ -146,10 +146,10 @@
     ]
   },
   "currentWork": {
-    "activeTask": "R17-GAMEPLAY",
+    "activeTask": "FRESH-FOUNDATION",
     "lastCompletedTask": "Mandatory-rebuild routing withdrawn following the user clarification; no runtime deletion or rewrite occurred.",
-    "nextTask": "R17-GAMEPLAY",
-    "nextStartingPoint": "Continue from the latest PR #10 implementation and existing local work. Review the 3ad18ce rendered camera/character evidence, resolve the measured posture-pressure failure and complete the concept/reference audit. Reassess a rewrite if a concrete limitation prevents progress.",
+    "nextTask": "Continue the fresh/ implementation on codex/game2-rebuild-20260913. Read FRESH_DESIGN.md and REUSE_LOG.md. Inspect fresh verification CI and code review, fix observed failures, then complete concept coverage/reference selection and compare actual new frames. Do not resume old PR #10 as the implementation path.",
+    "nextStartingPoint": "AI_DEVELOPMENT/FRESH_DESIGN.md",
     "blockedBy": [],
     "remoteStateChangeAuthorized": true,
     "remotePolicy": "Across future sessions, push verified checkpoints, integrate them into main, and publish GitHub Pages without asking again. This remains active until the user changes it."
@@ -161,5 +161,10 @@
     "Primitive character/cloth and vegetation presentation need observed, cause-tested improvement.",
     "No fixed-instruction element has a verified whole-element source-blind pass.",
     "SwiftShader timing is not physical-device performance."
-  ]
+  ],
+  "latestImplementationDirection": {
+    "instruction": "Fresh game from zero; define needs before inspecting old parts.",
+    "source": "latest direct user message 2026-09-13",
+    "decisionEvidence": "AI_DEVELOPMENT/FRESH_DESIGN.md"
+  }
 }

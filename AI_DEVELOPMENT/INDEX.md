@@ -1,10 +1,11 @@
 # Current execution direction — 2026-09-13
 
 Read `FIXED_INSTRUCTIONS.md`, then `REBUILD_STATE.yaml` and `SESSION_STATE.yaml`.
-Latest user clarification: 「作り直しは必要であればでいいよ」. Rebuilding is optional.
-Active implementation: `codex/game2-criteria-20260911`, PR #10. The optional rebuild
-branch contains routing records, not a newly implemented game. Do not discard working
-systems to fulfill a nonexistent mandatory-rewrite condition.
+Latest direct instruction: design and implement a new game from zero; define needs
+before inspecting any old component for selective reuse. Read `FRESH_DESIGN.md` and
+`REUSE_LOG.md`. Active branch: `codex/game2-rebuild-20260913`.
+Old PR #10, architecture and round entries below are preserved history, not the
+current runtime task. Earlier optional-rebuild routing is superseded.
 The fixed instructions and explicit user directives govern; plans and tests are tools.
 
 ---
