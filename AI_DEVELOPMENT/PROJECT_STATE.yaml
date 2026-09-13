@@ -163,7 +163,7 @@
    "Genshin Impact (touch layer and phone performance envelope only)"
   ],
   "criteria": "62 benchmark entries; legacy status counts remain 21 verified, 4 under review, 14 blocked, 23 proposed until the new evidence is matched to each full threshold. Round 17 measurement coverage is recorded separately; no thresholds were relaxed.",
-  "headlineGap": "886f4f3 passes the fresh-dist normal start to rendered-enemy to real-click-hit path in CI 34736414976. The previous da4535c candidate passed five technical frames and 20 encounters, but the final contact delta still needs a fresh five-frame, 20-encounter and 300-frame run. Character/cloth readability, physical-device and human gates remain open.",
+  "headlineGap": "Exact 9f7b70b passes five technical frames, 20 encounters and 300 rendered frames in CI 34737095560. Independent review clears the black ribbon and reversed damage lens but returns FAIL 58: axial combat-camera overlap and primitive character/cloth readability remain major. Physical-device and human gates remain open.",
   "structuralBlocker": "Local Chromium SIGTRAP and Cloud Browser WebGL limitations are bypassed using the already-authorized GitHub Actions execution surface. Actual capture and smoke evidence are available. Physical-device and human gates still require actual measurements.",
   "neverPerformed": [
    "A matched reference-title gameplay-video or physical-device comparison. Official publisher reference stills were fetched and supplied to a version-blind model critic on 2026-09-11.",
@@ -173,9 +173,9 @@
  },
  "currentWork": {
   "activeTask": "R17-GAMEPLAY",
-  "lastCompletedTask": "Main/Pages 86512c3 publicly restores the authored start and enemy progression. PR 886f4f3 passes fresh-dist normal movement, enemy rendering, lock/approach and a real-click 17-damage hit in CI 34736414976.",
+  "lastCompletedTask": "Exact PR candidate 9f7b70b completed five-frame, 20-encounter and 300-frame CI evidence. Independent review cleared the ribbon and damage-lens regressions but retained two visual majors.",
   "nextTask": "R17-GAMEPLAY",
-  "nextStartingPoint": "Publish one PR #10 [motion] evidence checkpoint from 886f4f3. Require fresh five-frame, 20-encounter and actual 300-frame verification plus independent review; then integrate and verify main/Pages. Next diagnose the Rig.js character major with neutral materials.",
+  "nextStartingPoint": "Run one [motion] checkpoint for the independently code-reviewed 30 degree mirrored duel-camera offset. Require fresh rendered separation before publication, then diagnose the remaining Rig.js character major with neutral materials.",
   "blockedBy": [],
   "remoteStateChangeAuthorized": true,
   "remotePolicy": "Across future sessions, push verified checkpoints, integrate them into main, and publish GitHub Pages without asking again. This remains active until the user changes it."
@@ -185,9 +185,9 @@
   "BM-ANIM-01: 18/18 measured attacks; shortest 233 ms against 140 ms.",
   "BM-CAMERA-04 remains inconclusive: path divergence 2.118 m.",
   "BM-CHAR-02 pixel survey and BM-AUDIO-03 true peak remain unverified.",
-  "Motion: cb4 has 300 unique rendered frames and both incoming and outgoing hits. Its damage lens is reversed; the independently reviewed repair still needs fresh rendered evidence.",
-  "No screen-crossing black ribbon was observed in the cb4 300-frame capture. Primitive character forms and combat-body/weapon readability remain a major pending neutral-material diagnosis.",
+  "Motion: exact 9f7b70b has 300 rendered frames and both hit directions. Independent review confirms the red lens only on incoming damage and no black-ribbon recurrence.",
+  "The 9f7 review retains two majors: primitive character/cloth forms and combat-body/weapon overlap caused by frontal lock framing. A camera repair is locally verified but not yet rendered.",
   "Real-device performance, thermals, boot and human ergonomics remain unmeasured.",
-  "main/Pages is 86512c3 with verified start and enemy progression; broader Round 17 source and the contact repair remain on PR #10 at 886f4f3."
+  "main/Pages is 86512c3 with verified start and enemy progression; broader Round 17 source remains unpublished on PR #10 at 9f7b70b."
  ]
 }

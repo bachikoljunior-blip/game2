@@ -24,12 +24,12 @@ binding contract that lets independent agents work on it in parallel; read §5 (
 direction), §7 (perf budget) and §8 (file ownership) before dispatching anything.
 
 > **Last completed round: 16. Active round: 17, verification in progress.** The current
-> continuation point is PR #10 after `886f4f3`: fresh-dist normal play now reaches both
-> forecourt enemies and records a real player hit, while main/Pages `86512c3` contains the
-> separately verified start and enemy-progression fixes. The latest contact commit used the
-> bounded `[normal-only]` path, so five frames, 20 encounters and fresh 300-frame `[motion]`
-> evidence are still required before integration. Character/cloth readability,
-> physical-device and human gates remain open.
+> continuation point is PR #10 after `9f7b70b`: five frames, 20 encounters and 300 rendered
+> frames passed CI 34737095560, but independent review returned FAIL 58 with combat-camera
+> overlap and primitive character/cloth construction as majors. A mirrored 30 degree side
+> composition now passes local geometry/collision checks and independent code review; it
+> requires fresh `[motion]` evidence before publication. Main/Pages remains `86512c3`.
+> Physical-device and human gates remain open.
 > Round 16 opened FAIL at 58/100 with
 > 3 blockers and closed on coherent `r16v1` with every contract gate held (120 draw calls,
 > 781,386 triangles, black gate 0/11/0/0/0, white gate hero 236 / torii 251). Five owners

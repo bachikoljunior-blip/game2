@@ -57,6 +57,10 @@ const LOCK_ACQUIRE_DIST = 19;
 const LOCK_BREAK_DIST = 24;
 const LOCK_CONE = Math.cos(62 * DEG);
 const LOCK_OCCLUDE_TIME = 1.1;
+// An unobstructed duel still needs a side angle. Looking exactly down the line
+// between the fighters keeps both capsules in-frame while hiding the target's
+// torso, weapon arm and contact pose behind the player.
+const LOCK_DUEL_OFFSET = Math.PI / 6;
 const LOCK_ORBIT_OFFSETS = [0, -Math.PI / 4, Math.PI / 4, -Math.PI / 2, Math.PI / 2,
   -Math.PI * 3 / 4, Math.PI * 3 / 4, Math.PI];
 
@@ -447,13 +451,19 @@ export class PlayerCamera {
   _selectLockYaw(axis, boom, separation) {
     if (!this.ctx.physics?.sphereCast) return axis;
     const clear = Math.min(boom * 0.9, 2.8);
-    if (this._lockClearance(axis, boom) >= clear) {
-      this._lockOrbitOffset = 0;
-      return axis;
+    const duelOffset = -LOCK_DUEL_OFFSET * this.shoulderSide;
+    const duelBoom = this._lockFramingBoom(boom, separation, duelOffset);
+    if (this._lockClearance(axis + duelOffset, duelBoom) >= Math.min(duelBoom * 0.92, clear)) {
+      this._lockOrbitOffset = duelOffset;
+      return axis + duelOffset;
     }
     const heldBoom = this._lockFramingBoom(boom, separation, this._lockOrbitOffset);
     if (this._lockOrbitOffset && this._lockClearance(axis + this._lockOrbitOffset, heldBoom) >= heldBoom * 0.92) {
       return axis + this._lockOrbitOffset;
+    }
+    if (this._lockClearance(axis, boom) >= clear) {
+      this._lockOrbitOffset = 0;
+      return axis;
     }
     let best = 0, bestClear = -1;
     for (let i = 1; i < LOCK_ORBIT_OFFSETS.length; i++) {

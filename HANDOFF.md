@@ -21,24 +21,29 @@ art-direction state record; project-wide session, plan and criterion pointers li
 
 ## Where the work is
 
-### Latest: normal enemy contact passes; full Round 17 rerun next
+### Latest: full evidence passed; independent review retains two majors
 
-Main/Pages is `86512c3bfdc69e03b5b490d9b0d79ec9da141343`: the authored start and
-enemy progression fixes are publicly verified. PR #10 is now at
-`886f4f3c97c0a3f7e8024ed34b912d1de0c51e44`. Its fresh-dist normal-progression
-[CI 34736414976](https://github.com/bachikoljunior-blip/game2/actions/runs/34736414976)
-walked from the normal start, rendered both forecourt ashigaru, locked and approached by
-real keyboard input, then registered a real mouse-click hit for 17 damage (HP 70 → 53).
-The retained render reported 100 draw calls / 511,418 triangles on SwiftShader; this is not
-phone-performance evidence. Exact hashes, the failing control and limitations are in
-`AI_DEVELOPMENT/EVIDENCE/r17-enemy-contact.md`.
+Main/Pages remains `86512c3bfdc69e03b5b490d9b0d79ec9da141343`. Exact PR #10 candidate
+`9f7b70bc7b496964925c2b62035aadee2dc8bd35` passed
+[CI 34737095560](https://github.com/bachikoljunior-blip/game2/actions/runs/34737095560):
+five fixed phone frames, all 20 encounters and 300 rendered motion frames. The combat clip
+contains a real incoming hit and two outgoing hits. This is SwiftShader correctness evidence,
+not phone performance.
 
-The previous full [CI 34730003799](https://github.com/bachikoljunior-blip/game2/actions/runs/34730003799)
-passed five frames and 20 encounters at `da4535c`, before the final contact tolerance. The
-latest commit intentionally ran only the dedicated normal path, so a new `[motion]`
-checkpoint must still repeat five frames, 20 encounters and all 300 rendered frames before
-PR #10 can be integrated. Independent visual review, character/cloth readability,
-physical-device and human gates remain open; overall product acceptance is not established.
+Independent review is `FAIL 58` with 0 blockers / 2 majors / 1 minor. It clears the
+screen-crossing black ribbon and confirms that the red perimeter appears on incoming damage,
+not outgoing hits. It retains primitive character/cloth construction and identifies a second
+major: frontal lock-on places the enemy directly behind the player, hiding the stance, weapon
+arm and contact pose. Exact artifact hashes and refutation are in
+`AI_DEVELOPMENT/EVIDENCE/r17-motion-9f7-review.json`.
+
+The camera mechanism is confirmed in source: open space selected the exact fighter axis before
+trying any side orbit. A bounded mirrored 30 degree offset now passes eight landscape/portrait,
+left/right-shoulder and open/corner fixtures: at least 831/840 readable-pair frames, at least
+802/840 complete central-body frames, zero target loss, zero collider overlap and 0.7024 m
+worst jump against 1.5 m. Independent code review is blocker 0 / major 0. This is geometry,
+not rendered proof. Next: push one `[motion]` checkpoint, re-review the 180 combat frames,
+then repair the surviving `Rig.js` character major. Publication remains withheld.
 
 ### Superseded checkpoint: start trap published; damage-feedback repair next
 

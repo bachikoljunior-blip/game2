@@ -96,17 +96,18 @@ reference gameplay, real-device performance or human review is claimed.
 > Picking the work up in a new session? [`HANDOFF.md`](./HANDOFF.md) carries the state
 > the container does not — `shots/` is gitignored and the review images do not survive.
 
-### 2026-09-13 candidate: normal enemy contact passes; full evidence pending
+### 2026-09-13 candidate: full evidence passed; independent review failed
 
-Main/Pages `86512c3` publicly restores the authored start and first enemy wave. PR #10
-candidate `886f4f3` additionally passes the fresh-build normal path from start through two
-rendered ashigaru, keyboard lock/approach and a real-click 17-damage hit in
-[CI 34736414976](https://github.com/bachikoljunior-blip/game2/actions/runs/34736414976).
-This candidate intentionally ran only the bounded progression gate. Before integration it
-still requires an exact-revision rerun of five phone frames, 20 encounters and 300 rendered
-frames, followed by independent visual review and a fresh revision-stamped Pages build.
-Physical-device performance and human review remain unmeasured. Exact evidence and hashes:
-[`r17-enemy-contact.md`](AI_DEVELOPMENT/EVIDENCE/r17-enemy-contact.md).
+Main/Pages `86512c3` publicly restores the authored start and first enemy wave. Exact PR #10
+candidate `9f7b70b` passes five phone frames, 20 encounters and 300 rendered frames in
+[CI 34737095560](https://github.com/bachikoljunior-blip/game2/actions/runs/34737095560).
+Independent review clears the prior black ribbon and reversed damage lens but returns
+`FAIL 58`: frontal combat framing merges both fighters, and primitive character/cloth
+construction remains major. The camera mechanism is confirmed and a mirrored 30 degree
+two-shot repair passes eight geometry/collision fixtures plus independent code review; fresh
+rendered evidence remains mandatory before publication. Physical-device performance and
+human review remain unmeasured. Exact review:
+[`r17-motion-9f7-review.json`](AI_DEVELOPMENT/EVIDENCE/r17-motion-9f7-review.json).
 
 ### 2026-09-11 candidate: measured gameplay progress, overall criteria unmet
 

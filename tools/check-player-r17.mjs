@@ -266,8 +266,9 @@ function bodyWithin(ctx, e, margin) {
     .every(([height, side]) => within(screenPoint(ctx, e, height, side), margin));
 }
 
-for (const aspect of [844 / 390, 390 / 844]) for (const corner of [false, true]) {
+for (const aspect of [844 / 390, 390 / 844]) for (const corner of [false, true]) for (const shoulderSide of [1, -1]) {
   const ctx = cameraContext(aspect), pc = ctx.playerCamera;
+  pc.shoulderSide = shoulderSide;
   ctx.player.position.set(1.4, 812, 1.4);
   const target = { id: 99, position: new Vector3(1.4, 812, -2.6), height: 2.15, radius: 0.45, isAlive: true, faction: 'oni' };
   ctx.enemies = { list: [target] };
@@ -277,7 +278,7 @@ for (const aspect of [844 / 390, 390 / 844]) for (const corner of [false, true])
   const key = new Event('keydown', { cancelable: true });
   Object.defineProperty(key, 'code', { value: 'KeyQ' });
   window.dispatchEvent(key);
-  let locked = 0, centralCenters = 0, centralBodies = 0, targetOff = 0, overlaps = 0, worstJump = 0;
+  let locked = 0, centralCenters = 0, centralBodies = 0, readablePairs = 0, targetOff = 0, overlaps = 0, worstJump = 0;
   const previous = ctx.camera.position.clone();
   for (let frame = 0; frame < 840; frame++) {
     ctx.input.update();
@@ -285,7 +286,10 @@ for (const aspect of [844 / 390, 390 / 844]) for (const corner of [false, true])
     ctx.input.endFrame();
     if (pc.lockTarget === target) {
       locked++;
-      if (within(screenPoint(ctx, ctx.player, ctx.player.height * 0.55), 0.8) && within(screenPoint(ctx, target, target.height * 0.55), 0.8)) centralCenters++;
+      const playerCenter = screenPoint(ctx, ctx.player, ctx.player.height * 0.55);
+      const targetCenter = screenPoint(ctx, target, target.height * 0.55);
+      if (within(playerCenter, 0.8) && within(targetCenter, 0.8)) centralCenters++;
+      if (Math.abs(playerCenter.x - targetCenter.x) >= 0.1) readablePairs++;
       if (bodyWithin(ctx, ctx.player, 0.8) && bodyWithin(ctx, target, 0.8)) centralBodies++;
       if (!within(screenPoint(ctx, target, target.height * 0.55), 1)) targetOff++;
     }
@@ -294,12 +298,13 @@ for (const aspect of [844 / 390, 390 / 844]) for (const corner of [false, true])
     previous.copy(ctx.camera.position);
   }
   ctx.input.dispose();
-  const row = { aspect: round(aspect), corner, lockedFrames: locked,
-    centersCentral: centralCenters, bodiesCentral: centralBodies, targetOff, overlaps, worstJumpM: round(worstJump) };
+  const row = { aspect: round(aspect), corner, shoulderSide, lockedFrames: locked,
+    centersCentral: centralCenters, bodiesCentral: centralBodies, readablePairs, targetOff, overlaps, worstJumpM: round(worstJump) };
   results.lockOn.push(row);
   assert.equal(locked, 840, JSON.stringify(row));
   assert.ok(centralCenters / locked >= 0.95, JSON.stringify(row));
   assert.ok(centralBodies / locked >= 0.95, JSON.stringify(row));
+  assert.ok(readablePairs / locked >= 0.95, JSON.stringify(row));
   assert.equal(targetOff, 0, JSON.stringify(row));
   assert.equal(overlaps, 0, JSON.stringify(row));
   assert.ok(worstJump <= 1.5, JSON.stringify(row));
