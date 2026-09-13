@@ -11,10 +11,10 @@
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
     "activeTask": "FRESH-REFERENCE-AND-COMPARISON",
-    "lastSuccessfulAction": "2026-09-13: C08 screen information/guidance GT reference now has four-axis selection evidence with accessibility and player counterevidence retained. Catalog has 23 source records; structural validator preserves 10 units, all 62 legacy criteria and unchanged fixed text.",
-    "currentFailingAction": "All formal elements remain not measured. Six elements still have incomplete reference axes; actual matched source-blind material and fresh presentation/complete play-loop production remain.",
+    "lastSuccessfulAction": "2026-09-13: C02 movement/camera reference was changed from provisional GT to MGSV during initial selection. All four axes and the replacement comparison are recorded; GT camera and MGSV input limitations are retained. Structural validator preserves 10 units, all 62 legacy criteria and unchanged fixed text.",
+    "currentFailingAction": "All formal elements remain not measured. Five elements still have incomplete reference axes; actual matched source-blind material and fresh presentation/complete play-loop production remain.",
     "currentHypothesis": null,
-    "nextAction": "Continue fresh/ at runtime afc8bcd. Read COMPARISON_ELEMENTS.yaml and 20260913-reference-selection-c08.json first. Complete remaining incomplete per-element reference axes, next C02 movement/camera while preserving the documented GT camera counterevidence. Acquire actual matched media for X01, improve fresh generated presentation/audio, then independent source-blind comparison. Every formal element remains not measured. Preserve public payload; deadline remains 2026-09-20T07:51:53Z.",
+    "nextAction": "Continue fresh/ at runtime afc8bcd. Read COMPARISON_ELEMENTS.yaml and 20260913-reference-selection-c02.json first. Complete the five remaining incomplete per-element reference axes, next C05 narrative coherence. Acquire actual matched media, improve fresh generated presentation/audio, then independent source-blind comparison. Every formal element remains not measured. Preserve public payload; deadline remains 2026-09-20T07:51:53Z.",
     "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
     "pendingVerification": [
       "Largest-comparable semantic review of proposed10units",
@@ -77,7 +77,8 @@
       "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-catalog-checkpoint.md",
       "AI_DEVELOPMENT/EVIDENCE/20260913-reference-selection-c04-c10.json",
       "AI_DEVELOPMENT/EVIDENCE/20260913-reference-selection-c04-sk.json",
-      "AI_DEVELOPMENT/EVIDENCE/20260913-reference-selection-c08.json"
+      "AI_DEVELOPMENT/EVIDENCE/20260913-reference-selection-c08.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260913-reference-selection-c02.json"
     ],
     "publicRuntimeRevision": "86512c3bfdc69e03b5b490d9b0d79ec9da141343"
   },
@@ -89,7 +90,7 @@
     "completion": "All concept elements satisfied by evidenced blind comparison.",
     "current_unit": "2026-09-13-fresh-design",
     "unit_status": "active",
-    "first_action": "Continue fresh/ at runtime afc8bcd. Read COMPARISON_ELEMENTS.yaml and 20260913-reference-selection-c08.json first. Complete remaining incomplete per-element reference axes, next C02 movement/camera while preserving the documented GT camera counterevidence. Acquire actual matched media for X01, improve fresh generated presentation/audio, then independent source-blind comparison. Every formal element remains not measured. Preserve public payload; deadline remains 2026-09-20T07:51:53Z.",
+    "first_action": "Continue fresh/ at runtime afc8bcd. Read COMPARISON_ELEMENTS.yaml and 20260913-reference-selection-c02.json first. Complete the five remaining incomplete per-element reference axes, next C05 narrative coherence. Acquire actual matched media, improve fresh generated presentation/audio, then independent source-blind comparison. Every formal element remains not measured. Preserve public payload; deadline remains 2026-09-20T07:51:53Z.",
     "implementation_strategy": "Fresh design and implementation; needs-before-reuse, per latest direct user instruction.",
     "unitEndReason": null
   }
