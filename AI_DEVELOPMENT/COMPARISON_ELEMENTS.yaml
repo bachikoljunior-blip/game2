@@ -553,14 +553,13 @@
       "referenceSelection": {
         "axes": {
           "elementQuality": {
-            "assessment": "substantiation incomplete",
-            "finding": "既存の画面案内参照を保持する。",
+            "assessment": "supported selection rationale; not a game verdict",
+            "finding": "視覚アクセシビリティ批評は、メニューの大きな文字・高コントラスト・大きなアイコン、拾得物の発光、環境内の風による案内を具体的に評価した。別のUI分析は、必要時だけ現れるHUD、風・煙・動物という画面内の手掛かり、被弾時の画面表現を一つの情報設計として整理した。",
             "sources": [
-              "GT-C"
+              "GT-UI-A0",
+              "GT-UI-D"
             ],
-            "unresolved": [
-              "HUDと案内の要素単独の専門評価が不足。"
-            ]
+            "unresolved": []
           },
           "fitToConcept": {
             "assessment": "supported selection rationale; not a game verdict",
@@ -580,32 +579,29 @@
             "unresolved": []
           },
           "longevity": {
-            "assessment": "substantiation incomplete",
-            "finding": "2024年批評は4年後も美術を評価する一方、技術面の古さを指摘。",
+            "assessment": "supported selection rationale; not a game verdict",
+            "finding": "発売翌年のDirector's Cutでは大きい文字、風の視認性、戦闘合図、追跡支援が追加・改善され、2023年のプレイヤー議論でも最小HUDと風案内が具体的に支持された。発売時の弱点が修正対象として継続した事実と、なお残る読みにくさの両方を保持する。",
             "sources": [
-              "GT-C"
+              "GT-UI-A0",
+              "GT-UI-A1",
+              "GT-UI-P"
             ],
-            "unresolved": [
-              "当該要素が長期にわたり基準とされる根拠が不足。"
-            ]
+            "unresolved": []
           },
           "reception": {
-            "assessment": "substantiation incomplete",
-            "finding": "専門批評と個別プレイヤー投稿を区別。美術の評価と反復への批判を併記。",
+            "assessment": "supported selection rationale; not a game verdict",
+            "finding": "専門的なアクセシビリティ批評はメニューと改善後の大文字・風・戦闘合図を評価する一方、画面端の状態表示、背景とのコントラスト、色のないボタン表示、足跡追跡、毎回必要なロック操作を批判した。プレイヤー投稿は没入を妨げない最小HUDと風案内を支持するが、完全非表示ができない、通常の目印を好むという反例もある。",
             "sources": [
-              "GT-C",
-              "GT-P"
+              "GT-UI-A0",
+              "GT-UI-A1",
+              "GT-UI-P",
+              "GT-WORLD-P"
             ],
-            "unresolved": [
-              "当該要素単独のプレイヤー評価を追加確認する。"
-            ]
+            "unresolved": []
           }
         },
-        "decision": "既存参照を保持。初回選定の根拠を補強中であり、全4軸が確定したとは扱わない。",
+        "decision": "GTをC08の参照として確定。全4軸の選定根拠は揃ったが、これはゲーム判定ではない。必要時だけ現れる情報、環境内の案内、読みやすい設定画面を基準とし、画面端の読みにくさ、風の低視認性、色依存・入力負担、追跡不足は再現せず超える。",
         "unresolved": [
-          "HUDと案内の要素単独の専門評価が不足。",
-          "当該要素単独のプレイヤー評価を追加確認する。",
-          "当該要素が長期にわたり基準とされる根拠が不足。",
           "実際の同目的資料を取得し出所を推定できない独立評価を行う。レビューは実比較の代用ではない。"
         ]
       },
@@ -1696,6 +1692,43 @@
     },
     {
       "accessed": "2026-09-13",
+      "id": "GT-UI-A0",
+      "kind": "specialist accessibility review by a visually impaired player; not blind evidence",
+      "limitation": "発売時版の一人の評価。HUD全利用者の成功率や現在版を代表しない。長所と同時に重要な視認性不足を報告している。",
+      "observation": "大きな文字、高コントラスト、大きなアイコンを持つメニューと拾得物の発光を高く評価。一方、画面端の目的・体力表示、白背景上の強調色、風の視認性と音方向不足を批判し、UI/HUDは必要要件の約80%との評価。",
+      "published": "2020-07-14",
+      "url": "https://caniplaythat.com/2020/07/14/ghost-of-tsushima-accessibility-impressions/"
+    },
+    {
+      "accessed": "2026-09-13",
+      "id": "GT-UI-A1",
+      "kind": "specialist accessibility review of later Director's Cut; not blind evidence",
+      "limitation": "移動・認知・聴覚の観点を含む一人の評価で全利用者を代表しない。記事自身が一部変更は改善になり切らないと評価している。",
+      "observation": "後発版の大きい文字、風の視認性と方向触覚、戦闘合図、追跡用ホタルを評価。一方、色を失ったボタン表示、足跡追跡の不足、毎回の再入力を要するロックを批判。",
+      "published": "2021-08-19",
+      "url": "https://caniplaythat.com/2021/08/19/ghost-of-tsushima-directors-cut-accessibility-review-can-i-play-that/"
+    },
+    {
+      "accessed": "2026-09-13",
+      "id": "GT-UI-D",
+      "kind": "independent UI design analysis by a player; not formal usability study or blind evidence",
+      "limitation": "個人によるデザイン分析であり、課題成功率やアクセシビリティを測定していない。",
+      "observation": "必要時だけ現れるHUD、風・動物・煙による画面内案内、拾得物の発光、被弾時の画面表現、Expert HUDを、没入と必要情報を両立する一つのUI設計として具体的に整理。",
+      "published": "2021-05-24",
+      "lastUpdated": "2025-12-16",
+      "url": "https://andyscabingames.wordpress.com/2021/05/24/increasing-player-immersion-through-the-user-interface-ui/"
+    },
+    {
+      "accessed": "2026-09-13",
+      "id": "GT-UI-P",
+      "kind": "later player discussion/reception research; not population consensus or blind evidence",
+      "limitation": "作品コミュニティ内の個別投稿群で選択偏りがある。最小HUDへの支持と完全非表示できない不満を同時に保持する。",
+      "observation": "2023年にも画面上の表示がほぼない点と直感的な風案内が具体的に支持され、通常のミニマップより景観へ注意を向けられると評価。一方、HUDを完全に消せない不満と鳥の障害物回避不足も報告。",
+      "published": "2023-08-12",
+      "url": "https://www.reddit.com/r/ghostoftsushima/comments/15pay9a/i_love_how_basically_0_hud_is_on_screen/"
+    },
+    {
+      "accessed": "2026-09-13",
       "id": "GT-AUDIO-D",
       "kind": "primary developer audio-production record; not independent reception or blind evidence",
       "limitation": "音響担当者の制作記録。実装意図・素材由来を示すが、聴取品質や優位性を独立に証明しない。",
@@ -1723,6 +1756,6 @@
     }
   ],
   "status": "not measured",
-  "updatedAt": "2026-09-13T18:50:32Z",
+  "updatedAt": "2026-09-13T20:10:29Z",
   "adoptionReview": "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-catalog-review.json"
 }

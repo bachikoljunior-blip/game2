@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "kind": "reference-selection research checkpoint",
+  "recordedAt": "2026-09-13T20:10:29Z",
+  "candidateRevision": "afc8bcdb0ddb869c93228c45b845c90d48a17083",
+  "catalogBaseRevision": "caab1529bc25987601ec05ebd72afd046e90f910",
+  "scope": [
+    "C08 reference: HUD, state communication and operation guidance"
+  ],
+  "method": "The reference was evaluated specifically for screen information and guidance. A visually impaired player's specialist launch review, a later Director's Cut accessibility review, a UI design analysis and later player discussion were separated. Positive evidence and accessibility failures were both retained.",
+  "result": {
+    "element": "C08",
+    "reference": "GT",
+    "selection": "four axes substantiated",
+    "positiveBasis": [
+      "Specialist accessibility criticism identifies large high-contrast menus, large icons and visible item feedback as strong components.",
+      "A UI analysis documents contextual HUD visibility, in-world wind/animal/smoke guidance, pickup glints and damage-state feedback as a coherent information design.",
+      "The later Director's Cut improved text size, wind visibility, combat cue visibility and tracking assistance.",
+      "Player discussion three years after launch still specifically supports the minimal HUD and wind guidance."
+    ],
+    "counterevidence": [
+      "Launch objectives and health at screen edges were hard to read at a glance, and some emphasis colors had poor contrast.",
+      "Director's Cut button prompts lost color associations, footprint tracking remained hard to see and lock-on required repeated input.",
+      "Players report that the HUD cannot be completely disabled and that guiding birds fail around obstacles; some prefer conventional waypoints."
+    ],
+    "remaining": [
+      "Acquire actual matched UI and operation-flow material and perform a valid source-blind comparison.",
+      "Complete the remaining incomplete four-axis selections for other elements."
+    ]
+  },
+  "formalVerdict": "not measured",
+  "formalVerdictReason": "No candidate/reference source-blind comparison was performed. Reference-selection research cannot assign a game-element verdict.",
+  "sources": [
+    "https://caniplaythat.com/2020/07/14/ghost-of-tsushima-accessibility-impressions/",
+    "https://caniplaythat.com/2021/08/19/ghost-of-tsushima-directors-cut-accessibility-review-can-i-play-that/",
+    "https://andyscabingames.wordpress.com/2021/05/24/increasing-player-immersion-through-the-user-interface-ui/",
+    "https://www.reddit.com/r/ghostoftsushima/comments/15pay9a/i_love_how_basically_0_hud_is_on_screen/"
+  ],
+  "verification": {
+    "command": "node tools/check-fresh-catalog.mjs",
+    "result": "PASS: 10 units, 16 legacy groups, 62 legacy criteria, six negative checks, fixed instruction text unchanged"
+  }
+}
