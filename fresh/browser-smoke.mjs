@@ -115,7 +115,7 @@ try{
   if(!report.mission.route.rejoin&&w.routePhase==='rejoined'){
    report.mission.route.rejoin={time:w.routeRejoinTime,position:w.routeRejoinPosition};mark(desktopRecording,'route-rejoin',report.mission.route.rejoin);
   }
-  if(w.routeChoice&&w.player.z<=ROUTE_FORK.obstacleFrontZ&&w.player.z>=ROUTE_FORK.obstacleBackZ&&w.time-lastRouteSampleTime>=.5){
+  if(w.routePhase==='branch'&&w.routeChoice&&w.player.z<=ROUTE_FORK.obstacleFrontZ&&w.player.z>=ROUTE_FORK.obstacleBackZ&&w.time-lastRouteSampleTime>=.5){
    report.mission.route.ridgeSamples.push({time:w.time,x:w.player.x,z:w.player.z});lastRouteSampleTime=w.time;
   }
   const a=playthroughAction(w,'left'),wanted=new Set();
@@ -213,9 +213,10 @@ try{
  const tapDodgeUntilObserved=async before=>{
   const retryDeadline=Date.now()+3000;
   do{
-   await tapPoint(dodgePoint);
    const observed=await mobile.evaluate(()=>({mode:freshDiagnostics().world.mode,dodges:freshDiagnostics().world.totals.dodges}));
-   if(observed.mode!=='playing'||observed.dodges>before)return;
+   if(observed.dodges>before)return;
+   if(observed.mode!=='playing')throw new Error('Mission ended before the recovery dodge was acknowledged');
+   await tapPoint(dodgePoint);
   }while(Date.now()<retryDeadline);
   throw new Error('Recovery dodge was not observed before its 3000ms input deadline');
  };
@@ -248,7 +249,7 @@ try{
    report.touchMission.route.rejoin={time:w.routeRejoinTime,position:w.routeRejoinPosition};mark(mobileRecording,'route-rejoin',report.touchMission.route.rejoin);
    await mobile.screenshot({path:new URL('touch-route-rejoin.png',out).pathname});
   }
-  if(w.routeChoice&&w.player.z<=ROUTE_FORK.obstacleFrontZ&&w.player.z>=ROUTE_FORK.obstacleBackZ&&w.time-lastTouchRouteSampleTime>=.5){
+  if(w.routePhase==='branch'&&w.routeChoice&&w.player.z<=ROUTE_FORK.obstacleFrontZ&&w.player.z>=ROUTE_FORK.obstacleBackZ&&w.time-lastTouchRouteSampleTime>=.5){
    report.touchMission.route.ridgeSamples.push({time:w.time,x:w.player.x,z:w.player.z});lastTouchRouteSampleTime=w.time;
   }
   const a=touchPlaythroughAction(w,'right',touchSession);

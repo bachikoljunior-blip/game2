@@ -23,9 +23,9 @@ test('defensive test player can guard, dodge, counter and arrive at delayed obse
 });
 
 test('separate observation, delivery and release delays preserve a usable touch route',()=>{
- for(const route of ['left','right']){
+  for(const route of ['left','right']){
   for(const delay of [0,.1,.25,.5]){
-    const world=createWorld(),session=createTouchPlaythroughSession();let held={x:0,z:0,guard:false},guardSeen=false,dodgeSeen=false,blockSeen=false;
+    const world=createWorld(),session=createTouchPlaythroughSession();let held={x:0,z:0,guard:false},guardSeen=false,dodgeSeen=false,blockSeen=false,attackSeen=false;
     const elapse=(seconds,delivered=held)=>{
       for(let elapsed=0;elapsed<seconds-1e-9;elapsed+=1/60){
         advance(world,Math.min(1/60,seconds-elapsed),delivered);
@@ -46,10 +46,12 @@ test('separate observation, delivery and release delays preserve a usable touch 
       }
       if(a.dodge||a.lock||a.attack){
         elapse(delay);
-        const key=a.dodge?'dodge':a.lock?'lock':'attack';
+        const key=a.lockAndDodge?'lockAndDodge':a.dodge?'dodge':a.lock?'lock':'attack';
+        attackSeen ||= key==='attack';
         const beforePulse=world.totals.dodges;
-        elapse(.05+delay,{...held,[key]:true});
-        if(key==='dodge'&&a.dodgeNeedsAcknowledgement){
+        elapse(.05+delay,{...held,[key]:true,
+          ...(key==='lockAndDodge'?{lock:true,dodge:true}:{})});
+        if((key==='dodge'||key==='lockAndDodge')&&a.dodgeNeedsAcknowledgement){
           for(let retry=0;world.mode==='playing'&&world.totals.dodges===beforePulse&&retry<18;retry++){
             elapse(.11);elapse(.05,{...held,dodge:true});
           }
@@ -63,31 +65,44 @@ test('separate observation, delivery and release delays preserve a usable touch 
       }else elapse(.08);
     }
     assert.equal(world.mode,'victory',`${route} delivery delay ${delay}`);
-    assert.equal(world.totals.kills,3);assert.ok(guardSeen&&dodgeSeen&&blockSeen);
+    assert.equal(world.totals.kills,3);assert.ok(guardSeen&&dodgeSeen&&blockSeen&&attackSeen);
     assert.equal(world.routeChoice,route);assert.equal(world.routePhase,'rejoined');
   }
  }
 });
 
+test('pristine left branch entry arms one simultaneous lock and spacing dodge',()=>{
+  const world=createWorld(),session=createTouchPlaythroughSession();
+  Object.assign(world.enemies.find(enemy=>enemy.id==='sentinel'),{hp:0,state:'dead'});
+  Object.assign(world.enemies.find(enemy=>enemy.id==='retainer'),{x:-3.15,z:-8.4});
+  Object.assign(world,{time:23.8,routeChoice:'left',routeChoiceTime:23.766666666666598,
+    routePhase:'branch',routeConsequence:'early-retainer',locked:null,events:[]});
+  Object.assign(world.player,{x:-2.55,z:-5.7,hp:100,posture:0,state:'idle',dodgeX:0,dodgeZ:1});
+  Object.assign(world.totals,{hits:3,received:0,parries:0,kills:1,dodges:1});
+  const action=touchPlaythroughAction(world,'left',session);
+  assert.equal(action.lock,true);assert.equal(action.dodge,true);assert.equal(action.lockAndDodge,true);
+  assert.equal(action.dodgeNeedsAcknowledgement,true);assert.equal(action.guard,true);
+  assert.equal(world.totals.received,0);assert.equal(world.player.posture,0);assert.deepEqual(world.events,[]);
+});
+
 test('left-retainer recovery retries until an observed dodge acknowledges it',()=>{
   const world=createWorld(),session=createTouchPlaythroughSession(),sentinel=world.enemies.find(enemy=>enemy.id==='sentinel');
   Object.assign(sentinel,{hp:0,state:'dead'});
-  Object.assign(world,{routeChoice:'left',routeChoiceTime:20,routePhase:'branch',locked:'retainer'});
+  Object.assign(world,{routeChoice:'left',routeChoiceTime:20,routePhase:'branch',locked:null});
   Object.assign(world.player,{x:-2.55,z:-5.7,posture:40,dodgeX:0,dodgeZ:1});
   Object.assign(world.enemies.find(enemy=>enemy.id==='retainer'),{x:-3,z:-7.5});
   Object.assign(world.totals,{hits:3,received:1,kills:1,dodges:1});
-  assert.equal(touchPlaythroughAction(world,'left',session).dodge,false,'entry counters establish the encounter baseline');
-  world.totals.received++;
   const before=JSON.stringify(world),first=touchPlaythroughAction(world,'left',session);
-  assert.equal(JSON.stringify(world),before,'test policy only reads the world');assert.equal(first.dodge,true);assert.equal(first.dodgeNeedsAcknowledgement,true);
-  assert.equal(touchPlaythroughAction(world,'left',session).dodge,true,'a rejected pulse leaves recovery pending');
+  assert.equal(JSON.stringify(world),before,'test policy only reads the world');
+  assert.equal(first.lock,true);assert.equal(first.dodge,true);assert.equal(first.lockAndDodge,true);assert.equal(first.dodgeNeedsAcknowledgement,true);
+  assert.equal(touchPlaythroughAction(world,'left',session).lockAndDodge,true,'a rejected combined pulse leaves recovery pending');
   world.totals.dodges++;
   assert.equal(touchPlaythroughAction(world,'left',session).dodge,false,'an observed dodge acknowledges recovery');
   world.totals.received++;
   assert.equal(touchPlaythroughAction(world,'left',session).dodge,false,'the encounter schedules only one recovery');
 });
 
-test('guarded retainer contact starts acknowledged recovery before a direct hit',()=>{
+test('left branch entry arms acknowledged recovery before a direct hit',()=>{
   const world=createWorld(),session=createTouchPlaythroughSession();
   Object.assign(world.enemies.find(enemy=>enemy.id==='sentinel'),{hp:0,state:'dead'});
   Object.assign(world.enemies.find(enemy=>enemy.id==='retainer'),{x:-3.15,z:-8.4});
@@ -95,8 +110,6 @@ test('guarded retainer contact starts acknowledged recovery before a direct hit'
     routePhase:'branch',routeConsequence:'early-retainer',locked:'retainer'});
   Object.assign(world.player,{x:-2.55,z:-5.700225336253143,posture:34,dodgeX:0,dodgeZ:1});
   Object.assign(world.totals,{hits:3,received:1,kills:1,dodges:1});
-  touchPlaythroughAction(world,'left',session);
-  world.events=[{type:'block',time:world.time,source:'retainer',target:'player',x:world.player.x,z:world.player.z}];
   const action=touchPlaythroughAction(world,'left',session);
   assert.equal(action.dodge,true);assert.equal(action.dodgeNeedsAcknowledgement,true);assert.equal(action.guard,true);
 });
@@ -113,20 +126,24 @@ test('deadline-driven recovery survives the modeled failed left encounter phase'
     routePhase:'branch',routeConsequence:'early-retainer',locked:null});
   Object.assign(world.player,{x:-2.55,z:-5.700225336253143,hp:76,posture:0,state:'idle',age:.2,dodgeX:0,dodgeZ:1});
   Object.assign(world.totals,{hits:3,received:1,parries:0,kills:1,dodges:1});
-  let held={x:0,z:0,guard:false};const delay=.5;
+  const branchEntryDodges=world.totals.dodges;
+  let held={x:0,z:0,guard:false},lockEstablished=false,attackDelivered=false;const delay=.5;
   const elapse=(seconds,delivered=held)=>{
     for(let elapsed=0;elapsed<seconds-1e-9;elapsed+=1/60){
       advance(world,Math.min(1/60,seconds-elapsed),delivered);
       delivered={...delivered,attack:false,dodge:false,lock:false};
+      lockEstablished ||= world.locked==='retainer';
     }
   };
   while(world.mode==='playing'&&retainer.hp>0&&world.time<50){
     const action=touchPlaythroughAction(world,'left',session);elapse(delay);
     if(action.guard!==held.guard){elapse(delay);held.guard=action.guard;}
     if(action.dodge||action.lock||action.attack){
-      const key=action.dodge?'dodge':action.lock?'lock':'attack',before=world.totals.dodges;elapse(delay);
-      elapse(.05+delay,{...held,[key]:true});
-      if(key==='dodge'&&action.dodgeNeedsAcknowledgement){
+      const key=action.lockAndDodge?'lockAndDodge':action.dodge?'dodge':action.lock?'lock':'attack',before=world.totals.dodges;elapse(delay);
+      attackDelivered ||= key==='attack';
+      elapse(.05+delay,{...held,[key]:true,
+        ...(key==='lockAndDodge'?{lock:true,dodge:true}:{})});
+      if((key==='dodge'||key==='lockAndDodge')&&action.dodgeNeedsAcknowledgement){
         for(let retry=0;world.mode==='playing'&&world.totals.dodges===before&&retry<18;retry++){
           elapse(.11);elapse(.05,{...held,dodge:true});
         }
@@ -138,4 +155,7 @@ test('deadline-driven recovery survives the modeled failed left encounter phase'
   }
   assert.ok(world.player.hp>0,`player died before the retainer: ${JSON.stringify(world.totals)}`);
   assert.equal(retainer.hp,0,'the retainer must fall after the acknowledged recovery');
+  assert.equal(world.totals.dodges,branchEntryDodges+1,'left branch recovery must acknowledge exactly one spacing dodge');
+  assert.equal(lockEstablished,true,'the combined branch-entry input must establish the retainer lock');
+  assert.equal(attackDelivered,true,'post-dodge pursuit waiting must not starve delayed attacks');
 });

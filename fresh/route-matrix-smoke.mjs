@@ -64,7 +64,7 @@ function observe(result,item,w,lastSample){
   if(!result.rejoin&&w.routePhase==='rejoined'){
     result.rejoin={time:w.routeRejoinTime,position:w.routeRejoinPosition};mark(item,'route-rejoin',result.rejoin);
   }
-  if(w.routeChoice&&w.player.z<=ROUTE_FORK.obstacleFrontZ&&w.player.z>=ROUTE_FORK.obstacleBackZ&&w.time-lastSample.value>=.5){
+  if(w.routePhase==='branch'&&w.routeChoice&&w.player.z<=ROUTE_FORK.obstacleFrontZ&&w.player.z>=ROUTE_FORK.obstacleBackZ&&w.time-lastSample.value>=.5){
     result.ridgeSamples.push({time:w.time,x:w.player.x,z:w.player.z});lastSample.value=w.time;
   }
 }
@@ -113,14 +113,36 @@ async function runTouchLeft(){
     const begin=async(id,p)=>{contacts.set(id,{...p,id});await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[...contacts.values()]});};
     const end=async id=>{contacts.delete(id);await cdp.send('Input.dispatchTouchEvent',{type:contacts.size?'touchMove':'touchEnd',touchPoints:[...contacts.values()]});};
     const tap=async p=>{const id=tapId++;await begin(id,p);await page.waitForTimeout(50);await end(id);await page.waitForTimeout(110);};
+    const tapPair=async(a,b)=>{
+      const first=tapId++,second=tapId++;
+      contacts.set(first,{...a,id:first});contacts.set(second,{...b,id:second});
+      await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[...contacts.values()]});await page.waitForTimeout(50);
+      contacts.delete(first);contacts.delete(second);
+      await cdp.send('Input.dispatchTouchEvent',{type:contacts.size?'touchMove':'touchEnd',touchPoints:[...contacts.values()]});await page.waitForTimeout(110);
+    };
     const tapDodgeUntilObserved=async before=>{
       const retryDeadline=Date.now()+3000;
       do{
-        await tap(dodge);
         const observed=await page.evaluate(()=>({mode:freshDiagnostics().world.mode,dodges:freshDiagnostics().world.totals.dodges}));
-        if(observed.mode!=='playing'||observed.dodges>before)return;
+        if(observed.dodges>before)return;
+        if(observed.mode!=='playing')throw new Error('Mission ended before the recovery dodge was acknowledged');
+        await tap(dodge);
       }while(Date.now()<retryDeadline);
       throw new Error('Recovery dodge was not observed before its 3000ms input deadline');
+    };
+    const waitForRetainerLockAfterPair=async beforeDodges=>{
+      const acknowledgementDeadline=Date.now()+3000;let observed=null,pairActivityObserved=false;
+      do{
+        observed=await page.evaluate(()=>({mode:freshDiagnostics().world.mode,locked:freshDiagnostics().world.locked,dodges:freshDiagnostics().world.totals.dodges}));
+        pairActivityObserved ||= observed.locked!==null||observed.dodges>beforeDodges;
+        if(observed.mode!=='playing')throw new Error('Mission ended before combined lock and dodge input was acknowledged');
+        if(observed.locked==='retainer')return observed;
+        // Do not resend the still-pending lock pulse: a second accepted lock
+        // would toggle the target back off. Wait for a rendered simulation
+        // frame, which can lag the 160ms physical pulse under CI recording.
+        await page.waitForTimeout(50);
+      }while(Date.now()<acknowledgementDeadline);
+      throw new Error(`Retainer lock was not observed before its 3000ms paired-input deadline (pair activity: ${pairActivityObserved})`);
     };
     const deadline=Date.now()+180000,lastSample={value:-Infinity},touchSession=createTouchPlaythroughSession();let kills=-1;result.guardObserved=false;result.blockOrParryObserved=false;
     while(Date.now()<deadline){
@@ -131,7 +153,12 @@ async function runTouchLeft(){
       observe(result,item,w,lastSample);
       const action=touchPlaythroughAction(w,'left',touchSession);
       if(action.guard&&!contacts.has(1))await begin(1,guard);if(!action.guard&&contacts.has(1))await end(1);
-      if(action.dodge)await (action.dodgeNeedsAcknowledgement?tapDodgeUntilObserved(w.totals.dodges):tap(dodge));else if(action.lock)await tap(lock);else if(action.attack)await tap(attack);
+      if(action.lockAndDodge){
+        await tapPair(lock,dodge);
+        const paired=await waitForRetainerLockAfterPair(w.totals.dodges);
+        if(paired.dodges<=w.totals.dodges)await tapDodgeUntilObserved(w.totals.dodges);
+      }
+      else if(action.dodge)await (action.dodgeNeedsAcknowledgement?tapDodgeUntilObserved(w.totals.dodges):tap(dodge));else if(action.lock)await tap(lock);else if(action.attack)await tap(attack);
       else if(action.x||action.z){
         await begin(4,stick);contacts.set(4,{x:stick.x+action.x*32,y:stick.y+action.z*32,id:4});
         await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[...contacts.values()]});await page.waitForTimeout(100);await end(4);await page.waitForTimeout(40);

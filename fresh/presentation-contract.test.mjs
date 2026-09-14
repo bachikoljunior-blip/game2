@@ -131,6 +131,7 @@ test('route checkpoint images are decoded after capture instead of perturbing he
     const end=source.indexOf('for(const key of held)',start);
     assert.ok(start>=0&&end>start);
     assert.doesNotMatch(source.slice(start,end),/screenshot\(/,'live route observation must not leave movement held during image encoding');
+    assert.match(source,/routePhase==='branch'&&w\.routeChoice/,'route-side samples must stop after physical reconvergence');
   }
   assert.match(verifier,/\['fork-entry','route-choice','route-landmark','route-rejoin'\]/);
   assert.match(verifier,/snapshotBytes>0/);
