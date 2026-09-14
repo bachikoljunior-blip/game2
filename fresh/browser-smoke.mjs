@@ -2,7 +2,7 @@ import { chromium } from 'playwright';
 import { mkdir, rename, writeFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import { playthroughAction } from './playthrough-policy.mjs';
-import { touchPlaythroughAction } from './touch-playthrough-policy.mjs';
+import { createTouchPlaythroughSession, touchPlaythroughAction } from './touch-playthrough-policy.mjs';
 import { ENDING_PHRASES } from './mission.js';
 import { ROUTE_FORK } from './route-layout.js';
 const out=new URL('../AI_DEVELOPMENT/EVIDENCE/fresh-20260913/',import.meta.url);
@@ -210,7 +210,16 @@ try{
   await endContact(id);
   await mobile.waitForTimeout(110);
  };
- const touchDeadline=Date.now()+180000;report.touchMission={policy:'right wind-cloth route; spacing dodge, held guard and close attacks after contact; prior dodge-only and narrow-counter failures retained',guardObserved:false,blockOrParryObserved:false,checkpoints:[],route:{preferred:'right',entry:null,choice:null,landmark:null,consequence:null,rejoin:null,ridgeSamples:[]},decisions:[],decisionsOmitted:0,timingScope:'Read-only observed world followed by real touch commands. Decision commandStarted/Finished are wall offsets including command round trips and deliberate waits, not measured game input latency.'};let touchKills=-1,lastTouchRouteSampleTime=-Infinity;mark(mobileRecording,'full-mission-start');
+ const tapDodgeUntilObserved=async before=>{
+  const retryDeadline=Date.now()+3000;
+  do{
+   await tapPoint(dodgePoint);
+   const observed=await mobile.evaluate(()=>({mode:freshDiagnostics().world.mode,dodges:freshDiagnostics().world.totals.dodges}));
+   if(observed.mode!=='playing'||observed.dodges>before)return;
+  }while(Date.now()<retryDeadline);
+  throw new Error('Recovery dodge was not observed before its 3000ms input deadline');
+ };
+ const touchDeadline=Date.now()+180000,touchSession=createTouchPlaythroughSession();report.touchMission={policy:'right wind-cloth route; spacing dodge, held guard and close attacks after contact; prior dodge-only and narrow-counter failures retained',guardObserved:false,blockOrParryObserved:false,checkpoints:[],route:{preferred:'right',entry:null,choice:null,landmark:null,consequence:null,rejoin:null,ridgeSamples:[]},decisions:[],decisionsOmitted:0,timingScope:'Read-only observed world followed by real touch commands. Decision commandStarted/Finished are wall offsets including command round trips and deliberate waits, not measured game input latency.'};let touchKills=-1,lastTouchRouteSampleTime=-Infinity;mark(mobileRecording,'full-mission-start');
  while(Date.now()<touchDeadline){
   const w=await mobile.evaluate(()=>freshDiagnostics().world);
   report.touchMission.guardObserved ||= w.player.state==='guard';
@@ -242,11 +251,11 @@ try{
   if(w.routeChoice&&w.player.z<=ROUTE_FORK.obstacleFrontZ&&w.player.z>=ROUTE_FORK.obstacleBackZ&&w.time-lastTouchRouteSampleTime>=.5){
    report.touchMission.route.ridgeSamples.push({time:w.time,x:w.player.x,z:w.player.z});lastTouchRouteSampleTime=w.time;
   }
-  const a=touchPlaythroughAction(w,'right');
+  const a=touchPlaythroughAction(w,'right',touchSession);
   const decision={observedWorldTime:w.time,playerState:w.player.state,posture:w.player.posture,action:a,commandStartedMs:Date.now()-(touchDeadline-180000)};
   if(a.guard&&!contacts.has(1))await beginContact(1,g);
   if(!a.guard&&contacts.has(1))await endContact(1);
-  if(a.dodge)await tapPoint(dodgePoint);
+  if(a.dodge)await (a.dodgeNeedsAcknowledgement?tapDodgeUntilObserved(w.totals.dodges):tapPoint(dodgePoint));
   else if(a.lock)await tapPoint(lockPoint);
   else if(a.attack)await tapPoint(attackPoint);
   else if(a.x||a.z){

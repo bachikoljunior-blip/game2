@@ -2,7 +2,7 @@ import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
 import { mkdir, rename, writeFile } from 'node:fs/promises';
 import { playthroughAction } from './playthrough-policy.mjs';
-import { touchPlaythroughAction } from './touch-playthrough-policy.mjs';
+import { createTouchPlaythroughSession, touchPlaythroughAction } from './touch-playthrough-policy.mjs';
 import { ROUTE_FORK } from './route-layout.js';
 
 const out=new URL('../AI_DEVELOPMENT/EVIDENCE/fresh-20260913/',import.meta.url);
@@ -113,16 +113,25 @@ async function runTouchLeft(){
     const begin=async(id,p)=>{contacts.set(id,{...p,id});await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[...contacts.values()]});};
     const end=async id=>{contacts.delete(id);await cdp.send('Input.dispatchTouchEvent',{type:contacts.size?'touchMove':'touchEnd',touchPoints:[...contacts.values()]});};
     const tap=async p=>{const id=tapId++;await begin(id,p);await page.waitForTimeout(50);await end(id);await page.waitForTimeout(110);};
-    const deadline=Date.now()+180000,lastSample={value:-Infinity};let kills=-1;result.guardObserved=false;result.blockOrParryObserved=false;
+    const tapDodgeUntilObserved=async before=>{
+      const retryDeadline=Date.now()+3000;
+      do{
+        await tap(dodge);
+        const observed=await page.evaluate(()=>({mode:freshDiagnostics().world.mode,dodges:freshDiagnostics().world.totals.dodges}));
+        if(observed.mode!=='playing'||observed.dodges>before)return;
+      }while(Date.now()<retryDeadline);
+      throw new Error('Recovery dodge was not observed before its 3000ms input deadline');
+    };
+    const deadline=Date.now()+180000,lastSample={value:-Infinity},touchSession=createTouchPlaythroughSession();let kills=-1;result.guardObserved=false;result.blockOrParryObserved=false;
     while(Date.now()<deadline){
       const w=await page.evaluate(()=>freshDiagnostics().world);
       result.guardObserved ||= w.player.state==='guard';result.blockOrParryObserved ||= w.events.some(event=>event.type==='block'||event.type==='parry');
       if(w.totals.kills!==kills){result.checkpoints.push(w);kills=w.totals.kills;mark(item,'kills',kills);}
       if(w.mode!=='playing'){if(w.mode==='victory')result.victoryObservedElapsedMs=Date.now()-(deadline-180000);break;}
       observe(result,item,w,lastSample);
-      const action=touchPlaythroughAction(w,'left');
+      const action=touchPlaythroughAction(w,'left',touchSession);
       if(action.guard&&!contacts.has(1))await begin(1,guard);if(!action.guard&&contacts.has(1))await end(1);
-      if(action.dodge)await tap(dodge);else if(action.lock)await tap(lock);else if(action.attack)await tap(attack);
+      if(action.dodge)await (action.dodgeNeedsAcknowledgement?tapDodgeUntilObserved(w.totals.dodges):tap(dodge));else if(action.lock)await tap(lock);else if(action.attack)await tap(attack);
       else if(action.x||action.z){
         await begin(4,stick);contacts.set(4,{x:stick.x+action.x*32,y:stick.y+action.z*32,id:4});
         await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[...contacts.values()]});await page.waitForTimeout(100);await end(4);await page.waitForTimeout(40);
