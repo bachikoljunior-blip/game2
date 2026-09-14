@@ -10,13 +10,14 @@
     "workingBranch": "codex/game2-rebuild-20260913",
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
-    "activeTask": "FRESH-C04-WHOLE-ELEMENT-COVERAGE",
-    "lastSuccessfulAction": "Recovered stopped foreground production, produced verified runtime44ce5a67 and reflected source checkpoint ce597b8 to main through PR15. Main06a5a2c has zero tree difference from the source checkpoint; iPhone run34839153196 and Pages run34839152328 succeeded.",
-    "currentFailingAction": "All10 formal comparisons and5reference-selection dossiers remain incomplete. Official C04 ordinary-play media required age verification and two editorial routes returned anti-bot challenges. Exact-image diagnosis still shows foreground torii occlusion, lamp/player depth stacking and simple actor geometry.",
-    "currentHypothesis": "The prior method failed because it repeated isolated cosmetic work without producing comparison-ready pairs. Blocked public media routes must not be retried as the only path; batch measured scene gaps and pursue alternate lawful ordinary-play media in parallel with exact-revision capture.",
-    "nextAction": "Reflect verified source44ce5a67 to main through the protected workflow. Then batch encounter camera obstacle avoidance, lamp/player depth and actor form in one render cycle while acquiring an alternate ordinary-play C04 source that does not require age-gate or anti-bot bypass. Keep all10 formal elements not measured until valid source-blind pairs exist; prioritize completing the five dossiers and first whole-element blind comparison.",
-    "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
+    "activeTask": "FRESH-C04-BRANCHING-ROUTE",
+    "lastSuccessfulAction": "Ultra integrator produced c18a5fd, CI34857008423 passed49 tests/build/actual PC and touch full missions/portrait/retry/two recording decodes, and PR17 reflected it to main38798e8 with PR/main iPhone workflows and Pages success. A lawful ordinary-play reference was acquired and fully decoded; the first anonymous material gate was executed.",
+    "currentFailingAction": "All10 formal comparisons and5reference-selection dossiers remain incomplete. C04-BLIND-ATTEMPT-01 was material invalid before source recognition or preference: the candidate route shows no fork or selectable alternate line from entry to shrine.",
+    "currentHypothesis": "The remaining C04 gate is now a candidate structure defect rather than source acquisition. A readable physical branch with a distinct landmark/consequence and reconvergence must exist and be traversed in real input before another blind packet can cover the fixed whole-element boundary.",
+    "nextAction": "Design and implement a readable, physically traversable C04 branch before the shrine, give both routes a perceivable landmark/consequence and reconvergence, verify both routes by actual PC/touch input, recapture the continuous route and repeat the independent source-concealed material gate. Keep all10 formal elements not measured until valid comparisons complete.",
+    "rollbackPoint": "c18a5fd1051b15471b3ca0ba3a129ccfc943596a",
     "pendingVerification": [
+      "C04 candidate entry-landmark-fork-shrine coverage on both physical routes before another anonymous comparison",
       "Whole-element actual candidate/reference pairs with valid source concealment",
       "Foreground obstacle visibility and weapon/contact readability across combat",
       "Ending actor grounding, sheathing and light balance",
@@ -27,25 +28,20 @@
     ],
     "modifiedFiles": [
       "AI_DEVELOPMENT/COMPARISON_ELEMENTS.yaml",
-      "AI_DEVELOPMENT/EVIDENCE/20260914-c04-delayed-touch.json",
-      "AI_DEVELOPMENT/EVIDENCE/20260914-c04-section-candidate.json",
-      "AI_DEVELOPMENT/EVIDENCE/20260914-c04-verified-checkpoint.json",
-      "AI_DEVELOPMENT/EVIDENCE/20260914-c05-longevity-supplement.json",
-      "AI_DEVELOPMENT/EVIDENCE/20260914-evidence-capacity-recovery.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-scene-c04-attempt.json",
+      "AI_DEVELOPMENT/FRESH_DESIGN.md",
       "AI_DEVELOPMENT/REBUILD_STATE.yaml",
       "AI_DEVELOPMENT/SESSION_STATE.yaml",
-      "AI_DEVELOPMENT/EVIDENCE/fresh-5afdd48-review/receipt.json",
-      "AI_DEVELOPMENT/EVIDENCE/fresh-5afdd48-review/README.md",
-      "AI_DEVELOPMENT/EVIDENCE/20260914-main-reflection-b0f5e76.json",
-      "AI_DEVELOPMENT/EVIDENCE/20260914-c04-method-recovery-scene-actor.json",
-      "fresh/presentation.js",
+      "fresh/browser-smoke.mjs",
+      "fresh/camera-framing.js",
+      "fresh/main.js",
       "fresh/presentation-contract.test.mjs",
-      "AI_DEVELOPMENT/FRESH_DESIGN.md"
+      "fresh/presentation.js"
     ],
     "remotePushPendingAuthorization": false,
     "remoteReleaseAuthorized": true,
     "remotePublicationStatus": "Main contains the verified fresh candidate under fresh/ through PR13. The root GitHub Pages route remains the existing public runtime; fresh public acceptance is not claimed.",
-    "publishedMainSha": "06a5a2ce7939f8d889bd54b28420d3fb3e8da1fd",
+    "publishedMainSha": "38798e8508bdb4cfa96c419cd76a8ebc6c267d20",
     "publishedUrl": "https://bachikoljunior-blip.github.io/game2/",
     "startPositionHotfix": {
       "status": "awaiting_verification",
@@ -98,41 +94,41 @@
       "coordination": "Check recent commits and running CI; if another producer is active, read only. No force push, duplicate work, or duplicate CI.",
       "activeBranch": "codex/game2-rebuild-20260913",
       "latestSafeCheckpoint": {
-        "at": "2026-09-14T11:39:30Z",
-        "verifiedRevision": "44ce5a67ad00f63ffc8c908d02db5c320d23d7ca",
-        "sourceCheckpoint": "ce597b8bd7a697ce7a4abc176d41985eb0ea363f",
-        "integratedMain": "06a5a2ce7939f8d889bd54b28420d3fb3e8da1fd",
-        "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-main-reflection-44ce5a67.json",
-        "review": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-method-recovery-scene-actor.json",
-        "execution": "Verified source tree is present on main and the source branch was fast-forwarded to the main merge. No persistent background producer is claimed. Continue from the latest remote state."
+        "at": "2026-09-14T15:06:00Z",
+        "verifiedRevision": "c18a5fd1051b15471b3ca0ba3a129ccfc943596a",
+        "sourceCheckpoint": "38798e8508bdb4cfa96c419cd76a8ebc6c267d20",
+        "integratedMain": "38798e8508bdb4cfa96c419cd76a8ebc6c267d20",
+        "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-scene-c04-attempt.json",
+        "review": "C04-BLIND-ATTEMPT-01",
+        "execution": "The verified implementation is on main and the source branch was fast-forwarded to the merge. The lawful C04 source is locally verified, but the first anonymous material gate exposed the candidate's missing fork; continue with the saved branching-route frontier."
       },
       "mainReflection": {
         "requiredEachRun": true,
         "latestUserInstruction": "ゲーム制作をしている三つのオートメーションをそれぞれ定期実行時にその時点のゲーム実装状態をメインブランチに反映するようにして",
         "scope": "bachikoljunior-blip/game2 only",
         "sourceBranch": "codex/game2-rebuild-20260913",
-        "latestSourceCheckpoint": "ce597b8bd7a697ce7a4abc176d41985eb0ea363f",
-        "verifiedRuntime": "44ce5a67ad00f63ffc8c908d02db5c320d23d7ca",
-        "pullRequest": 15,
-        "resultMainSha": "06a5a2ce7939f8d889bd54b28420d3fb3e8da1fd",
+        "latestSourceCheckpoint": "c18a5fd1051b15471b3ca0ba3a129ccfc943596a",
+        "verifiedRuntime": "c18a5fd1051b15471b3ca0ba3a129ccfc943596a",
+        "pullRequest": 17,
+        "resultMainSha": "38798e8508bdb4cfa96c419cd76a8ebc6c267d20",
         "verification": {
           "sourceRuntime": {
-            "run": 34838395942,
+            "run": 34857008423,
             "conclusion": "success",
-            "coverage": "47 tests, build, actual PC and touch full combat-to-signal-to-ending flow, portrait layout, retry and continuous recording decode"
+            "coverage": "49 tests, build, actual PC and touch full combat-to-signal-to-ending flow, foreground-post fade assertion, actor-layer assertion, portrait layout, retry and two continuous recording decodes"
           },
           "mainIphone": {
-            "run": 34839153196,
+            "run": 34859690633,
             "conclusion": "success"
           },
           "pages": {
-            "run": 34839152328,
+            "run": 34859690176,
             "conclusion": "success"
           },
           "pagesRouting": "The merge adds the fresh candidate under fresh/ but does not reroute the root Pages entry point. A fresh public-release claim is not made."
         },
         "completionClaim": false,
-        "nextRun": "Re-read remote source/main heads. If trees differ, validate and integrate through normal protected workflow; if identical, record confirmation and do not create an empty commit."
+        "nextRun": "Re-read remote source/main heads. Design the missing C04 physical branch from the fresh concept, verify both paths, then produce a new candidate packet; do not repeat the invalid straight-route comparison."
       }
     },
     "evidence": [
@@ -167,16 +163,43 @@
       "AI_DEVELOPMENT/EVIDENCE/20260914-c04-delayed-touch.json",
       "AI_DEVELOPMENT/EVIDENCE/20260914-main-reflection-b0f5e76.json",
       "AI_DEVELOPMENT/EVIDENCE/20260914-c04-method-recovery-scene-actor.json",
-      "AI_DEVELOPMENT/EVIDENCE/20260914-main-reflection-44ce5a67.json"
+      "AI_DEVELOPMENT/EVIDENCE/20260914-main-reflection-44ce5a67.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-scene-c04-attempt.json"
     ],
     "publicRuntimeRevision": "86512c3bfdc69e03b5b490d9b0d79ec9da141343",
     "producerExecution": {
       "kind": "foreground execution",
-      "checkpointAt": "2026-09-14T11:39:30Z",
+      "checkpointAt": "2026-09-14T15:06:00Z",
       "backgroundProducerConfirmed": false,
       "logicalActiveIsNotLivenessProof": true,
-      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-main-reflection-44ce5a67.json",
-      "nextInvocation": "Confirm actual remote/CI/producer activity, then resume exact saved frontier if foreground execution has ended. Do not duplicate active work."
+      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-scene-c04-attempt.json",
+      "nextInvocation": "Confirm actual remote/CI/producer activity, then resume the C04 branching-route frontier. Do not repeat the straight-route packet or duplicate an active writer."
+    },
+    "ultraDelegation": {
+      "instructionId": "ULTRA-CHILDREN-20260914-v3",
+      "userOriginals": [
+        "親はなんでもいい。子に全部やらせればいい。",
+        "確認したら、一旦game2 のオートメーションだけ有効にして、他は停止して"
+      ],
+      "requestedReasoningEffort": "ultra",
+      "integrator": "/root/game2_ultra_integrator",
+      "integratorSpawnArguments": {
+        "reasoning_effort": "ultra",
+        "fork_turns": "none",
+        "model": "omitted"
+      },
+      "parentConfirmationReceived": true,
+      "children": [
+        "/root/game2_ultra_integrator/fresh_scene_review",
+        "/root/game2_ultra_integrator/c04_source_route",
+        "/root/game2_ultra_integrator/c04_blind_attempt"
+      ],
+      "allChildSpawnArguments": "reasoning_effort=ultra, fork_turns=none, model omitted",
+      "receipt": "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-scene-c04-attempt.json",
+      "verifiedImplementation": "c18a5fd1051b15471b3ca0ba3a129ccfc943596a",
+      "verifiedWorkflow": 34857008423,
+      "integratedMain": "38798e8508bdb4cfa96c419cd76a8ebc6c267d20",
+      "automationGate": "pending remote readback of this receipt; do not change enabled states before that readback"
     }
   },
   "work": {
@@ -187,18 +210,18 @@
     "completion": "All concept elements satisfied by evidenced blind comparison.",
     "current_unit": "2026-09-13-fresh-design",
     "unit_status": "active",
-    "first_action": "Batch encounter camera obstacle avoidance, lamp/player depth and actor form in one render cycle while acquiring an alternate ordinary-play C04 source that does not require age-gate or anti-bot bypass. Keep all10 formal elements not measured until valid source-blind pairs exist; prioritize completing the five dossiers and first whole-element blind comparison.",
+    "first_action": "Design and implement a readable physical C04 branch before the shrine, verify both routes with actual PC/touch input, recapture entry-landmark-choice-shrine coverage and repeat the independent source-concealed material gate. Keep all10 formal elements not measured until valid comparisons exist.",
     "implementation_strategy": "Fresh design and implementation; needs-before-reuse, per latest direct user instruction.",
     "unitEndReason": null,
     "deadlineReassessment": {
-      "observedAt": "2026-09-14T11:32:47Z",
+      "observedAt": "2026-09-14T15:06:00Z",
       "prediction": "not yet grounded as can meet; under the latest instruction this means the current method is defective.",
-      "basis": "Ten formal comparisons and five dossiers remain incomplete. Three ordinary-play acquisition routes were tested but yielded no actual media. Candidate44ce5a67 completed one integrated visual cycle and full functional verification.",
-      "methodChange": "Stop using the blocked C04 route as the only next step. Batch all independently observed scene/actor gaps per render cycle and pursue alternate lawful media routes alongside candidate capture, with the first valid whole-element blind pair as the next scheduling gate.",
-      "validation": "Candidate44ce5a67 reduced four stored visual gaps in one cycle. CI34838395942 passed47 tests, build, PC/touch missions and recording decode; exact images show cleared foreground grass, distinct blades, added actor forms and a sheathed calm ending. Formal uncertainty remains because no valid reference pair exists.",
-      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-method-recovery-scene-actor.json",
-      "remainingHoursAtObservation": 140.32,
-      "nextMethodChange": "Reflect source44ce5a67 to main, then produce one batched camera/depth/actor candidate and obtain a comparison-ready ordinary-play source through a non-gated route. Start the first valid source-blind comparison before further isolated polish."
+      "basis": "Ten formal comparisons and five dossiers remain incomplete. A fully decoded continuous C04 reference now exists, but the first anonymous material gate proved that the candidate has no fork or selectable alternate route.",
+      "methodChange": "Batch the three stored screen-hierarchy defects, acquire lawful real comparison media in parallel, and place an independent material-validity gate before accepting any verdict. After that gate isolated the candidate structure defect, move the next production priority from more cosmetic polish or source hunting to a physical branch with real-input route coverage.",
+      "validation": "Candidate c18a5fd reduced the stored occlusion/light/actor gaps and CI34857008423 passed49 tests, build, PC/touch missions and recording decode. Two reference media files were downloaded and fully decoded. C04-BLIND-ATTEMPT-01 then identified the missing candidate fork at exact video ranges instead of producing a false verdict.",
+      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-scene-c04-attempt.json",
+      "remainingHoursAtObservation": 136.76,
+      "nextMethodChange": "Implement and verify the C04 branch before rebuilding the anonymous packet; do not retry the invalid straight-route comparison or treat source acquisition as the remaining blocker."
     },
     "latestDeadlineInstruction": {
       "userOriginal": "定期オートメーション実行時の継続確認の後、期限内に達成できるか考え、できる以外の判断をしたならやり方が間違ってることを疑え",
