@@ -10,11 +10,11 @@
     "workingBranch": "codex/game2-rebuild-20260913",
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
-    "activeTask": "FRESH-PRESENTATION-FOUNDATION",
+    "activeTask": "FRESH-PRESENTATION-FOUNDATION-CI",
     "lastSuccessfulAction": "Recovery revision ed296ee passed CI34799863173 after isolating desktop and phone in clean browser processes. The unchanged touch route completed3 fights, explicit signal, ending and clean retry in75.390s; desktop checks took81.489s;33 tests/build passed. The f2d81b7 one-hit transcription is corrected.",
     "currentFailingAction": null,
     "currentHypothesis": null,
-    "nextAction": "Production has resumed. Inspect the retained mobile ending image, then replace the largest primitive generated-presentation gaps as one coherent visual foundation rather than serial micro-fixes. Verify actual title/encounter/ending/phone frames and runtime budgets. In parallel with implementation evidence, finish C05/C06/C09/C11/C12 reference selection and build source-blind continuous media. All elements remain not measured. Deadline2026-09-20T07:51:53Z.",
+    "nextAction": "Verify the new generated sky, sun, raised side terrain, segmented bamboo and leaf clusters at its exact revision. Require34 tests, build, desktop and touch mission, then inspect actual title/encounter/ending/phone frames and render counts. Reject or repair regressions from evidence. Continue C05/C06/C09/C11/C12 selection and source-blind continuous media. All elements remain not measured. Deadline2026-09-20T07:51:53Z.",
     "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
     "pendingVerification": [
       "Exact candidate touch-only full mission CI",
@@ -35,6 +35,8 @@
       "fresh/main.js",
       "fresh/mission.css",
       "fresh/browser-smoke.mjs",
+      "fresh/presentation-contract.test.mjs",
+      "fresh/presentation.js",
       "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-b851e80.json",
       "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-touch-failure-f2d81b7.json"
     ],
@@ -111,7 +113,8 @@
       "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-presentation-checkpoint.json",
       "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-b851e80.json",
       "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-touch-failure-f2d81b7.json",
-      "AI_DEVELOPMENT/EVIDENCE/20260914-production-recovery-9895e92.json"
+      "AI_DEVELOPMENT/EVIDENCE/20260914-production-recovery-9895e92.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-landscape-foundation.json"
     ],
     "publicRuntimeRevision": "86512c3bfdc69e03b5b490d9b0d79ec9da141343"
   },
@@ -123,7 +126,7 @@
     "completion": "All concept elements satisfied by evidenced blind comparison.",
     "current_unit": "2026-09-13-fresh-design",
     "unit_status": "active",
-    "first_action": "Inspect the retained mobile ending image, then implement and verify the coherent generated-presentation foundation; finish unresolved reference selections and source-blind continuous media alongside it. All elements remain not measured. Deadline2026-09-20T07:51:53Z.",
+    "first_action": "Verify the generated landscape foundation in exact-revision CI and actual frames; repair evidence-backed regressions, then continue unresolved reference selections and source-blind continuous media. All elements remain not measured. Deadline2026-09-20T07:51:53Z.",
     "implementation_strategy": "Fresh design and implementation; needs-before-reuse, per latest direct user instruction.",
     "unitEndReason": null
   }

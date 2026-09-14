@@ -10,7 +10,7 @@ export function createPresentation(canvas) {
   renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
   renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
-  const scene = new T.Scene(); scene.background = new T.Color('#bfc4b2'); scene.fog = new T.FogExp2('#bfc4b2',.013);
+  const scene = new T.Scene(); scene.fog = new T.FogExp2('#b8b7a7',.0115);
   const camera = new T.PerspectiveCamera(52,1,.1,230);
   scene.add(new T.HemisphereLight('#c4dbed','#51453d',2.4));
   const sun = new T.DirectionalLight('#ffe2ad',3.5); sun.position.set(-24,28,18); sun.castShadow=true;
@@ -19,8 +19,21 @@ export function createPresentation(canvas) {
   let seed = 310519;
   const random = () => { seed = (1664525*seed+1013904223)>>>0; return seed/4294967296; };
   const material = (color, roughness=.85, metalness=0) => new T.MeshStandardMaterial({color,roughness,metalness});
-  const bark=material('#5c3d2d'), red=material('#a3462f'), stone=material('#747a70'), roof=material('#303e3d'),
-    leaf=material('#838044'), brass=material('#c5a36b',.35,.65), skin=material('#b49478'), dark=material('#181f25');
+  const bark=material('#516142'),bambooNode=material('#89905a'),red=material('#a3462f'),stone=material('#747a70'),roof=material('#303e3d'),
+    leaf=material('#747b3f'),brass=material('#c5a36b',.35,.65),skin=material('#b49478'),dark=material('#181f25');
+  leaf.side=T.DoubleSide;
+  // A generated atmospheric dome and sun establish one continuous magic-hour light field.
+  const sky=new T.Mesh(new T.SphereGeometry(190,32,18),new T.ShaderMaterial({
+    side:T.BackSide,depthWrite:false,uniforms:{sunDirection:{value:new T.Vector3(-.48,.24,-.84).normalize()}},
+    vertexShader:'varying vec3 ray; void main(){ray=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+    fragmentShader:'varying vec3 ray; uniform vec3 sunDirection; void main(){float h=smoothstep(-.18,.72,ray.y);vec3 horizon=vec3(.82,.58,.39);vec3 zenith=vec3(.19,.31,.39);float glow=pow(max(dot(normalize(ray),sunDirection),0.),18.);vec3 c=mix(horizon,zenith,h)+vec3(1.,.43,.12)*glow*.32;gl_FragColor=vec4(c,1.);}'
+  }));scene.add(sky);
+  const sunCanvas=document.createElement('canvas');sunCanvas.width=sunCanvas.height=128;
+  const sunCtx=sunCanvas.getContext('2d'),sunGradient=sunCtx.createRadialGradient(64,64,4,64,64,62);
+  sunGradient.addColorStop(0,'rgba(255,246,207,1)');sunGradient.addColorStop(.18,'rgba(255,209,132,.95)');sunGradient.addColorStop(.5,'rgba(255,143,75,.24)');sunGradient.addColorStop(1,'rgba(255,120,55,0)');
+  sunCtx.fillStyle=sunGradient;sunCtx.fillRect(0,0,128,128);
+  const sunSprite=new T.Sprite(new T.SpriteMaterial({map:new T.CanvasTexture(sunCanvas),transparent:true,depthWrite:false,blending:T.AdditiveBlending}));
+  sunSprite.position.set(-52,28,-92);sunSprite.scale.set(24,24,1);scene.add(sunSprite);
   // Generated grain has no external texture request.
   const texCanvas=document.createElement('canvas');texCanvas.width=texCanvas.height=128;
   const ctx=texCanvas.getContext('2d');ctx.fillStyle='#a4a092';ctx.fillRect(0,0,128,128);
@@ -34,7 +47,15 @@ export function createPresentation(canvas) {
   }
   const box=(m,x,y,z,w,h,d,ry=0)=>staticPart(new T.BoxGeometry(1,1,1),m,x,y,z,w,h,d,ry);
   const column=(m,x,y,z,r,h)=>staticPart(new T.CylinderGeometry(r*.88,r,h,8),m,x,y,z);
-  const ground=new T.Mesh(new T.PlaneGeometry(160,200,1,1),groundMat);ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+  const groundGeometry=new T.PlaneGeometry(160,200,64,80);groundGeometry.rotateX(-Math.PI/2);
+  const groundPosition=groundGeometry.getAttribute('position');
+  for(let i=0;i<groundPosition.count;i++){
+    const x=groundPosition.getX(i),z=groundPosition.getZ(i),edge=clamp((Math.abs(x)-4)/28,0,1);
+    const ridge=(2.2+Math.sin(x*.17+z*.055)*1.25+Math.sin(z*.11-x*.07)*.65)*edge;
+    groundPosition.setY(i,Math.max(0,ridge));
+  }
+  groundGeometry.computeVertexNormals();
+  const ground=new T.Mesh(groundGeometry,groundMat);ground.receiveShadow=true;scene.add(ground);
   // Stone paths use broken edge courses; open central ground remains navigable.
   for(let z=-19;z<24;z+=1.1) for(let x=-1.8;x<2;x+=.9)box(stone,x,.015,z,.85,.07,1.02,random()*.02);
   for(const o of OBSTACLES){if(o.h<5)column(red,o.x,o.h/2,o.z,.3,o.h);else{
@@ -56,11 +77,18 @@ export function createPresentation(canvas) {
     const a=i/28*Math.PI*2,rr=65+random()*40;
     staticPart(new T.ConeGeometry(15+random()*15,15+random()*26,7,3),material(i%2?'#637b76':'#879489'),Math.sin(a)*rr,0,Math.cos(a)*rr,1,1,1,random()*6);
   }
+  const leafParts=[];
+  for(const angle of [-.48,0,.48]){
+    const g=new T.PlaneGeometry(1.55,.16,2,1);g.translate(.7,0,0);g.rotateZ(angle);leafParts.push(g);
+  }
+  const leafCluster=mergeGeometries(leafParts);leafParts.forEach(g=>g.dispose());
   for(let i=0;i<150;i++){
     const side=random()<.5?-1:1,x=side*(10+random()*39),z=-50+random()*90,h=7+random()*7;
     column(bark,x,h/2,z,.08,h);
-    for(let j=0;j<4;j++)staticPart(new T.ConeGeometry(1.6-j*.22,2.5,5),leaf,x+(random()-.5),h*.55+j,z,1,.4,1,random()*6);
+    for(let y=.8;y<h;y+=1.15)column(bambooNode,x,y,z,.095,.035);
+    for(let j=0;j<6;j++)staticPart(leafCluster.clone(),leaf,x+(random()-.5)*.8,h*.43+j*h*.075,z+(random()-.5)*.8,.8+random()*.55,.8+random()*.35,.8+random()*.55,random()*Math.PI*2);
   }
+  leafCluster.dispose();
   for(const [mat,geoms] of batches){const merged=mergeGeometries(geoms);const mesh=new T.Mesh(merged,mat);mesh.castShadow=mesh.receiveShadow=true;scene.add(mesh);geoms.forEach(g=>g.dispose());}
   const grassMat=material('#8b8951');grassMat.side=T.DoubleSide;
   const wind={value:0};grassMat.onBeforeCompile=shader=>{shader.uniforms.windTime=wind;shader.vertexShader='uniform float windTime;\n'+shader.vertexShader;shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n transformed.x += sin(windTime * 1.6 + instanceMatrix[3].x * .3 + instanceMatrix[3].z * .2) * position.y * .24;');};

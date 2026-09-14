@@ -32,3 +32,12 @@ test('interface gives labels an opaque backing and keeps victory title off the l
   assert.match(main,/menu\.dataset\.mode=world\.mode/);
   assert.match(main,/input\.setActive\(false\);hud\.hidden=true;menu\.hidden=false/);
 });
+
+test('generated landscape replaces flat background and cone bamboo without external assets',()=>{
+  const source=readFileSync(new URL('./presentation.js',import.meta.url),'utf8');
+  assert.match(source,/new T\.ShaderMaterial/);
+  assert.match(source,/new T\.PlaneGeometry\(160,200,64,80\)/);
+  assert.match(source,/const leafCluster=mergeGeometries/);
+  assert.doesNotMatch(source,/new T\.ConeGeometry\(1\.6-j\*\.22,2\.5,5\)/);
+  assert.doesNotMatch(source,/TextureLoader|\.glb|\.gltf|fetch\(/);
+});

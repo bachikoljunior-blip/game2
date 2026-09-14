@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-14T02:41:18Z",
-  "phase": "fresh-presentation-foundation",
+  "updatedAt": "2026-09-14T02:48:00Z",
+  "phase": "fresh-presentation-foundation-ci",
   "userInstruction": "一旦ゲーム自体はゼロから作り直してくれる？",
   "activeBranch": "codex/game2-rebuild-20260913",
   "fixedInstructions": "AI_DEVELOPMENT/FIXED_INSTRUCTIONS.md",
@@ -27,7 +27,7 @@
   "comparisonCatalog": "AI_DEVELOPMENT/COMPARISON_ELEMENTS.yaml",
   "referenceSelectionComplete": false,
   "verificationEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-b851e80.json",
-  "pendingCandidate": "ed296ee passed CI34799863173: isolated phone route completed3 fights, signal, ending and clean retry in75.390s; desktop checks took81.489s. This recovers production but is not a concept-element verdict.",
+  "pendingCandidate": "After recovery ed296ee passed CI34799863173, a fresh generated-landscape candidate adds an atmospheric sky/sun, raised side terrain and segmented leaf-cluster bamboo. Local34 tests/build pass; exact-revision rendered CI and image review are pending.",
   "recoveryRole": {
     "userInstruction": "定期オートメーションは万が一実行が停止していたら、停止してしまう原因を全て潰してから再開する再発火役にしてください。",
     "status": "recovery_completed",
