@@ -109,7 +109,17 @@
     ],
     "childSpawnArguments": "reasoning_effort=ultra, fork_turns=none, model omitted",
     "receipt": "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-scene-c04-attempt.json",
-    "automationGate": "pending remote readback of the game2 receipt"
+    "automationGate": {
+      "game2ReceiptRemoteCommit": "08ef7e4ec11d4bcd334c63520e1ed5397f86aeb0",
+      "verifiedAt": "2026-09-14T15:15:02Z",
+      "crossRepoHeads": {
+        "survival": "b0f1dfb9860dbc00018c0c587d8f0934fadb6604",
+        "q": "89398313469f6f7c16e8a5c83cf95c6f58fae0cc"
+      },
+      "enabledReadback": "game2=true, survival=false, Q=false",
+      "otherSettingsPreserved": true,
+      "createdOrDeleted": false
+    }
   },
   "c04ComparisonAttempt": {
     "id": "C04-BLIND-ATTEMPT-01",

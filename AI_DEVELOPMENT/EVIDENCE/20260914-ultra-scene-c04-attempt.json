@@ -199,11 +199,11 @@
     "nextExactWork": "Design and implement a readable, physically traversable C04 branch before the shrine, give the two routes a perceivable landmark/consequence and reconvergence, verify both routes with actual PC/touch input, then recapture the whole route and repeat the independent source-concealed material gate."
   },
   "crossRepositoryUltraGate": {
-    "observedAt": "2026-09-14T15:00:00Z",
+    "observedAt": "2026-09-14T15:15:02Z",
     "survival": {
-      "branchHead": "0abe4628947064fe811ed842face2018b87d5bf5",
+      "branchHead": "b0f1dfb9860dbc00018c0c587d8f0934fadb6604",
       "source": "https://github.com/bachikoljunior-blip/survival/blob/claude/repo-instructions-constraints-r0070m/AI_DEVELOPMENT/SESSION_STATE.yaml",
-      "finding": "v3 receipt, unique active Ultra integration owner /root/integration_decisions_ultra_v2, exact ultra/none/model-omitted spawn arguments, parent result-only role and concrete C30/C31 verification/integration evidence are present."
+      "finding": "At the latest branch head, the v3 receipt, active Ultra integration owner /root/integration_decisions_ultra_v2, exact ultra/none/model-omitted spawn arguments, parent result-only role and concrete C30/C31/Floor verification and prior main-integration evidence are present. Current C32 CI/main work is explicitly assigned to that Ultra owner and is not counted as already executed."
     },
     "q": {
       "mainHead": "89398313469f6f7c16e8a5c83cf95c6f58fae0cc",
@@ -211,9 +211,44 @@
       "finding": "v3 receipt, Ultra integrator /root/ultra_v2_integrator, exact ultra/none/model-omitted spawn arguments, concrete PR20/main/CI/Site integration and independent Ultra review receipts are present."
     },
     "game2": {
-      "source": "AI_DEVELOPMENT/SESSION_STATE.yaml",
-      "finding": "This evidence links the confirmed Ultra integrator and three exact Ultra child calls to c18a5fd, CI34857008423, PR17/main38798e8 and the C04 material-invalid result."
+      "branchHeadBeforeAutomation": "08ef7e4ec11d4bcd334c63520e1ed5397f86aeb0",
+      "source": "https://github.com/bachikoljunior-blip/game2/blob/codex/game2-rebuild-20260913/AI_DEVELOPMENT/SESSION_STATE.yaml",
+      "finding": "Remote readback found the two original user quotations, /root/game2_ultra_integrator, exact ultra/none/model-omitted spawn arguments, c18a5fd, CI34857008423, main38798e8 and C04-BLIND-ATTEMPT-01."
     },
-    "automationAction": "Perform only after this game2 receipt is stored and read back from the remote production branch."
+    "gateDecision": "satisfied for the delegation switch only; this is not a claim that any game is complete",
+    "automationAction": {
+      "beforePeekAt": "2026-09-14T15:13:42Z",
+      "beforeEnabled": {
+        "game2": true,
+        "survival": true,
+        "q": true
+      },
+      "updates": [
+        {
+          "id": "6aa4047ea44c8191aa35d6c428969a7a",
+          "is_enabled": true,
+          "updated_at": "2026-09-14T15:13:42.315630+00:00"
+        },
+        {
+          "id": "6aa71e69ffec81919e059ecff6d98f82",
+          "is_enabled": false,
+          "updated_at": "2026-09-14T15:13:46.317117+00:00"
+        },
+        {
+          "id": "6aa72048f4388191a7448b249cf6578d",
+          "is_enabled": false,
+          "updated_at": "2026-09-14T15:13:50.024573+00:00"
+        }
+      ],
+      "readbackEnabled": {
+        "game2": true,
+        "survival": false,
+        "q": false
+      },
+      "settingsReadback": "For all three IDs, title, prompt, schedule, default_timezone, timing_mode, triggers, conversation_id, team_id, display_schedule, last_run_time and next_run_time were exactly equal before and after. Only is_enabled and the service-maintained updated_at changed.",
+      "deleted": false,
+      "created": false,
+      "unrelatedAutomationsChanged": false
+    }
   }
 }

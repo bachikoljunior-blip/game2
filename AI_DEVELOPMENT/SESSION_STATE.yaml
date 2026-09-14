@@ -199,7 +199,26 @@
       "verifiedImplementation": "c18a5fd1051b15471b3ca0ba3a129ccfc943596a",
       "verifiedWorkflow": 34857008423,
       "integratedMain": "38798e8508bdb4cfa96c419cd76a8ebc6c267d20",
-      "automationGate": "pending remote readback of this receipt; do not change enabled states before that readback"
+      "automationGate": {
+        "observedAt": "2026-09-14T15:15:02Z",
+        "game2ReceiptRemoteCommit": "08ef7e4ec11d4bcd334c63520e1ed5397f86aeb0",
+        "crossRepositoryEvidence": {
+          "survivalBranchHead": "b0f1dfb9860dbc00018c0c587d8f0934fadb6604",
+          "survivalSource": "https://github.com/bachikoljunior-blip/survival/blob/claude/repo-instructions-constraints-r0070m/AI_DEVELOPMENT/SESSION_STATE.yaml",
+          "qMainHead": "89398313469f6f7c16e8a5c83cf95c6f58fae0cc",
+          "qSource": "https://github.com/bachikoljunior-blip/Q/blob/main/docs/PROJECT_STATE.md",
+          "finding": "All three canonical records bind exact Ultra/none/model-omitted spawn arguments and accepted owner IDs to concrete work, verification and integration evidence. Pending future work is not counted as executed."
+        },
+        "beforeEnabled": "game2=true, survival=true, Q=true",
+        "readbackEnabled": "game2=true, survival=false, Q=false",
+        "ids": {
+          "game2": "6aa4047ea44c8191aa35d6c428969a7a",
+          "survival": "6aa71e69ffec81919e059ecff6d98f82",
+          "q": "6aa72048f4388191a7448b249cf6578d"
+        },
+        "settingsPreserved": "Exact comparison found title, prompt, schedule, timezone, timing mode, triggers, conversation/team IDs, display schedule, last-run and next-run unchanged for all three; only is_enabled and service updated_at changed.",
+        "deletedOrCreated": false
+      }
     }
   },
   "work": {
