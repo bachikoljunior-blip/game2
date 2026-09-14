@@ -69,9 +69,12 @@ try{
  await page.waitForFunction(()=>freshDiagnostics().world.player.z<8,{},{timeout:90000});await page.keyboard.up('KeyW');
  report.checks.push('real start and keyboard movement through torii');
  await page.keyboard.press('KeyE');await page.waitForFunction(()=>freshDiagnostics().world.locked!==null);
- for(let i=0;i<8;i++){
-  await page.mouse.click(800,360);await page.waitForTimeout(800);
-  if(await page.evaluate(()=>freshDiagnostics().world.totals.hits>0))break;
+ const clickDeadline=Date.now()+30000;
+ while(Date.now()<clickDeadline){
+  const w=await page.evaluate(()=>freshDiagnostics().world);
+  if(w.totals.hits>0||w.mode!=='playing')break;
+  if(w.player.state==='idle'||w.player.state==='guard')await page.mouse.click(800,360);
+  await page.waitForTimeout(250);
  }
  await page.waitForFunction(()=>freshDiagnostics().camera.foregroundPostOpacity<=.35,{},{timeout:15000});
  report.combat=await page.evaluate(()=>freshDiagnostics());
