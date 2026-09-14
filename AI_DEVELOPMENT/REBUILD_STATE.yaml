@@ -28,7 +28,7 @@
   "referenceSelectionComplete": false,
   "verificationEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-verified-checkpoint.json",
   "pendingCandidate": null,
-  "methodChangeEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-unknown-method-change.json",
+  "methodChangeEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-method-recovery-scene-actor.json",
   "recoveryRole": {
     "userInstruction": "定期オートメーションは万が一実行が停止していたら、停止してしまう原因を全て潰してから再開する再発火役にしてください。",
     "status": "production_restarted_and_verified",
@@ -91,8 +91,8 @@
     "nextMethodChange": "Read current remote heads and active CI, reassess the deadline, and reflect the latest verified implementation to main (confirm no diff; never create an empty commit). Then acquire ordinary uninterrupted C04 approach/exploration reference footage and pair it with candidate entrance→combat→shrine/ending coverage. Use the pair to choose one integrated scene/actor change for enemy-blade/actor contrast and vegetation occlusion, route/shrine depth, and victory pose/sheathing mismatch. Keep all 10 elements not measured until valid source-blind comparisons exist. Five reference dossiers, audio, WebKit/target-mobile, long-duration and battle comparisons remain required. Local ENOSPC remains unresolved; use authorized GitHub/CI operations without bypassing sandbox rules."
   },
   "localEnvironment": {
-    "status": "unresolved",
-    "issue": "Local command startup still fails with ENOSPC while creating the sandbox marker.",
-    "consequence": "GitHub-side repository and CI operations remain usable; this is not recorded as repaired."
+    "status": "workspace_capacity_recovered_browser_flow_pending_ci",
+    "issue": "The previous ENOSPC condition is absent in the recovered workspace. The local Playwright browser cache is unavailable and workspace-path installation cannot maintain its directory lock.",
+    "consequence": "Fresh clone, npm ci, 47 tests and build succeed locally. Full PC/touch rendered flow must be measured by the unchanged GitHub workflow before this candidate is treated as verified."
   }
 }

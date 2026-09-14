@@ -36,7 +36,8 @@
       "AI_DEVELOPMENT/SESSION_STATE.yaml",
       "AI_DEVELOPMENT/EVIDENCE/fresh-5afdd48-review/receipt.json",
       "AI_DEVELOPMENT/EVIDENCE/fresh-5afdd48-review/README.md",
-      "AI_DEVELOPMENT/EVIDENCE/20260914-main-reflection-b0f5e76.json"
+      "AI_DEVELOPMENT/EVIDENCE/20260914-main-reflection-b0f5e76.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260914-c04-method-recovery-scene-actor.json"
     ],
     "remotePushPendingAuthorization": false,
     "remoteReleaseAuthorized": true,
@@ -206,13 +207,12 @@
       "nextMethodChange": "Read current remote heads and active CI, reassess the deadline, and reflect the latest verified implementation to main (confirm no diff; never create an empty commit). Then acquire ordinary uninterrupted C04 approach/exploration reference footage and pair it with candidate entrance→combat→shrine/ending coverage. Use the pair to choose one integrated scene/actor change for enemy-blade/actor contrast and vegetation occlusion, route/shrine depth, and victory pose/sheathing mismatch. Keep all 10 elements not measured until valid source-blind comparisons exist. Five reference dossiers, audio, WebKit/target-mobile, long-duration and battle comparisons remain required. Local ENOSPC remains unresolved; use authorized GitHub/CI operations without bypassing sandbox rules."
     },
     "latestDeadlineInstruction": {
-      "userOriginal": "継続確認の後、期限内に達成できるか考え、できないや分からないと判断したならやり方が間違ってることを疑え",
+      "userOriginal": "定期オートメーション実行時の継続確認の後、期限内に達成できるか考え、できる以外の判断をしたならやり方が間違ってることを疑え",
       "appliesAfterEveryContinuationCheck": true,
       "triggers": [
-        "cannot meet deadline with current method",
-        "cannot determine deadline feasibility"
+        "any judgment other than a grounded conclusion that the deadline can be met"
       ],
-      "requiredResponse": "Identify methodological errors and missing evidence; change priorities, work division, tools or verification within authority, perform the changed work and measure its effect. Do not stop at a forecast or plan update. Preserve the concept, fixed criteria, reference selection conditions, evidence rigor and deadline. While another producer is active, make only a read-only assessment and hand it off at the next safe checkpoint.",
+      "requiredResponse": "Treat the current method as defective; identify the defect and missing evidence, change priorities, work division, tools or verification within authority, perform the changed work and measure its effect. Do not stop at a forecast or plan update. Preserve the concept, fixed criteria, reference selection conditions, evidence rigor and deadline. While another producer is active, make only a read-only assessment and hand it off at the next safe checkpoint.",
       "automationPromptUpdatedAndVerified": true
     },
     "blanketApproval": {

@@ -24,7 +24,10 @@ export function createPresentation(canvas) {
   const random = () => { seed = (1664525*seed+1013904223)>>>0; return seed/4294967296; };
   const material = (color, roughness=.85, metalness=0) => new T.MeshStandardMaterial({color,roughness,metalness});
   const bark=material('#485647'),bambooNode=material('#91906b'),red=material('#92432d'),stone=material('#7f8275'),roof=material('#303e3d'),
-    leaf=material('#72834c'),brass=material('#c5a36b',.35,.65),skin=material('#b49478'),dark=material('#181f25');
+    leaf=material('#72834c'),brass=material('#c5a36b',.35,.65),skin=material('#b49478'),dark=material('#181f25'),
+    playerBlade=material('#e7f4f4',.16,.92),enemyBlade=material('#ffe0a6',.22,.82);
+  playerBlade.emissive.set('#7397a1');playerBlade.emissiveIntensity=.13;
+  enemyBlade.emissive.set('#a64b24');enemyBlade.emissiveIntensity=.24;
   leaf.side=T.DoubleSide;
   const wind={value:0};
   const leafWind=shader=>{shader.uniforms.windTime=wind;shader.vertexShader='uniform float windTime; attribute float windWeight;\n'+shader.vertexShader;shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n float gust=sin(windTime*1.15+position.x*.19+position.z*.13)*windWeight; transformed.x+=gust*.13; transformed.z+=gust*.071;');};
@@ -87,8 +90,9 @@ export function createPresentation(canvas) {
   const ground=new T.Mesh(groundGeometry,groundMat);ground.receiveShadow=true;scene.add(ground);
   // Stone paths use broken edge courses; open central ground remains navigable.
   for(let z=-19;z<24;z+=1.1)for(let x=-1.8;x<2;x+=.9){
+    const pathCenter=Math.sin((z+8)*.13)*.42;
     const jitter=(random()-.5)*.1,w=.74+random()*.1,d=.89+random()*.13;
-    box(stone,x+jitter,.005+random()*.016,z+jitter,w,.055,d,(random()-.5)*.06);
+    box(stone,pathCenter+x+jitter,.005+random()*.016,z+jitter,w,.055,d,(random()-.5)*.06);
   }
   for(const o of OBSTACLES){if(o.h<5)column(red,o.x,o.h/2,o.z,.3,o.h);else{
     const base=shrineBaseSize(o);box(stone,o.x,base.height/2,o.z,base.width,base.height,base.depth);
@@ -157,7 +161,8 @@ export function createPresentation(canvas) {
   const grass=new T.InstancedMesh(grassGeo,grassMat,3000),grassColor=new T.Color();
   let rootError=0;
   for(let i=0;i<3000;i++){
-    const side=random()<.5?-1:1,band=random()<.8?12:28,x=side*(2.8+random()*band),z=-38+random()*67;
+    // Keep the authored amount while pulling tall foreground blades out of the duel corridor.
+    const side=random()<.5?-1:1,near=random()<.22,x=side*((near?4.8:9)+random()*(near?5.2:23)),z=-38+random()*67;
     q.setFromAxisAngle(T.Object3D.DEFAULT_UP,random()*Math.PI*2);const scale=.65+random()*.65;
     matrix.compose(pos.set(x,groundHeightAt(x,z)+.006,z),q,s.set(scale,scale,scale));grass.setMatrixAt(i,matrix);
     grassColor.setHSL(.105+random()*.08,.22+random()*.2,.40+random()*.22);grass.setColorAt(i,grassColor);
@@ -186,6 +191,10 @@ export function createPresentation(canvas) {
     const body=new T.Group();root.add(body);
     mesh(body,new T.CylinderGeometry(.24,.29,.55,10),cloth,0,1.22,0);
     mesh(body,new T.CylinderGeometry(.29,.29,.09,10),brass,0,.97,0);
+    mesh(body,new T.BoxGeometry(.49,.08,.25),dark,0,1.37,.01);
+    const leftCollar=mesh(body,new T.BoxGeometry(.08,.38,.03),brass,-.07,1.42,-.225);leftCollar.rotation.z=-.34;
+    const rightCollar=mesh(body,new T.BoxGeometry(.08,.38,.03),brass,.07,1.42,-.226);rightCollar.rotation.z=.34;
+    for(const side of [-1,1])mesh(body,new T.BoxGeometry(.2,.11,.31),cloth,side*.29,1.45,0).rotation.z=-side*.12;
     const head=mesh(body,new T.SphereGeometry(.145,12,10),skin,0,1.66,0);head.scale.set(.85,1.12,.9);
     mesh(body,new T.SphereGeometry(.148,12,8,0,Math.PI*2,0,Math.PI*.55),dark,0,1.69,0);
     mesh(body,new T.SphereGeometry(.075,8,6),dark,0,1.84,.025);
@@ -202,13 +211,14 @@ export function createPresentation(canvas) {
       mesh(elbow,new T.CylinderGeometry(.075,.055,.3,8),skin,0,-.14,0);
       limbs.push({hip,knee,arm,elbow});
     }
+    const scabbard=mesh(body,new T.CylinderGeometry(.048,.06,1.02,8),dark,-.22,.83,.02);scabbard.rotation.z=Math.PI*.42;
     const sword=new T.Group();limbs[1].elbow.add(sword);sword.position.y=-.3;
     mesh(sword,new T.CylinderGeometry(.035,.035,.2,6),dark,0,-.06,0);
     mesh(sword,new T.CylinderGeometry(.07,.07,.025,8),brass,0,-.16,0);
-    mesh(sword,new T.BoxGeometry(.055,.9,.018),material('#e6efec',.2,.9),0,-.61,0);
+    mesh(sword,new T.BoxGeometry(.065,.9,.022),id==='player'?playerBlade:enemyBlade,0,-.61,0);
     const ring=mesh(root,new T.TorusGeometry(.5,.013,5,32),brass,0,.035,0);ring.rotation.x=Math.PI/2;ring.visible=false;
     const signal=mesh(root,new T.OctahedronGeometry(.1),brass,0,2.1,0);signal.visible=false;
-    rigs.set(id,{root,body,limbs,ring,signal});return rigs.get(id);
+    rigs.set(id,{root,body,limbs,sword,scabbard,ring,signal});return rigs.get(id);
   }
   const look=new T.Vector3();
   const cameraFrame={x:0,y:0,z:0,lookX:0,lookY:0,lookZ:0},smoothedFrame={...cameraFrame};let initialized=false;
@@ -224,6 +234,7 @@ export function createPresentation(canvas) {
     for(const a of [world.player,...world.enemies]){
       const r=rigs.get(a.id)||rig(a.id);r.root.position.set(a.x,groundHeightAt(a.x,a.z),a.z);r.root.rotation.y=-a.yaw;
       r.body.rotation.z=a.hp<=0?-Math.PI/2:0;r.body.position.y=a.hp<=0?-.65:0;
+      r.sword.visible=!(world.mode==='victory'&&a.id==='player');
       r.ring.visible=world.locked===a.id;r.signal.visible=a.state==='windup';
       const walking=a.state==='idle'?Math.sin(a.stride*6)*.55:0;
       r.limbs.forEach((l,i)=>{const phase=i?walking:-walking;l.hip.rotation.x=phase;l.knee.rotation.x=Math.max(0,-phase)*.8;l.arm.rotation.set(-.2,0,i?-.15:.15);l.elbow.rotation.x=-.55;});
@@ -232,6 +243,11 @@ export function createPresentation(canvas) {
         const u=clamp((a.age-.1)/.24,0,1);r.limbs[1].arm.rotation.x=-2.7+u*2.5;r.limbs[1].arm.rotation.z=-.5+u*.9;r.limbs[1].elbow.rotation.x=-.3;
       }
       if(a.state==='dodge')r.body.rotation.x=-.35;else r.body.rotation.x=0;
+      if(world.mode==='victory'&&a.id==='player'&&a.hp>0){
+        r.body.rotation.set(0,0,0);
+        r.limbs[0].arm.rotation.set(-.42,0,.18);r.limbs[0].elbow.rotation.x=-.28;
+        r.limbs[1].arm.rotation.set(-.52,0,-.18);r.limbs[1].elbow.rotation.x=-.32;
+      }
     }
     computeCameraFrame(world,orbit,camera.aspect,cameraFrame);
     interpolateCameraFrame(smoothedFrame,cameraFrame,dt,initialized);
