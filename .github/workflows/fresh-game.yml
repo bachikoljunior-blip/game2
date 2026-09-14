@@ -2,7 +2,7 @@ name: Fresh game verification
 on:
   push:
     branches: [codex/game2-rebuild-20260913]
-    paths: ['fresh/**', '.github/workflows/fresh-game.yml']
+    paths: ['fresh/**', '.github/workflows/fresh-game.yml', 'docs/**', 'index.html', 'public/**', 'src/**', 'vite.config.js', 'vite.single.config.js', 'package.json', 'package-lock.json', 'tools/check-fresh-catalog.mjs', 'tools/validate-project-state.mjs', '.kit/**', 'ARCHITECTURE.md']
   workflow_dispatch:
 permissions:
   contents: read
@@ -15,18 +15,41 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: node --test fresh/*.test.mjs
-      - run: node node_modules/vite/bin/vite.js build --config fresh/vite.config.mjs
+      - name: Exact revision and unchanged public root
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git diff --exit-code 1ded4aae27f8331cec10975c8dbac9eb482460a9 HEAD -- docs index.html public src vite.config.js vite.single.config.js package.json package-lock.json
+      - name: Repository, catalog and ownership gates
+        run: |
+          node .kit/tools/bootstrap.mjs --target=. --check
+          node tools/validate-project-state.mjs --selftest
+          npm run validate:project
+          node tools/check-fresh-catalog.mjs
+          npm run check:ownership
+          npm run build
+          git diff --check
+      - name: Fresh unit contracts
+        run: node --test fresh/*.test.mjs
+      - name: Fresh production build
+        run: node node_modules/vite/bin/vite.js build --config fresh/vite.config.mjs
       - run: npx playwright install --with-deps chromium
       - name: Install video integrity tools
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg
+      - name: Tested worktree is still the exact revision
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git diff --exit-code HEAD -- .
+          git diff --cached --exit-code HEAD -- .
       - name: Real browser inputs and WebGL recovery
         run: |
           node node_modules/vite/bin/vite.js preview --config fresh/vite.config.mjs --host 127.0.0.1 --port 4178 &
@@ -47,3 +70,5 @@ jobs:
         with:
           name: fresh-game-${{ github.sha }}
           path: AI_DEVELOPMENT/EVIDENCE/fresh-20260913/
+          if-no-files-found: error
+          retention-days: 90

@@ -2,11 +2,11 @@ import * as T from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { OBSTACLES } from './simulation.js';
 import { SIGNAL } from './mission.js';
-import { computeCameraFrame, foregroundObstacleOpacity, interpolateCameraFrame } from './camera-framing.js';
+import { computeCameraFrame, foregroundObstacleOpacity, interpolateCameraFrame, usesArrivalFrame, usesRejoinVista } from './camera-framing.js';
 import { groundHeightAt, terrainVertexHeight, shrineBaseSize } from './terrain.js';
 import { indexForBatch } from './batch-geometry.js';
 import { spatialCell, partitionInstances } from './spatial-batches.js';
-import { ROUTE_FORK, distanceFromRoute, routePathCenters, routePathLength } from './route-layout.js';
+import { ROUTE_FORK, distanceFromRoute, routeCenterAt, routePathCenters, routePathLength } from './route-layout.js';
 
 const clamp = T.MathUtils.clamp;
 export function createPresentation(canvas) {
@@ -26,7 +26,8 @@ export function createPresentation(canvas) {
   const material = (color, roughness=.85, metalness=0) => new T.MeshStandardMaterial({color,roughness,metalness});
   const bark=material('#485647'),bambooNode=material('#91906b'),red=material('#92432d'),stone=material('#7f8275'),ridgeStone=material('#555b55'),roof=material('#303e3d'),
     leaf=material('#72834c'),brass=material('#c5a36b',.35,.65),skin=material('#b49478'),dark=material('#181f25'),
-    routeCloth=material('#b94f2f',.72,.02),playerBlade=material('#e7f4f4',.16,.92),enemyBlade=material('#ffe0a6',.22,.82);
+    routeCloth=material('#b94f2f',.72,.02),routeBinding=material('#b7a477',.62,.08),
+    playerBlade=material('#e7f4f4',.16,.92),enemyBlade=material('#ffe0a6',.22,.82);
   playerBlade.emissive.set('#7397a1');playerBlade.emissiveIntensity=.13;
   enemyBlade.emissive.set('#a64b24');enemyBlade.emissiveIntensity=.24;
   leaf.side=T.DoubleSide;
@@ -106,6 +107,18 @@ export function createPresentation(canvas) {
     const y=.005+random()*.016,rotation=(random()-.5)*.06;
     for(const center of centers){box(stone,center+x+jitter,y,z+jitter,w,.055,d,rotation);routeStoneTiles++;}
   }
+  // Two low generated binding-stone traces make the unchanged physical exits
+  // legible from the postcombat overview. They meet at one shared stone after
+  // the ridge; they are visual floor detail, not collision or route telemetry.
+  let routeBindingStones=0;
+  for(let z=ROUTE_FORK.obstacleBackZ-.25;z>ROUTE_FORK.rejoinZ;z-=.5){
+    for(const x of routePathCenters(z)){
+      const y=groundHeightAt(x,z);
+      box(routeBinding,x,y+.055,z,.16,.07,.3);routeBindingStones++;
+    }
+  }
+  box(routeBinding,0,groundHeightAt(0,ROUTE_FORK.rejoinZ)+.065,ROUTE_FORK.rejoinZ,.82,.09,.36);
+  routeBindingStones++;
   const toriiPosts=[];
   for(const o of OBSTACLES){if(o.kind==='torii'){
     const postMaterial=red.clone();postMaterial.transparent=true;
@@ -220,7 +233,7 @@ export function createPresentation(canvas) {
     minGrassRouteClearance=Math.min(minGrassRouteClearance,distanceFromRoute(x,z));
   }
   const landscapeMetrics={grassClumps:3000,grassBlades:9000,grassTriangles:grassGeo.index.count/3*grass.count,maxRootError:rootError,minGrassRouteClearance,baseFootprint:shrineBaseSize(OBSTACLES.find(o=>o.kind==='shrine')),
-    route:{obstacle:{...ROUTE_FORK.obstacle},stoneTiles:routeStoneTiles,pathCenters:{approach:routePathCenters(0),ridge:routePathCenters(ROUTE_FORK.obstacle.z),rejoined:routePathCenters(-18)},
+    route:{obstacle:{...ROUTE_FORK.obstacle},stoneTiles:routeStoneTiles,bindingStones:routeBindingStones,pathCenters:{approach:routePathCenters(0),ridge:routePathCenters(ROUTE_FORK.obstacle.z),rejoined:routePathCenters(-18)},
       left:{landmark:ROUTE_FORK.left.landmark,markers:ROUTE_FORK.left.markers.length,pathLength:routePathLength('left')},
       right:{landmark:ROUTE_FORK.right.landmark,markers:routeBanners.length,pathLength:routePathLength('right')}}};
   const grassGroups=partitionInstances(grass);grass.dispose();grassGroups.forEach(g=>scene.add(g));
@@ -297,9 +310,11 @@ export function createPresentation(canvas) {
     let generatedParts=0;root.traverse(node=>{if(node.isMesh)generatedParts++;});actorMetrics.partsByRig[id]=generatedParts;
     rigs.set(id,{root,body,limbs,sword,scabbard,ring,signal});return rigs.get(id);
   }
-  const look=new T.Vector3();
+  const look=new T.Vector3(),overviewProbe=new T.Vector3();
   const cameraFrame={x:0,y:0,z:0,lookX:0,lookY:0,lookZ:0},smoothedFrame={...cameraFrame};let initialized=false;
-  const cameraMetrics={lockedFrames:0,minHorizontalStandoff:null,maxDownAngleDegrees:0,foregroundPostOpacity:1};
+  const cameraMetrics={lockedFrames:0,minHorizontalStandoff:null,maxDownAngleDegrees:0,foregroundPostOpacity:1,
+    rejoinVistaFrames:0,rejoinComposition:null,rejoinFrameError:null,rejoinSightlineClearance:null,
+    arrivalOverviewFrames:0,arrivalComposition:null,arrivalFrameError:null};
   function resize(){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}
   resize();
   function render(world,dt,orbit=0){
@@ -331,6 +346,36 @@ export function createPresentation(canvas) {
     camera.position.set(smoothedFrame.x,smoothedFrame.y,smoothedFrame.z);
     look.set(smoothedFrame.lookX,smoothedFrame.lookY,smoothedFrame.lookZ);
     camera.lookAt(look);initialized=true;
+    if(usesRejoinVista(world)){
+      camera.updateMatrixWorld();
+      const exitZ=ROUTE_FORK.obstacleBackZ-.3;
+      const probes={
+        leftExit:{x:routeCenterAt('left',exitZ),y:groundHeightAt(routeCenterAt('left',exitZ),exitZ),z:exitZ},
+        rightExit:{x:routeCenterAt('right',exitZ),y:groundHeightAt(routeCenterAt('right',exitZ),exitZ),z:exitZ},
+        sharedJoin:{x:0,y:groundHeightAt(0,ROUTE_FORK.rejoinZ),z:ROUTE_FORK.rejoinZ}
+      };
+      cameraMetrics.rejoinVistaFrames++;
+      cameraMetrics.rejoinFrameError=Math.max(...['x','y','z','lookX','lookY','lookZ'].map(key=>Math.abs(smoothedFrame[key]-cameraFrame[key])));
+      const joinY=groundHeightAt(0,ROUTE_FORK.rejoinZ),rayT=(ROUTE_FORK.obstacleBackZ-smoothedFrame.z)/(ROUTE_FORK.rejoinZ-smoothedFrame.z);
+      cameraMetrics.rejoinSightlineClearance=smoothedFrame.y+(joinY-smoothedFrame.y)*rayT-ROUTE_FORK.obstacle.h;
+      cameraMetrics.rejoinComposition=Object.fromEntries(Object.entries(probes).map(([id,point])=>{
+        overviewProbe.set(point.x,point.y,point.z).project(camera);
+        return [id,{x:overviewProbe.x,y:overviewProbe.y,z:overviewProbe.z,inFrame:Math.abs(overviewProbe.x)<.92&&Math.abs(overviewProbe.y)<.92&&overviewProbe.z>-1&&overviewProbe.z<1}];
+      }));
+    }
+    if(usesArrivalFrame(world)){
+      camera.updateMatrixWorld();cameraMetrics.arrivalOverviewFrames++;
+      cameraMetrics.arrivalFrameError=Math.max(...['x','y','z','lookX','lookY','lookZ'].map(key=>Math.abs(smoothedFrame[key]-cameraFrame[key])));
+      const probes={
+        player:{x:world.player.x,y:groundHeightAt(world.player.x,world.player.z)+1.1,z:world.player.z},
+        signal:{x:SIGNAL.x,y:SIGNAL_HEIGHT,z:SIGNAL.z},
+        shrine:{x:0,y:5.5,z:-23}
+      };
+      cameraMetrics.arrivalComposition=Object.fromEntries(Object.entries(probes).map(([id,point])=>{
+        overviewProbe.set(point.x,point.y,point.z).project(camera);
+        return [id,{x:overviewProbe.x,y:overviewProbe.y,z:overviewProbe.z,inFrame:Math.abs(overviewProbe.x)<.92&&Math.abs(overviewProbe.y)<.92&&overviewProbe.z>-1&&overviewProbe.z<1}];
+      }));
+    }
     const postBlend=1-Math.exp(-Math.max(0,Math.min(dt,.1))*18);
     let foregroundPostOpacity=1;
     for(const post of toriiPosts){

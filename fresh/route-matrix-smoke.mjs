@@ -1,14 +1,18 @@
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
 import { mkdir, rename, writeFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
 import { playthroughAction } from './playthrough-policy.mjs';
 import { createTouchPlaythroughSession, touchPlaythroughAction } from './touch-playthrough-policy.mjs';
+import { ENDING_PHRASES, SIGNAL, canLightSignal } from './mission.js';
+import { usesRejoinVista } from './camera-framing.js';
 import { ROUTE_FORK } from './route-layout.js';
 
 const out=new URL('../AI_DEVELOPMENT/EVIDENCE/fresh-20260913/',import.meta.url);
 await mkdir(out,{recursive:true});
 const errors=[];
-const report={date:new Date().toISOString(),sourceRevision:process.env.GITHUB_SHA??null,
+const checkedOutRevision=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
+const report={date:new Date().toISOString(),sourceRevision:checkedOutRevision,ciClaimedRevision:process.env.GITHUB_SHA??null,
   environment:'Chromium / SwiftShader; complementary real-input route matrix, not physical-device performance',
   result:'passed',errors,recordings:[],missions:{}};
 const persist=()=>writeFile(new URL('route-matrix-report.json',out),JSON.stringify(report,null,2)+'\n');
@@ -21,6 +25,17 @@ function recording(id,size){
   report.recordings.push(item);return item;
 }
 function mark(item,event,detail){item.events.push({event,offsetMs:Date.now()-Date.parse(item.startedAt),...(detail===undefined?{}:{detail})});}
+async function waitForComposition(page,framesKey,compositionKey){
+  await page.waitForFunction(([framesKey,compositionKey])=>{
+    const camera=freshDiagnostics().camera,composition=camera[compositionKey];
+    const composed=camera[framesKey]>0&&composition&&Object.values(composition).every(subject=>subject.inFrame);
+    return composed&&(framesKey==='rejoinVistaFrames'?camera.rejoinFrameError<=.18&&camera.rejoinSightlineClearance>.3:camera.arrivalFrameError<=.18);
+  },[framesKey,compositionKey],{timeout:10000});
+  return page.evaluate(([framesKey,compositionKey])=>{
+    const camera=freshDiagnostics().camera;
+    return {frames:camera[framesKey],composition:camera[compositionKey],frame:camera.frame};
+  },[framesKey,compositionKey]);
+}
 async function finish(context,video,item){
   try{
     mark(item,'context-close');await context.close();await rename(await video.path(),new URL(item.file,out));
@@ -28,14 +43,15 @@ async function finish(context,video,item){
   }catch(error){item.status='failed';item.failure=String(error);report.result='failed';process.exitCode=1;}
   await persist();
 }
-function mission(route){return {preferred:route,entry:null,choice:null,landmark:null,consequence:null,rejoin:null,ridgeSamples:[],checkpoints:[],victoryObservedElapsedMs:null};}
+function mission(route){return {preferred:route,entry:null,choice:null,landmark:null,consequence:null,rejoinApproach:null,rejoin:null,arrivalView:null,arrival:null,signalInput:null,signalLit:null,ridgeSamples:[],checkpoints:[],victoryObservedElapsedMs:null};}
 function assertRoute(result,route){
   const expected=route==='left'?{landmark:'石灯',consequence:'early-retainer'}:{landmark:'風布',consequence:'overlook-warden'};
   assert.equal(result.after.mode,'victory');assert.equal(result.after.signalLit,true);assert.equal(result.after.totals.kills,3);
   assert.equal(result.after.routeChoice,route);assert.equal(result.after.routePhase,'rejoined');
   assert.equal(result.after.routeLandmark,expected.landmark);assert.equal(result.after.routeConsequence,expected.consequence);
   assert.ok(result.after.routeChoiceTime<result.after.routeLandmarkTime&&result.after.routeLandmarkTime<result.after.routeRejoinTime);
-  assert.ok(result.entry&&result.choice&&result.landmark&&result.consequence&&result.rejoin);
+  assert.ok(result.entry&&result.choice&&result.landmark&&result.consequence&&result.rejoinApproach&&result.rejoin&&result.arrivalView&&result.arrival&&result.signalInput&&result.signalLit);
+  assert.ok(result.arrival.distance<=SIGNAL.radius);assert.equal(result.signalLit.event?.type,'signal');
   assert.ok(result.ridgeSamples.length>0);
   const clearance=ROUTE_FORK.obstacle.w/2+.35;
   assert.ok(result.ridgeSamples.every(sample=>route==='left'?sample.x<=-clearance:sample.x>=clearance),`must remain on ${route} of the solid ridge`);
@@ -81,17 +97,49 @@ async function runDesktopRight(){
     while(Date.now()<deadline){
       const w=await page.evaluate(()=>freshDiagnostics().world);
       if(w.totals.kills!==kills){result.checkpoints.push(w);kills=w.totals.kills;mark(item,'kills',kills);}
-      if(w.mode!=='playing'){if(w.mode==='victory')result.victoryObservedElapsedMs=Date.now()-(deadline-180000);break;}
+      if(w.mode!=='playing'){
+        if(w.mode==='victory'){
+          result.victoryObservedElapsedMs=Date.now()-(deadline-180000);
+          if(!result.signalLit){result.signalLit={time:w.time,position:{x:w.player.x,z:w.player.z},event:w.events.find(event=>event.type==='signal')??null};mark(item,'signal-lit',result.signalLit);}
+        }
+        break;
+      }
       observe(result,item,w,lastSample);
+      if(!result.rejoinApproach&&usesRejoinVista(w)){
+        for(const key of held){await page.keyboard.up(key);held.delete(key);}
+        const camera=await waitForComposition(page,'rejoinVistaFrames','rejoinComposition');
+        result.rejoinApproach={time:w.time,position:{x:w.player.x,z:w.player.z},camera};
+        mark(item,'rejoin-approach',result.rejoinApproach);await page.waitForTimeout(1200);continue;
+      }
+      if(!result.arrivalView&&canLightSignal(w)){
+        for(const key of held){await page.keyboard.up(key);held.delete(key);}
+        const camera=await waitForComposition(page,'arrivalOverviewFrames','arrivalComposition');
+        result.arrivalView={time:w.time,position:{x:w.player.x,z:w.player.z},camera};
+        mark(item,'post-rejoin-shrine-view',result.arrivalView);await page.waitForTimeout(900);continue;
+      }
+      if(!result.arrival&&canLightSignal(w)){
+        for(const key of held){await page.keyboard.up(key);held.delete(key);}
+        const objective=await page.locator('#objective').innerText();
+        result.arrival={time:w.time,position:{x:w.player.x,z:w.player.z},distance:Math.hypot(w.player.x-SIGNAL.x,w.player.z-SIGNAL.z),objective};
+        assert.match(objective,/E または「灯す」で、谷へ合図を送る/);mark(item,'destination-arrival',result.arrival);await page.waitForTimeout(900);continue;
+      }
       const action=playthroughAction(w,'right'),wanted=new Set();
       if(action.x)wanted.add(action.x>0?'KeyD':'KeyA');if(action.z)wanted.add(action.z>0?'KeyS':'KeyW');
       for(const key of held)if(!wanted.has(key)){await page.keyboard.up(key);held.delete(key);}
       for(const key of wanted)if(!held.has(key)){await page.keyboard.down(key);held.add(key);}
-      if(action.lock)await page.keyboard.press('KeyE');if(action.attack)await page.mouse.click(800,360);
+      if(action.lock){
+        if(canLightSignal(w)&&!result.signalInput){result.signalInput={time:w.time,input:'KeyE',position:{x:w.player.x,z:w.player.z}};mark(item,'signal-input',result.signalInput);}
+        await page.keyboard.press('KeyE');
+      }
+      if(action.attack)await page.mouse.click(800,360);
       await page.waitForTimeout(100);
     }
     for(const key of held)await page.keyboard.up(key);
     result.after=await page.evaluate(()=>freshDiagnostics().world);assertRoute(result,'right');mark(item,'victory');
+    assert.equal(await page.locator('#menu').getAttribute('data-mode'),'victory');
+    assert.match(await page.locator('#objective').innerText(),/社の灯が、谷への合図になった/);
+    assert.deepEqual(await page.locator('#message').locator(':scope > *').allTextContents(),ENDING_PHRASES);
+    await page.waitForTimeout(500);assert.equal(await page.locator('#hud').isHidden(),true);
     await page.screenshot({path:new URL('desktop-right-victory.png',out).pathname});await page.click('#start');
     result.retry=await page.evaluate(()=>freshDiagnostics().world);assertRetry(result.retry);mark(item,'clean-retry');
     assert.deepEqual(errors,[]);
@@ -159,8 +207,32 @@ async function runTouchLeft(){
       const w=await page.evaluate(()=>freshDiagnostics().world);
       result.guardObserved ||= w.player.state==='guard';result.blockOrParryObserved ||= w.events.some(event=>event.type==='block'||event.type==='parry');
       if(w.totals.kills!==kills){result.checkpoints.push(w);kills=w.totals.kills;mark(item,'kills',kills);}
-      if(w.mode!=='playing'){if(w.mode==='victory')result.victoryObservedElapsedMs=Date.now()-(deadline-180000);break;}
+      if(w.mode!=='playing'){
+        if(w.mode==='victory'){
+          result.victoryObservedElapsedMs=Date.now()-(deadline-180000);
+          if(!result.signalLit){result.signalLit={time:w.time,position:{x:w.player.x,z:w.player.z},event:w.events.find(event=>event.type==='signal')??null};mark(item,'signal-lit',result.signalLit);}
+        }
+        break;
+      }
       observe(result,item,w,lastSample);
+      if(!result.rejoinApproach&&usesRejoinVista(w)){
+        if(contacts.size)await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});contacts.clear();
+        const camera=await waitForComposition(page,'rejoinVistaFrames','rejoinComposition');
+        result.rejoinApproach={time:w.time,position:{x:w.player.x,z:w.player.z},camera};
+        mark(item,'rejoin-approach',result.rejoinApproach);await page.waitForTimeout(1200);continue;
+      }
+      if(!result.arrivalView&&canLightSignal(w)){
+        if(contacts.size)await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});contacts.clear();
+        const camera=await waitForComposition(page,'arrivalOverviewFrames','arrivalComposition');
+        result.arrivalView={time:w.time,position:{x:w.player.x,z:w.player.z},camera};
+        mark(item,'post-rejoin-shrine-view',result.arrivalView);await page.waitForTimeout(900);continue;
+      }
+      if(!result.arrival&&canLightSignal(w)){
+        if(contacts.size)await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});contacts.clear();
+        const objective=await page.locator('#objective').innerText();
+        result.arrival={time:w.time,position:{x:w.player.x,z:w.player.z},distance:Math.hypot(w.player.x-SIGNAL.x,w.player.z-SIGNAL.z),objective};
+        assert.match(objective,/E または「灯す」で、谷へ合図を送る/);assert.equal(await page.locator('[data-action=lock]').innerText(),'灯す');mark(item,'destination-arrival',result.arrival);await page.waitForTimeout(900);continue;
+      }
       const action=touchPlaythroughAction(w,'left',touchSession);
       if(action.guard&&!contacts.has(1))await begin(1,guard);if(!action.guard&&contacts.has(1))await end(1);
       if(action.lockAndDodge){
@@ -168,7 +240,10 @@ async function runTouchLeft(){
         const paired=await waitForRetainerLockAfterPair(w.totals.dodges);
         if(paired.dodges<=w.totals.dodges)await tapDodgeUntilObserved(w.totals.dodges);
       }
-      else if(action.dodge)await (action.dodgeNeedsAcknowledgement?tapDodgeUntilObserved(w.totals.dodges):tap(dodge));else if(action.lock)await (action.targetId?tapLockUntilObserved(action.targetId):tap(lock));else if(action.attack)await tap(attack);
+      else if(action.dodge)await (action.dodgeNeedsAcknowledgement?tapDodgeUntilObserved(w.totals.dodges):tap(dodge));else if(action.lock){
+        if(canLightSignal(w)&&!result.signalInput){result.signalInput={time:w.time,input:'touch-lock',position:{x:w.player.x,z:w.player.z}};mark(item,'signal-input',result.signalInput);}
+        await (action.targetId?tapLockUntilObserved(action.targetId):tap(lock));
+      }else if(action.attack)await tap(attack);
       else if(action.x||action.z){
         await begin(4,stick);contacts.set(4,{x:stick.x+action.x*32,y:stick.y+action.z*32,id:4});
         await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[...contacts.values()]});await page.waitForTimeout(100);await end(4);await page.waitForTimeout(40);
@@ -177,12 +252,18 @@ async function runTouchLeft(){
     if(contacts.size)await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});contacts.clear();
     result.after=await page.evaluate(()=>freshDiagnostics().world);assertRoute(result,'left');
     assert.ok(Math.hypot(result.after.player.dodgeX,result.after.player.dodgeZ)>.5&&result.guardObserved&&result.blockOrParryObserved);
+    assert.equal(await page.locator('#menu').getAttribute('data-mode'),'victory');
+    assert.match(await page.locator('#objective').innerText(),/社の灯が、谷への合図になった/);
+    assert.deepEqual(await page.locator('#message').locator(':scope > *').allTextContents(),ENDING_PHRASES);
+    await page.waitForTimeout(500);assert.equal(await page.locator('#hud').isHidden(),true);
     mark(item,'victory');await page.screenshot({path:new URL('touch-left-victory.png',out).pathname});await page.locator('#start').tap();
     result.retry=await page.evaluate(()=>freshDiagnostics().world);assertRetry(result.retry);mark(item,'clean-retry');assert.deepEqual(errors,[]);
   }catch(error){report.result='failed';result.failure=String(error);result.failureState=await page.evaluate(()=>window.freshDiagnostics?.()).catch(()=>null);process.exitCode=1;}
   report.missions.touchLeft=result;await finish(context,video,item);await browser.close();
 }
 
-try{await runDesktopRight();await runTouchLeft();}
-catch(error){report.result='failed';report.setupOrShutdownFailure=String(error);process.exitCode=1;}
-finally{await persist();console.log(JSON.stringify(report));}
+for(const [name,route] of [['desktopRight',runDesktopRight],['touchLeft',runTouchLeft]]){
+  try{await route();}
+  catch(error){report.result='failed';(report.setupOrShutdownFailures??=[]).push({name,failure:String(error)});process.exitCode=1;}
+}
+await persist();console.log(JSON.stringify(report));

@@ -1,7 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {computeCameraFrame,foregroundObstacleOpacity,interpolateCameraFrame} from './camera-framing.js';
+import {PerspectiveCamera,Vector3} from 'three';
+import {computeCameraFrame,foregroundObstacleOpacity,interpolateCameraFrame,usesArrivalFrame,usesRejoinVista} from './camera-framing.js';
+import {SIGNAL} from './mission.js';
+import {ROUTE_FORK,routeCenterAt} from './route-layout.js';
 
 const angle=(camera,a,b)=>{
   const ax=a.x-camera.x,az=a.z-camera.z,bx=b.x-camera.x,bz=b.z-camera.z;
@@ -48,9 +51,65 @@ test('coincident fighters retain a finite camera direction and standoff',()=>{
 test('victory framing shows the signal from an authored oblique angle',()=>{
   const world={mode:'victory',player:{x:.4,z:-18.8,hp:100},enemies:[],locked:null};
   const frame=computeCameraFrame(world,0,16/9,{});
-  assert.ok(frame.x>3,'camera moves beside the signal instead of facing the wall from behind the player');
+  assert.ok(frame.x>4,'camera moves beside the signal instead of facing the wall from behind the player');
   assert.ok(frame.z>-14,'camera retains the shrine, signal and player in depth');
   assert.ok(frame.lookZ<-18.5,'camera looks back toward the lit signal');
+});
+
+test('pre-rejoin vista contains both physical route exits and their shared join',()=>{
+  const world={mode:'playing',pathCleared:false,routeChoice:'left',routePhase:'branch',signalLit:false,
+    player:{x:-3.4,z:-13,hp:100},enemies:[{id:'retainer',hp:0}],locked:null};
+  assert.equal(usesRejoinVista(world),true);
+  const frame=computeCameraFrame(world,0,16/9,{});
+  assert.ok(frame.y>=11,'rejoin camera must rise above the unchanged solid ridge');
+  const camera=new PerspectiveCamera(52,16/9,.1,230);
+  camera.position.set(frame.x,frame.y,frame.z);
+  camera.lookAt(frame.lookX,frame.lookY,frame.lookZ);
+  camera.updateMatrixWorld();
+  const exitZ=ROUTE_FORK.obstacleBackZ-.3;
+  const subjects=[
+    new Vector3(routeCenterAt('left',exitZ),0,exitZ),
+    new Vector3(routeCenterAt('right',exitZ),0,exitZ),
+    new Vector3(0,0,ROUTE_FORK.rejoinZ),
+    new Vector3(world.player.x,1.1,world.player.z)
+  ];
+  for(const subject of subjects){
+    const projected=subject.project(camera);
+    assert.ok(Math.abs(projected.x)<.92&&Math.abs(projected.y)<.92&&projected.z>-1&&projected.z<1,
+      'each route exit and the shared join must fit the authored landscape frame');
+  }
+  const rayHeight=frame.y+(0-frame.y)*(ROUTE_FORK.obstacleBackZ-frame.z)/(ROUTE_FORK.rejoinZ-frame.z);
+  assert.ok(rayHeight>ROUTE_FORK.obstacle.h+.3,'the sightline to the join must clear the unchanged ridge height');
+  for(const [route,enemyId] of [['left','retainer'],['right','warden']])for(const aspect of [16/9,844/390]){
+    const routeWorld={...world,routeChoice:route,player:{...world.player,x:routeCenterAt(route,world.player.z)},enemies:[{id:enemyId,hp:0}]};
+    const routeFrame=computeCameraFrame(routeWorld,0,aspect,{}),routeCamera=new PerspectiveCamera(52,aspect,.1,230);
+    routeCamera.position.set(routeFrame.x,routeFrame.y,routeFrame.z);routeCamera.lookAt(routeFrame.lookX,routeFrame.lookY,routeFrame.lookZ);routeCamera.updateMatrixWorld();
+    const player=new Vector3(routeWorld.player.x,1.1,routeWorld.player.z).project(routeCamera);
+    assert.ok(Math.abs(player.x)<.92&&Math.abs(player.y)<.92&&player.z>-1&&player.z<1,`${route} player must remain in the landscape vista`);
+  }
+  assert.equal(usesRejoinVista({...world,enemies:[{id:'retainer',hp:1}]}),false,'the view must not bypass the chosen encounter');
+  assert.equal(usesRejoinVista({...world,routePhase:'rejoined'}),false,'the view ends at the real simulation transition');
+});
+
+test('unlit arrival uses the same oblique signal frame as victory and clears the shrine lattice',()=>{
+  const player={x:.4,z:-18.2,hp:100};
+  const arrival={mode:'playing',pathCleared:true,routePhase:'rejoined',signalLit:false,player,enemies:[],locked:null};
+  const victory={mode:'victory',pathCleared:true,routePhase:'rejoined',signalLit:true,player,enemies:[],locked:null};
+  assert.equal(usesArrivalFrame(arrival),true);
+  const before=computeCameraFrame(arrival,0,16/9,{}),after=computeCameraFrame(victory,0,16/9,{});
+  assert.deepEqual(before,after,'lighting the signal must not cut to another camera');
+  const xAt=z=>before.x+(SIGNAL.x-before.x)*(z-before.z)/(SIGNAL.z-before.z);
+  assert.ok(Math.abs(xAt(-19.45))>.08,'signal sightline must clear the central red shrine bar');
+  const brassX=xAt(-19.39),nearestBrass=-3.8+Math.round((brassX+3.8)/.25)*.25;
+  assert.ok(Math.abs(brassX-nearestBrass)>.0125,'signal sightline must clear the fine brass lattice');
+  for(const aspect of [16/9,844/390])for(const position of [{x:0,z:SIGNAL.z+SIGNAL.radius},{x:SIGNAL.radius-.05,z:SIGNAL.z}]){
+    const staged={...arrival,player:{...player,...position}},stagedFrame=computeCameraFrame(staged,0,aspect,{});
+    const camera=new PerspectiveCamera(52,aspect,.1,230);camera.position.set(stagedFrame.x,stagedFrame.y,stagedFrame.z);camera.lookAt(stagedFrame.lookX,stagedFrame.lookY,stagedFrame.lookZ);camera.updateMatrixWorld();
+    for(const subject of [new Vector3(position.x,1.1,position.z),new Vector3(SIGNAL.x,3.15,SIGNAL.z),new Vector3(0,5.5,-23)]){
+      const projected=subject.project(camera);
+      assert.ok(Math.abs(projected.x)<.92&&Math.abs(projected.y)<.92&&projected.z>-1&&projected.z<1,'arrival-stage player, signal and shrine must share the landscape frame');
+    }
+  }
 });
 
 test('only the near foreground torii post fades for the verified first encounter frame',()=>{
@@ -120,6 +179,9 @@ test('foreground, signal, actor and branching-route hierarchy use the shared gam
   assert.match(source,/ROUTE_FORK\.left\.markers/);
   assert.match(source,/ROUTE_FORK\.right\.markers/);
   assert.match(source,/routeCloth\.onBeforeCompile/);
+  assert.match(source,/rejoinSightlineClearance/);
+  assert.match(source,/rejoinFrameError/);
+  assert.match(source,/arrivalFrameError/);
 });
 
 test('route checkpoint images are decoded after capture instead of perturbing held movement',()=>{
@@ -139,6 +201,12 @@ test('route checkpoint images are decoded after capture instead of perturbing he
   const recordedTouchStart=browser.indexOf("const mobileRecording=recording('touch'");
   assert.doesNotMatch(browser.slice(recordedTouchStart),/mobile\.reload\(/,'recorded touch mission must not reuse a preflight page through reload');
   assert.match(workflow,/browser-smoke\.mjs \|\| browser_status=\$\?[\s\S]*route-matrix-smoke\.mjs \|\| matrix_status=\$\?/,'one failed apparatus must not suppress the other route evidence');
-  assert.match(verifier,/\['fork-entry','route-choice','route-landmark','route-rejoin'\]/);
+  assert.match(verifier,/\['full-mission-start','fork-entry','route-choice','rejoin-approach','route-rejoin','post-rejoin-shrine-view','destination-arrival','signal-input','signal-lit','victory','clean-retry','context-close'\]/);
+  assert.match(verifier,/routeSpecificEvents=\[landmark,consequence\]\.sort\(\(a,b\)=>a\.detail\.time-b\.detail\.time/);
+  assert.match(verifier,/\['fork-entry',\.\.\.routeSpecificEvents,'rejoin-approach','signal-lit'\]/);
+  assert.match(verifier,/fixed-five frames must be byte-distinct/);
+  assert.match(verifier,/fully decoded before event checks/);
+  assert.match(verifier,/for\(const id of expectedIds\)/,'raw filenames must be discovered independently of parsed report entries');
+  assert.ok(verifier.indexOf("ff(['-xerror'")<verifier.indexOf("ordered(item.events"),'raw full decode must precede event-metadata assertions');
   assert.match(verifier,/snapshotBytes>0/);
 });
