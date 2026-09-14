@@ -10,17 +10,17 @@
     "workingBranch": "codex/game2-rebuild-20260913",
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
-    "activeTask": "FRESH-VICTORY-TYPOGRAPHY-CTA-EXPOSURE",
+    "activeTask": "FRESH-CONTINUOUS-EVIDENCE-AND-RESULT",
     "lastSuccessfulAction": "Responsive result candidate dcb632d passed CI34807763920:35 tests/build, desktop and isolated touch missions, landscape captures and actual390x844 portrait rotation. Portrait result copy measured15px and copy/retry remained in viewport. Independent static review found the responsive hierarchy and contrast usable.",
     "currentFailingAction": null,
     "currentHypothesis": null,
-    "nextAction": "Implement one responsive result-panel typography/CTA/exposure pass: authored Japanese line balance, punctuation-safe title spacing, at-least44px landscape CTA, safe-area bottom padding and reduced lamp clipping while keeping actor/sword readable. Verify exact frames, then continue unresolved C05/C06/C09/C11/C12 selection and source-blind continuous media. All elements remain not measured. Deadline2026-09-20T07:51:53Z.",
+    "nextAction": "Run the continuous-evidence candidate once on its exact remote head. Inspect both complete video decodes and PC/touch mission results; independently review actual result frames. Save verified results and failures before returning. Then prioritize the remaining reference selections and real paired continuous comparison material. All elements remain not measured. Deadline2026-09-20T07:51:53Z.",
     "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
     "pendingVerification": [
-      "Exact responsive victory typography/CTA/lamp-exposure frames",
+      "Exact responsive victory typography/CTA/lamp-exposure frames and complete playable video files",
       "Attack-only versus defense-led combat routes",
       "WebKit / iOS Simulator behavior",
-      "Physical-device performance",
+      "Smartphone-targeted performance in the best available WebKit/iOS environment; distinguish measurement from inference",
       "Audio and screen-reader behavior",
       "Source-blind comparison for every whole concept element"
     ],
@@ -114,7 +114,8 @@
       "AI_DEVELOPMENT/EVIDENCE/20260914-production-recovery-9895e92.json",
       "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-landscape-foundation.json",
       "AI_DEVELOPMENT/EVIDENCE/20260914-production-refire-28ff67c.json",
-      "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-victory-panel-candidate.json"
+      "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-victory-panel-candidate.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260914-unknown-method-change.json"
     ],
     "publicRuntimeRevision": "86512c3bfdc69e03b5b490d9b0d79ec9da141343"
   },
@@ -126,15 +127,28 @@
     "completion": "All concept elements satisfied by evidenced blind comparison.",
     "current_unit": "2026-09-13-fresh-design",
     "unit_status": "active",
-    "first_action": "Correct the exact-review findings in one integrated result-panel pass, then continue unresolved reference selections and source-blind continuous media. All elements remain not measured. Deadline2026-09-20T07:51:53Z.",
+    "first_action": "Validate the continuous-recording and responsive-result candidate, checkpoint exact results, then unblock actual reference/candidate comparisons. All elements remain not measured.",
     "implementation_strategy": "Fresh design and implementation; needs-before-reuse, per latest direct user instruction.",
     "unitEndReason": null,
     "deadlineReassessment": {
-      "observedAt": "2026-09-14T05:00:00Z",
-      "prediction": "at risk; not guaranteed",
-      "basis": "All ten element verdicts remain not measured and reference selection is incomplete.",
-      "methodChange": "Replace serial micro-fixes with integrated cross-element passes and shared continuous captures; do not weaken concept, references, criteria, evidence or deadline.",
-      "validation": "The integrated responsive pass closed the previously identified phone-result legibility and right-edge composition gaps: exact CI passed,390x844 copy is15px and all result controls are in bounds. Independent review reduced the next gap to Japanese line balance/title spacing, a roughly43px landscape CTA and lamp exposure."
+      "observedAt": "2026-09-14T06:20:28Z",
+      "prediction": "unknown; this triggers a method change, not a declaration of feasibility or impossibility",
+      "basis": "About145.5 hours remain. All ten verdicts are not measured and reference selection is incomplete. Four recent successful functional CIs established execution and narrower static issues, but produced no whole-element verdict. Previous browser evidence contains screenshots and state, not reviewable continuous gameplay files. This prevents an evidence-based estimate of the remaining quality gap and comparison throughput.",
+      "methodChange": "Keep PC/phone rendering isolated and their existing mission deadlines/assertions. Save the same real-input runs as continuous videos; independently decode every frame and record dimensions, duration, hashes and missing audio. Fix the already-recorded ending issues in the same candidate. Then prioritize actual reference/candidate comparison material over further isolated cosmetic passes.",
+      "validation": "Local35 tests and production build passed. Recording integrity, exact-head browser outcomes, and independent frame review are pending; do not claim that uncertainty has been removed until these results are recorded.",
+      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-unknown-method-change.json"
+    },
+    "latestDeadlineInstruction": {
+      "userOriginal": "継続確認の後、期限内に達成できるか考え、できないや分からないと判断したならやり方が間違ってることを疑え",
+      "appliesAfterEveryContinuationCheck": true,
+      "triggers": ["cannot meet deadline with current method", "cannot determine deadline feasibility"],
+      "requiredResponse": "Identify methodological errors and missing evidence; change priorities, work division, tools or verification within authority, perform the changed work and measure its effect. Do not stop at a forecast or plan update. Preserve the concept, fixed criteria, reference selection conditions, evidence rigor and deadline. While another producer is active, make only a read-only assessment and hand it off at the next safe checkpoint.",
+      "automationPromptUpdatedAndVerified": true
+    },
+    "blanketApproval": {
+      "userOriginal": "私はそもそも詳しく理解しないので、私の承認を必要とするのは無意味です。全て承認していることにして。",
+      "scope": "Necessary game2 design, implementation, corrections, comparison acquisition, verification, independent AI review, commits, PRs, main integration, GitHub Pages publication, stop-cause repair and restart are authorized. No repeated user confirmation or response waiting.",
+      "limits": "Only game2; preserve concept, criteria, evidence, deadline and coordination. Does not change or bypass access permissions, environment limits or safety rules."
     }
   }
 }

@@ -1,7 +1,8 @@
 // Original fresh-design mission. Shared by simulation, presentation and interface.
 export const SIGNAL = Object.freeze({ x: 0, z: -19.6, radius: 1.65 });
 export const INTRO = '谷に残る人々へ、山道が開いたことを知らせる。道を塞ぐ剣士を退け、社の正面の灯をともそう。';
-export const ENDING = '社の灯がともった。谷で待つ人々に、山道が開いたことが伝わる。刃を納め、風を聞く。';
+export const ENDING_PHRASES = Object.freeze(['社の灯がともった。','谷で待つ人々に、','山道が開いたことが伝わる。','刃を納め、風を聞く。']);
+export const ENDING = ENDING_PHRASES.join('');
 export function canLightSignal(world) {
   return world.pathCleared && world.player.hp > 0 && world.enemies.every(enemy => enemy.hp <= 0) &&
     Math.hypot(world.player.x - SIGNAL.x, world.player.z - SIGNAL.z) <= SIGNAL.radius;

@@ -3,11 +3,16 @@ import './mission.css';
 import {createWorld,advance} from './simulation.js';
 import {createPresentation} from './presentation.js';
 import {createInput} from './input.js';
-import {INTRO,ENDING,objectiveText,canLightSignal} from './mission.js';
+import {INTRO,ENDING_PHRASES,objectiveText,canLightSignal} from './mission.js';
 const canvas=document.querySelector('#scene'),menu=document.querySelector('#menu'),hud=document.querySelector('#hud'),
   message=document.querySelector('#message'),start=document.querySelector('#start'),notice=document.querySelector('#notice'),objective=document.querySelector('#objective');
 let view,world=createWorld(),running=false,paused=false,last=0,audio=null,lastSound=-1,contextLost=false;
 message.textContent=INTRO;
+function showEnding(){
+  message.replaceChildren(...ENDING_PHRASES.map(text=>{
+    const phrase=document.createElement('span');phrase.className='ending-phrase';phrase.textContent=text;return phrase;
+  }));
+}
 menu.dataset.mode='intro';
 function pause(){if(!running)return;running=false;paused=true;input.setActive(false);menu.hidden=false;menu.dataset.mode='pause';message.textContent='風の中で、ひと息。';start.textContent='続ける';audio?.suspend();}
 const input=createInput(canvas,pause);
@@ -35,7 +40,7 @@ function frame(now){
     if(lockButton.textContent!==label)lockButton.textContent=label;
     const e=world.events.at(-1);if(e&&e.time>lastSound){lastSound=e.time;sound(e.type);notice.textContent=e.type==='parry'?'弾き':e.type==='block'?'受け':e.type==='death'?'決着':'';}
     if(!e)notice.textContent='';
-    if(world.mode!=='playing'){running=false;paused=false;input.setActive(false);hud.hidden=true;menu.hidden=false;menu.dataset.mode=world.mode;message.textContent=world.mode==='victory'?ENDING:'灯はまだ消えている。もう一度、山道へ。';start.textContent='もう一度';}
+    if(world.mode!=='playing'){running=false;paused=false;input.setActive(false);hud.hidden=true;menu.hidden=false;menu.dataset.mode=world.mode;if(world.mode==='victory')showEnding();else message.textContent='灯はまだ消えている。もう一度、山道へ。';start.textContent='もう一度';}
   }
   if(!contextLost)view.render(world,dt,input.orbit);
 }

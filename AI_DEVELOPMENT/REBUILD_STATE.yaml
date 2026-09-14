@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-14T05:00:00Z",
-  "phase": "fresh-victory-typography-cta-exposure",
+  "updatedAt": "2026-09-14T06:20:28Z",
+  "phase": "fresh-continuous-evidence-and-result",
   "userInstruction": "一旦ゲーム自体はゼロから作り直してくれる？",
   "activeBranch": "codex/game2-rebuild-20260913",
   "fixedInstructions": "AI_DEVELOPMENT/FIXED_INSTRUCTIONS.md",
@@ -15,7 +15,7 @@
     "oldPr": 10,
     "optionalRebuildRouting": "ec2480166809f57fa623929bec0fbcb4d5a623a2"
   },
-  "continuation": "Implement authored Japanese line balance, punctuation-safe title spacing, an at-least44px landscape CTA, safe-area bottom padding and reduced lamp clipping as one result-panel pass. Then continue unresolved C05/C06/C09/C11/C12 selection and source-blind media. All elements remain not measured. Deadline2026-09-20T07:51:53Z.",
+  "continuation": "Verify the exact-head continuous recording/result candidate, inspect complete PC/touch video decodes and actual ending frames, and save outcomes. Then prioritize unresolved reference selection and actual source-blind comparison material. Unknown deadline feasibility now explicitly requires a method change with measured effect. All elements remain not measured. Deadline2026-09-20T07:51:53Z.",
   "status": "not measured",
   "publication": "Keep old Pages until a verified replacement is ready. Fresh runtime is a work-branch candidate, not public product acceptance.",
   "procedureAuthority": "Fixed instructions and explicit user directives govern. Tests, task plans and architecture documents are tools chosen by the AI, not additional fixed rules.",
@@ -27,7 +27,8 @@
   "comparisonCatalog": "AI_DEVELOPMENT/COMPARISON_ELEMENTS.yaml",
   "referenceSelectionComplete": false,
   "verificationEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-victory-panel-candidate.json",
-  "pendingCandidate": "Responsive ending is exact-head verified, including390x844 portrait bounds and independent static review. Next candidate must correct Japanese wraps/title spacing, landscape CTA height and lamp exposure without weakening the verified hierarchy.",
+  "pendingCandidate": "Continuous real-input recording and all-frame video decoding added; ending phrases, title spacing,48px CTA and reduced lamp intensity implemented. Local35 tests/build pass. Exact-head CI and independent visual review pending.",
+  "methodChangeEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-unknown-method-change.json",
   "recoveryRole": {
     "userInstruction": "定期オートメーションは万が一実行が停止していたら、停止してしまう原因を全て潰してから再開する再発火役にしてください。",
     "status": "production_restarted_and_verified",

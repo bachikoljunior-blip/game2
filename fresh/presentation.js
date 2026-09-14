@@ -109,8 +109,8 @@ export function createPresentation(canvas) {
   signalCap.position.set(SIGNAL.x,2.75,SIGNAL.z);scene.add(signalCap);
   const signalLight=new T.PointLight('#ffbb66',0,8,2);
   signalLight.position.set(SIGNAL.x,2.3,SIGNAL.z+.5);scene.add(signalLight);
-  const signalHalo=new T.Sprite(new T.SpriteMaterial({map:sunSprite.material.map,color:'#ffd08a',transparent:true,opacity:.72,depthWrite:false,blending:T.AdditiveBlending}));
-  signalHalo.position.set(SIGNAL.x,2.35,SIGNAL.z+.18);signalHalo.scale.set(4.2,4.2,1);signalHalo.visible=false;scene.add(signalHalo);
+  const signalHalo=new T.Sprite(new T.SpriteMaterial({map:sunSprite.material.map,color:'#ffd08a',transparent:true,opacity:.2,depthWrite:false,blending:T.AdditiveBlending}));
+  signalHalo.position.set(SIGNAL.x,2.35,SIGNAL.z+.18);signalHalo.scale.set(3,3,1);signalHalo.visible=false;scene.add(signalHalo);
   function mesh(parent,geom,mat,x,y,z){const m=new T.Mesh(geom,mat);m.position.set(x,y,z);m.castShadow=true;parent.add(m);return m;}
   function rig(id){
     const root=new T.Group();scene.add(root);const cloth=material(id==='player'?'#344c62':'#7c463a');
@@ -151,8 +151,8 @@ export function createPresentation(canvas) {
   function render(world,dt,orbit=0){
     wind.value=world.time;
     signalMaterial.emissive.set(world.signalLit?'#ffb84f':'#000000');
-    signalMaterial.emissiveIntensity=world.signalLit?2:0;
-    signalLight.intensity=world.signalLit?14:0;
+    signalMaterial.emissiveIntensity=world.signalLit ? .65 : 0;
+    signalLight.intensity=world.signalLit?9:0;
     signalHalo.visible=world.signalLit;
     for(const a of [world.player,...world.enemies]){
       const r=rigs.get(a.id)||rig(a.id);r.root.position.set(a.x,0,a.z);r.root.rotation.y=-a.yaw;
