@@ -4,6 +4,7 @@ import { OBSTACLES } from './simulation.js';
 import { SIGNAL } from './mission.js';
 import { computeCameraFrame, interpolateCameraFrame } from './camera-framing.js';
 import { groundHeightAt, terrainVertexHeight, shrineBaseSize } from './terrain.js';
+import { indexForBatch } from './batch-geometry.js';
 
 const clamp = T.MathUtils.clamp;
 export function createPresentation(canvas) {
@@ -50,6 +51,7 @@ export function createPresentation(canvas) {
   const stoneTexture=texture.clone();stoneTexture.repeat.set(1.3,1.3);stone.map=stoneTexture;stone.bumpMap=stoneTexture;stone.bumpScale=.06;
   const batches=new Map();const matrix=new T.Matrix4(),q=new T.Quaternion(),s=new T.Vector3(),pos=new T.Vector3();
   function staticPart(geometry,mat,x,y,z,sx=1,sy=1,sz=1,ry=0){
+    indexForBatch(geometry);
     q.setFromAxisAngle(T.Object3D.DEFAULT_UP,ry);matrix.compose(pos.set(x,y,z),q,s.set(sx,sy,sz));geometry.applyMatrix4(matrix);
     if(!batches.has(mat))batches.set(mat,[]);batches.get(mat).push(geometry);
   }

@@ -10,7 +10,8 @@
     "Regroup grass from6000 single blades x6triangles to3000clumps x3 tapered blades x4triangles, preserving36000 grass triangles; shared wind phase across grass and leaf crowns.",
     "Generate broader pointed bamboo leaf sprays, side outcrops, soil-bank color patches and irregular stone courses; place lanterns outside the main combat strip.",
     "Align sky sun and directional light; distinguish atmosphere and material values. Keep reference media completely outside runtime.",
-    "Shrink the decorative shrine plinth to its existing solid collision footprint so a stopped actor is not buried by a protruding cosmetic base."
+    "Shrink the decorative shrine plinth to its existing solid collision footprint so a stopped actor is not buried by a protruding cosmetic base.",
+    "Normalize index representation before static material batching, preserving geometry, after the first real-render initialization failure."
   ],
   "preserved": [
     "Three.js and all assets generated at startup; no external runtime media",
@@ -18,17 +19,26 @@
     "Fixed instructions, all ten comparison boundaries/references and sample thresholds unchanged"
   ],
   "localVerification": {
-    "tests": 42,
+    "tests": 43,
     "result": "passed",
     "build": "passed",
-    "bundleKb": 545.46,
-    "gzipKb": 143.38,
+    "bundleKb": 546.42,
+    "gzipKb": 143.75,
     "warning": "Existing over500kB bundle warning retained; not suppressed",
-    "geometryVerification": "Raycasts against actual Three.js PlaneGeometry triangles agree with ground sampler within1e-5 across diagonal interior samples; level central corridor and solid footprint constraints passed."
+    "geometryVerification": "Raycasts against actual Three.js PlaneGeometry triangles agree with ground sampler within1e-5 across diagonal interior samples; level central corridor and solid footprint constraints passed. A mixed indexed Box/Cylinder and unindexed Dodecahedron batching regression now also preserves every vertex attribute and face.",
+    "buildScope": "Pre-index-fix final landscape build passed; corrected build rechecked by the next exact-head CI."
   },
   "remoteVerification": null,
   "independentReview": null,
   "formalVerdict": "not measured",
   "workUnitEnded": false,
-  "nextWork": "Verify the integrated C04 approach-section candidate on exact head once:42 tests/build, all real PC/touch mission and recovery checks, continuous video decode, plant-root agreement and unchanged grass triangle budget. Independently compare against3d5ecfa at ordinary start/approach/combat and ending, including plinth/foot visibility. Keep C04 and all ten whole-element verdicts not measured. Retain actual reference images and source-labelled gap diagnosis separately from runtime. Then acquire the identified official continuous media and complete the still-missing whole-element coverage."
+  "nextWork": "Verify the integrated C04 approach-section candidate on exact head once:43 tests/build, all real PC/touch mission and recovery checks, continuous video decode, plant-root agreement and unchanged grass triangle budget. Independently compare against3d5ecfa at ordinary start/approach/combat and ending, including plinth/foot visibility. Keep C04 and all ten whole-element verdicts not measured. Retain actual reference images and source-labelled gap diagnosis separately from runtime. Then acquire the identified official continuous media and complete the still-missing whole-element coverage.",
+  "failedAttempts": [
+    {
+      "revision": "ea295ff0400a9e58f1b95c19cac0683a1922d188",
+      "run": 34818148603,
+      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-batch-failure.json"
+    }
+  ],
+  "updatedAt": "2026-09-14T07:36:16.485Z"
 }
