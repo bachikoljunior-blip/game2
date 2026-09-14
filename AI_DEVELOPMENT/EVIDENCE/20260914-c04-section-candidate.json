@@ -52,11 +52,14 @@
       "Straight path and shrine reveal; plain distant forms.",
       "Touch ending not reached; grounding there unverified.",
       "Cannot identify input latency versus render cost from images alone."
-    ]
+    ],
+    "sourceRevision": "7d5cfd5d2e55acd770fdc2ff73ebade2ca97b2c3",
+    "historical": true,
+    "supersededScopeNote": "This diagnosis belongs to the earlier failed touch candidate. The exact5afdd48 successful touch ending and its remaining gaps are in latestIndependentReview; keep earlier observations as history."
   },
   "formalVerdict": "not measured",
   "workUnitEnded": false,
-  "nextWork": "Inspect immutable5afdd48 / CI34823475645 original images and5-second recording samples via snapshot-existing-evidence workflow, then save independent visual diagnosis and exact blob/hash provenance. Gameplay CI passed; do not rerun it merely to retrieve images. Local disk exhaustion/sandbox-start failure remains unresolved. Use normal GitHub tools while retaining that limitation. After review, obtain ordinary-play reference/candidate coverage for the whole C04 boundary, then address the observed combat visibility/foreground vegetation and actor/weapon/ending gaps as one scene change. Five reference dossiers and all ten formal comparisons remain unfinished.",
+  "nextWork": "Read current remote head and SESSION/REBUILD, check for another active producer/CI, then reassess deadline. Latest verified runtime is5afdd48 / CI34823475645; its46tests, PC/touch full missions, endings/retry and recordings passed. Independent review is saved in fresh-5afdd48-review/receipt.json; do not repeat artifact retrieval or the old cleanup fix. Next reduce whole-element uncertainty: acquire retained C04 references' ordinary, uninterrupted approach/exploration footage (current wind clips contain debug/edits) and pair it with candidate entrance→combat→shrine/ending coverage, recording source recognition honestly. Use that coverage to make one scene/actor change addressing enemy-blade/actor contrast and vegetation occlusion, route/shrine depth, and the victory pose/sheathing mismatch. Remaining5reference dossiers and audio/WebKit/long-duration/battle comparisons are still required. While local ENOSPC persists, use authorized GitHub tools/CI; do not bypass sandbox rules or wait for human action.",
   "failedAttempts": [
     {
       "revision": "ea295ff0400a9e58f1b95c19cac0683a1922d188",
@@ -84,5 +87,37 @@
       "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-delayed-touch.json"
     }
   ],
-  "updatedAt": "2026-09-14T08:55:34.716Z"
+  "updatedAt": "2026-09-14T09:09:18.498Z",
+  "latestIndependentReview": {
+    "reviewer": "review_capture",
+    "scope": "Known-source diagnosis of four original PNGs (encounter, PC victory, touch landscape victory, touch portrait victory) and two five-second contact sheets from exact5afdd48 artifact. Not source-blind or full-motion evaluation.",
+    "sourceRevision": "5afdd48e56613adfdbd26f54e5b2c02a79b3ffc2",
+    "observedAt": "2026-09-14T09:09:18.498Z",
+    "transportVerified": "All six review images retrieved and displayed through the UTF-8 image envelope; no local file materialization required.",
+    "observations": [
+      "No former near-overhead combat view or major actor penetration through plinth/lantern visible in supplied samples.",
+      "PC and touch landscape endings show feet/paving separation without clear burial. Portrait lower body is covered by the dark result background; feet cannot be judged there.",
+      "Ending title/copy/retry remain visible and readable across the three original viewports."
+    ],
+    "remainingLargestGaps": [
+      {
+        "area": "Combat readability",
+        "finding": "Player's white blade is visible in the original encounter PNG; the enemy's dark blade merges with shadows. Grass, bamboo and posts weaken actor silhouettes in shrine-side combat samples."
+      },
+      {
+        "area": "Place composition",
+        "finding": "Straight paving, a flat-looking shrine front and repeated posts/vegetation dominate. Terrain, route and architecture still need a coherent depth treatment."
+      },
+      {
+        "area": "Actor and ending action",
+        "finding": "Faces, clothing and hands remain sparse. The PC victory pose has legs open as if stopped mid-walk, and drawn blades do not match the copy's sheathing/quiet ending."
+      }
+    ],
+    "limits": [
+      "Portrait feet are not judged visible or fixed.",
+      "Grey touch-recording padding and empty contact-sheet cells are not missing gameplay.",
+      "Five-second samples cannot establish complete motion smoothness, brief occlusions, all actions or real audio quality.",
+      "Formal verdicts remain not measured; no work unit ended."
+    ]
+  }
 }

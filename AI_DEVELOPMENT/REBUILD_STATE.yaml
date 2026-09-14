@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-14T08:55:34.716Z",
-  "phase": "fresh-exact-evidence-review",
+  "updatedAt": "2026-09-14T09:09:18.498Z",
+  "phase": "fresh-c04-whole-element-coverage",
   "userInstruction": "一旦ゲーム自体はゼロから作り直してくれる？",
   "activeBranch": "codex/game2-rebuild-20260913",
   "fixedInstructions": "AI_DEVELOPMENT/FIXED_INSTRUCTIONS.md",
@@ -15,7 +15,7 @@
     "oldPr": 10,
     "optionalRebuildRouting": "ec2480166809f57fa623929bec0fbcb4d5a623a2"
   },
-  "continuation": "Inspect immutable5afdd48 / CI34823475645 original images and5-second recording samples via snapshot-existing-evidence workflow, then save independent visual diagnosis and exact blob/hash provenance. Gameplay CI passed; do not rerun it merely to retrieve images. Local disk exhaustion/sandbox-start failure remains unresolved. Use normal GitHub tools while retaining that limitation. After review, obtain ordinary-play reference/candidate coverage for the whole C04 boundary, then address the observed combat visibility/foreground vegetation and actor/weapon/ending gaps as one scene change. Five reference dossiers and all ten formal comparisons remain unfinished.",
+  "continuation": "Read current remote head and SESSION/REBUILD, check for another active producer/CI, then reassess deadline. Latest verified runtime is5afdd48 / CI34823475645; its46tests, PC/touch full missions, endings/retry and recordings passed. Independent review is saved in fresh-5afdd48-review/receipt.json; do not repeat artifact retrieval or the old cleanup fix. Next reduce whole-element uncertainty: acquire retained C04 references' ordinary, uninterrupted approach/exploration footage (current wind clips contain debug/edits) and pair it with candidate entrance→combat→shrine/ending coverage, recording source recognition honestly. Use that coverage to make one scene/actor change addressing enemy-blade/actor contrast and vegetation occlusion, route/shrine depth, and the victory pose/sheathing mismatch. Remaining5reference dossiers and audio/WebKit/long-duration/battle comparisons are still required. While local ENOSPC persists, use authorized GitHub tools/CI; do not bypass sandbox rules or wait for human action.",
   "status": "not measured",
   "publication": "Keep old Pages until a verified replacement is ready. Fresh runtime is a work-branch candidate, not public product acceptance.",
   "procedureAuthority": "Fixed instructions and explicit user directives govern. Tests, task plans and architecture documents are tools chosen by the AI, not additional fixed rules.",
@@ -23,7 +23,7 @@
   "latestUserInstruction": "やっぱりゲーム自体はゼロから作り直して、作ろうとしたものが既存のものにあったら使える部分だけ取ってきて。既存のものを先に見てそのまま使うなどしないで",
   "decisionEvidence": "AI_DEVELOPMENT/FRESH_DESIGN.md",
   "verifiedRuntime": "5afdd48e56613adfdbd26f54e5b2c02a79b3ffc2",
-  "verificationScope": "46tests/build, actual PC/touch complete routes, signal, ending, portrait/landscape and clean retry; silent recording integrity/provenance. Exact new visual review pending, not smartphone performance or source-blind acceptance.",
+  "verificationScope": "46tests/build, actual PC/touch missions/ending/portrait/retry, silent recording integrity, and independent exact-revision sampled image diagnosis. Not full motion/audio, smartphone performance or source-blind acceptance.",
   "comparisonCatalog": "AI_DEVELOPMENT/COMPARISON_ELEMENTS.yaml",
   "referenceSelectionComplete": false,
   "verificationEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-verified-checkpoint.json",
@@ -40,7 +40,7 @@
     "verification": "ed296ee / CI34799863173 passed33 tests, production build, desktop route and isolated touch-only full mission without changing criteria. SwiftShader remains non-physical-device evidence.",
     "productionResumedAt": "2026-09-14T03:58:00Z",
     "latestBoundaryRecovery": "AI_DEVELOPMENT/EVIDENCE/20260914-production-refire-28ff67c.json",
-    "latestVerification": "5afdd48 / CI34823475645 full functional and recording verification passed; no separate persistent production executor claimed.",
+    "latestVerification": "5afdd48 / CI34823475645 full functional and recording verification passed; no separate persistent production executor claimed. Exact artifact extraction/independent sampled review also completed through normal GitHub tools at afce1bc/CI34825712915; local storage cause remains unresolved.",
     "latestBoundaryCheck": {
       "observedAt": "2026-09-14T04:50:44Z",
       "state": "stopped_after_bounded_execution",

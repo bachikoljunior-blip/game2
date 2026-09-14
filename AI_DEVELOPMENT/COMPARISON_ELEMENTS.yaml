@@ -1552,7 +1552,7 @@
     "formalEvidence": null,
     "legacyEvidenceReusableAsCurrent": false,
     "revision": "5afdd48e56613adfdbd26f54e5b2c02a79b3ffc2",
-    "verificationScope": "46tests/build, actual PC/touch missions, ending/portrait/retry, silent recording integrity. Exact new visual review pending; no whole-element source-blind verdict.",
+    "verificationScope": "46tests/build, real PC/touch missions and endings/retry, silent recordings and independent exact-revision sampled image diagnosis; all whole-element source-blind verdicts not measured.",
     "pendingCandidate": null
   },
   "schemaVersion": 1,
@@ -1869,6 +1869,6 @@
     }
   ],
   "status": "not measured",
-  "updatedAt": "2026-09-14T08:56:28.108Z",
+  "updatedAt": "2026-09-14T09:09:18.498Z",
   "adoptionReview": "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-catalog-review.json"
 }
