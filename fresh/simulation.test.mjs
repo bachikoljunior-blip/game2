@@ -1,13 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createWorld,stepWorld,advance,STEP,OBSTACLES} from './simulation.js';
-import {SIGNAL,objectiveText} from './mission.js';
+import {SIGNAL,canLightSignal,objectiveText} from './mission.js';
 import {playthroughAction} from './playthrough-policy.mjs';
 const ticks=(w,n,i={})=>{for(let t=0;t<n;t++)stepWorld(w,i);};
 test('read-only playthrough policy can complete combat and reach the signal without state shortcuts',()=>{
- const w=createWorld();
- for(let i=0;i<1800&&w.mode==='playing';i++)advance(w,.1,playthroughAction(w));
- assert.equal(w.mode,'victory');assert.equal(w.signalLit,true);assert.equal(w.totals.kills,3);assert.ok(w.player.hp>0);
+ for(const route of ['left','right']){
+  const w=createWorld(),before=JSON.stringify(w);
+  assert.ok(playthroughAction(w,route));assert.equal(JSON.stringify(w),before,'policy must only read state');
+  for(let i=0;i<1800&&w.mode==='playing';i++)advance(w,.1,playthroughAction(w,route));
+  assert.equal(w.mode,'victory');assert.equal(w.routeChoice,route);assert.equal(w.routePhase,'rejoined');
+  assert.equal(w.routeLandmark,route==='left'?'石灯':'風布');
+  assert.equal(w.routeConsequence,route==='left'?'early-retainer':'overlook-warden');
+  assert.ok(w.routeChoiceTime<w.routeLandmarkTime&&w.routeLandmarkTime<w.routeRejoinTime);
+  assert.equal(w.signalLit,true);assert.equal(w.totals.kills,3);assert.ok(w.player.hp>0);
+ }
 });
 test('normal movement goes towards the torii, fresh retry restores state',()=>{
  const w=createWorld();ticks(w,120,{z:-1});assert.ok(w.player.z<11);assert.equal(createWorld().player.z,18);
@@ -58,31 +65,56 @@ test('low render interval retains input and cannot repeat one attack pulse',()=>
  const w=createWorld();assert.equal(advance(w,.001,{attack:true}),false);assert.equal(advance(w,.02,{attack:true}),true);assert.equal(w.player.state,'attack');
 });
 test('terminal states stop simulation; no absent measurement is counted',()=>{
- const w=createWorld();w.enemies.forEach(e=>e.hp=0);w.player.z=SIGNAL.z+1;stepWorld(w);stepWorld(w,{lock:true});assert.equal(w.mode,'victory');const t=w.time;ticks(w,50);assert.equal(w.time,t);
+ const w=createWorld();w.routeChoice='left';w.routePhase='rejoined';w.enemies.forEach(e=>e.hp=0);w.player.z=SIGNAL.z+1;stepWorld(w);stepWorld(w,{lock:true});assert.equal(w.mode,'victory');const t=w.time;ticks(w,50);assert.equal(w.time,t);
  const dead=createWorld();dead.player.hp=0;stepWorld(dead);assert.equal(dead.mode,'defeat');
 });
 test('clearing the path requires a living arrival at the signal, not just the last kill',()=>{
  const w=createWorld();w.enemies.forEach(e=>e.hp=0);stepWorld(w);
  assert.equal(w.mode,'playing');assert.equal(w.signalLit,false);
- assert.equal(objectiveText(w),'道は開いた。社の正面の灯に近づく');
- ticks(w,600,{z:-1});assert.equal(w.mode,'playing');stepWorld(w,{lock:true});assert.equal(w.mode,'victory');assert.equal(w.signalLit,true);
- assert.equal(w.events.filter(e=>e.type==='signal').length,1);
+ assert.equal(objectiveText(w),'道は開いた。分かれた参道を通って灯へ');
+ w.player.z=SIGNAL.z+1;stepWorld(w,{lock:true});assert.equal(w.mode,'playing');assert.equal(w.signalLit,false,'arrival without a real route choice cannot light the signal');
+ const chosen=createWorld();chosen.routeChoice='left';chosen.routePhase='rejoined';chosen.enemies.forEach(e=>e.hp=0);chosen.player.z=SIGNAL.z+1;
+ stepWorld(chosen);stepWorld(chosen,{lock:true});assert.equal(chosen.mode,'victory');assert.equal(chosen.signalLit,true);
+ assert.equal(chosen.events.filter(e=>e.type==='signal').length,1);
  assert.equal(createWorld().signalLit,false);
  const alive=createWorld();alive.player.z=SIGNAL.z+1;stepWorld(alive);
  assert.equal(alive.mode,'playing');assert.equal(alive.signalLit,false);
  const dead=createWorld();dead.enemies.forEach(e=>e.hp=0);dead.player.z=SIGNAL.z+1;dead.player.hp=0;stepWorld(dead);
  assert.equal(dead.mode,'defeat');assert.equal(dead.signalLit,false);
 });
+test('a route choice cannot light the signal before physical reconvergence',()=>{
+ for(const route of ['left','right']){
+  const w=createWorld();w.routeChoice=route;w.routePhase='branch';w.pathCleared=true;
+  w.enemies.forEach(enemy=>enemy.hp=0);Object.assign(w.player,{x:SIGNAL.x,z:SIGNAL.z});
+  assert.equal(canLightSignal(w),false);
+ }
+});
+test('branch enemies activate only after their route is chosen or paths reconverge',()=>{
+ const w=createWorld(),retainer=w.enemies.find(enemy=>enemy.id==='retainer'),warden=w.enemies.find(enemy=>enemy.id==='warden');
+ Object.assign(w.player,{x:0,z:0});Object.assign(retainer,{x:-2,z:0});Object.assign(warden,{x:2,z:0});
+ stepWorld(w);assert.equal(retainer.stride,0);assert.equal(warden.stride,0);
+ w.routeChoice='right';w.routePhase='branch';stepWorld(w);
+ assert.equal(retainer.stride,0);assert.ok(warden.stride>0);
+ w.routePhase='rejoined';stepWorld(w);assert.ok(retainer.stride>0);
+});
+test('playthrough policy never targets a dormant enemy from the opposite branch',()=>{
+ const w=createWorld(),sentinel=w.enemies.find(enemy=>enemy.id==='sentinel');
+ const retainer=w.enemies.find(enemy=>enemy.id==='retainer'),warden=w.enemies.find(enemy=>enemy.id==='warden');
+ sentinel.hp=0;w.routeChoice='left';w.routePhase='branch';Object.assign(w.player,{x:-3,z:-8});
+ Object.assign(retainer,{x:-3,z:-10});Object.assign(warden,{x:-3,z:-8.5});
+ assert.equal(playthroughAction(w,'left').targetId,'retainer');
+ w.routePhase='rejoined';assert.equal(playthroughAction(w,'left').targetId,'warden');
+});
 test('signal activation uses distance, not only forward progress; batched time agrees',()=>{
  const a=createWorld(),b=createWorld();
- for(const w of [a,b]){w.enemies.forEach(e=>e.hp=0);w.player.x=3;w.player.z=SIGNAL.z+1;stepWorld(w);assert.equal(w.signalLit,false);}
+ for(const w of [a,b]){w.routeChoice='right';w.routePhase='rejoined';w.enemies.forEach(e=>e.hp=0);w.player.x=3;w.player.z=SIGNAL.z+1;stepWorld(w);assert.equal(w.signalLit,false);}
  for(let i=0;i<60;i++)advance(a,STEP,{x:-1});for(let i=0;i<4;i++)advance(b,.25,{x:-1});
  stepWorld(a,{lock:true});stepWorld(b,{lock:true});
  assert.equal(a.mode,'victory');assert.equal(b.mode,a.mode);assert.deepEqual(a.player,b.player);
  assert.equal(a.events.filter(e=>e.type==='signal').length,1);
 });
 test('last kill at the lamp cannot finish the mission without a subsequent signal input',()=>{
- const w=createWorld();w.player.z=SIGNAL.z+1;w.enemies.forEach(e=>e.hp=0);
+ const w=createWorld();w.routeChoice='left';w.routePhase='rejoined';w.player.z=SIGNAL.z+1;w.enemies.forEach(e=>e.hp=0);
  stepWorld(w,{lock:true});assert.equal(w.pathCleared,true);assert.equal(w.mode,'playing');assert.equal(w.signalLit,false);
  ticks(w,120);assert.equal(w.mode,'playing');assert.equal(w.signalLit,false);
  stepWorld(w,{lock:true});assert.equal(w.mode,'victory');assert.equal(w.signalLit,true);

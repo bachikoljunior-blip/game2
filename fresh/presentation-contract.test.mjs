@@ -92,7 +92,7 @@ test('scene and actor pass preserves density while clearing combat silhouettes a
   const source=readFileSync(new URL('./presentation.js',import.meta.url),'utf8');
   assert.match(source,/new T\.InstancedMesh\(grassGeo,grassMat,3000\)/);
   assert.match(source,/\(near\?4\.8:9\)/);
-  assert.match(source,/const pathCenter=Math\.sin\(\(z\+8\)\*\.13\)\*\.42/);
+  assert.match(source,/const centers=routePathCenters\(z\)/);
   assert.match(source,/playerBlade=material\('#e7f4f4'/);
   assert.match(source,/enemyBlade=material\('#ffe0a6'/);
   assert.match(source,/enemyBlade\.emissiveIntensity=\.24/);
@@ -101,7 +101,7 @@ test('scene and actor pass preserves density while clearing combat silhouettes a
   assert.match(source,/r\.sword\.visible=!\(world\.mode==='victory'&&a\.id==='player'\)/);
 });
 
-test('foreground, signal and actor hierarchy are generated without changing gameplay geometry',()=>{
+test('foreground, signal, actor and branching-route hierarchy use the shared gameplay geometry',()=>{
   const source=readFileSync(new URL('./presentation.js',import.meta.url),'utf8');
   const simulation=readFileSync(new URL('./simulation.js',import.meta.url),'utf8');
   assert.match(source,/const toriiPosts=\[\]/);
@@ -111,6 +111,34 @@ test('foreground, signal and actor hierarchy are generated without changing game
   assert.match(source,/const skirtFront=/);
   assert.match(source,/const forearmWrap=/);
   assert.match(source,/const facePlane=/);
-  assert.match(simulation,/\{ x: -3\.5, z: 7, w: \.55, d: \.55, h: 4\.5 \}/);
-  assert.match(simulation,/\{ x: 3\.5, z: 7, w: \.55, d: \.55, h: 4\.5 \}/);
+  assert.match(simulation,/\{ x: -3\.5, z: 7, w: \.55, d: \.55, h: 4\.5, kind: 'torii' \}/);
+  assert.match(simulation,/\{ x: 3\.5, z: 7, w: \.55, d: \.55, h: 4\.5, kind: 'torii' \}/);
+  assert.match(simulation,/ROUTE_FORK\.obstacle/);
+  assert.match(source,/if\(o\.kind==='torii'\)/);
+  assert.match(source,/else if\(o\.kind==='shrine'\)/);
+  assert.match(source,/const fork=ROUTE_FORK\.obstacle/);
+  assert.match(source,/ROUTE_FORK\.left\.markers/);
+  assert.match(source,/ROUTE_FORK\.right\.markers/);
+  assert.match(source,/routeCloth\.onBeforeCompile/);
+});
+
+test('route checkpoint images are decoded after capture instead of perturbing held movement',()=>{
+  const browser=readFileSync(new URL('./browser-smoke.mjs',import.meta.url),'utf8');
+  const matrix=readFileSync(new URL('./route-matrix-smoke.mjs',import.meta.url),'utf8');
+  const verifier=readFileSync(new URL('./verify-recordings.mjs',import.meta.url),'utf8');
+  const workflow=readFileSync(new URL('../.github/workflows/fresh-game.yml',import.meta.url),'utf8');
+  for(const source of [browser,matrix]){
+    const start=source.indexOf('held=new Set');
+    const end=source.indexOf('for(const key of held)',start);
+    assert.ok(start>=0&&end>start);
+    assert.doesNotMatch(source.slice(start,end),/screenshot\(/,'live route observation must not leave movement held during image encoding');
+    assert.match(source,/routePhase==='branch'&&w\.routeChoice/,'route-side samples must stop after physical reconvergence');
+    assert.match(source,/tapLockUntilObserved/,'touch combat must wait for one lock pulse instead of queuing lock toggles');
+  }
+  assert.match(browser,/preflightBrowser\.close\(\)[\s\S]*recording\('touch'/,'recorded touch mission must start in a browser launched after preflight closes');
+  const recordedTouchStart=browser.indexOf("const mobileRecording=recording('touch'");
+  assert.doesNotMatch(browser.slice(recordedTouchStart),/mobile\.reload\(/,'recorded touch mission must not reuse a preflight page through reload');
+  assert.match(workflow,/browser-smoke\.mjs \|\| browser_status=\$\?[\s\S]*route-matrix-smoke\.mjs \|\| matrix_status=\$\?/,'one failed apparatus must not suppress the other route evidence');
+  assert.match(verifier,/\['fork-entry','route-choice','route-landmark','route-rejoin'\]/);
+  assert.match(verifier,/snapshotBytes>0/);
 });
