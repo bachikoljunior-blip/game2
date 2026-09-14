@@ -10,11 +10,11 @@
     "workingBranch": "codex/game2-rebuild-20260913",
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
-    "activeTask": "FRESH-RECOVERY-TOUCH-ISOLATION",
-    "lastSuccessfulAction": "CI 34797784088 proved direct touch contacts across rendered frames: two enemies died, the third reached HP32, player HP remained100, and eight player hits were recorded. Node tests, build, desktop mission and base mobile checks passed. This is partial functional evidence only.",
-    "currentFailingAction": "CI 34797784088 did not finish the touch mission in its 180-second wall window. The phone simulation advanced only39.8 seconds while an already-tested desktop WebGL page remained alive in the same SwiftShader browser. The prior f2d81b7 evidence also mistranscribed actual totals.hits=1 as zero.",
-    "currentHypothesis": "An active desktop WebGL page competed with the phone page for software-rendering resources; process/state coupling also made phone timing non-independent. This explains the observed wall/simulation ratio and near-complete route, but remains a hypothesis until an isolated-browser CI run passes or supplies contrary timing.",
-    "nextAction": "Run the desktop and phone checks in separate browser processes and record their wall durations at the exact candidate revision. Require the unchanged touch criterion: three fights, explicit signal, ending and clean retry. If it passes, inspect the mobile ending image and preserve environment limits. If it fails, use the new per-apparatus durations and exact final state to isolate the remaining cause instead of repeating the same run. Then prioritize primitive generated presentation, remaining C05/C06/C09/C11/C12 selection and source-blind media. All elements remain not measured. Deadline2026-09-20T07:51:53Z.",
+    "activeTask": "FRESH-PRESENTATION-FOUNDATION",
+    "lastSuccessfulAction": "Recovery revision ed296ee passed CI34799863173 after isolating desktop and phone in clean browser processes. The unchanged touch route completed3 fights, explicit signal, ending and clean retry in75.390s; desktop checks took81.489s;33 tests/build passed. The f2d81b7 one-hit transcription is corrected.",
+    "currentFailingAction": null,
+    "currentHypothesis": null,
+    "nextAction": "Production has resumed. Inspect the retained mobile ending image, then replace the largest primitive generated-presentation gaps as one coherent visual foundation rather than serial micro-fixes. Verify actual title/encounter/ending/phone frames and runtime budgets. In parallel with implementation evidence, finish C05/C06/C09/C11/C12 reference selection and build source-blind continuous media. All elements remain not measured. Deadline2026-09-20T07:51:53Z.",
     "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
     "pendingVerification": [
       "Exact candidate touch-only full mission CI",
@@ -86,7 +86,10 @@
           "The f2d81b7 failure handoff mistranscribed totals.hits=1 as zero, which could send recovery toward the wrong input-loss hypothesis."
         ],
         "remediation": "Close the desktop browser and launch a clean phone browser; record separate durations; correct the preserved failure transcription.",
-        "verification": "Local structural and unit/build checks first, then exact-revision CI. Production is recovery_in_progress until that CI result is read."
+        "verification": "Resolved at ed296ee / CI34799863173:33 tests and build passed; desktop81.489s; isolated phone75.390s; full touch mission, signal, ending and retry passed.",
+        "status": "resolved",
+        "productionResumedAt": "2026-09-14T02:41:18Z",
+        "nextProductionTask": "FRESH-PRESENTATION-FOUNDATION"
       },
       "coordination": "Check recent commits and running CI; if another producer is active, read only. No force push, duplicate work, or duplicate CI.",
       "activeBranch": "codex/game2-rebuild-20260913"
@@ -120,7 +123,7 @@
     "completion": "All concept elements satisfied by evidenced blind comparison.",
     "current_unit": "2026-09-13-fresh-design",
     "unit_status": "active",
-    "first_action": "Verify the isolated desktop/phone browser correction in exact-revision CI without weakening the touch mission criterion; inspect its timing and final state, then continue the highest-quality-gap work. All elements remain not measured. Deadline2026-09-20T07:51:53Z.",
+    "first_action": "Inspect the retained mobile ending image, then implement and verify the coherent generated-presentation foundation; finish unresolved reference selections and source-blind continuous media alongside it. All elements remain not measured. Deadline2026-09-20T07:51:53Z.",
     "implementation_strategy": "Fresh design and implementation; needs-before-reuse, per latest direct user instruction.",
     "unitEndReason": null
   }

@@ -4,7 +4,16 @@
   "sourceRevision": "9895e92bf006e16fb79ae0061a32c04b33508c99",
   "failedRun": 34797784088,
   "failedJob": 103834133694,
-  "status": "recovery_in_progress",
+  "recoveryRevision": "ed296ee42ded31d34c7b024651b864d5d1c162bd",
+  "verifiedAt": "2026-09-14T02:41:18Z",
+  "verificationRun": 34799863173,
+  "verificationJob": 103840170709,
+  "artifact": {
+    "id": 10331271580,
+    "digest": "sha256:d4664971acaff07d7b4b36ebfc849eb18a33a3f32c0097cf8e90feca42607c50",
+    "expiresAt": "2026-12-13T02:38:00Z"
+  },
+  "status": "recovery_completed",
   "stopAssessment": "No running related CI or newer production revision was found after the failed run; production was treated as stopped for recovery.",
   "measuredFacts": {
     "nodeTests": "passed: 33",
@@ -41,6 +50,16 @@
     "Separate timing fields establish the independently run apparatus durations",
     "If CI still fails, preserve the new final state and investigate before another retry"
   ],
+  "verificationResult": {
+    "nodeTests": "passed: 33",
+    "productionBuild": "passed",
+    "desktopDurationMs": 81489,
+    "phoneDurationMs": 75390,
+    "touchMission": "passed: 3 kills, 9 player hits, explicit signal, ending and clean retry",
+    "touchEndState": "victory; signalLit=true; playerHP4; 4 hits received; no console/page errors",
+    "artifactInspection": "not performed in this recovery checkpoint; artifact was retained for subsequent image review",
+    "inference": "Clean process isolation removed the prior timing failure without changing the mission criterion. This verifies the recovery mechanism on this CI apparatus; it is not physical-device performance evidence."
+  },
   "formalVerdict": "not measured",
   "workUnitEnded": false
 }
