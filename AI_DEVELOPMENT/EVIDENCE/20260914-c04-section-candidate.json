@@ -30,11 +30,11 @@
     "buildScope": "Spatial candidate build passed before the observational timestamp separation; final exact revision is checked by CI."
   },
   "remoteVerification": {
-    "revision": "ce3615445aef7511917bcc9582b0c3a10da0a120",
-    "run": 34820020456,
+    "revision": "2b6e759054bf2089fa9937e041a7d3a7ebcc0210",
+    "run": 34821603815,
     "result": "failed",
-    "detail": "Spatial partition preserves scene and PC completes, old touch route defeated before deadline",
-    "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-spatial-result.json"
+    "detail": "Same spatial scene, PC passes; narrow-counter touch test-player defeated. Runtime unchanged.",
+    "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-delayed-touch.json"
   },
   "independentReview": {
     "reviewer": "review_capture",
@@ -56,7 +56,7 @@
   },
   "formalVerdict": "not measured",
   "workUnitEnded": false,
-  "nextWork": "Verify the defensive touch-route candidate at exact head:45 tests/build, real guard plus block/parry, actual dodge, attack,3kills,arrival,signal,ending and clean retry within unchanged180second mission deadline; desktop and zero-error/recovery/recording gates retained. Preserve ce36154's old dodge-route defeat as a separate failed observation. Then prioritize actual normal-play comparison coverage using the acquired native wind clips only within their limited nondebug scope; fix combat occlusion/darkness and complete remaining reference selection instead of resuming panel microchanges.",
+  "nextWork": "Verify the revised delay-aware touch test route:46tests/build, actual guard+block/parry,dodge,3kills,arrival,signal,ending,portrait/retry and strict victory observation<=180000ms; preserve earlier route failures and bounded model's0.75s defeat. Save exact CI and command timing evidence before any execution boundary. Then reduce whole-element uncertainty with ordinary-play comparison coverage and integrated combat visibility; debug wind clips are limited diagnostics and5reference selections remain incomplete.",
   "failedAttempts": [
     {
       "revision": "ea295ff0400a9e58f1b95c19cac0683a1922d188",
@@ -72,7 +72,12 @@
       "revision": "ce3615445aef7511917bcc9582b0c3a10da0a120",
       "run": 34820020456,
       "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-spatial-result.json"
+    },
+    {
+      "revision": "2b6e759054bf2089fa9937e041a7d3a7ebcc0210",
+      "run": 34821603815,
+      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-delayed-touch.json"
     }
   ],
-  "updatedAt": "2026-09-14T08:11:23.574Z"
+  "updatedAt": "2026-09-14T08:25:04.042Z"
 }

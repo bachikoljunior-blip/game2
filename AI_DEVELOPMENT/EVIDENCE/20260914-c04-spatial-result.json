@@ -338,5 +338,11 @@
   },
   "formalVerdict": "not measured",
   "workUnitEnded": false,
-  "next": "Validate a separately identified defensive touch route without altering game values or180second objective. Preserve prior dodge-only failures. Compare retained native reference motion at their actual supported scope."
+  "next": "Validate a separately identified defensive touch route without altering game values or180second objective. Preserve prior dodge-only failures. Compare retained native reference motion at their actual supported scope.",
+  "independentImageReview": {
+    "reviewer": "review_capture",
+    "method": "Six exact previous/new stills:encounter,mobile,PCending. Known-source diagnostic.",
+    "result": "No clear new vegetation/shadow omission found. Path/shoulder vegetation and crossing paving shadows retain continuity; mobile foliage extends behindtorii; PCfeet/paving boundary visible. Pose/wind/shadow differences cannot establish disappearance.",
+    "limits": "Three static scene pairs only; no continuous flicker, performance or whole-element verdict."
+  }
 }

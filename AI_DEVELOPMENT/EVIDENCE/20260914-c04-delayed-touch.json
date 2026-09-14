@@ -1,0 +1,241 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-09-14T08:25:04.042Z",
+  "runtimeRevision": "ce3615445aef7511917bcc9582b0c3a10da0a120",
+  "failedBrowserAttempt": {
+    "revision": "2b6e759054bf2089fa9937e041a7d3a7ebcc0210",
+    "run": 34821603815,
+    "url": "https://github.com/bachikoljunior-blip/game2/actions/runs/34821603815",
+    "result": "failed",
+    "tests": 45,
+    "build": "passed",
+    "desktopVictoryObservedElapsedMs": 62425,
+    "durationsMs": {
+      "desktop": 147593,
+      "mobile": 73135
+    },
+    "errors": [],
+    "touchPolicy": "held guard, actual dodge, recovery counters and early-windup interruption; prior dodge-only failures retained",
+    "touchFinal": {
+      "enemies": [
+        {
+          "age": 8.933333333333357,
+          "cooldown": 0,
+          "dodgeX": 0,
+          "dodgeZ": 0,
+          "guardAge": 99,
+          "hit": [],
+          "hp": 0,
+          "id": "sentinel",
+          "posture": 48.333333333333286,
+          "state": "dead",
+          "stride": 9.728190476190385,
+          "x": -3.264193873359851e-17,
+          "yaw": -2.6010501262060195e-18,
+          "z": 4.194857142857106
+        },
+        {
+          "age": 0.18333333333333332,
+          "cooldown": 0.9166666666666669,
+          "dodgeX": 0,
+          "dodgeZ": 0,
+          "guardAge": 99,
+          "hit": [
+            "player"
+          ],
+          "hp": 32,
+          "id": "retainer",
+          "posture": 33.699999999999974,
+          "state": "attack",
+          "stride": 11.159999999999954,
+          "x": -0.2907492817487215,
+          "yaw": 2.9174165565728516,
+          "z": 1.8196883730623385
+        },
+        {
+          "age": 24.433333333333227,
+          "cooldown": 0,
+          "dodgeX": 0,
+          "dodgeZ": 0,
+          "guardAge": 99,
+          "hit": [],
+          "hp": 100,
+          "id": "warden",
+          "posture": 0,
+          "state": "idle",
+          "stride": 0,
+          "x": 3,
+          "yaw": 0,
+          "z": -16
+        }
+      ],
+      "events": [
+        {
+          "source": "retainer",
+          "target": "player",
+          "time": 24.433333333333227,
+          "type": "hit",
+          "x": -0.046215815950304884,
+          "z": 2.892163726674073
+        },
+        {
+          "source": "retainer",
+          "target": "player",
+          "time": 24.433333333333227,
+          "type": "death",
+          "x": -0.046215815950304884,
+          "z": 2.892163726674073
+        }
+      ],
+      "locked": "retainer",
+      "mode": "defeat",
+      "pathCleared": false,
+      "player": {
+        "age": 0,
+        "cooldown": 0,
+        "dodgeX": 0,
+        "dodgeZ": -1,
+        "guardAge": 99,
+        "hit": [],
+        "hp": 0,
+        "id": "player",
+        "posture": 122.68333333333322,
+        "state": "dead",
+        "stride": 20.90427641314894,
+        "x": -0.046215815950304884,
+        "yaw": -0.22417609701694158,
+        "z": 2.892163726674073
+      },
+      "remainder": 0.01003333333332667,
+      "signalLit": false,
+      "ticks": 1466,
+      "time": 24.433333333333227,
+      "totals": {
+        "hits": 5,
+        "kills": 1,
+        "parries": 0,
+        "received": 4
+      }
+    },
+    "guardObserved": true,
+    "blockOrParryObserved": true,
+    "artifacts": [
+      {
+        "archive_download_url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10338472099/zip",
+        "created_at": "2026-09-14T08:18:06Z",
+        "digest": "sha256:bdd954659daba21cda2453e118a7e248279cc846b326f222caff6b6970c8da4c",
+        "expired": false,
+        "expires_at": "2026-12-13T08:13:14Z",
+        "id": 10338472099,
+        "name": "fresh-game-2b6e759054bf2089fa9937e041a7d3a7ebcc0210",
+        "size_in_bytes": 26871515,
+        "updated_at": "2026-09-14T08:18:06Z",
+        "url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10338472099",
+        "workflow_run": {
+          "head_branch": "codex/game2-rebuild-20260913",
+          "head_repository_id": 1316876624,
+          "head_sha": "2b6e759054bf2089fa9937e041a7d3a7ebcc0210",
+          "id": 34821603815,
+          "repository_id": 1316876624
+        }
+      }
+    ],
+    "rawEvidence": "browser-report.json in exact-revision artifact preserves the full callback samples, states and recording locators. Logs read; artifact ZIP digest reported by GitHub, not yet independently downloaded for this attempt.",
+    "failureInterpretation": "Actual defeat after1kill, second enemyHP32, playerposture122.68; not timeout or producer stop. Deadline assertion ran first and reported generic missing-victory wording; move mode assertion ahead of it while preserving the strict180second bound."
+  },
+  "diagnosis": {
+    "observed": "Prior unit model delivered a new decision immediately at an update and did not simulate world progress between observation and touch commands.",
+    "independentReview": {
+      "reviewer": "review_capture",
+      "result": "Confirmed lack of separated observation/command/rAF clocks and held-input/pulse lifetime. Independent FIFO-delay model:0.25s updates,0lagHP100victory,0.5slagHP28victory,0.75slag2kills/lastHP32defeat. Not an exact CI reproduction."
+    },
+    "methodChange": "Space with a dodge before close contact, hold guard for actual contact, then press close attacks. Remove narrow windup-stage dependency. Model observation/delivery/release while simulation continues at1/60, and record bounded real touch-command wall offsets. No game values or acceptance assertions changed.",
+    "producerDelayedModel": {
+      "scope": "Serial decision, delay before delivery,0.05s+delay held action/stick, then0.11s released action with guard held; simulation updated continuously at1/60. This is not the measured browser command distribution or every actual wait/rAF phase.",
+      "oldPolicyExample": "0.1s delivery delay produced defeat in the bounded serial model; immediate delivery passed.",
+      "newPolicy": [
+        {
+          "delaySeconds": 0,
+          "outcome": "victory",
+          "simulatedSeconds": 45.7667,
+          "hp": 100,
+          "kills": 3
+        },
+        {
+          "delaySeconds": 0.1,
+          "outcome": "victory",
+          "simulatedSeconds": 37.1833,
+          "hp": 100,
+          "kills": 3
+        },
+        {
+          "delaySeconds": 0.25,
+          "outcome": "victory",
+          "simulatedSeconds": 35.2333,
+          "hp": 100,
+          "kills": 3
+        },
+        {
+          "delaySeconds": 0.5,
+          "outcome": "victory",
+          "simulatedSeconds": 41.1167,
+          "hp": 100,
+          "kills": 3
+        },
+        {
+          "delaySeconds": 0.75,
+          "outcome": "defeat",
+          "simulatedSeconds": 17.1833,
+          "hp": 0,
+          "kills": 0
+        }
+      ],
+      "limits": "Longer-delay failure retained. No broad latency tolerance, real20battle result, physical-device performance or source-blind quality inferred."
+    },
+    "followupReview": "Independent reviewer found the first serial model treated movement as .05/.11 and combined guard/action delivery. Before CI, the model was corrected to separate guard commands and action/stick commands, use .05/.11 button, .10/.04 stick and .08 idle waits. Variable rAF phase and actual command-delay distribution remain unmodelled.",
+    "correctedBranchModel": {
+      "scope": "Separate state-return delay, guard-change command, action command(s), held/released waits at actual branch durations. Simulation continues in1/60steps, constant per-command illustrative delays.",
+      "observations": [
+        {
+          "delaySeconds": 0,
+          "mode": "victory",
+          "simulatedSeconds": 25.6666667,
+          "hp": 100
+        },
+        {
+          "delaySeconds": 0.1,
+          "mode": "victory",
+          "simulatedSeconds": 41.5833333,
+          "hp": 100
+        },
+        {
+          "delaySeconds": 0.25,
+          "mode": "victory",
+          "simulatedSeconds": 52.6166667,
+          "hp": 100
+        },
+        {
+          "delaySeconds": 0.5,
+          "mode": "victory",
+          "simulatedSeconds": 71.5333333,
+          "hp": 52
+        },
+        {
+          "delaySeconds": 0.75,
+          "mode": "defeat",
+          "simulatedSeconds": 19.85,
+          "hp": 0,
+          "kills": 0
+        }
+      ],
+      "limits": "Not a browser-time prediction, exact rAF/command trace replay or performance result.0.75s failure retained."
+    }
+  },
+  "newCandidate": {
+    "localTests": 46,
+    "result": "passed",
+    "realBrowser": "pending"
+  },
+  "formalVerdict": "not measured",
+  "workUnitEnded": false
+}

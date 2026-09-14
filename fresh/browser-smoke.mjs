@@ -169,7 +169,7 @@ try{
   await endContact(id);
   await mobile.waitForTimeout(110);
  };
- const touchDeadline=Date.now()+180000;report.touchMission={policy:'held guard, actual dodge, recovery counters and early-windup interruption; prior dodge-only failures retained',guardObserved:false,blockOrParryObserved:false,checkpoints:[]};let touchKills=-1;mark(mobileRecording,'full-mission-start');
+ const touchDeadline=Date.now()+180000;report.touchMission={policy:'spacing dodge, held guard and close attacks after contact; prior dodge-only and narrow-counter failures retained',guardObserved:false,blockOrParryObserved:false,checkpoints:[],decisions:[],decisionsOmitted:0,timingScope:'Read-only observed world followed by real touch commands. Decision commandStarted/Finished are wall offsets including command round trips and deliberate waits, not measured game input latency.'};let touchKills=-1;mark(mobileRecording,'full-mission-start');
  while(Date.now()<touchDeadline){
   const w=await mobile.evaluate(()=>freshDiagnostics().world);
   report.touchMission.guardObserved ||= w.player.state==='guard';
@@ -180,6 +180,7 @@ try{
    break;
   }
   const a=touchPlaythroughAction(w);
+  const decision={observedWorldTime:w.time,playerState:w.player.state,posture:w.player.posture,action:a,commandStartedMs:Date.now()-(touchDeadline-180000)};
   if(a.guard&&!contacts.has(1))await beginContact(1,g);
   if(!a.guard&&contacts.has(1))await endContact(1);
   if(a.dodge)await tapPoint(dodgePoint);
@@ -193,9 +194,13 @@ try{
    await endContact(4);
    await mobile.waitForTimeout(40);
   }else await mobile.waitForTimeout(80);
+  decision.commandFinishedMs=Date.now()-(touchDeadline-180000);
+  if(report.touchMission.decisions.length<400)report.touchMission.decisions.push(decision);
+  else report.touchMission.decisionsOmitted++;
  }
  await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});contacts.clear();
  report.touchMission.after=await mobile.evaluate(()=>freshDiagnostics().world);
+ assert.equal(report.touchMission.after.mode,'victory','touch mission ended without victory');
  assert.ok(Number.isFinite(report.touchMission.victoryObservedElapsedMs)&&report.touchMission.victoryObservedElapsedMs<=180000,'touch victory must be observed within180seconds, not after the loop deadline');
  assert.ok(Math.hypot(report.touchMission.after.player.dodgeX,report.touchMission.after.player.dodgeZ)>.5,'real touch route must actually trigger a dodge');
  assert.ok(report.touchMission.guardObserved&&report.touchMission.blockOrParryObserved,'real route must include observed guarding and an actual block/parry');

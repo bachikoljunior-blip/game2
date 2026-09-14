@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-14T08:11:23.574Z",
-  "phase": "fresh-defensive-touch-verification",
+  "updatedAt": "2026-09-14T08:25:04.042Z",
+  "phase": "fresh-delayed-touch-verification",
   "userInstruction": "一旦ゲーム自体はゼロから作り直してくれる？",
   "activeBranch": "codex/game2-rebuild-20260913",
   "fixedInstructions": "AI_DEVELOPMENT/FIXED_INSTRUCTIONS.md",
@@ -15,7 +15,7 @@
     "oldPr": 10,
     "optionalRebuildRouting": "ec2480166809f57fa623929bec0fbcb4d5a623a2"
   },
-  "continuation": "Verify the defensive touch-route candidate at exact head:45 tests/build, real guard plus block/parry, actual dodge, attack,3kills,arrival,signal,ending and clean retry within unchanged180second mission deadline; desktop and zero-error/recovery/recording gates retained. Preserve ce36154's old dodge-route defeat as a separate failed observation. Then prioritize actual normal-play comparison coverage using the acquired native wind clips only within their limited nondebug scope; fix combat occlusion/darkness and complete remaining reference selection instead of resuming panel microchanges.",
+  "continuation": "Verify the revised delay-aware touch test route:46tests/build, actual guard+block/parry,dodge,3kills,arrival,signal,ending,portrait/retry and strict victory observation<=180000ms; preserve earlier route failures and bounded model's0.75s defeat. Save exact CI and command timing evidence before any execution boundary. Then reduce whole-element uncertainty with ordinary-play comparison coverage and integrated combat visibility; debug wind clips are limited diagnostics and5reference selections remain incomplete.",
   "status": "not measured",
   "publication": "Keep old Pages until a verified replacement is ready. Fresh runtime is a work-branch candidate, not public product acceptance.",
   "procedureAuthority": "Fixed instructions and explicit user directives govern. Tests, task plans and architecture documents are tools chosen by the AI, not additional fixed rules.",
@@ -27,7 +27,7 @@
   "comparisonCatalog": "AI_DEVELOPMENT/COMPARISON_ELEMENTS.yaml",
   "referenceSelectionComplete": false,
   "verificationEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-camera-transition.json",
-  "pendingCandidate": "45 local tests pass with separately labelled guard/counter touch test player. Runtime stays spatial landscape fromce36154; actual full touch verification pending. Earlier dodge-only route defeat remains recorded.",
+  "pendingCandidate": "46 local tests pass with separated delivery/hold/release model and revised spacing/contact/close-attack test route. Actual browser pending. Game runtime unchanged fromce36154;2b6e759 narrow-counter route defeat retained.",
   "methodChangeEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-unknown-method-change.json",
   "recoveryRole": {
     "userInstruction": "定期オートメーションは万が一実行が停止していたら、停止してしまう原因を全て潰してから再開する再発火役にしてください。",

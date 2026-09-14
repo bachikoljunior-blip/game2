@@ -86,10 +86,11 @@
     ]
   },
   "contentInspection": {
-    "method": "Actual one-second sample contact sheets inspected by producer; independent check pending",
+    "method": "Actual one-second sample contact sheets inspected by producer and independent reviewer review_capture.",
     "wind01": "Elevated view of wind particles across terrain and cliffs, with debug/editor marks and text. Not a retail player-navigation route.",
     "wind02": "Third-person vegetation displacement; later section shows a colored debug trail and changes camera/scene. A short nondebug segment is present, but the whole clip is not uninterrupted ordinary play.",
-    "limits": "Both are source-identifiable and silent. Do not use debug parts or edits as a representative whole-element source-blind comparison. Wind/material behavior can inform a limited diagnostic; full C04 navigation, source concealment and audio remain unmeasured."
+    "limits": "Both are source-identifiable and silent. Do not use debug parts or edits as a representative whole-element source-blind comparison. Wind/material behavior can inform a limited diagnostic; full C04 navigation, source concealment and audio remain unmeasured.",
+    "independentReview": "Confirmed debug/editor markings inwind01 and colored debug trail/camera changes inwind02. Broad/local wind coherence and person/foliage density separation can be limited diagnostics; these are not whole normal-play navigation or source-blind evidence."
   },
   "formalVerdict": "not measured",
   "next": "Identify usable ordinary-play intervals by closer frame inspection and retain their limitations; obtain a genuine continuous navigation route for whole C04 rather than treating these debug demonstrations as sufficient."
