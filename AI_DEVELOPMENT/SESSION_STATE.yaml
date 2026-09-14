@@ -10,11 +10,11 @@
     "workingBranch": "codex/game2-rebuild-20260913",
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
-    "activeTask": "FRESH-CONTINUOUS-EVIDENCE-AND-RESULT",
-    "lastSuccessfulAction": "Responsive result candidate dcb632d passed CI34807763920:35 tests/build, desktop and isolated touch missions, landscape captures and actual390x844 portrait rotation. Portrait result copy measured15px and copy/retry remained in viewport. Independent static review found the responsive hierarchy and contrast usable.",
+    "activeTask": "FRESH-LOCK-CAMERA-TRANSITION",
+    "lastSuccessfulAction": "d48a8d7 / CI34813628212 passed35 tests/build, desktop/touch missions and retry, ending bounds/phrases/48px-or-larger CTA, two full-decodable continuous videos. Independent sampled review confirmed ending text improvements and exposed touch lock-camera overhead overlap.",
     "currentFailingAction": null,
     "currentHypothesis": null,
-    "nextAction": "Run the continuous-evidence candidate once on its exact remote head. Inspect both complete video decodes and PC/touch mission results; independently review actual result frames. Save verified results and failures before returning. Then prioritize the remaining reference selections and real paired continuous comparison material. All elements remain not measured. Deadline2026-09-20T07:51:53Z.",
+    "nextAction": "Reproduce the newly observed overhead touch-combat camera. Investigate Cartesian interpolation across changing duel directions, preserve standoff through angular interpolation if confirmed, and verify on actual recorded touch input. Continue outstanding reference/material preparation; all10 formal elements remain not measured.",
     "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
     "pendingVerification": [
       "Exact responsive victory typography/CTA/lamp-exposure frames and complete playable video files",
@@ -25,18 +25,17 @@
       "Source-blind comparison for every whole concept element"
     ],
     "modifiedFiles": [
+      ".github/workflows/fresh-game.yml",
+      "AI_DEVELOPMENT/EVIDENCE/20260914-unknown-method-change.json",
       "AI_DEVELOPMENT/FRESH_DESIGN.md",
-      "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-presentation-checkpoint.json",
-      "fresh/camera-framing.js",
-      "fresh/presentation-contract.test.mjs",
-      "fresh/presentation.js",
+      "AI_DEVELOPMENT/REBUILD_STATE.yaml",
+      "AI_DEVELOPMENT/SESSION_STATE.yaml",
+      "fresh/browser-smoke.mjs",
       "fresh/main.js",
       "fresh/mission.css",
-      "fresh/browser-smoke.mjs",
-      "fresh/presentation-contract.test.mjs",
+      "fresh/mission.js",
       "fresh/presentation.js",
-      "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-b851e80.json",
-      "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-touch-failure-f2d81b7.json"
+      "fresh/verify-recordings.mjs"
     ],
     "remotePushPendingAuthorization": false,
     "remoteReleaseAuthorized": true,
@@ -92,7 +91,13 @@
         "nextProductionTask": "FRESH-PRESENTATION-FOUNDATION"
       },
       "coordination": "Check recent commits and running CI; if another producer is active, read only. No force push, duplicate work, or duplicate CI.",
-      "activeBranch": "codex/game2-rebuild-20260913"
+      "activeBranch": "codex/game2-rebuild-20260913",
+      "latestSafeCheckpoint": {
+        "at": "2026-09-14T06:38:00Z",
+        "verifiedRevision": "d48a8d7a4648dab4d1b6a6f19ad1064f528dea7f",
+        "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-unknown-method-change.json",
+        "execution": "This foreground producer is continuing into the recorded camera defect; no separate background producer claimed."
+      }
     },
     "evidence": [
       "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-checkpoint.md",
@@ -127,21 +132,24 @@
     "completion": "All concept elements satisfied by evidenced blind comparison.",
     "current_unit": "2026-09-13-fresh-design",
     "unit_status": "active",
-    "first_action": "Validate the continuous-recording and responsive-result candidate, checkpoint exact results, then unblock actual reference/candidate comparisons. All elements remain not measured.",
+    "first_action": "Reproduce the newly observed overhead touch-combat camera. Investigate Cartesian interpolation across changing duel directions, preserve standoff through angular interpolation if confirmed, and verify on actual recorded touch input. Continue outstanding reference/material preparation; all10 formal elements remain not measured.",
     "implementation_strategy": "Fresh design and implementation; needs-before-reuse, per latest direct user instruction.",
     "unitEndReason": null,
     "deadlineReassessment": {
-      "observedAt": "2026-09-14T06:20:28Z",
+      "observedAt": "2026-09-14T06:38:00Z",
       "prediction": "unknown; this triggers a method change, not a declaration of feasibility or impossibility",
       "basis": "About145.5 hours remain. All ten verdicts are not measured and reference selection is incomplete. Four recent successful functional CIs established execution and narrower static issues, but produced no whole-element verdict. Previous browser evidence contains screenshots and state, not reviewable continuous gameplay files. This prevents an evidence-based estimate of the remaining quality gap and comparison throughput.",
       "methodChange": "Keep PC/phone rendering isolated and their existing mission deadlines/assertions. Save the same real-input runs as continuous videos; independently decode every frame and record dimensions, duration, hashes and missing audio. Fix the already-recorded ending issues in the same candidate. Then prioritize actual reference/candidate comparison material over further isolated cosmetic passes.",
-      "validation": "Local35 tests and production build passed. Recording integrity, exact-head browser outcomes, and independent frame review are pending; do not claim that uncertainty has been removed until these results are recorded.",
+      "validation": "Two complete retrievable continuous files replace absent video evidence:98.12s/2453 decoded frames desktop and99.6s/2490 frames touch. Both missions/recordings passed in the same CI. Browser wall durations98.054s and99.114s versus prior97.242s/97.465s are single-run observations, not a controlled overhead estimate. Independent sampled review exposed close-combat overhead camera/actor overlap previously absent from saved stills. Typography and CTA gaps closed at the measured viewports. Whole-element forecast remains unknown until actual reference comparisons.",
       "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-unknown-method-change.json"
     },
     "latestDeadlineInstruction": {
       "userOriginal": "継続確認の後、期限内に達成できるか考え、できないや分からないと判断したならやり方が間違ってることを疑え",
       "appliesAfterEveryContinuationCheck": true,
-      "triggers": ["cannot meet deadline with current method", "cannot determine deadline feasibility"],
+      "triggers": [
+        "cannot meet deadline with current method",
+        "cannot determine deadline feasibility"
+      ],
       "requiredResponse": "Identify methodological errors and missing evidence; change priorities, work division, tools or verification within authority, perform the changed work and measure its effect. Do not stop at a forecast or plan update. Preserve the concept, fixed criteria, reference selection conditions, evidence rigor and deadline. While another producer is active, make only a read-only assessment and hand it off at the next safe checkpoint.",
       "automationPromptUpdatedAndVerified": true
     },

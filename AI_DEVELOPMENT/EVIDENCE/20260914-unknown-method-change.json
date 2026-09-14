@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "observedAt": "2026-09-14T06:20:28Z",
+  "observedAt": "2026-09-14T06:38:00Z",
   "baseRevision": "e4c71ae8ddd352a12b82338a6d4033de3b73c16f",
   "userInstruction": "継続確認の後、期限内に達成できるか考え、できないや分からないと判断したならやり方が間違ってることを疑え",
   "continuationCheck": {
@@ -24,13 +24,242 @@
       "Declare the deadline achievable from successful CI: rejected because CI is not the fixed verdict.",
       "Record existing real-input checks and validate saved files: implemented; next priority is actual paired reference/candidate material."
     ],
-    "effect": "not yet measured; exact-head recording and independent frame review are next"
+    "effect": "Two complete retrievable continuous files replace absent video evidence:98.12s/2453 decoded frames desktop and99.6s/2490 frames touch. Both missions/recordings passed in the same CI. Browser wall durations98.054s and99.114s versus prior97.242s/97.465s are single-run observations, not a controlled overhead estimate. Independent sampled review exposed close-combat overhead camera/actor overlap previously absent from saved stills. Typography and CTA gaps closed at the measured viewports. Whole-element forecast remains unknown until actual reference comparisons."
   },
   "requirementsBeforeImplementation": "AI_DEVELOPMENT/FRESH_DESIGN.md:見通しが不明な場合の検証方法変更",
   "reuse": "No old game source inspected or imported. Generic Playwright video API checked against official documentation.",
   "documentation": "https://playwright.dev/docs/videos",
-  "localVerification": {"existingTests":35,"testConclusion":"passed","productionBuild":"passed","bundleWarning":"517.31kB main JavaScript;134.56kB gzip. Existing over500kB warning retained."},
-  "remoteVerification": null,
+  "localVerification": {
+    "existingTests": 35,
+    "testConclusion": "passed",
+    "productionBuild": "passed",
+    "bundleWarning": "517.31kB main JavaScript;134.56kB gzip. Existing over500kB warning retained."
+  },
+  "remoteVerification": {
+    "revision": "d48a8d7a4648dab4d1b6a6f19ad1064f528dea7f",
+    "run": 34813628212,
+    "job": 103879693212,
+    "conclusion": "success",
+    "tests": 35,
+    "build": "passed",
+    "durationsMs": {
+      "desktop": 98054,
+      "mobile": 99114
+    },
+    "checks": [
+      "real start and keyboard movement through torii",
+      "real click causes enemy HP loss",
+      "pause freezes simulation and resumes",
+      "WebGL loss/restore and resume",
+      "death and real retry restore player",
+      "real-input full combat, postcombat arrival, signal, ending and clean retry",
+      "mobile simultaneous guard/lock release preserves guard; cancel releases",
+      "mobile joystick movement and cancel stop",
+      "portrait victory result panel keeps readable copy and retry in viewport",
+      "touch-only full combat, arrival, signal, ending and clean retry"
+    ],
+    "errors": [],
+    "missions": {
+      "desktop": {
+        "kills": 3,
+        "signalLit": true,
+        "hp": 100,
+        "cleanRetry": true
+      },
+      "touch": {
+        "kills": 3,
+        "signalLit": true,
+        "hp": 28,
+        "cleanRetry": true
+      }
+    },
+    "resultLayouts": [
+      {
+        "viewport": {
+          "height": 720,
+          "width": 1280
+        },
+        "fontPx": 15,
+        "buttonHeightPx": 55,
+        "phrases": [
+          "社の灯がともった。",
+          "谷で待つ人々に、",
+          "山道が開いたことが伝わる。",
+          "刃を納め、風を聞く。"
+        ],
+        "bounds": "heading, message and button all fit"
+      },
+      {
+        "viewport": {
+          "height": 390,
+          "width": 844
+        },
+        "fontPx": 14,
+        "buttonHeightPx": 48,
+        "phrases": [
+          "社の灯がともった。",
+          "谷で待つ人々に、",
+          "山道が開いたことが伝わる。",
+          "刃を納め、風を聞く。"
+        ],
+        "bounds": "heading, message and button all fit"
+      },
+      {
+        "viewport": {
+          "height": 844,
+          "width": 390
+        },
+        "fontPx": 15,
+        "buttonHeightPx": 55,
+        "phrases": [
+          "社の灯がともった。",
+          "谷で待つ人々に、",
+          "山道が開いたことが伝わる。",
+          "刃を納め、風を聞く。"
+        ],
+        "bounds": "heading, message and button all fit"
+      }
+    ],
+    "recordings": [
+      {
+        "alignment": "Wall-clock event offsets are approximate; video/input synchronization has not been measured. Visual continuity must still be reviewed.",
+        "approximateIntervalSeconds": 98.054,
+        "audioTracks": 0,
+        "bytes": 10939066,
+        "decodedFrames": 2453,
+        "durationSeconds": 98.12,
+        "events": [
+          {
+            "detail": {
+              "height": 720,
+              "width": 1280
+            },
+            "event": "title-ready",
+            "offsetMs": 661
+          },
+          {
+            "event": "full-mission-start",
+            "offsetMs": 45391
+          },
+          {
+            "detail": 0,
+            "event": "kills",
+            "offsetMs": 45393
+          },
+          {
+            "detail": 1,
+            "event": "kills",
+            "offsetMs": 58624
+          },
+          {
+            "detail": 2,
+            "event": "kills",
+            "offsetMs": 70768
+          },
+          {
+            "detail": 3,
+            "event": "kills",
+            "offsetMs": 81310
+          },
+          {
+            "event": "victory",
+            "offsetMs": 86673
+          },
+          {
+            "event": "clean-retry",
+            "offsetMs": 98054
+          },
+          {
+            "event": "context-close",
+            "offsetMs": 98054
+          }
+        ],
+        "file": "desktop-continuous.webm",
+        "fullDecode": "passed",
+        "height": 720,
+        "id": "desktop",
+        "intervalToleranceSeconds": 2,
+        "sha256": "1edb5a06fb8b7b7901138f2ff1a8248ba335a1b0217eade596571813bd41cd7e",
+        "width": 1280
+      },
+      {
+        "alignment": "Wall-clock event offsets are approximate; video/input synchronization has not been measured. Visual continuity must still be reviewed.",
+        "approximateIntervalSeconds": 99.114,
+        "audioTracks": 0,
+        "bytes": 10839147,
+        "decodedFrames": 2490,
+        "durationSeconds": 99.6,
+        "events": [
+          {
+            "detail": {
+              "height": 390,
+              "width": 844
+            },
+            "event": "landscape",
+            "offsetMs": 326
+          },
+          {
+            "event": "full-mission-start",
+            "offsetMs": 15309
+          },
+          {
+            "detail": 0,
+            "event": "kills",
+            "offsetMs": 15311
+          },
+          {
+            "detail": 1,
+            "event": "kills",
+            "offsetMs": 34135
+          },
+          {
+            "detail": 2,
+            "event": "kills",
+            "offsetMs": 55633
+          },
+          {
+            "detail": 3,
+            "event": "kills",
+            "offsetMs": 71094
+          },
+          {
+            "event": "victory",
+            "offsetMs": 83644
+          },
+          {
+            "detail": {
+              "height": 844,
+              "width": 390
+            },
+            "event": "portrait",
+            "offsetMs": 90876
+          },
+          {
+            "event": "clean-retry",
+            "offsetMs": 99114
+          },
+          {
+            "event": "context-close",
+            "offsetMs": 99114
+          }
+        ],
+        "file": "touch-continuous.webm",
+        "fullDecode": "passed",
+        "height": 844,
+        "id": "touch",
+        "intervalToleranceSeconds": 2,
+        "sha256": "15be265bb226fefe25b66afbfb59b476f8536fb88f09856708a6d1152e6f9bb1",
+        "width": 844
+      }
+    ],
+    "artifact": {
+      "id": 10335996793,
+      "digest": "sha256:e500cf9e96888e0a638dc86d2b6560ecbcc1e06654ecd7ab1c5ac65ef553a844",
+      "zipHashLocallyMatched": true,
+      "videoHashesLocallyMatched": true
+    },
+    "environment": "Chromium / SwiftShader; not physical-device performance"
+  },
   "independentReview": {
     "type": "independent AI code review; not source-blind quality evaluation",
     "findings": [
@@ -39,8 +268,8 @@
       "Original setup/shutdown failure path could lose the manifest after desktop media finalization."
     ],
     "remediation": "Require ordered finite checkpoints, capture-interval duration consistency within2s recorder startup/tail tolerance, exact expected revision and ID/file/size binding. Save after each video finalization and use an outer setup/shutdown catch/finally. Check actual heading bounds and full phrase text.",
-    "verification": "Exact verifier run with synthetic decoded video fixtures: valid12s/300frame fixtures pass; late-ending100s metadata with12s clip, misordered checkpoints, wrong revision and swapped file all reject. An intentionally missing browser executable in the exact smoke entry saves setupOrShutdownFailure and exits1. Fixtures are separate diagnostic data, never game acceptance evidence.",
-    "remaining": "Correction rereview and real CI video/frame inspection pending."
+    "verification": "Exact verifier run with synthetic decoded video fixtures: valid12s/300frame fixtures pass; late-ending100s metadata with12s clip, misordered checkpoints, wrong revision and swapped file all reject. The exact smoke entry under an intentionally invalid local browser setup encountered a missing /tmp artifact directory first, saved setupOrShutdownFailure and exited1. This verifies setup-error preservation, not the particular missing-executable path. Fixtures are separate diagnostic data, never game acceptance evidence.",
+    "remaining": "Independent rereview found no blocker to real CI. Actual CI passed the duration check; video minus capture-interval difference was0.066s desktop and0.486s touch. Visual continuity was only sampled, not evaluated frame by frame."
   },
   "evidenceLimitations": [
     "Video capture is silent; no audio quality evidence.",
@@ -49,5 +278,21 @@
     "Recorded mission checks are not the required source-blind reference comparison,20-battle sample or whole-game acceptance."
   ],
   "formalVerdict": "not measured",
-  "workUnitEnded": false
+  "workUnitEnded": false,
+  "independentVisualReview": {
+    "scope": "Three exact ending screenshots plus5-second chronological sample sheets from hash-verified videos. Not source-blind comparison or full perceptual video review.",
+    "observations": [
+      "All four Japanese phrases stay intact; heading/copy/CTA are separated and fully visible in all three ending screenshots.",
+      "Samples show movement, combat, arrival, signal and ending. Known WebGL recovery/reload explain gray/title frames; touch gray bands are fixed-canvas padding.",
+      "Final clean retry is proven by real-input state assertions, but not visible in the5-second sample sheets."
+    ],
+    "remaining": [
+      "Touch sample sheet row2 column2 and row3 column5 show near-overhead close views and overlapping fighters, making weapons and spacing hard to read.",
+      "Portrait ending lamp core is near-white while lower actor/sword fades into the text gradient.",
+      "Ending copy says to sheathe the blade, but the captured pose still holds the sword drawn."
+    ],
+    "nextPriority": "Investigate rapid lock-camera direction changes and body overlap in the recorded touch battles before further isolated result-panel decoration."
+  },
+  "nextWork": "Reproduce the newly observed overhead touch-combat camera. Investigate Cartesian interpolation across changing duel directions, preserve standoff through angular interpolation if confirmed, and verify on actual recorded touch input. Continue outstanding reference/material preparation; all10 formal elements remain not measured.",
+  "transportNotes": "Direct git push timed out without changing remote; authenticated GitHub Git-data operations saved the identical tree14289e191856f26675979897e119015a79757a28 with a non-force ref update. Artifact urllib request failed403; ordinary curl retrieved the authorized ZIP and its hash matched."
 }
