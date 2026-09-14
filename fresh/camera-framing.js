@@ -1,7 +1,18 @@
+import {SIGNAL} from './mission.js';
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
 
 export function computeCameraFrame(world,orbit,aspect,out){
   const p=world.player;
+  if(world.mode==='victory'){
+    const portrait=aspect<.8;
+    out.x=SIGNAL.x+(portrait?3.35:5.15);
+    out.y=portrait?3.05:3.35;
+    out.z=SIGNAL.z+5.7;
+    out.lookX=(p.x+SIGNAL.x)*.5;
+    out.lookY=1.55;
+    out.lookZ=(p.z+SIGNAL.z)*.5-.25;
+    return out;
+  }
   const target=world.enemies.find(enemy=>enemy.id===world.locked&&enemy.hp>0);
   if(target){
     const dx=target.x-p.x,dz=target.z-p.z,distance=Math.max(.001,Math.hypot(dx,dz));

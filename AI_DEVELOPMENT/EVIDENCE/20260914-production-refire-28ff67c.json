@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-09-14T03:51:37Z",
+  "status": "production_restarted_candidate_pending_ci",
+  "lastProducedRevision": "28ff67cf78c40dd9c17819d8dbd3eb103c6a4160",
+  "lastWorkflow": 34800496145,
+  "lastWorkflowCompletedAt": "2026-09-14T02:53:25Z",
+  "stopEvidence": [
+    "No later branch revision or running related CI was found more than fifty minutes after the exact-head workflow completed.",
+    "SESSION_STATE and REBUILD_STATE still described the completed 28ff67c verification as pending, so the durable continuation did not include its result or independent image findings.",
+    "No separate production-launch facility is available in this run; the authorized fallback is to continue production in the re-fire execution."
+  ],
+  "causes": [
+    {
+      "cause": "The preceding bounded execution ended after reporting the rendered result without committing the result and exact next gap to durable state.",
+      "recurrenceCondition": "A run boundary after CI or review can leave the next trigger reading a stale pending action.",
+      "remedy": "Commit the completed CI, independent review, exact next gap and pending candidate together before starting the next remote verification.",
+      "verification": "This recovery commit contains both the 28ff67c result and the new integrated candidate; local 35 tests and production build pass. Exact-head rendered CI remains required."
+    },
+    {
+      "cause": "Production has no separate continuously running executor after a scheduled invocation ends.",
+      "recurrenceCondition": "Normal platform execution boundaries leave no process to continue between hourly checks.",
+      "remedy": "Use the enabled hourly task as the authorized re-fire surface and preserve an exact candidate/frontier at each boundary; do not claim a nonexistent background process.",
+      "verification": "The existing task is enabled with its unchanged hourly RRULE, and this run resumed substantive implementation from the stored review frontier."
+    }
+  ],
+  "resumedWork": {
+    "design": "AI_DEVELOPMENT/FRESH_DESIGN.md C01/C04/C08/C09 integrated screen improvement",
+    "implementation": [
+      "separated warm key light from cool rim and reduced flat ambient fill",
+      "added actor contact grounding and stronger body/sword separation",
+      "replaced distant cones with irregular generated forms and reduced vegetation line noise",
+      "added an oblique signal/player/shrine victory camera and concise result heading"
+    ],
+    "reuse": "No old game source or component was inspected or imported.",
+    "localVerification": "passed: 35 node tests and production build; bundle 516.85 kB, gzip 134.40 kB, existing over500kB warning retained",
+    "pending": "Exact-revision browser CI, actual desktop/phone frame inspection and independent image review"
+  },
+  "deadlineForecast": {
+    "deadline": "2026-09-20T07:51:53Z",
+    "prediction": "at risk; not guaranteed",
+    "basis": "All ten formal element verdicts remain not measured and reference selection is incomplete.",
+    "methodChange": "Prefer integrated cross-element presentation passes and shared continuous comparison captures over serial micro-fixes while preserving every criterion and evidence rule."
+  },
+  "formalVerdict": "not measured",
+  "workUnitEnded": false
+}

@@ -9,13 +9,14 @@ export function createPresentation(canvas) {
   const renderer = new T.WebGLRenderer({ canvas, antialias:true, powerPreference:'high-performance' });
   renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
-  renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
-  const scene = new T.Scene(); scene.fog = new T.FogExp2('#b8b7a7',.0115);
+  renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.06;
+  const scene = new T.Scene(); scene.fog = new T.FogExp2('#9eaaa8',.0105);
   const camera = new T.PerspectiveCamera(52,1,.1,230);
-  scene.add(new T.HemisphereLight('#c4dbed','#51453d',2.4));
-  const sun = new T.DirectionalLight('#ffe2ad',3.5); sun.position.set(-24,28,18); sun.castShadow=true;
+  scene.add(new T.HemisphereLight('#bdd4e2','#3c3433',1.35));
+  const sun = new T.DirectionalLight('#ffe0a8',3.8); sun.position.set(-24,28,18); sun.castShadow=true;
   sun.shadow.mapSize.set(2048,2048); Object.assign(sun.shadow.camera,{left:-28,right:28,top:32,bottom:-32,near:1,far:110});
   sun.shadow.bias=-.0004; sun.shadow.normalBias=.025; scene.add(sun);
+  const rim=new T.DirectionalLight('#8fbdd2',1.15);rim.position.set(18,12,22);scene.add(rim);
   let seed = 310519;
   const random = () => { seed = (1664525*seed+1013904223)>>>0; return seed/4294967296; };
   const material = (color, roughness=.85, metalness=0) => new T.MeshStandardMaterial({color,roughness,metalness});
@@ -73,13 +74,16 @@ export function createPresentation(canvas) {
     box(stone,x,1.45,z,.7,.14,.7);box(brass,x,1.68,z,.34,.35,.34);box(roof,x,1.99,z,.85,.16,.85);
   }
   // Distant terrain is original boot-generated geometry, layered through the haze.
+  const mountainMats=[material('#435d5e',1),material('#657b73',1)];
   for(let i=0;i<28;i++){
     const a=i/28*Math.PI*2,rr=65+random()*40;
-    staticPart(new T.ConeGeometry(15+random()*15,15+random()*26,7,3),material(i%2?'#637b76':'#879489'),Math.sin(a)*rr,0,Math.cos(a)*rr,1,1,1,random()*6);
+    const g=new T.DodecahedronGeometry(1,1);g.translate(0,.55,0);
+    staticPart(g,mountainMats[i%2],Math.sin(a)*rr,-3,Math.cos(a)*rr,15+random()*15,12+random()*18,17+random()*18,random()*6);
   }
   const leafParts=[];
   for(const angle of [-.48,0,.48]){
-    const g=new T.PlaneGeometry(1.55,.16,2,1);g.translate(.7,0,0);g.rotateZ(angle);leafParts.push(g);
+    const g=new T.PlaneGeometry(.95,.22,2,1);g.translate(.42,0,0);g.rotateZ(angle);leafParts.push(g);
+    const crossed=g.clone();crossed.rotateY(Math.PI/2);leafParts.push(crossed);
   }
   const leafCluster=mergeGeometries(leafParts);leafParts.forEach(g=>g.dispose());
   for(let i=0;i<150;i++){
@@ -92,9 +96,9 @@ export function createPresentation(canvas) {
   for(const [mat,geoms] of batches){const merged=mergeGeometries(geoms);const mesh=new T.Mesh(merged,mat);mesh.castShadow=mesh.receiveShadow=true;scene.add(mesh);geoms.forEach(g=>g.dispose());}
   const grassMat=material('#8b8951');grassMat.side=T.DoubleSide;
   const wind={value:0};grassMat.onBeforeCompile=shader=>{shader.uniforms.windTime=wind;shader.vertexShader='uniform float windTime;\n'+shader.vertexShader;shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n transformed.x += sin(windTime * 1.6 + instanceMatrix[3].x * .3 + instanceMatrix[3].z * .2) * position.y * .24;');};
-  const grassGeo=new T.PlaneGeometry(.12,.8,1,3);grassGeo.translate(0,.4,0);
-  const grass=new T.InstancedMesh(grassGeo,grassMat,8000);
-  for(let i=0;i<8000;i++){const x=(random()<.5?-1:1)*(3+random()*30),z=-38+random()*67;q.setFromAxisAngle(T.Object3D.DEFAULT_UP,random()*Math.PI);matrix.compose(pos.set(x,0,z),q,s.setScalar(.5+random()));grass.setMatrixAt(i,matrix);}
+  const grassGeo=new T.PlaneGeometry(.07,.68,1,3);grassGeo.translate(0,.34,0);
+  const grass=new T.InstancedMesh(grassGeo,grassMat,6000);
+  for(let i=0;i<6000;i++){const x=(random()<.5?-1:1)*(3+random()*30),z=-38+random()*67;q.setFromAxisAngle(T.Object3D.DEFAULT_UP,random()*Math.PI);matrix.compose(pos.set(x,0,z),q,s.setScalar(.5+random()));grass.setMatrixAt(i,matrix);}
   grass.instanceMatrix.needsUpdate=true;scene.add(grass);
   const rigs=new Map();
   // The hanging signal sits on the existing shrine wall, outside the walking path.
@@ -108,6 +112,9 @@ export function createPresentation(canvas) {
   function mesh(parent,geom,mat,x,y,z){const m=new T.Mesh(geom,mat);m.position.set(x,y,z);m.castShadow=true;parent.add(m);return m;}
   function rig(id){
     const root=new T.Group();scene.add(root);const cloth=material(id==='player'?'#344c62':'#7c463a');
+    cloth.emissive.set(id==='player'?'#122637':'#32150f');cloth.emissiveIntensity=.22;
+    const contact=new T.Mesh(new T.CircleGeometry(.46,20),new T.MeshBasicMaterial({color:'#0b1011',transparent:true,opacity:.28,depthWrite:false}));
+    contact.rotation.x=-Math.PI/2;contact.position.y=.018;root.add(contact);
     const body=new T.Group();root.add(body);
     mesh(body,new T.CylinderGeometry(.24,.29,.55,10),cloth,0,1.22,0);
     mesh(body,new T.CylinderGeometry(.29,.29,.09,10),brass,0,.97,0);
@@ -130,7 +137,7 @@ export function createPresentation(canvas) {
     const sword=new T.Group();limbs[1].elbow.add(sword);sword.position.y=-.3;
     mesh(sword,new T.CylinderGeometry(.035,.035,.2,6),dark,0,-.06,0);
     mesh(sword,new T.CylinderGeometry(.07,.07,.025,8),brass,0,-.16,0);
-    mesh(sword,new T.BoxGeometry(.035,.9,.012),material('#dce5e3',.23,.85),0,-.61,0);
+    mesh(sword,new T.BoxGeometry(.055,.9,.018),material('#e6efec',.2,.9),0,-.61,0);
     const ring=mesh(root,new T.TorusGeometry(.5,.013,5,32),brass,0,.035,0);ring.rotation.x=Math.PI/2;ring.visible=false;
     const signal=mesh(root,new T.OctahedronGeometry(.1),brass,0,2.1,0);signal.visible=false;
     rigs.set(id,{root,body,limbs,ring,signal});return rigs.get(id);

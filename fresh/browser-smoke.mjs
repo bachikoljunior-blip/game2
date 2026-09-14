@@ -56,6 +56,8 @@ try{
  assert.match(await page.locator('#message').innerText(),/社の灯がともった/);
  assert.equal(await page.locator('#menu').getAttribute('data-mode'),'victory');
  assert.equal(await page.locator('#menu h1').evaluate(node=>getComputedStyle(node).display),'none');
+ assert.equal(await page.locator('.result-heading').evaluate(node=>getComputedStyle(node).display),'block');
+ assert.match(await page.locator('.result-heading').innerText(),/灯、谷へ/);
  assert.equal(await page.locator('#hud').isHidden(),true);
  await page.screenshot({path:new URL('mission-victory.png',out).pathname});
  await page.click('#start');

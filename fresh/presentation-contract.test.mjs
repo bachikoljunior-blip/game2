@@ -23,12 +23,23 @@ test('portrait framing preserves a smaller lateral offset',()=>{
   assert.ok(Math.abs(portrait.x-player.x)<Math.abs(landscape.x-player.x));
 });
 
+test('victory framing shows the signal from an authored oblique angle',()=>{
+  const world={mode:'victory',player:{x:.4,z:-18.8,hp:100},enemies:[],locked:null};
+  const frame=computeCameraFrame(world,0,16/9,{});
+  assert.ok(frame.x>4,'camera moves beside the signal instead of facing the wall from behind the player');
+  assert.ok(frame.z>-15,'camera retains the shrine, signal and player in depth');
+  assert.ok(frame.lookZ<-18.5,'camera looks back toward the lit signal');
+});
+
 test('interface gives labels an opaque backing and keeps victory title off the lamp',()=>{
   const css=readFileSync(new URL('./mission.css',import.meta.url),'utf8');
   const main=readFileSync(new URL('./main.js',import.meta.url),'utf8');
+  const html=readFileSync(new URL('./index.html',import.meta.url),'utf8');
   assert.match(css,/#objective,#enemy\{[^}]*background:#10191d/);
   assert.match(css,/#enemy:empty\{display:none\}/);
   assert.match(css,/#menu\[data-mode="victory"\] h1/);
+  assert.match(css,/#menu\[data-mode="victory"\] \.result-heading\{display:block/);
+  assert.match(html,/class="result-heading">灯、谷へ</);
   assert.match(main,/menu\.dataset\.mode=world\.mode/);
   assert.match(main,/input\.setActive\(false\);hud\.hidden=true;menu\.hidden=false/);
 });
@@ -38,6 +49,9 @@ test('generated landscape replaces flat background and cone bamboo without exter
   assert.match(source,/new T\.ShaderMaterial/);
   assert.match(source,/new T\.PlaneGeometry\(160,200,64,80\)/);
   assert.match(source,/const leafCluster=mergeGeometries/);
+  assert.match(source,/new T\.DodecahedronGeometry/);
+  assert.match(source,/const rim=new T\.DirectionalLight/);
+  assert.match(source,/new T\.CircleGeometry\(\.46,20\)/);
   assert.doesNotMatch(source,/new T\.ConeGeometry\(1\.6-j\*\.22,2\.5,5\)/);
   assert.doesNotMatch(source,/TextureLoader|\.glb|\.gltf|fetch\(/);
 });

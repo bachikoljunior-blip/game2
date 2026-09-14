@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-14T02:48:00Z",
-  "phase": "fresh-presentation-foundation-ci",
+  "updatedAt": "2026-09-14T03:58:00Z",
+  "phase": "fresh-integrated-screen-candidate-ci",
   "userInstruction": "一旦ゲーム自体はゼロから作り直してくれる？",
   "activeBranch": "codex/game2-rebuild-20260913",
   "fixedInstructions": "AI_DEVELOPMENT/FIXED_INSTRUCTIONS.md",
@@ -15,28 +15,29 @@
     "oldPr": 10,
     "optionalRebuildRouting": "ec2480166809f57fa623929bec0fbcb4d5a623a2"
   },
-  "continuation": "Production resumed after verified process isolation. Inspect the retained mobile ending image, then implement the largest coherent generated-presentation improvement and verify actual desktop/phone frames and budgets. Continue unresolved C05/C06/C09/C11/C12 selection and source-blind media. All elements remain not measured. Deadline2026-09-20T07:51:53Z.",
+  "continuation": "Verify the integrated lighting/material/vegetation/victory-composition candidate at its exact revision, inspect actual desktop and phone frames independently, then continue unresolved C05/C06/C09/C11/C12 selection and source-blind media. All elements remain not measured. Deadline2026-09-20T07:51:53Z.",
   "status": "not measured",
   "publication": "Keep old Pages until a verified replacement is ready. Fresh runtime is a work-branch candidate, not public product acceptance.",
   "procedureAuthority": "Fixed instructions and explicit user directives govern. Tests, task plans and architecture documents are tools chosen by the AI, not additional fixed rules.",
   "coordination": "Check recent commits and running CI; if another producer is active, read only. No force push or duplicate work.",
   "latestUserInstruction": "やっぱりゲーム自体はゼロから作り直して、作ろうとしたものが既存のものにあったら使える部分だけ取ってきて。既存のものを先に見てそのまま使うなどしないで",
   "decisionEvidence": "AI_DEVELOPMENT/FRESH_DESIGN.md",
-  "verifiedRuntime": "b851e803e1af27e6e535b99a2b38b567a73e06dc",
+  "verifiedRuntime": "28ff67cf78c40dd9c17819d8dbd3eb103c6a4160",
   "verificationScope": "Exact-revision basic functional browser checks and static image review only; not whole-game or source-blind acceptance.",
   "comparisonCatalog": "AI_DEVELOPMENT/COMPARISON_ELEMENTS.yaml",
   "referenceSelectionComplete": false,
-  "verificationEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-b851e80.json",
-  "pendingCandidate": "After recovery ed296ee passed CI34799863173, a fresh generated-landscape candidate adds an atmospheric sky/sun, raised side terrain and segmented leaf-cluster bamboo. Local34 tests/build pass; exact-revision rendered CI and image review are pending.",
+  "verificationEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-landscape-foundation.json",
+  "pendingCandidate": "An integrated fresh correction addresses the independently observed flat light/materials, line-noise vegetation, actor/sword separation and weak ending composition. Local35 tests/build pass; exact-revision rendered CI and image review are pending.",
   "recoveryRole": {
     "userInstruction": "定期オートメーションは万が一実行が停止していたら、停止してしまう原因を全て潰してから再開する再発火役にしてください。",
-    "status": "recovery_completed",
+    "status": "production_restarted_candidate_pending_ci",
     "failedRun": 34797784088,
     "correctedCauses": [
       "Remove concurrent desktop/phone software rendering by closing and relaunching the browser between apparatuses.",
       "Correct f2d81b7 evidence from zero hits to the observed one hit."
     ],
     "verification": "ed296ee / CI34799863173 passed33 tests, production build, desktop route and isolated touch-only full mission without changing criteria. SwiftShader remains non-physical-device evidence.",
-    "productionResumedAt": "2026-09-14T02:41:18Z"
+    "productionResumedAt": "2026-09-14T03:58:00Z",
+    "latestBoundaryRecovery": "AI_DEVELOPMENT/EVIDENCE/20260914-production-refire-28ff67c.json"
   }
 }
