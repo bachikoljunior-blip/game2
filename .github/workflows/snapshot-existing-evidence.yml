@@ -1,0 +1,29 @@
+name: Snapshot existing game2 evidence
+on:
+  push:
+    branches: [codex/game2-rebuild-20260913]
+    paths: ['.github/workflows/snapshot-existing-evidence.yml', 'AI_DEVELOPMENT/TOOLS/snapshot_existing_artifact.py']
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: write
+concurrency:
+  group: game2-evidence-snapshot-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: AI_DEVELOPMENT/TOOLS
+      - name: Install image and recording decoder
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+      - name: Verify existing artifact and publish review blobs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 AI_DEVELOPMENT/TOOLS/snapshot_existing_artifact.py

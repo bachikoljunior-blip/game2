@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T01:42:21Z",
+  "kind": "fresh presentation correction checkpoint",
+  "baseRevision": "5402a92330f5850089e14d7f7b044f579479b15e",
+  "candidateIdentity": "Commit containing this checkpoint; CI and rendered images must use its exact github.sha.",
+  "sourceEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-4da1c60.json",
+  "design": "AI_DEVELOPMENT/FRESH_DESIGN.md / C02・C08 制作断面の画面修正",
+  "implementation": {
+    "legacySourceInspected": false,
+    "legacyPartsImported": false,
+    "changes": [
+      "Lock-on framing derives camera position from player-target axis and adds distance-sensitive lateral parallax",
+      "Portrait lock-on retains a smaller lateral displacement",
+      "Victory overlay removes the large title/help and anchors the ending copy away from the central signal lamp",
+      "Objective and enemy status use an opaque dark backing and light foreground independent of scene brightness",
+      "Camera temporary vectors are reused instead of allocated on every rendered frame"
+    ]
+  },
+  "verification": {
+    "node": {
+      "result": "passed",
+      "tests": 33,
+      "command": "node --test fresh/*.test.mjs",
+      "scope": "Simulation/input regressions plus pure lock-camera geometry and static interface contracts; not rendered proof"
+    },
+    "build": {
+      "result": "passed",
+      "command": "node node_modules/vite/bin/vite.js build --config fresh/vite.config.mjs",
+      "warning": "Generated bundle remains above Vite 500 kB warning; threshold unchanged."
+    },
+    "structure": {
+      "result": "passed",
+      "units": 10,
+      "legacyCriteriaUnchanged": 62,
+      "fixedInstructionsUnchanged": true
+    },
+    "browser": {
+      "result": "success at b851e803e1af27e6e535b99a2b38b567a73e06dc",
+      "workflow": ".github/workflows/fresh-game.yml",
+      "run": 34796846310,
+      "resultEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-b851e80.json"
+    }
+  },
+  "formalVerdict": "not measured",
+  "workUnit": {
+    "ended": false,
+    "reason": "No AI-initiated source-blind comparison completed."
+  },
+  "publication": {
+    "mainChanged": false,
+    "pagesChanged": false,
+    "reason": "Candidate lacks exact-revision rendered review and whole-element acceptance."
+  },
+  "nextAction": "Rendered correction CI succeeded and is recorded in EVIDENCE/20260914-fresh-ci-b851e80.json. Verify the newly added touch-only full mission at its own exact revision. Continue remaining initial reference selections C05/C06/C09/C11/C12 and source-blind media. Deadline 2026-09-20T07:51:53Z."
+}

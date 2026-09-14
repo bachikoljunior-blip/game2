@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T23:58:13.688Z",
+  "kind": "fresh implementation and reference research checkpoint",
+  "baseRevision": "0f5a37f9dc8ca7fe657e51f51933559118e77eb3",
+  "candidateIdentity": "Commit containing this checkpoint; subsequent CI uses exact github.sha. afc8bcd is NOT evidence for the mission change.",
+  "design": "AI_DEVELOPMENT/FRESH_DESIGN.md / C05 制作断面の目的と結末",
+  "implementation": {
+    "legacySourceInspected": false,
+    "legacyPartsImported": false,
+    "changes": [
+      "Original purpose: reopen mountain path and signal the valley with the shrine lamp",
+      "Enemy defeat no longer ends the mission; path-cleared stage, proximity and a subsequent signal input are required",
+      "Shared mission position and state across simulation, objective and generated lamp",
+      "Original beginning and ending text; clean retry",
+      "Read-only diagnostic test driver uses real keys/clicks in browser; no state mutation"
+    ]
+  },
+  "verification": {
+    "node": {
+      "result": "passed",
+      "tests": 30,
+      "command": "node --test fresh/simulation.test.mjs fresh/input-hud.test.mjs",
+      "limitation": "Nonrendered simulation and mocked input/HUD only; not actual touch or blind evidence"
+    },
+    "build": {
+      "result": "passed",
+      "command": "node node_modules/vite/bin/vite.js build --config fresh/vite.config.mjs",
+      "warning": "Generated bundle exceeds Vite 500 kB warning; threshold not changed."
+    },
+    "structure": {
+      "result": "passed",
+      "units": 10,
+      "legacyCriteriaUnchanged": 62,
+      "fixedInstructionsUnchanged": true
+    },
+    "localBrowser": {
+      "result": "not measured",
+      "attempts": [
+        "Default temporary directory unavailable",
+        "Workspace temporary directory then missing browser executable",
+        "Download attempt failed on install lock",
+        "Existing generic Chromium binary located but exited SIGTRAP before page creation"
+      ],
+      "inference": "Environment launch failure, not evidence of game-frame behavior or physical-device performance."
+    },
+    "ci": {
+      "status": "success; exact published mission revision",
+      "workflow": ".github/workflows/fresh-game.yml",
+      "runId": 34791254109,
+      "revision": "4da1c6049bd682d6030c40a8b01802b4e8b2e692",
+      "resultEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-4da1c60.json"
+    },
+    "independentReview": {
+      "reviewer": "/root/mission_review",
+      "kind": "code review; NOT blind comparison",
+      "findings": [
+        "aria-live text was re-assigned every frame: corrected to update only on changed text",
+        "Final kill at the lamp could end immediately: corrected with pathCleared plus subsequent explicit signal input"
+      ],
+      "correctiveRegressionTests": "Independent post-fix review confirmed both corrections, 30 passing node tests and diff --check. Reviewer additionally reproduced a real last strike plus same-tick E with quarter-second delivery: no victory until a subsequent E. No new concrete inconsistency found; rendering and touch signal remain unmeasured."
+    }
+  },
+  "referenceResearch": {
+    "element": "C05",
+    "reference": "SK",
+    "changed": false,
+    "addedSources": [
+      "https://rpgamer.com/review/sekiro-shadows-die-twice-review/",
+      "https://rpgamer.com/review/sekiro-shadows-die-twice-review/#comments",
+      "https://abstractinggames.com/2025/07/13/on-storytelling-sekiro-shadows-die-twice/"
+    ],
+    "result": "Element-specific rationale and separate player opinion recorded. Later discussion exists; long-term benchmark standing remains unresolved. No selection-completion claim.",
+    "limitations": [
+      "Sparse characterization and missable progression retained",
+      "Single self-reported player opinion is not consensus",
+      "Reviews and interpretive essays are not actual blind-comparison materials"
+    ]
+  },
+  "formalVerdict": "not measured",
+  "workUnit": {
+    "ended": false,
+    "reason": "No AI-initiated blind comparison completed."
+  },
+  "publication": {
+    "mainChanged": false,
+    "pagesChanged": false,
+    "reason": "Preserve old public runtime until new candidate verified."
+  },
+  "nextAction": "CI succeeded for exact mission revision 4da1c60. Continue at EVIDENCE/20260914-fresh-ci-4da1c60.json and SESSION_STATE.yaml for observed rendering corrections, touch-only full mission, attack-only route diagnosis and remaining reference/blind work. No blind unit has finished. Deadline 2026-09-20T07:51:53Z."
+}

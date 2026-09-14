@@ -23,6 +23,8 @@ magic-hour setting remain the creative brief.
 Each concept element needs its own justified reference and actual blind comparison
 under the fixed instructions. All elements must be satisfied; a working build or a
 technical CI PASS is not completion. Do not copy reference content into the game.
+Read `AI_DEVELOPMENT/COMPARISON_ELEMENTS.yaml` for the fresh comparison catalog and
+explicitly unresolved reference research; historical technical results are separate.
 
 ## Execution
 

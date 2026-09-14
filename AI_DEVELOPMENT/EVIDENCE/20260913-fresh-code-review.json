@@ -1,0 +1,96 @@
+{
+  "round": "20260913-fresh-code-review",
+  "profile": "independent-code-correctness",
+  "tier": "simulation-and-input-unit-evidence-only",
+  "nativeResolution": "0x0",
+  "nativeResolutionNote": "No rendered frame was assessed; 0x0 is a non-rendered review sentinel required by the schema.",
+  "verdict": "FAIL",
+  "verdictAppliesTo": "Initial reviewed code, before the coordinator's fixes. Retained historical findings below are now resolved at the tested code layer; this is not a current claim that those defects remain open.",
+  "lungeFixAddendum": {
+    "round": "20260913-fresh-lunge-fix-independent-review",
+    "sourceFixAuthor": "/root",
+    "reviewer": "/root/fresh_code_review",
+    "scope": "Current fresh/simulation.js lunge distance limiter and existing focused tests; no runtime files changed by reviewer, no publishing, no legacy source inspected.",
+    "technicalResult": "Fixed in independently reproduced stationary-player scenario; no additional retained defect within this bounded check.",
+    "formalElementStatus": "not measured",
+    "blindComparison": "Not performed; this addendum is a simulation correctness check, not a product-quality judgment.",
+    "causalComparison": {
+      "method": "Imported current simulation; independently reconstructed the previously reviewed unbounded attack-lunge expression by replacing only the current age<0.18 lunge block in memory. The reconstructed module was never written to disk. This is a controlled counterfactual, not execution of the old CI artifact.",
+      "initialConditions": {"factory": "createWorld()", "playerZ": 6.89, "sentinelZ": 5.53, "sentinelHP": 66, "input": {}, "deliveredSeconds": 20, "frameSeconds": 0.016666666666666666},
+      "unboundedLunge": {"mode": "playing", "playerHP": 4, "receivedHits": 4, "worldTimeSeconds": 20.000000000000146, "sentinelPlayerDistance": 0.11000000000001275},
+      "boundedLunge": {"mode": "defeat", "playerHP": 0, "receivedHits": 5, "worldTimeSeconds": 7.849999999999977, "sentinelPlayerDistance": 1.1000000000000005},
+      "mechanismAssessment": "Supported by controlled replacement: capping forward lunge movement at target gap minus 1.1 prevents successive stationary-target lunges from closing through the target before the attack becomes active. The same initial state now receives the fifth hit and reaches defeat."
+    },
+    "additionalChecks": {
+      "dtInvariance": {"frameSecondsCompared": [0.016666666666666666, 0.25], "playerEqual": true, "enemiesEqual": true, "totalsEqual": true, "terminalTick": 471},
+      "stationarySingleEnemySweep": {"player": {"x": 0, "z": 0}, "enemyCount": 1, "initialGaps": [0.7, 1.1, 1.36, 1.65, 2.2], "initialAnglesRadians": [0, 1.5707963267948966, 3.141592653589793, 4.71238898038469], "placement": "enemy.x=sin(angle)*gap; enemy.z=cos(angle)*gap", "framesPerCase": 1200, "frameSeconds": 0.016666666666666666, "cases": 20, "passed": 20, "assertionsPerCase": "mode=defeat and receivedHits=5"},
+      "persistedTests": {"command": "node --test fresh/simulation.test.mjs fresh/input-hud.test.mjs", "passed": 26, "failed": 0}
+    },
+    "unverified": ["Moving-target, obstacle-adjacent and crowd behavior are not established by this stationary-target sweep.", "Coordinator-reported CI 34762474176 observations were not independently inspected by this reviewer.", "The revised CDP touch sequence was not browser-executed in this review; actual mobile rerun remains pending.", "This fix does not establish combat feel, visual attack correspondence, browser death/retry lifecycle or any formal element achievement."]
+  },
+  "followUp": {
+    "status": "pending browser runtime and formal comparison; no retained open code finding",
+    "sourceFixAuthor": "/root",
+    "fixReviewer": "/root/fresh_code_review",
+    "measured": {"unrelatedTouchReleaseCasesPassed": 9, "guardOwnReleaseCasesPassed": 3, "clearDeactivateBlurAndResumeCasesPassed": 3, "actualHudExpressionCasesPassed": 2, "simulationTestsPassed": 8, "failed": 0},
+    "methods": ["Executed actual current createInput in fake DOM: hold guard while each lock/attack/dodge button emits pointerup/pointercancel/lostpointercapture; all 9 retain guard.", "Actual guard release/cancel/lostcapture clears guard; clear(), setActive(false) and blur clear guard and do not retain stale pointer ownership after resume.", "Extracted and executed current main.js locked lookup and HUD assignment; locked sentinel=34 with retainer=100 displays 34, and unlocked displays empty.", "Re-ran node --test fresh/simulation.test.mjs: 8 passed, 0 failed."],
+    "limitations": "These callback and expression tests do not prove actual browser input dispatch or the integrated main-loop lifecycle. Formal element status remains not measured."
+  },
+  "score": 0,
+  "scoreNote": "Required schema field, not a measured product-quality score. Technical gate fails on retained findings.",
+  "blindComparison": "Not performed. No unlabelled reference comparison was supplied or conducted; this code review cannot state which work a stranger would choose. All product/element quality judgments remain not measured.",
+  "scope": {
+    "read": ["fresh/*", "AI_DEVELOPMENT/FRESH_DESIGN.md", "AI_DEVELOPMENT/FIXED_INSTRUCTIONS.md", ".claude/skills/critic/SKILL.md", ".kit/lib/plan/findings.mjs"],
+    "legacySourceInspected": false,
+    "sourceEdited": false,
+    "browserRuntimeTested": false,
+    "limitations": ["Node tests and fake-DOM callbacks do not establish browser pointer delivery, mobile Safari behavior, visual quality, combat feel, audio quality, WebGL recovery, or device performance.", "No formal element achievement is inferred from technical tests."]
+  },
+  "evidence": {
+    "existingTests": {"command": "node --test fresh/simulation.test.mjs", "passed": 8, "failed": 0},
+    "observedReproductions": [
+      {"test": "unrelated_release_preserves_held_guard", "before": true, "after": false, "expected": true},
+      {"test": "hud_reports_locked_target_health", "locked": "sentinel", "lockedHp": 34, "displayedHp": 100, "displayedTarget": "retainer"}
+    ],
+    "reproductionCommand": "node --input-type=module -e 'import fs from \"node:fs\"; const r=JSON.parse(fs.readFileSync(\"AI_DEVELOPMENT/EVIDENCE/20260913-fresh-code-review.json\",\"utf8\")); await import(\"data:text/javascript,\"+encodeURIComponent(r.evidence.reproductionScript));'",
+    "reproductionScript": "const {createInput}=await import('file://'+process.cwd()+'/fresh/input.js'); const {createWorld}=await import('file://'+process.cwd()+'/fresh/simulation.js'); class Element { constructor(action){this.dataset={action};this.style={};this.listeners={};} addEventListener(type,callback){(this.listeners[type]??=[]).push(callback);} emit(type,id){for(const callback of this.listeners[type]??[])callback({pointerId:id,preventDefault(){},clientX:0,clientY:0});} setPointerCapture(){} querySelector(){return this.knob;} querySelectorAll(){return this.buttons;} } const canvas=new Element(),pad=new Element(),touch=new Element(),guard=new Element('guard'),lock=new Element('lock'); pad.knob=new Element();touch.buttons=[guard,lock];globalThis.window=new Element();globalThis.document=new Element();document.querySelector=id=>id==='#touch'?touch:pad;globalThis.matchMedia=()=>({matches:true});Object.defineProperty(globalThis,'navigator',{value:{maxTouchPoints:2},configurable:true});const input=createInput(canvas,()=>{});input.setActive(true);guard.emit('pointerdown',1);const before=input.sample().guard;lock.emit('pointerdown',2);lock.emit('pointerup',2);const after=input.sample().guard;console.log(JSON.stringify({test:'unrelated_release_preserves_held_guard',before,after,expected:true}));const w=createWorld();w.locked='sentinel';w.enemies[0].hp=34;w.enemies[1].z=17;w.enemies[1].x=0;w.enemies[1].hp=100;const near=w.enemies.filter(e=>e.hp>0).sort((a,b)=>Math.hypot(a.x-w.player.x,a.z-w.player.z)-Math.hypot(b.x-w.player.x,b.z-w.player.z))[0];console.log(JSON.stringify({test:'hud_reports_locked_target_health',locked:w.locked,lockedHp:w.enemies.find(e=>e.id===w.locked).hp,displayedHp:near.hp,displayedTarget:near.id}));",
+    "reproductionLimit": "First reproduction executes actual input.js callbacks. Second executes the exact reviewed HUD selection expression, not the browser main loop; after a fix its copied expression is historical evidence, not a regression test. Add a test of the actual HUD implementation."
+  },
+  "requirementMapping": [
+    {"requirement": "keyboard/touch cancellation", "evidence": "Source read of blur, visibility, keyup and setActive(false); fake-DOM multi-button touch release reproduced loss of held guard.", "technicalResult": "FAIL", "formalElementStatus": "not measured"},
+    {"requirement": "dt invariance", "evidence": "Existing test compares 600 STEP deliveries with 40 quarter-second deliveries under constant forward input: equal ticks, player and totals.", "technicalResult": "PASS for this trajectory only; timed action sequences not covered", "formalElementStatus": "not measured"},
+    {"requirement": "attack", "evidence": "Existing tests verify one frontal swing hits exactly once, rear target is excluded and short-frame pulse is retained.", "technicalResult": "PASS for tested scenarios", "formalElementStatus": "not measured"},
+    {"requirement": "deflect", "evidence": "Existing test verifies new guard parry and old guard block against a seeded frontal active attack.", "technicalResult": "PASS at simulation layer; touch guard persistence fails", "formalElementStatus": "not measured"},
+    {"requirement": "dodge", "evidence": "Existing seeded active-window test records evade and unchanged health.", "technicalResult": "PASS for tested active interval", "formalElementStatus": "not measured"},
+    {"requirement": "retry", "evidence": "Existing createWorld reset assertion passes; main click handler source resets world when paused is false.", "technicalResult": "Factory reset tested; real defeat-to-click-to-retry not measured", "formalElementStatus": "not measured"},
+    {"requirement": "lifecycle", "evidence": "Existing tests verify terminal world mode halts simulation. Pause, resume, resize and WebGL hooks reviewed in source only.", "technicalResult": "Terminal stepping tested; browser lifecycle not measured", "formalElementStatus": "not measured"}
+  ],
+  "findings": [
+    {
+      "id": "FRESH-INPUT-001",
+      "status": "resolved in subsequent coordinator fix; verified with 15 focused callback cases",
+      "severity": "major",
+      "shot": "fresh/input.js:24-26; Node fake-DOM multi-touch callback reproduction",
+      "problem": "With a guard pointer still down, pressing then releasing the separate lock button changes sampled guard from true to false. Unrelated action pointer cancellation or lost capture also clears guard.",
+      "why": "Touch-only players unexpectedly drop defense during simultaneous controls and cannot resume it without lifting and pressing the guard finger again.",
+      "owner": "fresh/input.js",
+      "hypothesis": "Confirmed by executing createInput: every touch button release callback deletes the same touchGuard entry, without checking the action or owning pointer.",
+      "fix": "Track guard ownership and restrict its release to guard pointers. Add node --test fresh/input.test.mjs cases for unrelated lock/attack/dodge pointerup, pointercancel and lostpointercapture while guard is held: all 9 must retain guard=true, and actual guard release, blur and setActive(false) must each yield false.",
+      "evidence": "evidence.observedReproductions[0]; reviewed release handler line 26.",
+      "refutation": {"reviewer": "/root/fresh_code_review/refute_findings", "result": "survived", "reason": "Independent fake-DOM tests of actual createInput reproduced guard true-to-false for lock, attack and dodge releases. Keyboard Q masks but does not refute touch-only failure. Lock does not intentionally interrupt guard."}
+    },
+    {
+      "id": "FRESH-HUD-001",
+      "status": "resolved in subsequent coordinator fix; current HUD expression verified in 2 cases",
+      "severity": "minor",
+      "shot": "fresh/main.js:26-27; locked-target health expression reproduction",
+      "problem": "The selected target is sentinel with 34 HP, but when retainer is closer the confrontation HUD displays retainer's 100 HP. The lock remains on sentinel.",
+      "why": "The visible selected opponent and its displayed health disagree, giving incorrect feedback during multi-enemy combat.",
+      "owner": "fresh/main.js",
+      "hypothesis": "Confirmed by source and expression execution: the HUD uses the nearest living enemy and treats world.locked only as a truthy gate instead of resolving that ID.",
+      "fix": "Resolve displayed health from the live enemy whose id equals world.locked. Add a test of the actual HUD implementation, run by node --test fresh/main.test.mjs, with locked sentinel=34 HP and nearer retainer=100 HP: displayed value must be 34; unlocked state must display no opponent health.",
+      "evidence": "evidence.observedReproductions[1]; simulation retains locked id until death or explicit unlock; presentation places selection ring on locked id.",
+      "refutation": {"reviewer": "/root/fresh_code_review/refute_findings", "result": "survived", "reason": "Independent code review confirmed no invariant keeps the locked enemy nearest. Movement changes nearest target while lock persists; ring ownership is correct and therefore does not reconcile incorrect HUD health."}
+    }
+  ]
+}

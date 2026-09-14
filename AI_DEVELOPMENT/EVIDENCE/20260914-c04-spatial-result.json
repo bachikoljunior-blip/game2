@@ -1,0 +1,348 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-09-14T08:11:23.574Z",
+  "sourceRevision": "ce3615445aef7511917bcc9582b0c3a10da0a120",
+  "run": 34820020456,
+  "url": "https://github.com/bachikoljunior-blip/game2/actions/runs/34820020456",
+  "conclusion": "failure",
+  "artifacts": [
+    {
+      "archive_download_url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10338465068/zip",
+      "created_at": "2026-09-14T07:58:49Z",
+      "digest": "sha256:9eb7ecfb4611a6295bb1defeb6c2539b6f6742d41585f001bc089022d228b89e",
+      "expired": false,
+      "expires_at": "2026-12-13T07:54:13Z",
+      "id": 10338465068,
+      "name": "fresh-game-ce3615445aef7511917bcc9582b0c3a10da0a120",
+      "size_in_bytes": 26041149,
+      "updated_at": "2026-09-14T07:58:49Z",
+      "url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10338465068",
+      "workflow_run": {
+        "head_branch": "codex/game2-rebuild-20260913",
+        "head_repository_id": 1316876624,
+        "head_sha": "ce3615445aef7511917bcc9582b0c3a10da0a120",
+        "id": 34820020456,
+        "repository_id": 1316876624
+      }
+    }
+  ],
+  "rawEvidence": "Artifact browser-report.json retains exact world states and all raw callback/stage timing samples; this summary does not replace it.",
+  "checks": [
+    "real start and keyboard movement through torii",
+    "real click causes enemy HP loss",
+    "pause freezes simulation and resumes",
+    "WebGL loss/restore and resume",
+    "death and real retry restore player",
+    "real-input full combat, postcombat arrival, signal, ending and clean retry",
+    "mobile simultaneous guard/lock release preserves guard; cancel releases",
+    "mobile joystick movement and cancel stop"
+  ],
+  "errors": [],
+  "durationsMs": {
+    "desktop": 82450,
+    "mobile": 110312
+  },
+  "desktopEncounter": {
+    "calls": 115,
+    "frame": 37,
+    "lines": 0,
+    "points": 0,
+    "triangles": 122202
+  },
+  "touchFinal": {
+    "enemies": [
+      {
+        "age": 59.79999999999789,
+        "cooldown": 0,
+        "dodgeX": 0,
+        "dodgeZ": 0,
+        "guardAge": 99,
+        "hit": [],
+        "hp": 0,
+        "id": "sentinel",
+        "posture": 46.23333333333328,
+        "state": "dead",
+        "stride": 10.559999999999967,
+        "x": -5.143516556418882e-17,
+        "yaw": 3.141592653589793,
+        "z": 11.559999999999945
+      },
+      {
+        "age": 17.900000000000265,
+        "cooldown": 0,
+        "dodgeX": 0,
+        "dodgeZ": 0,
+        "guardAge": 99,
+        "hit": [],
+        "hp": 0,
+        "id": "retainer",
+        "posture": 23.483333333333217,
+        "state": "dead",
+        "stride": 28.080000000000307,
+        "x": -2.734165234785267,
+        "yaw": -0.1310156984762485,
+        "z": -7.353503211694061
+      },
+      {
+        "age": 0.18333333333333332,
+        "cooldown": 0.9166666666666669,
+        "dodgeX": 0,
+        "dodgeZ": 0,
+        "guardAge": 99,
+        "hit": [
+          "player"
+        ],
+        "hp": 66,
+        "id": "warden",
+        "posture": 12.64999999999997,
+        "state": "attack",
+        "stride": 23.460000000000132,
+        "x": -3.0599857712185723,
+        "yaw": -1.6550312485192265,
+        "z": -4.4352920348564115
+      }
+    ],
+    "events": [
+      {
+        "source": "warden",
+        "target": "player",
+        "time": 79.81666666666342,
+        "type": "hit",
+        "x": -3.2360435297900247,
+        "z": -4.303086512188481
+      },
+      {
+        "source": "warden",
+        "target": "player",
+        "time": 79.81666666666342,
+        "type": "death",
+        "x": -3.2360435297900247,
+        "z": -4.303086512188481
+      }
+    ],
+    "locked": "warden",
+    "mode": "defeat",
+    "pathCleared": false,
+    "player": {
+      "age": 0,
+      "cooldown": 0,
+      "dodgeX": -0.998122861746516,
+      "dodgeZ": 0.06124339032863309,
+      "guardAge": 99,
+      "hit": [],
+      "hp": 0,
+      "id": "player",
+      "posture": 20,
+      "state": "dead",
+      "stride": 135.68681114912923,
+      "x": -3.2360435297900247,
+      "yaw": 0.9267058404339193,
+      "z": -4.303086512188481
+    },
+    "remainder": 0.008666666666736149,
+    "signalLit": false,
+    "ticks": 4789,
+    "time": 79.81666666666342,
+    "totals": {
+      "hits": 7,
+      "kills": 2,
+      "parries": 0,
+      "received": 5
+    },
+    "render": {
+      "calls": 95,
+      "frame": 373,
+      "lines": 0,
+      "points": 0,
+      "triangles": 119678
+    }
+  },
+  "landscape": {
+    "baseFootprint": {
+      "depth": 7,
+      "height": 0.56,
+      "width": 10
+    },
+    "grassBatches": 20,
+    "grassBlades": 9000,
+    "grassClumps": 3000,
+    "grassTriangles": 36000,
+    "leafBatches": 35,
+    "maxRootError": 2.3295251173026388e-7
+  },
+  "desktopTimings": {
+    "intervalMs": {
+      "samples": 128,
+      "p50": 466.59999999999854,
+      "p95": 883.2999999999956,
+      "max": 1183.2999999999993,
+      "mean": 475.63203124999984
+    },
+    "simulationMs": {
+      "samples": 128,
+      "p50": 0.10000000000582077,
+      "p95": 0.3000000000174623,
+      "max": 1.6000000000058208,
+      "mean": 0.13046875000031832
+    },
+    "renderCallMs": {
+      "samples": 128,
+      "p50": 2.3000000000029104,
+      "p95": 7.600000000005821,
+      "max": 876.6000000000058,
+      "mean": 9.806249999999409
+    }
+  },
+  "touchTimings": {
+    "intervalMs": {
+      "samples": 363,
+      "p50": 266.59999999999854,
+      "p95": 466.6999999999971,
+      "max": 599.9000000000005,
+      "mean": 264.8195592286501
+    },
+    "simulationMs": {
+      "samples": 363,
+      "p50": 0.09999999997671694,
+      "p95": 0.20000000001164153,
+      "max": 2.3999999999941792,
+      "mean": 0.10027548209268576
+    },
+    "renderCallMs": {
+      "samples": 363,
+      "p50": 1.5,
+      "p95": 4.399999999994179,
+      "max": 8.699999999982538,
+      "mean": 1.9633608815421706
+    }
+  },
+  "recordings": [
+    {
+      "audio": "not captured; audio remains not measured",
+      "closedAt": "2026-09-14T07:56:51.919Z",
+      "events": [
+        {
+          "detail": {
+            "height": 720,
+            "width": 1280
+          },
+          "event": "title-ready",
+          "offsetMs": 645
+        },
+        {
+          "event": "full-mission-start",
+          "offsetMs": 38785
+        },
+        {
+          "detail": 0,
+          "event": "kills",
+          "offsetMs": 38787
+        },
+        {
+          "detail": 1,
+          "event": "kills",
+          "offsetMs": 49894
+        },
+        {
+          "detail": 2,
+          "event": "kills",
+          "offsetMs": 59752
+        },
+        {
+          "detail": 3,
+          "event": "kills",
+          "offsetMs": 68059
+        },
+        {
+          "event": "victory",
+          "offsetMs": 73054
+        },
+        {
+          "event": "clean-retry",
+          "offsetMs": 82450
+        },
+        {
+          "event": "context-close",
+          "offsetMs": 82482
+        }
+      ],
+      "file": "desktop-continuous.webm",
+      "id": "desktop",
+      "size": {
+        "height": 720,
+        "width": 1280
+      },
+      "startedAt": "2026-09-14T07:55:29.320Z",
+      "status": "saved",
+      "timing": "Approximate wall-clock offsets from page creation; not exact video/input synchronization. Decoded frame counts may contain repeats and are not independent performance samples."
+    },
+    {
+      "audio": "not captured; audio remains not measured",
+      "closedAt": "2026-09-14T07:58:45.886Z",
+      "events": [
+        {
+          "detail": {
+            "height": 390,
+            "width": 844
+          },
+          "event": "landscape",
+          "offsetMs": 265
+        },
+        {
+          "event": "full-mission-start",
+          "offsetMs": 13255
+        },
+        {
+          "detail": 0,
+          "event": "kills",
+          "offsetMs": 13258
+        },
+        {
+          "detail": 1,
+          "event": "kills",
+          "offsetMs": 40055
+        },
+        {
+          "detail": 2,
+          "event": "kills",
+          "offsetMs": 89791
+        },
+        {
+          "event": "context-close",
+          "offsetMs": 110332
+        }
+      ],
+      "file": "touch-continuous.webm",
+      "framing": "844x390 landscape then390x844 portrait. Page is top-left on a fixed844x844 recording canvas; unused area is padding.",
+      "id": "touch",
+      "size": {
+        "height": 844,
+        "width": 844
+      },
+      "startedAt": "2026-09-14T07:56:55.474Z",
+      "status": "saved",
+      "timing": "Approximate wall-clock offsets from page creation; not exact video/input synchronization. Decoded frame counts may contain repeats and are not independent performance samples."
+    }
+  ],
+  "measurementLimits": "Actual rAF intervals and JavaScript advance/render call durations in this browser; not isolated GPU time or physical-device performance. Includes each recorded mode; bounded to first3000 callbacks.",
+  "conclusions": [
+    "44 tests/build and full desktop mission/retry passed. Touch died before180seconds; no whole-run or recording gate success.",
+    "Same early encounter submitted162888→122202 triangles; desktop full wall duration146715→82450ms in these single runs. This supports lower submitted work and observed wall-time reduction, not a controlled performance estimate.",
+    "Touch rAF p50266.6ms while JS simulation p500.1ms and render-call p501.5ms. JS simulation duration is not the dominant observed interval; GPU/browser/compositor/recording contributions are not individually measured.",
+    "Touch test-player route and outcome differ across runs. Defeat is not evidence the producer or renderer stopped."
+  ],
+  "independentCodeReview": {
+    "reviewer": "review_capture",
+    "result": "No lost geometry, matrices, colors or inadequate wind bounds found in bounded independent checks.160-instance transforms/colors retained bit-for-bit. Leaf maximum displacement0.1481m<0.2margin; grass0.2191m<0.3margin; depth shader and light-frustum culling retained.",
+    "limits": "Does not measure actual image flicker or performance."
+  },
+  "formalVerdict": "not measured",
+  "workUnitEnded": false,
+  "next": "Validate a separately identified defensive touch route without altering game values or180second objective. Preserve prior dodge-only failures. Compare retained native reference motion at their actual supported scope.",
+  "independentImageReview": {
+    "reviewer": "review_capture",
+    "method": "Six exact previous/new stills:encounter,mobile,PCending. Known-source diagnostic.",
+    "result": "No clear new vegetation/shadow omission found. Path/shoulder vegetation and crossing paving shadows retain continuity; mobile foliage extends behindtorii; PCfeet/paving boundary visible. Pose/wind/shadow differences cannot establish disappearance.",
+    "limits": "Three static scene pairs only; no continuous flicker, performance or whole-element verdict."
+  }
+}

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-13T14:19:53.817Z",
+  "updatedAt": "2026-09-14T01:56:53Z",
   "status": "active",
   "project": {
     "name": "KAGEROU 陽炎",
@@ -146,9 +146,9 @@
     ]
   },
   "currentWork": {
-    "activeTask": "FRESH-FOUNDATION",
-    "lastCompletedTask": "Mandatory-rebuild routing withdrawn following the user clarification; no runtime deletion or rewrite occurred.",
-    "nextTask": "Continue the fresh/ implementation on codex/game2-rebuild-20260913. Read FRESH_DESIGN.md and REUSE_LOG.md. Inspect fresh verification CI and code review, fix observed failures, then complete concept coverage/reference selection and compare actual new frames. Do not resume old PR #10 as the implementation path.",
+    "activeTask": "FRESH-TOUCH-MISSION-RETRY",
+    "lastCompletedTask": "Recorded failed touch-only mission CI f2d81b7 without weakening its criterion; corrected direct-contact driver prepared locally.",
+    "nextTask": "Inspect EVIDENCE/20260914-fresh-touch-failure-f2d81b7.json, then run the corrected direct-contact touch-only route at its exact candidate revision. Require all three fights, explicit signal, ending and clean retry. Keep the failed attempt. If it passes, inspect mobile mission image and record environment limits. Then continue attack-only balance, primitive generated presentation, remaining C05/C06/C09/C11/C12 selection and source-blind media. All elements remain not measured. Deadline 2026-09-20T07:51:53Z.",
     "nextStartingPoint": "AI_DEVELOPMENT/FRESH_DESIGN.md",
     "blockedBy": [],
     "remoteStateChangeAuthorized": true,

@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "kind": "reference-selection research checkpoint",
+  "recordedAt": "2026-09-13T17:30:51Z",
+  "candidateRevision": "afc8bcdb0ddb869c93228c45b845c90d48a17083",
+  "catalogBaseRevision": "f6e185c60ae61f4e2321c8dc27d86a99a00f6271",
+  "scope": [
+    "C04 primary reference: place, navigation and environmental response",
+    "C10 primary reference: sound, music and state response"
+  ],
+  "method": "Element-specific public evidence was separated into developer design records, independent professional criticism, player discussion and later retrospective/continuation evidence. Contrary evidence was retained. These sources select references only and are not candidate gameplay or blind-comparison material.",
+  "results": [
+    {
+      "element": "C04",
+      "reference": "GT",
+      "selection": "four axes substantiated for the primary reference",
+      "positiveBasis": [
+        "Independent criticism specifically connects wind navigation, animals, weather, scenery and score to one readable place experience.",
+        "Developer design evidence explains environment-wide reaction of foliage, cloth and particles to navigation wind and cinematic tension.",
+        "Player discussion supports looking at and reasoning about the world instead of a corner minimap.",
+        "A 2025 sequel interview still treats wind navigation as central and memorable."
+      ],
+      "counterevidence": [
+        "Some players report losing objectives without a minimap or prefer conventional waypoints.",
+        "The original navigation vector did not route around large obstacles such as cliffs.",
+        "A later review identifies static environmental and dated presentation aspects."
+      ],
+      "remaining": [
+        "Complete the separate four-axis selection of supplementary SK for compact place structure.",
+        "Acquire actual matched uninterrupted media and perform valid source-blind comparison."
+      ]
+    },
+    {
+      "element": "C10",
+      "reference": "GT",
+      "selection": "four axes substantiated for the primary reference",
+      "positiveBasis": [
+        "Professional awards specifically recognize sound design, foley and music.",
+        "Independent criticism praises the score as part of the world presentation.",
+        "Production records establish field-recorded environmental ambience rather than a generic soundtrack claim.",
+        "A 2025 specialist interview retains combat physicality and emotionally continuous mixing as design strengths."
+      ],
+      "counterevidence": [
+        "Player discussion includes sparse or forgettable music and repetitive confrontation cues.",
+        "The later audio team identifies static loops, fixed sound positions and one-point impact playback in the original as weaknesses."
+      ],
+      "remaining": [
+        "Acquire actual matched uninterrupted approach, tension, sword and post-combat ambience media and perform valid source-blind comparison."
+      ]
+    }
+  ],
+  "formalVerdict": "not measured",
+  "formalVerdictReason": "No candidate/reference source-blind comparison was performed. Reference-selection research cannot assign a game-element verdict.",
+  "verification": {
+    "command": "node tools/check-fresh-catalog.mjs",
+    "result": "PASS: 10 units, 16 legacy groups, 62 legacy criteria, six negative checks, fixed instruction text unchanged"
+  }
+}

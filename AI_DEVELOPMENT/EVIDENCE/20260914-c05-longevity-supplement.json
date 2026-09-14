@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-09-14T08:57:55.620Z",
+  "element": "C05",
+  "reference": "SK retained; no benchmark replacement",
+  "purpose": "Strengthen the unfinished longevity rationale with element-specific original criticism; do not substitute it for actual gameplay or blind comparison.",
+  "sources": [
+    {
+      "id": "SK-STORY-2020-CONTEXT",
+      "url": "https://channelcousin.com/2020/05/04/sekiro-narrative-design/",
+      "published": "2020-05-04",
+      "kind": "Original player/author narrative analysis",
+      "observation": "Evaluates the connection between conflict, places, action and themes with specific examples.",
+      "counterEvidence": "Its Dragonrot implementation claims have not been verified and are excluded as mechanics evidence.",
+      "scope": "One author's interpretation, not player consensus or play by this agent."
+    },
+    {
+      "id": "SK-STORY-2022-COMPARISON",
+      "url": "https://thegemsbok.com/art-reviews-and-articles/sekiro-shadows-die-twice-from-software-review/",
+      "published": "2022-02-16",
+      "kind": "Original authored criticism by Daniel Podgorski",
+      "observation": "Explicitly values narrative completeness/clarity and compares thematic quality favorably with the studio's strongest work.",
+      "counterEvidence": "Also criticizes reduced emotional effect, frequent dialogue/cutscene interruptions and overexplanation.",
+      "scope": "One author's reported playthroughs and evaluation, not sustained cross-reviewer benchmark consensus."
+    },
+    {
+      "id": "SK-STORY-L-rechecked",
+      "url": "https://abstractinggames.com/2025/07/13/on-storytelling-sekiro-shadows-die-twice/",
+      "published": "2025-07-13",
+      "kind": "Original later storytelling analysis; existing source reverified",
+      "observation": "Discusses a clear main plot and thematic connection to people and places.",
+      "counterEvidence": "Themes may be missed and alternate endings are difficult to discover.",
+      "scope": "Later substantive analysis; the article does not explicitly establish its use as a comparative benchmark."
+    }
+  ],
+  "independentReview": {
+    "reviewer": "review_capture",
+    "scope": "Source rationale audit, not gameplay/blind evaluation",
+    "result": "Three sources strengthen multi-author2020–2025 continuing evaluation, with an explicit2022 comparison. They do not establish that the C05 narrative element has long remained a comparison benchmark. Keep longevity substantiation incomplete."
+  },
+  "effect": "More element-specific evidence and counterevidence are recorded; the precise remaining inference is isolated. No reference-selection completion claimed.",
+  "remaining": "Bridge from sustained later evaluation to long-term benchmark standing for the narrative/meaning element, without relying on combat reputation.",
+  "selectionComplete": false,
+  "formalVerdict": "not measured",
+  "workUnitEnded": false
+}

@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-09-14T07:36:16.485Z",
+  "sourceRevision": "ea295ff0400a9e58f1b95c19cac0683a1922d188",
+  "run": 34818148603,
+  "url": "https://github.com/bachikoljunior-blip/game2/actions/runs/34818148603",
+  "conclusion": "failure",
+  "reports": [
+    {
+      "checks": [],
+      "date": "2026-09-14T07:31:14.003Z",
+      "durationsMs": {
+        "desktop": 30497,
+        "mobile": 30353
+      },
+      "environment": "Chromium / SwiftShader; not physical-device performance",
+      "errors": [
+        "THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index 233. All geometries must have compatible attributes; make sure index attribute exists among all geometries, or in none of them.",
+        "TypeError: Cannot read properties of null (reading 'morphAttributes')",
+        "THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index 233. All geometries must have compatible attributes; make sure index attribute exists among all geometries, or in none of them.",
+        "TypeError: Cannot read properties of null (reading 'morphAttributes')"
+      ],
+      "failure": "TimeoutError: page.waitForFunction: Timeout 30000ms exceeded.",
+      "mobileFailure": "TimeoutError: locator.tap: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#start')\n    - locator resolved to <button disabled id=\"start\">…</button>\n  - attempting tap action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying tap action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying tap action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is not enabled\n     - retrying tap action\n       - waiting 500ms\n",
+      "recordings": [
+        {
+          "audio": "not captured; audio remains not measured",
+          "closedAt": "2026-09-14T07:31:48.371Z",
+          "events": [
+            {
+              "event": "context-close",
+              "offsetMs": 30497
+            }
+          ],
+          "file": "desktop-continuous.webm",
+          "id": "desktop",
+          "size": {
+            "height": 720,
+            "width": 1280
+          },
+          "startedAt": "2026-09-14T07:31:14.401Z",
+          "status": "saved",
+          "timing": "Approximate wall-clock offsets from page creation; not exact video/input synchronization. Decoded frame counts may contain repeats and are not independent performance samples."
+        },
+        {
+          "audio": "not captured; audio remains not measured",
+          "closedAt": "2026-09-14T07:32:22.063Z",
+          "events": [
+            {
+              "detail": {
+                "height": 390,
+                "width": 844
+              },
+              "event": "landscape",
+              "offsetMs": 346
+            },
+            {
+              "event": "context-close",
+              "offsetMs": 30353
+            }
+          ],
+          "file": "touch-continuous.webm",
+          "framing": "844x390 landscape then390x844 portrait. Page is top-left on a fixed844x844 recording canvas; unused area is padding.",
+          "id": "touch",
+          "size": {
+            "height": 844,
+            "width": 844
+          },
+          "startedAt": "2026-09-14T07:31:48.495Z",
+          "status": "saved",
+          "timing": "Approximate wall-clock offsets from page creation; not exact video/input synchronization. Decoded frame counts may contain repeats and are not independent performance samples."
+        }
+      ],
+      "result": "failed",
+      "sourceRevision": "ea295ff0400a9e58f1b95c19cac0683a1922d188"
+    },
+    {
+      "date": "2026-09-14T07:32:22.149Z",
+      "failure": "AssertionError [ERR_ASSERTION]: a recording must not hide a failed browser mission\n\n'failed' !== 'passed'\n",
+      "recordings": [],
+      "result": "failed",
+      "scope": "Video integrity and provenance only. Silent software-rendered browser recordings; no source-blind verdict, audio result or smartphone performance claim. Decoded frames can repeat.",
+      "sourceRevision": "ea295ff0400a9e58f1b95c19cac0683a1922d188"
+    }
+  ],
+  "artifacts": [
+    {
+      "archive_download_url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10337537055/zip",
+      "created_at": "2026-09-14T07:32:23Z",
+      "digest": "sha256:eacaff5ccbac8594fbfe1a0f96002f73649eaa740d3a7f61d049f000d19c4461",
+      "expired": false,
+      "expires_at": "2026-12-13T07:30:11Z",
+      "id": 10337537055,
+      "name": "fresh-game-ea295ff0400a9e58f1b95c19cac0683a1922d188",
+      "size_in_bytes": 931675,
+      "updated_at": "2026-09-14T07:32:23Z",
+      "url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10337537055",
+      "workflow_run": {
+        "head_branch": "codex/game2-rebuild-20260913",
+        "head_repository_id": 1316876624,
+        "head_sha": "ea295ff0400a9e58f1b95c19cac0683a1922d188",
+        "id": 34818148603,
+        "repository_id": 1316876624
+      }
+    }
+  ],
+  "rootCause": "New non-indexed Dodecahedron rocks shared the stone-material batch with indexed Box/Cylinder pieces. mergeGeometries rejected the mixed index representation at geometry233; null then reached Mesh creation. Both browser starts failed before any gameplay assertion.",
+  "whyLocalTestsMissed": "42 tests covered terrain sampling, path/base contracts and prior input/camera logic, but did not construct a mixed indexed/unindexed material batch. Source-shape presence assertions did not exercise composition.",
+  "correction": "Assign identity indices to previously non-indexed generated parts before batching. Preserve all positions, normals, UVs and triangle count. Add a real mixed Box/Cylinder/Dodecahedron batch regression.",
+  "localCorrectionVerification": "43 tests passed; mixed actual geometries merge, with original rock positions, triangle count and all common vertex attribute counts preserved.",
+  "remaining": "Mixed-index initialization cause verified resolved. Touch non-completion tracked separately in20260914-c04-touch-cost.json.",
+  "productionState": "The foreground producer remained active and repaired this verification failure. It is not evidence of a separate producer stopping.",
+  "formalVerdict": "not measured",
+  "correctionVerification": {
+    "revision": "7d5cfd5d2e55acd770fdc2ff73ebade2ca97b2c3",
+    "run": 34818667465,
+    "initialization": "passed; no browser/console error, PC complete",
+    "wholeRun": "failed; separate touch180second deadline regression"
+  }
+}

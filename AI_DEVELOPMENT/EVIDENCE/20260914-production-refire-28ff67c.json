@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-09-14T03:51:37Z",
+  "status": "production_restarted_and_candidate_verified",
+  "lastProducedRevision": "28ff67cf78c40dd9c17819d8dbd3eb103c6a4160",
+  "lastWorkflow": 34800496145,
+  "lastWorkflowCompletedAt": "2026-09-14T02:53:25Z",
+  "stopEvidence": [
+    "No later branch revision or running related CI was found more than fifty minutes after the exact-head workflow completed.",
+    "SESSION_STATE and REBUILD_STATE still described the completed 28ff67c verification as pending, so the durable continuation did not include its result or independent image findings.",
+    "No separate production-launch facility is available in this run; the authorized fallback is to continue production in the re-fire execution."
+  ],
+  "causes": [
+    {
+      "cause": "The preceding bounded execution ended after reporting the rendered result without committing the result and exact next gap to durable state.",
+      "recurrenceCondition": "A run boundary after CI or review can leave the next trigger reading a stale pending action.",
+      "remedy": "Commit the completed CI, independent review, exact next gap and pending candidate together before starting the next remote verification.",
+      "verification": "The recovery commit contains both the 28ff67c result and the new integrated candidate. b852f6a passed exact-head CI34804385369, and this follow-up preserves the result and next gap before the run boundary."
+    },
+    {
+      "cause": "Production has no separate continuously running executor after a scheduled invocation ends.",
+      "recurrenceCondition": "Normal platform execution boundaries leave no process to continue between hourly checks.",
+      "remedy": "Use the enabled hourly task as the authorized re-fire surface and preserve an exact candidate/frontier at each boundary; do not claim a nonexistent background process.",
+      "verification": "The existing task is enabled with its unchanged hourly RRULE, and this run resumed substantive implementation from the stored review frontier."
+    }
+  ],
+  "resumedWork": {
+    "design": "AI_DEVELOPMENT/FRESH_DESIGN.md C01/C04/C08/C09 integrated screen improvement",
+    "implementation": [
+      "separated warm key light from cool rim and reduced flat ambient fill",
+      "added actor contact grounding and stronger body/sword separation",
+      "replaced distant cones with irregular generated forms and reduced vegetation line noise",
+      "added an oblique signal/player/shrine victory camera and concise result heading"
+    ],
+    "reuse": "No old game source or component was inspected or imported.",
+    "localVerification": "passed: 35 node tests and production build; bundle 516.85 kB, gzip 134.40 kB, existing over500kB warning retained",
+    "remoteVerification": {
+      "revision": "b852f6a981d90629313c241f230beaf223d8da29",
+      "workflowRun": 34804385369,
+      "job": 103853241224,
+      "conclusion": "success",
+      "tests": 35,
+      "desktopDurationMs": 98036,
+      "mobileDurationMs": 88775,
+      "render": {"calls": 92, "triangles": 127744},
+      "desktopMission": "passed: three kills, signal, ending, clean retry; player HP100",
+      "touchMission": "passed: three kills, signal, ending, clean retry; player HP76",
+      "errors": [],
+      "environment": "Chromium/SwiftShader; not physical-device performance",
+      "artifact": {
+        "id": 10333140503,
+        "digest": "sha256:a11e82aad38854fd7c1af7404481c8db65308caf07418bd91d3bdd369eaef5db"
+      }
+    },
+    "independentStaticReview": {
+      "verifiedImprovements": [
+        "daytime actor/background separation improved",
+        "encounter sword became conspicuous",
+        "central combat space is readable although torii obstruction remains",
+        "desktop victory has a coherent heading-narrative-retry order"
+      ],
+      "remaining": [
+        "flat low-detail materials and repeated vegetation",
+        "primitive blocky actors",
+        "victory wall still dominates the lamp, actor and result",
+        "large encounter torii posts still consume peripheral space",
+        "mobile victory body copy is too small and a bright right-edge geometry wedge weakens polish"
+      ],
+      "highestLeverageNextChange": "Create a responsive foreground result panel with larger text, stronger contrast separation and a tighter actor/lamp composition that excludes the wall edge.",
+      "scopeLimit": "Five static candidate frames only; not source-blind reference comparison, animation, controls, audio or physical-device performance."
+    },
+    "pending": "Responsive victory/result composition, remaining presentation gaps, unresolved reference selection and source-blind continuous comparisons"
+  },
+  "deadlineForecast": {
+    "deadline": "2026-09-20T07:51:53Z",
+    "prediction": "at risk; not guaranteed",
+    "basis": "All ten formal element verdicts remain not measured and reference selection is incomplete.",
+    "methodChange": "Prefer integrated cross-element presentation passes and shared continuous comparison captures over serial micro-fixes while preserving every criterion and evidence rule."
+  },
+  "formalVerdict": "not measured",
+  "workUnitEnded": false
+}

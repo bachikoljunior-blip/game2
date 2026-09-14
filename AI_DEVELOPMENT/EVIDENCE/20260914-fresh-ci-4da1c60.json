@@ -1,0 +1,719 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "4da1c6049bd682d6030c40a8b01802b4e8b2e692",
+  "run": 34791254109,
+  "url": "https://github.com/bachikoljunior-blip/game2/actions/runs/34791254109",
+  "conclusion": "success",
+  "job": 103815779251,
+  "artifact": {
+    "id": 10328467294,
+    "name": "fresh-game-4da1c6049bd682d6030c40a8b01802b4e8b2e692",
+    "digest": "sha256:bb4c07e5069d10258ad06ba3f09fbf7db95a45c241bb7867948fcf0fcfc60eb5",
+    "created_at": "2026-09-14T00:01:22Z",
+    "expires_at": "2026-12-12T23:59:31Z",
+    "size_in_bytes": 2222149
+  },
+  "artifactFilesSha256": {
+    "browser-report.json": "e11fb1ed8dc5c7d191d8336b7057f44966bb5d33d0afc356978dcdcf57c3d7fc",
+    "encounter.png": "b6a6fc0e0598265be0e6c503588f47485c997b5d0a6decf130770dea942a79c9",
+    "mission-victory.png": "94e9d5eb3cf7cfa3b5276b35acbbe4080a0d25722cabcf19de4f056d4064f1a2",
+    "mobile.png": "f7c04f4aeee51ff24bc654b772426b0e0c1f0477354720c9a4d9f6c45d79d499",
+    "title.png": "1a87334caf0e23a989b5946a8bfd6b1ec62d6c3001b6fcd3df064936d0e09f75"
+  },
+  "verification": {
+    "nodeTestsPassed": 30,
+    "build": "passed with unchanged 500 kB bundle warning",
+    "browser": "passed; actual input, no runtime state writes",
+    "independentCodeReview": "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-mission.json"
+  },
+  "report": {
+    "checks": [
+      "real start and keyboard movement through torii",
+      "real click causes enemy HP loss",
+      "pause freezes simulation and resumes",
+      "WebGL loss/restore and resume",
+      "death and real retry restore player",
+      "real-input full combat, postcombat arrival, signal, ending and clean retry",
+      "mobile simultaneous guard/lock release preserves guard; cancel releases",
+      "mobile joystick movement and cancel stop"
+    ],
+    "combat": {
+      "contextLost": false,
+      "paused": false,
+      "render": {
+        "calls": 95,
+        "frame": 44,
+        "lines": 0,
+        "points": 0,
+        "triangles": 67214
+      },
+      "running": true,
+      "world": {
+        "enemies": [
+          {
+            "age": 0.18333333333333332,
+            "cooldown": 0,
+            "guardAge": 99,
+            "hit": [],
+            "hp": 66,
+            "id": "sentinel",
+            "posture": 19.066666666666663,
+            "state": "windup",
+            "stride": 4.709999999999995,
+            "x": 3.67394039744206e-18,
+            "yaw": -3.141592653589793,
+            "z": 5.710000000000002
+          },
+          {
+            "age": 4.7499999999999885,
+            "cooldown": 0,
+            "guardAge": 99,
+            "hit": [],
+            "hp": 100,
+            "id": "retainer",
+            "posture": 0,
+            "state": "idle",
+            "stride": 0,
+            "x": -3,
+            "yaw": 0,
+            "z": -9
+          },
+          {
+            "age": 4.7499999999999885,
+            "cooldown": 0,
+            "guardAge": 99,
+            "hit": [],
+            "hp": 100,
+            "id": "warden",
+            "posture": 0,
+            "state": "idle",
+            "stride": 0,
+            "x": 3,
+            "yaw": 0,
+            "z": -16
+          }
+        ],
+        "events": [
+          {
+            "source": "player",
+            "target": "sentinel",
+            "time": 4.049999999999991,
+            "type": "hit",
+            "x": 3.67394039744206e-18,
+            "z": 5.47
+          }
+        ],
+        "locked": "sentinel",
+        "mode": "playing",
+        "pathCleared": false,
+        "player": {
+          "age": 0.2333333333333333,
+          "cooldown": 0,
+          "guardAge": 99,
+          "hit": [],
+          "hp": 100,
+          "id": "player",
+          "posture": 0,
+          "state": "idle",
+          "stride": 10.66666666666664,
+          "x": 7.03173522938875e-19,
+          "yaw": 1.8300411957923904e-18,
+          "z": 7.333333333333447
+        },
+        "remainder": 0.0022999999999838913,
+        "signalLit": false,
+        "ticks": 285,
+        "time": 4.7499999999999885,
+        "totals": {
+          "hits": 1,
+          "kills": 0,
+          "parries": 0,
+          "received": 0
+        }
+      }
+    },
+    "date": "2026-09-14T00:00:09.835Z",
+    "environment": "Chromium / SwiftShader; not physical-device performance",
+    "errors": [],
+    "mission": {
+      "after": {
+        "enemies": [
+          {
+            "age": 12.066666666666846,
+            "cooldown": 0,
+            "guardAge": 99,
+            "hit": [],
+            "hp": 0,
+            "id": "sentinel",
+            "posture": 60,
+            "state": "dead",
+            "stride": 3.029999999999995,
+            "x": 3.67394039744206e-18,
+            "yaw": -3.141592653589793,
+            "z": 4.029999999999988
+          },
+          {
+            "age": 6.766666666666648,
+            "cooldown": 0,
+            "guardAge": 99,
+            "hit": [],
+            "hp": 0,
+            "id": "retainer",
+            "posture": 60,
+            "state": "dead",
+            "stride": 2.9999999999999947,
+            "x": -3.0002239967364974,
+            "yaw": -3.141350929515885,
+            "z": -6.000000009565827
+          },
+          {
+            "age": 2.4833333333333294,
+            "cooldown": 0,
+            "guardAge": 99,
+            "hit": [],
+            "hp": 0,
+            "id": "warden",
+            "posture": 60,
+            "state": "dead",
+            "stride": 3.239999999999993,
+            "x": 2.1894978920536787,
+            "yaw": -3.0800054427885244,
+            "z": -12.898969277524607
+          }
+        ],
+        "events": [
+          {
+            "source": "player",
+            "target": "player",
+            "time": 17.166666666666973,
+            "type": "signal",
+            "x": 0.016973593264355144,
+            "z": -18.655875945041842
+          }
+        ],
+        "locked": null,
+        "mode": "victory",
+        "pathCleared": true,
+        "player": {
+          "age": 2.0166666666666644,
+          "cooldown": 0,
+          "guardAge": 99,
+          "hit": [],
+          "hp": 100,
+          "id": "player",
+          "posture": 0,
+          "state": "idle",
+          "stride": 40.88577686811304,
+          "x": 0.016973593264355144,
+          "yaw": 0,
+          "z": -18.655875945041842
+        },
+        "remainder": 0.016099999999987843,
+        "signalLit": true,
+        "ticks": 1030,
+        "time": 17.166666666666973,
+        "totals": {
+          "hits": 9,
+          "kills": 3,
+          "parries": 0,
+          "received": 0
+        }
+      },
+      "before": {
+        "enemies": [
+          {
+            "age": 0,
+            "cooldown": 0,
+            "guardAge": 99,
+            "hit": [],
+            "hp": 100,
+            "id": "sentinel",
+            "posture": 0,
+            "state": "idle",
+            "stride": 0,
+            "x": 0,
+            "yaw": 0,
+            "z": 1
+          },
+          {
+            "age": 0,
+            "cooldown": 0,
+            "guardAge": 99,
+            "hit": [],
+            "hp": 100,
+            "id": "retainer",
+            "posture": 0,
+            "state": "idle",
+            "stride": 0,
+            "x": -3,
+            "yaw": 0,
+            "z": -9
+          },
+          {
+            "age": 0,
+            "cooldown": 0,
+            "guardAge": 99,
+            "hit": [],
+            "hp": 100,
+            "id": "warden",
+            "posture": 0,
+            "state": "idle",
+            "stride": 0,
+            "x": 3,
+            "yaw": 0,
+            "z": -16
+          }
+        ],
+        "events": [],
+        "locked": null,
+        "mode": "playing",
+        "pathCleared": false,
+        "player": {
+          "age": 0,
+          "cooldown": 0,
+          "guardAge": 99,
+          "hit": [],
+          "hp": 100,
+          "id": "player",
+          "posture": 0,
+          "state": "idle",
+          "stride": 0,
+          "x": 0,
+          "yaw": 0,
+          "z": 18
+        },
+        "remainder": 0,
+        "signalLit": false,
+        "ticks": 0,
+        "time": 0,
+        "totals": {
+          "hits": 0,
+          "kills": 0,
+          "parries": 0,
+          "received": 0
+        }
+      },
+      "checkpoints": [
+        {
+          "enemies": [
+            {
+              "age": 0,
+              "cooldown": 0,
+              "guardAge": 99,
+              "hit": [],
+              "hp": 100,
+              "id": "sentinel",
+              "posture": 0,
+              "state": "idle",
+              "stride": 0,
+              "x": 0,
+              "yaw": 0,
+              "z": 1
+            },
+            {
+              "age": 0,
+              "cooldown": 0,
+              "guardAge": 99,
+              "hit": [],
+              "hp": 100,
+              "id": "retainer",
+              "posture": 0,
+              "state": "idle",
+              "stride": 0,
+              "x": -3,
+              "yaw": 0,
+              "z": -9
+            },
+            {
+              "age": 0,
+              "cooldown": 0,
+              "guardAge": 99,
+              "hit": [],
+              "hp": 100,
+              "id": "warden",
+              "posture": 0,
+              "state": "idle",
+              "stride": 0,
+              "x": 3,
+              "yaw": 0,
+              "z": -16
+            }
+          ],
+          "events": [],
+          "locked": null,
+          "mode": "playing",
+          "pathCleared": false,
+          "player": {
+            "age": 0,
+            "cooldown": 0,
+            "guardAge": 99,
+            "hit": [],
+            "hp": 100,
+            "id": "player",
+            "posture": 0,
+            "state": "idle",
+            "stride": 0,
+            "x": 0,
+            "yaw": 0,
+            "z": 18
+          },
+          "remainder": 0,
+          "signalLit": false,
+          "ticks": 0,
+          "time": 0,
+          "totals": {
+            "hits": 0,
+            "kills": 0,
+            "parries": 0,
+            "received": 0
+          }
+        },
+        {
+          "enemies": [
+            {
+              "age": 0.016666666666666666,
+              "cooldown": 0,
+              "guardAge": 99,
+              "hit": [],
+              "hp": 0,
+              "id": "sentinel",
+              "posture": 60,
+              "state": "dead",
+              "stride": 3.029999999999995,
+              "x": 3.67394039744206e-18,
+              "yaw": -3.141592653589793,
+              "z": 4.029999999999988
+            },
+            {
+              "age": 5.116666666666654,
+              "cooldown": 0,
+              "guardAge": 99,
+              "hit": [],
+              "hp": 100,
+              "id": "retainer",
+              "posture": 0,
+              "state": "idle",
+              "stride": 0,
+              "x": -3,
+              "yaw": 0,
+              "z": -9
+            },
+            {
+              "age": 5.116666666666654,
+              "cooldown": 0,
+              "guardAge": 99,
+              "hit": [],
+              "hp": 100,
+              "id": "warden",
+              "posture": 0,
+              "state": "idle",
+              "stride": 0,
+              "x": 3,
+              "yaw": 0,
+              "z": -16
+            }
+          ],
+          "events": [
+            {
+              "source": "player",
+              "target": "sentinel",
+              "time": 4.216666666666657,
+              "type": "hit",
+              "x": 3.67394039744206e-18,
+              "z": 4.029999999999988
+            },
+            {
+              "source": "player",
+              "target": "sentinel",
+              "time": 5.099999999999987,
+              "type": "hit",
+              "x": 3.67394039744206e-18,
+              "z": 4.029999999999988
+            },
+            {
+              "source": "player",
+              "target": "sentinel",
+              "time": 5.099999999999987,
+              "type": "death",
+              "x": 3.67394039744206e-18,
+              "z": 4.029999999999988
+            }
+          ],
+          "locked": null,
+          "mode": "playing",
+          "pathCleared": false,
+          "player": {
+            "age": 0.19999999999999998,
+            "cooldown": 0,
+            "guardAge": 99,
+            "hit": [
+              "sentinel"
+            ],
+            "hp": 100,
+            "id": "player",
+            "posture": 0,
+            "state": "attack",
+            "stride": 12.870000000000074,
+            "x": 7.16866419013379e-19,
+            "yaw": 2.6882490712988113e-18,
+            "z": 5.129999999999988
+          },
+          "remainder": 0.0000333333333314631,
+          "signalLit": false,
+          "ticks": 307,
+          "time": 5.116666666666654,
+          "totals": {
+            "hits": 3,
+            "kills": 1,
+            "parries": 0,
+            "received": 0
+          }
+        },
+        {
+          "enemies": [
+            {
+              "age": 5.316666666666653,
+              "cooldown": 0,
+              "guardAge": 99,
+              "hit": [],
+              "hp": 0,
+              "id": "sentinel",
+              "posture": 60,
+              "state": "dead",
+              "stride": 3.029999999999995,
+              "x": 3.67394039744206e-18,
+              "yaw": -3.141592653589793,
+              "z": 4.029999999999988
+            },
+            {
+              "age": 0.016666666666666666,
+              "cooldown": 0,
+              "guardAge": 99,
+              "hit": [],
+              "hp": 0,
+              "id": "retainer",
+              "posture": 60,
+              "state": "dead",
+              "stride": 2.9999999999999947,
+              "x": -3.0002239967364974,
+              "yaw": -3.141350929515885,
+              "z": -6.000000009565827
+            },
+            {
+              "age": 10.416666666666764,
+              "cooldown": 0,
+              "guardAge": 99,
+              "hit": [],
+              "hp": 100,
+              "id": "warden",
+              "posture": 0,
+              "state": "idle",
+              "stride": 0,
+              "x": 3,
+              "yaw": 0,
+              "z": -16
+            }
+          ],
+          "events": [
+            {
+              "source": "player",
+              "target": "retainer",
+              "time": 9.566666666666721,
+              "type": "hit",
+              "x": -3.0002239967364974,
+              "z": -6.000000009565827
+            },
+            {
+              "source": "player",
+              "target": "retainer",
+              "time": 10.400000000000096,
+              "type": "hit",
+              "x": -3.0002239967364974,
+              "z": -6.000000009565827
+            },
+            {
+              "source": "player",
+              "target": "retainer",
+              "time": 10.400000000000096,
+              "type": "death",
+              "x": -3.0002239967364974,
+              "z": -6.000000009565827
+            }
+          ],
+          "locked": null,
+          "mode": "playing",
+          "pathCleared": false,
+          "player": {
+            "age": 0.19999999999999998,
+            "cooldown": 0,
+            "guardAge": 99,
+            "hit": [
+              "retainer"
+            ],
+            "hp": 100,
+            "id": "player",
+            "posture": 0,
+            "state": "attack",
+            "stride": 24.143333333333274,
+            "x": -3.000489774834917,
+            "yaw": 0.00024172407390840318,
+            "z": -4.900489774834929
+          },
+          "remainder": 0.016533333333336366,
+          "signalLit": false,
+          "ticks": 625,
+          "time": 10.416666666666764,
+          "totals": {
+            "hits": 6,
+            "kills": 2,
+            "parries": 0,
+            "received": 0
+          }
+        },
+        {
+          "enemies": [
+            {
+              "age": 9.700000000000061,
+              "cooldown": 0,
+              "guardAge": 99,
+              "hit": [],
+              "hp": 0,
+              "id": "sentinel",
+              "posture": 60,
+              "state": "dead",
+              "stride": 3.029999999999995,
+              "x": 3.67394039744206e-18,
+              "yaw": -3.141592653589793,
+              "z": 4.029999999999988
+            },
+            {
+              "age": 4.39999999999999,
+              "cooldown": 0,
+              "guardAge": 99,
+              "hit": [],
+              "hp": 0,
+              "id": "retainer",
+              "posture": 60,
+              "state": "dead",
+              "stride": 2.9999999999999947,
+              "x": -3.0002239967364974,
+              "yaw": -3.141350929515885,
+              "z": -6.000000009565827
+            },
+            {
+              "age": 0.11666666666666665,
+              "cooldown": 0,
+              "guardAge": 99,
+              "hit": [],
+              "hp": 0,
+              "id": "warden",
+              "posture": 60,
+              "state": "dead",
+              "stride": 3.239999999999993,
+              "x": 2.1894978920536787,
+              "yaw": -3.0800054427885244,
+              "z": -12.898969277524607
+            }
+          ],
+          "events": [
+            {
+              "source": "player",
+              "target": "warden",
+              "time": 14.016666666666943,
+              "type": "hit",
+              "x": 2.1894978920536787,
+              "z": -12.898969277524607
+            },
+            {
+              "source": "player",
+              "target": "warden",
+              "time": 14.683333333333643,
+              "type": "hit",
+              "x": 2.1894978920536787,
+              "z": -12.898969277524607
+            },
+            {
+              "source": "player",
+              "target": "warden",
+              "time": 14.683333333333643,
+              "type": "death",
+              "x": 2.1894978920536787,
+              "z": -12.898969277524607
+            }
+          ],
+          "locked": null,
+          "mode": "playing",
+          "pathCleared": true,
+          "player": {
+            "age": 0.3,
+            "cooldown": 0,
+            "guardAge": 99,
+            "hit": [
+              "warden"
+            ],
+            "hp": 100,
+            "id": "player",
+            "posture": 0,
+            "state": "attack",
+            "stride": 33.15911020144647,
+            "x": 2.1217947785963096,
+            "yaw": 0.061587210801268936,
+            "z": -11.801054759709956
+          },
+          "remainder": 0.016099999999987246,
+          "signalLit": false,
+          "ticks": 888,
+          "time": 14.800000000000315,
+          "totals": {
+            "hits": 9,
+            "kills": 3,
+            "parries": 0,
+            "received": 0
+          }
+        }
+      ]
+    },
+    "result": "passed"
+  },
+  "independentImageReview": {
+    "reviewer": "/root/mission_review",
+    "kind": "source-aware static image review, NOT blind comparison",
+    "images": [
+      "title.png",
+      "encounter.png",
+      "mobile.png",
+      "mission-victory.png"
+    ],
+    "observations": [
+      "1280x720 introduction and ending text/buttons show no apparent clipping or overlap.",
+      "844x390 landscape mobile movement pad and four controls do not overlap each other.",
+      "Encounter enemy torso, arms and blade overlap behind the player, reducing visible telegraph information.",
+      "Large ending title covers the signal lamp; emission and wall bounce are visible, but the completed objective lacks clear framing.",
+      "Small light-colored objective/enemy health text lies against bright background. No numeric contrast measurement was taken.",
+      "Repeated triangular trees, broad grass planes and simple cylindrical/box characters remain visibly primitive."
+    ],
+    "limits": "Reviewer checked provided images/report directly; revision/run mapping was supplied by coordinator, not independently queried."
+  },
+  "diagnostic": {
+    "observation": "This actual-input route completed with 9 hits, 3 kills, 0 received damage, 0 parries, HP100.",
+    "inference": "Attack-centered route may trivialize defense and enemy reading; reproduce alternative timings/encounters before tuning. This is not evidence of combat depth or a quality pass."
+  },
+  "notMeasured": [
+    "Source-blind comparison for any whole concept element",
+    "Touch-only full mission and signal completion",
+    "Portrait/narrow viewport menus and orientation changes",
+    "WebKit / iOS Simulator behavior",
+    "Physical-device performance",
+    "Audio and screen-reader behavior",
+    "Continuous camera/animation readability and before/after lamp imagery"
+  ],
+  "formalVerdict": "not measured",
+  "workUnitEnded": false,
+  "publication": {
+    "mainChanged": false,
+    "pagesChanged": false,
+    "mainRevision": "44799485360f30f93db6ebd2577a7eec23396e49",
+    "reason": "New mission has basic functional verification, not replacement-product acceptance; visible presentation gaps and unmeasured elements remain."
+  },
+  "nextAction": "Continue from this exact runtime. Correct observed enemy occlusion, ending title over lamp and low-contrast labels; verify portrait/landscape touch mission through signal and retry. Test attack-only route against defense-led routes. Complete remaining initial reference selection C05/C06/C09/C11/C12 and actual matched blind media without changing goals. Deadline 2026-09-20T07:51:53Z."
+}

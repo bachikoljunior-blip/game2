@@ -1,0 +1,404 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-09-14T08:34:39.471Z",
+  "runtimeRevision": "ce3615445aef7511917bcc9582b0c3a10da0a120",
+  "failedBrowserAttempt": {
+    "revision": "2b6e759054bf2089fa9937e041a7d3a7ebcc0210",
+    "run": 34821603815,
+    "url": "https://github.com/bachikoljunior-blip/game2/actions/runs/34821603815",
+    "result": "failed",
+    "tests": 45,
+    "build": "passed",
+    "desktopVictoryObservedElapsedMs": 62425,
+    "durationsMs": {
+      "desktop": 147593,
+      "mobile": 73135
+    },
+    "errors": [],
+    "touchPolicy": "held guard, actual dodge, recovery counters and early-windup interruption; prior dodge-only failures retained",
+    "touchFinal": {
+      "enemies": [
+        {
+          "age": 8.933333333333357,
+          "cooldown": 0,
+          "dodgeX": 0,
+          "dodgeZ": 0,
+          "guardAge": 99,
+          "hit": [],
+          "hp": 0,
+          "id": "sentinel",
+          "posture": 48.333333333333286,
+          "state": "dead",
+          "stride": 9.728190476190385,
+          "x": -3.264193873359851e-17,
+          "yaw": -2.6010501262060195e-18,
+          "z": 4.194857142857106
+        },
+        {
+          "age": 0.18333333333333332,
+          "cooldown": 0.9166666666666669,
+          "dodgeX": 0,
+          "dodgeZ": 0,
+          "guardAge": 99,
+          "hit": [
+            "player"
+          ],
+          "hp": 32,
+          "id": "retainer",
+          "posture": 33.699999999999974,
+          "state": "attack",
+          "stride": 11.159999999999954,
+          "x": -0.2907492817487215,
+          "yaw": 2.9174165565728516,
+          "z": 1.8196883730623385
+        },
+        {
+          "age": 24.433333333333227,
+          "cooldown": 0,
+          "dodgeX": 0,
+          "dodgeZ": 0,
+          "guardAge": 99,
+          "hit": [],
+          "hp": 100,
+          "id": "warden",
+          "posture": 0,
+          "state": "idle",
+          "stride": 0,
+          "x": 3,
+          "yaw": 0,
+          "z": -16
+        }
+      ],
+      "events": [
+        {
+          "source": "retainer",
+          "target": "player",
+          "time": 24.433333333333227,
+          "type": "hit",
+          "x": -0.046215815950304884,
+          "z": 2.892163726674073
+        },
+        {
+          "source": "retainer",
+          "target": "player",
+          "time": 24.433333333333227,
+          "type": "death",
+          "x": -0.046215815950304884,
+          "z": 2.892163726674073
+        }
+      ],
+      "locked": "retainer",
+      "mode": "defeat",
+      "pathCleared": false,
+      "player": {
+        "age": 0,
+        "cooldown": 0,
+        "dodgeX": 0,
+        "dodgeZ": -1,
+        "guardAge": 99,
+        "hit": [],
+        "hp": 0,
+        "id": "player",
+        "posture": 122.68333333333322,
+        "state": "dead",
+        "stride": 20.90427641314894,
+        "x": -0.046215815950304884,
+        "yaw": -0.22417609701694158,
+        "z": 2.892163726674073
+      },
+      "remainder": 0.01003333333332667,
+      "signalLit": false,
+      "ticks": 1466,
+      "time": 24.433333333333227,
+      "totals": {
+        "hits": 5,
+        "kills": 1,
+        "parries": 0,
+        "received": 4
+      }
+    },
+    "guardObserved": true,
+    "blockOrParryObserved": true,
+    "artifacts": [
+      {
+        "archive_download_url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10338472099/zip",
+        "created_at": "2026-09-14T08:18:06Z",
+        "digest": "sha256:bdd954659daba21cda2453e118a7e248279cc846b326f222caff6b6970c8da4c",
+        "expired": false,
+        "expires_at": "2026-12-13T08:13:14Z",
+        "id": 10338472099,
+        "name": "fresh-game-2b6e759054bf2089fa9937e041a7d3a7ebcc0210",
+        "size_in_bytes": 26871515,
+        "updated_at": "2026-09-14T08:18:06Z",
+        "url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10338472099",
+        "workflow_run": {
+          "head_branch": "codex/game2-rebuild-20260913",
+          "head_repository_id": 1316876624,
+          "head_sha": "2b6e759054bf2089fa9937e041a7d3a7ebcc0210",
+          "id": 34821603815,
+          "repository_id": 1316876624
+        }
+      }
+    ],
+    "rawEvidence": "Exact-revision artifact browser-report.json and logs retain all states/timings. ZIP downloaded and SHA256 verified; both recordings fully decoded with ffmpeg exit0. Mission remains failed.",
+    "failureInterpretation": "Actual defeat after1kill, second enemyHP32, playerposture122.68; not timeout or producer stop. Deadline assertion ran first and reported generic missing-victory wording; move mode assertion ahead of it while preserving the strict180second bound.",
+    "localArtifactVerification": {
+      "archiveSha256": "bdd954659daba21cda2453e118a7e248279cc846b326f222caff6b6970c8da4c",
+      "videos": [
+        {
+          "file": "desktop-continuous.webm",
+          "sha256": "dc22ec035d28896090badcbb28038b4d00c9cfa56fd4be5382e9da5b281221dd",
+          "bytes": 16648436
+        },
+        {
+          "file": "touch-continuous.webm",
+          "sha256": "f918b3dfd177aeecadd9b52486b8ed546fd17c342547f2d21c5266a91dba835c",
+          "bytes": 8099858
+        }
+      ]
+    }
+  },
+  "diagnosis": {
+    "observed": "Prior unit model delivered a new decision immediately at an update and did not simulate world progress between observation and touch commands.",
+    "independentReview": {
+      "reviewer": "review_capture",
+      "result": "Confirmed lack of separated observation/command/rAF clocks and held-input/pulse lifetime. Independent FIFO-delay model:0.25s updates,0lagHP100victory,0.5slagHP28victory,0.75slag2kills/lastHP32defeat. Not an exact CI reproduction."
+    },
+    "methodChange": "Space with a dodge before close contact, hold guard for actual contact, then press close attacks. Remove narrow windup-stage dependency. Model observation/delivery/release while simulation continues at1/60, and record bounded real touch-command wall offsets. No game values or acceptance assertions changed.",
+    "producerDelayedModel": {
+      "scope": "Serial decision, delay before delivery,0.05s+delay held action/stick, then0.11s released action with guard held; simulation updated continuously at1/60. This is not the measured browser command distribution or every actual wait/rAF phase.",
+      "oldPolicyExample": "0.1s delivery delay produced defeat in the bounded serial model; immediate delivery passed.",
+      "newPolicy": [
+        {
+          "delaySeconds": 0,
+          "outcome": "victory",
+          "simulatedSeconds": 45.7667,
+          "hp": 100,
+          "kills": 3
+        },
+        {
+          "delaySeconds": 0.1,
+          "outcome": "victory",
+          "simulatedSeconds": 37.1833,
+          "hp": 100,
+          "kills": 3
+        },
+        {
+          "delaySeconds": 0.25,
+          "outcome": "victory",
+          "simulatedSeconds": 35.2333,
+          "hp": 100,
+          "kills": 3
+        },
+        {
+          "delaySeconds": 0.5,
+          "outcome": "victory",
+          "simulatedSeconds": 41.1167,
+          "hp": 100,
+          "kills": 3
+        },
+        {
+          "delaySeconds": 0.75,
+          "outcome": "defeat",
+          "simulatedSeconds": 17.1833,
+          "hp": 0,
+          "kills": 0
+        }
+      ],
+      "limits": "Longer-delay failure retained. No broad latency tolerance, real20battle result, physical-device performance or source-blind quality inferred."
+    },
+    "followupReview": "Independent reviewer found the first serial model treated movement as .05/.11 and combined guard/action delivery. Before CI, the model was corrected to separate guard commands and action/stick commands, use .05/.11 button, .10/.04 stick and .08 idle waits. Variable rAF phase and actual command-delay distribution remain unmodelled.",
+    "correctedBranchModel": {
+      "scope": "Separate state-return delay, guard-change command, action command(s), held/released waits at actual branch durations. Simulation continues in1/60steps, constant per-command illustrative delays.",
+      "observations": [
+        {
+          "delaySeconds": 0,
+          "mode": "victory",
+          "simulatedSeconds": 25.6666667,
+          "hp": 100
+        },
+        {
+          "delaySeconds": 0.1,
+          "mode": "victory",
+          "simulatedSeconds": 41.5833333,
+          "hp": 100
+        },
+        {
+          "delaySeconds": 0.25,
+          "mode": "victory",
+          "simulatedSeconds": 52.6166667,
+          "hp": 100
+        },
+        {
+          "delaySeconds": 0.5,
+          "mode": "victory",
+          "simulatedSeconds": 71.5333333,
+          "hp": 52
+        },
+        {
+          "delaySeconds": 0.75,
+          "mode": "defeat",
+          "simulatedSeconds": 19.85,
+          "hp": 0,
+          "kills": 0
+        }
+      ],
+      "limits": "Not a browser-time prediction, exact rAF/command trace replay or performance result.0.75s failure retained."
+    },
+    "finalModelReview": {
+      "reviewer": "review_capture",
+      "result": "Confirmed separate guard command and actual button50/110ms,stick100/40ms,idle80ms branch waits. Reexecuted both focused model tests successfully. Actual rAF phase/jitter remains unverified."
+    }
+  },
+  "newCandidate": {
+    "revision": "9266736dee85e78d174c885190c38f8e7e570e7d",
+    "run": 34822773628,
+    "url": "https://github.com/bachikoljunior-blip/game2/actions/runs/34822773628",
+    "tests": 46,
+    "build": "passed",
+    "result": "failed after touch victory; ending/retry not checked",
+    "errors": [],
+    "desktopVictoryObservedElapsedMs": 65124,
+    "touchVictoryObservedElapsedMs": 95014,
+    "touchWorld": {
+      "enemies": [
+        {
+          "age": 33.11666666666607,
+          "cooldown": 0,
+          "dodgeX": 0,
+          "dodgeZ": 0,
+          "guardAge": 99,
+          "hit": [],
+          "hp": 0,
+          "id": "sentinel",
+          "posture": 60,
+          "state": "dead",
+          "stride": 8.190000000000017,
+          "x": -1.1389215232070392e-16,
+          "yaw": -2.0515795900898534e-17,
+          "z": 9.189999999999996
+        },
+        {
+          "age": 19.71666666666683,
+          "cooldown": 0,
+          "dodgeX": 0,
+          "dodgeZ": 0,
+          "guardAge": 99,
+          "hit": [],
+          "hp": 0,
+          "id": "retainer",
+          "posture": 55.683333333333316,
+          "state": "dead",
+          "stride": 6.60000000000001,
+          "x": -2.57827865765731,
+          "yaw": 2.7046913959393892,
+          "z": -2.5439213670606695
+        },
+        {
+          "age": 8.950000000000024,
+          "cooldown": 0,
+          "dodgeX": 0,
+          "dodgeZ": 0,
+          "guardAge": 99,
+          "hit": [],
+          "hp": 0,
+          "id": "warden",
+          "posture": 58.01666666666666,
+          "state": "dead",
+          "stride": 7.290000000000016,
+          "x": 3.2502279413415516,
+          "yaw": -1.1367622789879877,
+          "z": -8.962167509896203
+        }
+      ],
+      "events": [
+        {
+          "source": "player",
+          "target": "player",
+          "time": 44.74999999999874,
+          "type": "signal",
+          "x": -0.045925863780211296,
+          "z": -19.15
+        }
+      ],
+      "locked": null,
+      "mode": "victory",
+      "pathCleared": true,
+      "player": {
+        "age": 8.38333333333333,
+        "cooldown": 0,
+        "dodgeX": -3.575196864980844e-17,
+        "dodgeZ": 1,
+        "guardAge": 99,
+        "hit": [],
+        "hp": 100,
+        "id": "player",
+        "posture": 0,
+        "state": "idle",
+        "stride": 55.345927841226306,
+        "x": -0.045925863780211296,
+        "yaw": 0,
+        "z": -19.15
+      },
+      "remainder": 0.0043666666666679,
+      "signalLit": true,
+      "ticks": 2685,
+      "time": 44.74999999999874,
+      "totals": {
+        "hits": 9,
+        "kills": 3,
+        "parries": 0,
+        "received": 0
+      }
+    },
+    "guardObserved": true,
+    "blockOrParryObserved": true,
+    "commandTimings": {
+      "samples": 52,
+      "p50": 1041,
+      "p95": 4297,
+      "max": 5276,
+      "scope": "Read-only observed world followed by real touch commands. Decision commandStarted/Finished are wall offsets including command round trips and deliberate waits, not measured game input latency."
+    },
+    "failure": "Error: cdpSession.send: Protocol error (Input.dispatchTouchEvent): Must send a TouchStart first to start a new touch.",
+    "artifacts": [
+      {
+        "archive_download_url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10338638210/zip",
+        "created_at": "2026-09-14T08:32:24Z",
+        "digest": "sha256:f2b1792de9dd9ac9ecfb0dfe2b6df696fd9224af68de46839e383783c38d6dd5",
+        "expired": false,
+        "expires_at": "2026-12-13T08:27:00Z",
+        "id": 10338638210,
+        "name": "fresh-game-9266736dee85e78d174c885190c38f8e7e570e7d",
+        "size_in_bytes": 33043268,
+        "updated_at": "2026-09-14T08:32:24Z",
+        "url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10338638210",
+        "workflow_run": {
+          "head_branch": "codex/game2-rebuild-20260913",
+          "head_repository_id": 1316876624,
+          "head_sha": "9266736dee85e78d174c885190c38f8e7e570e7d",
+          "id": 34822773628,
+          "repository_id": 1316876624
+        }
+      }
+    ]
+  },
+  "formalVerdict": "not measured",
+  "workUnitEnded": false,
+  "cleanupCorrection": {
+    "cause": "The successful signal tap ended its final touch contact. An unconditional final touchCancel was then rejected by CDP because no touch sequence existed. This is a test cleanup error after game victory; previous tactical defeats remain separate.",
+    "change": "Send final touchCancel only if the contacts map is nonempty, then clear it. Preserve ending/portrait/retry/video/zero-error and180second checks.",
+    "verification": "Verified at5afdd48 / CI34823475645: no empty-contact protocol error; touch victory at70457ms followed by ending, portrait and clean retry; both video integrity checks passed."
+  },
+  "finalVerification": {
+    "revision": "5afdd48e56613adfdbd26f54e5b2c02a79b3ffc2",
+    "run": 34823475645,
+    "result": "passed",
+    "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-verified-checkpoint.json",
+    "tests": 46,
+    "desktopVictoryObservedElapsedMs": 46808,
+    "touchVictoryObservedElapsedMs": 70457,
+    "scope": "Exact original mission assertions, guard/contact checks, signal, ending, landscape/portrait result, clean retry, zero errors and recording integrity passed. No changed game values or weakened180second mission deadline."
+  },
+  "updatedAt": "2026-09-14T08:55:34.716Z"
+}

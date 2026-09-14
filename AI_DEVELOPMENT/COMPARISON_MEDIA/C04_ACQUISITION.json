@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "element": "C04",
+  "reference": "GT",
+  "purpose": "Acquire actual retained-reference images for independent scene-gap diagnosis. This is not a replacement of the reference, a full-element comparison packet, or permission to include reference content in the game.",
+  "candidateRevision": "3d5ecfa33df6c1a15b26403df71f18ef19573ac2",
+  "candidateArtifact": 10335164887,
+  "materials": [
+    {
+      "id": "GT-WORLD-20200709",
+      "file": "world-20200709.jpg",
+      "article": "https://blog.playstation.com/2020/07/09/crafting-the-world-of-tsushima/",
+      "published": "2020-07-09",
+      "url": "https://blog.playstation.com/tachyon/2020/07/200709-GoT-Env-Featured.jpg?crop_strategy=smart&resize=1088%2C612",
+      "scope": "Official article featured image. Confirm actual rendered content visually after acquisition; a promotional still does not establish a continuous retail play route."
+    },
+    {
+      "id": "GT-VFX-20210112",
+      "file": "effects-20210112.jpg",
+      "article": "https://blog.playstation.com/2021/01/12/how-stunning-visual-effects-bring-ghost-of-tsushima-to-life/",
+      "published": "2021-01-12",
+      "url": "https://blog.playstation.com/tachyon/2021/01/Ghost-VFX-FI.jpg?crop_strategy=smart&resize=1088%2C612",
+      "scope": "Official post-release article featured image. Confirm actual rendered content visually; still imagery cannot measure wind, interaction, navigation, audio, or frame pacing."
+    }
+  ],
+  "constraints": [
+    "Download original served bytes; record URL, redirect destination, UTC retrieval date, MIME type, byte count and SHA-256.",
+    "Retain source mapping for provenance. These labelled images are diagnostic material, not a valid source-blind packet.",
+    "Reference images remain in comparison-only artifacts; never import them into fresh/, public/, dist/, or Pages.",
+    "C04 still requires its existing five scenes and continuous entry, landmark, fork, shrine, wind and landscape behavior. Do not narrow the element to these two stills.",
+    "Extract only media links from the two source pages to locate continuous material; do not copy article prose into the game or evidence artifact."
+  ]
+}

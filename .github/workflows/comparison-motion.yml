@@ -1,0 +1,27 @@
+name: Comparison motion acquisition
+on:
+  push:
+    branches: [codex/game2-rebuild-20260913]
+    paths:
+      - AI_DEVELOPMENT/COMPARISON_MEDIA/C04_MOTION_ACQUISITION.json
+      - AI_DEVELOPMENT/COMPARISON_MEDIA/acquire_c04_motion.py
+      - .github/workflows/comparison-motion.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: game2-comparison-motion-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch the fixed reference Wind section clips
+        run: python3 AI_DEVELOPMENT/COMPARISON_MEDIA/acquire_c04_motion.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c04-motion-${{ github.sha }}
+          path: AI_DEVELOPMENT/COMPARISON_MEDIA/acquired-motion/

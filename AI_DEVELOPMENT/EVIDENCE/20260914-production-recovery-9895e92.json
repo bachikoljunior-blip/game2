@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-09-14T02:32:32Z",
+  "sourceRevision": "9895e92bf006e16fb79ae0061a32c04b33508c99",
+  "failedRun": 34797784088,
+  "failedJob": 103834133694,
+  "recoveryRevision": "ed296ee42ded31d34c7b024651b864d5d1c162bd",
+  "verifiedAt": "2026-09-14T02:41:18Z",
+  "verificationRun": 34799863173,
+  "verificationJob": 103840170709,
+  "artifact": {
+    "id": 10331271580,
+    "digest": "sha256:d4664971acaff07d7b4b36ebfc849eb18a33a3f32c0097cf8e90feca42607c50",
+    "expiresAt": "2026-12-13T02:38:00Z"
+  },
+  "status": "recovery_completed",
+  "stopAssessment": "No running related CI or newer production revision was found after the failed run; production was treated as stopped for recovery.",
+  "measuredFacts": {
+    "nodeTests": "passed: 33",
+    "build": "passed",
+    "desktopMission": "passed through ending and clean retry",
+    "baseMobileChecks": "passed",
+    "touchMission": "failed after 180 wall seconds: 2 kills, 8 player hits, 0 hits received, player HP100, third enemy HP32, mode playing",
+    "touchSimulationTimeSeconds": 39.81666666666569,
+    "renderAtFailure": {"frames": 167, "calls": 58, "triangles": 65404},
+    "environment": "Chromium with SwiftShader; not physical-device performance"
+  },
+  "causes": [
+    {
+      "cause": "The desktop page remained open and rendering while the phone context ran in the same software-rendering browser.",
+      "basis": "Source inspection plus the measured 39.8 simulated seconds during a180-second wall window. The route made consistent functional progress and was one hit short of the third kill.",
+      "classification": "evidence-supported hypothesis pending corrected-run verification",
+      "remedy": "Close the desktop page and browser, then launch a clean browser for phone checks. Record separate desktop and phone wall durations."
+    },
+    {
+      "cause": "The previous f2d81b7 evidence copied totals.hits=1 as zero and described the touch attack as unsampled.",
+      "basis": "The preserved CI browser report contains totals.hits=1 and sentinelHP66.",
+      "classification": "confirmed handoff error",
+      "remedy": "Correct the preserved evidence and current session state without changing its failed verdict."
+    }
+  ],
+  "notCauses": [
+    "The latest run did not show lost touch attack input: it recorded8 player hits.",
+    "The latest run did not show combat defeat: the player remained atHP100 with no hits received.",
+    "A single CI failure is not a game verdict and does not change any element from not measured."
+  ],
+  "verificationRequired": [
+    "33 unit tests and production build pass after the harness change",
+    "Exact-revision CI completes all three touch fights, explicit signal, ending and clean retry",
+    "Separate timing fields establish the independently run apparatus durations",
+    "If CI still fails, preserve the new final state and investigate before another retry"
+  ],
+  "verificationResult": {
+    "nodeTests": "passed: 33",
+    "productionBuild": "passed",
+    "desktopDurationMs": 81489,
+    "phoneDurationMs": 75390,
+    "touchMission": "passed: 3 kills, 9 player hits, explicit signal, ending and clean retry",
+    "touchEndState": "victory; signalLit=true; playerHP4; 4 hits received; no console/page errors",
+    "artifactInspection": "not performed in this recovery checkpoint; artifact was retained for subsequent image review",
+    "inference": "Clean process isolation removed the prior timing failure without changing the mission criterion. This verifies the recovery mechanism on this CI apparatus; it is not physical-device performance evidence."
+  },
+  "formalVerdict": "not measured",
+  "workUnitEnded": false
+}

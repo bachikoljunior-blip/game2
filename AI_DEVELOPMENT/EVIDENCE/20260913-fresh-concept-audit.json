@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "kind": "Independent initial concept-catalog adoption audit with separate refutation",
+  "date": "2026-09-13",
+  "reviewer": "/root/concept_coverage_audit",
+  "refuter": "/root/concept_coverage_audit/refute_catalog",
+  "round": "20260913-fresh-concept-audit",
+  "profile": "document-audit",
+  "tier": "not-applicable",
+  "nativeResolution": "0x0",
+  "verdict": "FAIL",
+  "score": 0,
+  "scoreMeaning": "Document-readiness sentinel, not a numerical assessment of game quality.",
+  "blindComparison": "NOT PERFORMED. This audit compares concept documents with a provisional catalog, not actual anonymous game material. It cannot establish which work a stranger would prefer, and assigns no satisfied or not satisfied game-element verdict.",
+  "scope": {
+    "purpose": "Audit the unfinished old catalog for adoption under the current design-first rebuild direction, without deriving the new design from implementation.",
+    "implementationInspected": false,
+    "runtimeTested": false,
+    "networkResearchPerformed": false,
+    "oldWorkspaceReadOnly": true,
+    "outputOnly": "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-concept-audit.json",
+    "limitations": [
+      "No src/ or fresh/ implementation was inspected.",
+      "No determination of reference-title superiority was made; coordinator owns element-specific reference research.",
+      "Findings concern provisional catalog adoption, not a claim that the unseen new game lacks a behavior.",
+      "The current active benchmark was not modified or audited; source observations below identify the old game2-review-3ad catalog explicitly."
+    ]
+  },
+  "inputs": [
+    {"path": "game2-rebuild/CLAUDE.md", "sha256": "03f45a2cd8361eba294e3aa4bb689c4b304a7ef1094b4d6ffe5e2bd69852874d"},
+    {"path": "game2-rebuild/AI_DEVELOPMENT/FIXED_INSTRUCTIONS.md", "sha256": "33df45517ff254e93113f1cb29eae579362ef9aa9d7f8984a8a691dd6ef209aa"},
+    {"path": "game2-rebuild/AI_DEVELOPMENT/FRESH_DESIGN.md", "sha256": "2b8f7daf65bd224638d6e4187b308aceacbc43dd1d647dd8a151299b4c355dc2"},
+    {"path": "game2-review-3ad/AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml", "sha256": "87e457ddec2e13d588b377a033101b80d930e5ee46d00bd4810ac7ca0ed72e06"},
+    {"path": "game2-review-3ad/AI_DEVELOPMENT/EVIDENCE/20260913-concept-independent-audit.json", "sha256": "5da63725881099d55dd109eca0cdbae5bb4d3feb411a99a7c851380da28ab059"},
+    {"path": "game2-review-3ad/AI_DEVELOPMENT/EVIDENCE/20260913-concept-refutation.json", "sha256": "b3e4b845782809adb8fda0f012e13beee4b29f567c2cdd4920f483721107f953"}
+  ],
+  "structuralChecks": {
+    "conceptClauseCount": 32,
+    "comparisonUnitCount": 12,
+    "clausesWithoutMappings": 0,
+    "asymmetricMappings": 0,
+    "notMeasuredUnitCount": 12,
+    "meaning": "The existing IDs and reciprocal mappings are internally complete. This does not establish coverage of the current concept or maximal comparison grouping."
+  },
+  "findings": [
+    {
+      "id": "FRESH-CONCEPT-01",
+      "severity": "major",
+      "shot": "document: old concept authority and current rebuild authority",
+      "owner": "AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml",
+      "problem": "The provisional catalog still calls 220 m a fixed world contract and promotes exact movement speeds, HUD implementation, gesture/button arrangement and rendering techniques into binding concept clauses sourced from old architecture. Current CLAUDE explicitly classifies architecture and technical tests as supporting material, not additional fixed instructions.",
+      "why": "Adopting this authority classification would let an old implementation-oriented specification dictate the fresh design despite the current instruction hierarchy. It also obscures which desired outcomes genuinely remain binding.",
+      "evidence": [
+        {"path": "game2-rebuild/CLAUDE.md", "location": "Execution, lines 29-33", "quote": "Architecture, 62 technical tests, round machinery and plans are supporting material, not additional fixed instructions."},
+        {"path": "game2-review-3ad/AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml", "location": "concept.clauses W01 and concept.scopeInterpretation", "quote": "The fixed 220 m world contract remains."},
+        {"path": "game2-review-3ad/AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml", "location": "concept.clauses K05/U01/U02/U03/U05/V02/V04", "observation": "Architecture supplies exact speeds, floating-stick and gesture choices, four buttons, canvas2d HUD, cascaded shadows and volumetric-light methods."},
+        {"path": "game2-review-3ad/AI_DEVELOPMENT/EVIDENCE/20260913-concept-refutation.json", "location": "CONCEPT-20260913-03", "quote": "Architecture fixes 220m geography, not a four-encounter maximum."}
+      ],
+      "hypothesis": "Historical architecture authority survived the later clarification that design and technical apparatus are discretionary; this is inferred, not a verified account of authorship.",
+      "fix": "Reconcile every old clause against current authority. Classify it as current concept outcome, chosen fresh design specification, supporting technical diagnostic, or historical record, with explicit provenance. Preserve AAA quality, Japanese sword action, mobile-first plus desktop, the setting, Three.js and boot-generated assets. Preserve displaced numerical/technique records as supporting/history; do not silently weaken their wording or claim 220 m is forbidden. Target: 0 old-architecture-only clauses labeled user-fixed and 0 lost current concept outcomes. Read all resulting authority/source classifications with node -e \"const d=JSON.parse(require('fs').readFileSync('AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml','utf8')); console.log(JSON.stringify(d.concept,null,2))\" and independently check them against CLAUDE.md and FRESH_DESIGN.md."
+    },
+    {
+      "id": "FRESH-CONCEPT-02",
+      "severity": "major",
+      "shot": "document: fresh experience and input-to-evidence traceability",
+      "owner": "AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml",
+      "problem": "The catalog has broad matching categories, but does not explicitly map the fresh quiet approach -> brief tension -> sword weight -> postcombat wind sequence as a connected experience. Japanese minimal guidance is not explicit in C08, and the otherwise mapped desktop support does not name keyboard/pointer input-to-response evidence in C02/C03; C09 is touchscreen-only.",
+      "why": "An internally complete old clause graph can still omit the current design's concrete experience. Separate scenic, combat and audio samples need not reveal whether the intended transition works; a desktop HUD sample need not show desktop controls working.",
+      "evidence": [
+        {"path": "game2-rebuild/AI_DEVELOPMENT/FRESH_DESIGN.md", "location": "lines 7, 12, 15 and 25", "observation": "Specifies the connected emotional sequence, key/pointer/multitouch semantic input, cancellation/focus-loss release, Japanese minimal guidance, and actual-input verification."},
+        {"path": "game2-review-3ad/AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml", "location": "C10.comparisonMethod", "quote": "実際の環境音・通常戦闘・緊張遷移を同じ再生条件で匿名聴取する。"},
+        {"path": "game2-review-3ad/AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml", "location": "C08.comparisonMethod", "observation": "Explicitly covers smartphone and desktop screen/flow comprehension, but not Japanese/minimal guidance as a fresh-design mapping."},
+        {"path": "game2-review-3ad/AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml", "location": "C02/C03 comparisonMethod and C09 comparisonBoundary", "observation": "Movement/camera methods describe play and input timing without naming desktop key/pointer paths; C09 explicitly describes two-thumb touch controls."}
+      ],
+      "hypothesis": "The catalog is still mapped to pre-rebuild source clauses rather than the current authored experience; the absence of explicit mappings is observed, their production cause is inferred.",
+      "fix": "Enrich existing units rather than inventing genre features or additional fragments. Add one unbroken approach-to-postcombat audiovisual comparison with obligations assigned across combat, place/presentation and audio; map Japanese minimal guidance and safe-area comprehension to C08; explicitly cover desktop key/pointer and touch semantic inputs, including cancellation/focus loss, within the existing input/lifecycle evidence. Target: 0 unmapped fresh experience clauses and explicit coverage of both input families. Read the final boundaries/methods with node -e \"const d=JSON.parse(require('fs').readFileSync('AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml','utf8')); console.log(JSON.stringify(d.comparisonElements.map(({id,conceptClauses,comparisonMethod})=>({id,conceptClauses,comparisonMethod})),null,2))\". Closest-available smartphone verification and labeled inference remain allowed; no physical-device requirement is introduced."
+    },
+    {
+      "id": "FRESH-CONCEPT-03",
+      "severity": "major",
+      "shot": "document: largest-comparable grouping rationale",
+      "owner": "AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml",
+      "problem": "The 12-unit catalog remains explicitly provisional and does not establish why a larger coherent comparison cannot combine movement with camera (C02/C03), or place/exploration with environmental presentation (C04/C07). Existing explanations identify different questions, but do not test the largest-comparable requirement.",
+      "why": "Different questions can be diagnostic subquestions of one larger concept element. Conversely, shared media alone does not prove merger is correct. Fixing the count at 12 by inertia would bypass the user's extraction rule; forcing a lower number without an adequate comparison boundary would do the same.",
+      "evidence": [
+        {"path": "game2-rebuild/AI_DEVELOPMENT/FIXED_INSTRUCTIONS.md", "location": "何を要素とするか, item 2", "quote": "比較できる範囲で、最も大きなまとまりにします。"},
+        {"path": "game2-review-3ad/AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml", "location": "initialApplication.elementExtraction", "quote": "12 comparison units with all sourced clauses mapped; independent catalog review pending"},
+        {"path": "game2-review-3ad/AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml", "location": "C02/C03 comparisonBoundary and comparisonMethod", "observation": "Both compare continuous third-person traversal/play under GT, divided into response and framing; no combined-boundary rejection test is recorded."},
+        {"path": "game2-review-3ad/AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml", "location": "C04/C07 comparisonBoundary; C04.supplementaryReference", "observation": "Place/traversal and integrated environmental imagery overlap, but C04 additionally retains SK for compact space. This counterevidence must survive any merger."}
+      ],
+      "hypothesis": "Legacy category names may be anchoring the count after selected mergers. This mechanism is unverified; the finding is missing maximality substantiation, not demonstrated overfragmentation.",
+      "fix": "Record at least 2 explicit merge tests: C02+C03 and C04+C07. For each proposed larger boundary, identify the concept component and actual media/evaluation question, retain every outcome obligation, and explain what becomes unassessable or ceases to be one coherent component if the split remains. Preserve GT and C04's supplementary SK reference provenance; do not change references to ease a pass. Keep or merge based on that evidence, not a target count. Target: 2 documented merge decisions and 0 dropped obligations. Read the decision log with rg -n 'C02|C03|C04|C07|merge|group' AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml."
+    },
+    {
+      "id": "FRESH-CONCEPT-04",
+      "severity": "major",
+      "shot": "document: old candidate evidence during fresh-catalog adoption",
+      "owner": "AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml",
+      "problem": "The old catalog's currentGap fields include already-acquired encounters, frames, visual gate results, input and recovery evidence. They are valid historical claims about the old candidate, but cannot be adopted as current fresh-build evidence without revision-specific separation.",
+      "why": "All 12 formal verdicts correctly remain not measured, yet a carried-forward currentGap can still misstate what the rebuilt candidate has demonstrated. Current authority explicitly prohibits transferring old implementation evidence.",
+      "evidence": [
+        {"path": "game2-rebuild/CLAUDE.md", "location": "line 33", "quote": "Do not claim old implementation evidence or simulated hardware timing for the new game."},
+        {"path": "game2-rebuild/AI_DEVELOPMENT/FRESH_DESIGN.md", "location": "line 25", "quote": "旧20戦・300フレームを新作の証拠にしない。"},
+        {"path": "game2-review-3ad/AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml", "location": "C01.currentGap", "quote": "敵味方の実命中と20戦は取得済み。体幹経由の死亡は19/32=59.375%で60%基準未達。"},
+        {"path": "game2-review-3ad/AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml", "location": "C02/C07/C12 currentGap", "observation": "Claims 120 movement frames, five passing visual gates, and already-measured public startup/retry/WebGL recovery."}
+      ],
+      "hypothesis": "Direct catalog transplantation could mix reference research, which may remain useful, with candidate-specific measurements, which do not transfer. This is an adoption hazard, not an accusation that historical records are false.",
+      "fix": "Keep old candidate observations as dated historical evidence with exact source revision. Fresh currentGap must identify only verified new-candidate measurements or their absence; preserve reusable reference research separately. Target: 0 unqualified old-candidate measurements in fresh currentGap and 0 satisfied records without valid comparison evidence. Inspect fields with node -e \"const d=JSON.parse(require('fs').readFileSync('AI_DEVELOPMENT/REFERENCE_BENCHMARKS.yaml','utf8')); console.log(JSON.stringify(d.comparisonElements.map(({id,status,currentGap,verdictEvidence})=>({id,status,currentGap,verdictEvidence})),null,2))\"."
+    }
+  ],
+  "separateRefutation": {
+    "method": "A different agent, not the finding author or catalog coordinator, read the named conceptual documents and was instructed to refute each proposed finding. Final findings above incorporate its limiting counterevidence.",
+    "results": [
+      {"id": "FRESH-CONCEPT-01", "result": "retained with qualification", "counterevidence": "Supporting specifications are not prohibited or automatically deleted. Preserve recurring desired outcomes and historical numbers; 220 m is not shown to be forbidden, only not owner-fixed by the current sources."},
+      {"id": "FRESH-CONCEPT-02", "result": "retained as explicit mapping gap", "counterevidence": "C10 already covers tension transitions, C08 expressly covers both platforms, and K02 maps desktop. Total absence claims were refuted. No physical-device proof requirement may be introduced."},
+      {"id": "FRESH-CONCEPT-03", "result": "retained as unresolved grouping audit", "counterevidence": "Shared reference/media do not prove merger. Different questions do not prove maximality. C04 has supplementary SK, so treating C04/C07 as simply the same-reference pair was refuted."},
+      {"id": "FRESH-CONCEPT-04", "result": "retained as adoption boundary", "counterevidence": "Historical currentGap evidence is legitimate for the old build; the problem arises only if presented as fresh-candidate evidence."
+      }
+    ]
+  },
+  "notRetainedAsActiveDefects": [
+    {
+      "claim": "The current old catalog imposes four encounters as a maximum content count.",
+      "reason": "Refuted by W01 and scopeInterpretation, which explicitly reject the four-encounter ceiling. FRESH_DESIGN also says the first slice is not a final content limit."
+    },
+    {
+      "claim": "The current old catalog permanently excludes voice, dialogue or natural motion under boot generation.",
+      "reason": "Refuted for the scoped active concept/comparison fields: concept.invariants rejects permanent outcome ceilings, scopeInterpretation rejects absent dialogue as a ceiling, C06 requires naturalness rather than readability alone, and C10 rejects synthesis-based quality ceilings. Do not infer that recorded voice or imported mocap is required."
+    },
+    {
+      "claim": "The 12-unit count is conclusively overfragmented and must become 10 or 11.",
+      "reason": "Not proved. The retained finding is incomplete largest-comparable substantiation, not a mandated replacement count."
+    },
+    {
+      "claim": "The 32-clause map has orphaned or one-way links.",
+      "reason": "Refuted by the structural check: zero unmapped clauses and zero asymmetric relationships."
+    }
+  ],
+  "minimalIntegrationOrder": [
+    "Reconcile current concept authority without changing the creative brief or importing legacy implementation as design.",
+    "Complete explicit fresh-experience coverage inside the existing comparison structure.",
+    "Finish the two highest-overlap merge tests; retain every applicable outcome and reference obligation.",
+    "Separate old-candidate evidence from fresh currentGap, preserve reference research, and keep unperformed formal comparisons not measured.",
+    "Complete four-axis element-specific research and actual source-blind comparisons; this document audit is not their substitute."
+  ]
+}

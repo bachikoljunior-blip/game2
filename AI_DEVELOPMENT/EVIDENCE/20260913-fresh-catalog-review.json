@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-13",
+  "round": "20260913-fresh-catalog-review",
+  "profile": "document-and-source-audit",
+  "tier": "not-applicable",
+  "nativeResolution": "0x0",
+  "reviewer": "/root/concept_coverage_audit",
+  "refuter": "/root/concept_coverage_audit/refute_catalog",
+  "verdict": "PASS",
+  "verdictScope": "Accurate provisional checkpoint after the concrete audit corrections only. Not finalized element extraction, completed reference selection, or game acceptance.",
+  "catalogFinalization": "incomplete: semantic maximality and reference substantiation remain open",
+  "score": 100,
+  "scoreMeaning": "Schema-required Boolean checkpoint-integrity sentinel, not a graded catalog-completion or game-quality score.",
+  "blindComparison": "NOT PERFORMED. Documents and publicly attributed selection sources were reviewed, not anonymous candidate/reference material. No preference between games is measured and no game element is declared satisfied or not satisfied.",
+  "scope": {
+    "reviewedPath": "AI_DEVELOPMENT/COMPARISON_ELEMENTS.yaml",
+    "initialSnapshotSha256": "b90ad846d4d55d9c6b609d381448abc65742f2c373b46c9d12eb0f70d0aa55ba",
+    "preCorrectionSnapshotSha256": "5760d9d655fca0bb3e3055c5012842f8d2cf3e3a6093fa851735d0387ea64e75",
+    "separatelyRefutedCorrectionSnapshotSha256": "5e28c47d4c9c1cff3e842216f1fb4e7b434c21516cc0c17b2d817943339fcb6f",
+    "finalReviewedSnapshotSha256": "c3e94ab8c3c2e9bd9caf4d46f32de82ac1733eb5fdc5ee88c4fdd24588b16b6e",
+    "runtimeFilesInspected": false,
+    "runtimeTested": false,
+    "catalogModifiedByReviewer": false,
+    "remoteWrites": false,
+    "sourceReadCount": 8,
+    "qualification": "The coordinator corrected C09, added GT-A, corrected C04 evidence scope and GI-C date typing, and added D06 during this review. Reviewer independently reread the final hash above. Later changes require new verification."
+  },
+  "structuralChecks": {
+    "currentConceptClauses": 5,
+    "historicalSupportingClauses": 32,
+    "freshDesignClauses": 6,
+    "comparisonUnits": 10,
+    "supportingCriterionIds": 62,
+    "missingOldCriterionIds": [],
+    "addedCriterionIds": [],
+    "unmappedCurrentOrFreshClauses": [],
+    "missingForwardToElementBacklinks": [],
+    "historicalFileSha256": "80104bcecc69145badf68272d3d8cb8d8b60ec29f261179d04715f5ca4846e67",
+    "historicalFileMatchesCatalogHash": true,
+    "formalStatuses": "All 10 not measured; verdictEvidence null; no old candidate evidence asserted as fresh currentGap.",
+    "referenceDrift": "No assignment replacement observed. C02/C03 retain GT after merger. C04/C07 retain GT plus the explicitly scoped SK supplementary reference. Other existing assignments retained.",
+    "authority": "Five current concept clauses are distinct from chosen fresh design and historical diagnostics. No active 220 m or four-encounter maximum is established by those five clauses."
+  },
+  "findings": [],
+  "historicalFindingsResolvedDuringReview": [
+    {
+      "id": "FRESH-CATALOG-01",
+      "severity": "major",
+      "shot": "document: C04 primary reference evidence scope after merger",
+      "owner": "AI_DEVELOPMENT/COMPARISON_ELEMENTS.yaml",
+      "problem": "C04 primary reference elementQuality, reception and longevity each say supported selection rationale with empty unresolved arrays, while their recorded support concerns scenic art/wind and associated criticisms. The merged unit also includes route legibility, navigation and a retained environment-response facet, whose corresponding selection substantiation is not established by those annotations.",
+      "why": "A merge must preserve evidentiary obligations as well as criterion IDs. Partial support for environmental imagery must not silently become complete support for the entire enlarged place experience. Global initial-application incompleteness limits, but does not repair, the more specific axis-level closure.",
+      "evidence": [
+        {"path": "AI_DEVELOPMENT/COMPARISON_ELEMENTS.yaml", "location": "C04 comparisonBoundary/comparisonMethod/diagnosticFacets", "observation": "Boundary includes terrain, routes and sightlines; method requires route comprehension; retained C04 facet includes branches and response."},
+        {"path": "AI_DEVELOPMENT/COMPARISON_ELEMENTS.yaml", "location": "C04.referenceSelection.axes.elementQuality/reception/longevity", "observation": "All three assessed supported with zero unresolved items; longevity finding is specifically about art four years later."},
+        {"url": "https://www.pcgamer.com/games/action/ghost-of-tsushima-directors-cut-review/", "location": "PC experience section", "observation": "Directly praises landscapes, wind and art direction while criticizing limited environmental interaction and a static world. This supports scoped visual selection rationale, not whole-unit route-legibility superiority."},
+        {"url": "https://www.reddit.com/r/patientgamers/comments/18vkygc/just_finished_ghost_of_tsushima_ps5_directors_cut/", "location": "player comments", "observation": "Contains visual praise alongside repetitive-task and world-structure criticisms; individual opinions are correctly not treated as consensus elsewhere in the catalog."}
+      ],
+      "hypothesis": "Visual-axis annotations may have been carried forward into the merged element without expanding unresolved scope. This inferred authorship mechanism is not required for the finding.",
+      "fix": "Keep GT and the supported scenic evidence. Identify that support as partial-scope and explicitly leave route/navigation/response quality, corresponding reception and whole-unit longevity substantiation unresolved where evidence is absent. Do not indiscriminately downgrade the separately labeled conceptual-fit inference or substitute an easier reference. Target: 0 axis records implying whole-C04 closure from visual-only evidence. Read C04 axes and supplementary scope with node -e \"const d=JSON.parse(require('fs').readFileSync('AI_DEVELOPMENT/COMPARISON_ELEMENTS.yaml'));console.log(JSON.stringify(d.comparisonElements.find(e=>e.id==='C04'),null,2))\" and verify each open facet against cited passages."
+    },
+    {
+      "id": "FRESH-CATALOG-02",
+      "severity": "minor",
+      "shot": "source metadata: GI-C date type",
+      "owner": "AI_DEVELOPMENT/COMPARISON_ELEMENTS.yaml",
+      "problem": "GI-C records 2021-06-15 as its publication date, but the independently opened page identifies that date as Last updated, not publication.",
+      "why": "Selection and longevity records must distinguish publication timing from an update. The same calendar date is not evidence of both events.",
+      "evidence": [
+        {"path": "AI_DEVELOPMENT/COMPARISON_ELEMENTS.yaml", "location": "sources[id=GI-C].published", "quote": "2021-06-15"},
+        {"url": "https://www.androidcentral.com/genshin-impact-review", "location": "byline beneath Jennifer Locke, independently opened 2026-09-13", "quote": "Last updated 15 June 2021"}
+      ],
+      "hypothesis": "The visible byline date may have been stored in a generic published field without preserving its date type. This cause is inferred.",
+      "fix": "Store the observed date as updated/lastUpdated or attach dateType=lastUpdated; leave published unknown unless separately verified. Target: 0 unverified publication dates for GI-C. Read the record with node -e \"const d=JSON.parse(require('fs').readFileSync('AI_DEVELOPMENT/COMPARISON_ELEMENTS.yaml'));console.log(JSON.stringify(d.sources.find(s=>s.id==='GI-C'),null,2))\" and compare its date type with the cited page."
+    }
+  ],
+  "resolvedDuringReview": [
+    {
+      "id": "FRESH-CATALOG-01",
+      "resolution": "C04 elementQuality, reception and longevity now explicitly state substantiation incomplete for route comprehension/navigation/environment response beyond scenic evidence. Primary reception retains actual expert/player praise and criticism while requiring facet-specific evidence from both groups. GT and supplementary SK retained. The full selection remains open, so the concrete whole-unit closure overclaim is resolved, not the underlying research gap."
+    },
+    {
+      "id": "FRESH-CATALOG-02",
+      "resolution": "GI-C published is null; lastUpdated is 2021-06-15 with explicit dateType explanation. Independently verified in final snapshot."
+    },
+    {
+      "id": "D06-TRACEABILITY",
+      "resolution": "Added chosen-fresh-design clause for telegraph/attack phases/health/posture/deflection/dodge, presentation-hit phase agreement and one-hit-per-swing, with verified C01/C06 backlinks. No new element or user-fixed rule introduced."
+    },
+    {
+      "id": "C09-AUTHORITY-CONTRADICTION",
+      "initialProblem": "Initial C09 boundary and fit finding required flick-direction slash, tap attack, four buttons and default auto-face, despite the method saying gestures and button count were not fixed.",
+      "resolution": "Coordinator changed boundary and fit to semantic smartphone input outcomes with gestures/button count explicitly discretionary. Independently verified in final snapshot; no remaining finding retained."
+    }
+  ],
+  "separateRefutation": {
+    "method": "The non-author refuter reread the document snapshot and attempted to disprove each proposed defect. Source-date byline was independently browsed by the reviewer; refuter explicitly did not claim a second live byline check.",
+    "finalCorrectionVerification": "The separate refuter independently verified snapshot 5e28c47d and found prior concrete issues resolved for a provisional checkpoint, with complete false and all ten verdicts not measured. Coordinator subsequently made C04 reception explicitly incomplete as well; reviewer independently verified final c3e94ab8 snapshot. No finalized extraction, selection or game acceptance is established.",
+    "results": [
+      {"id": "FRESH-CATALOG-01", "result": "retained narrowly", "counterevidence": "Catalog globally admits incompleteness and the cited sources do support scenic selection. Neither observation fills the merged navigation/response evidence gap or repairs empty axis-level unresolved arrays. No reference replacement justified."},
+      {"id": "FRESH-CATALOG-02", "result": "retained minor", "counterevidence": "Refuter confirmed the publication field; reviewer directly verified last-updated wording. The date value need not be discarded, only typed correctly unless publication is separately proved."},
+      {"id": "C09-AUTHORITY-CONTRADICTION", "result": "resolved", "counterevidence": "Corrected boundary and fit now agree with method."},
+      {"id": "MISSING-VERDICT-TRUTH-TABLE", "result": "not retained as a violation", "counterevidence": "fixedInstructions and authority incorporate the clear governing rule. Local protocol does not contradict it. Adding candidate/tie/reference outcome mapping is a useful nonblocking execution improvement."},
+      {"id": "TEN-UNITS-NOT-MAXIMAL", "result": "not proved", "counterevidence": "Both mergers retain all 62 IDs and references with concrete shared-experience reasons. Remaining maximality is explicitly provisional, not falsely complete. This audit does not establish that 10 is definitively maximal."},
+      {"id": "LOST-COMBAT-OBLIGATIONS", "result": "not proved", "counterevidence": "C01 includes attack, defense, posture, danger attacks, opponent response and input/state evidence, with deflection in selection rationale and combat/choice/AI links; D05 covers state/presentation correspondence. More explicit telegraph/phase/hit-dedup mapping could help, but broad coverage is not evidence of absence."}
+    ]
+  },
+  "sourceChecks": [
+    {"id": "GT-C", "url": "https://www.pcgamer.com/games/action/ghost-of-tsushima-directors-cut-review/", "result": "Observation supported at stated PC-review scope; date 2024-05-21 confirmed. No-crash statement is one reviewer's experience, not a general recovery benchmark."},
+    {"id": "GT-P", "url": "https://www.reddit.com/r/patientgamers/comments/18vkygc/just_finished_ghost_of_tsushima_ps5_directors_cut/", "result": "Mixed scenic/combat praise and repetition/enemy-variety criticism confirmed; exact posting date appropriately unresolved."},
+    {"id": "SK-C", "url": "https://www.pcgamer.com/sekiro-review/", "result": "2019-03-25 publication and specific sword-combat praise confirmed; no material overclaim identified in catalog summary."},
+    {"id": "SK-L", "url": "https://rpgamer.com/review/sekiro-shadows-die-twice-review/", "result": "2024-12-16 confirmed. Review explicitly praises weighty attacks, opponent responses and swordplay years after release. Scoped C01 later-reception rationale supported; not evidence that all other elements are resolved."},
+    {"id": "SK-P", "url": "https://www.reddit.com/r/ShouldIbuythisgame/comments/1bexh6t/should_i_buy_sekiro_shadows_die_twice/", "result": "Parry-learning satisfaction and difficulty objections both present. Individual opinions, not consensus or playing the game."},
+    {"id": "GI-C", "url": "https://www.androidcentral.com/genshin-impact-review", "result": "Galaxy S10 touch responsiveness, learning curve and smaller-device caveat confirmed. Date-type correction retained. Does not prove contemporary sustained performance."},
+    {"id": "GI-P", "url": "https://apps.apple.com/us/app/genshin-impact/id1517783697", "result": "Page accessible with public app/review context. Catalog claims only inspection and explicitly rejects using aggregate reception as input/performance proof; no broader substantiation granted by this audit."},
+    {"id": "GT-A", "url": "https://www.audiogang.org/game-audio-network-guild-announces-19th-annual-g-a-n-g-award-winners/", "result": "2021-06-01 primary awards record confirms sound-design co-win, Foley award and creative/technical music award. Narrow professional audio-quality rationale supported; not long-term/player evidence or actual comparison audio."}
+  ],
+  "remainingWorkNotDisguisedAsNewDefects": [
+    "Finalize largest-comparable extraction after testing the remaining boundaries; no particular smaller number is mandated by this audit.",
+    "Complete explicitly unresolved four-axis substantiation without substituting references because of candidate difficulty.",
+    "Acquire actual comparable material and establish valid independent source blindness, then apply the fixed three-status rule.",
+    "Keep reference research, document validation and technical CI separate from game-element achievement."
+  ]
+}
