@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-14T09:26:38.092Z",
+  "updatedAt": "2026-09-14T11:32:47Z",
   "phase": "fresh-c04-whole-element-coverage",
   "userInstruction": "一旦ゲーム自体はゼロから作り直してくれる？",
   "activeBranch": "codex/game2-rebuild-20260913",
@@ -15,20 +15,20 @@
     "oldPr": 10,
     "optionalRebuildRouting": "ec2480166809f57fa623929bec0fbcb4d5a623a2"
   },
-  "continuation": "Read current remote heads and active CI, reassess the deadline, and reflect the latest verified implementation to main (confirm no diff; never create an empty commit). Then acquire ordinary uninterrupted C04 approach/exploration reference footage and pair it with candidate entrance→combat→shrine/ending coverage. Use the pair to choose one integrated scene/actor change for enemy-blade/actor contrast and vegetation occlusion, route/shrine depth, and victory pose/sheathing mismatch. Keep all 10 elements not measured until valid source-blind comparisons exist. Five reference dossiers, audio, WebKit/target-mobile, long-duration and battle comparisons remain required. Local ENOSPC remains unresolved; use authorized GitHub/CI operations without bypassing sandbox rules.",
+  "continuation": "Reflect verified source44ce5a67 to main through the protected workflow. Then batch encounter camera obstacle avoidance, lamp/player depth and actor form in one render cycle while acquiring an alternate ordinary-play C04 source that does not require age-gate or anti-bot bypass. Keep all10 formal elements not measured until valid source-blind pairs exist; prioritize completing the five dossiers and first whole-element blind comparison.",
   "status": "not measured",
   "publication": "Keep old Pages until a verified replacement is ready. Fresh runtime is a work-branch candidate, not public product acceptance.",
   "procedureAuthority": "Fixed instructions and explicit user directives govern. Tests, task plans and architecture documents are tools chosen by the AI, not additional fixed rules.",
   "coordination": "Check recent commits and running CI; if another producer is active, read only. No force push or duplicate work.",
   "latestUserInstruction": "やっぱりゲーム自体はゼロから作り直して、作ろうとしたものが既存のものにあったら使える部分だけ取ってきて。既存のものを先に見てそのまま使うなどしないで",
   "decisionEvidence": "AI_DEVELOPMENT/FRESH_DESIGN.md",
-  "verifiedRuntime": "5afdd48e56613adfdbd26f54e5b2c02a79b3ffc2",
-  "verificationScope": "46tests/build, actual PC/touch missions/ending/portrait/retry, silent recording integrity, and independent exact-revision sampled image diagnosis. Not full motion/audio, smartphone performance or source-blind acceptance.",
+  "verifiedRuntime": "44ce5a67ad00f63ffc8c908d02db5c320d23d7ca",
+  "verificationScope": "47tests/build, actual PC/touch missions/ending/portrait/retry, silent recording integrity, and exact-revision before/after image diagnosis. Not full motion/audio, smartphone performance or source-blind acceptance.",
   "comparisonCatalog": "AI_DEVELOPMENT/COMPARISON_ELEMENTS.yaml",
   "referenceSelectionComplete": false,
-  "verificationEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-verified-checkpoint.json",
+  "verificationEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-method-recovery-scene-actor.json",
   "pendingCandidate": null,
-  "methodChangeEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-unknown-method-change.json",
+  "methodChangeEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-method-recovery-scene-actor.json",
   "recoveryRole": {
     "userInstruction": "定期オートメーションは万が一実行が停止していたら、停止してしまう原因を全て潰してから再開する再発火役にしてください。",
     "status": "production_restarted_and_verified",
@@ -81,18 +81,18 @@
     "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-main-reflection-b0f5e76.json"
   },
   "deadlineReassessment": {
-    "observedAt": "2026-09-14T09:26:38.092Z",
-    "prediction": "unknown; all 10 formal comparisons and five reference dossiers are incomplete. This is neither impossibility nor an on-schedule claim.",
-    "basis": "Verified runtime passed 46 tests/build and complete PC/touch mission evidence. The exact checkpoint tree is now on main and its main iPhone/Pages workflows passed, but whole-element paired comparisons do not yet exist.",
-    "methodChange": "Reflect each verified implementation checkpoint to main through the normal protected workflow, recording exact SHAs and avoiding empty commits. This removes accumulated integration debt. Next, acquire and pair ordinary C04 play footage before another isolated cosmetic pass so the unknown quality gap becomes measurable.",
-    "validation": "PR13 merged f16053f into b0f5e76. Post-merge compare showed zero file differences; main iPhone run34827684788 and Pages run34827682280 succeeded. The integration backlog fell from37 commits/95 files to zero tree delta. Formal quality uncertainty remains.",
-    "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-main-reflection-b0f5e76.json",
-    "remainingHoursAtObservation": 142.42080777777778,
-    "nextMethodChange": "Read current remote heads and active CI, reassess the deadline, and reflect the latest verified implementation to main (confirm no diff; never create an empty commit). Then acquire ordinary uninterrupted C04 approach/exploration reference footage and pair it with candidate entrance→combat→shrine/ending coverage. Use the pair to choose one integrated scene/actor change for enemy-blade/actor contrast and vegetation occlusion, route/shrine depth, and victory pose/sheathing mismatch. Keep all 10 elements not measured until valid source-blind comparisons exist. Five reference dossiers, audio, WebKit/target-mobile, long-duration and battle comparisons remain required. Local ENOSPC remains unresolved; use authorized GitHub/CI operations without bypassing sandbox rules."
+    "observedAt": "2026-09-14T11:32:47Z",
+    "prediction": "not yet grounded as can meet; under the latest instruction this means the current method is defective.",
+    "basis": "Ten formal comparisons and five dossiers remain incomplete. Three ordinary-play acquisition routes were tested but yielded no actual media. Candidate44ce5a67 completed one integrated visual cycle and full functional verification.",
+    "methodChange": "Stop using the blocked C04 route as the only next step. Batch all independently observed scene/actor gaps per render cycle and pursue alternate lawful media routes alongside candidate capture, with the first valid whole-element blind pair as the next scheduling gate.",
+    "validation": "Candidate44ce5a67 reduced four stored visual gaps in one cycle. CI34838395942 passed47 tests, build, PC/touch missions and recording decode; exact images show cleared foreground grass, distinct blades, added actor forms and a sheathed calm ending. Formal uncertainty remains because no valid reference pair exists.",
+    "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-method-recovery-scene-actor.json",
+    "remainingHoursAtObservation": 140.32,
+    "nextMethodChange": "Reflect source44ce5a67 to main, then produce one batched camera/depth/actor candidate and obtain a comparison-ready ordinary-play source through a non-gated route. Start the first valid source-blind comparison before further isolated polish."
   },
   "localEnvironment": {
-    "status": "unresolved",
-    "issue": "Local command startup still fails with ENOSPC while creating the sandbox marker.",
-    "consequence": "GitHub-side repository and CI operations remain usable; this is not recorded as repaired."
+    "status": "workspace_capacity_recovered_browser_flow_pending_ci",
+    "issue": "The previous ENOSPC condition is absent in the recovered workspace. The local Playwright browser cache is unavailable and workspace-path installation cannot maintain its directory lock.",
+    "consequence": "Fresh clone, npm ci, 47 tests and build succeed locally. Full PC/touch rendered flow must be measured by the unchanged GitHub workflow before this candidate is treated as verified."
   }
 }

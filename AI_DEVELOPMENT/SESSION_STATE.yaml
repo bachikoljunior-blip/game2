@@ -11,10 +11,10 @@
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
     "activeTask": "FRESH-C04-WHOLE-ELEMENT-COVERAGE",
-    "lastSuccessfulAction": "Verified fresh checkpoint f16053f (runtime 5afdd48 / CI34823475645) was staged into main through PR13. Remote main is b0f5e76; post-merge compare has zero file differences. Main iPhone run34827684788 and Pages run34827682280 succeeded. This is integration evidence, not whole-element acceptance.",
-    "currentFailingAction": "All10 formal comparisons and5reference-selection dossiers incomplete. Exact image diagnosis retains enemy-blade/actor visibility, straight/shallow place layout and sparse actor/unsheathed frozen victory pose. Local ENOSPC/sandbox startup remains unresolved; normal GitHub evidence processing works.",
-    "currentHypothesis": "Static-panel iteration and functional passes do not estimate whole-element quality. Ordinary-play reference coverage and a scene/actor-level comparison are the next uncertainty-reduction step; known-source sampled improvements are not blind success.",
-    "nextAction": "Read current remote heads and active CI, reassess the deadline, and reflect the latest verified implementation to main (confirm no diff; never create an empty commit). Then acquire ordinary uninterrupted C04 approach/exploration reference footage and pair it with candidate entrance→combat→shrine/ending coverage. Use the pair to choose one integrated scene/actor change for enemy-blade/actor contrast and vegetation occlusion, route/shrine depth, and victory pose/sheathing mismatch. Keep all 10 elements not measured until valid source-blind comparisons exist. Five reference dossiers, audio, WebKit/target-mobile, long-duration and battle comparisons remain required. Local ENOSPC remains unresolved; use authorized GitHub/CI operations without bypassing sandbox rules.",
+    "lastSuccessfulAction": "Recovered stopped foreground production at exact main/source 0ccb488, restored a writable local workspace, and produced verified candidate 44ce5a67. CI34838395942 passed 47 tests, build, PC/touch full mission, signal, ending, portrait, retry and recording decode in 80.476s/78.228s.",
+    "currentFailingAction": "All10 formal comparisons and5reference-selection dossiers remain incomplete. Official C04 ordinary-play media required age verification and two editorial routes returned anti-bot challenges. Exact-image diagnosis still shows foreground torii occlusion, lamp/player depth stacking and simple actor geometry.",
+    "currentHypothesis": "The prior method failed because it repeated isolated cosmetic work without producing comparison-ready pairs. Blocked public media routes must not be retried as the only path; batch measured scene gaps and pursue alternate lawful ordinary-play media in parallel with exact-revision capture.",
+    "nextAction": "Reflect verified source44ce5a67 to main through the protected workflow. Then batch encounter camera obstacle avoidance, lamp/player depth and actor form in one render cycle while acquiring an alternate ordinary-play C04 source that does not require age-gate or anti-bot bypass. Keep all10 formal elements not measured until valid source-blind pairs exist; prioritize completing the five dossiers and first whole-element blind comparison.",
     "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
     "pendingVerification": [
       "Whole-element actual candidate/reference pairs with valid source concealment",
@@ -36,7 +36,11 @@
       "AI_DEVELOPMENT/SESSION_STATE.yaml",
       "AI_DEVELOPMENT/EVIDENCE/fresh-5afdd48-review/receipt.json",
       "AI_DEVELOPMENT/EVIDENCE/fresh-5afdd48-review/README.md",
-      "AI_DEVELOPMENT/EVIDENCE/20260914-main-reflection-b0f5e76.json"
+      "AI_DEVELOPMENT/EVIDENCE/20260914-main-reflection-b0f5e76.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260914-c04-method-recovery-scene-actor.json",
+      "fresh/presentation.js",
+      "fresh/presentation-contract.test.mjs",
+      "AI_DEVELOPMENT/FRESH_DESIGN.md"
     ],
     "remotePushPendingAuthorization": false,
     "remoteReleaseAuthorized": true,
@@ -192,27 +196,26 @@
     "completion": "All concept elements satisfied by evidenced blind comparison.",
     "current_unit": "2026-09-13-fresh-design",
     "unit_status": "active",
-    "first_action": "Read current remote heads and active CI, reassess the deadline, and reflect the latest verified implementation to main (confirm no diff; never create an empty commit). Then acquire ordinary uninterrupted C04 approach/exploration reference footage and pair it with candidate entrance→combat→shrine/ending coverage. Use the pair to choose one integrated scene/actor change for enemy-blade/actor contrast and vegetation occlusion, route/shrine depth, and victory pose/sheathing mismatch. Keep all 10 elements not measured until valid source-blind comparisons exist. Five reference dossiers, audio, WebKit/target-mobile, long-duration and battle comparisons remain required. Local ENOSPC remains unresolved; use authorized GitHub/CI operations without bypassing sandbox rules.",
+    "first_action": "Reflect verified source44ce5a67 to main through the protected workflow. Then batch encounter camera obstacle avoidance, lamp/player depth and actor form in one render cycle while acquiring an alternate ordinary-play C04 source that does not require age-gate or anti-bot bypass. Keep all10 formal elements not measured until valid source-blind pairs exist; prioritize completing the five dossiers and first whole-element blind comparison.",
     "implementation_strategy": "Fresh design and implementation; needs-before-reuse, per latest direct user instruction.",
     "unitEndReason": null,
     "deadlineReassessment": {
-      "observedAt": "2026-09-14T09:26:38.092Z",
-      "prediction": "unknown; all 10 formal comparisons and five reference dossiers are incomplete. This is neither impossibility nor an on-schedule claim.",
-      "basis": "Verified runtime passed 46 tests/build and complete PC/touch mission evidence. The exact checkpoint tree is now on main and its main iPhone/Pages workflows passed, but whole-element paired comparisons do not yet exist.",
-      "methodChange": "Reflect each verified implementation checkpoint to main through the normal protected workflow, recording exact SHAs and avoiding empty commits. This removes accumulated integration debt. Next, acquire and pair ordinary C04 play footage before another isolated cosmetic pass so the unknown quality gap becomes measurable.",
-      "validation": "PR13 merged f16053f into b0f5e76. Post-merge compare showed zero file differences; main iPhone run34827684788 and Pages run34827682280 succeeded. The integration backlog fell from37 commits/95 files to zero tree delta. Formal quality uncertainty remains.",
-      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-main-reflection-b0f5e76.json",
-      "remainingHoursAtObservation": 142.42080777777778,
-      "nextMethodChange": "Read current remote heads and active CI, reassess the deadline, and reflect the latest verified implementation to main (confirm no diff; never create an empty commit). Then acquire ordinary uninterrupted C04 approach/exploration reference footage and pair it with candidate entrance→combat→shrine/ending coverage. Use the pair to choose one integrated scene/actor change for enemy-blade/actor contrast and vegetation occlusion, route/shrine depth, and victory pose/sheathing mismatch. Keep all 10 elements not measured until valid source-blind comparisons exist. Five reference dossiers, audio, WebKit/target-mobile, long-duration and battle comparisons remain required. Local ENOSPC remains unresolved; use authorized GitHub/CI operations without bypassing sandbox rules."
+      "observedAt": "2026-09-14T11:32:47Z",
+      "prediction": "not yet grounded as can meet; under the latest instruction this means the current method is defective.",
+      "basis": "Ten formal comparisons and five dossiers remain incomplete. Three ordinary-play acquisition routes were tested but yielded no actual media. Candidate44ce5a67 completed one integrated visual cycle and full functional verification.",
+      "methodChange": "Stop using the blocked C04 route as the only next step. Batch all independently observed scene/actor gaps per render cycle and pursue alternate lawful media routes alongside candidate capture, with the first valid whole-element blind pair as the next scheduling gate.",
+      "validation": "Candidate44ce5a67 reduced four stored visual gaps in one cycle. CI34838395942 passed47 tests, build, PC/touch missions and recording decode; exact images show cleared foreground grass, distinct blades, added actor forms and a sheathed calm ending. Formal uncertainty remains because no valid reference pair exists.",
+      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-method-recovery-scene-actor.json",
+      "remainingHoursAtObservation": 140.32,
+      "nextMethodChange": "Reflect source44ce5a67 to main, then produce one batched camera/depth/actor candidate and obtain a comparison-ready ordinary-play source through a non-gated route. Start the first valid source-blind comparison before further isolated polish."
     },
     "latestDeadlineInstruction": {
-      "userOriginal": "継続確認の後、期限内に達成できるか考え、できないや分からないと判断したならやり方が間違ってることを疑え",
+      "userOriginal": "定期オートメーション実行時の継続確認の後、期限内に達成できるか考え、できる以外の判断をしたならやり方が間違ってることを疑え",
       "appliesAfterEveryContinuationCheck": true,
       "triggers": [
-        "cannot meet deadline with current method",
-        "cannot determine deadline feasibility"
+        "any judgment other than a grounded conclusion that the deadline can be met"
       ],
-      "requiredResponse": "Identify methodological errors and missing evidence; change priorities, work division, tools or verification within authority, perform the changed work and measure its effect. Do not stop at a forecast or plan update. Preserve the concept, fixed criteria, reference selection conditions, evidence rigor and deadline. While another producer is active, make only a read-only assessment and hand it off at the next safe checkpoint.",
+      "requiredResponse": "Treat the current method as defective; identify the defect and missing evidence, change priorities, work division, tools or verification within authority, perform the changed work and measure its effect. Do not stop at a forecast or plan update. Preserve the concept, fixed criteria, reference selection conditions, evidence rigor and deadline. While another producer is active, make only a read-only assessment and hand it off at the next safe checkpoint.",
       "automationPromptUpdatedAndVerified": true
     },
     "blanketApproval": {

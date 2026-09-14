@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-09-14T11:18:48Z",
+  "scope": "C01/C04/C08 integrated scene and actor correction",
+  "continuity": {
+    "sourceBranch": "codex/game2-rebuild-20260913",
+    "sourceHeadAtCheck": "0ccb488df480aef491c9bc4d944388e3f3628926",
+    "mainHeadAtCheck": "0ccb488df480aef491c9bc4d944388e3f3628926",
+    "treeDifferenceFiles": 0,
+    "runningRelatedCi": false,
+    "lastVerifiedActivity": "2026-09-14T09:28:00Z",
+    "state": "stopped_after_bounded_foreground_execution",
+    "cause": "The previous bounded producer ended and no persistent background producer or later branch/CI activity existed.",
+    "restart": "Recovered the exact saved frontier from remote, verified writable workspace capacity, installed dependencies and resumed implementation in this run."
+  },
+  "environmentRecovery": {
+    "previousIssue": "Local ENOSPC had prevented command startup in the prior run.",
+    "measuredAvailableSpace": "4.5 GiB at 2026-09-14T11:18:48Z",
+    "verification": [
+      "Fresh clone completed.",
+      "npm ci completed.",
+      "47 source and simulation tests completed.",
+      "Fresh production build completed."
+    ],
+    "status": "resolved for the current workspace",
+    "remainingLimit": "The local Playwright browser cache was absent. Browser installation was attempted, but the managed filesystem could not maintain Playwright's directory lock; full browser verification is delegated to the unchanged GitHub workflow and is not yet claimed."
+  },
+  "deadlineAssessment": {
+    "deadline": "2026-09-20T07:51:53Z",
+    "remainingHoursAtObservation": 140.55,
+    "judgment": "not yet grounded as can meet",
+    "methodDefect": "All ten formal comparisons and five reference dossiers remain incomplete, so continuing isolated cosmetic edits cannot support a deadline forecast.",
+    "methodChangeExecuted": "Attempted ordinary C04 media acquisition first. When three public routes could not provide the actual media without an age gate or anti-bot challenge, stopped repeating the blocked route and batched four independently observed candidate gaps into one implementation and verification cycle.",
+    "effectMeasuredSoFar": "The implementation now has 47 passing tests versus 46 at the previous verified checkpoint, retains 3000 grass instances, keeps simulation geometry unchanged, and builds successfully. Rendered-effect and full-flow verification remain pending CI."
+  },
+  "referenceAcquisition": {
+    "target": "ordinary uninterrupted C04 approach and exploration footage",
+    "attempts": [
+      {
+        "url": "https://blog.playstation.com/2020/05/12/thursdays-state-of-play-is-all-about-ghost-of-tsushima/",
+        "actualMedia": "https://www.youtube.com/watch?v=Ur0pQblaZcE",
+        "result": "Official page and video identity confirmed; actual video download required age verification/sign-in.",
+        "use": "No frames were used and no comparison was claimed."
+      },
+      {
+        "url": "https://www.gamespot.com/videos/ghost-of-tsushima-exploration-and-stealth-combat-gameplay/2300-6453456/",
+        "result": "Cloudflare challenge loop prevented retrieval of the actual gameplay media.",
+        "use": "No frames were used and no comparison was claimed."
+      },
+      {
+        "url": "https://www.jeuxvideo.com/videos/1245127/ghost-of-tsushima-18-minutes-de-gameplay-inedit.htm",
+        "result": "Cloudflare challenge prevented retrieval of the actual gameplay media.",
+        "use": "No frames were used and no comparison was claimed."
+      }
+    ],
+    "verdict": "not measured"
+  },
+  "implementation": {
+    "requirementsDefinedBeforeCode": [
+      "Keep 3000 grass instances while clearing the central duel silhouettes.",
+      "Introduce only a visual path curve; do not change simulation navigation or collision.",
+      "Separate player and enemy blade visibility without changing hit geometry or timings.",
+      "Show an authored scabbard and a calm sheathed victory pose."
+    ],
+    "changes": [
+      "Moved tall-grass roots outside a 4.8m central corridor while preserving all 3000 instances.",
+      "Added a deterministic stone-path center curve of at most 0.42m.",
+      "Added distinct low-emissive player and enemy blade materials.",
+      "Added belt, crossed collar and shoulder forms to actors.",
+      "Added a waist scabbard and hid the player's sword only in victory while resetting both arms."
+    ],
+    "oldGameInspectedOrReused": false
+  },
+  "localVerification": {
+    "tests": {
+      "command": "node --test fresh/*.test.mjs",
+      "passed": 47,
+      "failed": 0
+    },
+    "build": {
+      "command": "node node_modules/vite/bin/vite.js build --config fresh/vite.config.mjs",
+      "result": "success"
+    },
+    "browserFlow": {
+      "result": "not measured locally",
+      "reason": "Playwright browser executable unavailable; workspace-path installation failed on its managed directory lock after the default cache was not persisted.",
+      "next": "Run the repository Fresh game verification workflow on the committed source checkpoint."
+    }
+  },
+  "remoteVerification": {
+    "revision": "44ce5a67ad00f63ffc8c908d02db5c320d23d7ca",
+    "run": 34838395942,
+    "result": "success",
+    "tests": 47,
+    "coverage": [
+      "production build",
+      "actual PC start, movement, combat, pause/resume, WebGL loss/restore, death, victory, signal and clean retry",
+      "actual touch multitouch ownership, joystick cancel, combat, signal, landscape-to-portrait result and clean retry",
+      "continuous recording decode and artifact upload"
+    ],
+    "measuredWallClockMs": {
+      "desktop": 80476,
+      "touch": 78228
+    },
+    "performanceScope": "Chromium with SwiftShader; not physical-device performance"
+  },
+  "independentImageDiagnosis": {
+    "method": "Exact-revision CI images were inspected beside the prior 5afdd48 images. Source identities were known, so this is diagnosis, not blind comparison.",
+    "improvementsObserved": [
+      "Tall foreground grass no longer crosses the encounter silhouettes while distant density remains visible.",
+      "The enemy and player blades separate from the dark ground more clearly.",
+      "Collar, belt and shoulder forms improve player/enemy silhouette distinction.",
+      "Victory no longer shows the player walking with a drawn blade; the scabbard and calm stance are visible."
+    ],
+    "remainingGaps": [
+      "A foreground torii post still occupies a large left portion of the encounter frame.",
+      "The victory lamp remains brighter than the character and the portrait frame stacks the character directly below it.",
+      "The generated actor is still geometrically simple compared with the selected reference quality."
+    ],
+    "effect": "Four stored visual gaps were reduced in one cycle, but C01/C04/C08 and all other formal elements remain not measured."
+  },
+  "formalElementStatus": {
+    "satisfied": 0,
+    "notSatisfied": 0,
+    "notMeasured": 10,
+    "completionClaim": false
+  },
+  "next": "Reflect verified revision 44ce5a67 into main through the protected workflow. Then make encounter camera obstacle avoidance and lamp/player depth the next batched render change while continuing alternate ordinary-play reference acquisition."
+}

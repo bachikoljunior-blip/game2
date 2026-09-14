@@ -80,3 +80,16 @@ test('generated landscape replaces flat background and cone bamboo without exter
   assert.doesNotMatch(source,/new T\.ConeGeometry\(1\.6-j\*\.22,2\.5,5\)/);
   assert.doesNotMatch(source,/TextureLoader|\.glb|\.gltf|fetch\(/);
 });
+
+test('scene and actor pass preserves density while clearing combat silhouettes and sheathing the victory pose',()=>{
+  const source=readFileSync(new URL('./presentation.js',import.meta.url),'utf8');
+  assert.match(source,/new T\.InstancedMesh\(grassGeo,grassMat,3000\)/);
+  assert.match(source,/\(near\?4\.8:9\)/);
+  assert.match(source,/const pathCenter=Math\.sin\(\(z\+8\)\*\.13\)\*\.42/);
+  assert.match(source,/playerBlade=material\('#e7f4f4'/);
+  assert.match(source,/enemyBlade=material\('#ffe0a6'/);
+  assert.match(source,/enemyBlade\.emissiveIntensity=\.24/);
+  assert.match(source,/const scabbard=mesh\(body/);
+  assert.match(source,/rigs\.set\(id,\{root,body,limbs,sword,scabbard,ring,signal\}\)/);
+  assert.match(source,/r\.sword\.visible=!\(world\.mode==='victory'&&a\.id==='player'\)/);
+});
