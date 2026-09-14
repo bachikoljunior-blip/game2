@@ -92,7 +92,7 @@ test('scene and actor pass preserves density while clearing combat silhouettes a
   const source=readFileSync(new URL('./presentation.js',import.meta.url),'utf8');
   assert.match(source,/new T\.InstancedMesh\(grassGeo,grassMat,3000\)/);
   assert.match(source,/\(near\?4\.8:9\)/);
-  assert.match(source,/const pathCenter=Math\.sin\(\(z\+8\)\*\.13\)\*\.42/);
+  assert.match(source,/const centers=routePathCenters\(z\)/);
   assert.match(source,/playerBlade=material\('#e7f4f4'/);
   assert.match(source,/enemyBlade=material\('#ffe0a6'/);
   assert.match(source,/enemyBlade\.emissiveIntensity=\.24/);
@@ -101,7 +101,7 @@ test('scene and actor pass preserves density while clearing combat silhouettes a
   assert.match(source,/r\.sword\.visible=!\(world\.mode==='victory'&&a\.id==='player'\)/);
 });
 
-test('foreground, signal and actor hierarchy are generated without changing gameplay geometry',()=>{
+test('foreground, signal, actor and branching-route hierarchy use the shared gameplay geometry',()=>{
   const source=readFileSync(new URL('./presentation.js',import.meta.url),'utf8');
   const simulation=readFileSync(new URL('./simulation.js',import.meta.url),'utf8');
   assert.match(source,/const toriiPosts=\[\]/);
@@ -111,6 +111,13 @@ test('foreground, signal and actor hierarchy are generated without changing game
   assert.match(source,/const skirtFront=/);
   assert.match(source,/const forearmWrap=/);
   assert.match(source,/const facePlane=/);
-  assert.match(simulation,/\{ x: -3\.5, z: 7, w: \.55, d: \.55, h: 4\.5 \}/);
-  assert.match(simulation,/\{ x: 3\.5, z: 7, w: \.55, d: \.55, h: 4\.5 \}/);
+  assert.match(simulation,/\{ x: -3\.5, z: 7, w: \.55, d: \.55, h: 4\.5, kind: 'torii' \}/);
+  assert.match(simulation,/\{ x: 3\.5, z: 7, w: \.55, d: \.55, h: 4\.5, kind: 'torii' \}/);
+  assert.match(simulation,/ROUTE_FORK\.obstacle/);
+  assert.match(source,/if\(o\.kind==='torii'\)/);
+  assert.match(source,/else if\(o\.kind==='shrine'\)/);
+  assert.match(source,/const fork=ROUTE_FORK\.obstacle/);
+  assert.match(source,/ROUTE_FORK\.left\.markers/);
+  assert.match(source,/ROUTE_FORK\.right\.markers/);
+  assert.match(source,/routeCloth\.onBeforeCompile/);
 });

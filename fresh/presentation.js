@@ -6,6 +6,7 @@ import { computeCameraFrame, foregroundObstacleOpacity, interpolateCameraFrame }
 import { groundHeightAt, terrainVertexHeight, shrineBaseSize } from './terrain.js';
 import { indexForBatch } from './batch-geometry.js';
 import { spatialCell, partitionInstances } from './spatial-batches.js';
+import { ROUTE_FORK, distanceFromRoute, routePathCenters, routePathLength } from './route-layout.js';
 
 const clamp = T.MathUtils.clamp;
 export function createPresentation(canvas) {
@@ -23,9 +24,9 @@ export function createPresentation(canvas) {
   let seed = 310519;
   const random = () => { seed = (1664525*seed+1013904223)>>>0; return seed/4294967296; };
   const material = (color, roughness=.85, metalness=0) => new T.MeshStandardMaterial({color,roughness,metalness});
-  const bark=material('#485647'),bambooNode=material('#91906b'),red=material('#92432d'),stone=material('#7f8275'),roof=material('#303e3d'),
+  const bark=material('#485647'),bambooNode=material('#91906b'),red=material('#92432d'),stone=material('#7f8275'),ridgeStone=material('#555b55'),roof=material('#303e3d'),
     leaf=material('#72834c'),brass=material('#c5a36b',.35,.65),skin=material('#b49478'),dark=material('#181f25'),
-    playerBlade=material('#e7f4f4',.16,.92),enemyBlade=material('#ffe0a6',.22,.82);
+    routeCloth=material('#b94f2f',.72,.02),playerBlade=material('#e7f4f4',.16,.92),enemyBlade=material('#ffe0a6',.22,.82);
   playerBlade.emissive.set('#7397a1');playerBlade.emissiveIntensity=.13;
   enemyBlade.emissive.set('#a64b24');enemyBlade.emissiveIntensity=.24;
   leaf.side=T.DoubleSide;
@@ -33,6 +34,14 @@ export function createPresentation(canvas) {
   const leafWind=shader=>{shader.uniforms.windTime=wind;shader.vertexShader='uniform float windTime; attribute float windWeight;\n'+shader.vertexShader;shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n float gust=sin(windTime*1.15+position.x*.19+position.z*.13)*windWeight; transformed.x+=gust*.13; transformed.z+=gust*.071;');};
   leaf.onBeforeCompile=leafWind;
   const leafDepth=new T.MeshDepthMaterial({depthPacking:T.RGBADepthPacking,side:T.DoubleSide});leafDepth.onBeforeCompile=leafWind;
+  routeCloth.side=T.DoubleSide;
+  routeCloth.emissive.set('#4b140d');routeCloth.emissiveIntensity=.18;
+  routeCloth.onBeforeCompile=shader=>{
+    shader.uniforms.windTime=wind;
+    shader.vertexShader='uniform float windTime;\n'+shader.vertexShader;
+    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',
+      '#include <begin_vertex>\n float loose=clamp((0.8-position.y)/1.6,0.0,1.0); transformed.z+=sin(windTime*2.1+position.x*4.5)*loose*.18; transformed.x+=sin(windTime*1.35+position.y*3.0)*loose*.035;');
+  };
   // A generated atmospheric dome and sun establish one continuous magic-hour light field.
   const sky=new T.Mesh(new T.SphereGeometry(190,32,18),new T.ShaderMaterial({
     side:T.BackSide,depthWrite:false,uniforms:{sunDirection:{value:new T.Vector3(-24,18,-42).normalize()}},
@@ -88,19 +97,22 @@ export function createPresentation(canvas) {
   groundGeometry.setAttribute('color',new T.Float32BufferAttribute(groundColors,3));
   groundGeometry.computeVertexNormals();
   const ground=new T.Mesh(groundGeometry,groundMat);ground.receiveShadow=true;scene.add(ground);
-  // Stone paths use broken edge courses; open central ground remains navigable.
-  for(let z=-19;z<24;z+=1.1)for(let x=-1.8;x<2;x+=.9){
-    const pathCenter=Math.sin((z+8)*.13)*.42;
-    const jitter=(random()-.5)*.1,w=.74+random()*.1,d=.89+random()*.13;
-    box(stone,pathCenter+x+jitter,.005+random()*.016,z+jitter,w,.055,d,(random()-.5)*.06);
+  // One approach visibly divides around the solid ridge and joins again at the
+  // shrine. Each z/x sample consumes one noise bundle, so adding the second
+  // authored centre does not randomise the rest of the established valley.
+  let routeStoneTiles=0;
+  for(let z=-19;z<24;z+=1.1)for(let x=-.65;x<=.6501;x+=.325){
+    const centers=routePathCenters(z),jitter=(random()-.5)*.06,w=.27+random()*.05,d=.89+random()*.13;
+    const y=.005+random()*.016,rotation=(random()-.5)*.06;
+    for(const center of centers){box(stone,center+x+jitter,y,z+jitter,w,.055,d,rotation);routeStoneTiles++;}
   }
   const toriiPosts=[];
-  for(const o of OBSTACLES){if(o.h<5){
+  for(const o of OBSTACLES){if(o.kind==='torii'){
     const postMaterial=red.clone();postMaterial.transparent=true;
     const post=new T.Mesh(new T.CylinderGeometry(.3*.88,.3,o.h,8),postMaterial);
     post.position.set(o.x,o.h/2,o.z);post.castShadow=post.receiveShadow=true;scene.add(post);
     toriiPosts.push({mesh:post,obstacle:o,opacity:1});
-  }else{
+  }else if(o.kind==='shrine'){
     const base=shrineBaseSize(o);box(stone,o.x,base.height/2,o.z,base.width,base.height,base.depth);
     box(bark,o.x,2.3,o.z,o.w,4,o.d);
     for(let x=-4;x<=4;x+=1)box(red,x,2.6,-19.45,.16,4.4,.2);
@@ -114,6 +126,35 @@ export function createPresentation(canvas) {
     const y=groundHeightAt(x,z);
     box(stone,x,y+.18,z,.95,.36,.95);column(stone,x,y+.75,z,.18,.95);
     box(stone,x,y+1.45,z,.7,.14,.7);box(brass,x,y+1.68,z,.34,.35,.34);box(roof,x,y+1.99,z,.85,.16,.85);
+  }
+  // The low rock spine occupies the same footprint as ROUTE_FORK.obstacle.
+  // A continuous base prevents a visual gap from implying a false shortcut;
+  // separately seeded rocks break up its silhouette without perturbing the valley.
+  const fork=ROUTE_FORK.obstacle;
+  box(ridgeStone,fork.x,.62,fork.z,fork.w,1.24,fork.d);
+  let routeSeed=9042026;
+  const routeRandom=()=>{routeSeed=(1664525*routeSeed+1013904223)>>>0;return routeSeed/4294967296;};
+  for(let z=fork.z+fork.d/2-.65;z>fork.z-fork.d/2+.45;z-=1.45)for(const x of [-1.35,0,1.35]){
+    const rock=new T.DodecahedronGeometry(1,1),sx=.72+routeRandom()*.22,sy=.72+routeRandom()*.5,sz=.72+routeRandom()*.25;
+    staticPart(rock,ridgeStone,x+(routeRandom()-.5)*.18,.75+sy*.52,z+(routeRandom()-.5)*.16,sx,sy,sz,routeRandom()*6.28);
+  }
+  // Left: compact generated stone lamps signal the shorter, earlier duel.
+  for(const marker of ROUTE_FORK.left.markers){
+    const y=groundHeightAt(marker.x,marker.z);
+    box(stone,marker.x,y+.11,marker.z,.62,.22,.62);
+    column(stone,marker.x,y+.64,marker.z,.13,.88);
+    box(stone,marker.x,y+1.08,marker.z,.64,.12,.64);
+    box(roof,marker.x,y+1.24,marker.z,.48,.2,.48);
+  }
+  // Right: generated cloth hangs from three poles and visibly moves with the
+  // same wind clock as the bamboo. The longer lateral path reveals the ridge.
+  const routeBanners=[];
+  for(const marker of ROUTE_FORK.right.markers){
+    const y=groundHeightAt(marker.x,marker.z);
+    column(dark,marker.x,y+1.35,marker.z,.045,2.7);
+    const bannerGeometry=new T.PlaneGeometry(.9,1.6,5,8);bannerGeometry.translate(-.45,-.8,0);
+    const banner=new T.Mesh(bannerGeometry,routeCloth);
+    banner.position.set(marker.x-.04,y+2.5,marker.z);banner.castShadow=true;banner.receiveShadow=true;scene.add(banner);routeBanners.push(banner);
   }
   // Distant terrain is original boot-generated geometry, layered through the haze.
   const mountainMats=[material('#3e535e',1),material('#65716b',1)];
@@ -165,16 +206,23 @@ export function createPresentation(canvas) {
   }
   const grassGeo=mergeGeometries(blades);blades.forEach(g=>g.dispose());
   const grass=new T.InstancedMesh(grassGeo,grassMat,3000),grassColor=new T.Color();
-  let rootError=0;
+  let rootError=0,minGrassRouteClearance=Infinity;
   for(let i=0;i<3000;i++){
     // Keep the authored amount while pulling tall foreground blades out of the duel corridor.
-    const side=random()<.5?-1:1,near=random()<.22,x=side*((near?4.8:9)+random()*(near?5.2:23)),z=-38+random()*67;
+    const side=random()<.5?-1:1,near=random()<.22,z=-38+random()*67;
+    let x=side*((near?4.8:9)+random()*(near?5.2:23));
+    const routeClearance=1.45,initialClearance=distanceFromRoute(x,z);
+    if(initialClearance<routeClearance)x+=side*(routeClearance-initialClearance+.08);
     q.setFromAxisAngle(T.Object3D.DEFAULT_UP,random()*Math.PI*2);const scale=.65+random()*.65;
     matrix.compose(pos.set(x,groundHeightAt(x,z)+.006,z),q,s.set(scale,scale,scale));grass.setMatrixAt(i,matrix);
     grassColor.setHSL(.105+random()*.08,.22+random()*.2,.40+random()*.22);grass.setColorAt(i,grassColor);
     rootError=Math.max(rootError,Math.abs(grass.instanceMatrix.array[i*16+13]-groundHeightAt(x,z)-.006));
+    minGrassRouteClearance=Math.min(minGrassRouteClearance,distanceFromRoute(x,z));
   }
-  const landscapeMetrics={grassClumps:3000,grassBlades:9000,grassTriangles:grassGeo.index.count/3*grass.count,maxRootError:rootError,baseFootprint:shrineBaseSize(OBSTACLES.find(o=>o.h>=5))};
+  const landscapeMetrics={grassClumps:3000,grassBlades:9000,grassTriangles:grassGeo.index.count/3*grass.count,maxRootError:rootError,minGrassRouteClearance,baseFootprint:shrineBaseSize(OBSTACLES.find(o=>o.kind==='shrine')),
+    route:{obstacle:{...ROUTE_FORK.obstacle},stoneTiles:routeStoneTiles,pathCenters:{approach:routePathCenters(0),ridge:routePathCenters(ROUTE_FORK.obstacle.z),rejoined:routePathCenters(-18)},
+      left:{landmark:ROUTE_FORK.left.landmark,markers:ROUTE_FORK.left.markers.length,pathLength:routePathLength('left')},
+      right:{landmark:ROUTE_FORK.right.landmark,markers:routeBanners.length,pathLength:routePathLength('right')}}};
   const grassGroups=partitionInstances(grass);grass.dispose();grassGroups.forEach(g=>scene.add(g));
   landscapeMetrics.grassBatches=grassGroups.length;landscapeMetrics.leafBatches=batches.get(leaf).size;
   const rigs=new Map(),actorMetrics={partsByRig:{}};

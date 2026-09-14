@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { playthroughAction } from './playthrough-policy.mjs';
 import { touchPlaythroughAction } from './touch-playthrough-policy.mjs';
 import { ENDING_PHRASES } from './mission.js';
+import { ROUTE_FORK } from './route-layout.js';
 const out=new URL('../AI_DEVELOPMENT/EVIDENCE/fresh-20260913/',import.meta.url);
 await mkdir(out,{recursive:true});
 const launchBrowser=()=>chromium.launch({headless:true,executablePath:process.env.CHROME_PATH,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
@@ -55,6 +56,13 @@ try{
  report.actors=await page.evaluate(()=>freshDiagnostics().actors);
  assert.ok(report.landscape.maxRootError<1e-5,'plant roots agree with the rendered ground');
  assert.ok(report.landscape.grassTriangles<=36000,'clustered grass preserves its prior triangle budget');
+ assert.ok(report.landscape.minGrassRouteClearance>=1.45,'grass roots must stay out of both playable stone routes');
+ assert.deepEqual(report.landscape.route.pathCenters.approach,[0]);
+ assert.equal(report.landscape.route.pathCenters.ridge.length,2,'the ridge must visibly have two stone routes');
+ assert.deepEqual(report.landscape.route.pathCenters.rejoined,[0]);
+ assert.equal(report.landscape.route.left.markers,3);assert.equal(report.landscape.route.right.markers,3);
+ assert.ok(report.landscape.route.right.pathLength>report.landscape.route.left.pathLength,'wind-cloth route must be the longer detour');
+ report.checks.push('generated ridge, two route surfaces, stone-lamp and wind-cloth landmarks share the route contract');
  assert.ok(Object.values(report.actors.partsByRig).length===4&&Object.values(report.actors.partsByRig).every(count=>count>=40),'every generated fighter keeps the authored layered silhouette');
  await page.screenshot({path:new URL('title.png',out).pathname});
  await page.click('#start');await page.keyboard.down('KeyW');
@@ -80,7 +88,7 @@ try{
  const retry=await page.evaluate(()=>freshDiagnostics());assert.equal(retry.world.player.hp,100);assert.equal(retry.world.player.z,18);report.checks.push('death and real retry restore player');
  // Complete the newly authored objective with real input, never diagnostic mutations.
  const held=new Set(),fullDeadline=Date.now()+180000;
- report.mission={before:retry.world,checkpoints:[]};let lastKills=-1;mark(desktopRecording,'full-mission-start');
+ report.mission={before:retry.world,checkpoints:[],route:{preferred:'left',entry:null,choice:null,landmark:null,consequence:null,rejoin:null,ridgeSamples:[]}};let lastKills=-1,lastRouteSampleTime=-Infinity;mark(desktopRecording,'full-mission-start');
  while(Date.now()<fullDeadline){
   const w=await page.evaluate(()=>freshDiagnostics().world);
   if(w.totals.kills!==lastKills){report.mission.checkpoints.push(w);lastKills=w.totals.kills;mark(desktopRecording,'kills',lastKills);}
@@ -88,7 +96,29 @@ try{
    if(w.mode==='victory')report.mission.victoryObservedElapsedMs=Date.now()-(fullDeadline-180000);
    break;
   }
-  const a=playthroughAction(w),wanted=new Set();
+  if(!report.mission.route.entry&&w.totals.kills>=1&&!w.routeChoice&&w.player.z<=ROUTE_FORK.splitStartZ+4&&w.player.z>ROUTE_FORK.obstacleFrontZ+.5){
+   report.mission.route.entry={time:w.time,position:{x:w.player.x,z:w.player.z}};mark(desktopRecording,'fork-entry',report.mission.route.entry);
+   await page.screenshot({path:new URL('desktop-route-fork.png',out).pathname});
+  }
+  if(!report.mission.route.choice&&w.routeChoice){
+   report.mission.route.choice={route:w.routeChoice,time:w.routeChoiceTime,position:w.routeChoicePosition};mark(desktopRecording,'route-choice',report.mission.route.choice);
+   await page.screenshot({path:new URL('desktop-route-left-choice.png',out).pathname});
+  }
+  if(!report.mission.route.landmark&&w.routeLandmark){
+   report.mission.route.landmark={id:w.routeLandmark,time:w.routeLandmarkTime,position:{x:w.player.x,z:w.player.z}};mark(desktopRecording,'route-landmark',report.mission.route.landmark);
+   await page.screenshot({path:new URL('desktop-route-left-landmark.png',out).pathname});
+  }
+  if(!report.mission.route.consequence&&w.routeConsequence){
+   report.mission.route.consequence={id:w.routeConsequence,time:w.routeConsequenceTime,position:{x:w.player.x,z:w.player.z}};mark(desktopRecording,'route-consequence',report.mission.route.consequence);
+  }
+  if(!report.mission.route.rejoin&&w.routePhase==='rejoined'){
+   report.mission.route.rejoin={time:w.routeRejoinTime,position:w.routeRejoinPosition};mark(desktopRecording,'route-rejoin',report.mission.route.rejoin);
+   await page.screenshot({path:new URL('desktop-route-rejoin.png',out).pathname});
+  }
+  if(w.routeChoice&&w.player.z<=ROUTE_FORK.obstacleFrontZ&&w.player.z>=ROUTE_FORK.obstacleBackZ&&w.time-lastRouteSampleTime>=.5){
+   report.mission.route.ridgeSamples.push({time:w.time,x:w.player.x,z:w.player.z});lastRouteSampleTime=w.time;
+  }
+  const a=playthroughAction(w,'left'),wanted=new Set();
   if(a.x)wanted.add(a.x>0?'KeyD':'KeyA');if(a.z)wanted.add(a.z>0?'KeyS':'KeyW');
   for(const key of held)if(!wanted.has(key)){await page.keyboard.up(key);held.delete(key);}
   for(const key of wanted)if(!held.has(key)){await page.keyboard.down(key);held.add(key);}
@@ -101,6 +131,11 @@ try{
  assert.ok(Number.isFinite(report.mission.victoryObservedElapsedMs)&&report.mission.victoryObservedElapsedMs<=180000,'desktop victory must be observed within180seconds, not after the loop deadline');
  assert.equal(report.mission.after.mode,'victory');assert.equal(report.mission.after.signalLit,true);
  assert.equal(report.mission.after.totals.kills,3);
+ assert.equal(report.mission.after.routeChoice,'left');assert.equal(report.mission.after.routePhase,'rejoined');assert.equal(report.mission.route.choice.route,'left');
+ assert.equal(report.mission.after.routeLandmark,'石灯');assert.equal(report.mission.after.routeConsequence,'early-retainer');
+ assert.ok(report.mission.after.routeChoiceTime<report.mission.after.routeLandmarkTime&&report.mission.after.routeLandmarkTime<report.mission.after.routeRejoinTime);
+ assert.ok(report.mission.route.entry&&report.mission.route.landmark&&report.mission.route.consequence&&report.mission.route.rejoin,'desktop recording must cover fork entry, landmark, consequence and reconvergence');
+ assert.ok(report.mission.route.ridgeSamples.length>0&&report.mission.route.ridgeSamples.every(sample=>sample.x<=-(ROUTE_FORK.obstacle.w/2+.35)),'desktop must remain on the left side of the solid ridge');
  assert.ok(report.mission.checkpoints.some(w=>w.totals.kills===3&&w.mode==='playing'),'last kill must leave the arrival objective active');
  assert.match(await page.locator('#message').innerText(),/社の灯がともった/);
  assert.equal(await page.locator('#menu').getAttribute('data-mode'),'victory');
@@ -116,6 +151,8 @@ try{
  await page.click('#start');
  const clean=await page.evaluate(()=>freshDiagnostics().world);
  assert.equal(clean.signalLit,false);assert.equal(clean.pathCleared,false);assert.equal(clean.totals.kills,0);
+ assert.equal(clean.routeChoice,null);assert.equal(clean.routePhase,'approach');assert.equal(clean.routeChoiceTime,null);assert.equal(clean.routeChoicePosition,null);
+ assert.equal(clean.routeLandmark,null);assert.equal(clean.routeConsequence,null);assert.equal(clean.routeRejoinTime,null);
  assert.equal(clean.player.hp,100);assert.equal(clean.player.z,18);assert.ok(clean.enemies.every(e=>e.hp===100));
  await page.waitForFunction(()=>document.querySelector('#objective').textContent==='谷へ合図を送るため、鳥居の先へ');
  report.checks.push('real-input full combat, postcombat arrival, signal, ending and clean retry');
@@ -172,7 +209,7 @@ try{
   await endContact(id);
   await mobile.waitForTimeout(110);
  };
- const touchDeadline=Date.now()+180000;report.touchMission={policy:'spacing dodge, held guard and close attacks after contact; prior dodge-only and narrow-counter failures retained',guardObserved:false,blockOrParryObserved:false,checkpoints:[],decisions:[],decisionsOmitted:0,timingScope:'Read-only observed world followed by real touch commands. Decision commandStarted/Finished are wall offsets including command round trips and deliberate waits, not measured game input latency.'};let touchKills=-1;mark(mobileRecording,'full-mission-start');
+ const touchDeadline=Date.now()+180000;report.touchMission={policy:'right wind-cloth route; spacing dodge, held guard and close attacks after contact; prior dodge-only and narrow-counter failures retained',guardObserved:false,blockOrParryObserved:false,checkpoints:[],route:{preferred:'right',entry:null,choice:null,landmark:null,consequence:null,rejoin:null,ridgeSamples:[]},decisions:[],decisionsOmitted:0,timingScope:'Read-only observed world followed by real touch commands. Decision commandStarted/Finished are wall offsets including command round trips and deliberate waits, not measured game input latency.'};let touchKills=-1,lastTouchRouteSampleTime=-Infinity;mark(mobileRecording,'full-mission-start');
  while(Date.now()<touchDeadline){
   const w=await mobile.evaluate(()=>freshDiagnostics().world);
   report.touchMission.guardObserved ||= w.player.state==='guard';
@@ -182,7 +219,29 @@ try{
    if(w.mode==='victory')report.touchMission.victoryObservedElapsedMs=Date.now()-(touchDeadline-180000);
    break;
   }
-  const a=touchPlaythroughAction(w);
+  if(!report.touchMission.route.entry&&w.totals.kills>=1&&!w.routeChoice&&w.player.z<=ROUTE_FORK.splitStartZ+4&&w.player.z>ROUTE_FORK.obstacleFrontZ+.5){
+   report.touchMission.route.entry={time:w.time,position:{x:w.player.x,z:w.player.z}};mark(mobileRecording,'fork-entry',report.touchMission.route.entry);
+   await mobile.screenshot({path:new URL('touch-route-fork.png',out).pathname});
+  }
+  if(!report.touchMission.route.choice&&w.routeChoice){
+   report.touchMission.route.choice={route:w.routeChoice,time:w.routeChoiceTime,position:w.routeChoicePosition};mark(mobileRecording,'route-choice',report.touchMission.route.choice);
+   await mobile.screenshot({path:new URL('touch-route-right-choice.png',out).pathname});
+  }
+  if(!report.touchMission.route.landmark&&w.routeLandmark){
+   report.touchMission.route.landmark={id:w.routeLandmark,time:w.routeLandmarkTime,position:{x:w.player.x,z:w.player.z}};mark(mobileRecording,'route-landmark',report.touchMission.route.landmark);
+   await mobile.screenshot({path:new URL('touch-route-right-landmark.png',out).pathname});
+  }
+  if(!report.touchMission.route.consequence&&w.routeConsequence){
+   report.touchMission.route.consequence={id:w.routeConsequence,time:w.routeConsequenceTime,position:{x:w.player.x,z:w.player.z}};mark(mobileRecording,'route-consequence',report.touchMission.route.consequence);
+  }
+  if(!report.touchMission.route.rejoin&&w.routePhase==='rejoined'){
+   report.touchMission.route.rejoin={time:w.routeRejoinTime,position:w.routeRejoinPosition};mark(mobileRecording,'route-rejoin',report.touchMission.route.rejoin);
+   await mobile.screenshot({path:new URL('touch-route-rejoin.png',out).pathname});
+  }
+  if(w.routeChoice&&w.player.z<=ROUTE_FORK.obstacleFrontZ&&w.player.z>=ROUTE_FORK.obstacleBackZ&&w.time-lastTouchRouteSampleTime>=.5){
+   report.touchMission.route.ridgeSamples.push({time:w.time,x:w.player.x,z:w.player.z});lastTouchRouteSampleTime=w.time;
+  }
+  const a=touchPlaythroughAction(w,'right');
   const decision={observedWorldTime:w.time,playerState:w.player.state,posture:w.player.posture,action:a,commandStartedMs:Date.now()-(touchDeadline-180000)};
   if(a.guard&&!contacts.has(1))await beginContact(1,g);
   if(!a.guard&&contacts.has(1))await endContact(1);
@@ -213,6 +272,11 @@ try{
  assert.equal(report.touchMission.after.mode,'victory');
  assert.equal(report.touchMission.after.signalLit,true);
  assert.equal(report.touchMission.after.totals.kills,3);
+ assert.equal(report.touchMission.after.routeChoice,'right');assert.equal(report.touchMission.after.routePhase,'rejoined');assert.equal(report.touchMission.route.choice.route,'right');
+ assert.equal(report.touchMission.after.routeLandmark,'風布');assert.equal(report.touchMission.after.routeConsequence,'overlook-warden');
+ assert.ok(report.touchMission.after.routeChoiceTime<report.touchMission.after.routeLandmarkTime&&report.touchMission.after.routeLandmarkTime<report.touchMission.after.routeRejoinTime);
+ assert.ok(report.touchMission.route.entry&&report.touchMission.route.landmark&&report.touchMission.route.consequence&&report.touchMission.route.rejoin,'touch recording must cover fork entry, landmark, consequence and reconvergence');
+ assert.ok(report.touchMission.route.ridgeSamples.length>0&&report.touchMission.route.ridgeSamples.every(sample=>sample.x>=ROUTE_FORK.obstacle.w/2+.35),'touch must remain on the right side of the solid ridge');
  assert.ok(report.touchMission.checkpoints.some(w=>w.totals.kills===3&&w.mode==='playing'));
  assert.equal(await mobile.locator('#menu').getAttribute('data-mode'),'victory');
  await mobile.waitForTimeout(500);
@@ -231,6 +295,8 @@ try{
  await mobile.locator('#start').tap();
  const touchRetry=await mobile.evaluate(()=>freshDiagnostics().world);
  assert.equal(touchRetry.signalLit,false);assert.equal(touchRetry.totals.kills,0);
+ assert.equal(touchRetry.routeChoice,null);assert.equal(touchRetry.routePhase,'approach');assert.equal(touchRetry.routeChoiceTime,null);assert.equal(touchRetry.routeChoicePosition,null);
+ assert.equal(touchRetry.routeLandmark,null);assert.equal(touchRetry.routeConsequence,null);assert.equal(touchRetry.routeRejoinTime,null);
  assert.equal(touchRetry.player.hp,100);assert.equal(touchRetry.player.z,18);
  report.checks.push('touch-only full combat, arrival, signal, ending and clean retry');
  mark(mobileRecording,'clean-retry');

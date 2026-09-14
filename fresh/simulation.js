@@ -1,10 +1,12 @@
 // Fresh implementation. This module has no rendering, browser or legacy imports.
 import { canLightSignal } from './mission.js';
+import { ROUTE_FORK, routeChoiceAt } from './route-layout.js';
 export const STEP = 1 / 60;
 export const OBSTACLES = [
-  { x: -3.5, z: 7, w: .55, d: .55, h: 4.5 },
-  { x: 3.5, z: 7, w: .55, d: .55, h: 4.5 },
-  { x: 0, z: -23, w: 10, d: 7, h: 5 },
+  { x: -3.5, z: 7, w: .55, d: .55, h: 4.5, kind: 'torii' },
+  { x: 3.5, z: 7, w: .55, d: .55, h: 4.5, kind: 'torii' },
+  ROUTE_FORK.obstacle,
+  { x: 0, z: -23, w: 10, d: 7, h: 5, kind: 'shrine' },
 ];
 export const angleDelta = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
 export const distance = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
@@ -14,7 +16,10 @@ const actor = (id, x, z) => ({ id, x, z, yaw: 0, hp: 100, posture: 0,
 export function createWorld() {
   return { time: 0, remainder: 0, ticks: 0, mode: 'playing', player: actor('player', 0, 18),
     enemies: [actor('sentinel', 0, 1), actor('retainer', -3, -9), actor('warden', 3, -16)],
-    locked: null, pathCleared: false, signalLit: false, events: [], totals: { hits: 0, received: 0, parries: 0, kills: 0 } };
+    locked: null, routeChoice: null, routePhase: 'approach', routeChoiceTime: null, routeChoicePosition: null,
+    routeLandmark: null, routeLandmarkTime: null, routeConsequence: null, routeConsequenceTime: null,
+    routeRejoinTime: null, routeRejoinPosition: null, pathCleared: false, signalLit: false,
+    events: [], totals: { hits: 0, received: 0, parries: 0, kills: 0, dodges: 0 } };
 }
 function enter(a, state) { a.state = state; a.age = 0; a.hit = []; }
 function move(a, dx, dz) {
@@ -35,7 +40,7 @@ function move(a, dx, dz) {
   }
   a.stride += Math.hypot(dx, dz);
 }
-function event(w, type, a, b) { w.events.push({ type, time: w.time, source: a.id, target: b.id, x: b.x, z: b.z }); }
+function event(w, type, a, b, detail = {}) { w.events.push({ type, time: w.time, source: a.id, target: b.id, x: b.x, z: b.z, ...detail }); }
 function strike(w, a, b) {
   if (b.hp <= 0 || a.hit.includes(b.id) || distance(a, b) > 1.95 ||
       Math.abs(angleDelta(face(a, b), a.yaw)) > .95) return;
@@ -86,6 +91,7 @@ export function stepWorld(w, input = {}) {
       const dx=input.x||0,dz=input.z||0,length=Math.hypot(dx,dz);
       p.dodgeX=length>.1?dx/length:-Math.sin(p.yaw);
       p.dodgeZ=length>.1?dz/length:Math.cos(p.yaw);
+      w.totals.dodges++;
       enter(p, 'dodge');
     }
     else if (input.attack) enter(p, 'attack');
@@ -119,6 +125,30 @@ export function stepWorld(w, input = {}) {
     }
     if (a.age >= .18 && a.age <= .34) {
       for (const b of a === p ? w.enemies : [p]) strike(w,a,b);
+    }
+  }
+  const routeChoice = p.hp > 0 && routeChoiceAt(p);
+  if (!w.routeChoice && routeChoice) {
+    w.routeChoice = routeChoice;
+    w.routePhase = 'branch';
+    w.routeChoiceTime = w.time;
+    w.routeChoicePosition = { x: p.x, z: p.z };
+    event(w, 'route', p, p, { route: routeChoice });
+  }
+  if (w.routeChoice && w.routePhase === 'branch') {
+    const route = ROUTE_FORK[w.routeChoice];
+    if (!w.routeLandmark && route.markers.some(marker => Math.hypot(p.x - marker.x, p.z - marker.z) <= 1.8)) {
+      w.routeLandmark = route.landmark; w.routeLandmarkTime = w.time;
+      event(w, 'landmark', p, p, { route: w.routeChoice, landmark: route.landmark });
+    }
+    const routeEnemy = w.enemies.find(enemy => enemy.id === route.enemyId);
+    if (!w.routeConsequence && routeEnemy && (routeEnemy.hp < 100 || distance(p, routeEnemy) <= 4.2)) {
+      w.routeConsequence = route.consequenceId; w.routeConsequenceTime = w.time;
+      event(w, 'route-consequence', p, routeEnemy, { route: w.routeChoice, consequence: route.consequenceId });
+    }
+    if (p.z <= ROUTE_FORK.rejoinZ - .25 && Math.abs(p.x) <= ROUTE_FORK.rejoinHalfWidth) {
+      w.routePhase = 'rejoined'; w.routeRejoinTime = w.time; w.routeRejoinPosition = { x: p.x, z: p.z };
+      event(w, 'route-rejoin', p, p, { route: w.routeChoice });
     }
   }
   if (p.hp <= 0) w.mode = 'defeat';
