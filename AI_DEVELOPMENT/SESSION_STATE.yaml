@@ -10,16 +10,14 @@
     "workingBranch": "codex/game2-rebuild-20260913",
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
-    "activeTask": "FRESH-VICTORY-PANEL-CANDIDATE-CI",
-    "lastSuccessfulAction": "Production re-fired at b852f6a and CI34804385369 passed35 tests/build, desktop mission and isolated touch mission with no errors. Independent static review verified improved actor/background and encounter sword separation plus clearer desktop result order; victory hierarchy, small phone copy and a bright right-edge wedge remain.",
+    "activeTask": "FRESH-VICTORY-TYPOGRAPHY-CTA-EXPOSURE",
+    "lastSuccessfulAction": "Responsive result candidate dcb632d passed CI34807763920:35 tests/build, desktop and isolated touch missions, landscape captures and actual390x844 portrait rotation. Portrait result copy measured15px and copy/retry remained in viewport. Independent static review found the responsive hierarchy and contrast usable.",
     "currentFailingAction": null,
     "currentHypothesis": null,
-    "nextAction": "Verify the responsive result panel, shifted signal/player composition and generated halo at its exact revision. Require desktop and touch mission, landscape plus390x844 portrait frames, text/bounds measurements and independent static review. Then continue remaining presentation gaps, unresolved C05/C06/C09/C11/C12 selection and source-blind continuous media. All elements remain not measured. Deadline2026-09-20T07:51:53Z.",
+    "nextAction": "Implement one responsive result-panel typography/CTA/exposure pass: authored Japanese line balance, punctuation-safe title spacing, at-least44px landscape CTA, safe-area bottom padding and reduced lamp clipping while keeping actor/sword readable. Verify exact frames, then continue unresolved C05/C06/C09/C11/C12 selection and source-blind continuous media. All elements remain not measured. Deadline2026-09-20T07:51:53Z.",
     "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
     "pendingVerification": [
-      "Exact responsive victory composition desktop and touch-only full mission CI",
-      "Independent review of responsive victory composition images",
-      "Portrait/narrow viewport and orientation behavior",
+      "Exact responsive victory typography/CTA/lamp-exposure frames",
       "Attack-only versus defense-led combat routes",
       "WebKit / iOS Simulator behavior",
       "Physical-device performance",
@@ -128,15 +126,15 @@
     "completion": "All concept elements satisfied by evidenced blind comparison.",
     "current_unit": "2026-09-13-fresh-design",
     "unit_status": "active",
-    "first_action": "Verify the responsive victory-panel candidate in exact-revision desktop, phone landscape and phone portrait evidence, then continue unresolved reference selections and source-blind continuous media. All elements remain not measured. Deadline2026-09-20T07:51:53Z.",
+    "first_action": "Correct the exact-review findings in one integrated result-panel pass, then continue unresolved reference selections and source-blind continuous media. All elements remain not measured. Deadline2026-09-20T07:51:53Z.",
     "implementation_strategy": "Fresh design and implementation; needs-before-reuse, per latest direct user instruction.",
     "unitEndReason": null,
     "deadlineReassessment": {
-      "observedAt": "2026-09-14T03:58:00Z",
+      "observedAt": "2026-09-14T05:00:00Z",
       "prediction": "at risk; not guaranteed",
       "basis": "All ten element verdicts remain not measured and reference selection is incomplete.",
       "methodChange": "Replace serial micro-fixes with integrated cross-element passes and shared continuous captures; do not weaken concept, references, criteria, evidence or deadline.",
-      "validation": "The first integrated candidate changed lighting, materials, vegetation, actor readability and ending composition together. Exact-head CI passed; independent static review verified actor and sword separation but found victory hierarchy and mobile legibility still weak."
+      "validation": "The integrated responsive pass closed the previously identified phone-result legibility and right-edge composition gaps: exact CI passed,390x844 copy is15px and all result controls are in bounds. Independent review reduced the next gap to Japanese line balance/title spacing, a roughly43px landscape CTA and lamp exposure."
     }
   }
 }

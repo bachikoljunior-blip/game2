@@ -2,13 +2,13 @@
   "schemaVersion": 1,
   "createdAt": "2026-09-14T04:52:51Z",
   "baseRevision": "a21ad1f5043088431e443a79b739dc6fffcda724",
-  "status": "candidate_pending_exact_head_ci",
+  "status": "exact_head_ci_and_static_review_complete",
   "restart": {
     "stopObservedAt": "2026-09-14T04:50:44Z",
     "lastActivity": "a21ad1f saved the verified b852f6a result and exact next frontier at 2026-09-14T04:07:06Z",
     "cause": "No separate production executor persists beyond the bounded invocation; no later branch activity or running CI was present.",
     "remedy": "Use this enabled hourly re-fire surface and resume the exact saved victory-composition frontier. Preserve the candidate and verification frontier before this run ends.",
-    "verification": "Substantive implementation resumed; local35 tests and production build pass. Exact-head rendered CI remains pending."
+    "verification": "Substantive implementation resumed; local35 tests and production build pass. Exact-head CI34807763920 passed the desktop and isolated touch mission plus landscape and390x844 portrait captures."
   },
   "designBeforeImplementation": "AI_DEVELOPMENT/FRESH_DESIGN.md C05/C08 responsive ending composition",
   "implementation": [
@@ -23,12 +23,51 @@
     "tests": "passed:35",
     "productionBuild": "passed",
     "bundle": "517.13 kB main JavaScript,134.48 kB gzip; existing over500kB warning retained",
-    "limitations": "Structural and build checks are not visual or element verdicts. Exact-revision browser frames remain pending."
+    "limitations": "Structural and build checks are not visual or element verdicts."
+  },
+  "remoteVerification": {
+    "revision": "dcb632d20e0825e1f04fcdb1eb8d48804912d4c5",
+    "workflowRun": 34807763920,
+    "job": 103862867811,
+    "conclusion": "success",
+    "tests": 35,
+    "desktopDurationMs": 97242,
+    "mobileDurationMs": 97465,
+    "render": {"calls": 92, "triangles": 127744},
+    "desktopMission": "passed: three kills, signal, ending and clean retry; player HP100",
+    "touchMission": "passed: three kills, signal, ending and clean retry; player HP28",
+    "portraitResult": {
+      "viewport": "390x844",
+      "bodyFontPx": 15,
+      "messageBounds": "x22..368, y697.5..747",
+      "retryBounds": "x22..368, y761..816",
+      "fullyInViewport": true
+    },
+    "errors": [],
+    "environment": "Chromium/SwiftShader; not physical-device performance",
+    "artifact": {
+      "id": 10333328234,
+      "digest": "sha256:be785c4fcb7b9e8e4317a244042862d42fd822ad8b6cece75e62663163845a2a"
+    }
+  },
+  "independentStaticReview": {
+    "verified": [
+      "Portrait title, copy and retry are legible and fully inside the viewport.",
+      "Portrait centers the actor and lamp above the result region; phone landscape separates copy left from the focal scene right.",
+      "The dark scrim prevents text collisions and maintains strong contrast in all three result frames."
+    ],
+    "remaining": [
+      "Japanese copy wraps mechanically, including 山道が開/いた on phone and 伝わ/る on desktop.",
+      "Title tracking around the Japanese comma is excessive.",
+      "Phone-landscape retry height is about43px and the primary action styling is weak.",
+      "Portrait lamp clips to white while the lower actor and sword dissolve into the floor.",
+      "Desktop retains a large empty upper-left region."
+    ],
+    "nextIntegratedChange": "Use one responsive result-panel component with authored Japanese line balance, punctuation-safe title spacing, stronger at-least44px CTA, safe-area bottom padding and rebalanced lamp exposure.",
+    "scopeLimit": "Three exact-revision static result frames only; not source-blind reference comparison, animation, controls, audio or physical-device performance."
   },
   "requiredNextEvidence": [
-    "Exact-revision desktop and touch mission completion",
-    "Desktop landscape, phone landscape and phone portrait victory images",
-    "Independent static image review against the b852f6a findings",
+    "Exact-revision frames after the integrated Japanese typography, CTA and lamp-exposure pass",
     "Continue unresolved reference selection and actual source-blind continuous media"
   ],
   "formalVerdict": "not measured",
