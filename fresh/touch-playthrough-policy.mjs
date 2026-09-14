@@ -11,7 +11,8 @@ export function touchPlaythroughAction(world, preferredRoute='left') {
   // Inputs arrive after the observed frame. Establish spacing before close
   // contact, then guard a strike and press the attack instead of waiting for a
   // narrow animation window which may have expired by delivery time.
-  const press=p.posture>0||world.totals.hits>0;
+  const missedContactRecovery=p.state==='guard'&&p.guardAge>=2&&target.state==='windup';
+  const press=p.posture>0||world.totals.hits>0||missedContactRecovery;
   // Read each stance rather than repeating defensive inputs: one spacing
   // dodge remains sufficient, the quick retainer is traded with after the
   // first posture contact, and the heavier opponents are held on guard.
