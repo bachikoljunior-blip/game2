@@ -21,7 +21,7 @@
   ],
   "failure": {
     "stage": "touch-only full mission",
-    "observed": "Player died at first encounter with 0 player hits, 5 hits received, sentinel HP66. A Playwright locator tap was waiting for the lock control when terminal state hid controls, then timed out.",
+    "observed": "Player died at first encounter after 1 player hit and 5 hits received; sentinel HP was 66. A Playwright locator tap was waiting for the lock control when terminal state hid controls, then timed out.",
     "world": {
       "mode": "defeat",
       "time": 18.666666666666888,
@@ -29,14 +29,15 @@
       "playerZ": 7.577142857142817,
       "locked": "sentinel",
       "totals": {
-        "playerHits": 0,
+        "hits": 1,
         "received": 5,
         "parries": 0,
         "kills": 0
       }
     },
-    "classification": "The first driver used immediate high-level locator taps without a frame wait or defensive response. It did not establish that touch attack was sampled. This is a failed measurement, not proof that the touch game is impossible or proof of a pass."
+    "classification": "The first driver used immediate high-level locator taps without a frame wait or defensive response. It established one sampled touch attack but not a complete touch mission. This is a failed measurement, not proof that the touch game is impossible or proof of a pass."
   },
+  "correctionNote": "Corrected at the next safe checkpoint from the preserved CI report, whose actual field was totals.hits=1. The earlier zero-hit transcription was wrong; the failed verdict is unchanged.",
   "correction": "Dispatch touch contacts directly to rendered action-button coordinates, hold each contact across frames, wait after release, and dodge an observable close windup. Continue to read state only through diagnostics.",
   "formalVerdict": "not measured",
   "workUnitEnded": false,

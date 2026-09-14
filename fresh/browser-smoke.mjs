@@ -4,10 +4,12 @@ import assert from 'node:assert/strict';
 import { playthroughAction } from './playthrough-policy.mjs';
 const out=new URL('../AI_DEVELOPMENT/EVIDENCE/fresh-20260913/',import.meta.url);
 await mkdir(out,{recursive:true});
-const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+const launchBrowser=()=>chromium.launch({headless:true,executablePath:process.env.CHROME_PATH,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+const browser=await launchBrowser();
 const page=await browser.newPage({viewport:{width:1280,height:720}});const errors=[];
 page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
-const report={date:new Date().toISOString(),environment:'Chromium / SwiftShader; not physical-device performance',checks:[],errors};
+const report={date:new Date().toISOString(),environment:'Chromium / SwiftShader; not physical-device performance',checks:[],errors,durationsMs:{}};
+const desktopStarted=Date.now();
 try{
  await page.goto('http://127.0.0.1:4178/?diagnostic=1');await page.waitForFunction(()=>window.freshDiagnostics?.().render.calls>0);
  await page.screenshot({path:new URL('title.png',out).pathname});
@@ -64,8 +66,16 @@ try{
  report.checks.push('real-input full combat, postcombat arrival, signal, ending and clean retry');
  assert.deepEqual(errors,[]);report.result='passed';
 }catch(e){report.result='failed';report.failure=String(e);report.failureState=await page.evaluate(()=>window.freshDiagnostics?.()).catch(()=>null);process.exitCode=1;await page.screenshot({path:new URL('failure.png',out).pathname}).catch(()=>{});}
-const phone=await browser.newContext({viewport:{width:844,height:390},isMobile:true,hasTouch:true,deviceScaleFactor:1});
+report.durationsMs.desktop=Date.now()-desktopStarted;
+// Desktop and phone must not compete for the same software-rendering process. The
+// previous run kept the desktop WebGL page alive and advanced only 39.8 seconds of
+// simulation during a 180-second phone window. A clean browser also makes each
+// apparatus independently reproducible instead of inheriting restored WebGL state.
+await page.close();await browser.close();
+const mobileBrowser=await launchBrowser();
+const phone=await mobileBrowser.newContext({viewport:{width:844,height:390},isMobile:true,hasTouch:true,deviceScaleFactor:1});
 const mobile=await phone.newPage();mobile.on('pageerror',e=>errors.push(String(e)));
+const mobileStarted=Date.now();
 try{
  await mobile.goto('http://127.0.0.1:4178/?diagnostic=1');await mobile.locator('#start').tap();
  const cdp=await phone.newCDPSession(mobile);
@@ -133,4 +143,5 @@ try{
  report.checks.push('touch-only full combat, arrival, signal, ending and clean retry');
  assert.deepEqual(errors,[]);
 }catch(e){report.result='failed';report.mobileFailure=String(e);report.mobileFailureState=await mobile.evaluate(()=>window.freshDiagnostics?.()).catch(()=>null);process.exitCode=1;}
-await writeFile(new URL('browser-report.json',out),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));await browser.close();
+report.durationsMs.mobile=Date.now()-mobileStarted;
+await writeFile(new URL('browser-report.json',out),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));await mobileBrowser.close();

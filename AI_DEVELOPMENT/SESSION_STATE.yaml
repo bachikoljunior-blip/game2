@@ -10,11 +10,11 @@
     "workingBranch": "codex/game2-rebuild-20260913",
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
-    "activeTask": "FRESH-TOUCH-MISSION-RETRY",
-    "lastSuccessfulAction": "Runtime b851e80 remains the last fully passing exact-revision browser candidate. Independent AI directly confirmed its three targeted static-frame corrections. At f2d81b7, node/build/desktop/base-mobile checks passed before the expanded touch mission failed.",
-    "currentFailingAction": "CI 34797267416: the first touch-only full-mission driver delivered no sampled player attack, allowed five hits and died at the sentinel; locator tap then timed out after terminal controls hid. Failure preserved; direct-contact taps with frame waits and windup dodge are prepared, not yet verified.",
-    "currentHypothesis": null,
-    "nextAction": "Inspect EVIDENCE/20260914-fresh-touch-failure-f2d81b7.json, then run the corrected direct-contact touch-only route at its exact candidate revision. Require all three fights, explicit signal, ending and clean retry. Keep the failed attempt. If it passes, inspect mobile mission image and record environment limits. Then continue attack-only balance, primitive generated presentation, remaining C05/C06/C09/C11/C12 selection and source-blind media. All elements remain not measured. Deadline 2026-09-20T07:51:53Z.",
+    "activeTask": "FRESH-RECOVERY-TOUCH-ISOLATION",
+    "lastSuccessfulAction": "CI 34797784088 proved direct touch contacts across rendered frames: two enemies died, the third reached HP32, player HP remained100, and eight player hits were recorded. Node tests, build, desktop mission and base mobile checks passed. This is partial functional evidence only.",
+    "currentFailingAction": "CI 34797784088 did not finish the touch mission in its 180-second wall window. The phone simulation advanced only39.8 seconds while an already-tested desktop WebGL page remained alive in the same SwiftShader browser. The prior f2d81b7 evidence also mistranscribed actual totals.hits=1 as zero.",
+    "currentHypothesis": "An active desktop WebGL page competed with the phone page for software-rendering resources; process/state coupling also made phone timing non-independent. This explains the observed wall/simulation ratio and near-complete route, but remains a hypothesis until an isolated-browser CI run passes or supplies contrary timing.",
+    "nextAction": "Run the desktop and phone checks in separate browser processes and record their wall durations at the exact candidate revision. Require the unchanged touch criterion: three fights, explicit signal, ending and clean retry. If it passes, inspect the mobile ending image and preserve environment limits. If it fails, use the new per-apparatus durations and exact final state to isolate the remaining cause instead of repeating the same run. Then prioritize primitive generated presentation, remaining C05/C06/C09/C11/C12 selection and source-blind media. All elements remain not measured. Deadline2026-09-20T07:51:53Z.",
     "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
     "pendingVerification": [
       "Exact candidate touch-only full mission CI",
@@ -75,7 +75,20 @@
     "continuationAutomation": {
       "enabled": true,
       "cadence": "hourly",
-      "coordination": "Check recent commits and running CI; if another producer is active, read only. No force push or duplicate work.",
+      "role": "Reignite production only after diagnosing, correcting and verifying every evidenced stop cause; do not duplicate active production.",
+      "latestUserInstruction": "定期オートメーションは万が一実行が停止していたら、停止してしまう原因を全て潰してから再開する再発火役にしてください。",
+      "lastStop": {
+        "observedAt": "2026-09-14T02:32:32Z",
+        "lastProducedRevision": "9895e92bf006e16fb79ae0061a32c04b33508c99",
+        "failedRun": 34797784088,
+        "causes": [
+          "Desktop and phone WebGL pages rendered concurrently in one SwiftShader browser, leaving the phone only39.8 simulated seconds in180 wall seconds.",
+          "The f2d81b7 failure handoff mistranscribed totals.hits=1 as zero, which could send recovery toward the wrong input-loss hypothesis."
+        ],
+        "remediation": "Close the desktop browser and launch a clean phone browser; record separate durations; correct the preserved failure transcription.",
+        "verification": "Local structural and unit/build checks first, then exact-revision CI. Production is recovery_in_progress until that CI result is read."
+      },
+      "coordination": "Check recent commits and running CI; if another producer is active, read only. No force push, duplicate work, or duplicate CI.",
       "activeBranch": "codex/game2-rebuild-20260913"
     },
     "evidence": [
@@ -94,7 +107,8 @@
       "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-4da1c60.json",
       "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-presentation-checkpoint.json",
       "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-b851e80.json",
-      "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-touch-failure-f2d81b7.json"
+      "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-touch-failure-f2d81b7.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260914-production-recovery-9895e92.json"
     ],
     "publicRuntimeRevision": "86512c3bfdc69e03b5b490d9b0d79ec9da141343"
   },
@@ -106,7 +120,7 @@
     "completion": "All concept elements satisfied by evidenced blind comparison.",
     "current_unit": "2026-09-13-fresh-design",
     "unit_status": "active",
-    "first_action": "Inspect EVIDENCE/20260914-fresh-touch-failure-f2d81b7.json, then run the corrected direct-contact touch-only route at its exact candidate revision. Require all three fights, explicit signal, ending and clean retry. Keep the failed attempt. If it passes, inspect mobile mission image and record environment limits. Then continue attack-only balance, primitive generated presentation, remaining C05/C06/C09/C11/C12 selection and source-blind media. All elements remain not measured. Deadline 2026-09-20T07:51:53Z.",
+    "first_action": "Verify the isolated desktop/phone browser correction in exact-revision CI without weakening the touch mission criterion; inspect its timing and final state, then continue the highest-quality-gap work. All elements remain not measured. Deadline2026-09-20T07:51:53Z.",
     "implementation_strategy": "Fresh design and implementation; needs-before-reuse, per latest direct user instruction.",
     "unitEndReason": null
   }
