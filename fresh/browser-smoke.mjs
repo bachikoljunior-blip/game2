@@ -167,42 +167,65 @@ report.desktopTimings=await page.evaluate(()=>window.freshDiagnostics?.(true).ti
 // simulation during a 180-second phone window. A clean browser also makes each
 // apparatus independently reproducible instead of inheriting restored WebGL state.
 await finishRecording(desktop,desktopVideo,desktopRecording);await browser.close();
-const mobileBrowser=await launchBrowser();browsers.push(mobileBrowser);
 const phoneVideoSize={width:844,height:844};
-const phone=await mobileBrowser.newContext({viewport:{width:844,height:390},isMobile:true,hasTouch:true,deviceScaleFactor:1,recordVideo:{dir:new URL('recording-temp/',out).pathname,size:phoneVideoSize}});
-const mobile=await phone.newPage(),mobileVideo=mobile.video();mobile.on('pageerror',e=>errors.push(String(e)));mobile.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
-const mobileRecording=recording('touch',phoneVideoSize);
-mobileRecording.framing='844x390 landscape then390x844 portrait. Page is top-left on a fixed844x844 recording canvas; unused area is padding.';
-const mobileStarted=Date.now();
+// Keep the short multi-contact apparatus outside the long recorded mission.
+// Two CI runs closed a reused mobile CDP target after preflight + reload, while
+// available mission-only artifacts did not show that closure. This also makes
+// the continuous evidence begin with one clean start instead of a prior test.
+const preflightBrowser=await launchBrowser();browsers.push(preflightBrowser);
+const preflightPhone=await preflightBrowser.newContext({viewport:{width:844,height:390},isMobile:true,hasTouch:true,deviceScaleFactor:1});
+const preflight=await preflightPhone.newPage(),preflightStarted=Date.now();
+preflight.on('pageerror',e=>errors.push(String(e)));preflight.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
 try{
- await mobile.goto('http://127.0.0.1:4178/?diagnostic=1');mark(mobileRecording,'landscape',{width:844,height:390});await mobile.locator('#start').tap();
- const cdp=await phone.newCDPSession(mobile);
- const point=async selector=>{const b=await mobile.locator(selector).boundingBox();return {x:b.x+b.width/2,y:b.y+b.height/2};};
- const g=await point('[data-action=guard]'),l=await point('[data-action=lock]'),s=await point('#stick');
- await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...g,id:1}]});
- await mobile.waitForFunction(()=>freshDiagnostics().world.player.state==='guard');
- await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...g,id:1},{...l,id:2}]});
+ await preflight.goto('http://127.0.0.1:4178/?diagnostic=1');await preflight.locator('#start').tap();
+ const preflightCdp=await preflightPhone.newCDPSession(preflight);
+ const preflightPoint=async selector=>{const b=await preflight.locator(selector).boundingBox();return {x:b.x+b.width/2,y:b.y+b.height/2};};
+ const g=await preflightPoint('[data-action=guard]'),l=await preflightPoint('[data-action=lock]'),s=await preflightPoint('#stick');
+ await preflightCdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...g,id:1}]});
+ await preflight.waitForFunction(()=>freshDiagnostics().world.player.state==='guard');
+ await preflightCdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...g,id:1},{...l,id:2}]});
  // CDP touchEnd terminates all contacts; touchMove with the remaining active list
  // releases only the removed contact. https://chromedevtools.github.io/devtools-protocol/tot/Input/#method-dispatchTouchEvent
- await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{...g,id:1}]});
- await mobile.waitForTimeout(350);assert.equal(await mobile.evaluate(()=>freshDiagnostics().world.player.state),'guard');
- await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});await mobile.waitForFunction(()=>freshDiagnostics().world.player.state==='idle');
+ await preflightCdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{...g,id:1}]});
+ await preflight.waitForTimeout(350);assert.equal(await preflight.evaluate(()=>freshDiagnostics().world.player.state),'guard');
+ await preflightCdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});await preflight.waitForFunction(()=>freshDiagnostics().world.player.state==='idle');
  report.checks.push('mobile simultaneous guard/lock release preserves guard; cancel releases');
- const before=await mobile.evaluate(()=>freshDiagnostics().world.player.z);
- await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...s,id:3}]});
- await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:s.x,y:s.y-32,id:3}]});
- await mobile.waitForFunction(z=>freshDiagnostics().world.player.z<z-.3,before,{timeout:15000});
- await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});await mobile.waitForTimeout(300);
- const stopped=await mobile.evaluate(()=>freshDiagnostics().world.player.z);await mobile.waitForTimeout(350);
- assert.equal(await mobile.evaluate(()=>freshDiagnostics().world.player.z),stopped);report.checks.push('mobile joystick movement and cancel stop');
- await mobile.screenshot({path:new URL('mobile.png',out).pathname});
+ const before=await preflight.evaluate(()=>freshDiagnostics().world.player.z);
+ await preflightCdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...s,id:3}]});
+ await preflightCdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:s.x,y:s.y-32,id:3}]});
+ await preflight.waitForFunction(z=>freshDiagnostics().world.player.z<z-.3,before,{timeout:15000});
+ await preflightCdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});await preflight.waitForTimeout(300);
+ const stopped=await preflight.evaluate(()=>freshDiagnostics().world.player.z);await preflight.waitForTimeout(350);
+ assert.equal(await preflight.evaluate(()=>freshDiagnostics().world.player.z),stopped);report.checks.push('mobile joystick movement and cancel stop');
+ await preflight.screenshot({path:new URL('mobile.png',out).pathname});
+}catch(e){report.result='failed';report.mobilePreflightFailure=String(e);report.mobilePreflightFailureState=await preflight.evaluate(()=>window.freshDiagnostics?.()).catch(()=>null);process.exitCode=1;throw e;
+}finally{report.durationsMs.mobilePreflight=Date.now()-preflightStarted;await preflightPhone.close().catch(()=>{});await preflightBrowser.close().catch(()=>{});}
+
+const mobileBrowser=await launchBrowser(),mobileStarted=Date.now();browsers.push(mobileBrowser);let mobileCloseRequested=false;
+mobileBrowser.on('disconnected',()=>{report.mobileBrowserDisconnected={offsetMs:Date.now()-mobileStarted,closeRequested:mobileCloseRequested};});
+const phone=await mobileBrowser.newContext({viewport:{width:844,height:390},isMobile:true,hasTouch:true,deviceScaleFactor:1,recordVideo:{dir:new URL('recording-temp/',out).pathname,size:phoneVideoSize}});
+const mobile=await phone.newPage(),mobileVideo=mobile.video();
+phone.on('close',()=>{report.mobileContextClosed={offsetMs:Date.now()-mobileStarted,closeRequested:mobileCloseRequested};});
+mobile.on('close',()=>{report.mobilePageClosed={offsetMs:Date.now()-mobileStarted,closeRequested:mobileCloseRequested};});
+mobile.on('pageerror',e=>errors.push(String(e)));mobile.on('console',m=>{if(m.type()==='error')errors.push(m.text());});mobile.on('crash',()=>{report.mobilePageCrashOffsetMs=Date.now()-mobileStarted;});
+const mobileRecording=recording('touch',phoneVideoSize);
+mobileRecording.framing='844x390 landscape then390x844 portrait. Page is top-left on a fixed844x844 recording canvas; unused area is padding.';
+let mobileCommandPhase='mission-setup';
+try{
  // Run the complete authored objective through touch controls only. Diagnostics
  // are read-only; every state change below comes from a rendered control.
- await mobile.reload();await mobile.locator('#start').tap();
- const attackPoint=await point('[data-action=attack]'),lockPoint=await point('[data-action=lock]'),dodgePoint=await point('[data-action=dodge]');
+ await mobile.goto('http://127.0.0.1:4178/?diagnostic=1');mark(mobileRecording,'landscape',{width:844,height:390});await mobile.locator('#start').tap();
+ const cdp=await phone.newCDPSession(mobile);
+ const sendTouch=async(phase,params)=>{
+  mobileCommandPhase=phase;const command={phase,startedOffsetMs:Date.now()-mobileStarted};report.mobileLastCdpCommand=command;
+  try{await cdp.send('Input.dispatchTouchEvent',params);command.finishedOffsetMs=Date.now()-mobileStarted;}
+  catch(e){command.failedOffsetMs=Date.now()-mobileStarted;command.failure=String(e);throw e;}
+ };
+ const point=async selector=>{const b=await mobile.locator(selector).boundingBox();return {x:b.x+b.width/2,y:b.y+b.height/2};};
+ const g=await point('[data-action=guard]'),s=await point('#stick'),attackPoint=await point('[data-action=attack]'),lockPoint=await point('[data-action=lock]'),dodgePoint=await point('[data-action=dodge]');
  let tapId=10;const contacts=new Map();
- const beginContact=async(id,p)=>{contacts.set(id,{...p,id});await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[...contacts.values()]});};
- const endContact=async id=>{contacts.delete(id);await cdp.send('Input.dispatchTouchEvent',{type:contacts.size?'touchMove':'touchEnd',touchPoints:[...contacts.values()]});};
+ const beginContact=async(id,p)=>{contacts.set(id,{...p,id});await sendTouch(`contact-${id}-start`,{type:'touchStart',touchPoints:[...contacts.values()]});};
+ const endContact=async id=>{contacts.delete(id);await sendTouch(`contact-${id}-end`,{type:contacts.size?'touchMove':'touchEnd',touchPoints:[...contacts.values()]});};
  const tapPoint=async p=>{
   const id=tapId++;
   await beginContact(id,p);
@@ -220,9 +243,22 @@ try{
   }while(Date.now()<retryDeadline);
   throw new Error('Recovery dodge was not observed before its 3000ms input deadline');
  };
- const touchDeadline=Date.now()+180000,touchSession=createTouchPlaythroughSession();report.touchMission={policy:'right wind-cloth route; spacing dodge, held guard and close attacks after contact; prior dodge-only and narrow-counter failures retained',guardObserved:false,blockOrParryObserved:false,checkpoints:[],route:{preferred:'right',entry:null,choice:null,landmark:null,consequence:null,rejoin:null,ridgeSamples:[]},decisions:[],decisionsOmitted:0,timingScope:'Read-only observed world followed by real touch commands. Decision commandStarted/Finished are wall offsets including command round trips and deliberate waits, not measured game input latency.'};let touchKills=-1,lastTouchRouteSampleTime=-Infinity;mark(mobileRecording,'full-mission-start');
+ const tapLockUntilObserved=async targetId=>{
+  await tapPoint(lockPoint);const acknowledgementDeadline=Date.now()+3000;
+  do{
+   const observed=await mobile.evaluate(()=>({mode:freshDiagnostics().world.mode,locked:freshDiagnostics().world.locked}));
+   if(observed.mode!=='playing')throw new Error(`Mission ended before the ${targetId} lock was acknowledged`);
+   if(observed.locked===targetId)return;
+   // Never resend an unobserved lock. If the first pulse is merely waiting for
+   // a throttled frame, a second accepted pulse would toggle the target off.
+   await mobile.waitForTimeout(50);
+  }while(Date.now()<acknowledgementDeadline);
+  throw new Error(`${targetId} lock was not observed before its 3000ms input deadline`);
+ };
+ const touchDeadline=Date.now()+180000,touchSession=createTouchPlaythroughSession();report.touchMission={policy:'right wind-cloth route; spacing dodge, one-pulse lock acknowledgement, held guard and close attacks after contact; prior dodge-only, queued-lock and narrow-counter failures retained',guardObserved:false,blockOrParryObserved:false,checkpoints:[],route:{preferred:'right',entry:null,choice:null,landmark:null,consequence:null,rejoin:null,ridgeSamples:[]},decisions:[],decisionsOmitted:0,timingScope:'Read-only observed world followed by real touch commands. Decision commandStarted/Finished are wall offsets including command round trips and deliberate waits, not measured game input latency.'};let touchKills=-1,lastTouchRouteSampleTime=-Infinity;mark(mobileRecording,'full-mission-start');
  while(Date.now()<touchDeadline){
   const w=await mobile.evaluate(()=>freshDiagnostics().world);
+  report.mobileLastObservedWorld=w;mobileCommandPhase='decision';
   report.touchMission.guardObserved ||= w.player.state==='guard';
   report.touchMission.blockOrParryObserved ||= w.events.some(e=>e.type==='block'||e.type==='parry');
   if(w.totals.kills!==touchKills){report.touchMission.checkpoints.push(w);touchKills=w.totals.kills;mark(mobileRecording,'kills',touchKills);}
@@ -257,12 +293,12 @@ try{
   if(a.guard&&!contacts.has(1))await beginContact(1,g);
   if(!a.guard&&contacts.has(1))await endContact(1);
   if(a.dodge)await (a.dodgeNeedsAcknowledgement?tapDodgeUntilObserved(w.totals.dodges):tapPoint(dodgePoint));
-  else if(a.lock)await tapPoint(lockPoint);
+  else if(a.lock)await (a.targetId?tapLockUntilObserved(a.targetId):tapPoint(lockPoint));
   else if(a.attack)await tapPoint(attackPoint);
   else if(a.x||a.z){
    await beginContact(4,s);
    contacts.set(4,{x:s.x+a.x*32,y:s.y+a.z*32,id:4});
-   await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[...contacts.values()]});
+   await sendTouch('contact-4-move',{type:'touchMove',touchPoints:[...contacts.values()]});
    await mobile.waitForTimeout(100);
    await endContact(4);
    await mobile.waitForTimeout(40);
@@ -273,7 +309,7 @@ try{
  }
  // A terminal signal tap can leave no active contacts. Chromium rejects a
  // cancellation without a touch sequence; only cancel contacts still held.
- if(contacts.size)await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});
+ if(contacts.size)await sendTouch('mission-contact-cancel',{type:'touchCancel',touchPoints:[]});
  contacts.clear();
  report.touchMission.after=await mobile.evaluate(()=>freshDiagnostics().world);
  assert.equal(report.touchMission.after.mode,'victory','touch mission ended without victory');
@@ -310,13 +346,14 @@ try{
  assert.equal(touchRetry.routeLandmark,null);assert.equal(touchRetry.routeLandmarkTime,null);assert.equal(touchRetry.routeConsequence,null);assert.equal(touchRetry.routeConsequenceTime,null);
  assert.equal(touchRetry.routeRejoinTime,null);assert.equal(touchRetry.routeRejoinPosition,null);
  assert.equal(touchRetry.player.hp,100);assert.equal(touchRetry.player.z,18);
+ report.mobilePreCloseWorld=touchRetry;
  report.checks.push('touch-only full combat, arrival, signal, ending and clean retry');
  mark(mobileRecording,'clean-retry');
  assert.deepEqual(errors,[]);
-}catch(e){report.result='failed';report.mobileFailure=String(e);report.mobileFailureState=await mobile.evaluate(()=>window.freshDiagnostics?.()).catch(()=>null);process.exitCode=1;}
+}catch(e){report.result='failed';report.mobileFailure=String(e);report.mobileFailurePhase=mobileCommandPhase;report.mobileFailureState=await mobile.evaluate(()=>window.freshDiagnostics?.()).catch(()=>null);process.exitCode=1;}
 report.durationsMs.mobile=Date.now()-mobileStarted;
 report.touchTimings=await mobile.evaluate(()=>window.freshDiagnostics?.(true).timings).catch(()=>null);
-await finishRecording(phone,mobileVideo,mobileRecording);await mobileBrowser.close();
+mobileCloseRequested=true;await finishRecording(phone,mobileVideo,mobileRecording);await mobileBrowser.close();
 }
 try{await run();}
 catch(e){report.result='failed';report.setupOrShutdownFailure=String(e);process.exitCode=1;}

@@ -132,7 +132,11 @@ test('route checkpoint images are decoded after capture instead of perturbing he
     assert.ok(start>=0&&end>start);
     assert.doesNotMatch(source.slice(start,end),/screenshot\(/,'live route observation must not leave movement held during image encoding');
     assert.match(source,/routePhase==='branch'&&w\.routeChoice/,'route-side samples must stop after physical reconvergence');
+    assert.match(source,/tapLockUntilObserved/,'touch combat must wait for one lock pulse instead of queuing lock toggles');
   }
+  assert.match(browser,/preflightBrowser\.close\(\)[\s\S]*recording\('touch'/,'recorded touch mission must start in a browser launched after preflight closes');
+  const recordedTouchStart=browser.indexOf("const mobileRecording=recording('touch'");
+  assert.doesNotMatch(browser.slice(recordedTouchStart),/mobile\.reload\(/,'recorded touch mission must not reuse a preflight page through reload');
   assert.match(verifier,/\['fork-entry','route-choice','route-landmark','route-rejoin'\]/);
   assert.match(verifier,/snapshotBytes>0/);
 });

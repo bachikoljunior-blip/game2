@@ -130,6 +130,16 @@ async function runTouchLeft(){
       }while(Date.now()<retryDeadline);
       throw new Error('Recovery dodge was not observed before its 3000ms input deadline');
     };
+    const tapLockUntilObserved=async targetId=>{
+      await tap(lock);const acknowledgementDeadline=Date.now()+3000;
+      do{
+        const observed=await page.evaluate(()=>({mode:freshDiagnostics().world.mode,locked:freshDiagnostics().world.locked}));
+        if(observed.mode!=='playing')throw new Error(`Mission ended before the ${targetId} lock was acknowledged`);
+        if(observed.locked===targetId)return;
+        await page.waitForTimeout(50);
+      }while(Date.now()<acknowledgementDeadline);
+      throw new Error(`${targetId} lock was not observed before its 3000ms input deadline`);
+    };
     const waitForRetainerLockAfterPair=async beforeDodges=>{
       const acknowledgementDeadline=Date.now()+3000;let observed=null,pairActivityObserved=false;
       do{
@@ -158,7 +168,7 @@ async function runTouchLeft(){
         const paired=await waitForRetainerLockAfterPair(w.totals.dodges);
         if(paired.dodges<=w.totals.dodges)await tapDodgeUntilObserved(w.totals.dodges);
       }
-      else if(action.dodge)await (action.dodgeNeedsAcknowledgement?tapDodgeUntilObserved(w.totals.dodges):tap(dodge));else if(action.lock)await tap(lock);else if(action.attack)await tap(attack);
+      else if(action.dodge)await (action.dodgeNeedsAcknowledgement?tapDodgeUntilObserved(w.totals.dodges):tap(dodge));else if(action.lock)await (action.targetId?tapLockUntilObserved(action.targetId):tap(lock));else if(action.attack)await tap(attack);
       else if(action.x||action.z){
         await begin(4,stick);contacts.set(4,{x:stick.x+action.x*32,y:stick.y+action.z*32,id:4});
         await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[...contacts.values()]});await page.waitForTimeout(100);await end(4);await page.waitForTimeout(40);
