@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "observedAt": "2026-09-14T03:51:37Z",
-  "status": "production_restarted_candidate_pending_ci",
+  "status": "production_restarted_and_candidate_verified",
   "lastProducedRevision": "28ff67cf78c40dd9c17819d8dbd3eb103c6a4160",
   "lastWorkflow": 34800496145,
   "lastWorkflowCompletedAt": "2026-09-14T02:53:25Z",
@@ -15,7 +15,7 @@
       "cause": "The preceding bounded execution ended after reporting the rendered result without committing the result and exact next gap to durable state.",
       "recurrenceCondition": "A run boundary after CI or review can leave the next trigger reading a stale pending action.",
       "remedy": "Commit the completed CI, independent review, exact next gap and pending candidate together before starting the next remote verification.",
-      "verification": "This recovery commit contains both the 28ff67c result and the new integrated candidate; local 35 tests and production build pass. Exact-head rendered CI remains required."
+      "verification": "The recovery commit contains both the 28ff67c result and the new integrated candidate. b852f6a passed exact-head CI34804385369, and this follow-up preserves the result and next gap before the run boundary."
     },
     {
       "cause": "Production has no separate continuously running executor after a scheduled invocation ends.",
@@ -34,7 +34,42 @@
     ],
     "reuse": "No old game source or component was inspected or imported.",
     "localVerification": "passed: 35 node tests and production build; bundle 516.85 kB, gzip 134.40 kB, existing over500kB warning retained",
-    "pending": "Exact-revision browser CI, actual desktop/phone frame inspection and independent image review"
+    "remoteVerification": {
+      "revision": "b852f6a981d90629313c241f230beaf223d8da29",
+      "workflowRun": 34804385369,
+      "job": 103853241224,
+      "conclusion": "success",
+      "tests": 35,
+      "desktopDurationMs": 98036,
+      "mobileDurationMs": 88775,
+      "render": {"calls": 92, "triangles": 127744},
+      "desktopMission": "passed: three kills, signal, ending, clean retry; player HP100",
+      "touchMission": "passed: three kills, signal, ending, clean retry; player HP76",
+      "errors": [],
+      "environment": "Chromium/SwiftShader; not physical-device performance",
+      "artifact": {
+        "id": 10333140503,
+        "digest": "sha256:a11e82aad38854fd7c1af7404481c8db65308caf07418bd91d3bdd369eaef5db"
+      }
+    },
+    "independentStaticReview": {
+      "verifiedImprovements": [
+        "daytime actor/background separation improved",
+        "encounter sword became conspicuous",
+        "central combat space is readable although torii obstruction remains",
+        "desktop victory has a coherent heading-narrative-retry order"
+      ],
+      "remaining": [
+        "flat low-detail materials and repeated vegetation",
+        "primitive blocky actors",
+        "victory wall still dominates the lamp, actor and result",
+        "large encounter torii posts still consume peripheral space",
+        "mobile victory body copy is too small and a bright right-edge geometry wedge weakens polish"
+      ],
+      "highestLeverageNextChange": "Create a responsive foreground result panel with larger text, stronger contrast separation and a tighter actor/lamp composition that excludes the wall edge.",
+      "scopeLimit": "Five static candidate frames only; not source-blind reference comparison, animation, controls, audio or physical-device performance."
+    },
+    "pending": "Responsive victory/result composition, remaining presentation gaps, unresolved reference selection and source-blind continuous comparisons"
   },
   "deadlineForecast": {
     "deadline": "2026-09-20T07:51:53Z",
