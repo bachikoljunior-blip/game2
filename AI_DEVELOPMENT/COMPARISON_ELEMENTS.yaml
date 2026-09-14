@@ -1547,16 +1547,12 @@
     "SK": "SEKIRO: Shadows Die Twice (2019)"
   },
   "runtime": {
-    "basicEvidence": "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-ci-afc8bcd.json",
+    "basicEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-4da1c60.json",
     "branch": "codex/game2-rebuild-20260913",
     "formalEvidence": null,
     "legacyEvidenceReusableAsCurrent": false,
-    "revision": "afc8bcdb0ddb869c93228c45b845c90d48a17083",
-    "pendingCandidate": {
-      "baseRevision": "0f5a37f9dc8ca7fe657e51f51933559118e77eb3",
-      "checkpoint": "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-mission.json",
-      "note": "revision/basicEvidence above describe the prior smoke-tested runtime only, not this mission change."
-    }
+    "revision": "4da1c6049bd682d6030c40a8b01802b4e8b2e692",
+    "verificationScope": "Basic functional browser evidence and source-aware static image review only; all whole-element blind verdicts remain not measured."
   },
   "schemaVersion": 1,
   "sources": [

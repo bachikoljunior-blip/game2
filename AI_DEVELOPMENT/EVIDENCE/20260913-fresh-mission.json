@@ -45,9 +45,11 @@
       "inference": "Environment launch failure, not evidence of game-frame behavior or physical-device performance."
     },
     "ci": {
-      "status": "pending automatic run on publication",
+      "status": "success; exact published mission revision",
       "workflow": ".github/workflows/fresh-game.yml",
-      "runId": null
+      "runId": 34791254109,
+      "revision": "4da1c6049bd682d6030c40a8b01802b4e8b2e692",
+      "resultEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-4da1c60.json"
     },
     "independentReview": {
       "reviewer": "/root/mission_review",
@@ -85,5 +87,5 @@
     "pagesChanged": false,
     "reason": "Preserve old public runtime until new candidate verified."
   },
-  "nextAction": "Read EVIDENCE/20260913-fresh-mission.json and latest branch head. Inspect the automatically triggered Fresh game verification for that exact mission commit, including real-input victory, signal action, retry, mobile inputs and WebGL recovery. Local browser exited SIGTRAP before any frame. Do not transfer afc8bcd evidence to this change or publish it before rendered verification. C05 reference longevity remains unresolved; continue remaining five reference selections (C05/C06/C09/C11/C12) and actual blind media. No blind unit has finished. Deadline 2026-09-20T07:51:53Z."
+  "nextAction": "CI succeeded for exact mission revision 4da1c60. Continue at EVIDENCE/20260914-fresh-ci-4da1c60.json and SESSION_STATE.yaml for observed rendering corrections, touch-only full mission, attack-only route diagnosis and remaining reference/blind work. No blind unit has finished. Deadline 2026-09-20T07:51:53Z."
 }

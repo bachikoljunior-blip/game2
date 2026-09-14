@@ -10,22 +10,22 @@
     "workingBranch": "codex/game2-rebuild-20260913",
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
-    "activeTask": "FRESH-MISSION-VERIFICATION",
-    "lastSuccessfulAction": "Original mission implemented from a recorded fresh design: purpose, combat, arrival, a separate signal action, visual lamp, ending and retry. 30 node tests pass. Independent review identified a same-tick last-kill completion and repetitive aria-live updates; both corrected. No fresh rendered result yet.",
-    "currentFailingAction": "Local Chromium exits SIGTRAP before page creation. Mission real-input/rendered verification and all formal blind comparisons remain unmeasured. C05 has additional narrative/player sources but unresolved longevity; five selections remain incomplete.",
+    "activeTask": "FRESH-PRESENTATION-AND-TOUCH",
+    "lastSuccessfulAction": "Exact runtime 4da1c6049bd682d6030c40a8b01802b4e8b2e692 passed CI 34791254109: 30 node tests, build, real-input full combat/arrival/signal/ending/retry, WebGL recovery and mobile multi-touch/cancel. Independent code corrections verified; independent static image review recorded visible gaps.",
+    "currentFailingAction": "No whole-element blind pass. Static images show enemy occlusion, title obscuring lamp, weak label contrast and primitive geometry. Touch-only mission, portrait menus and audio remain unmeasured. Five reference selections remain incomplete.",
     "currentHypothesis": null,
-    "nextAction": "Read EVIDENCE/20260913-fresh-mission.json and latest branch head. Inspect the automatically triggered Fresh game verification for that exact mission commit, including real-input victory, signal action, retry, mobile inputs and WebGL recovery. Local browser exited SIGTRAP before any frame. Do not transfer afc8bcd evidence to this change or publish it before rendered verification. C05 reference longevity remains unresolved; continue remaining five reference selections (C05/C06/C09/C11/C12) and actual blind media. No blind unit has finished. Deadline 2026-09-20T07:51:53Z.",
+    "nextAction": "Continue from this exact runtime. Correct observed enemy occlusion, ending title over lamp and low-contrast labels; verify portrait/landscape touch mission through signal and retry. Test attack-only route against defense-led routes. Complete remaining initial reference selection C05/C06/C09/C11/C12 and actual matched blind media without changing goals. Deadline 2026-09-20T07:51:53Z. Read AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-4da1c60.json and fresh remote head first; no duplicate edits or CI. All elements remain not measured; current blind work unit remains active.",
     "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
     "pendingVerification": [
-      "Exact mission revision CI and real-input full victory/retry",
-      "Small portrait and landscape mission text, lamp visibility and touch signal action",
-      "Remaining reference selection and independent source-blind comparisons"
+      "Source-blind comparison for any whole concept element",
+      "Touch-only full mission and signal completion",
+      "Portrait/narrow viewport menus and orientation changes",
+      "WebKit / iOS Simulator behavior",
+      "Physical-device performance",
+      "Audio and screen-reader behavior",
+      "Continuous camera/animation readability and before/after lamp imagery"
     ],
-    "modifiedFiles": [
-      "AI_DEVELOPMENT/COMPARISON_ELEMENTS.yaml",
-      "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-catalog-review.json",
-      "tools/check-fresh-catalog.mjs"
-    ],
+    "modifiedFiles": [],
     "remotePushPendingAuthorization": false,
     "remoteReleaseAuthorized": true,
     "remotePublicationStatus": "Old public runtime remains intact. Fresh runtime is a separate unaccepted work-branch candidate.",
@@ -78,7 +78,8 @@
       "AI_DEVELOPMENT/EVIDENCE/20260913-reference-selection-c04-sk.json",
       "AI_DEVELOPMENT/EVIDENCE/20260913-reference-selection-c08.json",
       "AI_DEVELOPMENT/EVIDENCE/20260913-reference-selection-c02.json",
-      "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-mission.json"
+      "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-mission.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-4da1c60.json"
     ],
     "publicRuntimeRevision": "86512c3bfdc69e03b5b490d9b0d79ec9da141343"
   },
@@ -90,7 +91,7 @@
     "completion": "All concept elements satisfied by evidenced blind comparison.",
     "current_unit": "2026-09-13-fresh-design",
     "unit_status": "active",
-    "first_action": "Read EVIDENCE/20260913-fresh-mission.json and latest branch head. Inspect the automatically triggered Fresh game verification for that exact mission commit, including real-input victory, signal action, retry, mobile inputs and WebGL recovery. Local browser exited SIGTRAP before any frame. Do not transfer afc8bcd evidence to this change or publish it before rendered verification. C05 reference longevity remains unresolved; continue remaining five reference selections (C05/C06/C09/C11/C12) and actual blind media. No blind unit has finished. Deadline 2026-09-20T07:51:53Z.",
+    "first_action": "Continue from this exact runtime. Correct observed enemy occlusion, ending title over lamp and low-contrast labels; verify portrait/landscape touch mission through signal and retry. Test attack-only route against defense-led routes. Complete remaining initial reference selection C05/C06/C09/C11/C12 and actual matched blind media without changing goals. Deadline 2026-09-20T07:51:53Z. Read AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-4da1c60.json and fresh remote head first; no duplicate edits or CI. All elements remain not measured; current blind work unit remains active.",
     "implementation_strategy": "Fresh design and implementation; needs-before-reuse, per latest direct user instruction.",
     "unitEndReason": null
   }
