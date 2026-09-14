@@ -41,6 +41,62 @@ test('a reversing lock bearing cannot pull the interpolated camera overhead',()=
   }
 });
 
+test('large authored composition changes remain continuous after a dropped frame',()=>{
+  const world={mode:'playing',pathCleared:false,routeChoice:'left',routePhase:'branch',signalLit:false,
+    player:{x:-3.4,z:-13,hp:100},enemies:[{id:'retainer',hp:0}],locked:null};
+  const current={x:-2.55,y:2.8,z:-7.2,lookX:-3.4,lookY:1.25,lookZ:-13.6};
+  const wanted=computeCameraFrame(world,0,16/9,{}),before={...current};
+  interpolateCameraFrame(current,wanted,.1,true);
+  assert.ok(Math.abs(current.y-before.y)<=.4+1e-9,'one delayed render cannot jump vertically into the vista');
+  assert.ok(Math.hypot(current.x-before.x,current.z-before.z)<=.7+1e-9,'one delayed render cannot cut horizontally to the vista');
+  for(let n=0;n<100;n++)interpolateCameraFrame(current,wanted,.1,true);
+  assert.ok(Math.max(...['x','y','z','lookX','lookY','lookZ'].map(key=>Math.abs(current[key]-wanted[key])))<.18,
+    'the bounded transition still settles within the browser composition gate');
+});
+
+test('vista exit and arrival entry retain the same per-frame continuity bound',()=>{
+  const rightVista={mode:'playing',pathCleared:false,routeChoice:'right',routePhase:'branch',signalLit:false,
+    player:{x:4.5,z:-13,hp:100},enemies:[{id:'warden',hp:0}],locked:null};
+  const ordinary={...rightVista,routePhase:'rejoined',player:{x:.5,z:-17.5,hp:100},enemies:[],routeChoice:'right'};
+  const locked={...ordinary,player:{x:0,z:-18,hp:100},enemies:[{id:'sentinel',x:0,z:-19.4,hp:100}],locked:'sentinel'};
+  const arrival={...ordinary,pathCleared:true,signalLit:false,locked:null,enemies:[]};
+  for(const [from,to] of [[computeCameraFrame(rightVista,0,16/9,{}),computeCameraFrame(ordinary,0,16/9,{})],
+    [computeCameraFrame(locked,0,16/9,{}),computeCameraFrame(arrival,0,16/9,{})]]){
+    const current={...from},before={...from};
+    interpolateCameraFrame(current,to,.1,true);
+    assert.ok(Math.abs(current.y-before.y)<=.4+1e-9);
+    assert.ok(Math.hypot(current.x-before.x,current.z-before.z)<=.7+1e-9);
+    for(let n=0;n<100;n++)interpolateCameraFrame(current,to,.1,true);
+    assert.ok(Math.max(...['x','y','z','lookX','lookY','lookZ'].map(key=>Math.abs(current[key]-to[key])))<.18);
+  }
+});
+
+test('post-rejoin unlocked descent makes the later lock satisfy the unchanged duel angle',()=>{
+  for(const [route,aspect,enemy] of [
+    ['left',16/9,{id:'warden',x:3,z:-16,hp:100}],
+    ['right',844/390,{id:'retainer',x:-3,z:-9,hp:100}]
+  ]){
+    const vista={mode:'playing',pathCleared:false,routeChoice:route,routePhase:'branch',signalLit:false,
+      player:{x:routeCenterAt(route,-13),z:-13,hp:100},enemies:[{id:route==='left'?'retainer':'warden',hp:0}],locked:null};
+    const ordinary={...vista,routePhase:'rejoined',player:{x:route==='left'?-.5:.5,z:-17.5,hp:100},enemies:[enemy],locked:null};
+    const current=computeCameraFrame(vista,0,aspect,{});
+    let downAngleDegrees=Infinity;
+    for(let n=0;n<600&&downAngleDegrees>30;n++){
+      interpolateCameraFrame(current,computeCameraFrame(ordinary,0,aspect,{}),1/60,true);
+      const horizontal=Math.hypot(current.x-current.lookX,current.z-current.lookZ);
+      downAngleDegrees=Math.atan2(current.y-current.lookY,horizontal)*180/Math.PI;
+    }
+    assert.ok(downAngleDegrees<=30,'the unlocked guard dwell must have a finite safe endpoint');
+    ordinary.locked=enemy.id;
+    for(let n=0;n<240;n++){
+      interpolateCameraFrame(current,computeCameraFrame(ordinary,0,aspect,{}),1/60,true);
+      const horizontal=Math.hypot(current.x-current.lookX,current.z-current.lookZ);
+      downAngleDegrees=Math.atan2(current.y-current.lookY,horizontal)*180/Math.PI;
+      assert.ok(downAngleDegrees<=35,'lock may start only after the continuous camera descent satisfies the original limit');
+    }
+  }
+});
+
 test('coincident fighters retain a finite camera direction and standoff',()=>{
   const world={player:{x:2,z:1,hp:100,yaw:.7},enemies:[{id:'e',x:2,z:1,hp:100}],locked:'e'};
   const frame=computeCameraFrame(world,0,390/844,{});
@@ -201,9 +257,11 @@ test('route checkpoint images are decoded after capture instead of perturbing he
   const recordedTouchStart=browser.indexOf("const mobileRecording=recording('touch'");
   assert.doesNotMatch(browser.slice(recordedTouchStart),/mobile\.reload\(/,'recorded touch mission must not reuse a preflight page through reload');
   assert.match(workflow,/browser-smoke\.mjs \|\| browser_status=\$\?[\s\S]*route-matrix-smoke\.mjs \|\| matrix_status=\$\?/,'one failed apparatus must not suppress the other route evidence');
-  assert.match(verifier,/\['full-mission-start','fork-entry','route-choice','rejoin-approach','route-rejoin','post-rejoin-shrine-view','destination-arrival','signal-input','signal-lit','victory','clean-retry','context-close'\]/);
+  assert.match(verifier,/\['full-mission-start','fork-entry','route-choice','rejoin-approach','route-rejoin','rejoin-camera-settled','post-rejoin-shrine-view','destination-arrival','signal-input','signal-lit','victory','clean-retry','context-close'\]/);
+  for(const source of [browser,matrix])assert.match(source,/world\.locked===null&&world\.player\.state==='guard'&&Number\.isFinite\(downAngleDegrees\)&&downAngleDegrees<=30/,'all four real-input routes must receive guard and settle the continuous vista exit before locking');
+  assert.match(matrix,/result\.camera=await cameraContract\(page\)/,'both complementary routes must retain the unchanged final camera contract');
   assert.match(verifier,/routeSpecificEvents=\[landmark,consequence\]\.sort\(\(a,b\)=>a\.detail\.time-b\.detail\.time/);
-  assert.match(verifier,/\['fork-entry',\.\.\.routeSpecificEvents,'rejoin-approach','signal-lit'\]/);
+  assert.match(verifier,/\['fork-entry',\.\.\.routeSpecificEvents,'route-rejoin','destination-arrival'\]/);
   assert.match(verifier,/fixed-five frames must be byte-distinct/);
   assert.match(verifier,/fully decoded before event checks/);
   assert.match(verifier,/for\(const id of expectedIds\)/,'raw filenames must be discovered independently of parsed report entries');

@@ -56,15 +56,17 @@ for(const id of expectedIds){
   let priorOffset=-1;
   for(const event of item.events){assert.ok(Number.isFinite(event.offsetMs)&&event.offsetMs>=priorOffset,'event offsets must be finite and monotonic');priorOffset=event.offsetMs;}
   const names=item.events.map(event=>event.event);
-  ordered(item.events,['full-mission-start','fork-entry','route-choice','rejoin-approach','route-rejoin','post-rejoin-shrine-view','destination-arrival','signal-input','signal-lit','victory','clean-retry','context-close']);
+  ordered(item.events,['full-mission-start','fork-entry','route-choice','rejoin-approach','route-rejoin','rejoin-camera-settled','post-rejoin-shrine-view','destination-arrival','signal-input','signal-lit','victory','clean-retry','context-close']);
   const choice=item.events.find(event=>event.event==='route-choice'),landmark=item.events.find(event=>event.event==='route-landmark'),
     consequence=item.events.find(event=>event.event==='route-consequence'),approach=item.events.find(event=>event.event==='rejoin-approach'),
-    rejoin=item.events.find(event=>event.event==='route-rejoin'),postView=item.events.find(event=>event.event==='post-rejoin-shrine-view'),
+    rejoin=item.events.find(event=>event.event==='route-rejoin'),rejoinSettled=item.events.find(event=>event.event==='rejoin-camera-settled'),postView=item.events.find(event=>event.event==='post-rejoin-shrine-view'),
     arrival=item.events.find(event=>event.event==='destination-arrival'),signalInput=item.events.find(event=>event.event==='signal-input'),signalLit=item.events.find(event=>event.event==='signal-lit');
   const expectedRoute=new Map([['desktop','left'],['touch','right'],['desktop-right','right'],['touch-left','left']]).get(id);
   assert.equal(choice.detail.route,expectedRoute);
   for(const checkpoint of [landmark,consequence])assert.ok(checkpoint&&checkpoint.offsetMs>=choice.offsetMs&&checkpoint.offsetMs<=rejoin.offsetMs,'landmark and consequence must occur after choice and no later than physical reconvergence');
-  assert.ok(approach.offsetMs<rejoin.offsetMs&&rejoin.offsetMs<=postView.offsetMs&&postView.offsetMs<=arrival.offsetMs&&arrival.offsetMs<signalInput.offsetMs&&signalInput.offsetMs<=signalLit.offsetMs);
+  assert.ok(approach.offsetMs<rejoin.offsetMs&&rejoin.offsetMs<rejoinSettled.offsetMs&&rejoinSettled.offsetMs<=postView.offsetMs&&postView.offsetMs<=arrival.offsetMs&&arrival.offsetMs<signalInput.offsetMs&&signalInput.offsetMs<=signalLit.offsetMs);
+  assert.equal(rejoinSettled.detail.mode,'playing');assert.equal(rejoinSettled.detail.locked,null);assert.equal(rejoinSettled.detail.playerState,'guard');
+  assert.ok(Number.isFinite(rejoinSettled.detail.downAngleDegrees)&&rejoinSettled.detail.downAngleDegrees<=30);
   assert.ok(item.events.filter(event=>event.event==='kills').some(event=>event.detail===3));
   assert.equal(names.at(-1),'context-close');
   const approximateIntervalSeconds=item.events.at(-1).offsetMs/1000;
@@ -87,7 +89,12 @@ for(const id of expectedIds){
    snapshots.push({event:name,file:`decoded/${filename}`,bytes:snapshotBytes,sha256:await sha256(snapshotFile),approximateOffsetSeconds:captureOffsetMs/1000,eventOffsetSeconds:checkpoint.offsetMs/1000,semanticWorldTime:checkpoint.detail?.time??null});
   }
   const routeSpecificEvents=[landmark,consequence].sort((a,b)=>a.detail.time-b.detail.time||a.offsetMs-b.offsetMs||a.event.localeCompare(b.event)).map(event=>event.event);
-  const fixedFiveEvents=['fork-entry',...routeSpecificEvents,'rejoin-approach','signal-lit'];
+  // Five comparison frames must carry the whole claimed progression: the
+  // available fork, the two route-specific facts in semantic order, the
+  // *actual* shared rejoin, and the unlit destination arrival. The continuous
+  // clip still proceeds through signal lighting, but neither telemetry nor a
+  // pre-rejoin preview may stand in for the two missing visual claims.
+  const fixedFiveEvents=['fork-entry',...routeSpecificEvents,'route-rejoin','destination-arrival'];
   const fixedFive=fixedFiveEvents.map(name=>snapshots.find(snapshot=>snapshot.event===name));
   assert.equal(new Set(fixedFive.map(frame=>frame.sha256)).size,5,'fixed-five frames must be byte-distinct; recapture a criterion-bearing checkpoint instead of duplicating a frame');
   assert.ok(fixedFive.every((frame,index)=>index===0||frame.approximateOffsetSeconds>fixedFive[index-1].approximateOffsetSeconds),'fixed-five capture offsets must follow semantic gameplay order');

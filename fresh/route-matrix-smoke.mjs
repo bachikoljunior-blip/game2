@@ -36,6 +36,20 @@ async function waitForComposition(page,framesKey,compositionKey){
     return {frames:camera[framesKey],composition:camera[compositionKey],frame:camera.frame};
   },[framesKey,compositionKey]);
 }
+async function waitForPostRejoinCamera(page){
+  await page.waitForFunction(()=>{
+    const {world,camera}=freshDiagnostics(),frame=camera.frame;
+    const horizontal=Math.hypot(frame.x-frame.lookX,frame.z-frame.lookZ);
+    const downAngleDegrees=Math.atan2(frame.y-frame.lookY,horizontal)*180/Math.PI;
+    return world.mode!=='playing'||world.locked===null&&world.player.state==='guard'&&Number.isFinite(downAngleDegrees)&&downAngleDegrees<=30;
+  },{},{timeout:10000});
+  return page.evaluate(()=>{
+    const {world,camera}=freshDiagnostics(),frame=camera.frame;
+    const horizontal=Math.hypot(frame.x-frame.lookX,frame.z-frame.lookZ);
+    const downAngleDegrees=Math.atan2(frame.y-frame.lookY,horizontal)*180/Math.PI;
+    return {mode:world.mode,locked:world.locked,playerState:world.player.state,frame,horizontal,downAngleDegrees};
+  });
+}
 async function finish(context,video,item){
   try{
     mark(item,'context-close');await context.close();await rename(await video.path(),new URL(item.file,out));
@@ -43,14 +57,21 @@ async function finish(context,video,item){
   }catch(error){item.status='failed';item.failure=String(error);report.result='failed';process.exitCode=1;}
   await persist();
 }
-function mission(route){return {preferred:route,entry:null,choice:null,landmark:null,consequence:null,rejoinApproach:null,rejoin:null,arrivalView:null,arrival:null,signalInput:null,signalLit:null,ridgeSamples:[],checkpoints:[],victoryObservedElapsedMs:null};}
+async function cameraContract(page){
+  const metric=await page.evaluate(()=>freshDiagnostics().camera);
+  assert.ok(metric.lockedFrames>0,'must observe actual locked combat renders');
+  assert.ok(Number.isFinite(metric.minHorizontalStandoff)&&metric.minHorizontalStandoff>=3.5,'lock transitions must retain horizontal standoff');
+  assert.ok(metric.maxDownAngleDegrees<=35,'lock transitions must not pass above the duel');
+  return metric;
+}
+function mission(route){return {preferred:route,entry:null,choice:null,landmark:null,consequence:null,rejoinApproach:null,rejoin:null,rejoinCameraSettled:null,arrivalView:null,arrival:null,signalInput:null,signalLit:null,ridgeSamples:[],checkpoints:[],victoryObservedElapsedMs:null};}
 function assertRoute(result,route){
   const expected=route==='left'?{landmark:'石灯',consequence:'early-retainer'}:{landmark:'風布',consequence:'overlook-warden'};
   assert.equal(result.after.mode,'victory');assert.equal(result.after.signalLit,true);assert.equal(result.after.totals.kills,3);
   assert.equal(result.after.routeChoice,route);assert.equal(result.after.routePhase,'rejoined');
   assert.equal(result.after.routeLandmark,expected.landmark);assert.equal(result.after.routeConsequence,expected.consequence);
   assert.ok(result.after.routeChoiceTime<result.after.routeLandmarkTime&&result.after.routeLandmarkTime<result.after.routeRejoinTime);
-  assert.ok(result.entry&&result.choice&&result.landmark&&result.consequence&&result.rejoinApproach&&result.rejoin&&result.arrivalView&&result.arrival&&result.signalInput&&result.signalLit);
+  assert.ok(result.entry&&result.choice&&result.landmark&&result.consequence&&result.rejoinApproach&&result.rejoin&&result.rejoinCameraSettled&&result.arrivalView&&result.arrival&&result.signalInput&&result.signalLit);
   assert.ok(result.arrival.distance<=SIGNAL.radius);assert.equal(result.signalLit.event?.type,'signal');
   assert.ok(result.ridgeSamples.length>0);
   const clearance=ROUTE_FORK.obstacle.w/2+.35;
@@ -111,6 +132,15 @@ async function runDesktopRight(){
         result.rejoinApproach={time:w.time,position:{x:w.player.x,z:w.player.z},camera};
         mark(item,'rejoin-approach',result.rejoinApproach);await page.waitForTimeout(1200);continue;
       }
+      if(result.rejoin&&!result.rejoinCameraSettled){
+        for(const key of held){await page.keyboard.up(key);held.delete(key);}
+        await page.keyboard.down('KeyQ');
+        try{result.rejoinCameraSettled=await waitForPostRejoinCamera(page);}
+        finally{await page.keyboard.up('KeyQ');}
+        assert.equal(result.rejoinCameraSettled.mode,'playing');assert.equal(result.rejoinCameraSettled.locked,null);assert.equal(result.rejoinCameraSettled.playerState,'guard');
+        assert.ok(result.rejoinCameraSettled.downAngleDegrees<=30);
+        mark(item,'rejoin-camera-settled',result.rejoinCameraSettled);continue;
+      }
       if(!result.arrivalView&&canLightSignal(w)){
         for(const key of held){await page.keyboard.up(key);held.delete(key);}
         const camera=await waitForComposition(page,'arrivalOverviewFrames','arrivalComposition');
@@ -135,7 +165,7 @@ async function runDesktopRight(){
       await page.waitForTimeout(100);
     }
     for(const key of held)await page.keyboard.up(key);
-    result.after=await page.evaluate(()=>freshDiagnostics().world);assertRoute(result,'right');mark(item,'victory');
+    result.after=await page.evaluate(()=>freshDiagnostics().world);assertRoute(result,'right');result.camera=await cameraContract(page);mark(item,'victory');
     assert.equal(await page.locator('#menu').getAttribute('data-mode'),'victory');
     assert.match(await page.locator('#objective').innerText(),/社の灯が、谷への合図になった/);
     assert.deepEqual(await page.locator('#message').locator(':scope > *').allTextContents(),ENDING_PHRASES);
@@ -221,6 +251,15 @@ async function runTouchLeft(){
         result.rejoinApproach={time:w.time,position:{x:w.player.x,z:w.player.z},camera};
         mark(item,'rejoin-approach',result.rejoinApproach);await page.waitForTimeout(1200);continue;
       }
+      if(result.rejoin&&!result.rejoinCameraSettled){
+        if(contacts.size)await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});contacts.clear();
+        await begin(1,guard);
+        try{result.rejoinCameraSettled=await waitForPostRejoinCamera(page);}
+        finally{if(contacts.has(1))await end(1);}
+        assert.equal(result.rejoinCameraSettled.mode,'playing');assert.equal(result.rejoinCameraSettled.locked,null);assert.equal(result.rejoinCameraSettled.playerState,'guard');
+        assert.ok(result.rejoinCameraSettled.downAngleDegrees<=30);
+        mark(item,'rejoin-camera-settled',result.rejoinCameraSettled);continue;
+      }
       if(!result.arrivalView&&canLightSignal(w)){
         if(contacts.size)await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});contacts.clear();
         const camera=await waitForComposition(page,'arrivalOverviewFrames','arrivalComposition');
@@ -250,7 +289,7 @@ async function runTouchLeft(){
       }else await page.waitForTimeout(80);
     }
     if(contacts.size)await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});contacts.clear();
-    result.after=await page.evaluate(()=>freshDiagnostics().world);assertRoute(result,'left');
+    result.after=await page.evaluate(()=>freshDiagnostics().world);assertRoute(result,'left');result.camera=await cameraContract(page);
     assert.ok(Math.hypot(result.after.player.dodgeX,result.after.player.dodgeZ)>.5&&result.guardObserved&&result.blockOrParryObserved);
     assert.equal(await page.locator('#menu').getAttribute('data-mode'),'victory');
     assert.match(await page.locator('#objective').innerText(),/社の灯が、谷への合図になった/);

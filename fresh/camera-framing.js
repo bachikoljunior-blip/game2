@@ -87,15 +87,27 @@ export function computeCameraFrame(world,orbit,aspect,out){
 // Interpolate the horizontal orbit and radius around a moving focus instead.
 export function interpolateCameraFrame(current,wanted,dt,initialized){
   if(!initialized)return Object.assign(current,wanted);
-  const alpha=1-Math.exp(-Math.max(0,Math.min(dt,.1))*8);
+  const priorX=current.x,priorZ=current.z;
+  const step=Math.max(0,Math.min(dt,.1));
+  const alpha=1-Math.exp(-step*8);
+  // A dropped browser frame must not turn a large authored composition change
+  // into a visual cut. Keep the ordinary exponential response for tracking,
+  // but rate-limit only the large deltas introduced by the rejoin and arrival
+  // views. This changes presentation motion, not simulation or camera targets.
+  const approach=(from,to,maxDelta)=>from+clamp((to-from)*alpha,-maxDelta,maxDelta);
   const oldRadius=Math.hypot(current.x-current.lookX,current.z-current.lookZ);
   const newRadius=Math.hypot(wanted.x-wanted.lookX,wanted.z-wanted.lookZ);
   const oldAngle=Math.atan2(current.x-current.lookX,current.z-current.lookZ);
   const newAngle=Math.atan2(wanted.x-wanted.lookX,wanted.z-wanted.lookZ);
   const delta=Math.atan2(Math.sin(newAngle-oldAngle),Math.cos(newAngle-oldAngle));
-  const angle=oldAngle+delta*alpha,radius=oldRadius+(newRadius-oldRadius)*alpha;
-  for(const key of ['lookX','lookY','lookZ','y'])current[key]+=(wanted[key]-current[key])*alpha;
-  current.x=current.lookX+Math.sin(angle)*radius;
-  current.z=current.lookZ+Math.cos(angle)*radius;
+  const angle=oldAngle+clamp(delta*alpha,-1.5*step,1.5*step);
+  const radius=approach(oldRadius,newRadius,3*step);
+  for(const key of ['lookX','lookY','lookZ'])current[key]=approach(current[key],wanted[key],5*step);
+  current.y=approach(current.y,wanted.y,4*step);
+  const nextX=current.lookX+Math.sin(angle)*radius,nextZ=current.lookZ+Math.cos(angle)*radius;
+  const dx=nextX-priorX,dz=nextZ-priorZ,distance=Math.hypot(dx,dz),maxHorizontal=7*step;
+  const horizontalScale=distance>maxHorizontal&&distance>0?maxHorizontal/distance:1;
+  current.x=priorX+dx*horizontalScale;
+  current.z=priorZ+dz*horizontalScale;
   return current;
 }

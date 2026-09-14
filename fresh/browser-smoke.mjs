@@ -31,6 +31,20 @@ async function waitForComposition(page,framesKey,compositionKey){
   return {frames:camera[framesKey],composition:camera[compositionKey],frame:camera.frame};
  },[framesKey,compositionKey]);
 }
+async function waitForPostRejoinCamera(page){
+ await page.waitForFunction(()=>{
+  const {world,camera}=freshDiagnostics(),frame=camera.frame;
+  const horizontal=Math.hypot(frame.x-frame.lookX,frame.z-frame.lookZ);
+  const downAngleDegrees=Math.atan2(frame.y-frame.lookY,horizontal)*180/Math.PI;
+  return world.mode!=='playing'||world.locked===null&&world.player.state==='guard'&&Number.isFinite(downAngleDegrees)&&downAngleDegrees<=30;
+ },{},{timeout:10000});
+ return page.evaluate(()=>{
+  const {world,camera}=freshDiagnostics(),frame=camera.frame;
+  const horizontal=Math.hypot(frame.x-frame.lookX,frame.z-frame.lookZ);
+  const downAngleDegrees=Math.atan2(frame.y-frame.lookY,horizontal)*180/Math.PI;
+  return {mode:world.mode,locked:world.locked,playerState:world.player.state,frame,horizontal,downAngleDegrees};
+ });
+}
 async function finishRecording(context,video,item){
  try{
   mark(item,'context-close');await context.close();
@@ -106,7 +120,7 @@ try{
  const retry=await page.evaluate(()=>freshDiagnostics());assert.equal(retry.world.player.hp,100);assert.equal(retry.world.player.z,18);report.checks.push('death and real retry restore player');
  // Complete the newly authored objective with real input, never diagnostic mutations.
  const held=new Set(),fullDeadline=Date.now()+180000;
- report.mission={before:retry.world,checkpoints:[],route:{preferred:'left',entry:null,choice:null,landmark:null,consequence:null,rejoinApproach:null,rejoin:null,arrivalView:null,arrival:null,signalInput:null,signalLit:null,ridgeSamples:[]}};let lastKills=-1,lastRouteSampleTime=-Infinity;mark(desktopRecording,'full-mission-start');
+ report.mission={before:retry.world,checkpoints:[],route:{preferred:'left',entry:null,choice:null,landmark:null,consequence:null,rejoinApproach:null,rejoin:null,rejoinCameraSettled:null,arrivalView:null,arrival:null,signalInput:null,signalLit:null,ridgeSamples:[]}};let lastKills=-1,lastRouteSampleTime=-Infinity;mark(desktopRecording,'full-mission-start');
  while(Date.now()<fullDeadline){
   const w=await page.evaluate(()=>freshDiagnostics().world);
   if(w.totals.kills!==lastKills){report.mission.checkpoints.push(w);lastKills=w.totals.kills;mark(desktopRecording,'kills',lastKills);}
@@ -141,6 +155,18 @@ try{
    report.mission.route.rejoinApproach={time:w.time,position:{x:w.player.x,z:w.player.z},camera};
    mark(desktopRecording,'rejoin-approach',report.mission.route.rejoinApproach);await page.waitForTimeout(1200);continue;
   }
+  if(report.mission.route.rejoin&&!report.mission.route.rejoinCameraSettled){
+   // The settled vista necessarily looks down more steeply than the combat
+   // contract permits. Release movement and hold the real guard control while
+   // the same continuous camera descends; only then may policy pulse lock.
+   for(const key of held){await page.keyboard.up(key);held.delete(key);}
+   await page.keyboard.down('KeyQ');
+   try{report.mission.route.rejoinCameraSettled=await waitForPostRejoinCamera(page);}
+   finally{await page.keyboard.up('KeyQ');}
+   assert.equal(report.mission.route.rejoinCameraSettled.mode,'playing');assert.equal(report.mission.route.rejoinCameraSettled.locked,null);assert.equal(report.mission.route.rejoinCameraSettled.playerState,'guard');
+   assert.ok(report.mission.route.rejoinCameraSettled.downAngleDegrees<=30);
+   mark(desktopRecording,'rejoin-camera-settled',report.mission.route.rejoinCameraSettled);continue;
+  }
   if(!report.mission.route.arrivalView&&canLightSignal(w)){
    for(const key of held){await page.keyboard.up(key);held.delete(key);}
    const camera=await waitForComposition(page,'arrivalOverviewFrames','arrivalComposition');
@@ -173,7 +199,7 @@ try{
  assert.equal(report.mission.after.routeLandmark,'石灯');assert.equal(report.mission.after.routeConsequence,'early-retainer');
  assert.ok(report.mission.route.arrival.distance<=SIGNAL.radius);assert.equal(report.mission.route.signalLit.event?.type,'signal');
  assert.ok(report.mission.after.routeChoiceTime<report.mission.after.routeLandmarkTime&&report.mission.after.routeLandmarkTime<report.mission.after.routeRejoinTime);
- assert.ok(report.mission.route.entry&&report.mission.route.landmark&&report.mission.route.consequence&&report.mission.route.rejoinApproach&&report.mission.route.rejoin&&report.mission.route.arrivalView&&report.mission.route.arrival&&report.mission.route.signalInput&&report.mission.route.signalLit,'desktop recording must cover fork, visible reconvergence, shrine arrival and signal');
+ assert.ok(report.mission.route.entry&&report.mission.route.landmark&&report.mission.route.consequence&&report.mission.route.rejoinApproach&&report.mission.route.rejoin&&report.mission.route.rejoinCameraSettled&&report.mission.route.arrivalView&&report.mission.route.arrival&&report.mission.route.signalInput&&report.mission.route.signalLit,'desktop recording must cover fork, visible reconvergence, continuous camera descent, shrine arrival and signal');
  assert.ok(report.mission.route.ridgeSamples.length>0&&report.mission.route.ridgeSamples.every(sample=>sample.x<=-(ROUTE_FORK.obstacle.w/2+.35)),'desktop must remain on the left side of the solid ridge');
  assert.ok(report.mission.checkpoints.some(w=>w.totals.kills===3&&w.mode==='playing'),'last kill must leave the arrival objective active');
  assert.match(await page.locator('#message').innerText(),/社の灯がともった/);
@@ -294,7 +320,7 @@ try{
   }while(Date.now()<acknowledgementDeadline);
   throw new Error(`${targetId} lock was not observed before its 3000ms input deadline`);
  };
- const touchDeadline=Date.now()+180000,touchSession=createTouchPlaythroughSession();report.touchMission={policy:'right wind-cloth route; spacing dodge, one-pulse lock acknowledgement, held guard and close attacks after contact; prior dodge-only, queued-lock and narrow-counter failures retained',guardObserved:false,blockOrParryObserved:false,checkpoints:[],route:{preferred:'right',entry:null,choice:null,landmark:null,consequence:null,rejoinApproach:null,rejoin:null,arrivalView:null,arrival:null,signalInput:null,signalLit:null,ridgeSamples:[]},decisions:[],decisionsOmitted:0,timingScope:'Read-only observed world followed by real touch commands. Decision commandStarted/Finished are wall offsets including command round trips and deliberate waits, not measured game input latency.'};let touchKills=-1,lastTouchRouteSampleTime=-Infinity;mark(mobileRecording,'full-mission-start');
+ const touchDeadline=Date.now()+180000,touchSession=createTouchPlaythroughSession();report.touchMission={policy:'right wind-cloth route; spacing dodge, one-pulse lock acknowledgement, held guard and close attacks after contact; prior dodge-only, queued-lock and narrow-counter failures retained',guardObserved:false,blockOrParryObserved:false,checkpoints:[],route:{preferred:'right',entry:null,choice:null,landmark:null,consequence:null,rejoinApproach:null,rejoin:null,rejoinCameraSettled:null,arrivalView:null,arrival:null,signalInput:null,signalLit:null,ridgeSamples:[]},decisions:[],decisionsOmitted:0,timingScope:'Read-only observed world followed by real touch commands. Decision commandStarted/Finished are wall offsets including command round trips and deliberate waits, not measured game input latency.'};let touchKills=-1,lastTouchRouteSampleTime=-Infinity;mark(mobileRecording,'full-mission-start');
  while(Date.now()<touchDeadline){
   const w=await mobile.evaluate(()=>freshDiagnostics().world);
   report.mobileLastObservedWorld=w;mobileCommandPhase='decision';
@@ -331,6 +357,15 @@ try{
    const camera=await waitForComposition(mobile,'rejoinVistaFrames','rejoinComposition');
    report.touchMission.route.rejoinApproach={time:w.time,position:{x:w.player.x,z:w.player.z},camera};
    mark(mobileRecording,'rejoin-approach',report.touchMission.route.rejoinApproach);await mobile.waitForTimeout(1200);continue;
+  }
+  if(report.touchMission.route.rejoin&&!report.touchMission.route.rejoinCameraSettled){
+   if(contacts.size)await sendTouch('rejoin-settle-cancel',{type:'touchCancel',touchPoints:[]});contacts.clear();
+   await beginContact(1,g);
+   try{report.touchMission.route.rejoinCameraSettled=await waitForPostRejoinCamera(mobile);}
+   finally{if(contacts.has(1))await endContact(1);}
+   assert.equal(report.touchMission.route.rejoinCameraSettled.mode,'playing');assert.equal(report.touchMission.route.rejoinCameraSettled.locked,null);assert.equal(report.touchMission.route.rejoinCameraSettled.playerState,'guard');
+   assert.ok(report.touchMission.route.rejoinCameraSettled.downAngleDegrees<=30);
+   mark(mobileRecording,'rejoin-camera-settled',report.touchMission.route.rejoinCameraSettled);continue;
   }
   if(!report.touchMission.route.arrivalView&&canLightSignal(w)){
    if(contacts.size)await sendTouch('arrival-view-cancel',{type:'touchCancel',touchPoints:[]});contacts.clear();
@@ -382,7 +417,7 @@ try{
  assert.equal(report.touchMission.after.routeLandmark,'風布');assert.equal(report.touchMission.after.routeConsequence,'overlook-warden');
  assert.ok(report.touchMission.route.arrival.distance<=SIGNAL.radius);assert.equal(report.touchMission.route.signalLit.event?.type,'signal');
  assert.ok(report.touchMission.after.routeChoiceTime<report.touchMission.after.routeLandmarkTime&&report.touchMission.after.routeLandmarkTime<report.touchMission.after.routeRejoinTime);
- assert.ok(report.touchMission.route.entry&&report.touchMission.route.landmark&&report.touchMission.route.consequence&&report.touchMission.route.rejoinApproach&&report.touchMission.route.rejoin&&report.touchMission.route.arrivalView&&report.touchMission.route.arrival&&report.touchMission.route.signalInput&&report.touchMission.route.signalLit,'touch recording must cover fork, visible reconvergence, shrine arrival and signal');
+ assert.ok(report.touchMission.route.entry&&report.touchMission.route.landmark&&report.touchMission.route.consequence&&report.touchMission.route.rejoinApproach&&report.touchMission.route.rejoin&&report.touchMission.route.rejoinCameraSettled&&report.touchMission.route.arrivalView&&report.touchMission.route.arrival&&report.touchMission.route.signalInput&&report.touchMission.route.signalLit,'touch recording must cover fork, visible reconvergence, continuous camera descent, shrine arrival and signal');
  assert.ok(report.touchMission.route.ridgeSamples.length>0&&report.touchMission.route.ridgeSamples.every(sample=>sample.x>=ROUTE_FORK.obstacle.w/2+.35),'touch must remain on the right side of the solid ridge');
  assert.ok(report.touchMission.checkpoints.some(w=>w.totals.kills===3&&w.mode==='playing'));
  assert.equal(await mobile.locator('#menu').getAttribute('data-mode'),'victory');
