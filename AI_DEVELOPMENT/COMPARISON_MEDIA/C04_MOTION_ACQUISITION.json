@@ -1,0 +1,10 @@
+{
+  "element": "C04",
+  "reference": "GT",
+  "article": "https://blog.playstation.com/2021/01/12/how-stunning-visual-effects-bring-ghost-of-tsushima-to-life/",
+  "section": "Wind",
+  "maxClips": 4,
+  "maxBytesPerClip": 67108864,
+  "purpose": "Acquire actual motion shown in the retained reference's official post-release wind section, to reduce missing motion evidence. Inspect the decoded footage before using it.",
+  "limits": "Selected demonstration footage may contain debug views, cuts and non-retail builds. It is not a complete comparable navigation route, source-blind verdict, audio result or evidence of having played the reference. No reference content enters the runtime. Only normal source-provided media links from the Wind section; no age-gated sections."
+}
