@@ -2,7 +2,7 @@ import * as T from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { OBSTACLES } from './simulation.js';
 import { SIGNAL } from './mission.js';
-import { computeCameraFrame } from './camera-framing.js';
+import { computeCameraFrame, interpolateCameraFrame } from './camera-framing.js';
 
 const clamp = T.MathUtils.clamp;
 export function createPresentation(canvas) {
@@ -144,8 +144,9 @@ export function createPresentation(canvas) {
     const signal=mesh(root,new T.OctahedronGeometry(.1),brass,0,2.1,0);signal.visible=false;
     rigs.set(id,{root,body,limbs,ring,signal});return rigs.get(id);
   }
-  const look=new T.Vector3(),wanted=new T.Vector3(),lookWanted=new T.Vector3();
-  const cameraFrame={x:0,y:0,z:0,lookX:0,lookY:0,lookZ:0};let initialized=false;
+  const look=new T.Vector3();
+  const cameraFrame={x:0,y:0,z:0,lookX:0,lookY:0,lookZ:0},smoothedFrame={...cameraFrame};let initialized=false;
+  const cameraMetrics={lockedFrames:0,minHorizontalStandoff:null,maxDownAngleDegrees:0};
   function resize(){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}
   resize();
   function render(world,dt,orbit=0){
@@ -167,11 +168,18 @@ export function createPresentation(canvas) {
       if(a.state==='dodge')r.body.rotation.x=-.35;else r.body.rotation.x=0;
     }
     computeCameraFrame(world,orbit,camera.aspect,cameraFrame);
-    wanted.set(cameraFrame.x,cameraFrame.y,cameraFrame.z);
-    lookWanted.set(cameraFrame.lookX,cameraFrame.lookY,cameraFrame.lookZ);
-    const smooth=initialized?1-Math.exp(-Math.min(dt,.1)*8):1;
-    camera.position.lerp(wanted,smooth);look.lerp(lookWanted,smooth);camera.lookAt(look);initialized=true;
+    interpolateCameraFrame(smoothedFrame,cameraFrame,dt,initialized);
+    camera.position.set(smoothedFrame.x,smoothedFrame.y,smoothedFrame.z);
+    look.set(smoothedFrame.lookX,smoothedFrame.lookY,smoothedFrame.lookZ);
+    camera.lookAt(look);initialized=true;
+    if(world.mode==='playing'&&world.locked){
+      const horizontal=Math.hypot(smoothedFrame.x-smoothedFrame.lookX,smoothedFrame.z-smoothedFrame.lookZ);
+      const downAngle=Math.atan2(smoothedFrame.y-smoothedFrame.lookY,horizontal)*180/Math.PI;
+      cameraMetrics.lockedFrames++;
+      cameraMetrics.minHorizontalStandoff=Math.min(cameraMetrics.minHorizontalStandoff??Infinity,horizontal);
+      cameraMetrics.maxDownAngleDegrees=Math.max(cameraMetrics.maxDownAngleDegrees,downAngle);
+    }
     renderer.render(scene,camera);
   }
-  return {render,resize,renderer,scene,camera};
+  return {render,resize,renderer,scene,camera,cameraDiagnostics:()=>({...cameraMetrics,frame:{...smoothedFrame}})};
 }

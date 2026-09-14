@@ -34,6 +34,13 @@ async function resultLayout(p){
  for(const phrase of layout.phrases)assert.ok(phrase.rect.height<=phrase.lineHeight+1,'authored phrases must remain intact at the tested viewport');
  return layout;
 }
+async function cameraContract(p){
+ const metric=await p.evaluate(()=>freshDiagnostics().camera);
+ assert.ok(metric.lockedFrames>0,'must observe actual locked combat renders');
+ assert.ok(Number.isFinite(metric.minHorizontalStandoff)&&metric.minHorizontalStandoff>=3.5,'lock transitions must retain horizontal standoff');
+ assert.ok(metric.maxDownAngleDegrees<=35,'lock transitions must not pass above the duel');
+ return metric;
+}
 async function run(){
 const browser=await launchBrowser();browsers.push(browser);
 const desktop=await browser.newContext({viewport:desktopSize,recordVideo:{dir:new URL('recording-temp/',out).pathname,size:desktopSize}});
@@ -92,6 +99,7 @@ try{
  await page.waitForTimeout(500);
  assert.equal(await page.locator('#hud').isHidden(),true);
  report.desktopResult=await resultLayout(page);mark(desktopRecording,'victory');
+ report.desktopCamera=await cameraContract(page);
  await page.screenshot({path:new URL('mission-victory.png',out).pathname});
  await page.waitForTimeout(3000);
  await page.click('#start');
@@ -177,6 +185,7 @@ try{
  assert.equal(await mobile.locator('#menu').getAttribute('data-mode'),'victory');
  await mobile.waitForTimeout(500);
  report.landscapeResult=await resultLayout(mobile);mark(mobileRecording,'victory');
+ report.touchCamera=await cameraContract(mobile);
  await mobile.screenshot({path:new URL('mobile-mission-victory.png',out).pathname});
  await mobile.waitForTimeout(3000);
  await mobile.setViewportSize({width:390,height:844});await mobile.waitForTimeout(500);

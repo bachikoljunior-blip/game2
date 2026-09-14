@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-14T06:38:00Z",
+  "updatedAt": "2026-09-14T06:47:50.374Z",
   "phase": "fresh-lock-camera-transition",
   "userInstruction": "一旦ゲーム自体はゼロから作り直してくれる？",
   "activeBranch": "codex/game2-rebuild-20260913",
@@ -15,7 +15,7 @@
     "oldPr": 10,
     "optionalRebuildRouting": "ec2480166809f57fa623929bec0fbcb4d5a623a2"
   },
-  "continuation": "Reproduce the newly observed overhead touch-combat camera. Investigate Cartesian interpolation across changing duel directions, preserve standoff through angular interpolation if confirmed, and verify on actual recorded touch input. Continue outstanding reference/material preparation; all10 formal elements remain not measured.",
+  "continuation": "Verify the new latched-dodge/angular-camera candidate once on exact head. Preserve previous d48a8d7 videos as baseline. Check every locked render's standoff/down angle, real PC/touch mission and both complete recordings; compare actual touch combat frames independently. Then move to remaining reference/actual paired material and the larger actor/scene/ending gaps. All10 elements remain not measured.",
   "status": "not measured",
   "publication": "Keep old Pages until a verified replacement is ready. Fresh runtime is a work-branch candidate, not public product acceptance.",
   "procedureAuthority": "Fixed instructions and explicit user directives govern. Tests, task plans and architecture documents are tools chosen by the AI, not additional fixed rules.",
@@ -27,7 +27,7 @@
   "comparisonCatalog": "AI_DEVELOPMENT/COMPARISON_ELEMENTS.yaml",
   "referenceSelectionComplete": false,
   "verificationEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-unknown-method-change.json",
-  "pendingCandidate": "Continuous recording/result candidate is verified. Newly captured touch-combat overhead overlap is the next defect to reproduce and correct.",
+  "pendingCandidate": "Latched directional/neutral-backward dodge and angular camera interpolation implemented.39 local tests/build pass. Exact-head recorded PC/touch verification pending.",
   "methodChangeEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-unknown-method-change.json",
   "recoveryRole": {
     "userInstruction": "定期オートメーションは万が一実行が停止していたら、停止してしまう原因を全て潰してから再開する再発火役にしてください。",

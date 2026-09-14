@@ -45,4 +45,4 @@ function frame(now){
   if(!contextLost)view.render(world,dt,input.orbit);
 }
 requestAnimationFrame(frame);
-if(new URLSearchParams(location.search).has('diagnostic'))Object.defineProperty(window,'freshDiagnostics',{value:()=>JSON.parse(JSON.stringify({world,running,paused,contextLost,render:view.renderer.info.render})),writable:false});
+if(new URLSearchParams(location.search).has('diagnostic'))Object.defineProperty(window,'freshDiagnostics',{value:()=>JSON.parse(JSON.stringify({world,running,paused,contextLost,render:view.renderer.info.render,camera:view.cameraDiagnostics()})),writable:false});

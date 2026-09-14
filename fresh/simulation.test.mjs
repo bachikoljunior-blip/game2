@@ -30,6 +30,26 @@ test('dodge protects during its active interval',()=>{
  const w=createWorld(),e=w.enemies[0];e.z=16.5;e.yaw=Math.PI;e.state='attack';e.age=.17;
  w.player.state='dodge';w.player.age=.1;stepWorld(w);assert.equal(w.player.hp,100);assert.ok(w.events.some(e=>e.type==='evade'));
 });
+
+test('a neutral locked dodge retreats without oscillating through the target',()=>{
+ const w=createWorld();w.player.x=0;w.player.z=0;w.enemies=w.enemies.slice(0,1);
+ Object.assign(w.enemies[0],{x:0,z:-1.65,state:'windup'});w.locked=w.enemies[0].id;
+ let priorZ=0;
+ for(let n=0;n<27;n++){
+  stepWorld(w,n===0?{dodge:true}:{});
+  assert.ok(w.player.z>priorZ,'retreat must not reverse direction to chase the locked enemy');
+  assert.ok(Math.hypot(w.player.x-w.enemies[0].x,w.player.z-w.enemies[0].z)>=1.65);
+  priorZ=w.player.z;
+ }
+ assert.ok(w.player.z>3&&w.player.z<3.3);assert.equal(w.player.hp,100);
+});
+
+test('a directional dodge keeps the chosen direction as facing and input change',()=>{
+ const w=createWorld();w.player.x=0;w.player.z=0;w.enemies=w.enemies.slice(0,1);
+ Object.assign(w.enemies[0],{x:0,z:-1.65,state:'windup'});w.locked=w.enemies[0].id;
+ for(let n=0;n<27;n++)stepWorld(w,n===0?{dodge:true,x:1}:{x:-1,z:-1});
+ assert.ok(w.player.x>3);assert.ok(Math.abs(w.player.z)<1e-8);
+});
 test('60Hz and quarter-second frame delivery yield identical simulation',()=>{
  const a=createWorld(),b=createWorld();for(let i=0;i<600;i++)advance(a,STEP,{z:-1});for(let i=0;i<40;i++)advance(b,.25,{z:-1});
  assert.equal(a.ticks,b.ticks);assert.deepEqual(a.player,b.player);assert.deepEqual(a.totals,b.totals);

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {computeCameraFrame} from './camera-framing.js';
+import {computeCameraFrame,interpolateCameraFrame} from './camera-framing.js';
 
 const angle=(camera,a,b)=>{
   const ax=a.x-camera.x,az=a.z-camera.z,bx=b.x-camera.x,bz=b.z-camera.z;
@@ -21,6 +21,28 @@ test('portrait framing preserves a smaller lateral offset',()=>{
   const landscape=computeCameraFrame({player,enemies:[enemy],locked:enemy.id},0,16/9,{});
   const portrait=computeCameraFrame({player,enemies:[enemy],locked:enemy.id},0,9/16,{});
   assert.ok(Math.abs(portrait.x-player.x)<Math.abs(landscape.x-player.x));
+});
+
+test('a reversing lock bearing cannot pull the interpolated camera overhead',()=>{
+  const world={player:{x:0,z:0,hp:100},enemies:[{id:'e',x:0,z:-1.8,hp:100}],locked:'e'};
+  const current=computeCameraFrame(world,0,844/390,{});
+  world.enemies[0].z=1.8;
+  const desired=computeCameraFrame(world,0,844/390,{});
+  // This interval makes the previous Cartesian lerp pass exactly through the duel.
+  interpolateCameraFrame(current,desired,Math.log(2)/8,true);
+  assert.ok(Math.hypot(current.x-current.lookX,current.z-current.lookZ)>4.5);
+  for(let n=0;n<60;n++){
+    world.enemies[0].z=n%2?1.8:-1.8;
+    interpolateCameraFrame(current,computeCameraFrame(world,0,844/390,{}),1/60,true);
+    assert.ok(Math.hypot(current.x-current.lookX,current.z-current.lookZ)>4.5);
+  }
+});
+
+test('coincident fighters retain a finite camera direction and standoff',()=>{
+  const world={player:{x:2,z:1,hp:100,yaw:.7},enemies:[{id:'e',x:2,z:1,hp:100}],locked:'e'};
+  const frame=computeCameraFrame(world,0,390/844,{});
+  assert.ok(Object.values(frame).every(Number.isFinite));
+  assert.ok(Math.hypot(frame.x-frame.lookX,frame.z-frame.lookZ)>4.5);
 });
 
 test('victory framing shows the signal from an authored oblique angle',()=>{

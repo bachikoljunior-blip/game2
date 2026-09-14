@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T06:47:50.374Z",
+  "baseRevision": "f8e15d11b08f8337b7a8d392f1a90a8bb766b64f",
+  "observationRevision": "d48a8d7a4648dab4d1b6a6f19ad1064f528dea7f",
+  "requirements": "AI_DEVELOPMENT/FRESH_DESIGN.md:連続記録で露見した接近戦の視点・回避",
+  "motivation": "Independent5-second samples of actual touch combat showed overhead close-ups and overlapping fighters. This was newly observable because the unknown-forecast method change preserved continuous play.",
+  "reproduction": {
+    "kind": "controlled nonrendered current-game cases, not restored historical video states",
+    "neutralDodge": {
+      "enemyStartGap": 1.65,
+      "ticks": 27,
+      "durationSeconds": 0.45,
+      "before": {
+        "minGap": 0.016666666666666385,
+        "reversals": 12
+      },
+      "after": {
+        "minGap": 1.7666666666666666,
+        "reversals": 0,
+        "travel": 3.1500000000000004
+      }
+    },
+    "camera": {
+      "oppositeBearingHalfwayStandoffBefore": 0,
+      "oppositeBearingHalfwayStandoffAfter": 6.224938232625284,
+      "coincidentStandoffBefore": 0,
+      "coincidentPortraitStandoffAfter": 4.661854582073533
+    },
+    "causes": [
+      "Player yaw follows the target every fixed step and previously determined dodge movement too, so crossing the target reversed the ongoing dodge repeatedly.",
+      "Cartesian camera/focus interpolation crosses the duel when the target bearing reverses; zero-distance target normalization also produced zero horizontal offset."
+    ]
+  },
+  "implementation": [
+    "Choose dodge direction once at entry: explicit movement vector, otherwise backwards from facing. Camera-facing updates no longer reverse the movement.",
+    "Interpolate camera azimuth by the shortest arc and radius around a smoothed focus, keeping horizontal standoff during direction changes.",
+    "Use actor-facing direction for a coincident target; expose read-only rendered camera aggregates and assert meaningful geometric regressions in real browser missions."
+  ],
+  "preserved": {
+    "dodgeSpeed": 7,
+    "dodgeDuration": 0.46,
+    "protectionInterval": 0.32,
+    "enemyWindup": 0.65,
+    "damage": "unchanged",
+    "missionDeadlineSeconds": 180,
+    "criteria": "No fixed text, reference, element boundary, acceptance status or sample requirement changed.",
+    "reuse": "No old game source imported or inspected."
+  },
+  "localVerification": {
+    "tests": 39,
+    "result": "passed",
+    "build": "passed",
+    "bundleKb": 518.26,
+    "gzipKb": 134.91,
+    "warning": "Existing over500kB warning retained"
+  },
+  "remoteVerification": null,
+  "independentReview": null,
+  "formalVerdict": "not measured",
+  "workUnitEnded": false,
+  "nextWork": "Verify the new latched-dodge/angular-camera candidate once on exact head. Preserve previous d48a8d7 videos as baseline. Check every locked render's standoff/down angle, real PC/touch mission and both complete recordings; compare actual touch combat frames independently. Then move to remaining reference/actual paired material and the larger actor/scene/ending gaps. All10 elements remain not measured."
+}

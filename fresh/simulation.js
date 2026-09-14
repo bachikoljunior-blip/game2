@@ -10,7 +10,7 @@ export const angleDelta = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b))
 export const distance = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 const face = (a, b) => Math.atan2(b.x - a.x, -(b.z - a.z));
 const actor = (id, x, z) => ({ id, x, z, yaw: 0, hp: 100, posture: 0,
-  state: 'idle', age: 0, guardAge: 99, hit: [], cooldown: 0, stride: 0 });
+  state: 'idle', age: 0, guardAge: 99, hit: [], cooldown: 0, stride: 0, dodgeX: 0, dodgeZ: 0 });
 export function createWorld() {
   return { time: 0, remainder: 0, ticks: 0, mode: 'playing', player: actor('player', 0, 18),
     enemies: [actor('sentinel', 0, 1), actor('retainer', -3, -9), actor('warden', 3, -16)],
@@ -82,7 +82,12 @@ export function stepWorld(w, input = {}) {
   if (target && p.state !== 'attack' && p.state !== 'dead') p.yaw = face(p, target);
   if (p.state === 'guard' && !input.guard) enter(p, 'idle');
   if (p.state === 'idle' || p.state === 'guard') {
-    if (input.dodge) enter(p, 'dodge');
+    if (input.dodge) {
+      const dx=input.x||0,dz=input.z||0,length=Math.hypot(dx,dz);
+      p.dodgeX=length>.1?dx/length:-Math.sin(p.yaw);
+      p.dodgeZ=length>.1?dz/length:Math.cos(p.yaw);
+      enter(p, 'dodge');
+    }
     else if (input.attack) enter(p, 'attack');
     else if (input.guard && p.state !== 'guard') { enter(p, 'guard'); p.guardAge = 0; }
     const x = input.x || 0, z = input.z || 0, n = Math.max(1, Math.hypot(x,z));
@@ -91,7 +96,7 @@ export function stepWorld(w, input = {}) {
       if (!target && Math.hypot(x,z) > .1) p.yaw = Math.atan2(x, -z);
     }
   }
-  if (p.state === 'dodge') move(p, Math.sin(p.yaw)*STEP*7, -Math.cos(p.yaw)*STEP*7);
+  if (p.state === 'dodge') move(p, p.dodgeX*STEP*7, p.dodgeZ*STEP*7);
   // One attacking enemy at a time gives other combatants an observable circling role.
   let occupied = w.enemies.some(e => e.state === 'windup' || e.state === 'attack');
   for (const e of w.enemies) {

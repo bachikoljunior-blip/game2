@@ -14,7 +14,7 @@
     "lastSuccessfulAction": "d48a8d7 / CI34813628212 passed35 tests/build, desktop/touch missions and retry, ending bounds/phrases/48px-or-larger CTA, two full-decodable continuous videos. Independent sampled review confirmed ending text improvements and exposed touch lock-camera overhead overlap.",
     "currentFailingAction": null,
     "currentHypothesis": null,
-    "nextAction": "Reproduce the newly observed overhead touch-combat camera. Investigate Cartesian interpolation across changing duel directions, preserve standoff through angular interpolation if confirmed, and verify on actual recorded touch input. Continue outstanding reference/material preparation; all10 formal elements remain not measured.",
+    "nextAction": "Verify the new latched-dodge/angular-camera candidate once on exact head. Preserve previous d48a8d7 videos as baseline. Check every locked render's standoff/down angle, real PC/touch mission and both complete recordings; compare actual touch combat frames independently. Then move to remaining reference/actual paired material and the larger actor/scene/ending gaps. All10 elements remain not measured.",
     "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
     "pendingVerification": [
       "Exact responsive victory typography/CTA/lamp-exposure frames and complete playable video files",
@@ -120,7 +120,8 @@
       "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-landscape-foundation.json",
       "AI_DEVELOPMENT/EVIDENCE/20260914-production-refire-28ff67c.json",
       "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-victory-panel-candidate.json",
-      "AI_DEVELOPMENT/EVIDENCE/20260914-unknown-method-change.json"
+      "AI_DEVELOPMENT/EVIDENCE/20260914-unknown-method-change.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-camera-transition.json"
     ],
     "publicRuntimeRevision": "86512c3bfdc69e03b5b490d9b0d79ec9da141343"
   },
@@ -132,14 +133,14 @@
     "completion": "All concept elements satisfied by evidenced blind comparison.",
     "current_unit": "2026-09-13-fresh-design",
     "unit_status": "active",
-    "first_action": "Reproduce the newly observed overhead touch-combat camera. Investigate Cartesian interpolation across changing duel directions, preserve standoff through angular interpolation if confirmed, and verify on actual recorded touch input. Continue outstanding reference/material preparation; all10 formal elements remain not measured.",
+    "first_action": "Verify the new latched-dodge/angular-camera candidate once on exact head. Preserve previous d48a8d7 videos as baseline. Check every locked render's standoff/down angle, real PC/touch mission and both complete recordings; compare actual touch combat frames independently. Then move to remaining reference/actual paired material and the larger actor/scene/ending gaps. All10 elements remain not measured.",
     "implementation_strategy": "Fresh design and implementation; needs-before-reuse, per latest direct user instruction.",
     "unitEndReason": null,
     "deadlineReassessment": {
       "observedAt": "2026-09-14T06:38:00Z",
       "prediction": "unknown; this triggers a method change, not a declaration of feasibility or impossibility",
       "basis": "About145.5 hours remain. All ten verdicts are not measured and reference selection is incomplete. Four recent successful functional CIs established execution and narrower static issues, but produced no whole-element verdict. Previous browser evidence contains screenshots and state, not reviewable continuous gameplay files. This prevents an evidence-based estimate of the remaining quality gap and comparison throughput.",
-      "methodChange": "Keep PC/phone rendering isolated and their existing mission deadlines/assertions. Save the same real-input runs as continuous videos; independently decode every frame and record dimensions, duration, hashes and missing audio. Fix the already-recorded ending issues in the same candidate. Then prioritize actual reference/candidate comparison material over further isolated cosmetic passes.",
+      "methodChange": "Keep PC/phone rendering isolated and their existing mission deadlines/assertions. Save the same real-input runs as continuous videos; independently decode every frame and record dimensions, duration, hashes and missing audio. Fix the already-recorded ending issues in the same candidate. Then prioritize actual reference/candidate comparison material over further isolated cosmetic passes. The saved continuous samples exposed a core combat defect: reproduce and correct homing-dodge reversals and camera orbit collapse as one input/camera change before further cosmetic work.",
       "validation": "Two complete retrievable continuous files replace absent video evidence:98.12s/2453 decoded frames desktop and99.6s/2490 frames touch. Both missions/recordings passed in the same CI. Browser wall durations98.054s and99.114s versus prior97.242s/97.465s are single-run observations, not a controlled overhead estimate. Independent sampled review exposed close-combat overhead camera/actor overlap previously absent from saved stills. Typography and CTA gaps closed at the measured viewports. Whole-element forecast remains unknown until actual reference comparisons.",
       "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-unknown-method-change.json"
     },

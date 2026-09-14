@@ -17,7 +17,7 @@ export function computeCameraFrame(world,orbit,aspect,out){
   const target=world.enemies.find(enemy=>enemy.id===world.locked&&enemy.hp>0);
   if(target){
     const dx=target.x-p.x,dz=target.z-p.z,distance=Math.max(.001,Math.hypot(dx,dz));
-    const nx=dx/distance,nz=dz/distance;
+    const nx=distance>.05?dx/distance:Math.sin(p.yaw??orbit),nz=distance>.05?dz/distance:-Math.cos(p.yaw??orbit);
     const portrait=aspect<.8;
     // Close duels need much stronger parallax: a distant over-shoulder camera
     // puts both bodies on almost the same screen ray even with a small offset.
@@ -41,4 +41,21 @@ export function computeCameraFrame(world,orbit,aspect,out){
   out.lookY=1.25;
   out.lookZ=p.z-.6;
   return out;
+}
+
+// Position interpolation cuts through the duel when the lock bearing reverses.
+// Interpolate the horizontal orbit and radius around a moving focus instead.
+export function interpolateCameraFrame(current,wanted,dt,initialized){
+  if(!initialized)return Object.assign(current,wanted);
+  const alpha=1-Math.exp(-Math.max(0,Math.min(dt,.1))*8);
+  const oldRadius=Math.hypot(current.x-current.lookX,current.z-current.lookZ);
+  const newRadius=Math.hypot(wanted.x-wanted.lookX,wanted.z-wanted.lookZ);
+  const oldAngle=Math.atan2(current.x-current.lookX,current.z-current.lookZ);
+  const newAngle=Math.atan2(wanted.x-wanted.lookX,wanted.z-wanted.lookZ);
+  const delta=Math.atan2(Math.sin(newAngle-oldAngle),Math.cos(newAngle-oldAngle));
+  const angle=oldAngle+delta*alpha,radius=oldRadius+(newRadius-oldRadius)*alpha;
+  for(const key of ['lookX','lookY','lookZ','y'])current[key]+=(wanted[key]-current[key])*alpha;
+  current.x=current.lookX+Math.sin(angle)*radius;
+  current.z=current.lookZ+Math.cos(angle)*radius;
+  return current;
 }
