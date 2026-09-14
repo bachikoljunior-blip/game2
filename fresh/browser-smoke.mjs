@@ -198,7 +198,10 @@ try{
   if(report.touchMission.decisions.length<400)report.touchMission.decisions.push(decision);
   else report.touchMission.decisionsOmitted++;
  }
- await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});contacts.clear();
+ // A terminal signal tap can leave no active contacts. Chromium rejects a
+ // cancellation without a touch sequence; only cancel contacts still held.
+ if(contacts.size)await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});
+ contacts.clear();
  report.touchMission.after=await mobile.evaluate(()=>freshDiagnostics().world);
  assert.equal(report.touchMission.after.mode,'victory','touch mission ended without victory');
  assert.ok(Number.isFinite(report.touchMission.victoryObservedElapsedMs)&&report.touchMission.victoryObservedElapsedMs<=180000,'touch victory must be observed within180seconds, not after the loop deadline');

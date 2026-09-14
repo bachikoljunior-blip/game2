@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "observedAt": "2026-09-14T08:25:04.042Z",
+  "observedAt": "2026-09-14T08:34:39.471Z",
   "runtimeRevision": "ce3615445aef7511917bcc9582b0c3a10da0a120",
   "failedBrowserAttempt": {
     "revision": "2b6e759054bf2089fa9937e041a7d3a7ebcc0210",
@@ -140,8 +140,23 @@
         }
       }
     ],
-    "rawEvidence": "browser-report.json in exact-revision artifact preserves the full callback samples, states and recording locators. Logs read; artifact ZIP digest reported by GitHub, not yet independently downloaded for this attempt.",
-    "failureInterpretation": "Actual defeat after1kill, second enemyHP32, playerposture122.68; not timeout or producer stop. Deadline assertion ran first and reported generic missing-victory wording; move mode assertion ahead of it while preserving the strict180second bound."
+    "rawEvidence": "Exact-revision artifact browser-report.json and logs retain all states/timings. ZIP downloaded and SHA256 verified; both recordings fully decoded with ffmpeg exit0. Mission remains failed.",
+    "failureInterpretation": "Actual defeat after1kill, second enemyHP32, playerposture122.68; not timeout or producer stop. Deadline assertion ran first and reported generic missing-victory wording; move mode assertion ahead of it while preserving the strict180second bound.",
+    "localArtifactVerification": {
+      "archiveSha256": "bdd954659daba21cda2453e118a7e248279cc846b326f222caff6b6970c8da4c",
+      "videos": [
+        {
+          "file": "desktop-continuous.webm",
+          "sha256": "dc22ec035d28896090badcbb28038b4d00c9cfa56fd4be5382e9da5b281221dd",
+          "bytes": 16648436
+        },
+        {
+          "file": "touch-continuous.webm",
+          "sha256": "f918b3dfd177aeecadd9b52486b8ed546fd17c342547f2d21c5266a91dba835c",
+          "bytes": 8099858
+        }
+      ]
+    }
   },
   "diagnosis": {
     "observed": "Prior unit model delivered a new decision immediately at an update and did not simulate world progress between observation and touch commands.",
@@ -229,13 +244,150 @@
         }
       ],
       "limits": "Not a browser-time prediction, exact rAF/command trace replay or performance result.0.75s failure retained."
+    },
+    "finalModelReview": {
+      "reviewer": "review_capture",
+      "result": "Confirmed separate guard command and actual button50/110ms,stick100/40ms,idle80ms branch waits. Reexecuted both focused model tests successfully. Actual rAF phase/jitter remains unverified."
     }
   },
   "newCandidate": {
-    "localTests": 46,
-    "result": "passed",
-    "realBrowser": "pending"
+    "revision": "9266736dee85e78d174c885190c38f8e7e570e7d",
+    "run": 34822773628,
+    "url": "https://github.com/bachikoljunior-blip/game2/actions/runs/34822773628",
+    "tests": 46,
+    "build": "passed",
+    "result": "failed after touch victory; ending/retry not checked",
+    "errors": [],
+    "desktopVictoryObservedElapsedMs": 65124,
+    "touchVictoryObservedElapsedMs": 95014,
+    "touchWorld": {
+      "enemies": [
+        {
+          "age": 33.11666666666607,
+          "cooldown": 0,
+          "dodgeX": 0,
+          "dodgeZ": 0,
+          "guardAge": 99,
+          "hit": [],
+          "hp": 0,
+          "id": "sentinel",
+          "posture": 60,
+          "state": "dead",
+          "stride": 8.190000000000017,
+          "x": -1.1389215232070392e-16,
+          "yaw": -2.0515795900898534e-17,
+          "z": 9.189999999999996
+        },
+        {
+          "age": 19.71666666666683,
+          "cooldown": 0,
+          "dodgeX": 0,
+          "dodgeZ": 0,
+          "guardAge": 99,
+          "hit": [],
+          "hp": 0,
+          "id": "retainer",
+          "posture": 55.683333333333316,
+          "state": "dead",
+          "stride": 6.60000000000001,
+          "x": -2.57827865765731,
+          "yaw": 2.7046913959393892,
+          "z": -2.5439213670606695
+        },
+        {
+          "age": 8.950000000000024,
+          "cooldown": 0,
+          "dodgeX": 0,
+          "dodgeZ": 0,
+          "guardAge": 99,
+          "hit": [],
+          "hp": 0,
+          "id": "warden",
+          "posture": 58.01666666666666,
+          "state": "dead",
+          "stride": 7.290000000000016,
+          "x": 3.2502279413415516,
+          "yaw": -1.1367622789879877,
+          "z": -8.962167509896203
+        }
+      ],
+      "events": [
+        {
+          "source": "player",
+          "target": "player",
+          "time": 44.74999999999874,
+          "type": "signal",
+          "x": -0.045925863780211296,
+          "z": -19.15
+        }
+      ],
+      "locked": null,
+      "mode": "victory",
+      "pathCleared": true,
+      "player": {
+        "age": 8.38333333333333,
+        "cooldown": 0,
+        "dodgeX": -3.575196864980844e-17,
+        "dodgeZ": 1,
+        "guardAge": 99,
+        "hit": [],
+        "hp": 100,
+        "id": "player",
+        "posture": 0,
+        "state": "idle",
+        "stride": 55.345927841226306,
+        "x": -0.045925863780211296,
+        "yaw": 0,
+        "z": -19.15
+      },
+      "remainder": 0.0043666666666679,
+      "signalLit": true,
+      "ticks": 2685,
+      "time": 44.74999999999874,
+      "totals": {
+        "hits": 9,
+        "kills": 3,
+        "parries": 0,
+        "received": 0
+      }
+    },
+    "guardObserved": true,
+    "blockOrParryObserved": true,
+    "commandTimings": {
+      "samples": 52,
+      "p50": 1041,
+      "p95": 4297,
+      "max": 5276,
+      "scope": "Read-only observed world followed by real touch commands. Decision commandStarted/Finished are wall offsets including command round trips and deliberate waits, not measured game input latency."
+    },
+    "failure": "Error: cdpSession.send: Protocol error (Input.dispatchTouchEvent): Must send a TouchStart first to start a new touch.",
+    "artifacts": [
+      {
+        "archive_download_url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10338638210/zip",
+        "created_at": "2026-09-14T08:32:24Z",
+        "digest": "sha256:f2b1792de9dd9ac9ecfb0dfe2b6df696fd9224af68de46839e383783c38d6dd5",
+        "expired": false,
+        "expires_at": "2026-12-13T08:27:00Z",
+        "id": 10338638210,
+        "name": "fresh-game-9266736dee85e78d174c885190c38f8e7e570e7d",
+        "size_in_bytes": 33043268,
+        "updated_at": "2026-09-14T08:32:24Z",
+        "url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10338638210",
+        "workflow_run": {
+          "head_branch": "codex/game2-rebuild-20260913",
+          "head_repository_id": 1316876624,
+          "head_sha": "9266736dee85e78d174c885190c38f8e7e570e7d",
+          "id": 34822773628,
+          "repository_id": 1316876624
+        }
+      }
+    ]
   },
   "formalVerdict": "not measured",
-  "workUnitEnded": false
+  "workUnitEnded": false,
+  "cleanupCorrection": {
+    "cause": "The successful signal tap ended its final touch contact. An unconditional final touchCancel was then rejected by CDP because no touch sequence existed. This is a test cleanup error after game victory; previous tactical defeats remain separate.",
+    "change": "Send final touchCancel only if the contacts map is nonempty, then clear it. Preserve ending/portrait/retry/video/zero-error and180second checks.",
+    "verification": "Actual CI pending at next revision; no success inferred for unchecked ending/retry."
+  }
 }
