@@ -73,6 +73,7 @@ try{
   await page.mouse.click(800,360);await page.waitForTimeout(800);
   if(await page.evaluate(()=>freshDiagnostics().world.totals.hits>0))break;
  }
+ await page.waitForFunction(()=>freshDiagnostics().camera.foregroundPostOpacity<=.35,{},{timeout:15000});
  report.combat=await page.evaluate(()=>freshDiagnostics());
  await page.screenshot({path:new URL('encounter.png',out).pathname});
  assert.ok(report.combat.world.totals.hits>0,'actual clicks must cause a hit');report.checks.push('real click causes enemy HP loss');
