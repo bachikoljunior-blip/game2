@@ -85,6 +85,50 @@ test('pristine left branch entry arms one simultaneous lock and spacing dodge',(
   assert.equal(world.totals.received,0);assert.equal(world.player.posture,0);assert.deepEqual(world.events,[]);
 });
 
+test('long-held guard cannot pre-empt the first required defensive contact',()=>{
+  const world=createWorld(),session=createTouchPlaythroughSession(),sentinel=world.enemies.find(enemy=>enemy.id==='sentinel');
+  Object.assign(world,{locked:'sentinel',time:8,totals:{hits:0,received:0,parries:0,kills:0,dodges:1}});
+  Object.assign(world.player,{x:0,z:2.8,state:'guard',age:3,guardAge:3,posture:0,dodgeX:0,dodgeZ:1});
+  Object.assign(sentinel,{x:0,z:1,yaw:Math.PI,state:'windup',age:.3});
+  const before=JSON.stringify(world),waiting=touchPlaythroughAction(world,'right',session);
+  assert.equal(JSON.stringify(world),before,'test policy only reads the world');
+  assert.equal(waiting.guard,true);assert.equal(waiting.attack,false,'first windup must be allowed to meet the held guard');
+  assert.equal(waiting.x,0);assert.equal(waiting.z,0,'defensive staging cannot walk out of the incoming strike');
+  advance(world,.25,waiting);advance(world,.25,waiting);advance(world,.25,waiting);
+  assert.ok(world.events.some(event=>event.type==='block'&&event.target==='player'),'the authored strike must reach the stationary guard');
+  const counter=touchPlaythroughAction(world,'right',session);
+  assert.equal(session.defenseObserved,true);assert.equal(counter.attack,true,'an observed defensive contact opens the counterattack');
+});
+
+test('defensive staging escapes the preserved 5eb8dca touch-left stall',()=>{
+  const world=createWorld(),session=createTouchPlaythroughSession(),sentinel=world.enemies.find(enemy=>enemy.id==='sentinel');
+  Object.assign(world,{time:135.43333333333325,remainder:.007666666666815751,ticks:8126,mode:'playing',locked:'sentinel',
+    routeChoice:null,routePhase:'approach',events:[],totals:{hits:0,received:0,parries:0,kills:0,dodges:1}});
+  Object.assign(world.player,{x:-4.0263325334611314e-17,z:7.427428571428532,yaw:Math.PI,hp:100,posture:0,
+    state:'guard',age:127.1833333333274,guardAge:127.1833333333274,hit:[],cooldown:0,
+    stride:349.0159999999626,dodgeX:-1.2325507755493267e-17,dodgeZ:1});
+  Object.assign(sentinel,{x:-2.2949808553943172e-17,z:7.450000000000016,yaw:-1.0531946364463743e-17,
+    hp:100,posture:0,state:'windup',age:.4666666666666666,guardAge:99,hit:[],cooldown:0,stride:139.1700000000045});
+  const staged=touchPlaythroughAction(world,'left',session);
+  assert.equal(staged.guard,true);assert.equal(staged.attack,false);assert.equal(staged.x,0);assert.equal(staged.z,0);
+  advance(world,.25,{guard:true});advance(world,.25,{guard:true});
+  assert.equal(world.player.posture,34);assert.ok(world.events.some(event=>event.type==='block'&&event.source==='sentinel'&&event.target==='player'));
+  assert.equal(touchPlaythroughAction(world,'left',session).attack,true,'the recovered defensive contact must open the counterattack');
+  assert.equal(session.defenseObserved,true);
+});
+
+test('only a player defensive contact unlocks missed-contact recovery',()=>{
+  const world=createWorld(),session=createTouchPlaythroughSession(),sentinel=world.enemies.find(enemy=>enemy.id==='sentinel');
+  Object.assign(world,{locked:'sentinel',time:8,events:[{type:'block',time:8,source:'player',target:'sentinel',x:0,z:1}]});
+  Object.assign(world.player,{x:0,z:2.8,state:'guard',age:3,guardAge:3,posture:0});
+  Object.assign(sentinel,{x:0,z:1,state:'windup',age:.3});
+  assert.equal(touchPlaythroughAction(world,'right',session).attack,false,'an enemy-side block is not player defence');
+  assert.equal(session.defenseObserved,false);
+  world.events=[{type:'parry',time:8,source:'sentinel',target:'player',x:0,z:2.8}];
+  assert.equal(touchPlaythroughAction(world,'right',session).attack,true,'the prior missed-contact escape hatch remains after measured player defence');
+  assert.equal(session.defenseObserved,true);
+});
+
 test('left-retainer recovery retries until an observed dodge acknowledges it',()=>{
   const world=createWorld(),session=createTouchPlaythroughSession(),sentinel=world.enemies.find(enemy=>enemy.id==='sentinel');
   Object.assign(sentinel,{hp:0,state:'dead'});

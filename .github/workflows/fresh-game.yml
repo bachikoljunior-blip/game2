@@ -32,8 +32,13 @@ jobs:
           node node_modules/vite/bin/vite.js preview --config fresh/vite.config.mjs --host 127.0.0.1 --port 4178 &
           SERVER_PID=$!
           trap 'kill "$SERVER_PID"' EXIT
-          node fresh/browser-smoke.mjs
-          node fresh/route-matrix-smoke.mjs
+          browser_status=0
+          matrix_status=0
+          node fresh/browser-smoke.mjs || browser_status=$?
+          node fresh/route-matrix-smoke.mjs || matrix_status=$?
+          if (( browser_status != 0 || matrix_status != 0 )); then
+            exit 1
+          fi
       - name: Decode continuous play evidence
         if: always()
         run: node fresh/verify-recordings.mjs

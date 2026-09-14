@@ -126,6 +126,7 @@ test('route checkpoint images are decoded after capture instead of perturbing he
   const browser=readFileSync(new URL('./browser-smoke.mjs',import.meta.url),'utf8');
   const matrix=readFileSync(new URL('./route-matrix-smoke.mjs',import.meta.url),'utf8');
   const verifier=readFileSync(new URL('./verify-recordings.mjs',import.meta.url),'utf8');
+  const workflow=readFileSync(new URL('../.github/workflows/fresh-game.yml',import.meta.url),'utf8');
   for(const source of [browser,matrix]){
     const start=source.indexOf('held=new Set');
     const end=source.indexOf('for(const key of held)',start);
@@ -137,6 +138,7 @@ test('route checkpoint images are decoded after capture instead of perturbing he
   assert.match(browser,/preflightBrowser\.close\(\)[\s\S]*recording\('touch'/,'recorded touch mission must start in a browser launched after preflight closes');
   const recordedTouchStart=browser.indexOf("const mobileRecording=recording('touch'");
   assert.doesNotMatch(browser.slice(recordedTouchStart),/mobile\.reload\(/,'recorded touch mission must not reuse a preflight page through reload');
+  assert.match(workflow,/browser-smoke\.mjs \|\| browser_status=\$\?[\s\S]*route-matrix-smoke\.mjs \|\| matrix_status=\$\?/,'one failed apparatus must not suppress the other route evidence');
   assert.match(verifier,/\['fork-entry','route-choice','route-landmark','route-rejoin'\]/);
   assert.match(verifier,/snapshotBytes>0/);
 });

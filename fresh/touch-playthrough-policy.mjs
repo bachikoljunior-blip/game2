@@ -3,7 +3,7 @@
 import {playthroughAction} from './playthrough-policy.mjs';
 
 export function createTouchPlaythroughSession(){
-  return {routeKey:null,lastDodges:0,recoveryOwed:0,recoveryTriggered:false};
+  return {routeKey:null,lastDodges:0,recoveryOwed:0,recoveryTriggered:false,defenseObserved:false};
 }
 
 function observeLeftRetainerRecovery(world,session){
@@ -27,6 +27,9 @@ function observeLeftRetainerRecovery(world,session){
 
 export function touchPlaythroughAction(world,preferredRoute='left',session=null) {
   const p=world.player,base=playthroughAction(world,preferredRoute);
+  if(session&&!session.defenseObserved){
+    session.defenseObserved=world.events.some(event=>(event.type==='block'||event.type==='parry')&&event.target==='player');
+  }
   const recoveryDue=observeLeftRetainerRecovery(world,session);
   const live=world.enemies.filter(e=>e.hp>0);
   const target=live.find(e=>e.id===base.targetId);
@@ -35,7 +38,12 @@ export function touchPlaythroughAction(world,preferredRoute='left',session=null)
   // Inputs arrive after the observed frame. Establish spacing before close
   // contact, then guard a strike and press the attack instead of waiting for a
   // narrow animation window which may have expired by delivery time.
-  const missedContactRecovery=p.state==='guard'&&p.guardAge>=2&&target.state==='windup';
+  // Do not pre-empt the first incoming strike merely because its windup was
+  // observed after a long-held guard. CI proved that this could finish the
+  // sentinel without ever exercising the required real block/parry path.
+  // Once a defensive contact has actually been observed, keep the older
+  // missed-contact escape hatch for later encounters.
+  const missedContactRecovery=(!session||session.defenseObserved)&&p.state==='guard'&&p.guardAge>=2&&target.state==='windup';
   const press=p.posture>0||world.totals.hits>0||missedContactRecovery;
   // A close unlocked retainer gets lock and dodge in one delivered touch frame;
   // a separate lock round trip was long enough for three blocks in CI. A
@@ -49,7 +57,12 @@ export function touchPlaythroughAction(world,preferredRoute='left',session=null)
   // the authored 0.18s lunge can reach the unchanged 1.95m strike radius.
   const awaitRetainer=postDodgeRetainer&&d>2.25;
   const guard=d<=4.2&&(target.id!=='retainer'||recoveryDue||p.posture<20&&!postDodgeRetainer);
-  return {...base,x:awaitRetainer?0:d>3?base.x:0,z:awaitRetainer?0:d>3?base.z:0,guard,
+  // While establishing the first measured defence, stop once guard range is
+  // reached. Delayed joystick commands previously carried the player across
+  // a windup and back out of its strike, repeating forever. A stationary,
+  // locked guard lets the unchanged enemy pursuit close and make contact.
+  const stageDefense=!!session&&!session.defenseObserved&&guard;
+  return {...base,x:stageDefense||awaitRetainer?0:d>3?base.x:0,z:stageDefense||awaitRetainer?0:d>3?base.z:0,guard,
     dodge,lockAndDodge,dodgeNeedsAcknowledgement:recoveryDue,
     attack:postDodgeRetainer?d<=2.25:press&&d<=1.95};
 }
