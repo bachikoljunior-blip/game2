@@ -2,6 +2,19 @@ import {SIGNAL} from './mission.js';
 import {groundHeightAt} from './terrain.js';
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
 
+// A solid landmark remains part of the world and collision map, but a post that
+// sits very near the camera can cover a large fraction of a duel.  This pure
+// test keeps the fade local to the near, forward-facing post instead of making
+// the whole gate translucent.
+export function foregroundObstacleOpacity(camera,focus,obstacle){
+  const vx=focus.x-camera.x,vz=focus.z-camera.z,length=Math.hypot(vx,vz);
+  if(length<.001)return 1;
+  const px=obstacle.x-camera.x,pz=obstacle.z-camera.z,distance=Math.hypot(px,pz);
+  const forward=(px*vx+pz*vz)/length;
+  const lateral=Math.abs(px*vz-pz*vx)/length;
+  return distance<=4.6&&forward>.15&&forward<length+1.5&&lateral<=2.65?.16:1;
+}
+
 export function computeCameraFrame(world,orbit,aspect,out){
   const p=world.player;
   const ground=groundHeightAt(p.x,p.z);

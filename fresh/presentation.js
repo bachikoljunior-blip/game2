@@ -2,7 +2,7 @@ import * as T from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { OBSTACLES } from './simulation.js';
 import { SIGNAL } from './mission.js';
-import { computeCameraFrame, interpolateCameraFrame } from './camera-framing.js';
+import { computeCameraFrame, foregroundObstacleOpacity, interpolateCameraFrame } from './camera-framing.js';
 import { groundHeightAt, terrainVertexHeight, shrineBaseSize } from './terrain.js';
 import { indexForBatch } from './batch-geometry.js';
 import { spatialCell, partitionInstances } from './spatial-batches.js';
@@ -94,7 +94,13 @@ export function createPresentation(canvas) {
     const jitter=(random()-.5)*.1,w=.74+random()*.1,d=.89+random()*.13;
     box(stone,pathCenter+x+jitter,.005+random()*.016,z+jitter,w,.055,d,(random()-.5)*.06);
   }
-  for(const o of OBSTACLES){if(o.h<5)column(red,o.x,o.h/2,o.z,.3,o.h);else{
+  const toriiPosts=[];
+  for(const o of OBSTACLES){if(o.h<5){
+    const postMaterial=red.clone();postMaterial.transparent=true;
+    const post=new T.Mesh(new T.CylinderGeometry(.3*.88,.3,o.h,8),postMaterial);
+    post.position.set(o.x,o.h/2,o.z);post.castShadow=post.receiveShadow=true;scene.add(post);
+    toriiPosts.push({mesh:post,obstacle:o,opacity:1});
+  }else{
     const base=shrineBaseSize(o);box(stone,o.x,base.height/2,o.z,base.width,base.height,base.depth);
     box(bark,o.x,2.3,o.z,o.w,4,o.d);
     for(let x=-4;x<=4;x+=1)box(red,x,2.6,-19.45,.16,4.4,.2);
@@ -171,45 +177,67 @@ export function createPresentation(canvas) {
   const landscapeMetrics={grassClumps:3000,grassBlades:9000,grassTriangles:grassGeo.index.count/3*grass.count,maxRootError:rootError,baseFootprint:shrineBaseSize(OBSTACLES.find(o=>o.h>=5))};
   const grassGroups=partitionInstances(grass);grass.dispose();grassGroups.forEach(g=>scene.add(g));
   landscapeMetrics.grassBatches=grassGroups.length;landscapeMetrics.leafBatches=batches.get(leaf).size;
-  const rigs=new Map();
-  // The hanging signal sits on the existing shrine wall, outside the walking path.
+  const rigs=new Map(),actorMetrics={partsByRig:{}};
+  // The hanging signal stays on the shared horizontal mission position, but is
+  // lifted clear of the actor silhouette and held by generated wall hardware.
+  const SIGNAL_HEIGHT=3.15;
   const signalMaterial=material('#74624a');
   const signalLamp=new T.Mesh(new T.CylinderGeometry(.3,.27,.65,12),signalMaterial);
-  signalLamp.position.set(SIGNAL.x,2.3,SIGNAL.z);scene.add(signalLamp);
+  signalLamp.position.set(SIGNAL.x,SIGNAL_HEIGHT,SIGNAL.z);scene.add(signalLamp);
   const signalCap=new T.Mesh(new T.ConeGeometry(.43,.24,8),roof);
-  signalCap.position.set(SIGNAL.x,2.75,SIGNAL.z);scene.add(signalCap);
-  const signalLight=new T.PointLight('#ffbb66',0,8,2);
-  signalLight.position.set(SIGNAL.x,2.3,SIGNAL.z+.5);scene.add(signalLight);
-  const signalHalo=new T.Sprite(new T.SpriteMaterial({map:sunSprite.material.map,color:'#ffd08a',transparent:true,opacity:.2,depthWrite:false,blending:T.AdditiveBlending}));
-  signalHalo.position.set(SIGNAL.x,2.35,SIGNAL.z+.18);signalHalo.scale.set(3,3,1);signalHalo.visible=false;scene.add(signalHalo);
+  signalCap.position.set(SIGNAL.x,SIGNAL_HEIGHT+.45,SIGNAL.z);scene.add(signalCap);
+  const signalBracket=new T.Group();signalBracket.position.set(SIGNAL.x,SIGNAL_HEIGHT+.72,SIGNAL.z+.08);scene.add(signalBracket);
+  const bracketArm=new T.Mesh(new T.BoxGeometry(.72,.07,.08),brass);bracketArm.position.x=.28;bracketArm.castShadow=true;signalBracket.add(bracketArm);
+  const bracketDrop=new T.Mesh(new T.CylinderGeometry(.025,.025,.48,6),dark);bracketDrop.position.set(0,-.23,0);bracketDrop.castShadow=true;signalBracket.add(bracketDrop);
+  const signalLight=new T.PointLight('#ffbb66',0,5.5,2);
+  signalLight.position.set(SIGNAL.x,SIGNAL_HEIGHT,SIGNAL.z+.5);scene.add(signalLight);
+  const signalHalo=new T.Sprite(new T.SpriteMaterial({map:sunSprite.material.map,color:'#ffd08a',transparent:true,opacity:.08,depthWrite:false,blending:T.AdditiveBlending}));
+  signalHalo.position.set(SIGNAL.x,SIGNAL_HEIGHT+.05,SIGNAL.z+.18);signalHalo.scale.set(1.9,1.9,1);signalHalo.visible=false;scene.add(signalHalo);
   function mesh(parent,geom,mat,x,y,z){const m=new T.Mesh(geom,mat);m.position.set(x,y,z);m.castShadow=true;parent.add(m);return m;}
   function rig(id){
-    const root=new T.Group();scene.add(root);const cloth=material(id==='player'?'#344c62':'#7c463a');
-    cloth.emissive.set(id==='player'?'#122637':'#32150f');cloth.emissiveIntensity=.22;
+    const root=new T.Group();scene.add(root);const isPlayer=id==='player';
+    const cloth=material(isPlayer?'#315873':'#824638',.78),clothShadow=material(isPlayer?'#1d3346':'#492722',.9),
+      armor=material(isPlayer?'#263942':'#3d2b28',.66,.08),trim=material(isPlayer?'#c9c7ae':'#c5a166',.62,.14);
+    cloth.emissive.set(isPlayer?'#102536':'#32150f');cloth.emissiveIntensity=.16;
     const contact=new T.Mesh(new T.CircleGeometry(.46,20),new T.MeshBasicMaterial({color:'#0b1011',transparent:true,opacity:.28,depthWrite:false}));
     contact.rotation.x=-Math.PI/2;contact.position.y=.018;root.add(contact);
     const body=new T.Group();root.add(body);
-    mesh(body,new T.CylinderGeometry(.24,.29,.55,10),cloth,0,1.22,0);
-    mesh(body,new T.CylinderGeometry(.29,.29,.09,10),brass,0,.97,0);
-    mesh(body,new T.BoxGeometry(.49,.08,.25),dark,0,1.37,.01);
-    const leftCollar=mesh(body,new T.BoxGeometry(.08,.38,.03),brass,-.07,1.42,-.225);leftCollar.rotation.z=-.34;
-    const rightCollar=mesh(body,new T.BoxGeometry(.08,.38,.03),brass,.07,1.42,-.226);rightCollar.rotation.z=.34;
-    for(const side of [-1,1])mesh(body,new T.BoxGeometry(.2,.11,.31),cloth,side*.29,1.45,0).rotation.z=-side*.12;
+    mesh(body,new T.CylinderGeometry(.23,.3,.58,12),cloth,0,1.22,0);
+    mesh(body,new T.BoxGeometry(.43,.3,.16),armor,0,1.27,-.08);
+    for(let plate=0;plate<3;plate++)mesh(body,new T.BoxGeometry(.39-plate*.025,.045,.19),trim,0,1.38-plate*.085,-.17);
+    mesh(body,new T.CylinderGeometry(.31,.32,.105,10),trim,0,.96,0);
+    const leftCollar=mesh(body,new T.BoxGeometry(.075,.4,.035),trim,-.07,1.43,-.205);leftCollar.rotation.z=-.34;
+    const rightCollar=mesh(body,new T.BoxGeometry(.075,.4,.035),trim,.07,1.43,-.206);rightCollar.rotation.z=.34;
+    for(const side of [-1,1]){
+      const shoulder=mesh(body,new T.BoxGeometry(.23,.11,.34),armor,side*.31,1.45,0);shoulder.rotation.z=-side*.14;
+      const shoulderTrim=mesh(body,new T.BoxGeometry(.19,.035,.35),trim,side*.315,1.49,0);shoulderTrim.rotation.z=-side*.14;
+    }
+    const skirtFront=[];
+    for(const side of [-1,1]){
+      const panel=mesh(body,new T.BoxGeometry(.235,.52,.115),clothShadow,side*.13,.69,-.055);panel.rotation.z=side*.045;skirtFront.push(panel);
+      const backPanel=mesh(body,new T.BoxGeometry(.21,.48,.08),cloth,side*.12,.71,.13);backPanel.rotation.z=-side*.035;
+    }
     const head=mesh(body,new T.SphereGeometry(.145,12,10),skin,0,1.66,0);head.scale.set(.85,1.12,.9);
     mesh(body,new T.SphereGeometry(.148,12,8,0,Math.PI*2,0,Math.PI*.55),dark,0,1.69,0);
     mesh(body,new T.SphereGeometry(.075,8,6),dark,0,1.84,.025);
+    const headband=mesh(body,new T.TorusGeometry(.145,.016,4,14),trim,0,1.7,0);headband.rotation.x=Math.PI/2;
+    const facePlane=mesh(body,new T.BoxGeometry(.13,.1,.018),skin,0,1.65,-.14);facePlane.rotation.x=-.06;
+    const nose=mesh(body,new T.ConeGeometry(.026,.065,6),skin,0,1.66,-.172);nose.rotation.x=-Math.PI/2;
+    for(const side of [-1,1])mesh(body,new T.SphereGeometry(.028,6,5),skin,side*.13,1.67,0);
     const limbs=[];
     for(const side of [-1,1]){
       const hip=new T.Group();hip.position.set(side*.15,.96,0);body.add(hip);
-      mesh(hip,new T.CylinderGeometry(.17,.21,.52,8),cloth,0,-.23,0);
+      mesh(hip,new T.CylinderGeometry(.145,.205,.52,8),clothShadow,0,-.23,0);
       const knee=new T.Group();knee.position.y=-.49;hip.add(knee);
       mesh(knee,new T.CylinderGeometry(.095,.07,.4,8),dark,0,-.18,0);
       mesh(knee,new T.BoxGeometry(.15,.11,.3),dark,0,-.38,-.07);
       const arm=new T.Group();arm.position.set(side*.28,1.43,0);body.add(arm);
-      mesh(arm,new T.CylinderGeometry(.12,.09,.33,8),cloth,0,-.15,0);
+      mesh(arm,new T.CylinderGeometry(.125,.095,.33,8),cloth,0,-.15,0);
       const elbow=new T.Group();elbow.position.y=-.31;arm.add(elbow);
-      mesh(elbow,new T.CylinderGeometry(.075,.055,.3,8),skin,0,-.14,0);
-      limbs.push({hip,knee,arm,elbow});
+      mesh(elbow,new T.CylinderGeometry(.075,.058,.3,8),skin,0,-.14,0);
+      const forearmWrap=mesh(elbow,new T.CylinderGeometry(.08,.075,.12,8),trim,0,-.08,0);
+      const hand=mesh(elbow,new T.SphereGeometry(.065,8,6),skin,0,-.31,0);hand.scale.set(.82,1,.8);
+      limbs.push({hip,knee,arm,elbow,forearmWrap,hand});
     }
     const scabbard=mesh(body,new T.CylinderGeometry(.048,.06,1.02,8),dark,-.22,.83,.02);scabbard.rotation.z=Math.PI*.42;
     const sword=new T.Group();limbs[1].elbow.add(sword);sword.position.y=-.3;
@@ -218,18 +246,19 @@ export function createPresentation(canvas) {
     mesh(sword,new T.BoxGeometry(.065,.9,.022),id==='player'?playerBlade:enemyBlade,0,-.61,0);
     const ring=mesh(root,new T.TorusGeometry(.5,.013,5,32),brass,0,.035,0);ring.rotation.x=Math.PI/2;ring.visible=false;
     const signal=mesh(root,new T.OctahedronGeometry(.1),brass,0,2.1,0);signal.visible=false;
+    let generatedParts=0;root.traverse(node=>{if(node.isMesh)generatedParts++;});actorMetrics.partsByRig[id]=generatedParts;
     rigs.set(id,{root,body,limbs,sword,scabbard,ring,signal});return rigs.get(id);
   }
   const look=new T.Vector3();
   const cameraFrame={x:0,y:0,z:0,lookX:0,lookY:0,lookZ:0},smoothedFrame={...cameraFrame};let initialized=false;
-  const cameraMetrics={lockedFrames:0,minHorizontalStandoff:null,maxDownAngleDegrees:0};
+  const cameraMetrics={lockedFrames:0,minHorizontalStandoff:null,maxDownAngleDegrees:0,foregroundPostOpacity:1};
   function resize(){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}
   resize();
   function render(world,dt,orbit=0){
     wind.value=world.time;
     signalMaterial.emissive.set(world.signalLit?'#ffb84f':'#000000');
-    signalMaterial.emissiveIntensity=world.signalLit ? .65 : 0;
-    signalLight.intensity=world.signalLit?9:0;
+    signalMaterial.emissiveIntensity=world.signalLit ? .36 : 0;
+    signalLight.intensity=world.signalLit?3.2:0;
     signalHalo.visible=world.signalLit;
     for(const a of [world.player,...world.enemies]){
       const r=rigs.get(a.id)||rig(a.id);r.root.position.set(a.x,groundHeightAt(a.x,a.z),a.z);r.root.rotation.y=-a.yaw;
@@ -254,6 +283,17 @@ export function createPresentation(canvas) {
     camera.position.set(smoothedFrame.x,smoothedFrame.y,smoothedFrame.z);
     look.set(smoothedFrame.lookX,smoothedFrame.lookY,smoothedFrame.lookZ);
     camera.lookAt(look);initialized=true;
+    const postBlend=1-Math.exp(-Math.max(0,Math.min(dt,.1))*18);
+    let foregroundPostOpacity=1;
+    for(const post of toriiPosts){
+      const wanted=world.mode==='playing'&&world.locked?foregroundObstacleOpacity(smoothedFrame,look,post.obstacle):1;
+      post.opacity+= (wanted-post.opacity)*postBlend;
+      post.mesh.material.opacity=post.opacity;
+      post.mesh.material.depthWrite=post.opacity>.55;
+      post.mesh.castShadow=post.opacity>.55;
+      foregroundPostOpacity=Math.min(foregroundPostOpacity,post.opacity);
+    }
+    cameraMetrics.foregroundPostOpacity=foregroundPostOpacity;
     if(world.mode==='playing'&&world.locked){
       const horizontal=Math.hypot(smoothedFrame.x-smoothedFrame.lookX,smoothedFrame.z-smoothedFrame.lookZ);
       const downAngle=Math.atan2(smoothedFrame.y-smoothedFrame.lookY,horizontal)*180/Math.PI;
@@ -263,5 +303,5 @@ export function createPresentation(canvas) {
     }
     renderer.render(scene,camera);
   }
-  return {render,resize,renderer,scene,camera,cameraDiagnostics:()=>({...cameraMetrics,frame:{...smoothedFrame}}),landscapeDiagnostics:()=>({...landscapeMetrics})};
+  return {render,resize,renderer,scene,camera,cameraDiagnostics:()=>({...cameraMetrics,frame:{...smoothedFrame}}),landscapeDiagnostics:()=>({...landscapeMetrics}),actorDiagnostics:()=>JSON.parse(JSON.stringify(actorMetrics))};
 }

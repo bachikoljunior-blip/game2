@@ -51,4 +51,4 @@ function frame(now){
   if(timings.samples.length<3000)timings.samples.push({mode:world.mode,running,intervalMs:interval,simulationMs,renderCallMs});else timings.omitted++;
 }
 requestAnimationFrame(frame);
-if(new URLSearchParams(location.search).has('diagnostic'))Object.defineProperty(window,'freshDiagnostics',{value:(includeTimings=false)=>JSON.parse(JSON.stringify({world,running,paused,contextLost,render:view.renderer.info.render,camera:view.cameraDiagnostics(),landscape:view.landscapeDiagnostics(),...(includeTimings?{timings}:{})})),writable:false});
+if(new URLSearchParams(location.search).has('diagnostic'))Object.defineProperty(window,'freshDiagnostics',{value:(includeTimings=false)=>JSON.parse(JSON.stringify({world,running,paused,contextLost,render:view.renderer.info.render,camera:view.cameraDiagnostics(),landscape:view.landscapeDiagnostics(),actors:view.actorDiagnostics(),...(includeTimings?{timings}:{})})),writable:false});

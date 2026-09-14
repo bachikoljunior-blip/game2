@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {computeCameraFrame,interpolateCameraFrame} from './camera-framing.js';
+import {computeCameraFrame,foregroundObstacleOpacity,interpolateCameraFrame} from './camera-framing.js';
 
 const angle=(camera,a,b)=>{
   const ax=a.x-camera.x,az=a.z-camera.z,bx=b.x-camera.x,bz=b.z-camera.z;
@@ -53,6 +53,13 @@ test('victory framing shows the signal from an authored oblique angle',()=>{
   assert.ok(frame.lookZ<-18.5,'camera looks back toward the lit signal');
 });
 
+test('only the near foreground torii post fades for the verified first encounter frame',()=>{
+  const camera={x:-3.8547,z:11.0246},focus={x:0,z:6.176};
+  assert.ok(foregroundObstacleOpacity(camera,focus,{x:-3.5,z:7})<=.2);
+  assert.equal(foregroundObstacleOpacity(camera,focus,{x:3.5,z:7}),1);
+  assert.equal(foregroundObstacleOpacity({x:-3.5,z:15},focus,{x:-3.5,z:7}),1);
+});
+
 test('interface gives labels an opaque backing and keeps victory title off the lamp',()=>{
   const css=readFileSync(new URL('./mission.css',import.meta.url),'utf8');
   const main=readFileSync(new URL('./main.js',import.meta.url),'utf8');
@@ -92,4 +99,18 @@ test('scene and actor pass preserves density while clearing combat silhouettes a
   assert.match(source,/const scabbard=mesh\(body/);
   assert.match(source,/rigs\.set\(id,\{root,body,limbs,sword,scabbard,ring,signal\}\)/);
   assert.match(source,/r\.sword\.visible=!\(world\.mode==='victory'&&a\.id==='player'\)/);
+});
+
+test('foreground, signal and actor hierarchy are generated without changing gameplay geometry',()=>{
+  const source=readFileSync(new URL('./presentation.js',import.meta.url),'utf8');
+  const simulation=readFileSync(new URL('./simulation.js',import.meta.url),'utf8');
+  assert.match(source,/const toriiPosts=\[\]/);
+  assert.match(source,/foregroundObstacleOpacity\(smoothedFrame,look,post\.obstacle\)/);
+  assert.match(source,/const SIGNAL_HEIGHT=3\.15/);
+  assert.match(source,/signalLight\.intensity=world\.signalLit\?3\.2:0/);
+  assert.match(source,/const skirtFront=/);
+  assert.match(source,/const forearmWrap=/);
+  assert.match(source,/const facePlane=/);
+  assert.match(simulation,/\{ x: -3\.5, z: 7, w: \.55, d: \.55, h: 4\.5 \}/);
+  assert.match(simulation,/\{ x: 3\.5, z: 7, w: \.55, d: \.55, h: 4\.5 \}/);
 });
