@@ -32,6 +32,10 @@ export const ROUTE_FORK = Object.freeze({
 
 export const ROUTE_IDS = Object.freeze(['left', 'right']);
 export const isRouteId = route => ROUTE_IDS.includes(route);
+export function routeEncounterActive(routePhase, routeChoice, enemyId) {
+  const route = ROUTE_IDS.find(id => ROUTE_FORK[id].enemyId === enemyId);
+  return !route || routePhase === 'rejoined' || routeChoice === route;
+}
 const branchFor = route => {
   if (!isRouteId(route)) throw new RangeError(`Unknown route: ${route}`);
   return ROUTE_FORK[route];

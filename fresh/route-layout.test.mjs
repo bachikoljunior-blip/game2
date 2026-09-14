@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createWorld,stepWorld} from './simulation.js';
-import {ROUTE_FORK,routeCenterAt,routeChoiceAt,routeLabel,routePathCenters,routePathLength} from './route-layout.js';
+import {ROUTE_FORK,routeCenterAt,routeChoiceAt,routeEncounterActive,routeLabel,routePathCenters,routePathLength} from './route-layout.js';
 
 test('one approach physically divides outside the ridge and reconverges',()=>{
   assert.deepEqual(routePathCenters(0),[0]);
@@ -43,6 +43,14 @@ test('choice is recorded before route-specific observations even at a landmark',
 
 test('unknown route ids are rejected instead of silently becoming the left route',()=>{
   assert.throws(()=>routeLabel('typo'),RangeError);
+});
+
+test('encounter availability follows approach, chosen branch and reconvergence',()=>{
+  assert.equal(routeEncounterActive('approach',null,'sentinel'),true);
+  assert.equal(routeEncounterActive('approach',null,'retainer'),false);
+  assert.equal(routeEncounterActive('branch','left','retainer'),true);
+  assert.equal(routeEncounterActive('branch','left','warden'),false);
+  assert.equal(routeEncounterActive('rejoined','left','warden'),true);
 });
 
 test('the ridge stops a central shortcut while both ordinary movement routes pass it',()=>{

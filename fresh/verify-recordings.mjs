@@ -53,7 +53,14 @@ try{
   assert.ok(Math.abs(durationSeconds-approximateIntervalSeconds)<=2,'recording length must agree with the capture interval within2s of recorder startup/tail uncertainty');
   assert.ok(item.events.filter(e=>e.event==='kills').some(e=>e.detail===3));
   execFileSync('ffmpeg',['-v','error','-xerror','-i',file.pathname,'-map','0:v:0','-f','null','-'],{timeout:120000,maxBuffer:1048576});
-  report.recordings.push({id:item.id,file:item.file,sha256:createHash('sha256').update(await readFile(file)).digest('hex'),bytes:bytes.size,width:video[0].width,height:video[0].height,durationSeconds,approximateIntervalSeconds,intervalToleranceSeconds:2,decodedFrames,audioTracks:audio.length,fullDecode:'passed',events:item.events,alignment:'Wall-clock event offsets are approximate; video/input synchronization has not been measured. Visual continuity must still be reviewed.'});
+  const snapshots=[];
+  for(const name of ['fork-entry','route-choice','route-landmark','route-rejoin']){
+   const checkpoint=item.events.find(event=>event.event===name),snapshot=`${item.id}-${name}.png`,snapshotFile=new URL(snapshot,out);
+   execFileSync('ffmpeg',['-v','error','-ss',String(checkpoint.offsetMs/1000),'-i',file.pathname,'-frames:v','1','-y',snapshotFile.pathname],{timeout:120000,maxBuffer:1048576});
+   const snapshotBytes=(await stat(snapshotFile)).size;assert.ok(snapshotBytes>0,`${snapshot} must contain a decoded frame`);
+   snapshots.push({event:name,file:snapshot,bytes:snapshotBytes,approximateOffsetSeconds:checkpoint.offsetMs/1000});
+  }
+  report.recordings.push({id:item.id,file:item.file,sha256:createHash('sha256').update(await readFile(file)).digest('hex'),bytes:bytes.size,width:video[0].width,height:video[0].height,durationSeconds,approximateIntervalSeconds,intervalToleranceSeconds:2,decodedFrames,audioTracks:audio.length,fullDecode:'passed',events:item.events,snapshots,alignment:'Wall-clock event offsets are approximate; video/input synchronization has not been measured. Visual continuity must still be reviewed.'});
  }
 }catch(e){report.result='failed';report.failure=String(e);process.exitCode=1;}
 await writeFile(new URL('recording-report.json',out),JSON.stringify(report,null,2)+'\n');

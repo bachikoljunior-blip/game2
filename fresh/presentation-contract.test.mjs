@@ -121,3 +121,17 @@ test('foreground, signal, actor and branching-route hierarchy use the shared gam
   assert.match(source,/ROUTE_FORK\.right\.markers/);
   assert.match(source,/routeCloth\.onBeforeCompile/);
 });
+
+test('route checkpoint images are decoded after capture instead of perturbing held movement',()=>{
+  const browser=readFileSync(new URL('./browser-smoke.mjs',import.meta.url),'utf8');
+  const matrix=readFileSync(new URL('./route-matrix-smoke.mjs',import.meta.url),'utf8');
+  const verifier=readFileSync(new URL('./verify-recordings.mjs',import.meta.url),'utf8');
+  for(const source of [browser,matrix]){
+    const start=source.indexOf('held=new Set');
+    const end=source.indexOf('for(const key of held)',start);
+    assert.ok(start>=0&&end>start);
+    assert.doesNotMatch(source.slice(start,end),/screenshot\(/,'live route observation must not leave movement held during image encoding');
+  }
+  assert.match(verifier,/\['fork-entry','route-choice','route-landmark','route-rejoin'\]/);
+  assert.match(verifier,/snapshotBytes>0/);
+});

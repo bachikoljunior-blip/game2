@@ -48,25 +48,21 @@ function assertRetry(world){
   assert.equal(world.routeLandmark,null);assert.equal(world.routeLandmarkTime,null);assert.equal(world.routeConsequence,null);assert.equal(world.routeConsequenceTime,null);
   assert.equal(world.routeRejoinTime,null);assert.equal(world.routeRejoinPosition,null);assert.equal(world.player.hp,100);assert.equal(world.player.z,18);
 }
-async function observe(page,result,item,w,prefix,lastSample){
+function observe(result,item,w,lastSample){
   if(!result.entry&&w.totals.kills>=1&&!w.routeChoice&&w.player.z<=ROUTE_FORK.splitStartZ+4&&w.player.z>ROUTE_FORK.obstacleFrontZ+.5){
     result.entry={time:w.time,position:{x:w.player.x,z:w.player.z}};mark(item,'fork-entry',result.entry);
-    await page.screenshot({path:new URL(`${prefix}-fork.png`,out).pathname});
   }
   if(!result.choice&&w.routeChoice){
     result.choice={route:w.routeChoice,time:w.routeChoiceTime,position:w.routeChoicePosition};mark(item,'route-choice',result.choice);
-    await page.screenshot({path:new URL(`${prefix}-choice.png`,out).pathname});
   }
   if(!result.landmark&&w.routeLandmark){
     result.landmark={id:w.routeLandmark,time:w.routeLandmarkTime,position:{x:w.player.x,z:w.player.z}};mark(item,'route-landmark',result.landmark);
-    await page.screenshot({path:new URL(`${prefix}-landmark.png`,out).pathname});
   }
   if(!result.consequence&&w.routeConsequence){
     result.consequence={id:w.routeConsequence,time:w.routeConsequenceTime,position:{x:w.player.x,z:w.player.z}};mark(item,'route-consequence',result.consequence);
   }
   if(!result.rejoin&&w.routePhase==='rejoined'){
     result.rejoin={time:w.routeRejoinTime,position:w.routeRejoinPosition};mark(item,'route-rejoin',result.rejoin);
-    await page.screenshot({path:new URL(`${prefix}-rejoin.png`,out).pathname});
   }
   if(w.routeChoice&&w.player.z<=ROUTE_FORK.obstacleFrontZ&&w.player.z>=ROUTE_FORK.obstacleBackZ&&w.time-lastSample.value>=.5){
     result.ridgeSamples.push({time:w.time,x:w.player.x,z:w.player.z});lastSample.value=w.time;
@@ -86,7 +82,7 @@ async function runDesktopRight(){
       const w=await page.evaluate(()=>freshDiagnostics().world);
       if(w.totals.kills!==kills){result.checkpoints.push(w);kills=w.totals.kills;mark(item,'kills',kills);}
       if(w.mode!=='playing'){if(w.mode==='victory')result.victoryObservedElapsedMs=Date.now()-(deadline-180000);break;}
-      await observe(page,result,item,w,'desktop-right',lastSample);
+      observe(result,item,w,lastSample);
       const action=playthroughAction(w,'right'),wanted=new Set();
       if(action.x)wanted.add(action.x>0?'KeyD':'KeyA');if(action.z)wanted.add(action.z>0?'KeyS':'KeyW');
       for(const key of held)if(!wanted.has(key)){await page.keyboard.up(key);held.delete(key);}
@@ -123,7 +119,7 @@ async function runTouchLeft(){
       result.guardObserved ||= w.player.state==='guard';result.blockOrParryObserved ||= w.events.some(event=>event.type==='block'||event.type==='parry');
       if(w.totals.kills!==kills){result.checkpoints.push(w);kills=w.totals.kills;mark(item,'kills',kills);}
       if(w.mode!=='playing'){if(w.mode==='victory')result.victoryObservedElapsedMs=Date.now()-(deadline-180000);break;}
-      await observe(page,result,item,w,'touch-left',lastSample);
+      observe(result,item,w,lastSample);
       const action=touchPlaythroughAction(w,'left');
       if(action.guard&&!contacts.has(1))await begin(1,guard);if(!action.guard&&contacts.has(1))await end(1);
       if(action.dodge)await tap(dodge);else if(action.lock)await tap(lock);else if(action.attack)await tap(attack);

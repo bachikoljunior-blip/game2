@@ -1,6 +1,6 @@
 // Fresh implementation. This module has no rendering, browser or legacy imports.
 import { canLightSignal } from './mission.js';
-import { ROUTE_FORK, routeChoiceAt } from './route-layout.js';
+import { ROUTE_FORK, routeChoiceAt, routeEncounterActive } from './route-layout.js';
 export const STEP = 1 / 60;
 export const OBSTACLES = [
   { x: -3.5, z: 7, w: .55, d: .55, h: 4.5, kind: 'torii' },
@@ -13,14 +13,7 @@ export const distance = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 const face = (a, b) => Math.atan2(b.x - a.x, -(b.z - a.z));
 const actor = (id, x, z) => ({ id, x, z, yaw: 0, hp: 100, posture: 0,
   state: 'idle', age: 0, guardAge: 99, hit: [], cooldown: 0, stride: 0, dodgeX: 0, dodgeZ: 0 });
-const authoredRouteFor = enemy => enemy.id === ROUTE_FORK.left.enemyId ? 'left' :
-  enemy.id === ROUTE_FORK.right.enemyId ? 'right' : null;
-const routeEncounterActive = (w, enemy) => {
-  const route = authoredRouteFor(enemy);
-  if (!route || w.routePhase === 'rejoined') return true;
-  if (w.routeChoice === route) return true;
-  return false;
-};
+const encounterActive = (w, enemy) => routeEncounterActive(w.routePhase, w.routeChoice, enemy.id);
 export function createWorld() {
   return { time: 0, remainder: 0, ticks: 0, mode: 'playing', player: actor('player', 0, 18),
     enemies: [actor('sentinel', 0, 1), actor('retainer', -3, -9), actor('warden', 3, -16)],
@@ -86,9 +79,9 @@ export function stepWorld(w, input = {}) {
       enter(a, 'idle');
     }
   }
-  if (w.locked && !w.enemies.some(e => e.id === w.locked && e.hp > 0 && routeEncounterActive(w,e))) w.locked = null;
+  if (w.locked && !w.enemies.some(e => e.id === w.locked && e.hp > 0 && encounterActive(w,e))) w.locked = null;
   if (input.lock) {
-    const targets = w.enemies.filter(e => e.hp > 0 && routeEncounterActive(w,e) && distance(p, e) < 12).sort((a,b) => distance(p,a)-distance(p,b));
+    const targets = w.enemies.filter(e => e.hp > 0 && encounterActive(w,e) && distance(p, e) < 12).sort((a,b) => distance(p,a)-distance(p,b));
     w.locked = w.locked ? null : targets[0]?.id ?? null;
   }
   const target = w.enemies.find(e => e.id === w.locked);
@@ -118,7 +111,7 @@ export function stepWorld(w, input = {}) {
     // Branch combat follows the authored route state: both branch enemies
     // hold before commitment, only the chosen one activates in the branch,
     // and every survivor may pursue after physical reconvergence.
-    if (!routeEncounterActive(w,e)) continue;
+    if (!encounterActive(w,e)) continue;
     if (e.state === 'idle' && distance(e,p) < 11) {
       e.yaw = face(e,p);
       if (distance(e,p) > 1.65) move(e, Math.sin(e.yaw)*STEP*1.8, -Math.cos(e.yaw)*STEP*1.8);

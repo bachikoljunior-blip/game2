@@ -1,9 +1,9 @@
 // Test driver only: reads a diagnostic snapshot; never writes game state.
 import { SIGNAL } from './mission.js';
-import { ROUTE_FORK, routeTravelGoal } from './route-layout.js';
+import { ROUTE_FORK, routeEncounterActive, routeTravelGoal } from './route-layout.js';
 export function playthroughAction(world, preferredRoute='left') {
   const p=world.player;
-  const live=world.enemies.filter(e=>e.hp>0);
+  const live=world.enemies.filter(e=>e.hp>0&&routeEncounterActive(world.routePhase,world.routeChoice,e.id));
   const locked=live.find(e=>e.id===world.locked);
   const nearest=live.sort((a,b)=>Math.hypot(a.x-p.x,a.z-p.z)-Math.hypot(b.x-p.x,b.z-p.z))[0];
   const nearestDistance=nearest?Math.hypot(nearest.x-p.x,nearest.z-p.z):Infinity;

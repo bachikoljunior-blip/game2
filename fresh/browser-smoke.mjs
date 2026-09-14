@@ -102,22 +102,18 @@ try{
   }
   if(!report.mission.route.entry&&w.totals.kills>=1&&!w.routeChoice&&w.player.z<=ROUTE_FORK.splitStartZ+4&&w.player.z>ROUTE_FORK.obstacleFrontZ+.5){
    report.mission.route.entry={time:w.time,position:{x:w.player.x,z:w.player.z}};mark(desktopRecording,'fork-entry',report.mission.route.entry);
-   await page.screenshot({path:new URL('desktop-route-fork.png',out).pathname});
   }
   if(!report.mission.route.choice&&w.routeChoice){
    report.mission.route.choice={route:w.routeChoice,time:w.routeChoiceTime,position:w.routeChoicePosition};mark(desktopRecording,'route-choice',report.mission.route.choice);
-   await page.screenshot({path:new URL('desktop-route-left-choice.png',out).pathname});
   }
   if(!report.mission.route.landmark&&w.routeLandmark){
    report.mission.route.landmark={id:w.routeLandmark,time:w.routeLandmarkTime,position:{x:w.player.x,z:w.player.z}};mark(desktopRecording,'route-landmark',report.mission.route.landmark);
-   await page.screenshot({path:new URL('desktop-route-left-landmark.png',out).pathname});
   }
   if(!report.mission.route.consequence&&w.routeConsequence){
    report.mission.route.consequence={id:w.routeConsequence,time:w.routeConsequenceTime,position:{x:w.player.x,z:w.player.z}};mark(desktopRecording,'route-consequence',report.mission.route.consequence);
   }
   if(!report.mission.route.rejoin&&w.routePhase==='rejoined'){
    report.mission.route.rejoin={time:w.routeRejoinTime,position:w.routeRejoinPosition};mark(desktopRecording,'route-rejoin',report.mission.route.rejoin);
-   await page.screenshot({path:new URL('desktop-route-rejoin.png',out).pathname});
   }
   if(w.routeChoice&&w.player.z<=ROUTE_FORK.obstacleFrontZ&&w.player.z>=ROUTE_FORK.obstacleBackZ&&w.time-lastRouteSampleTime>=.5){
    report.mission.route.ridgeSamples.push({time:w.time,x:w.player.x,z:w.player.z});lastRouteSampleTime=w.time;

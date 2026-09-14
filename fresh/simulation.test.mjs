@@ -97,6 +97,14 @@ test('branch enemies activate only after their route is chosen or paths reconver
  assert.equal(retainer.stride,0);assert.ok(warden.stride>0);
  w.routePhase='rejoined';stepWorld(w);assert.ok(retainer.stride>0);
 });
+test('playthrough policy never targets a dormant enemy from the opposite branch',()=>{
+ const w=createWorld(),sentinel=w.enemies.find(enemy=>enemy.id==='sentinel');
+ const retainer=w.enemies.find(enemy=>enemy.id==='retainer'),warden=w.enemies.find(enemy=>enemy.id==='warden');
+ sentinel.hp=0;w.routeChoice='left';w.routePhase='branch';Object.assign(w.player,{x:-3,z:-8});
+ Object.assign(retainer,{x:-3,z:-10});Object.assign(warden,{x:-3,z:-8.5});
+ assert.equal(playthroughAction(w,'left').targetId,'retainer');
+ w.routePhase='rejoined';assert.equal(playthroughAction(w,'left').targetId,'warden');
+});
 test('signal activation uses distance, not only forward progress; batched time agrees',()=>{
  const a=createWorld(),b=createWorld();
  for(const w of [a,b]){w.routeChoice='right';w.routePhase='rejoined';w.enemies.forEach(e=>e.hp=0);w.player.x=3;w.player.z=SIGNAL.z+1;stepWorld(w);assert.equal(w.signalLit,false);}
