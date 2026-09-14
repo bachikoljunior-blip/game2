@@ -10,14 +10,15 @@
     "workingBranch": "codex/game2-rebuild-20260913",
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
-    "activeTask": "FRESH-C04-BRANCHING-ROUTE",
-    "lastSuccessfulAction": "Ultra integrator produced c18a5fd, CI34857008423 passed49 tests/build/actual PC and touch full missions/portrait/retry/two recording decodes, and PR17 reflected it to main38798e8 with PR/main iPhone workflows and Pages success. A lawful ordinary-play reference was acquired and fully decoded; the first anonymous material gate was executed.",
-    "currentFailingAction": "All10 formal comparisons and5reference-selection dossiers remain incomplete. C04-BLIND-ATTEMPT-01 was material invalid before source recognition or preference: the candidate route shows no fork or selectable alternate line from entry to shrine.",
-    "currentHypothesis": "The remaining C04 gate is now a candidate structure defect rather than source acquisition. A readable physical branch with a distinct landmark/consequence and reconvergence must exist and be traversed in real input before another blind packet can cover the fixed whole-element boundary.",
-    "nextAction": "Design and implement a readable, physically traversable C04 branch before the shrine, give both routes a perceivable landmark/consequence and reconvergence, verify both routes by actual PC/touch input, recapture the continuous route and repeat the independent source-concealed material gate. Keep all10 formal elements not measured until valid comparisons complete.",
-    "rollbackPoint": "c18a5fd1051b15471b3ca0ba3a129ccfc943596a",
+    "activeTask": "FRESH-C04-VISIBLE-REJOIN-AND-REFERENCE-MATERIAL",
+    "lastSuccessfulAction": "Ultra integrator produced runtime1ded4aae with a collision-enforced two-route shrine approach. Fresh CI34889248280 passed67 tests/build and PC-left/right plus touch-left/right full missions; all4 recordings fully decoded. PR19 integrated the runtime to main6eed8c5, PR/main iPhone and Pages passed. C04-BLIND-ATTEMPT-02 then independently measured material readiness without issuing an element verdict.",
+    "currentFailingAction": "All10 formal comparisons and5reference-selection dossiers remain incomplete. C04-BLIND-ATTEMPT-02 was MATERIAL INVALID before recognition or preference: referenceA failed items2-8 and candidateB failed visible reconvergence, post-rejoin destination arrival and five-frame coverage in items6-8.",
+    "currentHypothesis": "The two-route mechanics and four input paths are now verified. The immediate C04 blockers are evidence readability in the candidate capture and an unsuitable reference excerpt, not absent route physics: both materials need separate readiness gates before another paired blind comparison.",
+    "nextAction": "From main/source6eed8c5, make the candidate's two-route reconvergence and subsequent shrine/signal arrival visually readable without changing physics, values or criteria. In parallel acquire lawful reference footage with an actual simultaneous route choice and reconvergence. Pass candidate and reference through separate anonymous single-material gates before rebuilding the paired packet; keep all10 not measured.",
+    "rollbackPoint": "1ded4aae27f8331cec10975c8dbac9eb482460a9",
     "pendingVerification": [
-      "C04 candidate entry-landmark-fork-shrine coverage on both physical routes before another anonymous comparison",
+      "C04 candidate capture that visibly shows both routes entering one reconvergence point and continues through shrine/signal arrival",
+      "Lawful C04 reference capture with simultaneous selectable routes and visible reconvergence; separate anonymous material-readiness gates for each side before pairing",
       "Whole-element actual candidate/reference pairs with valid source concealment",
       "Foreground obstacle visibility and weapon/contact readability across combat",
       "Ending actor grounding, sheathing and light balance",
@@ -28,20 +29,29 @@
     ],
     "modifiedFiles": [
       "AI_DEVELOPMENT/COMPARISON_ELEMENTS.yaml",
-      "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-scene-c04-attempt.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-c04-two-routes.json",
       "AI_DEVELOPMENT/FRESH_DESIGN.md",
       "AI_DEVELOPMENT/REBUILD_STATE.yaml",
       "AI_DEVELOPMENT/SESSION_STATE.yaml",
       "fresh/browser-smoke.mjs",
-      "fresh/camera-framing.js",
-      "fresh/main.js",
+      ".github/workflows/fresh-game.yml",
+      "fresh/mission.js",
+      "fresh/playthrough-policy.mjs",
       "fresh/presentation-contract.test.mjs",
-      "fresh/presentation.js"
+      "fresh/presentation.js",
+      "fresh/route-layout.js",
+      "fresh/route-layout.test.mjs",
+      "fresh/route-matrix-smoke.mjs",
+      "fresh/simulation.js",
+      "fresh/simulation.test.mjs",
+      "fresh/touch-playthrough-policy.mjs",
+      "fresh/touch-playthrough-policy.test.mjs",
+      "fresh/verify-recordings.mjs"
     ],
     "remotePushPendingAuthorization": false,
     "remoteReleaseAuthorized": true,
-    "remotePublicationStatus": "Main contains the verified fresh candidate under fresh/ through PR13. The root GitHub Pages route remains the existing public runtime; fresh public acceptance is not claimed.",
-    "publishedMainSha": "38798e8508bdb4cfa96c419cd76a8ebc6c267d20",
+    "remotePublicationStatus": "Main6eed8c5 contains verified runtime1ded4aae under fresh/ through PR19. The root GitHub Pages route remains the existing public runtime; fresh public acceptance is not claimed.",
+    "publishedMainSha": "6eed8c552f8955d4a45be0eda6e7b78eece09312",
     "publishedUrl": "https://bachikoljunior-blip.github.io/game2/",
     "startPositionHotfix": {
       "status": "awaiting_verification",
@@ -94,41 +104,41 @@
       "coordination": "Check recent commits and running CI; if another producer is active, read only. No force push, duplicate work, or duplicate CI.",
       "activeBranch": "codex/game2-rebuild-20260913",
       "latestSafeCheckpoint": {
-        "at": "2026-09-14T15:06:00Z",
-        "verifiedRevision": "c18a5fd1051b15471b3ca0ba3a129ccfc943596a",
-        "sourceCheckpoint": "38798e8508bdb4cfa96c419cd76a8ebc6c267d20",
-        "integratedMain": "38798e8508bdb4cfa96c419cd76a8ebc6c267d20",
-        "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-scene-c04-attempt.json",
-        "review": "C04-BLIND-ATTEMPT-01",
-        "execution": "The verified implementation is on main and the source branch was fast-forwarded to the merge. The lawful C04 source is locally verified, but the first anonymous material gate exposed the candidate's missing fork; continue with the saved branching-route frontier."
+        "at": "2026-09-14T20:15:44Z",
+        "verifiedRevision": "1ded4aae27f8331cec10975c8dbac9eb482460a9",
+        "sourceCheckpoint": "6eed8c552f8955d4a45be0eda6e7b78eece09312",
+        "integratedMain": "6eed8c552f8955d4a45be0eda6e7b78eece09312",
+        "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-c04-two-routes.json",
+        "review": "C04-BLIND-ATTEMPT-02",
+        "execution": "The two-route runtime passed the four-way PC/touch route matrix and all four recordings decoded, then PR19 integrated it to main. The strict anonymous gate accepted candidate items1-5 but exposed unreadable reconvergence/arrival and an invalid reference excerpt; continue with separate single-material readiness gates."
       },
       "mainReflection": {
         "requiredEachRun": true,
         "latestUserInstruction": "ゲーム制作をしている三つのオートメーションをそれぞれ定期実行時にその時点のゲーム実装状態をメインブランチに反映するようにして",
         "scope": "bachikoljunior-blip/game2 only",
         "sourceBranch": "codex/game2-rebuild-20260913",
-        "latestSourceCheckpoint": "c18a5fd1051b15471b3ca0ba3a129ccfc943596a",
-        "verifiedRuntime": "c18a5fd1051b15471b3ca0ba3a129ccfc943596a",
-        "pullRequest": 17,
-        "resultMainSha": "38798e8508bdb4cfa96c419cd76a8ebc6c267d20",
+        "latestSourceCheckpoint": "6eed8c552f8955d4a45be0eda6e7b78eece09312",
+        "verifiedRuntime": "1ded4aae27f8331cec10975c8dbac9eb482460a9",
+        "pullRequest": 19,
+        "resultMainSha": "6eed8c552f8955d4a45be0eda6e7b78eece09312",
         "verification": {
           "sourceRuntime": {
-            "run": 34857008423,
+            "run": 34889248280,
             "conclusion": "success",
-            "coverage": "49 tests, build, actual PC and touch full combat-to-signal-to-ending flow, foreground-post fade assertion, actor-layer assertion, portrait layout, retry and two continuous recording decodes"
+            "coverage": "67 tests, build, actual Chromium PC-left/right and touch-left/right full combat-to-signal-to-ending routes, retry/context-close checks and four continuous recording decodes"
           },
           "mainIphone": {
-            "run": 34859690633,
+            "run": 34890795976,
             "conclusion": "success"
           },
           "pages": {
-            "run": 34859690176,
+            "run": 34890794331,
             "conclusion": "success"
           },
-          "pagesRouting": "The merge adds the fresh candidate under fresh/ but does not reroute the root Pages entry point. A fresh public-release claim is not made."
+          "pagesRouting": "PR19 updates the fresh candidate under fresh/ but leaves root index.html blob7e2a5f80 and public/ tree8675ba05 unchanged. A fresh public-release claim is not made."
         },
         "completionClaim": false,
-        "nextRun": "Re-read remote source/main heads. Design the missing C04 physical branch from the fresh concept, verify both paths, then produce a new candidate packet; do not repeat the invalid straight-route comparison."
+        "nextRun": "Re-read remote source/main heads. Make the candidate reconvergence and post-rejoin shrine arrival visible, acquire a lawful actual-branching reference, and pass each side through a separate anonymous material-readiness gate before pairing."
       }
     },
     "evidence": [
@@ -164,16 +174,17 @@
       "AI_DEVELOPMENT/EVIDENCE/20260914-main-reflection-b0f5e76.json",
       "AI_DEVELOPMENT/EVIDENCE/20260914-c04-method-recovery-scene-actor.json",
       "AI_DEVELOPMENT/EVIDENCE/20260914-main-reflection-44ce5a67.json",
-      "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-scene-c04-attempt.json"
+      "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-scene-c04-attempt.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-c04-two-routes.json"
     ],
     "publicRuntimeRevision": "86512c3bfdc69e03b5b490d9b0d79ec9da141343",
     "producerExecution": {
       "kind": "foreground execution",
-      "checkpointAt": "2026-09-14T15:06:00Z",
+      "checkpointAt": "2026-09-14T20:15:44Z",
       "backgroundProducerConfirmed": false,
       "logicalActiveIsNotLivenessProof": true,
-      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-scene-c04-attempt.json",
-      "nextInvocation": "Confirm actual remote/CI/producer activity, then resume the C04 branching-route frontier. Do not repeat the straight-route packet or duplicate an active writer."
+      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-c04-two-routes.json",
+      "nextInvocation": "Confirm remote heads and producer activity, then resume the visible-rejoin/reference-material frontier. Do not duplicate an active writer or pair materials before each side passes its own readiness gate."
     },
     "ultraDelegation": {
       "instructionId": "ULTRA-CHILDREN-20260914-v3",
@@ -182,25 +193,28 @@
         "確認したら、一旦game2 のオートメーションだけ有効にして、他は停止して"
       ],
       "requestedReasoningEffort": "ultra",
-      "integrator": "/root/game2_ultra_integrator",
+      "integrator": "/root/game2_ultra_routes",
       "integratorSpawnArguments": {
         "reasoning_effort": "ultra",
         "fork_turns": "none",
         "model": "omitted"
       },
+      "effectiveInternalStrengthIndependentlyConfirmed": false,
       "parentConfirmationReceived": true,
       "children": [
         "/root/game2_ultra_integrator/fresh_scene_review",
         "/root/game2_ultra_integrator/c04_source_route",
-        "/root/game2_ultra_integrator/c04_blind_attempt"
+        "/root/game2_ultra_integrator/c04_blind_attempt",
+        "/root/game2_ultra_routes/c04_blind_material_gate_02",
+        "/root/game2_ultra_routes/state_schema_audit"
       ],
       "allChildSpawnArguments": "reasoning_effort=ultra, fork_turns=none, model omitted",
-      "receipt": "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-scene-c04-attempt.json",
-      "verifiedImplementation": "c18a5fd1051b15471b3ca0ba3a129ccfc943596a",
-      "verifiedWorkflow": 34857008423,
-      "integratedMain": "38798e8508bdb4cfa96c419cd76a8ebc6c267d20",
+      "receipt": "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-c04-two-routes.json",
+      "verifiedImplementation": "1ded4aae27f8331cec10975c8dbac9eb482460a9",
+      "verifiedWorkflow": 34889248280,
+      "integratedMain": "6eed8c552f8955d4a45be0eda6e7b78eece09312",
       "automationGate": {
-        "observedAt": "2026-09-14T15:15:02Z",
+        "observedAt": "2026-09-14T20:15:44Z",
         "game2ReceiptRemoteCommit": "08ef7e4ec11d4bcd334c63520e1ed5397f86aeb0",
         "crossRepositoryEvidence": {
           "survivalBranchHead": "b0f1dfb9860dbc00018c0c587d8f0934fadb6604",
@@ -216,7 +230,7 @@
           "survival": "6aa71e69ffec81919e059ecff6d98f82",
           "q": "6aa72048f4388191a7448b249cf6578d"
         },
-        "settingsPreserved": "Exact comparison found title, prompt, schedule, timezone, timing mode, triggers, conversation/team IDs, display schedule, last-run and next-run unchanged for all three; only is_enabled and service updated_at changed.",
+        "settingsPreserved": "Latest readback retained the recorded prompts and schedules for all three tasks with enabled states game2=true, survival=false and Q=false; no task was created, deleted or updated in this run.",
         "deletedOrCreated": false
       }
     }
@@ -229,18 +243,18 @@
     "completion": "All concept elements satisfied by evidenced blind comparison.",
     "current_unit": "2026-09-13-fresh-design",
     "unit_status": "active",
-    "first_action": "Design and implement a readable physical C04 branch before the shrine, verify both routes with actual PC/touch input, recapture entry-landmark-choice-shrine coverage and repeat the independent source-concealed material gate. Keep all10 formal elements not measured until valid comparisons exist.",
+    "first_action": "Make the already verified two-route candidate visibly show reconvergence and subsequent shrine/signal arrival, while acquiring a lawful reference with actual simultaneous routes and visible reconvergence. Pass candidate and reference separately through anonymous material-readiness gates before pairing; keep all10 not measured.",
     "implementation_strategy": "Fresh design and implementation; needs-before-reuse, per latest direct user instruction.",
     "unitEndReason": null,
     "deadlineReassessment": {
-      "observedAt": "2026-09-14T15:06:00Z",
-      "prediction": "not yet grounded as can meet; under the latest instruction this means the current method is defective.",
-      "basis": "Ten formal comparisons and five dossiers remain incomplete. A fully decoded continuous C04 reference now exists, but the first anonymous material gate proved that the candidate has no fork or selectable alternate route.",
-      "methodChange": "Batch the three stored screen-hierarchy defects, acquire lawful real comparison media in parallel, and place an independent material-validity gate before accepting any verdict. After that gate isolated the candidate structure defect, move the next production priority from more cosmetic polish or source hunting to a physical branch with real-input route coverage.",
-      "validation": "Candidate c18a5fd reduced the stored occlusion/light/actor gaps and CI34857008423 passed49 tests, build, PC/touch missions and recording decode. Two reference media files were downloaded and fully decoded. C04-BLIND-ATTEMPT-01 then identified the missing candidate fork at exact video ranges instead of producing a false verdict.",
-      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-scene-c04-attempt.json",
-      "remainingHoursAtObservation": 136.76,
-      "nextMethodChange": "Implement and verify the C04 branch before rebuilding the anonymous packet; do not retry the invalid straight-route comparison or treat source acquisition as the remaining blocker."
+      "observedAt": "2026-09-14T20:15:44Z",
+      "prediction": "not grounded as can meet; under the latest instruction the current method is treated as defective.",
+      "basis": "Ten formal comparisons and five dossiers remain incomplete. Route mechanics now pass the complete four-way input matrix, but the strict material gate exposed an invalid reference excerpt and candidate footage that hides reconvergence and post-rejoin arrival.",
+      "methodChange": "Replace the straight candidate with collision-enforced two paths, expand verification to PC/touch on both paths with four full decodes, isolate browser preflight from recording, acknowledge input pulses, stage actual defense, and run both apparatuses after sibling failure. Then change comparison preparation from immediate A/B pairing to separate single-material readiness gates for candidate and reference. No game value or criterion was weakened.",
+      "validation": "CI34889248280 passed67 tests/build and all four PC/touch route missions at runtime1ded4aae; all four recordings fully decoded. The second independent gate improved the candidate from prior failure of route items2-6 to passing items1-5, while precisely isolating candidate items6-8 and reference items2-8 before recognition or preference.",
+      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-c04-two-routes.json",
+      "remainingHoursAtObservation": 131.6,
+      "nextMethodChange": "Use separate anonymous readiness gates: first make candidate reconvergence and shrine arrival readable, and independently replace the reference excerpt with one that actually contains simultaneous routes, choice and visible reconvergence."
     },
     "latestDeadlineInstruction": {
       "userOriginal": "定期オートメーション実行時の継続確認の後、期限内に達成できるか考え、できる以外の判断をしたならやり方が間違ってることを疑え",

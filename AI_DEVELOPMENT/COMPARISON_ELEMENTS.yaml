@@ -209,7 +209,7 @@
         "K03",
         "K06"
       ],
-      "currentGap": "c18a5fdで前景鳥居の大遮蔽、勝利時の灯と人物の重なり・光量、人物の単純な大形状を一括改善し、実入力PC/touch全ミッションを再検証した。年齢確認・anti-bot回避のないGamersyde正規ページから通常プレイ実媒体2本を取得し全復号した。45420は編集された複数地域の映像で全体経路には不適、45075は岩場進入・白い樹・経路選択・山上の社を連続して含む。実候補と後者を同条件で匿名化した初回比較C04-BLIND-ATTEMPT-01は、独立Ultra評価者が候補側に分岐／選択可能な別導線が一度もないと確認してmaterial invalidで停止し、出所判定・選好へ進まなかった。従って未測定を維持し、次は候補に読める実分岐と再合流を設計・実装して全経路を再取得する。",
+      "currentGap": "1ded4aaeで中央の物理尾根、同時に選べる左の石灯路／右の風布路、経路固有の遭遇と再合流を実装した。CI34889248280は同一SHAでPC-left/rightとtouch-left/rightの4経路を通常入力で全完走し、4録画を全復号した。匿名C04-BLIND-ATTEMPT-02では候補Bが進入・二経路・実選択・固有landmark・固有遭遇の項目1〜5を満たした一方、柵・岩・カメラにより再合流とその後の社到着が読めず6〜8を満たさなかった。参照Aも一本道の障害列で項目2〜8を満たさずMATERIAL INVALIDとなり、出所認識・選好比較は未実施。未測定を維持し、次は候補の可視再合流／社到着と、実分岐・再合流を連続して含む合法参照を各々単独material gateで検証してから新しい対を作る。",
       "diagnosticFacets": [
         {
           "id": "C04",
@@ -1547,12 +1547,12 @@
     "SK": "SEKIRO: Shadows Die Twice (2019)"
   },
   "runtime": {
-    "basicEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-verified-checkpoint.json",
+    "basicEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-c04-two-routes.json",
     "branch": "codex/game2-rebuild-20260913",
     "formalEvidence": null,
     "legacyEvidenceReusableAsCurrent": false,
-    "revision": "5afdd48e56613adfdbd26f54e5b2c02a79b3ffc2",
-    "verificationScope": "46tests/build, real PC/touch missions and endings/retry, silent recordings and independent exact-revision sampled image diagnosis; all whole-element source-blind verdicts not measured.",
+    "revision": "1ded4aae27f8331cec10975c8dbac9eb482460a9",
+    "verificationScope": "67tests/build, real DOM PC/touch input on both left/right routes, four complete missions and four fully decoded silent recordings in Chromium/SwiftShader. This is route-contract evidence, not physical-phone performance, audio evidence or a whole-element source-blind verdict.",
     "pendingCandidate": null
   },
   "schemaVersion": 1,
@@ -1869,6 +1869,6 @@
     }
   ],
   "status": "not measured",
-  "updatedAt": "2026-09-14T09:09:18.498Z",
+  "updatedAt": "2026-09-14T20:15:44Z",
   "adoptionReview": "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-catalog-review.json"
 }
