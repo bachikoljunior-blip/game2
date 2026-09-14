@@ -23,13 +23,21 @@ every texture, mesh, animation and sound is synthesised at boot. `ARCHITECTURE.m
 binding contract that lets independent agents work on it in parallel; read §5 (art
 direction), §7 (perf budget) and §8 (file ownership) before dispatching anything.
 
-> **Last completed round: 16. Active round: none.** Round 16 opened FAIL at 58/100 with
+> **Last completed round: 16. Active round: 17, verification in progress.** The current
+> continuation point is PR #10 after `9f7b70b`: five frames, 20 encounters and 300 rendered
+> frames passed CI 34737095560, but independent review returned FAIL 58 with combat-camera
+> overlap and primitive character/cloth construction as majors. A mirrored 30 degree side
+> composition now passes local geometry/collision checks and independent code review; it
+> requires fresh `[motion]` evidence before publication. Main/Pages remains `86512c3`.
+> Physical-device and human gates remain open.
+> Round 16 opened FAIL at 58/100 with
 > 3 blockers and closed on coherent `r16v1` with every contract gate held (120 draw calls,
 > 781,386 triangles, black gate 0/11/0/0/0, white gate hero 236 / torii 251). Five owners
 > committed, ten were gated out, and one blocker was re-routed mid-round on a measured
 > disproof. **Round 16 has no closing critic verdict** — the user ended the run at the end
 > of the round, so `r16v1` was gated but never judged. Rounds 17–20 were cancelled, not
-> queued. Do not activate Round 17 without a new user instruction.
+> queued. The new 2026-09-11 user instruction now resumes development until the established
+> criteria are achieved. Current candidate and exact next step are in `HANDOFF.md`.
 >
 > **This block is the single most-missed staleness trap in this file.** It said "Last
 > completed round: 14" while 15 was finished and 16 was being asked for. `HANDOFF.md` is the

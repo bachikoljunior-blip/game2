@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "round": 17,
+  "profile": "phone",
+  "tier": "medium",
+  "nativeResolution": "2532x1170",
+  "verdict": "FAIL",
+  "score": 58,
+  "blindComparison": "No matched reference gameplay footage or human blind study was supplied, so stranger preference is unmeasured. The review applies the repository's named composition and readability principles to the supplied frames without claiming an observed side-by-side result.",
+  "scope": "Independent read-only review of exact PR #10 candidate 9f7b70bc7b496964925c2b62035aadee2dc8bd35: all 300 rendered frames, native representatives, incoming and outgoing hit frames, framing, ribbon recurrence and character readability.",
+  "provenance": {
+    "sourceSha": "9f7b70bc7b496964925c2b62035aadee2dc8bd35",
+    "buildFingerprint": "cef81b22e5bd2249b7bf166af3a4fc08373a6142da23b76ff2bfc89edcf3ff52",
+    "workflowRun": 34737095560,
+    "candidateArtifact": 10312111014,
+    "candidateArchiveSha256": "41c23a98ef075b254f37b9e10f145b07d47a3b5b603af604da62ac3144cb782c",
+    "motionArtifact": 10311359296,
+    "motionArchiveSha256": "f7f9c3037b6fbe11e1c466dc7dcca5e9ce5e3745c79eb35c6e6d8e33987515fd",
+    "locomotionVideoSha256": "a0ea7b70792f4e3ef3877735064a29c29e6f1a0fbc1db89f3697b9b3a77e864f",
+    "combatVideoSha256": "e33170ed736ddd5e6fd7f2d921bf8c55bac92c6b75c3742dc17c5e8a4510937f",
+    "locomotionFrames": 120,
+    "combatFrames": 180,
+    "totalRenderedFrames": 300
+  },
+  "clearedWithinScope": [
+    "No screen-crossing opaque black ribbon recurs in the 300-frame sample.",
+    "The incoming enemy hit at combat frame 67 aligns with red perimeter and guard feedback.",
+    "Outgoing player hits at combat frames 109 and 153 do not trigger the full-screen red damage lens.",
+    "No gross teleport or obvious pose discontinuity was observed.",
+    "Both bodies remain in-frame for all 180 combat frames and no enemy-active frame is clipped."
+  ],
+  "findings": [
+    {
+      "id": "R17-MOTION-9F7-001",
+      "severity": "major",
+      "shot": "locomotion frames 40 and 100; combat frames 0, 7, 25, 67, 109 and 153",
+      "problem": "The player and ronin still read as construction mannequins: oval heads, squared sleeve and torso masses, narrow limbs and flat skirt panels. Arm, garment and weapon ownership collapse where the fighters overlap.",
+      "why": "E07 and E12 require the player, enemy and attack phase to remain readable at phone scale and in motion; these silhouettes do not meet that bar.",
+      "owner": "src/anim/Rig.js",
+      "fix": "Inspect the named poses under a neutral diagnostic material, improve layered-clothing and arm-to-weapon silhouettes within the existing budget, and require a new native-resolution review with zero surviving character-readability majors.",
+      "hypothesis": "Visible body and garment construction plus insufficient local material separation may both contribute; the supplied pixels do not isolate either mechanism.",
+      "evidence": "All named native frames and complete 10-frame mosaics; the defect survives both sunlit locomotion and shaded combat.",
+      "refutationStatus": "SURVIVED"
+    },
+    {
+      "id": "R17-MOTION-9F7-002",
+      "severity": "major",
+      "shot": "combat frames 7 and 25; ranges 60-69, 105-115 and 149-159",
+      "problem": "The frontal lock-on camera repeatedly aligns the enemy directly behind the player. Both bodies remain technically in-frame, but the enemy torso, stance, weapon-arm origin and contact pose are obscured.",
+      "why": "BM-CAMERA-01 and motion readability require a two-shot that explains the relationship and the attack, not merely two overlapping capsules inside the viewport.",
+      "owner": "src/gameplay/PlayerCamera.js",
+      "fix": "Compose an unobstructed lock-on duel from a bounded side angle, retain both complete bodies inside the central 80 percent, and prove that their projected torso centres remain separated through startup, active and reaction phases in a fresh 180-frame combat sample.",
+      "hypothesis": "The open-space lock yaw may choose the exact player-target axis before considering a side orbit; prove this in source and projection tests before relying on it.",
+      "evidence": "The complete combat mosaic and native frames show repeated near-total torso overlap despite zero clipped enemy-active frames.",
+      "refutationStatus": "SURVIVED"
+    },
+    {
+      "id": "R17-MOTION-9F7-003",
+      "severity": "minor",
+      "shot": "combat frames 108-110 and 152-154",
+      "problem": "Outgoing hit feedback is present but weakly legible because the contact point is buried inside the merged fighters; small chest flecks, orbs and a later segmented white trail carry most of the cue.",
+      "why": "A successful sword contact should read immediately from contact pose and directional reaction at phone scale, without depending on telemetry or a delayed trail.",
+      "owner": "src/fx/Effects.js",
+      "fix": "After camera separation is repaired, recapture both hit windows and require the contact point and directional enemy reaction to remain visually identifiable across each three-frame window without a red full-screen lens.",
+      "hypothesis": "The effect may be adequate once the camera no longer merges both bodies, so do not increase intensity until the camera-only recapture is reviewed.",
+      "evidence": "Native combat frames 108-110 and 152-154 plus their manifest hit events.",
+      "refutationStatus": "SURVIVED_AS_MINOR_PENDING_CAMERA_RETEST"
+    }
+  ],
+  "refInconclusive": [
+    "BM-ANIM-03 blend completion and bone-rotation limits.",
+    "Foot locking on slopes of at least 15 degrees.",
+    "Physical-device performance, hardware touch, audio and human combat feel.",
+    "Full enemy-archetype coverage."
+  ],
+  "releaseDecision": "Not releasable as the Round 17 gameplay visual checkpoint. Repair and recapture the two surviving majors; do not publish the prepared Pages payload.",
+  "refutationPass": {
+    "independent": true,
+    "result": "Both majors survived. The outgoing-feedback observation was narrowed to minor because camera overlap may be the dominant readability loss. Ribbon and damage-lens clearances were confirmed."
+  }
+}

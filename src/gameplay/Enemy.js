@@ -29,6 +29,9 @@ import { EnemyAI } from './EnemyAI.js';
 /** Game-feel gravity (ARCHITECTURE §4), not 9.81. */
 const GRAVITY = -22;
 
+/** Radians in gameplay; the capsule controller accepts degrees. */
+const SLOPE_LIMIT = 0.86;
+
 /** LOD ring radii in metres at HIGH; scaled per tier in `_applyLimits()`. */
 const LOD_NEAR = 25;
 const LOD_FAR = 60;
@@ -506,6 +509,8 @@ export class Enemy {
     this.health = this.maxHealth;
     this.maxPosture = this.def.stats.posture;
     this.posture = this.maxPosture;
+    // Combat must not infer regeneration after the first hit: our lockout owns it.
+    this.managesPostureRegen = true;
     this.state = 'idle';
     this.invulnerable = false;
     this.hitboxes = [];
@@ -543,6 +548,7 @@ export class Enemy {
     this.yaw = 0;
     this.targetYaw = 0;
     this.controller = null;
+    this._warnedControllerPosition = false;
     this.grounded = true;
     this.surface = 'grass';
     this.speed = 0;                 // horizontal speed, m/s
@@ -724,12 +730,14 @@ export class Enemy {
     if (!rig || typeof rig.on !== 'function') return;
     if (!this._onActiveStart) {
       this._onActiveStart = () => {
-        if (!this.currentMove || this.currentMove.feint) return;
+        if (this.state !== 'attack' || !this.currentMove || this.currentMove.feint ||
+          this.attackPhase !== 'startup') return;
         this._markerDriven = true;
         this.weapon.active = true;
         this.attackPhase = 'active';
       };
       this._onActiveEnd = () => {
+        if (this.state !== 'attack' || !this.currentMove) return;
         this._markerDriven = true;
         this.weapon.active = false;
         if (this.attackPhase === 'active') this.attackPhase = 'recovery';
@@ -753,7 +761,7 @@ export class Enemy {
         height: this.height,
         position: this.position,
         stepHeight: 0.42,
-        slopeLimit: 0.86,
+        slopeLimit: SLOPE_LIMIT * 180 / Math.PI,
         mass: this.def.rig.build === 'heavy' ? 160 : 78,
         layer: this.ctx.physics.LAYER?.ENEMY ?? this.ctx.physics.LAYER?.CHARACTER,
         owner: this,
@@ -811,6 +819,19 @@ export class Enemy {
     this._footPhase = 0;
     this.moveCooldowns.fill(0);
 
+    const it = this.intent;
+    it.behaviour = 'hold';
+    it.moveDir.set(0, 0, 0);
+    it.moveGain = 0;
+    it.lookAt.set(0, 0, 0);
+    it.hasLook = false;
+    it.attack = null;
+    it.guard = false;
+    it.parry = false;
+    it.dodge = false;
+    it.dodgeDir.set(0, 0, 0);
+    it.taunt = false;
+
     if (position) this.position.set(position.x, position.y, position.z);
     const th = this.ctx.terrain?.heightAt?.(this.position.x, this.position.z);
     if (Number.isFinite(th)) this.position.y = th;
@@ -828,6 +849,7 @@ export class Enemy {
     this.root.rotation.set(0, this.yaw, 0);
     this.root.scale.set(1, 1, 1);
     this.forward.set(-Math.sin(this.yaw), 0, -Math.cos(this.yaw));
+    it.faceDir.copy(this.forward);
     this.visual.position.set(0, 0, 0);
     this.visual.rotation.set(0, 0, 0);
     this.visual.scale.set(1, 1, 1);
@@ -836,13 +858,17 @@ export class Enemy {
     this.lod = 0;
     this._animInterval = 0;
 
+    // Pooled enemies keep one Rig instance. Reset it once at the entity lifecycle
+    // boundary so no prior attack layer, look lock or cloth spring reaches idle.
+    try { this.rig?.reset?.(); } catch { /* a proxy or degraded rig still respawns */ }
+
     this._ensureController();
     if (this.controller) {
       this.controller.enabled = true;
       if (this.controller.position?.set) {
         this.controller.position.set(this.position.x, this.position.y, this.position.z);
       }
-      try { this.controller.teleport?.(this.position); } catch { /* optional */ }
+      try { this.controller.teleport?.(this.position.x, this.position.y, this.position.z); } catch { /* optional */ }
     }
 
     this.ai.reset(o.seed ?? ((this.id * 2654435761) >>> 0));
@@ -1067,7 +1093,18 @@ export class Enemy {
     try { this.ctx.combat?.registerTelegraph?.(this, move.telegraph, move.startup); }
     catch { /* combat absent */ }
 
-    this._play(move.clip, 0.08, false, 1, move.total);
+    const animation = this._play(move.clip, 0.08, false, 1, move.total, move);
+    const events = animation?.clip?.events;
+    let hasStart = false, hasEnd = false;
+    if (events) {
+      for (let i = 0; i < events.length; i++) {
+        if (events[i].name === 'hit-active-start') hasStart = true;
+        else if (events[i].name === 'hit-active-end') hasEnd = true;
+      }
+    }
+    // Establish authority before the first marker. Starting with a timer and
+    // switching clocks mid-swing can reopen a completed swing for one frame.
+    this._markerDriven = hasStart && hasEnd;
 
     // Snap the facing at commit so the swing cannot track the player through it.
     if (this.target?.position) {
@@ -1113,19 +1150,18 @@ export class Enemy {
       return;
     }
 
-    if (this.attackPhase === 'startup' && t >= m.startup) {
-      // Markers are authoritative; this timer is the safety net for a clip that
-      // ships without them, so the fight never silently stops working.
-      if (!this._markerDriven || t > m.startup + 0.12) {
+    if (!this._markerDriven) {
+      // Markerless fallback only. A known clip owns both ends of its blade arc.
+      if (this.attackPhase === 'startup' && t >= m.startup) {
         this.attackPhase = 'active';
         this.weapon.active = true;
       }
+      if (this.attackPhase === 'active' && t >= m.startup + m.active) {
+        this.attackPhase = 'recovery';
+        this.weapon.active = false;
+      }
+      if (t >= span + 0.14) this.weapon.active = false;
     }
-    if (this.attackPhase === 'active' && t >= m.startup + m.active) {
-      this.attackPhase = 'recovery';
-      this.weapon.active = false;
-    }
-    if (t >= span + 0.14) this.weapon.active = false;   // hard cutoff
 
     if (m.ranged && this.attackPhase === 'active' && !this._projectileFired) {
       this._projectileFired = true;
@@ -1295,8 +1331,18 @@ export class Enemy {
     if (this.controller && this.controller.enabled !== false) {
       try { gi = this.controller.move(this._disp, dt); } catch { gi = null; }
       const cp = this.controller.position;
-      if (cp && typeof cp.x === 'number') this.position.set(cp.x, cp.y, cp.z);
-      else this.position.add(this._disp);
+      if (cp && Number.isFinite(cp.x) && Number.isFinite(cp.y) && Number.isFinite(cp.z)) {
+        this.position.set(cp.x, cp.y, cp.z);
+      } else if (cp) {
+        // Hold the last valid root; dead reckoning would hide a broken collider.
+        this.velocity.set(0, 0, 0);
+        this._desiredVel.set(0, 0, 0);
+        gi = null;
+        if (!this._warnedControllerPosition) {
+          this._warnedControllerPosition = true;
+          console.warn('[enemy] non-finite controller position ignored');
+        }
+      } else this.position.add(this._disp);
     } else {
       this.position.add(this._disp);
     }
@@ -1345,14 +1391,14 @@ export class Enemy {
 
   // --------------------------------------------------------------------- visuals
 
-  _play(clip, fade = 0.15, loop = false, speed = 1, duration = 0) {
+  _play(clip, fade = 0.15, loop = false, speed = 1, duration = 0, attack = null) {
     if (!clip) return;
     if (loop && clip === this._lastClip) return;
     this._lastClip = clip;
     const rig = this.rig;
     if (!rig || typeof rig.play !== 'function') return;
     try {
-      rig.play(clip, { fade, loop, speed, duration, layer: 'base', entity: this });
+      return rig.play(clip, { fade, loop, speed, duration, attack, layer: 'base', entity: this });
     } catch { /* unknown clip — the rig keeps its current pose */ }
   }
 
@@ -1661,8 +1707,10 @@ export class Enemy {
     this.ai.onParrySuccess(attacker);
   }
 
-  onParried(defender) {
-    this.posture = Math.max(0, this.posture - this.maxPosture * 0.22);
+  onParried(defender, payload) {
+    // Combat supplies the fixed perfect/late pressure; standalone callers retain
+    // a fallback consequence without charging that pressure a second time.
+    if (!payload) this.posture = Math.max(0, this.posture - this.maxPosture * 0.22);
     this.postureLocked = this.def.stats.postureRegenDelay;
     if (this.hasToken) { this.manager?._releaseToken(this); this.hasToken = false; }
     this.weapon.active = false;
@@ -1744,11 +1792,6 @@ export class EnemyManager {
         for (let i = 0; i < this.list.length; i++) this.list[i].ai?.onTargetLost?.();
       }
     };
-    this._onBusParry = (p) => {
-      if (!p) return;
-      if (p.defender?.faction === 'oni') p.defender.onParrySuccess?.(p.attacker);
-      if (p.attacker?.faction === 'oni') p.attacker.onParried?.(p.defender);
-    };
     this._onBusPostureBreak = (p) => {
       const e = p?.entity;
       if (e?.faction === 'oni' && e.isAlive && e.state !== 'postureBroken') e._breakPosture?.();
@@ -1787,7 +1830,6 @@ export class EnemyManager {
     bus.on('hit', this._onBusHit);
     bus.on('footstep', this._onBusFootstep);
     bus.on('death', this._onBusDeath);
-    bus.on('parry', this._onBusParry);
     bus.on('posture-break', this._onBusPostureBreak);
   }
 
@@ -1798,7 +1840,6 @@ export class EnemyManager {
     bus.off('hit', this._onBusHit);
     bus.off('footstep', this._onBusFootstep);
     bus.off('death', this._onBusDeath);
-    bus.off('parry', this._onBusParry);
     bus.off('posture-break', this._onBusPostureBreak);
   }
 

@@ -37,6 +37,7 @@ export const TUNING = {
   // ── swept hit detection ────────────────────────────────────────────────────
   SWEEP_SUBSTEPS: 4,            // blade positions tested between last frame and this one (3–5)
   SWEEP_PAD: 0.055,             // m of "blade thickness"; a graze should still read as a hit
+  PLAYER_CONTACT_ASSIST: 0.15,  // m at full aim assist; closes low-frame/mobile near-misses
   BROAD_SLACK: 0.75,            // m of extra radius on the cheap broadphase reject
   MULTIHIT_INTERVAL: 0.20,      // s before a `weapon.multiHit` swing may hit one target again
   SWING_MERGE: 0.12,            // s in which a beginSwing() call refines the swing the
@@ -47,7 +48,7 @@ export const TUNING = {
 
   // ── damage & poise ─────────────────────────────────────────────────────────
   BASE_DAMAGE: 12,              // fallback when weapon.damage is missing
-  HEAVY_MULT: 1.85,             // damage multiplier for a heavy swing
+  HEAVY_MULT: 1.85,             // fallback heavy bonus when no authored damage is supplied
   CRIT_MULT: 1.65,              // backstab / punish-window multiplier
   BACKSTAB_ARC: 1.92,           // rad (~110°) behind the victim that counts as a backstab
   CHIP_RESIDUE: 0.14,           // fraction of blocked damage that still reaches health
@@ -58,7 +59,9 @@ export const TUNING = {
   STAGGER_TIME: 0.42,           // s of a normal directional stagger (420 ms)
 
   // ── posture ────────────────────────────────────────────────────────────────
-  POSTURE_PER_DAMAGE: 0.85,     // posture added per point of damage dealt to health
+  POSTURE_PER_DAMAGE: 1.15,     // posture added per point of damage dealt to health;
+                                // direct pressure must beat HP depletion, even when a
+                                // large authored hit would otherwise empty both at once
   POSTURE_REGEN: 22.0,          // posture/s baseline regeneration
   POSTURE_REGEN_DELAY: 0.55,    // s of no pressure before regeneration starts at all (550 ms)
   POSTURE_REGEN_RAMP: 1.6,      // s of continued calm needed to reach the unpressured rate
@@ -106,7 +109,8 @@ export const TUNING = {
   SLOWMO_BREAK: 0.28,           // time scale of the posture-break dip
   SLOWMO_BREAK_TIME: 0.55,      // s the dip holds (550 ms)
   SLOWMO_EXEC: 0.42,            // time scale during an execution wind-up
-  LUNGE_SPEED: 3.2,             // m/s the attacker drifts into their target while swinging
+  LUNGE_SPEED: 3.2,             // m/s enemy drift toward its target while swinging
+  PLAYER_LUNGE_RESPONSE: 18,    // 1/s response after the target's current AI step
   LUNGE_MIN_GAP: 0.95,          // m; stop lunging here so bodies never interpenetrate
   LUNGE_MAX: 0.30,              // s of lunge per swing (300 ms)
   KNOCKBACK_LIGHT: 2.1,         // m/s impulse away from a light hit
@@ -319,6 +323,7 @@ class CombatRecord {
 
     // swing
     this.swinging = false;
+    this.closeAfterSweep = false;
     this.swingId = 0;
     this.swingStart = 0;
     this.swingHeavy = false;
@@ -377,6 +382,7 @@ class CombatRecord {
     this.hasPrev = false;
     this.bladeValid = false;
     this.swinging = false;
+    this.closeAfterSweep = false;
     this.swingId = 0;
     this.swingDamage = null;
     this.swingPoise = null;
@@ -550,6 +556,7 @@ export class CombatDirector {
     this._updateDemo(rdt);
     this._clashPass(now);
     this._sweepPass(now);
+    this._closeEndedSwings();
     this._updateProjectiles(rdt, now);
     this._integrateImpulses(rdt);
     this._updateTokens(now);
@@ -569,6 +576,51 @@ export class CombatDirector {
     this._demo.active = false;
     this.ctx?.engine?.setTimeScale?.(1, true);
     this.ctx?.pipeline?.setLetterbox?.(0, 0);
+  }
+
+  /** Clear the previous fight before Level respawns its entities for a retry. */
+  reset() {
+    const ex = this._exec;
+    if (ex.active) {
+      if (ex.attacker && ex.attacker.isAlive !== false) this._safeSet(ex.attacker, 'invulnerable', false);
+      if (ex.victim && ex.victim.isAlive !== false) this._safeSet(ex.victim, 'invulnerable', false);
+    }
+    ex.active = false;
+    ex.phase = 0;
+    ex.t = 0;
+    ex.attacker = null;
+    ex.victim = null;
+    this._demo.active = false;
+    this._demo.a = null;
+    this._demo.b = null;
+    for (const [entity, rec] of this._records) {
+      rec.reset(entity);
+      rec.seen = this._frame;
+    }
+    this._tokens.melee.length = 0;
+    this._tokens.ranged.length = 0;
+    this._lastGrantMelee = -999;
+    this._lastGrantRanged = -999;
+    for (let i = 0; i < this._projectiles.length; i++) {
+      this._projectiles[i].alive = false;
+      this._projectiles[i].owner = null;
+    }
+    this._stopUntil = -999;
+    this._stopStart = -999;
+    this._slowUntil = -999;
+    this._stopScale = 1;
+    this._slowScale = 1;
+    this._timeScaleApplied = 1;
+    this._slowGrade = 0;
+    this._spam = 0;
+    this._lastPlayerKind = '';
+    this._lastPlayerSwing = -999;
+    this.parryStreak = 0;
+    this.tension = 0;
+    this.ctx?.engine?.setTimeScale?.(1, true);
+    this.ctx?.pipeline?.setSlowMo?.(0);
+    this.ctx?.pipeline?.setLetterbox?.(0, 0);
+    this.ctx?.playerCamera?.cinematic?.(false, null);
   }
 
   applyQuality() { /* combat resolution is deliberately tier-independent */ }
@@ -670,12 +722,24 @@ export class CombatDirector {
   /** Close a swing early (animation cancel, stagger interrupt, deflect). */
   endSwing(entity) {
     const rec = this._records.get(entity);
-    if (!rec || !rec.swinging) return;
+    if (!rec) return;
+    rec.closeAfterSweep = false;
+    if (!rec.swinging) return;
     rec.swinging = false;
     rec.hitIds.length = 0;
     rec.hitTimes.length = 0;
     rec.lungeUntil = 0;
     rec.lungeTarget = null;
+  }
+
+  /**
+   * Close after Combat has sampled and swept the current frame's blade pose.
+   * An animation end marker fires during Rig update; Player then exports the new
+   * pose before Combat updates. Closing at the marker would discard that final arc.
+   */
+  endSwingAfterSample(entity) {
+    const rec = this._records.get(entity);
+    if (rec?.swinging) rec.closeAfterSweep = true;
   }
 
   /**
@@ -1133,6 +1197,7 @@ export class CombatDirector {
       if (dead) {
         if (rec.alive) { rec.alive = false; this.releaseToken(e); }
         rec.swinging = false;
+        rec.closeAfterSweep = false;
         continue;
       }
       rec.alive = true;
@@ -1158,8 +1223,16 @@ export class CombatDirector {
 
       // ── swing edge detection ──
       const active = !!e.weapon?.active;
-      if (active && !rec.swinging) this._openSwing(rec, e, null, now);
-      else if (!active && rec.swinging) this.endSwing(e);
+      if (active) {
+        rec.closeAfterSweep = false;
+        if (!rec.swinging) this._openSwing(rec, e, null, now);
+      } else if (rec.swinging && !rec.closeAfterSweep) {
+        // An unmarked falling edge is a cancellation/stagger/death path. Close
+        // immediately so a cancelled enemy attack cannot damage on a stale pose.
+        // Player's natural marker/fallback close explicitly requests one final
+        // sample with endSwingAfterSample().
+        this.endSwing(e);
+      }
 
       // ── window expiry ──
       if (rec.guarding && now > rec.guardUntil && e.state !== 'guard') rec.guarding = false;
@@ -1201,9 +1274,26 @@ export class CombatDirector {
           const dist = _vA.length();
           if (dist > TUNING.LUNGE_MIN_GAP) {
             _vA.divideScalar(dist);
-            const step = Math.min(TUNING.LUNGE_SPEED * rdt, dist - TUNING.LUNGE_MIN_GAP);
-            sp.addScaledVector(_vA, step);
-            e.root?.position?.copy?.(sp);
+            const remaining = dist - TUNING.LUNGE_MIN_GAP;
+            if (e === this.ctx?.player && typeof e.applyCombatLunge === 'function') {
+              const budget = Math.max(0, e._combatLungeRemaining || 0);
+              const requested = Math.min(budget,
+                remaining * (1 - Math.exp(-TUNING.PLAYER_LUNGE_RESPONSE * rdt)));
+              // Spend the request even when collision blocks it, so a held
+              // attack cannot store movement and burst through a wall later.
+              e._combatLungeRemaining = Math.max(0, budget - requested);
+              const applied = e.applyCombatLunge(_vA, requested);
+              if (rec.bladeValid && applied
+                && Number.isFinite(applied.x) && Number.isFinite(applied.y)
+                && Number.isFinite(applied.z) && applied.lengthSq() > 0) {
+                rec.base.add(applied);
+                rec.tip.add(applied);
+              }
+            } else {
+              const step = Math.min(TUNING.LUNGE_SPEED * rdt, remaining);
+              sp.addScaledVector(_vA, step);
+              e.root?.position?.copy?.(sp);
+            }
           }
         }
       }
@@ -1276,6 +1366,15 @@ export class CombatDirector {
     }
   }
 
+  /** Finalise falling edges only after their last exported pose was tested. */
+  _closeEndedSwings() {
+    for (let i = 0; i < this._entities.length; i++) {
+      const e = this._entities[i];
+      const rec = this._records.get(e);
+      if (rec?.closeAfterSweep) this.endSwing(e);
+    }
+  }
+
   /** Test the swept quad against one target's hitboxes. Returns true on contact. */
   _sweepAgainst(ra, attacker, target, steps, now) {
     const boxes = Array.isArray(target.hitboxes) && target.hitboxes.length
@@ -1287,16 +1386,22 @@ export class CombatDirector {
       _p0.lerpVectors(ra.prevBase, ra.base, u);
       _p1.lerpVectors(ra.prevTip, ra.tip, u);
 
-      // h === count is the body-capsule fallback, used only when not one bone-driven
-      // hitbox could be resolved (rig not ready, or an entity authored without one).
-      let resolved = 0;
+      // Bone capsules add limb/head detail, but they must not replace the core
+      // body capsule. Sparse point-like bones leave gaps large enough for a
+      // visibly intersecting katana to miss, especially at low frame rates.
+      // h === count always tests that core body envelope after the detailed set.
       for (let h = 0; h <= count; h++) {
-        if (h === count && resolved > 0) break;
         const hb = (h < count && boxes) ? boxes[h] : null;
         const radius = this._hitboxSegment(target, hb, _hbA, _hbB);
         if (radius <= 0) continue;
-        if (h < count) resolved++;
-        const total = radius + TUNING.SWEEP_PAD;
+        // The camera/turn assist already bends the player's authored swing toward
+        // a lock target. Give that same mobile-facing difficulty scalar a small
+        // contact tolerance so a sampled 4 fps arc cannot miss by a few centimetres.
+        // Enemy weapons never receive this forgiveness.
+        const playerAssist = attacker === this.ctx?.player
+          ? TUNING.PLAYER_CONTACT_ASSIST * (this.diff?.aimAssist ?? 0)
+          : 0;
+        const total = radius + TUNING.SWEEP_PAD + playerAssist;
         const d2 = segmentSegment(_p0, _p1, _hbA, _hbB, _c1, _c2);
         if (d2 > total * total) continue;
 
@@ -1310,7 +1415,9 @@ export class CombatDirector {
         _vD.normalize();
         _vE.copy(_c2).addScaledVector(_vD, radius);
 
-        const dmg = this._weaponDamage(attacker) * (ra.swingHeavy ? TUNING.HEAVY_MULT : 1);
+        // Player's descriptor already includes its heavy/stance/chain bonuses;
+        // multiplying again turned an authored 49.4 ender into a 91.39 one-shot.
+        const dmg = this._weaponDamage(attacker);
         this._markHit(ra, target, now);
         this._resolveContact(
           attacker, target, _vE, _vD, dmg, ra.swingKind, ra.swingHeavy, false,
@@ -1536,8 +1643,8 @@ export class CombatDirector {
     if (!tookHealth) this._safeSet(target, 'health', Math.max(0, (h0 ?? 0) - damage));
     this.ctx?.bus?.emit?.('hit', hp);
 
-    // Player emits its own `damage-taken` (it returns true to say so); everyone else
-    // relies on us for it.
+    // The entity may explicitly return true only when it already emitted
+    // `damage-taken`; the normal Player and Enemy paths rely on Combat here.
     if (verdict !== true) {
       const dp = this._dmgP();
       dp.entity = target; dp.amount = damage; dp.direction.copy(dir);
@@ -1832,8 +1939,8 @@ export class CombatDirector {
 
   /**
    * Slower at low health, faster the longer the entity goes unpressured — but only for
-   * entities that do not already regenerate for themselves. Player and Enemy both do;
-   * we detect their drift and stand down rather than fight them.
+   * entities that do not regenerate for themselves. Explicit ownership also keeps a
+   * one-off reward, such as Player.onParry(), from being mistaken for ongoing regen.
    */
   _regenPosture(entity, rec, rdt, now) {
     if (entity.posture == null) return;
@@ -1841,14 +1948,17 @@ export class CombatDirector {
 
     const drift = entity.posture - rec.postureSeen;
     if (Math.abs(drift) > 1e-4) {
-      // Movement we did not cause. If it is heading away from a break, the entity owns
-      // its own regeneration and we must never write posture on idle frames again.
+      // Older passive entities have no ownership flag, so infer their recovery.
+      // Player explicitly delegates: its parry/kill rewards must not disable regen.
       const towardBreak = rec.postureMode < 0 ? drift < 0 : drift > 0;
-      if (!towardBreak) rec.selfRegen = true;
+      if (!towardBreak && entity.managesPostureRegen == null) rec.selfRegen = true;
       rec.postureSeen = entity.posture;
       if (towardBreak) this._checkBreak(entity, rec, null);
     }
-    if (rec.selfRegen) return;
+    // Enemy's authored recovery delay starts with the first hit. Waiting to infer
+    // ownership from visible regen restores its bar before that delay has elapsed.
+    if (entity.managesPostureRegen === true ||
+      (entity.managesPostureRegen == null && rec.selfRegen)) return;
     if (now < rec.brokenUntil) return;
     if (now - rec.lastPressure < TUNING.POSTURE_REGEN_DELAY) return;
     const pressure = this._pressureOf(entity, rec);
@@ -2372,6 +2482,7 @@ export class CombatDirector {
 
   _openSwing(rec, e, opts, now) {
     rec.swinging = true;
+    rec.closeAfterSweep = false;
     rec.swingId = this._swingSeq++;
     rec.swingStart = now;
     rec.hitIds.length = 0;
@@ -2472,6 +2583,9 @@ export class CombatDirector {
       rec.seen = this._frame;
       this._records.set(entity, rec);
     }
+    // Capture the resting convention before onDamage/onParried can drain a new
+    // enemy below the classification threshold on its very first contact.
+    this._classifyPosture(entity, rec);
     return rec;
   }
 
@@ -2490,7 +2604,12 @@ export class CombatDirector {
     if (!entity) return;
     this.releaseToken(entity);
     const rec = this._records.get(entity);
-    if (rec) { rec.swinging = false; rec.parryEnd = -999; rec.knock.set(0, 0, 0); }
+    if (rec) {
+      rec.swinging = false;
+      rec.closeAfterSweep = false;
+      rec.parryEnd = -999;
+      rec.knock.set(0, 0, 0);
+    }
   }
 
   _archetype(e) {
@@ -2530,7 +2649,8 @@ export class CombatDirector {
   _weaponDamage(e) {
     const rec = e ? this._records.get(e) : null;
     if (rec?.swingDamage != null) return rec.swingDamage;
-    return e?.weapon?.damage ?? TUNING.BASE_DAMAGE;
+    if (e?.weapon?.damage != null) return e.weapon.damage;
+    return TUNING.BASE_DAMAGE * ((rec?.swingHeavy ?? e?.weapon?.heavy) ? TUNING.HEAVY_MULT : 1);
   }
 
   /** Parry width: difficulty-scaled for the player, archetype-scaled for the AI. */

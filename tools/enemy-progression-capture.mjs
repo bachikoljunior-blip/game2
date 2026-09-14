@@ -1,0 +1,321 @@
+#!/usr/bin/env node
+// Normal production boot + real DOM keyboard input. No teleport, encounter reset,
+// spawnWave call, virtual clock, replacement renderer, or injected game state.
+import assert from 'node:assert/strict';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { resolve, join } from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { serveStatic } from '../.kit/lib/browser/serve.mjs';
+import { launchHeadless } from '../.kit/lib/browser/launch.mjs';
+import { waitForBoot } from '../.kit/lib/browser/boot.mjs';
+import { revision } from '../.kit/lib/release/revision.mjs';
+import { verifyServed } from '../.kit/lib/release/verifyServed.mjs';
+
+const opts = Object.fromEntries(process.argv.slice(2).map((x) => x.replace(/^--/, '').split('=')));
+const localBuildRoot = resolve('dist');
+const root = resolve(opts.root || 'dist');
+if (!opts.url) {
+  assert.equal(root, localBuildRoot,
+    'local progression evidence must exercise the fresh Vite build in dist');
+}
+const tag = opts.tag || 'enemy-progression';
+assert.match(tag, /^[a-zA-Z0-9_-]+$/);
+const out = resolve('shots', tag);
+mkdirSync(out, { recursive: true });
+const report = {
+  status: 'FAIL',
+  startedAt: new Date().toISOString(),
+  sourceRevision: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(),
+  scope: 'Normal production boot, real keyboard movement, authored Level trigger and EnemyManager spawn.',
+  exclusions: ['No spawnWave or teleport.', 'SwiftShader is not physical-device performance.', 'No full-game or visual-quality acceptance is claimed.'],
+  errors: [],
+};
+const save = () => writeFileSync(join(out, 'report.json'), JSON.stringify(report, null, 2) + '\n');
+let server;
+let browser;
+
+try {
+  if (!opts.url) server = await serveStatic({ root, basePath: '/game2/docs' });
+  const url = (opts.url || server.origin).replace(/\/$/, '') + '/';
+  report.url = url;
+  const candidateHtml = readFileSync(join(root, 'index.html'), 'utf8');
+  // A local candidate is the fresh Vite output, which intentionally has no
+  // publish-only artifact-revision tag. Its bytes are served directly by the
+  // in-process server, so marker checks are sufficient here. Published Pages
+  // must retain the stronger self-verifying revision check against docs/.
+  const expectedRevision = opts.url ? revision.verify(candidateHtml) : null;
+  report.candidate = {
+    root,
+    indexSha256: createHash('sha256').update(candidateHtml).digest('hex'),
+    identity: opts.url ? 'published-artifact-revision' : 'fresh-vite-build',
+    expectedRevision,
+  };
+  const served = await verifyServed({
+    url,
+    expectedRevision,
+    codec: opts.url ? revision : null,
+    attempts: opts.url ? 36 : 1,
+    markers: ['id="game-canvas"', 'assets/index-'],
+    onAttempt: (attempt, failures) => console.log('[enemy-progression] served attempt', attempt, failures),
+  });
+  report.served = { ...served, html: undefined };
+  assert.equal(served.ok, true, JSON.stringify(served.failures));
+  browser = await launchHeadless({ proxy: false });
+  report.browser = browser.version();
+  const context = await browser.newContext({ viewport: { width: 568, height: 320 }, deviceScaleFactor: 1 });
+  await context.addInitScript(() => Object.defineProperty(navigator, 'webdriver', { get: () => false }));
+  const page = await context.newPage();
+  page.on('pageerror', (error) => report.errors.push({ type: 'pageerror', text: error.message }));
+  page.on('console', (message) => {
+    if (message.type() === 'error') report.errors.push({ type: 'console', text: message.text(), location: message.location() });
+  });
+  page.on('requestfailed', (request) => report.errors.push({ type: 'request', url: request.url(), text: request.failure()?.errorText }));
+  page.on('response', (response) => {
+    if (response.status() >= 400) report.errors.push({ type: 'http', url: response.url(), status: response.status() });
+  });
+
+  // debug only exposes the existing runtime for observation; movement and spawning stay on normal production paths.
+  await page.goto(url + '?q=low&debug=1', { waitUntil: 'load', timeout: 120000 });
+  report.boot = await waitForBoot(page, {
+    readyExpr: 'window.__kagerouReady === true', statusSelector: '#boot-status', timeout: 420000,
+  });
+  assert.equal(report.boot.booted, true, JSON.stringify(report.boot));
+
+  // Observe the real call without changing its arguments, return value or timing.
+  await page.evaluate(() => {
+    const k = window.__kagerou;
+    window.__normalSpawnEvidence = { calls: [], hits: [] };
+    const original = k.enemies.spawn.bind(k.enemies);
+    k.enemies.spawn = (...args) => {
+      const [archetype, position, options] = args;
+      window.__normalSpawnEvidence.calls.push({
+        archetype,
+        position: position?.toArray?.() || null,
+        spawnPoint: options?.spawnPoint || null,
+        alerted: options?.alerted === true,
+      });
+      return original(...args);
+    };
+    k.bus.on('hit', (event) => window.__normalSpawnEvidence.hits.push({
+      attacker: event?.attacker?.faction || null,
+      attackerId: event?.attacker?.id ?? null,
+      target: event?.target?.faction || null,
+      targetId: event?.target?.id ?? null,
+      damage: event?.damage || 0,
+    }));
+  });
+
+  await page.locator('#boot-start').click();
+  await page.waitForFunction(() => window.__kagerou.engine.running && window.__kagerou.engine.frame >= 3,
+    null, { timeout: 240000, polling: 250 });
+  report.initial = await page.evaluate(() => ({
+    position: window.__kagerou.player.position.toArray(),
+    encounter: window.__kagerou.level._enc.active?.id || null,
+  }));
+  assert.ok(report.initial.position[2] > 72.5, 'normal start must begin on the authored approach');
+
+  // Clear the opening card and most of the approach at normal speed, then tap
+  // through the final metres. Software rendering can block the test-side poll
+  // for several game frames; holding W all the way to the trigger would carry
+  // the player through the waiting formation before key-up is delivered.
+  await page.keyboard.down('KeyW');
+  await page.waitForFunction(() => window.__kagerou.player.position.z < 52,
+    null, { timeout: 240000, polling: 50 });
+  await page.keyboard.up('KeyW');
+  // The intro is 4.7 simulated seconds, but SwiftShader can advance those
+  // frames much more slowly than wall time on a cold runner. Wait for the
+  // authored state transition instead of imposing a 15-second performance
+  // assumption on this functional progression check.
+  await page.waitForFunction(() => window.__kagerou.menus._title < 0,
+    null, { timeout: 120000, polling: 100 });
+  for (let step = 0; step < 40; step++) {
+    const armed = await page.evaluate(() => window.__kagerou.level._enc.active?.id === 'forecourt'
+      && window.__kagerou.level._enc.armed === true);
+    if (armed) break;
+    await page.keyboard.press('KeyW', { delay: 90 });
+    await page.waitForTimeout(60);
+  }
+  await page.waitForFunction(() => window.__kagerou.level._enc.active?.id === 'forecourt'
+      && window.__kagerou.level._enc.armed === true,
+    null, { timeout: 10000, polling: 50 });
+  await page.waitForFunction(() => window.__normalSpawnEvidence.calls.length >= 2,
+    null, { timeout: 30000, polling: 100 });
+  await page.waitForTimeout(100);
+
+  report.appearance = await page.evaluate(() => {
+    const k = window.__kagerou;
+    return {
+      position: k.player.position.toArray(),
+      encounter: k.level._enc.active?.id || null,
+      calls: window.__normalSpawnEvidence.calls.slice(),
+      enemies: k.enemies.list.map((enemy) => {
+        const screen = enemy.position.clone().setY(enemy.position.y + enemy.height * 0.55).project(k.camera);
+        return {
+          id: enemy.id,
+          archetype: enemy.archetype,
+          position: enemy.position.toArray(),
+          screen: screen.toArray(),
+          inFrame: Math.abs(screen.x) <= 1 && Math.abs(screen.y) <= 1 && screen.z >= -1 && screen.z <= 1,
+          rootVisible: enemy.root.visible,
+          alive: enemy.isAlive,
+          health: enemy.health,
+        };
+      }),
+      drawCalls: k.engine.stats.drawCalls,
+      triangles: k.engine.stats.triangles,
+    };
+  });
+  assert.equal(report.appearance.encounter, 'forecourt');
+  assert.deepEqual(report.appearance.calls.slice(0, 2).map((call) => call.archetype), ['ashigaru', 'ashigaru']);
+  assert.deepEqual(report.appearance.calls.slice(0, 2).map((call) => call.spawnPoint), ['torii_c', 'torii_l']);
+  assert.ok(report.appearance.calls.slice(0, 2).every((call) => call.alerted));
+  assert.ok(report.appearance.enemies.length >= 2);
+  assert.ok(report.appearance.enemies.slice(0, 2).every((enemy) => enemy.rootVisible && enemy.alive));
+  assert.ok(report.appearance.enemies.some((enemy) => enemy.inFrame), 'at least one live enemy must project into the rendered frame');
+  assert.ok(report.appearance.drawCalls > 0 && report.appearance.triangles > 0);
+  await page.screenshot({ path: join(out, 'enemy-visible.png') });
+
+  // Stay on the public input surface and prove the player can damage one of the
+  // normally spawned enemies. Enemy-to-player contact is useful telemetry but
+  // must not satisfy this gate.
+  await page.keyboard.press('KeyQ');
+  await page.waitForFunction(() => window.__kagerou.playerCamera.lockTarget?.isAlive === true,
+    null, { timeout: 10000, polling: 50 });
+  await page.keyboard.down('KeyW');
+  await page.waitForFunction(() => {
+    const k = window.__kagerou;
+    const target = k.playerCamera.lockTarget;
+    return target && Math.hypot(target.position.x - k.player.position.x,
+      target.position.z - k.player.position.z) <= 1.60;
+  }, null, { timeout: 10000, polling: 50 });
+  await page.keyboard.up('KeyW');
+  await page.waitForTimeout(150);
+  const combatSnapshot = () => page.evaluate(() => {
+    const k = window.__kagerou;
+    const player = k.player;
+    const target = k.playerCamera.lockTarget;
+    const rec = k.combat._records.get(player);
+    const dx = target ? target.position.x - player.position.x : 0;
+    const dz = target ? target.position.z - player.position.z : 0;
+    const distance = target ? Math.hypot(dx, dz) : null;
+    const attack = player.attack;
+    return {
+      frame: k.engine.frame,
+      hits: window.__normalSpawnEvidence.hits.slice(),
+      playerHealth: player.health,
+      playerState: player.state,
+      stateTime: player.stateTime,
+      weaponActive: player.weapon.active,
+      attack: attack ? {
+        key: attack.key,
+        activeAt: attack.activeAt,
+        activeEnd: attack.activeEnd,
+        total: attack.total,
+        opened: attack.opened,
+        closed: attack.closed,
+      } : null,
+      position: player.position.toArray(),
+      forward: player.forward.toArray(),
+      yaw: player.yaw,
+      desiredYaw: player.desiredYaw,
+      targetPosition: target?.position?.toArray?.() || null,
+      targetDistance: distance,
+      targetDot: target && distance > 1e-6
+        ? (player.forward.x * dx + player.forward.z * dz) / distance
+        : null,
+      bladeBase: player.bladeBase.toArray(),
+      bladeTip: player.bladeTip.toArray(),
+      combatRecord: rec ? {
+        swinging: rec.swinging,
+        swingId: rec.swingId,
+        bladeValid: rec.bladeValid,
+        hasPrev: rec.hasPrev,
+        base: rec.base.toArray(),
+        tip: rec.tip.toArray(),
+        prevBase: rec.prevBase.toArray(),
+        prevTip: rec.prevTip.toArray(),
+      } : null,
+      enemies: k.enemies.list.map((enemy) => ({
+        id: enemy.id,
+        archetype: enemy.archetype,
+        health: enemy.health,
+        state: enemy.state,
+      })),
+    };
+  });
+
+  // A wall-clock click cadence can collapse repeated inputs while software
+  // rendering is still advancing the same attack. Observe complete game-state
+  // transitions so each attempt reaches its authored active window.
+  const attempts = [];
+  for (let i = 0; i < 6; i++) {
+    if (await page.evaluate(() => window.__normalSpawnEvidence.hits.some((hit) =>
+      hit.attacker === 'player' && hit.target === 'oni' && hit.damage > 0))) break;
+    await page.waitForFunction(() => !['attack', 'drawing'].includes(window.__kagerou.player.state),
+      null, { timeout: 120000, polling: 100 });
+    // Ashigaru will circle and back-step between swings. Re-close through the
+    // normal movement input instead of assuming the first approach remains in
+    // katana range for the whole exchange.
+    const distance = await page.evaluate(() => {
+      const k = window.__kagerou;
+      const target = k.playerCamera.lockTarget;
+      return target ? Math.hypot(target.position.x - k.player.position.x,
+        target.position.z - k.player.position.z) : Infinity;
+    });
+    if (distance > 1.65) {
+      await page.keyboard.down('KeyW');
+      await page.waitForFunction(() => {
+        const k = window.__kagerou;
+        const target = k.playerCamera.lockTarget;
+        return target && Math.hypot(target.position.x - k.player.position.x,
+          target.position.z - k.player.position.z) <= 1.55;
+      }, null, { timeout: 5000, polling: 50 });
+      await page.keyboard.up('KeyW');
+    }
+    const attempt = { before: await combatSnapshot(), frames: [] };
+    await page.mouse.click(360, 165);
+    let entered = false;
+    let lastFrame = -1;
+    const deadline = Date.now() + 120000;
+    while (Date.now() < deadline) {
+      const sample = await combatSnapshot();
+      if (sample.frame !== lastFrame) {
+        attempt.frames.push(sample);
+        lastFrame = sample.frame;
+      }
+      if (sample.playerState === 'attack' || sample.playerState === 'drawing') entered = true;
+      if (sample.hits.some((hit) => hit.attacker === 'player' && hit.target === 'oni' && hit.damage > 0)
+        || (entered && sample.playerState !== 'attack'
+        && sample.playerState !== 'drawing')) break;
+      await page.waitForTimeout(50);
+    }
+    attempt.after = await combatSnapshot();
+    attempt.enteredAttack = entered;
+    attempts.push(attempt);
+    assert.equal(entered, true, `attack ${i + 1} was not accepted by the live input path`);
+  }
+  report.combat = { attempts, final: await combatSnapshot() };
+  await page.screenshot({ path: join(out, 'enemy-combat.png') });
+  const playerHits = report.combat.final.hits.filter((hit) =>
+    hit.attacker === 'player' && hit.target === 'oni' && hit.damage > 0);
+  assert.ok(playerHits.length > 0, 'normal player input must produce a player-to-oni hit event');
+  const initialHealth = new Map(report.appearance.enemies.map((enemy) => [enemy.id, enemy.health]));
+  assert.ok(report.combat.final.enemies.some((enemy) => initialHealth.has(enemy.id)
+    && enemy.health < initialHealth.get(enemy.id)),
+  'a normally spawned enemy must lose health after the player hit');
+  assert.equal(report.errors.length, 0, JSON.stringify(report.errors));
+  report.status = 'PASS';
+  await context.close();
+} catch (error) {
+  report.error = error.stack || String(error);
+  console.error(report.error);
+  process.exitCode = 1;
+} finally {
+  report.finishedAt = new Date().toISOString();
+  save();
+  await browser?.close();
+  await server?.close();
+}
+
+console.log(JSON.stringify(report, null, 2));

@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "updatedAt": "2026-08-01T08:00:00Z",
+ "updatedAt": "2026-09-11T13:55:00Z",
  "status": "active",
  "purpose": "Per-element reference benchmarks for KAGEROU. This file is the authority for WHICH shipped title sets the bar for each element of the product, WHY that title was chosen, and WHAT concrete criterion each reference is converted into. It carries across sessions and is loaded before any critique, repair, or final quality judgement.",
  "authorityBoundary": {
@@ -29,10 +29,10 @@
   ]
  },
  "evidenceBasis": {
-  "declaration": "HONEST STATEMENT OF WHAT THIS FILE IS AND IS NOT. The reference titles below are characterised from general knowledge of their published gameplay and critical reception. Within this repository and container NO reference footage was fetched, NO reference title was played or measured, NO blind side-by-side against a real reference frame has been performed, and NO expert or player review of KAGEROU has been solicited. Outbound network access is proxy-restricted in this environment and even the project's own GitHub Pages surface was denied at the last attempt (PROJECT_STATE.verifiedState.publication.browserGate).",
+  "declaration": "At this benchmark file’s creation on 2026-08-01 the titles were characterised from general knowledge; no reference footage or actual reference frames had been fetched. On 2026-09-11 official publisher promotional stills were fetched and supplied alongside version-blind KAGEROU frames to an independent model critic. Sources, native dimensions and hashes are recorded in AI_DEVELOPMENT/EVIDENCE/r17-reference-sources.json. These unmatched promotional stills are not reference gameplay footage, physical-device measurements or a human blind study. No reference title was played or measured and no human expert/player review is claimed.",
   "consequence": "Every criterion below is therefore written so it can be checked against KAGEROU'S OWN build with tools this repository has or can build — a measurable property of our frames, our source, our runtime, or our device — never as 'compare to the reference image'. Reference titles supply the PRINCIPLE and the STANDARD; the threshold is always measured on us.",
   "prohibitedClaims": [
-   "Do not record a blind comparison against a reference title as performed. The critic's recalled-framing comparison in tools/CRITIC.md is a judgement from memory and must be labelled as such.",
+   "Do not call a model’s predicted preference an observed human blind comparison, or an unmatched official promotional still a matched reference gameplay capture. Label any recalled material outside the supplied references as memory-based.",
    "Do not record real-device performance as measured. SwiftShader capture evidence is not phone evidence.",
    "Do not record expert or player validation. None has occurred.",
    "Do not describe a reference title's internal implementation as fact. Only its observable, published behaviour is usable."
@@ -1324,6 +1324,12 @@
    "reason": "User instruction: maintain the latest stated concept as the top criterion and assign each element its own most-appropriate high-quality reference, converted into concrete evidence-based criteria and carried across sessions.",
    "titleSetDecision": "Three titles. Ghost of Tsushima and SEKIRO were already the project's stated bar and cover thirteen elements between them. Genshin Impact was added for exactly two elements — touch controls and the mobile performance envelope — because neither console title provides any evidence for a touchscreen or a phone, and leaving those elements without a reference would have meant the primary platform had no bar.",
    "notableScoping": "選択と結果 was deliberately scoped down to in-combat risk/reward and player-triggered escalation, because narrative branching is out of the stated concept. It is not silently dropped: a re-entry trigger is recorded."
+  },
+  {
+   "date": "2026-09-11",
+   "change": "Recorded the actual official reference-still evidence now available and distinguished version-blind model criticism from a human or matched-gameplay study. Criteria, thresholds, title set and concept are unchanged.",
+   "conceptChanged": false,
+   "evidence": "AI_DEVELOPMENT/EVIDENCE/r17-reference-sources.json"
   }
  ]
 }

@@ -107,6 +107,55 @@ const LUT_SIZE = 32;
  */
 const GOD_PHASE_G = 0.76;
 
+/**
+ * Screen-space shafts must not turn a character standing a few metres from the
+ * camera into a building-sized radial shadow.  The occlusion buffer marks only a
+ * *near depth discontinuity* as transparent to the radial integral: continuous
+ * foreground terrain remains an occluder, while the distant torii, roofs and
+ * foliage which author the world-space shaft pattern are unchanged.
+ */
+export const GOD_RAY_NEAR_OCCLUDER = Object.freeze({
+  fullBypassM: 6.0,
+  fadeEndM: 12.0,
+  silhouetteGapM: 1.5,
+  silhouetteFullGapM: 3.0,
+  sideProbeUv: 0.040,
+  maxCompensation: 1.50,
+});
+
+/** CPU mirror of the shader mask, kept public for a deterministic regression test. */
+export function godRayOccluderKeep(viewDistanceM, sideDistanceAM, sideDistanceBM) {
+  const z = Math.max(0, viewDistanceM);
+  const near = 1 - smoothstep(
+    GOD_RAY_NEAR_OCCLUDER.fullBypassM,
+    GOD_RAY_NEAR_OCCLUDER.fadeEndM,
+    z,
+  );
+  const gap = Math.max(sideDistanceAM, sideDistanceBM) - z;
+  const silhouette = smoothstep(
+    GOD_RAY_NEAR_OCCLUDER.silhouetteGapM,
+    GOD_RAY_NEAR_OCCLUDER.silhouetteFullGapM,
+    gap,
+  );
+  return clamp(1 - near * silhouette, 0, 1);
+}
+
+/** Renormalises only samples deliberately omitted by the near-silhouette mask. */
+export function godRayOccluderCompensation(totalWeight, keptWeight) {
+  if (!(totalWeight > 0) || !(keptWeight > 0)) return 1;
+  return clamp(totalWeight / keptWeight, 1, GOD_RAY_NEAR_OCCLUDER.maxCompensation);
+}
+
+/** CPU mirror of the intended god-ray additive-radiance guard contract. */
+export function sanitizeGodRayRadiance(rgb) {
+  return rgb.map((value) => {
+    if (!(value > 0)) return 0; // negative values, zero and NaN cannot emit light
+    // 16384 is inside WebGL 1's minimum mediump range. The authored God Rays input
+    // is clamped to 2 (1 in LDR), so this only closes non-operational magnitudes.
+    return Math.min(value, 16384);
+  });
+}
+
 // ---------------------------------------------------------------------------
 // shared GLSL
 // ---------------------------------------------------------------------------
@@ -126,6 +175,20 @@ float luma(vec3 c) { return dot(c, LUMA709); }
 float lumaN(vec3 c) { float l = dot(c, vec3(0.299, 0.587, 0.114)); return l / (1.0 + l); }
 float sat(float x) { return clamp(x, 0.0, 1.0); }
 vec3  sat3(vec3 x) { return clamp(x, 0.0, 1.0); }
+// The ablation isolates the artifact to the God Rays path; it does not measure this
+// intermediate target. Negative/non-finite HDR reconstruction is therefore a
+// falsifiable hypothesis. This guard enforces the narrower invariant we need either
+// way: an additive-light path cannot subtract radiance. The ternaries close NaN to
+// zero (NaN > 0.0 is false). 16384 is within the WebGL 1 minimum mediump range and
+// far above this pass's authored <= 2 input; mobile precision and cost remain an
+// actual-device measurement.
+vec3 nonNegativeRadiance(vec3 c) {
+  return vec3(
+    c.r > 0.0 ? min(c.r, 16384.0) : 0.0,
+    c.g > 0.0 ? min(c.g, 16384.0) : 0.0,
+    c.b > 0.0 ? min(c.b, 16384.0) : 0.0
+  );
+}
 float hash12(vec2 p) {
   vec3 p3 = fract(vec3(p.xyx) * 0.1031);
   p3 += dot(p3, p3.yzx + 33.33);
@@ -620,10 +683,41 @@ void main() {
   //     leaves the sky alone and turns the disc into a bright core, not a common-mode
   //     flood. The disc's own glare belongs to the bloom pass, which clamps at 28 and
   //     has the resolution for it; this pass owns the shafts.
-  vec3 src = texture2D(tScene, vUv).rgb;
+  // Negative/non-finite scene reconstruction is a falsifiable explanation for the
+  // God Rays-path artifact, not a measured intermediate value. Enforce additive
+  // monotonicity at this boundary: darkness may block emission but cannot emit
+  // negative light.
+  vec3 src = nonNegativeRadiance(texture2D(tScene, vUv).rgb);
   float peak = max(max(src.r, src.g), max(src.b, 1e-5));
   vec3 emit = src * min(1.0, uEmitClamp / peak) * (sky * prox);
-  gl_FragColor = vec4(emit, 1.0);
+
+  // A radial screen-space integral has no world-space volume.  Treating every
+  // opaque texel as a full-height blocker therefore extrudes a nearby fighter (or
+  // their weapon) from its silhouette all the way to the sun.  At quarter
+  // resolution that false shadow becomes the conspicuous staircase seen in the
+  // round-17 motion capture.  Distinguish a compact near silhouette from continuous
+  // ground by looking *across* the sun ray: at least one side has to reveal depth
+  // several metres behind the centre.  We store the keep weight in alpha so the
+  // radial pass pays no additional depth fetches per march step.
+  vec2 rayDisplay = (uSunUv - vUv) * vec2(uAspect, 1.0);
+  vec2 perpDisplay = length(rayDisplay) > 1e-5
+    ? normalize(vec2(-rayDisplay.y, rayDisplay.x))
+    : vec2(1.0, 0.0);
+  vec2 perpUv = perpDisplay / vec2(uAspect, 1.0);
+  vec2 probe = perpUv * ${GOD_RAY_NEAR_OCCLUDER.sideProbeUv.toFixed(3)};
+  float dA = texture2D(tDepth, clamp(vUv + probe, vec2(0.0), vec2(1.0))).x;
+  float dB = texture2D(tDepth, clamp(vUv - probe, vec2(0.0), vec2(1.0))).x;
+  float z = viewZ(min(d, 0.9999999));
+  float zA = viewZ(min(dA, 0.9999999));
+  float zB = viewZ(min(dB, 0.9999999));
+  float nearMask = 1.0 - smoothstep(
+    ${GOD_RAY_NEAR_OCCLUDER.fullBypassM.toFixed(1)},
+    ${GOD_RAY_NEAR_OCCLUDER.fadeEndM.toFixed(1)}, z);
+  float silhouette = smoothstep(
+    ${GOD_RAY_NEAR_OCCLUDER.silhouetteGapM.toFixed(1)},
+    ${GOD_RAY_NEAR_OCCLUDER.silhouetteFullGapM.toFixed(1)}, max(zA, zB) - z);
+  float keep = clamp(1.0 - nearMask * silhouette, 0.0, 1.0);
+  gl_FragColor = vec4(emit, keep);
 }
 `;
 
@@ -642,13 +736,18 @@ void main() {
   vec2 uv = vUv;
   float illum = 1.0;
   vec3 acc = vec3(0.0);
+  float totalWeight = 0.0;
+  float keptWeight = 0.0;
   // Jitter the march start per pixel: a fixed step count on a low-res buffer bands
   // badly on gradients, and one dither texel of noise costs nothing.
   float j = hash12(vUv * 1024.0 + uNoise);
   uv -= delta * j;
   for (int i = 0; i < GOD_SAMPLES; i++) {
     uv -= delta;
-    acc += texture2D(tSrc, uv).rgb * illum;
+    vec4 sampleValue = texture2D(tSrc, uv);
+    acc += sampleValue.rgb * illum * sampleValue.a;
+    totalWeight += illum;
+    keptWeight += illum * sampleValue.a;
     illum *= uDecay;
   }
   // The scattering phase function, on the *view* angle — the term this pass never had.
@@ -680,7 +779,12 @@ void main() {
   float cosT = inversesqrt(1.0 + tanT * tanT);
   float g = uPhase.x;
   float ph = pow((1.0 - g) * (1.0 - g) / max(1.0 + g * g - 2.0 * g * cosT, 1e-4), 1.5);
-  gl_FragColor = vec4(acc * (uWeight / float(GOD_SAMPLES)) * ph, 1.0);
+  // Samples marked as near silhouettes are missing observations, not black
+  // world-space blockers.  Restore their share from the remaining integral while
+  // capping compensation so a mostly-occluded ray cannot turn into a bright streak.
+  float compensate = clamp(totalWeight / max(keptWeight, 1e-5), 1.0,
+    ${GOD_RAY_NEAR_OCCLUDER.maxCompensation.toFixed(2)});
+  gl_FragColor = vec4(acc * compensate * (uWeight / float(GOD_SAMPLES)) * ph, 1.0);
 }
 `;
 
@@ -1257,7 +1361,11 @@ void main() {
   color += texture2D(tBloom, uv).rgb * uBloomStrength * uBloomTint;
 #endif
 #ifdef USE_GODRAYS
-  color += texture2D(tGod, uv).rgb * uGodStrength * uGodTint;
+  // Enforce the same additive invariant at the composite seam. Finite non-negative
+  // texels in the authored operating range are unchanged; negative/non-finite input
+  // cannot subtract scene radiance. The rendered artifact response remains a CI
+  // measurement.
+  color += nonNegativeRadiance(texture2D(tGod, uv).rgb) * uGodStrength * uGodTint;
 #endif
 
   // ---- exposure ------------------------------------------------------------
@@ -1711,6 +1819,22 @@ export class PostFX {
     this._w = nw;
     this._h = nh;
     if (this._ready || this._quadMesh) this._buildTargets(nw, nh);
+  }
+
+  onContextLost() {
+    this._disposeTargets();
+    // Keep these JS identities: soft-particle materials retain the exported depth.
+    // Their old GL handles must be released while the context is still lost.
+    this._depthTexture?.dispose();
+    this._rtDepthMirror?.dispose();
+  }
+
+  onContextRestored() {
+    if (!this._ready) return;
+    this._frame = 0;
+    // Rebuild even at unchanged size: temporal, focus and exposure buffers lost
+    // their contents. _buildTargets preserves the exported depth texture object.
+    this._buildTargets(this._w, this._h);
   }
 
   dispose() {

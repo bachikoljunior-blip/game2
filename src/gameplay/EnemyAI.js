@@ -220,7 +220,9 @@ export class EnemyAI {
     this._bi = B.hold;
     this._commitTimer = 0;
     this._tickTimer = r() * TICK_INTERVAL;
+    this._tickDt = TICK_INTERVAL;
     this._sinceTick = 0;
+    this.time = 0;
     this.alertness = 0;
     this.canSee = false;
     this.lastSeen = -99;
@@ -228,6 +230,7 @@ export class EnemyAI {
     this._losTimer = 0;
     this._losClear = true;
     this._move = null;
+    this._moveScore = 0;
     this._attackBlock = 0;
     this._attackTryTimer = 0;
     this._whiffTimer = 0;
@@ -240,15 +243,35 @@ export class EnemyAI {
     this._reaction.armed = false;
     this._reaction.timer = 0;
     this._reaction.type = 'none';
+    this._reaction.unblockable = false;
     this._playerPhase = 'none';
+    this._playerPhaseTime = 0;
     this._playerWasActive = false;
     this._recoverTimer = 0;
     this._lastAttackTime = -99;
     this._lastHitLandedAt = -99;
+    this._avoidTimer = 0;
     this._avoidRot = 0;
     this._avoidBlocked = false;
+    this._sepX = 0; this._sepZ = 0; this._sepN = 0;
+    this._nearestAlly = null;
+    this._allyCount = 0;
+    this._tokenAlly = false;
     this._circleSign = p.hand;
     this._scanPhase = r() * 6.28;
+
+    // The staggered first perception tick is intentional, but steering still runs
+    // immediately. Give that frame a neutral snapshot rather than the previous
+    // pooled life's target and crowding sensors.
+    const s = this.s;
+    s.dist = 99; s.distSq = 9801; s.los = true;
+    s.toX = 0; s.toZ = 1; s.angle = 0; s.facing = 0; s.playerFacing = 0;
+    s.hp = 1; s.post = 1; s.token = false;
+    s.playerPhase = 'none'; s.playerGuarding = false; s.playerVulnerable = false;
+    s.playerHeavy = false; s.sinceAttack = 99; s.crowding = 0; s.allyCount = 0;
+    s.slotError = 0;
+    s.wantRange = t.preferredRange;
+    s.circleRange = t.circleRange;
   }
 
   // ---------------------------------------------------------------------- update

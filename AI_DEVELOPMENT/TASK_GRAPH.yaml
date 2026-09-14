@@ -192,7 +192,7 @@
    "unblocks": [
     "NEXT16"
    ],
-   "status": "active"
+   "status": "verified"
   },
   {
    "id": "NEXT16",
@@ -301,7 +301,7 @@
    "unblocks": [
     "KIT-REFERENCE-SET"
    ],
-   "status": "active"
+   "status": "ready"
   },
   {
    "id": "KIT-SKILL-RECONCILE",
@@ -310,7 +310,15 @@
    ],
    "unblocks": [],
    "status": "ready"
+  },
+  {
+   "id": "R17-GAMEPLAY",
+   "dependsOn": [
+    "PHYS-NARROWPHASE"
+   ],
+   "unblocks": [],
+   "status": "active"
   }
  ],
- "updatedAt": "2026-08-02T09:10:00Z"
+ "updatedAt": "2026-09-11T12:55:00Z"
 }

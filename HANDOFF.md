@@ -21,9 +21,102 @@ art-direction state record; project-wide session, plan and criterion pointers li
 
 ## Where the work is
 
+### Latest: full evidence passed; independent review retains two majors
+
+Main/Pages remains `86512c3bfdc69e03b5b490d9b0d79ec9da141343`. Exact PR #10 candidate
+`9f7b70bc7b496964925c2b62035aadee2dc8bd35` passed
+[CI 34737095560](https://github.com/bachikoljunior-blip/game2/actions/runs/34737095560):
+five fixed phone frames, all 20 encounters and 300 rendered motion frames. The combat clip
+contains a real incoming hit and two outgoing hits. This is SwiftShader correctness evidence,
+not phone performance.
+
+Independent review is `FAIL 58` with 0 blockers / 2 majors / 1 minor. It clears the
+screen-crossing black ribbon and confirms that the red perimeter appears on incoming damage,
+not outgoing hits. It retains primitive character/cloth construction and identifies a second
+major: frontal lock-on places the enemy directly behind the player, hiding the stance, weapon
+arm and contact pose. Exact artifact hashes and refutation are in
+`AI_DEVELOPMENT/EVIDENCE/r17-motion-9f7-review.json`.
+
+The camera mechanism is confirmed in source: open space selected the exact fighter axis before
+trying any side orbit. A bounded mirrored 30 degree offset now passes eight landscape/portrait,
+left/right-shoulder and open/corner fixtures: at least 831/840 readable-pair frames, at least
+802/840 complete central-body frames, zero target loss, zero collider overlap and 0.7024 m
+worst jump against 1.5 m. Independent code review is blocker 0 / major 0. This is geometry,
+not rendered proof. Next: push one `[motion]` checkpoint, re-review the 180 combat frames,
+then repair the surviving `Rig.js` character major. Publication remains withheld.
+
+### Superseded checkpoint: start trap published; damage-feedback repair next
+
+The bounded start-position hotfix is on main/Pages at
+`f7aa1d9382f2b4f938c8ffb3bbd5af5c16b687b8`. Public
+[CI 34672160985](https://github.com/bachikoljunior-blip/game2/actions/runs/34672160985)
+matched the eight served artifact files exactly, reported zero browser/HTTP/GL faults, moved
+16.3176 m by keyboard and 19.6615 m by touch, and restored z=72.9995 on retry. This closes
+the user's immediate start-trap request; it does not establish overall product acceptance.
+
+PR #10's latest verified source is
+`cb4d7d620e8d704affc26b697f3458c1d953c724`. Its
+[CI 34666329831](https://github.com/bachikoljunior-blip/game2/actions/runs/34666329831)
+passed all five technical/tone frames (119 draw calls / 802,472 triangles), measured
+27/35 posture resolutions in 20 encounters (77.14% against 60%), and produced 300 unique
+rendered motion frames containing both hit directions. Independent review no longer observed
+the global black ribbon, but returned FAIL 55 with two majors: primitive character/cloth
+silhouettes, and a reversed damage lens that appeared on outgoing enemy damage instead of
+incoming player damage. Exact evidence and refutation are in
+`AI_DEVELOPMENT/EVIDENCE/r17-motion-cb4-{review,refutation}.json`.
+
+The reversed lens was reproduced in the event path. `Combat` is the authoritative
+`damage-taken` emitter, but `Player` returned `true` without emitting after applying combat
+damage; `Effects` also pulsed the red lens for every entity. The prepared repair restores one
+player event for plain/guard/late-parry damage and restricts the lens to exact local-player
+identity while preserving blood, shake and enemy audio. All 19 focused tests, production
+build and independent code review pass (blocker 0 / major 0). Next: publish this source delta
+with `[motion]`, re-run five frames, 20 encounters and 300 rendered frames, and independently
+inspect incoming/outgoing event frames. Then diagnose the remaining `Rig.js` major with
+neutral materials. Physical-device and human gates remain open.
+
+### Earlier Round 17 checkpoints (superseded by the latest evidence above)
+
 - Logical session: **active** (`2026-07-31-game2-continuation`). It ends only when the user
   explicitly says so.
-- Current working branch: **`claude/kagerou-round-16-q5h1ah`**, created from the
+- Current working branch: **`codex/game2-criteria-20260911`**, based on inspected main
+  **`4e6d23a40af33bb3ba409b3826e77666262ce353`**. The user's 2026-09-11 request explicitly
+  resumes development until the established criteria are met. Round 17 is active; five
+  gameplay owners' repairs plus integrated UI/recovery changes pass focused Node checks
+  and the production build. Candidate **`9a2e0395772315115ab7214475eef74cab3091f1`**
+  completed [five-frame capture, 20 encounters, and 300 motion frames](https://github.com/bachikoljunior-blip/game2/actions/runs/34622792639).
+  The technical five-frame gate passed (119 calls / 804,744 triangles). Initial interaction
+  metrics were 14 pass / 1 fail / 3 inconclusive. `BM-ANIM-01` validly passed with 40/40
+  attacks and a 233 ms shortest onset. The stored combat report's 66-death denominator was
+  inflated by anonymous compatibility events. The fresh corrected run measured 5/16
+  posture-resolved deaths (**31.25%**, still FAIL against 60%). Exact gameplay evidence and
+  artifact hashes are in `AI_DEVELOPMENT/EVIDENCE/r17-candidate-d494.md`. The motion job
+  produced valid 120-frame locomotion and 180-frame combat MP4s, but the combat clip had
+  zero enemy-attributable impact reactions and therefore failed coverage. A replacement
+  plan uses the already-validated aggressive-v2 bot through registered DOM pointer/guard
+  input, with no game-state injection. Exact motion hashes and failure scope are in
+  `AI_DEVELOPMENT/EVIDENCE/r17-motion-9a2.md`. The
+  source-blind K/M critic scored both versions 45/100, FAIL; separate refutation retained the
+  foliage and terrain blockers and narrowed the lantern finding from major to minor. Exact
+  mapping, hashes and limitations are in `AI_DEVELOPMENT/EVIDENCE/r17-visual-review.md`.
+  This is a same-critic tie, not a regression claim against earlier critics' scores.
+  resulting repairs remove duplicate heavy damage, pooled-enemy state leakage and recursive
+  shake ownership, and replace the proven crossed foliage cards and folded macro ridge
+  mechanism. Fresh independent review of the motion sample failed it at 35/100 because of
+  dominant black staircase artifacts, combat-body overlap, primitive character construction,
+  and missing impact evidence. Corrected motion capture and a fresh independent review remain
+  pending. The post-9a2 local repair tree reconnects cloth solver arrays to their live GPU
+  attributes, excludes only isolated 6–12 m character silhouettes from the quarter-resolution
+  god-ray integral, raises ordinary posture pressure after replaying the fresh health-only
+  sequences, and replaces the missed combat inputs with the validated aggressive-v2 DOM
+  script. Focused checks pass; full five-frame, 20-encounter, 300-frame and independent-review
+  evidence is still required. See `AI_DEVELOPMENT/EVIDENCE/r17-repairs-after-9a2.md`.
+  Recovery source **`bb5c49f1b8ffee0406a2b0e60d520b8c80d40320`** on
+  `codex/game2-smoke-20260911` passed actual native touch and WebGL recovery in
+  [run 34605905851](https://github.com/bachikoljunior-blip/game2/actions/runs/34605905851).
+  Overall PASS is not established; the public Pages payload still predates these repairs.
+  See `AI_DEVELOPMENT/EVIDENCE/r17-integration.md` for the exact scope and limitations.
+- Previous Round 16 working branch: **`claude/kagerou-round-16-q5h1ah`**, created from the
   BENCH-APPARATUS checkpoint `4a53d74` and fast-forwarded onto `main` at **`4811ba0`**.
   It carries **Round 16** (eight commits) plus the TD-010 physics fix. The
   benchmark branch `claude/game-reference-benchmark-qh0v0q` is merged at `0a4fd14`, the
@@ -108,9 +201,11 @@ art-direction state record; project-wide session, plan and criterion pointers li
   `curl` fail before reaching GitHub. **Do not record a Round 15 public browser gate until
   it is actually run from a network that can reach github.io.** The last verified public
   browser gate remains the Rounds 13–14 one at `4a3eff7`.
-- Exact next action: await a future user instruction. The user closed Round 16 explicitly
-  ("今途中のラウンドが終わるまでにして") after authorizing five rounds, so **Rounds 17–20
-  were cancelled, not deferred for cost** — do not resume them as if they were queued.
+- Exact next action: inspect CI apparatus, five native frames and 20-encounter traces;
+  repair observed failures, obtain an independent critique, and integrate verified
+  checkpoints under the standing authorization. The old Round 16 stop instruction was
+  superseded by the explicit 2026-09-11 request. This does not create a product PASS or
+  erase the outstanding real-device/human evidence requirements.
 - Current rollback point for round 16: **`4811ba0`** (the branch base). Owner commits are
   `e503c95` sky, `6decc1c` world, `2314ae8` foliage, `9330fa8` physics, `b38c71b` postfx,
   `391c0f4` world (canopy re-route), with `4388b3d` the critique and `c6d0eb5` the debt

@@ -200,6 +200,7 @@ export class Player {
     this.maxHealth = 100; this.health = 100;
     /** Sekiro-style: posture is *accumulated pressure*, 0 fresh → maxPosture breaks. */
     this.maxPosture = 100; this.posture = 0;
+    this.managesPostureRegen = false;
     this.state = 'sheathed';
     this.invulnerable = false;
     this.hitboxes = [
@@ -263,7 +264,7 @@ export class Player {
 
     this.attackInfo = {                // opts object handed to combat.beginSwing, reused
       entity: this, move: 'h_r', clip: 'slash_horizontal_r', damage: 16, poise: 12,
-      kind: 'slash', reach: 2.15, heavy: false, finisher: false, stance: 'seigan',
+      kind: 'slash', reach: 2.15, lunge: 1.25, heavy: false, finisher: false, stance: 'seigan',
       combo: 0, base: this.bladeBase, tip: this.bladeTip,
     };
 
@@ -313,6 +314,10 @@ export class Player {
     this._warnedNaN = false;
     this._warnedBladeNaN = false;
     this._lungeVel = new Vector3();
+    this._combatLungeTarget = null;
+    this._combatLungeRemaining = 0;
+    this._combatLungeMove = new Vector3();
+    this._combatLungeApplied = new Vector3();
     this._dodgeDir = new Vector3();
     this._lookAt = new Vector3();
   }
@@ -391,8 +396,8 @@ export class Player {
     // windows (names come from EVENT_NAMES in Poses.js). The timers in the FSM are
     // the fallback so everything still resolves with a marker-less rig.
     const on = (name, fn) => { try { this.rig.on?.(name, fn); } catch { /* optional */ } };
-    on('hit-active-start', () => this._setWeaponActive(true));
-    on('hit-active-end', () => this._setWeaponActive(false));
+    on('hit-active-start', () => this._onHitActiveStart());
+    on('hit-active-end', () => this._onHitActiveEnd());
     on('cancel-window-open', () => { this.canCancel = true; });
     on('footstep', (e) => { this._rigFootsteps = true; this._footstep(e?.foot ?? e?.side ?? null); });
     on('iframe-start', () => {
@@ -610,6 +615,8 @@ export class Player {
         this.attack = null;
         this.canCancel = false;
         this._lungeVel.set(0, 0, 0);
+        this._combatLungeTarget = null;
+        this._combatLungeRemaining = 0;
         break;
       case 'dodge':
         this.invulnerable = false;
@@ -844,7 +851,6 @@ export class Player {
       this._disp.x += this._lungeVel.x * dt;
       this._disp.z += this._lungeVel.z * dt;
     }
-
     const wasGrounded = this.grounded;
     const fallSpeed = -this.velocity.y;
     let gi = null;
@@ -915,6 +921,28 @@ export class Player {
     this.speed = Math.hypot(this.velocity.x, this.velocity.z);
   }
 
+  /** Move a Combat-requested lunge through static collision; returns the actual delta. */
+  applyCombatLunge(direction, distance) {
+    const applied = this._combatLungeApplied.set(0, 0, 0);
+    if (!(distance > 0) || !isFiniteVec(direction)) return applied;
+    const len = Math.hypot(direction.x, direction.z);
+    if (!(len > 1e-6)) return applied;
+    const sx = this.position.x, sy = this.position.y, sz = this.position.z;
+    this._combatLungeMove.set(direction.x / len * distance, 0,
+      direction.z / len * distance);
+    if (this.controller?.moveHorizontal) {
+      const cp = this.controller.position;
+      if (cp?.copy && (Math.abs(cp.x - this.position.x) > 1e-4
+        || Math.abs(cp.y - this.position.y) > 1e-4
+        || Math.abs(cp.z - this.position.z) > 1e-4)) cp.copy(this.position);
+      this.controller.moveHorizontal(this._combatLungeMove);
+      if (isFiniteVec(this.controller.position)) this.position.copy(this.controller.position);
+    } else {
+      this.position.add(this._combatLungeMove);
+    }
+    return applied.set(this.position.x - sx, this.position.y - sy, this.position.z - sz);
+  }
+
   /**
    * The player's transform is read by the camera, which is read by the audio
    * listener, the light rig and the post chain — a single non-finite frame here
@@ -933,6 +961,8 @@ export class Player {
     this.velocity.set(0, 0, 0);
     this.speed = 0;
     this._lungeVel.set(0, 0, 0);
+    this._combatLungeTarget = null;
+    this._combatLungeRemaining = 0;
     this._landDip = 0;
     this._landDipVel = 0;
     if (!Number.isFinite(this.yaw)) this.yaw = this.desiredYaw = 0;
@@ -970,8 +1000,9 @@ export class Player {
 
   _applyFacing(dt) {
     // Angular speed falls off with speed: snappy at a walk, committed at a sprint.
+    // Braking during a run reversal must still finish the full turn within 250 ms.
     const t = clamp(this.speed / SPEED_SPRINT, 0, 1);
-    let rate = lerp(14.0, 5.2, t);
+    let rate = lerp(17.0, 7.2, t);
     if (this.turningInPlace) rate = TURN_IN_PLACE_RATE;
     else if (this.state === 'attack' || this.state === 'drawing') rate = 3.0;
     else if (this.lockTarget) rate = 12.0;
@@ -1250,6 +1281,16 @@ export class Player {
     this.weapon.heavy = a.heavy;
     this.weapon.multiHit = false;
     this.weapon.arc = a.heavy ? 2.6 : 2.0;
+    // Preserve the full authored budget during startup. Combat consumes it at
+    // the hit marker, after the target's current AI step is known.
+    if (this.ctx.combat?.beginSwing && this._assistTarget?.position
+      && this._assistTarget.isAlive !== false) {
+      this._combatLungeTarget = this._assistTarget;
+      this._combatLungeRemaining = a.lunge;
+    } else {
+      this._combatLungeTarget = null;
+      this._combatLungeRemaining = 0;
+    }
     this._play(a.clip, 0.07, a.rate, false);
     this._clearBuffer();
   }
@@ -1269,7 +1310,7 @@ export class Player {
     }
     if (a.opened && !a.closed && t >= a.activeEnd) {
       a.closed = true;
-      this._setWeaponActive(false);
+      this._setWeaponActive(false, true);
     }
     if (t >= a.cancelAt) this.canCancel = true;
 
@@ -1291,8 +1332,9 @@ export class Player {
 
   /**
    * Open the swing with Combat and close the gap so cuts connect (§5).
-   * CombatDirector runs its own lunge off `beginSwing` (TUNING.LUNGE_*), so we
-   * only drive our own when it is absent — otherwise the player double-lunges.
+   * With Combat present, pursuit is budgeted here and Combat applies it through
+   * `applyCombatLunge` after the target's AI step. The legacy no-Combat fallback
+   * keeps its velocity nudge so a bare gameplay fixture still degrades gracefully.
    */
   _startLunge(a) {
     const combat = this.ctx.combat;
@@ -1319,7 +1361,7 @@ export class Player {
     i.entity = this; i.move = a.key; i.clip = a.clip;
     i.damage = a.damage; i.poise = a.poise; i.kind = a.kind; i.heavy = a.heavy;
     i.multiHit = false;
-    i.reach = a.reach; i.finisher = a.finisher; i.stance = this.stance;
+    i.reach = a.reach; i.lunge = a.lunge; i.finisher = a.finisher; i.stance = this.stance;
     i.combo = this.comboCount;
     i.base = this.bladeBase; i.tip = this.bladeTip;
     return i;
@@ -1495,7 +1537,23 @@ export class Player {
 
   // ---------------------------------------------------------------- weapon
 
-  _setWeaponActive(on) {
+  /** Rig marker callbacks are methods so their Combat routing can be regressed. */
+  _onHitActiveStart() {
+    // The marker is the timing authority. Start Combat's lunge and metadata on
+    // this edge too, instead of waiting for the fallback clock one frame later.
+    if (this.attack && !this.attack.opened) {
+      this.attack.opened = true;
+      this._setWeaponActive(true);
+      this._startLunge(this.attack);
+    } else this._setWeaponActive(true);
+  }
+
+  _onHitActiveEnd() {
+    if (this.attack) this.attack.closed = true;
+    this._setWeaponActive(false, true);
+  }
+
+  _setWeaponActive(on, afterSample = false) {
     // `draw_iai` also plays as a plain unsheathe, and it carries a hit-active
     // marker; only an actual attack state may open a hitbox.
     if (on && this.state !== 'attack' && this.state !== 'drawing' && this.state !== 'execution') return;
@@ -1509,7 +1567,8 @@ export class Player {
     } else if (this._trailOpen) {
       this._trailOpen = false;
       this.ctx.fx?.endTrail?.(this);
-      this.ctx.combat?.endSwing?.(this);
+      if (afterSample) this.ctx.combat?.endSwingAfterSample?.(this);
+      else this.ctx.combat?.endSwing?.(this);
     }
   }
 
@@ -1662,8 +1721,10 @@ export class Player {
       } else if (payload.parried) {
         this._setState('parry', null, true);
       }
-      // Health, posture, stagger, death and the events are Combat's from here.
-      return true;
+      // Combat owns the authoritative damage-taken event (ARCHITECTURE §2).
+      // Returning undefined tells it to emit once after observing this health
+      // change; true is reserved for handlers that already emitted the event.
+      return;
     }
 
     const frontal = -(dir.x * this.forward.x + dir.z * this.forward.z);   // 1 = from the front
@@ -1876,6 +1937,8 @@ export class Player {
     this._iframe = 0;
     this.velocity.set(0, 0, 0);
     this._lungeVel.set(0, 0, 0);
+    this._combatLungeTarget = null;
+    this._combatLungeRemaining = 0;
     this.speed = 0;
     this.sheathed = true;
     this.guarding = false;

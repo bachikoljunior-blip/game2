@@ -15,7 +15,8 @@
  *   unreadable numbers you get from a rig whose bone axes follow the limbs.
  * - **No AnimationMixer.** Clips are keyframed poses; the sampler slerps them and four
  *   layers compose the result. Locomotion is a 2D blend space driven by *distance
- *   travelled*, which is the only real cure for foot skate.
+ *   travelled*. Stance feet stay at a world-space anchor while swing feet clear
+ *   the terrain; cadence alone cannot compensate an authored joint curve.
  * - **Zero per-frame allocation.** Everything transient comes from the scratch pools at
  *   the top of the file. If you add a `new Vector3()` inside `update()`, you have
  *   regressed the frame budget on mobile.
@@ -25,7 +26,7 @@
 
 import {
   Bone, Skeleton, SkinnedMesh, Mesh, Group, Object3D,
-  BufferGeometry, Float32BufferAttribute, Uint16BufferAttribute,
+  BufferAttribute, BufferGeometry, Float32BufferAttribute, Uint16BufferAttribute,
   Vector3, Quaternion, Matrix4, Euler, Color, Sphere,
   MeshStandardMaterial, DoubleSide, FrontSide, DynamicDrawUsage,
 } from 'three';
@@ -121,6 +122,17 @@ const _col = new Color();
 const _IDENTITY = new Matrix4();
 const _UP = new Vector3(0, 1, 0);
 const _FWD = new Vector3(0, 0, -1);
+const _spring = new Float64Array(2);
+
+/** These secondary springs are underdamped; solve them exactly at the dt clamp. */
+function integrateSpring(x, v, target, stiffness, damping, dt) {
+  const decay = damping * 0.5;
+  const frequency = Math.sqrt(stiffness - decay * decay);
+  const sn = Math.sin(frequency * dt) / frequency, cs = Math.cos(frequency * dt);
+  const ex = Math.exp(-decay * dt), offset = x - target;
+  _spring[0] = target + ex * (offset * cs + (v + decay * offset) * sn);
+  _spring[1] = ex * (v * cs - (decay * v + stiffness * offset) * sn);
+}
 
 // ===========================================================================
 // EASING
@@ -292,6 +304,23 @@ function sampleClip(c, t, outQ, outP, outDef) {
   }
 }
 
+/** Map a gameplay clock through anticipation, damaging sweep and recovery. */
+function attackClipTime(clock, timing) {
+  const a = timing[0], b = timing[1], end = timing[2];
+  const sa = timing[3], sb = timing[4], sourceEnd = timing[5];
+  if (clock <= a) return Math.max(0, clock) * sa / a;
+  if (clock <= b) return sa + (clock - a) * (sb - sa) / (b - a);
+  if (clock < end) return sb + (clock - b) * (sourceEnd - sb) / (end - b);
+  return sourceEnd;
+}
+
+function attackGameTime(source, timing) {
+  if (source <= timing[3]) return Math.max(0, source) * timing[0] / timing[3];
+  if (source <= timing[4]) return timing[0] + (source - timing[3])
+    * (timing[1] - timing[0]) / (timing[4] - timing[3]);
+  return timing[1] + (source - timing[4]) * (timing[2] - timing[1]) / (timing[5] - timing[4]);
+}
+
 // ===========================================================================
 // MASKS
 // ===========================================================================
@@ -371,11 +400,17 @@ class Layer {
     this.loop = false;
     this.finished = false;
     this.onEnd = null;
+    this.attackTiming = new Float64Array(6);
+    this.attackTimed = false;
+    this.attackTime = 0;
 
     // Cross-fade: the outgoing clip keeps playing under the incoming one.
     this.prev = null;
     this.prevTime = 0;
     this.prevSpeed = 1;
+    this.prevAttackTiming = new Float64Array(6);
+    this.prevAttackTimed = false;
+    this.prevAttackTime = 0;
     this.blend = 1;
     this.blendRate = 0;
 
@@ -1895,9 +1930,18 @@ class ClothBatch {
     const idx = [];
     for (const p of this.patches) p.writeStatic(uv, col, rm, idx);
 
+    // Float32BufferAttribute deliberately clones a supplied typed array. That is
+    // correct for the static attributes below, but fatal for the two arrays the
+    // Verlet solver rewrites: `flush()` would update ClothBatch.pos/nor while the
+    // GPU attributes kept their all-zero construction copies. Use BufferAttribute
+    // for those live arrays and seed them before the first render, so the batch is
+    // neither disconnected from the solver nor a one-frame degenerate mesh at the
+    // rig origin.
+    for (const p of this.patches) p.flush();
+
     const g = new BufferGeometry();
-    g.setAttribute('position', new Float32BufferAttribute(this.pos, 3));
-    g.setAttribute('normal', new Float32BufferAttribute(this.nor, 3));
+    g.setAttribute('position', new BufferAttribute(this.pos, 3));
+    g.setAttribute('normal', new BufferAttribute(this.nor, 3));
     g.setAttribute('uv', new Float32BufferAttribute(uv, 2));
     g.setAttribute('color', new Float32BufferAttribute(col, 3));
     g.setAttribute('aRM', new Float32BufferAttribute(rm, 2));
@@ -2145,6 +2189,13 @@ export class Rig {
     this._locoDriven = false;
     this._locoMode = true;
     this.locoPhase = 0;
+    this._locoStride = 1.34;
+    this._locoContact = 0.5;
+    this._locoLift = 0.12;
+    this._locoCadence = 0.5;
+    this._locoRootPrev = new Vector3();
+    this._locoRootReady = false;
+    this._locoDirection = new Vector3(0, 0, -1);
     this.stance = this.variant === 'oni' ? 'seigan' : 'sheathed';
     this._stanceClip = STANCE_IDLE[this.stance];
     this._clipRates = Object.create(null);
@@ -2173,7 +2224,18 @@ export class Rig {
     this._footN = [new Vector3(0, 1, 0), new Vector3(0, 1, 0)];
     this._footLock = [new Vector3(), new Vector3()];
     this._footLocked = [0, 0];
+    this._footYaw = [0, 0];
+    this._footTarget = [new Vector3(), new Vector3()];
+    this._footSwingStart = [new Vector3(), new Vector3()];
+    this._footLanding = [new Vector3(), new Vector3()];
+    this._footPhase = [-1, -1];
+    this._footHasTarget = [0, 0];
+    this._feetActive = false;
+    this._feetMoving = false;
     this._groundMode = -1;
+    this._groundY = 0;
+    this._groundNrm = new Vector3(0, 1, 0);
+    this._warnedGround = false;
 
     // ---- events
     this._listeners = new Map();
@@ -2282,6 +2344,10 @@ export class Rig {
     this.bones.foot_l = this.bones.footL;
 
     this.skeleton = new Skeleton(this.boneList);
+    this._legChains = [
+      [this.bones.thighR, this.bones.shinR, this.bones.footR],
+      [this.bones.thighL, this.bones.shinL, this.bones.footL],
+    ];
 
     for (let i = 0; i < NB; i++) { this._outQ[i * 4 + 3] = 1; this._tmpQ[i * 4 + 3] = 1; }
   }
@@ -2564,7 +2630,9 @@ export class Rig {
   }
 
   /**
-   * `play(clipName, { fade, speed, layer, loop, mask, weight, offset, duration, onEnd })`.
+   * `play(clipName, { fade, speed, layer, loop, mask, weight, offset, duration, attack, onEnd })`.
+   * `attack: {startup, active, recovery}` retimes the three phases separately;
+   * its clock drives both the pose and the source clip's damaging event markers.
    *
    * Playing a locomotion clip on the base layer does NOT take the base layer out of
    * blend-space mode — it feeds the blend space instead. That is deliberate: both
@@ -2619,10 +2687,14 @@ export class Rig {
       layer.prev = layer.clip;
       layer.prevTime = layer.time;
       layer.prevSpeed = layer.speed;
+      layer.prevAttackTimed = layer.attackTimed;
+      layer.prevAttackTime = layer.attackTime;
+      layer.prevAttackTiming.set(layer.attackTiming);
       layer.blend = 0;
       layer.blendRate = 1 / fade;
     } else {
       layer.prev = null;
+      layer.prevAttackTimed = false;
       layer.blend = 1;
       layer.blendRate = 0;
     }
@@ -2632,6 +2704,28 @@ export class Rig {
     // `duration` retimes the clip to fit a gameplay window (Enemy.js drives startup
     // and recovery lengths from its archetype table, not from the clip).
     layer.speed = o.duration > 0 ? (c.duration / o.duration) : (o.speed || 1);
+    layer.attackTimed = false;
+    const attack = o.attack;
+    if (attack && Number.isFinite(attack.startup) && attack.startup > 0
+      && Number.isFinite(attack.active) && attack.active > 0
+      && Number.isFinite(attack.recovery) && attack.recovery >= 0) {
+      let start = -1, end = -1;
+      for (let i = 0; i < c.events.length; i++) {
+        const event = c.events[i];
+        if (event.name === 'hit-active-start' && start < 0) start = event.t;
+        if (event.name === 'hit-active-end' && end < 0) end = event.t;
+      }
+      if (start > 0 && end > start && end < c.duration) {
+        const timing = layer.attackTiming;
+        timing[0] = attack.startup;
+        timing[1] = attack.startup + attack.active;
+        timing[2] = timing[1] + attack.recovery;
+        timing[3] = start; timing[4] = end; timing[5] = c.duration;
+        layer.attackTimed = true;
+        layer.attackTime = attackGameTime(layer.time, timing);
+        layer.speed = Number.isFinite(o.speed) && o.speed > 0 ? o.speed : 1;
+      }
+    }
     layer.loop = o.loop !== undefined ? !!o.loop : !!c.loop;
     layer.finished = false;
     layer.onEnd = o.onEnd || null;
@@ -2733,17 +2827,20 @@ export class Rig {
 
   /** Player.js hands us what it already knows about the ground under the capsule. */
   setGround(normal, grounded, surface) {
-    if (normal) this.groundNormal.copy(normal);
+    if (normal && Number.isFinite(normal.x) && Number.isFinite(normal.y)
+      && Number.isFinite(normal.z) && normal.x * normal.x + normal.y * normal.y + normal.z * normal.z > 1e-8)
+      this.groundNormal.copy(normal).normalize();
     if (grounded !== undefined) this.grounded = !!grounded;
     if (surface) this.groundSurface = surface;
   }
 
   // ====================================================== impulses / reactions
 
-  /** Hit reaction from a world-space impact direction. Feeds a critically damped spring. */
+  /** Hit reaction from a world-space impact direction. Feeds a damped spring. */
   addFlinch(dirWorld, strength) {
-    const s = strength === undefined ? 1 : strength;
+    const s = Number.isFinite(strength) ? strength : 1;
     if (!dirWorld) { this._flinchVX += 9 * s; return; }
+    if (!Number.isFinite(dirWorld.x) || !Number.isFinite(dirWorld.y) || !Number.isFinite(dirWorld.z)) return;
     // Into the rig's own frame so a hit from behind bends the spine forward.
     _v[10].copy(dirWorld).normalize();
     this.root.updateWorldMatrix(true, false);
@@ -2754,7 +2851,7 @@ export class Rig {
   }
 
   /** Clash / parry kickback on the arms and chest. */
-  addRecoil(strength) { this._recoilV += (strength === undefined ? 1 : strength) * 12; }
+  addRecoil(strength) { this._recoilV += (Number.isFinite(strength) ? strength : 1) * 12; }
 
   // ========================================================= LOD and toggles
 
@@ -2767,6 +2864,7 @@ export class Rig {
     this._applyClothVisibility();
     if (l >= 1) { this._lookActive = false; this._lookTargetWeight = 0; }
     if (l >= 1) { this._hipDrop = 0; }
+    this._feetActive = false;
   }
 
   setCloth(on) {
@@ -2774,7 +2872,7 @@ export class Rig {
     this._applyClothVisibility();
   }
 
-  setIK(on) { this._ik = !!on; }
+  setIK(on) { this._ik = !!on; this._feetActive = false; }
 
   /**
    * Detail culling. `userData.detail` is the LOD at which a mesh stops being drawn:
@@ -2837,7 +2935,8 @@ export class Rig {
    */
   update(dt, elapsed) {
     if (this.disposed || !this.built) return;
-    const d = Math.min(0.1, (dt || 0) * this.timeScale);
+    const scaled = dt * this.timeScale;
+    const d = Number.isFinite(scaled) ? clamp(scaled, 0, 0.25) : 0;
     this.time += d;
 
     // At LOD 2 the character is a distant silhouette: pose it at 10 Hz and skip
@@ -2867,23 +2966,47 @@ export class Rig {
   // -------------------------------------------------------------- locomotion
 
   /**
-   * Phase advances by *distance travelled over stride length*, never by wall time.
-   * That single choice is what makes the feet stick: at 3 m/s in a 2.05 m stride the
-   * cycle runs at 1.46 Hz, and it keeps doing so through every blend.
+   * Measure the controller's displacement, including a slow frame or a collision.
+   * Animation's capped dt must not leave its stride behind the moving capsule.
    */
   _advanceLoco(dt) {
     const L = this._loco;
     const sp = Math.max(Math.abs(L.forward), Math.hypot(L.forward, L.strafe));
     L.speed = sp;
-    let stride = 1.34;
-    if (sp > 5.9) stride = 2.48;
-    else if (sp > 3.4) stride = lerp(2.05, 2.48, (sp - 3.4) / 2.5);
-    else if (sp > 1.9) stride = lerp(1.34, 2.05, (sp - 1.9) / 1.5);
+    const table = LOCOMOTION_FORWARD;
+    let i = 0;
+    while (i < table.length - 2 && sp > table[i + 1].speed) i++;
+    const a = table[i], b = table[i + 1];
+    const t = clamp((sp - a.speed) / (b.speed - a.speed), 0, 1);
+    let stride = lerp(a.stride, b.stride, t);
+    const finishingStep = sp <= 0.12 && this._feetActive && (!this._footLocked[0] || !this._footLocked[1]);
+    if (!finishingStep) {
+      this._locoContact = lerp(a.contact, b.contact, t);
+      this._locoLift = lerp(a.lift, b.lift, t);
+    }
     if (L.forward < -0.2 && Math.abs(L.forward) > Math.abs(L.strafe)) stride = 1.05;
     else if (Math.abs(L.strafe) > Math.abs(L.forward) * 1.15) stride = 1.15;
-    // Idle still ticks so a stopped character resumes on the correct foot.
-    const cadence = sp > 0.06 ? sp / stride : 0.5;
-    this.locoPhase = (this.locoPhase + cadence * dt) % 1;
+    if (!finishingStep) this._locoStride = stride * this.scale;
+    this.root.updateWorldMatrix(true, false);
+    const p = _v[12].setFromMatrixPosition(this.root.matrixWorld);
+    const travel = _v[13].subVectors(p, this._locoRootPrev);
+    travel.y = 0;
+    let distance = this._locoRootReady ? travel.length() : sp * dt;
+    // Respawns and capture teleports start a fresh support polygon.
+    if (distance > 2.5 * this.scale) { distance = 0; this._feetActive = false; }
+    if (distance > 1e-5 && this._locoRootReady) this._locoDirection.copy(travel).normalize();
+    else if (!this._locoRootReady) {
+      this._locoDirection.set(L.strafe, 0, -L.forward).transformDirection(this.root.matrixWorld);
+      this._locoDirection.y = 0;
+      if (this._locoDirection.lengthSq() < 1e-8) this._locoDirection.set(0, 0, -1);
+      else this._locoDirection.normalize();
+    }
+    this._locoRootPrev.copy(p);
+    this._locoRootReady = true;
+    if (sp > 0.06 && dt > 1e-5) this._locoCadence = distance / (this._locoStride * dt);
+    const settling = this._feetActive && (!this._footLocked[0] || !this._footLocked[1]);
+    this.locoPhase = (this.locoPhase + (sp > 0.06 ? distance / this._locoStride
+      : dt * (settling ? Math.max(0.5, this._locoCadence) : 0.5))) % 1;
     if (this.locoPhase < 0) this.locoPhase += 1;
   }
 
@@ -2951,8 +3074,16 @@ export class Rig {
       if (!l.clip) continue;
 
       const prevT = l.time;
-      l.time += dt * l.speed;
-      if (l.prev) l.prevTime += dt * l.prevSpeed;
+      if (l.attackTimed) {
+        l.attackTime += dt * l.speed;
+        l.time = attackClipTime(l.attackTime, l.attackTiming);
+      } else l.time += dt * l.speed;
+      if (l.prev) {
+        if (l.prevAttackTimed) {
+          l.prevAttackTime += dt * l.prevSpeed;
+          l.prevTime = attackClipTime(l.prevAttackTime, l.prevAttackTiming);
+        } else l.prevTime += dt * l.prevSpeed;
+      }
 
       // Once the incoming clip has fully faded in, stop sampling the outgoing one.
       if (l.prev && l.blend >= 1) l.prev = null;
@@ -2961,7 +3092,10 @@ export class Rig {
       if (l.loop) {
         if (l.time >= dur) {
           this._fireRange(l, prevT, dur);
-          l.time -= dur * Math.floor(l.time / dur);
+          if (l.attackTimed) {
+            l.attackTime %= l.attackTiming[2];
+            l.time = attackClipTime(l.attackTime, l.attackTiming);
+          } else l.time -= dur * Math.floor(l.time / dur);
           this._fireRange(l, -1e-6, l.time);
         } else this._fireRange(l, prevT, l.time);
       } else if (l.time >= dur) {
@@ -3084,23 +3218,23 @@ export class Rig {
     this._yawPrev = yaw;
     this._yawVel = damp(this._yawVel, dt > 1e-5 ? dyaw / dt : 0, 14, dt);
     const drive = clamp(this._yawVel * 0.085, -0.30, 0.30);
-    this._lagSpineV += (drive - this._lagSpine) * 190 * dt - this._lagSpineV * 21 * dt;
-    this._lagSpine += this._lagSpineV * dt;
-    this._lagHeadV += (drive * 1.5 - this._lagHead) * 130 * dt - this._lagHeadV * 17 * dt;
-    this._lagHead += this._lagHeadV * dt;
+    integrateSpring(this._lagSpine, this._lagSpineV, drive, 190, 21, dt);
+    this._lagSpine = _spring[0]; this._lagSpineV = _spring[1];
+    integrateSpring(this._lagHead, this._lagHeadV, drive * 1.5, 130, 17, dt);
+    this._lagHead = _spring[0]; this._lagHeadV = _spring[1];
     qAddEuler(Q, I.spine1 * 4, 0, -this._lagSpine * 0.35, 0, 1);
     qAddEuler(Q, I.spine2 * 4, 0, -this._lagSpine * 0.45, 0, 1);
     qAddEuler(Q, I.spine3 * 4, 0, -this._lagSpine * 0.40, 0, 1);
     qAddEuler(Q, I.neck * 4, 0, -this._lagHead * 0.50, 0, 1);
     qAddEuler(Q, I.head * 4, 0, -this._lagHead * 0.35, 0, 1);
 
-    // --- flinch: critically damped, so a hit reads as one sharp displacement and a
+    // --- flinch: heavily damped, so a hit reads as one sharp displacement and a
     //     settle rather than a wobble.
     const K = 165, C = 2 * Math.sqrt(K) * 0.85;
-    this._flinchVX += (-K * this._flinchX - C * this._flinchVX) * dt;
-    this._flinchVZ += (-K * this._flinchZ - C * this._flinchVZ) * dt;
-    this._flinchX += this._flinchVX * dt;
-    this._flinchZ += this._flinchVZ * dt;
+    integrateSpring(this._flinchX, this._flinchVX, 0, K, C, dt);
+    this._flinchX = _spring[0]; this._flinchVX = _spring[1];
+    integrateSpring(this._flinchZ, this._flinchVZ, 0, K, C, dt);
+    this._flinchZ = _spring[0]; this._flinchVZ = _spring[1];
     if (Math.abs(this._flinchX) > 1e-4 || Math.abs(this._flinchZ) > 1e-4) {
       const fx = clamp(this._flinchX, -0.55, 0.55), fz = clamp(this._flinchZ, -0.55, 0.55);
       qAddEuler(Q, I.spine1 * 4, fx * 0.22, 0, fz * 0.22, 1);
@@ -3114,8 +3248,8 @@ export class Rig {
     }
 
     // --- clash recoil, arms only
-    this._recoilV += (-260 * this._recoil - 2 * Math.sqrt(260) * 0.9 * this._recoilV) * dt;
-    this._recoil += this._recoilV * dt;
+    integrateSpring(this._recoil, this._recoilV, 0, 260, 2 * Math.sqrt(260) * 0.9, dt);
+    this._recoil = _spring[0]; this._recoilV = _spring[1];
     if (Math.abs(this._recoil) > 1e-4) {
       const r = clamp(this._recoil, -0.6, 0.6);
       qAddEuler(Q, I.upperArmR * 4, -r * 0.40, 0, r * 0.14, 1);
@@ -3216,15 +3350,20 @@ export class Rig {
    * floating up a stone stair or standing on air on a slope.
    */
   _applyFootIK(dt) {
+    if (this.grounded && this._locoMode && !this.layers[LAYER_BASE].clip
+      && this.layers[LAYER_ACTION].weight < 0.001) {
+      this._applyLocomotionFeet(dt);
+      return;
+    }
+    this._feetActive = false;
     const S = this.scale;
     const ankleLift = 0.085 * S;
     const maxLift = 0.42 * S, maxDrop = 0.34 * S;
-    const feet = ['footR', 'footL'];
     let lowest = 0;
     let anyHit = false;
 
     for (let i = 0; i < 2; i++) {
-      const foot = this.bones[feet[i]];
+      const foot = this._legChains[i][2];
       const a = _v[12].setFromMatrixPosition(foot.matrixWorld);
       const hit = this._probeGround(a.x, a.y + 0.60 * S, a.z, 1.4 * S);
       if (!hit) { this._footY[i] = a.y; this._footN[i].copy(this.groundNormal); continue; }
@@ -3244,12 +3383,12 @@ export class Rig {
     hips.updateMatrixWorld(true);
 
     for (let i = 0; i < 2; i++) {
-      const sideU = i === 0 ? 'R' : 'L';
-      const foot = this.bones['foot' + sideU];
+      const chain = this._legChains[i];
+      const foot = chain[2];
       const a = _v[13].setFromMatrixPosition(foot.matrixWorld);
       // Knee pole: forward of the knee in the rig's own frame, so it never inverts.
-      const knee = _v[14].setFromMatrixPosition(this.bones['shin' + sideU].matrixWorld);
-      const hip = _v[15].setFromMatrixPosition(this.bones['thigh' + sideU].matrixWorld);
+      const knee = _v[14].setFromMatrixPosition(chain[1].matrixWorld);
+      const hip = _v[15].setFromMatrixPosition(chain[0].matrixWorld);
       _v[16].copy(knee).sub(hip);
       _v[17].copy(a).sub(hip).normalize();
       _v[16].addScaledVector(_v[17], -_v[16].dot(_v[17]));
@@ -3257,15 +3396,15 @@ export class Rig {
       _v[16].normalize().multiplyScalar(0.9 * S).add(knee);
 
       _v[18].set(a.x, this._footY[i], a.z);
-      // Standing still is where foot skate is most visible, so lock the plant only
-      // then — at speed the phase-driven cadence already keeps the feet honest.
+      // Action clips retain their authored step placement. Their standing anchors
+      // only suppress secondary sway; locomotion uses full stance locks above.
       if (this._loco.speed < 0.4) {
         if (!this._footLocked[i]) { this._footLock[i].copy(_v[18]); this._footLocked[i] = 1; }
         _v[18].x = lerp(_v[18].x, this._footLock[i].x, 0.35);
         _v[18].z = lerp(_v[18].z, this._footLock[i].z, 0.35);
       } else this._footLocked[i] = 0;
 
-      this.solveIK(['thigh' + sideU, 'shin' + sideU, 'foot' + sideU], _v[18], _v[16], 1);
+      this.solveIK(chain, _v[18], _v[16], 1);
 
       // Roll the sole onto the surface, clamped so a steep face does not snap the ankle.
       const n = this._footN[i];
@@ -3287,6 +3426,111 @@ export class Rig {
   }
 
   /**
+   * An ankle supports body weight only during stance. Its world point is immutable
+   * until toe-off; the other ankle follows a raised arc toward the next landing.
+   * Predicting that landing from remaining stride keeps both ends of the arc still
+   * at constant speed, instead of snapping a moving foot onto the floor.
+   */
+  _applyLocomotionFeet(dt) {
+    const S = this.scale, stride = this._locoStride;
+    const duty = this._locoContact, moving = this._loco.speed > 0.12;
+    const direction = this._locoDirection;
+    const origin = _v[12].setFromMatrixPosition(this.root.matrixWorld);
+    const right = _v[13].set(1, 0, 0).transformDirection(this.root.matrixWorld);
+    right.y = 0; right.normalize();
+    const rootUp = _v[14].set(0, 1, 0).transformDirection(this.root.matrixWorld);
+    const lead = stride * duty * 0.5;
+    let drop = 0, anyHit = false;
+    for (let i = 0; i < 2; i++) {
+      this._footHasTarget[i] = 0;
+      const chain = this._legChains[i];
+      const phase = (this.locoPhase + (i === 0 ? 0 : 0.5)) % 1;
+      const stance = phase < duty || (!moving && (this._footLocked[i] || !this._feetActive));
+      const target = this._footTarget[i], lock = this._footLock[i];
+      const start = this._footSwingStart[i];
+      const landing = this._footLanding[i];
+      const side = (i === 0 ? 1 : -1) * 0.115 * S;
+      if (!this._feetActive) {
+        this._footLocked[i] = 0;
+        this._footPhase[i] = -1;
+        start.copy(origin).addScaledVector(right, side)
+          .addScaledVector(direction, -lead - stride * Math.max(0, phase - duty));
+        if (this._probeGround(start.x, origin.y + 0.65 * S, start.z, 1.8 * S))
+          start.y = this._groundY + 0.085 * S;
+        landing.copy(origin).addScaledVector(right, side);
+      }
+      if (stance) {
+        // A phase wrap can cross a whole swing on a very slow frame.
+        if (!this._footLocked[i] || (moving && this._feetMoving && phase < this._footPhase[i])) {
+          if (!moving && this._feetActive) lock.copy(landing);
+          else lock.copy(origin).addScaledVector(right, side)
+            .addScaledVector(direction, moving ? lead - stride * phase : 0);
+          if (!this._probeGround(lock.x, origin.y + 0.65 * S, lock.z, 1.8 * S)) continue;
+          lock.y = this._groundY + 0.085 * S;
+          this._footN[i].copy(this._groundNrm);
+          this._footYaw[i] = Math.atan2(this.root.matrixWorld.elements[8], this.root.matrixWorld.elements[10]);
+          this._footLocked[i] = 1;
+        }
+        target.copy(lock);
+      } else {
+        if (this._footLocked[i]) start.copy(lock);
+        this._footLocked[i] = 0;
+        const u = (phase - duty) / (1 - duty);
+        const blend = u * u * (3 - 2 * u);
+        if (moving) target.copy(origin).addScaledVector(right, side)
+          .addScaledVector(direction, lead + stride * (1 - phase));
+        else target.copy(landing);
+        if (!this._probeGround(target.x, origin.y + 0.85 * S, target.z, 2 * S)) continue;
+        target.y = this._groundY + 0.085 * S;
+        landing.copy(target);
+        this._footN[i].copy(this._groundNrm);
+        target.lerpVectors(start, target, blend);
+        const lift = Math.sin(Math.PI * u) * this._locoLift * S;
+        target.y += lift;
+        // A stair between two landings must not pass through the swing sole.
+        if (this._probeGround(target.x, target.y + 0.6 * S, target.z, 1.8 * S))
+          target.y = Math.max(target.y, this._groundY + 0.085 * S + lift);
+      }
+      this._footPhase[i] = phase;
+      this._footHasTarget[i] = 1;
+      anyHit = true;
+      // Solve the support-leg reach before IK. A smoothed pelvis that is too high
+      // makes the solver clamp the endpoint and silently drags a planted foot.
+      const hip = _v[15].setFromMatrixPosition(chain[0].matrixWorld)
+        .addScaledVector(rootUp, -this._hipDrop).sub(target);
+      const reach = (chain[1].position.length() + chain[2].position.length()) * 0.996;
+      const along = hip.dot(rootUp);
+      const disc = along * along - hip.lengthSq() + reach * reach;
+      if (disc >= 0) drop = Math.min(drop, -along + Math.sqrt(disc));
+    }
+    if (!anyHit) { this._feetActive = false; return; }
+    this._feetActive = true;
+    this._feetMoving = moving;
+    drop = clamp(drop, -0.34 * S, 0);
+    this._hipDrop = Math.min(drop, damp(this._hipDrop, drop, 16, dt));
+    const hips = this.bones.hips;
+    hips.position.y = this._restP[4] + this._outP[4] * S + this._hipDrop;
+    hips.updateMatrixWorld(true);
+    for (let i = 0; i < 2; i++) {
+      if (!this._footHasTarget[i]) continue;
+      const chain = this._legChains[i], foot = chain[2];
+      // The authored knees bend toward local -Z, including backward and lateral
+      // travel. The travel direction therefore must not define the knee plane.
+      const pole = _v[16].set(0, 0, -1).transformDirection(this.root.matrixWorld)
+        .multiplyScalar(0.9 * S).add(_v[17].setFromMatrixPosition(chain[0].matrixWorld));
+      this.solveIK(chain, this._footTarget[i], pole, 1);
+      if (this._footLocked[i]) {
+        const normal = this._footN[i];
+        const world = _q[10].setFromUnitVectors(_UP, normal)
+          .multiply(_q[11].setFromAxisAngle(_UP, this._footYaw[i]));
+        const parent = _q[12].setFromRotationMatrix(_m[4].extractRotation(foot.parent.matrixWorld)).invert();
+        foot.quaternion.copy(parent).multiply(world);
+        foot.updateMatrixWorld(true);
+      }
+    }
+  }
+
+  /**
    * Ground query. `ctx.physics.raycastDown` is the intended path, but Physics.js is
    * written in parallel and its return shape is not pinned, so every plausible shape
    * is accepted and the working one is cached. Terrain height is the fallback, and a
@@ -3297,24 +3541,20 @@ export class Rig {
     if (this._groundMode !== 1 && phys && typeof phys.raycastDown === 'function') {
       try {
         const r = phys.raycastDown(x, y, z, maxDist);
-        if (r === null || r === undefined || r === false) { this._groundMode = 0; return false; }
+        if (r === null || r === undefined || r === false || r.hit === false) { this._groundMode = 0; return false; }
         if (typeof r === 'number') {
-          this._groundMode = 0; this._groundY = r; this._groundNrm = this.groundNormal; return true;
+          this._groundMode = 0; return this._recordGround(r, this.groundNormal);
         }
         if (r.point) {
           this._groundMode = 0;
-          this._groundY = r.point.y;
-          this._groundNrm = r.normal || this.groundNormal;
-          return true;
+          return this._recordGround(r.point.y, r.normal || this.groundNormal);
         }
         if (typeof r.distance === 'number') {
           this._groundMode = 0;
-          this._groundY = y - r.distance;
-          this._groundNrm = r.normal || this.groundNormal;
-          return true;
+          return this._recordGround(y - r.distance, r.normal || this.groundNormal);
         }
         if (typeof r.y === 'number') {
-          this._groundMode = 0; this._groundY = r.y; this._groundNrm = r.normal || this.groundNormal; return true;
+          this._groundMode = 0; return this._recordGround(r.y, r.normal || this.groundNormal);
         }
       } catch { this._groundMode = 1; }
     }
@@ -3325,14 +3565,24 @@ export class Rig {
         try {
           const h = fn.call(terr, x, z);
           if (typeof h === 'number' && Number.isFinite(h)) {
-            this._groundY = h; this._groundNrm = this.groundNormal; return true;
+            return this._recordGround(h, this.groundNormal);
           }
         } catch { /* fall through */ }
       }
     }
-    this._groundY = this.root.matrixWorld.elements[13];
-    this._groundNrm = this.groundNormal;
-    return this.grounded;
+    return this.grounded && this._recordGround(this.root.matrixWorld.elements[13], this.groundNormal);
+  }
+
+  _recordGround(y, normal) {
+    if (!Number.isFinite(y) || !normal || !Number.isFinite(normal.x)
+      || !Number.isFinite(normal.y) || !Number.isFinite(normal.z)
+      || normal.x * normal.x + normal.y * normal.y + normal.z * normal.z < 1e-8) {
+      if (!this._warnedGround) { this._warnedGround = true; console.warn('[rig] invalid ground sample ignored'); }
+      return false;
+    }
+    this._groundY = y;
+    this._groundNrm.copy(normal).normalize();
+    return true;
   }
 
   // --------------------------------------------------------------- look-at
@@ -3467,11 +3717,16 @@ export class Rig {
       l.weight = l.index === LAYER_BASE ? 1 : 0;
       l.targetWeight = l.weight;
       l.finished = false; l.onEnd = null;
+      l.attackTimed = false; l.prevAttackTimed = false; l.attackTime = 0; l.prevAttackTime = 0;
     }
     this._locoMode = true;
     this._locoDriven = false;
     this._loco.forward = 0; this._loco.strafe = 0; this._loco.speed = 0; this._loco.norm = 0;
     this.locoPhase = 0;
+    this._locoRootReady = false;
+    this._locoCadence = 0.5;
+    this._feetActive = false;
+    this._feetMoving = false;
     this._phasePrev = undefined;
     this._hipDrop = 0;
     this._flinchX = this._flinchZ = this._flinchVX = this._flinchVZ = 0;

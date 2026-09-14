@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "round": 17,
+  "profile": "phone",
+  "tier": "MEDIUM",
+  "nativeResolution": "2532x1170",
+  "verdict": "FAIL",
+  "score": 55,
+  "blindComparison": "No reference-title footage was supplied, so no measured side-by-side preference is claimed.",
+  "scope": "Independent read-only review of the completed cb4 motion artifact: provenance, 300 rendered frames, screen-crossing black ribbons, character/cloth readability and combat feedback.",
+  "provenance": {
+    "sourceSha": "cb4d7d620e8d704affc26b697f3458c1d953c724",
+    "buildFingerprint": "d0232b7421e1861acb9ee108bb500ef70f06635daf3813af02e922347d96c5e8",
+    "workflowRun": 34666329831,
+    "artifact": 10289909293,
+    "archiveSha256": "77635d019e61868a7324e851d35afaba1dfe556a8c87e151020c2ca49102bc35",
+    "nonWarningErrors": 0
+  },
+  "apparatus": {
+    "status": "PASS_FOR_SUPPLIED_CAPTURE",
+    "locomotionFrames": 120,
+    "combatFrames": 180,
+    "uniqueDecodedFrames": 300,
+    "consecutiveEngineAndRenderCounters": true,
+    "incomingHit": { "frame": 68, "attacker": 9001, "target": 1, "damage": 12.376, "playerHealth": [100, 87.624] },
+    "outgoingHit": { "frame": 109, "attacker": 1, "target": 9001, "damage": 34, "enemyHealth": [115, 81] },
+    "limitation": "60 Hz is a virtual capture clock on SwiftShader; this is not physical-device performance."
+  },
+  "clearedWithinScope": [
+    "No large screen-crossing black ribbon was observed in all 300 thumbnails plus 11 native samples.",
+    "A real incoming enemy hit and a separate outgoing player hit are present.",
+    "Both MP4s contain unique consecutive rendered frames."
+  ],
+  "findings": [
+    {
+      "id": "R17-MOTION-001",
+      "severity": "major",
+      "shot": "locomotion-walk-040; locomotion-run-100; combat-combat-setup-000; combat-enemy-startup-007; combat-enemy-active-025; combat-reaction-068",
+      "problem": "The player and ronin still read as primitive mannequins: oval heads, orange cylindrical joints, broad rectangular sleeve masses and flat skirt panels. Overlap makes arm and weapon ownership hard to read.",
+      "why": "E07 and E12 require a clear character, sword and attack-phase silhouette at speed and in shadow.",
+      "owner": "src/anim/Rig.js",
+      "hypothesis": "Visible body/garment construction and insufficient material separation may both contribute; native pixels alone do not separate them.",
+      "fix": "Inspect the same six poses under a neutral diagnostic material, then improve layered clothing and arm-to-weapon readability within existing budgets. Require zero surviving readability majors in a new independent native review.",
+      "evidence": "All six named native PNGs; primary player region approximately x1000 y450 w330 h650.",
+      "refutationStatus": "SURVIVED"
+    },
+    {
+      "id": "R17-MOTION-002",
+      "severity": "major",
+      "shot": "combat frames 67-69 and 108-110",
+      "problem": "The red full-screen edge flash appears at f109 when the player hits the enemy, and is absent at f68 when the enemy reduces player health.",
+      "why": "The strongest damage cue identifies the opposite event, so taking damage and landing a hit are visually confused.",
+      "owner": "src/fx/Effects.js",
+      "hypothesis": "The player damage event is suppressed while the screen feedback consumer accepts an enemy damage event.",
+      "fix": "Make Combat emit exactly one player damage event and restrict the red lens to the damaged local player. Re-capture both directions and compare event frames with native before/after frames.",
+      "evidence": "Perimeter red-excess f67/f68/f69 = 16.73/16.32/16.66; f108/f109/f110 = 16.14/64.37/60.53. Health/event records identify f68 as incoming and f109 as outgoing.",
+      "refutationStatus": "SURVIVED_WITH_OWNER_CORRECTION"
+    }
+  ],
+  "notAccepted": ["full-game pass", "R17 merge", "physical-device performance", "audio", "human combat feel", "all archetypes"]
+}

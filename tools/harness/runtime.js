@@ -106,6 +106,7 @@
         rec.value = scalarise(payload);
       }
       events.push(rec);
+      if (name === 'telegraph' && payload?.entity) bot.observeTelegraph(payload);
       return original(name, payload);
     };
     tapped = true;
@@ -167,10 +168,15 @@
   // seam separately with Playwright's CDP touch input and records the agreement.
   const canvas = () => document.getElementById('game-canvas');
   const live = new Map();          // pointerId -> {x, y}
+  const heldKeys = new Set();
 
   function pointer(type, id, x, y, opts = {}) {
     const el = canvas();
     if (!el) return false;
+    if (type === 'pointerdown' && live.has(id)) {
+      events.push({ f: frameIndex, name: 'harness-error', where: 'pointer', message: `duplicate pointerdown ${id}` });
+      return false;
+    }
     const target = type === 'pointerdown' ? el : window;
     const ev = new PointerEvent(type, {
       pointerId: id,
@@ -179,10 +185,10 @@
       clientX: x, clientY: y,
       screenX: x, screenY: y,
       button: opts.button ?? 0,
-      buttons: type === 'pointerup' ? 0 : (opts.buttons ?? 1),
+      buttons: type === 'pointerup' || type === 'pointercancel' ? 0 : (opts.buttons ?? 1),
       bubbles: true, cancelable: true, composed: true,
       width: opts.width ?? 24, height: opts.height ?? 24,
-      pressure: type === 'pointerup' ? 0 : 0.5,
+      pressure: type === 'pointerup' || type === 'pointercancel' ? 0 : 0.5,
     });
     target.dispatchEvent(ev);
     if (type === 'pointerup' || type === 'pointercancel') live.delete(id);
@@ -195,6 +201,57 @@
       code, key: code, bubbles: true, cancelable: true,
     });
     window.dispatchEvent(ev);
+    if (down) heldKeys.add(code); else heldKeys.delete(code);
+    return true;
+  }
+
+  function releaseInputs() {
+    for (const [id, p] of live) pointer('pointercancel', id, p.x, p.y);
+    for (const code of heldKeys) key(code, false);
+    window.__kagerou?.input?.releaseAll?.();
+  }
+
+  function destination(k, a) {
+    let x = a.x, y = a.y, z = a.z;
+    if (a.to === 'bell') {
+      const b = k.level?.interactables?.find((it) => it.id === 'bell')?.position;
+      if (!b) return null;
+      x = b.x + (a.dx ?? 0); z = b.z + (a.dz ?? 0);
+      y = k.terrain?.heightAt?.(x, z);
+      if (Number.isFinite(y)) y += 0.02 + (a.dy ?? 0);
+    }
+    if (!Number.isFinite(x) || !Number.isFinite(z)) return null;
+    if (!Number.isFinite(y)) {
+      const hit = k.physics?.raycastDown?.(x, (k.player.root.position.y || 0) + 40, z, 200, 17);
+      y = hit?.hit ? hit.point.y + 0.02 : k.terrain?.heightAt?.(x, z);
+    }
+    return Number.isFinite(y) ? { x, y, z } : null;
+  }
+
+  function resetEncounter(a) {
+    const k = window.__kagerou;
+    const p = k?.player;
+    const pos = p ? destination(k, a) : null;
+    if (!pos || typeof p.respawn !== 'function') return false;
+    bot.reset();
+    bot.enabled = false;
+    releaseInputs();
+    k.enemies?.despawnAll?.();
+    k.combat?.reset?.();
+    // These are isolated authored samples. Unrelated story waves must not enter
+    // midway through a three-opponent encounter and alter the sample silently.
+    if (k.level?.spawnQueue) k.level.spawnQueue.length = 0;
+    k.level?._advanceEncounter?.(-1);
+    p.respawn(p.position.clone().set(pos.x, pos.y, pos.z));
+    VERBS.teleport({ ...pos, yaw: a.yaw ?? 0, label: a.label });
+    if (k.playerCamera) {
+      k.playerCamera.lockTarget = null;
+      k.playerCamera.enabled = true;
+      k.playerCamera.snap?.();
+    }
+    events.push({ f: frameIndex, name: 'encounter-reset', label: a.label ?? null,
+      x: round(p.position.x), y: round(p.position.y), z: round(p.position.z),
+      alive: p.isAlive === true, health: p.health, state: p.state, storyWavesSuspended: true });
     return true;
   }
 
@@ -229,7 +286,28 @@
       owner[a.prop] = a.value;
       return true;
     },
-    bot: (a) => { bot.enabled = !!a.on; bot.policy = a.policy || bot.policy; bot.reset(); return true; },
+    bot: (a) => { bot.reset(false); bot.enabled = !!a.on; bot.policy = a.policy || bot.policy; return true; },
+    resetInput: () => { bot.reset(); releaseInputs(); return true; },
+    resetEncounter,
+    prepareBell: (a) => {
+      if (!resetEncounter({ ...a, to: 'bell' })) return false;
+      const level = window.__kagerou.level;
+      const bell = level?.interactables?.find((it) => it.id === 'bell');
+      if (!bell || typeof level._advanceEncounter !== 'function') return false;
+      bell.used = false;
+      level._interactionCooldown = 0;
+      // ENCOUNTERS[3] is the authored event-triggered bell encounter. Verify the
+      // identity so a future layout change fails setup instead of ringing early.
+      level._advanceEncounter(3);
+      const waiting = level._enc?.active?.id === 'bell' && level._enc?.armed === false;
+      events.push({ f: frameIndex, name: 'bell-setup', waiting, interactable: bell.id,
+        x: round(bell.position.x), y: round(bell.position.y), z: round(bell.position.z) });
+      return waiting;
+    },
+    lockIfFree: () => {
+      if (!window.__kagerou?.playerCamera?.lockTarget) { key('KeyQ', true); key('KeyQ', false); }
+      return true;
+    },
     /**
      * Put the player somewhere specific. The physics capsule owns its own position, so
      * moving `root.position` alone leaves the controller behind and the character walks
@@ -239,20 +317,12 @@
       const k = window.__kagerou;
       const p = k?.player;
       if (!p) return false;
-      let x = a.x, y = a.y, z = a.z;
-      if (a.to === 'bell') {
-        const b = k.level?._bellPos;
-        if (!b) return false;
-        x = b.x + (a.dx ?? 2.0); y = b.y + (a.dy ?? 0); z = b.z + (a.dz ?? 2.0);
-      }
-      if (!Number.isFinite(x) || !Number.isFinite(z)) return false;
+      const pos = destination(k, a);
+      if (!pos) return false;
+      const { x, y, z } = pos;
       // Ground the destination by raycast rather than keeping the current height: a
       // teleport that leaves the capsule buried makes every later frame a depenetration,
       // which reads as "the controller cannot move" and is not a fact about the game.
-      if (!Number.isFinite(y)) {
-        const hit = k.physics?.raycastDown?.(x, (k.player.root.position.y || 0) + 40, z, 200, 17);
-        y = hit && hit.hit ? hit.point.y + 0.02 : p.root.position.y;
-      }
       p.root.position.set(x, y, z);
       p.controller?.teleport?.(x, y, z);
       p.controller?.setPosition?.(p.root.position);
@@ -281,7 +351,7 @@
       const p = k?.player;
       if (!p || !k.physics) return false;
       const yaw = a.yaw ?? p.yaw;
-      const dir = { x: Math.sin(yaw), y: 0, z: -Math.cos(yaw) };
+      const dir = { x: -Math.sin(yaw), y: 0, z: -Math.cos(yaw) };
       const origin = { x: p.root.position.x, y: p.root.position.y + 0.9, z: p.root.position.z };
       const hit = k.physics.raycast(origin, dir, a.maxDist ?? 60, 17);
       events.push({
@@ -409,14 +479,150 @@
     for (let i = 0; i < list.length; i++) {
       const e = list[i];
       const b = e.rig?.bones?.hand_r || e.rig?.bones?.handR || e.rig?.bones?.weapon_tip || null;
-      if (!b) { row.push([e.id, null]); continue; }
+      const attackTime = round(e.attackTime, 5);
+      const move = e.currentMove?.id ?? null;
+      if (!b) { row.push([e.id, null, stateId(e.state), e.weapon?.active ? 1 : 0, attackTime, move, 0, null, null, null, null, 1, 0]); continue; }
       const w = b.getWorldPosition(scratchA);
       const prev = _emotionPrev.get(e.id);
-      const d = prev ? Math.hypot(w.x - prev[0], w.y - prev[1], w.z - prev[2]) : 0;
-      _emotionPrev.set(e.id, [w.x, w.y, w.z]);
-      row.push([e.id, round(d, 5), stateId(e.state), e.weapon?.active ? 1 : 0]);
+      const d = prev ? Math.hypot(w.x - prev.x, w.y - prev.y, w.z - prev.z) : 0;
+      e.root?.updateWorldMatrix?.(true, false);
+      const matrix = e.root?.matrixWorld?.elements;
+      const rx = matrix?.[12], ry = matrix?.[13], rz = matrix?.[14];
+      const yaw = matrix ? Math.atan2(matrix[8], matrix[10]) : NaN;
+      const rig = e.rig, base = rig?.layers?.[0], time = rig?.time;
+      let reason = 0;
+      if (!prev || !Number.isFinite(rx) || !Number.isFinite(ry) || !Number.isFinite(rz)
+        || !Number.isFinite(yaw) || !Number.isFinite(time)) reason |= 1;
+      if (e.state !== 'idle' || e.weapon?.active) reason |= 2;
+      if (prev && Math.hypot(rx - prev.rx, ry - prev.ry, rz - prev.rz) > 1e-5) reason |= 4;
+      if (prev && Math.abs(Math.atan2(Math.sin(yaw - prev.yaw), Math.cos(yaw - prev.yaw))) > 1e-5) reason |= 8;
+      const blendIdle = rig?._locoMode && !base?.clip
+        && Number.isFinite(rig?._loco?.forward) && Number.isFinite(rig?._loco?.strafe)
+        && Math.hypot(rig._loco.forward, rig._loco.strafe) <= 1e-5;
+      const clipIdle = base?.clip?.name?.startsWith('idle_') && base.loop;
+      if (!base || (!blendIdle && !clipIdle)) reason |= 16;
+      if (!base || base.blend < 1 || Math.abs(base.weight - base.targetWeight) > 0.0008) reason |= 32;
+      for (let j = 1; j < (rig?.layers?.length || 0); j++) {
+        if (rig.layers[j].weight > 0.0008 || rig.layers[j].targetWeight > 0.0008) reason |= 64;
+      }
+      if (rig?._feetActive && (!rig._footLocked?.[0] || !rig._footLocked?.[1])) reason |= 128;
+      const lx = rig?._look?.x, ly = rig?._look?.y, lz = rig?._look?.z;
+      if (prev && rig?._lookActive && Math.hypot(lx - prev.lx, ly - prev.ly, lz - prev.lz) > 1e-5) reason |= 256;
+      const advanced = prev && Number.isFinite(time) && Number.isFinite(prev.time) && time > prev.time;
+      // The flag is independent of hand displacement. One simulation second of
+      // unchanged root/idle pose outlasts the 0.22 s fades and turn/recoil settling.
+      const quiet = reason === 0 && advanced ? prev.quiet + Math.min(0.25, time - prev.time) : 0;
+      const eligible = quiet >= 1;
+      _emotionPrev.set(e.id, { x: w.x, y: w.y, z: w.z, rx, ry, rz, yaw, time, quiet, lx, ly, lz });
+      // Preserve columns 0..5. New diagnostics: eligible, root XYZ/yaw,
+      // rejection bits, and independently observed quiet simulation seconds.
+      row.push([e.id, round(d, 5), stateId(e.state), e.weapon?.active ? 1 : 0, attackTime, move,
+        eligible ? 1 : 0, round(rx, 6), round(ry, 6), round(rz, 6), round(yaw, 6), reason, round(quiet, 5)]);
     }
     out.emotion.push(row);
+  }
+
+  function animationSubject(e) {
+    return {
+      enemy: e.id, archetype: e.archetype, rig: e.rig?.root?.uuid ?? null,
+      rigScale: round(e.rig?.scale, 8), height: round(e.rig?.height, 8),
+      rootScale: e.root.scale.toArray(), visualScale: e.visual.scale.toArray(),
+    };
+  }
+
+  function recordedSpawn(s) {
+    return {
+      position: s.position.toArray().map(v => round(v, 8)),
+      seed: Number.isInteger(s.opts.seed) ? s.opts.seed : null,
+      alerted: !!s.opts.alerted,
+      faceTarget: s.opts.faceTarget !== false,
+      target: s.opts.target?.id ?? null,
+    };
+  }
+
+  // This is an animation-noise calibration before AI activation, not an AI idle
+  // test. Unaware AI deliberately scans and turns the root continuously.
+  function calibrateEnemyIdle(k, spawned, frames) {
+    const dt = 1 / 60;
+    const list = spawned.map(s => s.entity);
+    const out = {
+      schemaVersion: 1, phase: 'rig-idle-calibration', dtMs: 1000 / 60, stride: 1,
+      frames: Math.max(120, Math.floor(frames || 300)), sampledFrames: [],
+      method: 'same-instance Enemy._updateAnim at 60 Hz before AI activation',
+      limitation: 'Authored idle noise only; AI, FSM, combat and the gameplay/input clock do not advance. This does not validate natural waiting AI.',
+      subjects: spawned.map(s => ({ ...animationSubject(s.entity), spawn: recordedSpawn(s) })),
+      observationSubjects: [], columns: { emotion: [] }, stateNames: [],
+      emotionRowSchema: ['enemyId', 'handTravelM', 'stateId', 'weaponActive', 'attackTimeSeconds', 'moveId',
+        'idleEligible', 'rootWorldX', 'rootWorldY', 'rootWorldZ', 'rootWorldYaw', 'idleRejectionBits', 'quietSimulationSeconds'],
+      enemyAnimUpdates: 0, worldMatrixUpdates: 0,
+      attacks: 0, activeSamples: 0, attackStateSamples: 0, errors: [],
+    };
+    _emotionPrev.clear();
+    try {
+      if (!list.length || list.some(e => !e.rig || typeof e._updateAnim !== 'function')) {
+        throw new Error('every measured enemy must have its real Rig');
+      }
+      const active = new Map();
+      for (let f = 0; f < out.frames; f++) {
+        for (const e of list) { e._updateAnim(dt); out.enemyAnimUpdates++; }
+        k.scene.updateMatrixWorld(true);
+        out.worldMatrixUpdates++;
+        probeEnemyMotion({ enemies: { list } }, out.columns);
+        out.sampledFrames.push(f);
+        for (const e of list) {
+          if (e.weapon.active) {
+            out.activeSamples++;
+            if (!active.get(e.id)) out.attacks++;
+          }
+          if (e.state === 'attack') out.attackStateSamples++;
+          active.set(e.id, !!e.weapon.active);
+        }
+      }
+      if (out.activeSamples || out.attackStateSamples) out.errors.push('an attack occurred during idle calibration');
+    } catch (error) { out.errors.push(String(error.message || error)); }
+    finally {
+      for (const s of spawned) {
+        try {
+          // Re-enter through the product's normal pool lifecycle with the exact
+          // position/options captured from this individual spawn. Enemy.reset owns
+          // Rig/FSM/AI cleanup; the harness must not repair private state itself.
+          s.entity.reset(s.position, s.opts);
+          out.observationSubjects.push({ ...animationSubject(s.entity), spawn: recordedSpawn(s) });
+        } catch (error) { out.errors.push(`reset ${s.entity.id}: ${error.message || error}`); }
+      }
+      _emotionPrev.clear();
+    }
+    out.stateNames = stateNames.slice();
+    out.completedFrames = out.sampledFrames.length;
+    out.resetLifecycle = 'Enemy.reset(position, opts)';
+    return out;
+  }
+
+  function calibratedSpawn(a) {
+    const k = window.__kagerou, manager = k.enemies;
+    const original = manager?.spawn;
+    if (typeof original !== 'function') return false;
+    const own = Object.prototype.hasOwnProperty.call(manager, 'spawn');
+    const spawned = [];
+    manager.spawn = function (archetype, position, opts) {
+      const savedPosition = position.clone(), savedOpts = { ...opts };
+      const entity = original.call(this, archetype, position, opts);
+      if (entity) spawned.push({ entity, position: savedPosition, opts: savedOpts });
+      return entity;
+    };
+    let ok;
+    try { ok = VERBS.call(a); }
+    finally { if (own) manager.spawn = original; else delete manager.spawn; }
+    const eventStart = events.length;
+    run.idleCalibration = calibrateEnemyIdle(k, spawned, run.plan.idleCalibration.frames);
+    // Calibration emissions have their own phase and never inflate combat counts.
+    run.idleCalibration.events = events.splice(eventStart).map(e => ({ ...e, phase: 'rig-idle-calibration' }));
+    run.idleCalibration.beforeObservationFrame = frameIndex;
+    run.idleCalibration.spawnAction = { ...a };
+    if (run.idleCalibration.errors.length) {
+      run.failedActions.push({ f: frameIndex, do: 'idleCalibration', label: run.idleCalibration.errors.join('; ') });
+    }
+    return ok;
   }
 
   function probeFeet(k, out) {
@@ -536,14 +742,41 @@
     enabled: false,
     policy: 'aggressive',
     reactFrames: 12,          // ~200 ms at 60 Hz — deliberately slower than REACTION_FLOOR
-    _pending: -1,
-    _cool: 0,
+    _guardUntil: 0,
+    _guardDown: false,
     _stickDown: false,
-    reset() { this._pending = -1; this._cool = 0; },
+    _flick: null,
+    _nextAttack: 0,
+    _swings: 0,
+    _telegraphs: new Map(),
+    reset(clearCues = true) {
+      for (const id of [80, 81, 90, 91]) {
+        const p = live.get(id);
+        if (p) pointer('pointercancel', id, p.x, p.y);
+      }
+      this._guardDown = false;
+      this._stickDown = false;
+      this._flick = null;
+      this._guardUntil = 0;
+      this._nextAttack = 0;
+      this._swings = 0;
+      if (clearCues) this._telegraphs.clear();
+    },
+    observeTelegraph(p) {
+      const duration = Number.isFinite(p.duration) ? p.duration : 0;
+      // The cue's published duration is visible timing information. React once
+      // per emitted cue, no earlier than 200 ms after it was first shown.
+      this._telegraphs.set(p.entity.id, {
+        kind: p.kind, seen: frameIndex,
+        respond: frameIndex + Math.max(this.reactFrames, Math.round(duration * 60) - 6),
+        expires: frameIndex + Math.max(this.reactFrames + 24, Math.round(duration * 60) + 24),
+        reacted: false,
+      });
+    },
     tick(k, f, layout) {
       if (!this.enabled) return;
       const p = k.player;
-      if (!p || !p.isAlive) return;
+      if (!p || !p.isAlive) { this.reset(false); return; }
       const list = k.enemies?.list || [];
       let near = null, nd = 1e9;
       for (const e of list) {
@@ -551,38 +784,49 @@
         const d = Math.hypot(e.position.x - p.position.x, e.position.z - p.position.z);
         if (d < nd) { nd = d; near = e; }
       }
-      if (!near) { this._release(layout); return; }
+      if (!near) { this.reset(false); return; }
 
-      // React to a published telegraph after a human-ish latency, then guard.
-      const tel = k.combat?.getTelegraph?.(near) || null;
-      if (tel && this._pending < 0) this._pending = f + this.reactFrames;
-
-      if (this._pending >= 0 && f >= this._pending) {
-        this._pending = -1;
-        if (tel === 'unblockable') VERBS.keyDown({ code: 'Space' }), VERBS.keyUp({ code: 'Space' });
-        else this._guard(layout, true);
-        this._cool = f + 24;
-      } else if (f > this._cool) {
-        this._guard(layout, false);
+      const cue = this._telegraphs.get(near.id);
+      const cueLive = cue && f <= cue.expires;
+      if (cueLive && !cue.reacted && f >= cue.respond) {
+        cue.reacted = true;
+        if (cue.kind === 'unblockable' || cue.kind === 'grab') {
+          this._guard(layout, false);
+          key('Space', true); key('Space', false);
+        } else {
+          this._guard(layout, true);
+          this._guardUntil = f + 24;
+        }
+        events.push({ f, name: 'bot-reaction', entity: { id: near.id }, kind: cue.kind,
+          cueFrame: cue.seen, reactionFrames: f - cue.seen });
       }
+      if (this._guardDown && f >= this._guardUntil) this._guard(layout, false);
 
       // Close distance, then swing. Both through the touch surface.
-      if (nd > 2.6) {
-        this._stick(layout, 1.0, Math.atan2(near.position.x - p.position.x, -(near.position.z - p.position.z)) - (k.playerCamera?.yaw ?? 0));
+      if (nd > 1.65) {
+        const dx = near.position.x - p.position.x, dz = near.position.z - p.position.z;
+        // PlayerCamera.yaw is the unshaken input basis. Rendered camera position and
+        // quaternion include impact shake and would feed the ablation back into play.
+        const angle = (k.playerCamera?.yaw ?? 0) - Math.atan2(-dx, -dz);
+        this._stick(layout, 0.92, angle);
       } else {
         this._release(layout);
         // Alternate a tap (light attack) with a flick (directional slash) so the trace
         // contains both verbs; a bot that only taps produced one slash in fourteen
         // seconds and left every combat metric without a sample.
-        if (f % 22 === 0 && this.policy === 'aggressive') {
+        const broken = near.state === 'postureBroken' || near.state === 'posture_break';
+        if (f >= this._nextAttack && this.policy === 'aggressive' && !this._guardDown &&
+          !this._flick && (!cueLive || cue.reacted || broken)) {
+          this._nextAttack = f + 22;
           const c = layout.gestureCentre;
-          if ((f / 22) % 2 === 0) {
+          if (broken || this._swings % 2 === 0) {
             pointer('pointerdown', 90, c.x, c.y);
             pointer('pointerup', 90, c.x, c.y);
           } else {
-            this._flick = { f0: f, x: c.x, y: c.y, dx: (f % 44 === 0 ? 150 : -150), dy: (f % 66 === 0 ? 70 : -70) };
+            this._flick = { f0: f, x: c.x, y: c.y, dx: (this._swings % 4 === 1 ? -150 : 150), dy: (this._swings % 3 ? 70 : -70) };
             pointer('pointerdown', 91, c.x, c.y);
           }
+          this._swings++;
         }
       }
       // A flick has to be a real drag over real frames or Input classifies it as a tap.
@@ -605,16 +849,20 @@
       if (this._stickDown) { pointer('pointerup', 80, layout.stickOrigin.x, layout.stickOrigin.y); this._stickDown = false; }
     },
     _guard(layout, on) {
+      if (on === this._guardDown) return;
       const k = window.__kagerou;
       if (!k?.input) return;
       // Guard is a held HUD zone; press it through its registered rect so the zone
       // plumbing is exercised rather than bypassed.
       const z = (k.input._zones || []).find((zz) => zz.name === 'guard');
       const r = z?.rect?.();
-      if (!r) { k.input.state.guard = on; return; }
+      if (!r) {
+        events.push({ f: frameIndex, name: 'harness-error', where: 'bot.guard', message: 'registered guard zone unavailable' });
+        return;
+      }
       const cx = r.x + r.w / 2, cy = r.y + r.h / 2;
-      if (on) pointer('pointerdown', 81, cx, cy);
-      else pointer('pointerup', 81, cx, cy);
+      const ok = pointer(on ? 'pointerdown' : 'pointerup', 81, cx, cy);
+      if (ok) this._guardDown = on;
     },
   };
 
@@ -626,11 +874,29 @@
     const w = window.innerWidth, h = window.innerHeight;
     const stickLeft = (k.input?.stickSide ?? 'left') === 'left';
     const half = k.input?.stickHalf ?? 0.42;
+    const zones = (k.input?._zones || []).map((z) => z.rect?.()).filter(Boolean);
+    const clear = (x, y) => {
+      const pad = 36;             // encompasses the touch-drags start jitter
+      if (x < pad || x > w - pad || y < pad || y > h - pad) return false;
+      if (stickLeft ? x - pad < w * half : x + pad > w * (1 - half)) return false;
+      return !zones.some((r) => x + pad >= r.x && x - pad <= r.x + r.w &&
+        y + pad >= r.y && y - pad <= r.y + r.h);
+    };
+    let gestureCentre = { x: stickLeft ? w * 0.72 : w * 0.28, y: h * 0.42 };
+    if (!clear(gestureCentre.x, gestureCentre.y)) {
+      search: for (const fy of [0.28, 0.20, 0.36, 0.50, 0.60]) {
+        for (const fx of [0.65, 0.76, 0.86, 0.58]) {
+          const x = w * (stickLeft ? fx : 1 - fx), y = h * fy;
+          if (clear(x, y)) { gestureCentre = { x, y }; break search; }
+        }
+      }
+    }
     return {
       w, h,
       stickOrigin: { x: stickLeft ? w * half * 0.5 : w * (1 - half * 0.5), y: h * 0.68 },
       stickRadius: 62 * (k.input?.uiScale ?? 1),
-      gestureCentre: { x: stickLeft ? w * 0.72 : w * 0.28, y: h * 0.42 },
+      gestureCentre,
+      gestureSafe: clear(gestureCentre.x, gestureCentre.y),
     };
   }
 
@@ -646,6 +912,7 @@
     probeState.lastCam = null;
     bot.enabled = false;
     bot.reset();
+    releaseInputs();
 
     const cols = {};
     for (const p of plan.probes || []) for (const c of COLUMNS[p] || []) cols[c] = [];
@@ -662,8 +929,13 @@
       stride: Math.max(1, plan.stride || 1),
       sampled: [],
       failedActions: [],
+      idleCalibration: null,
       startedAt: nativeNow(),
     };
+    if (!run.layout.gestureSafe) {
+      events.push({ f: 0, name: 'harness-error', where: 'layout', message: 'no clear gesture origin with 36 px start margin' });
+      run.failedActions.push({ f: 0, do: 'layout', label: 'gesture-origin-blocked' });
+    }
     _emotionPrev.clear();
     return { ok: true, frames: plan.frames, columns: Object.keys(cols) };
   }
@@ -677,7 +949,9 @@
       if (acts) {
         for (const a of acts) {
           const verb = VERBS[a.do];
-          const ok = verb ? verb(a) : false;
+          const calibrate = run.plan.id === 'anim-startup' && run.plan.idleCalibration && !run.idleCalibration
+            && a.do === 'call' && a.target === 'enemies' && a.method === 'spawnWave';
+          const ok = calibrate ? calibratedSpawn(a) : verb ? verb(a) : false;
           if (!ok) run.failedActions.push({ f: frameIndex, do: a.do, label: a.label ?? null });
         }
       }
@@ -703,6 +977,9 @@
 
   function finish() {
     if (!run) return { ok: false, error: 'no active run' };
+    bot.enabled = false;
+    bot.reset();
+    releaseInputs();
     const out = {
       id: run.plan.id,
       frames: frameIndex,
@@ -710,12 +987,19 @@
       stride: run.stride,
       sampledFrames: run.sampled,
       render: run.plan.render !== false,
+      conditions: run.plan.conditions || null,
+      harnessPolicyVersion: 2,
+      difficultyName: window.__kagerou?.combat?.difficultyName ?? null,
       wallMs: Math.round(nativeNow() - run.startedAt),
       columns: run.cols,
       events: events.slice(),
       failedActions: run.failedActions,
       stateNames: stateNames.slice(),
       behaviourNames: behaviourNames.slice(),
+      ...(run.plan.idleCalibration ? { idleCalibration: run.idleCalibration,
+        observation: { phase: 'gameplay-observation', frames: frameIndex, calibrationFramesIncluded: 0,
+          seconds: round(frameIndex * run.dt / 1000, 3), authoredFrames: run.plan.authoredFrames ?? run.plan.frames,
+          limitation: 'Pre-activation Rig idle calibration is separate; all authored actions and all observed attacks are retained.' } } : {}),
     };
     setRender(true);
     run = null;

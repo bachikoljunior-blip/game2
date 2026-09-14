@@ -187,9 +187,11 @@ async function resetWorld(page, home, opts = {}) {
     if (!k) return;
     if (skipIntro) { k.menus?.skipIntro?.(); k.menus?.resume?.(); }
     k.enemies?.despawnAll?.();
+    k.combat?.reset?.();
     k.debugCam?.('off');
     k.input?.releaseAll?.();
     if (k.player && h) {
+      k.player.respawn?.({ x: h[0], y: h[1], z: h[2] });
       k.player.root.position.set(h[0], h[1], h[2]);
       k.player.controller?.teleport?.(h[0], h[1], h[2]);
       k.player.controller?.setPosition?.(k.player.root.position);
@@ -210,6 +212,12 @@ async function resetWorld(page, home, opts = {}) {
 }
 
 async function runPlan(page, plan) {
+  const authoredFrames = plan.frames;
+  if (plan.id === 'anim-startup') {
+    // Extend observation only; preserve every authored action and its frame.
+    // The separate calibration does not consume gameplay or input-clock frames.
+    plan = { ...plan, authoredFrames, frames: Math.max(plan.frames, 30 * 60), idleCalibration: { frames: 5 * 60 } };
+  }
   const begun = await page.evaluate((p) => window.__kh.begin(p), plan);
   if (!begun.ok) throw new Error(`begin(${plan.id}) failed: ${begun.error}`);
   let done = false;
@@ -225,7 +233,9 @@ async function runPlan(page, plan) {
   console.log(`\r[interaction] ${plan.id}: ${trace.frames} frames in ${secs.toFixed(1)}s wall ` +
     `(${(trace.frames / secs).toFixed(1)} fps sim), ${trace.events.length} events` +
     (trace.failedActions.length ? `, ${trace.failedActions.length} FAILED ACTIONS` : ''));
-  trace.plan = { id: plan.id, criteria: plan.criteria, frames: plan.frames, probes: plan.probes, actions: plan.actions.length };
+  trace.plan = { id: plan.id, criteria: plan.criteria, frames: plan.frames, authoredFrames,
+    probes: plan.probes, actions: plan.actions.length,
+    ...(plan.id === 'anim-startup' ? { authoredTimeline: plan.actions } : {}) };
   return trace;
 }
 
@@ -316,12 +326,18 @@ async function landmarkSurvey(page) {
     // "no landmark visible from any approach point", which was a fact about the rig.
     const base = k.player?.root?.position?.y ?? 0;
     const ground = (x, z) => {
-      const h = k.physics.raycastDown?.(x, base + 80, z, 400, 17);
+      // Start at walking head height. A ray from above every roof lands on a
+      // torii crossbar and surveys an aerial view no arriving player can have.
+      const terrain = k.terrain?.heightAt?.(x, z);
+      const origin = Number.isFinite(terrain) ? terrain + 1.8 : base + 80;
+      const h = k.physics.raycastDown?.(x, origin, z, 400, 17);
       return h && h.hit ? h.point.y : null;
     };
     // Plateau-local layout numbers from world/Level.js LAYOUT, resolved to world height
     // by raycast so this cannot drift from the terrain.
-    const anchors = [
+    const anchors = k.level?.landmarks?.length
+      ? k.level.landmarks.map((a) => ({ name: a.id, p: a.position.clone() }))
+      : [
       { name: 'great-torii', x: 0, z: 38.5, up: 5.6 },
       { name: 'honden-roof', x: 0, z: -4.5, up: 8.0 },
       { name: 'bell-tower', x: 16.5, z: 27.0, up: 4.6 },
@@ -538,7 +554,7 @@ async function audioPeakSurvey(page) {
  * Three apparatus validations. Each states a falsifiable prediction and measures it;
  * none of them are allowed to be assumed.
  */
-async function selfCheck(page, home, layout) {
+async function selfCheck(page, home, layout, fingerprint) {
   const checks = {};
 
   // 120 frames is two simulated seconds — long enough for the controller to reach steady
@@ -580,13 +596,14 @@ async function selfCheck(page, home, layout) {
     window.__kh.pump(8);
     return { draws: k.engine.stats.drawCalls, tris: k.engine.stats.triangles, tier: k.quality?.name ?? null };
   });
-  const prev = readReport();
+  const prev = readReport(fingerprint);
   checks.agreementWithScreenshotRig = {
     pose: 'hero', measuredHere: stats,
-    screenshotRig: prev ? { draws: prev.worstDrawCalls, tris: prev.worstTriangles, tag: prev.tag } : null,
+    screenshotRig: prev ? { draws: prev.drawCalls, tris: prev.triangles, tag: prev.tag,
+      source: prev.source, sha256: prev.sha256, buildFingerprint: prev.buildFingerprint } : null,
     note: prev
-      ? 'the screenshot rig reports its worst shot, so equality is not expected; a same-order match is the check'
-      : 'no shots/report.json to compare against in this run',
+      ? 'independent screenshot-rig runtime snapshot from the identical build; dynamic scene counts differ, so exact counter equality is not claimed'
+      : 'no same-build phone/MEDIUM screenshot report to compare against in this run',
   };
   return checks;
 }
@@ -628,15 +645,26 @@ function carrySelfCheck(tag, fingerprint) {
   } catch (e) { return { carried: false, error: String(e.message || e) }; }
 }
 
-function readReport() {
-  const f = join(OUT, 'report.json');
-  if (!existsSync(f)) return null;
-  try {
-    const r = JSON.parse(readFileSync(f, 'utf8'));
-    const phone = r.profiles?.phone;
-    if (!phone?.stats) return null;
-    return { worstDrawCalls: phone.stats.drawCalls ?? null, worstTriangles: phone.stats.triangles ?? null, tag: r.at ?? null };
-  } catch { return null; }
+function readReport(fingerprint) {
+  // Tagged review captures deliberately do not overwrite report.json. Match the
+  // explicit tag and build rather than silently losing the independent control.
+  const tag = String(argv['screenshot-tag'] || TAG);
+  if (!/^[\w.-]+$/.test(tag)) throw new Error('Invalid --screenshot-tag');
+  for (const name of [`report-${tag}.json`, 'report.json']) {
+    const f = join(OUT, name);
+    if (!existsSync(f)) continue;
+    try {
+      const bytes = readFileSync(f);
+      const r = JSON.parse(bytes);
+      const phone = r.profiles?.phone;
+      if (r.build?.fingerprint !== fingerprint || !phone?.booted || phone.stats?.tier !== 1 ||
+        !(phone.stats.drawCalls > 0) || !(phone.stats.triangles > 0)) continue;
+      return { drawCalls: phone.stats.drawCalls, triangles: phone.stats.triangles,
+        tag: r.at, source: `shots/${name}`, sha256: createHash('sha256').update(bytes).digest('hex'),
+        buildFingerprint: r.build.fingerprint };
+    } catch { /* unreadable or stale controls cannot establish agreement */ }
+  }
+  return null;
 }
 
 // ------------------------------------------------------------------------- main
@@ -693,6 +721,7 @@ async function main() {
       'The player is a scripted policy in tools/harness/runtime.js, not a human.',
       'No reference-title footage was fetched or compared; thresholds are measured on our own build.',
       'Input is synthesised as DOM PointerEvents in-page; the browser\'s own digitiser-to-event path is not exercised.',
+      'Animation startup uses a separate same-Rig authored idle-noise calibration before AI activation; it is not a test of natural waiting AI. All subsequent gameplay attacks are counted.',
     ],
     scenarios: { ...(previous?.scenarios || {}) },
     selfCheck: null,
@@ -738,7 +767,7 @@ async function main() {
 
     if (argv['self-check'] || !argv['carry-self-check']) {
       console.log('[interaction] apparatus self-check…');
-      report.selfCheck = await selfCheck(page, home, layout);
+      report.selfCheck = await selfCheck(page, home, layout, report.build.fingerprint);
       console.log(`[interaction] determinism divergence ${report.selfCheck.determinism.worstAbsoluteDivergence}; ` +
         `render-substitution divergence ${report.selfCheck.renderSubstitution.worstAbsoluteDivergence}`);
     } else {
@@ -773,6 +802,17 @@ async function main() {
             frames: trace.frames, wallMs: trace.wallMs, events: trace.events.length,
             failedActions: trace.failedActions.length, criteria: plan.criteria,
             trace: `shots/interaction-${TAG}/${plan.id}.json`,
+            ...(trace.idleCalibration ? { idleCalibration: {
+              phase: trace.idleCalibration.phase, method: trace.idleCalibration.method,
+              limitation: trace.idleCalibration.limitation,
+              frames: trace.idleCalibration.completedFrames, dtMs: trace.idleCalibration.dtMs,
+              enemyAnimUpdates: trace.idleCalibration.enemyAnimUpdates,
+              worldMatrixUpdates: trace.idleCalibration.worldMatrixUpdates,
+              attacks: trace.idleCalibration.attacks, activeSamples: trace.idleCalibration.activeSamples,
+              resetLifecycle: trace.idleCalibration.resetLifecycle,
+              subjects: trace.idleCalibration.subjects, observationSubjects: trace.idleCalibration.observationSubjects,
+              errors: trace.idleCalibration.errors, rawColumns: 'trace.idleCalibration.columns.emotion',
+            }, observation: trace.observation } : {}),
           };
           // `ringBell` emits no objective of its own — it plays a sound, shakes the camera
           // and fires a wave trigger — so the only unambiguous evidence that the bell was

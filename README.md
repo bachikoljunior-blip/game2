@@ -9,12 +9,12 @@ assets** — every texture, mesh, animation and sound is synthesised in code at 
 
 ## Run it
 
-Play the verified production build on
+Play the published checkpoint on
 [GitHub Pages](https://bachikoljunior-blip.github.io/game2/). The checked-in Pages artifact
-contains the measured Rounds 13–14 checkpoint; this is a runnable incremental checkpoint,
-not a claim that the overall visual gate passes. Remote and browser verification state is
-recorded in `AI_DEVELOPMENT/PROJECT_STATE.yaml`; payload merge `4a3eff7` loaded current
-`index-D_EFhYS4.js` with ready/running true and zero recorded browser/network errors.
+contains the Round 16 checkpoint. Its repository payload is verified; its live-browser gate
+remains unverified. Current repairs are on `codex/game2-criteria-20260911` and are undergoing
+rendered CI verification before publication. Overall product criteria have **not** passed.
+Remote and browser evidence is recorded in `AI_DEVELOPMENT/PROJECT_STATE.yaml`.
 
 ```bash
 npm install
@@ -37,21 +37,20 @@ npm run shots      # build, then capture the visual-review screenshot set
 | 避 | dodge |
 | 技 | special |
 | 敵 | lock on |
+| 調 (near an available object) | interact; the prompt explains the consequence |
 
 **Desktop**
 
 `WASD` move · mouse look (right-drag or click to capture) · `LMB` attack · `Shift+LMB` heavy ·
 `C` guard · `Space` dodge · `Q` lock on · `E` special · `R` sheathe · `1/2/3` stance ·
-`Esc` pause. Gamepads are supported.
+`F` interact · `Esc` pause. Gamepads are supported (View/Select for interaction).
 
 ---
 
 ## Why it looks the way it does
 
-The whole build is procedural, which sounds like a limitation and is actually the point:
-a phone downloads under two megabytes and then spends a few hundred milliseconds
-synthesising a world locally, instead of streaming a hundred megabytes of textures it will
-sample four times.
+The whole build is procedural: the current candidate is about 490kB compressed and generates
+its world locally. Actual phone boot time has not yet been measured.
 
 - **Materials** are evaluated per pixel from domain-warped simplex and worley fields, with
   normals derived by Sobel from the same height field — not faked from albedo luminance.
@@ -81,20 +80,83 @@ enclosed space, and Genshin's sustained thermal behaviour on mid-range Android. 
 only — nothing from any reference's characters, world, layout, UI, staging or music is
 copied, and no reference title is named in the shipped product.
 
-**The honest state of that bar, as of 2026-08-01: ten elements of sixteen now carry at
-least one executed measurement, against one the day before.** That is coverage, not
-quality — the first interaction run returned 5 pass, 9 fail and 4 inconclusive. Visuals is
-measured and currently fails. Combat and AI are the last two elements resting on a source
-audit alone: their scenarios and metrics are wired, but the sample they need is
-unaffordable until the physics cost in TD-010 comes down, and that was recorded rather
-than quietly reduced to a smaller sample. No side-by-side against real reference footage,
-no real-device frame rate, and no expert or player review has ever been performed, and
-none is claimed anywhere in this repository.
+**As of 2026-09-11, candidate `3633597` has an executed 20-encounter combat/AI sample,
+five native phone/MEDIUM frames, 300 rendered motion frames, and a passing
+production/touch/graphics-recovery smoke.**
+Coverage is not quality: the latest interaction metrics returned 15 pass, 0 fail and 3
+inconclusive. Attack-motion onset passes (18/18 attacks, shortest 233 ms), and posture
+resolution is 21/30 = 70% against 60%. Incoming-attack video coverage still fails, and sample
+audio peak does not establish true peak. Independent review retains black rendering ribbons,
+primitive character forms and combat occlusion. The prior still-set review judged both versions below
+the visual bar; the repaired frames still need fresh independent review. No matched
+reference gameplay, real-device performance or human review is claimed.
 
 ## Where this build actually stands
 
 > Picking the work up in a new session? [`HANDOFF.md`](./HANDOFF.md) carries the state
 > the container does not — `shots/` is gitignored and the review images do not survive.
+
+### 2026-09-13 candidate: full evidence passed; independent review failed
+
+Main/Pages `86512c3` publicly restores the authored start and first enemy wave. Exact PR #10
+candidate `9f7b70b` passes five phone frames, 20 encounters and 300 rendered frames in
+[CI 34737095560](https://github.com/bachikoljunior-blip/game2/actions/runs/34737095560).
+Independent review clears the prior black ribbon and reversed damage lens but returns
+`FAIL 58`: frontal combat framing merges both fighters, and primitive character/cloth
+construction remains major. The camera mechanism is confirmed and a mirrored 30 degree
+two-shot repair passes eight geometry/collision fixtures plus independent code review; fresh
+rendered evidence remains mandatory before publication. Physical-device performance and
+human review remain unmeasured. Exact review:
+[`r17-motion-9f7-review.json`](AI_DEVELOPMENT/EVIDENCE/r17-motion-9f7-review.json).
+
+### 2026-09-11 candidate: measured gameplay progress, overall criteria unmet
+
+Latest [CI](https://github.com/bachikoljunior-blip/game2/actions/runs/34640487523) completed
+on `3633597`; main/Pages remains `4e6d23a`. Five technical frames and the posture target
+passed. The next step is a short input rehearsal and stopped-frame render ablation to
+repair the failed incoming-attack sample and persistent black ribbons. Exact results and
+artifact hashes: [`r17-candidate-363.md`](AI_DEVELOPMENT/EVIDENCE/r17-candidate-363.md).
+
+The following paragraphs retain the earlier checkpoint history.
+
+The current candidate fixes foot planting, attack-window timing, posture pressure, camera
+collision, contextual input, encounter progression and restart. Fourteen focused behavioral
+test files pass, along with the production build, ownership and project-state checks.
+The small-screen layout also includes context and pause controls in its overlap audit.
+
+[CI run](https://github.com/bachikoljunior-blip/game2/actions/runs/34615869197) captured
+candidate `d4941ca` at phone/MEDIUM, then executed 20 scripted encounters. The candidate
+stayed within 119 draw calls / 804,744 triangles across the five fixed views.
+Reversals completed in 217 ms; planted-foot p95 drift was zero (worst 0.044 cm); the camera
+traverse had zero collider overlaps across 1,896 frames. These are instrumented scenarios.
+The repaired harness records changed stimuli explicitly, so cross-version numbers are not
+identical-input comparisons. The stored report initially counted anonymous compatibility
+notifications as enemy deaths. Re-evaluating the unchanged raw trace with authoritative
+entity deaths gives 15 of 31 posture-resolved deaths (48.39%), below the unchanged 60%
+target. The apparatus correction has a regression test. A fresh corrected run measured
+5 of 16 posture-resolved deaths (31.25%), still below the same target, while all 40 sampled
+attack startups met the 233 ms minimum. The 300-frame job produced valid locomotion and
+combat MP4s, but its combat coverage had no enemy-attributable impact reaction. Independent
+review also rejected the sample for dominant black staircase artifacts, combat-body overlap,
+and primitive character construction. The replacement plan drives the validated aggressive-v2
+bot exclusively through registered DOM pointer/guard input. Exact evidence and artifact hashes:
+[`r17-candidate-d494.md`](AI_DEVELOPMENT/EVIDENCE/r17-candidate-d494.md) and
+[`r17-motion-9a2.md`](AI_DEVELOPMENT/EVIDENCE/r17-motion-9a2.md).
+
+The next local repair tree raises ordinary hit posture pressure only after replaying the
+fresh health-only sequences, removes near-character silhouettes from the quarter-resolution
+god-ray occlusion integral while retaining world occluders, reconnects cloth simulation
+arrays to their GPU attributes, and replaces the missed fixed combat inputs with the
+validated DOM-input aggressive script. Focused checks pass, but none of those repairs count
+until a fresh full CI run, native rendered evidence, and independent review complete. Exact
+diagnosis and verification boundary:
+[`r17-repairs-after-9a2.md`](AI_DEVELOPMENT/EVIDENCE/r17-repairs-after-9a2.md).
+
+[Native input/recovery CI](https://github.com/bachikoljunior-blip/game2/actions/runs/34605905851)
+passed two fresh browser contexts, native Dodge/context touches, real WebGL loss/restoration,
+and resumed gameplay with zero page, console, HTTP or invalid-GL errors. This is not phone
+performance or a public-deployment check. Full scope and limitations:
+[`r17-integration.md`](AI_DEVELOPMENT/EVIDENCE/r17-integration.md).
 
 ### The game is now measured in motion, not only photographed
 

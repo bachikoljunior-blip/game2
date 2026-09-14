@@ -1,7 +1,7 @@
 {
  "schemaVersion": 1,
- "updatedAt": "2026-08-02T09:10:00Z",
- "selectionMethod": "Round 16 was run end to end on user instruction and closed with every contract gate held on r16v1. PHYS-NARROWPHASE ran in parallel and resolved TD-010, which was not a performance defect at all but a NaN query AABB making TriBVH.overlapAABB's cull fail open; its root cause is an ARCHITECTURE 5b violation at Enemy.js:845 that also left enemies with no world collision. The user then explicitly ended the run at the end of this round (\"\u4eca\u9014\u4e2d\u306e\u30e9\u30a6\u30f3\u30c9\u304c\u7d42\u308f\u308b\u307e\u3067\u306b\u3057\u3066\"), so rounds 17-20 were cancelled rather than deferred. Next selection is not made here; it awaits a new user instruction. || KIT/SKILLS WORKSTREAM (separate owner, added 2026-08-02): the nine shared skills were executed for the first time and three defects were fixed; the KIT-* tasks below are that workstream's, not the art loop's. The art-round selection above is unchanged and still awaits a user instruction. The important entry is KIT-REFERENCE-SET: the skills are apparatus and have measured nothing yet.",
+ "updatedAt": "2026-09-11T12:55:00Z",
+ "selectionMethod": "2026-09-11 user resumed production until existing criteria pass. Prioritize observed gameplay defects and unlock real interaction evidence. Historical kit work is retained but is not the current production task.",
  "tasks": [
   {
    "id": "R15-PUBLISH",
@@ -73,7 +73,7 @@
    "dependencies": [
     "BENCH-APPARATUS"
    ],
-   "objective": "Make the three authored interactables reachable. Level.interact(), nearestInteractable() and ringBell() have no caller, and Input's 'interact' intent is consumed by nobody, so the bell, the ema and the chozuya \u2014 and the bell's wave trigger \u2014 cannot be reached in play.",
+   "objective": "Make the three authored interactables reachable. Level.interact(), nearestInteractable() and ringBell() have no caller, and Input's 'interact' intent is consumed by nobody, so the bell, the ema and the chozuya — and the bell's wave trigger — cannot be reached in play.",
    "verification": "tools/interaction-capture.mjs --scenarios=bell-accident: the deliberate half must produce a ring (interactables bell.used true) while the bot-driven combat half still produces none.",
    "nextAction": "Owned by [world] plus whichever system should consume the intent. TD-011."
   },
@@ -120,7 +120,7 @@
    ],
    "objective": "Stop tools/CRITIC.md and the shared critic skill from being two documents that say the same thing differently.",
    "verification": "kit test 'a repository critic brief emits what the critic skill and the validator require' parses CRITIC.md's own JSON template and runs it through validateFindings(strict). Proved able to fail: the template as committed at 17ce484 is rejected on round, profile, tier and nativeResolution; the current one passes.",
-   "nextAction": "Complete. CRITIC.md now defers to .claude/skills/critic/SKILL.md and .kit/lib/plan/findings.mjs for the schema and keeps only the KAGEROU-specific bar. NOT re-verified against the parallel session's critic work, which was not on this branch when this was written \u2014 see KIT-SKILL-RECONCILE.",
+   "nextAction": "Complete. CRITIC.md now defers to .claude/skills/critic/SKILL.md and .kit/lib/plan/findings.mjs for the schema and keeps only the KAGEROU-specific bar. NOT re-verified against the parallel session's critic work, which was not on this branch when this was written — see KIT-SKILL-RECONCILE.",
    "planNode": "KIT-SKILLS"
   },
   {
@@ -162,12 +162,12 @@
   },
   {
    "id": "KIT-VARIANCE",
-   "status": "active",
+   "status": "ready",
    "priority": 0,
    "dependencies": [],
    "objective": "Measure the run-to-run variance of the judgement itself, so a later before/after can be told from noise. Arm 1 is the capture rig; arm 2, the critic's verdict on one unchanged set, is NOT yet collected.",
    "verification": "The same set judged repeatedly under one unchanged build, reported per cell, with a no-change control arm collected as its own later batch.",
-   "nextAction": "ARM 1 COMPLETE 2026-08-02, evidence in AI_DEVELOPMENT/EVIDENCE/kit-variance.md. Eight phone review captures on one frozen build (bfddbfad8eb8), 4+4 with batch B as the no-change control. Result: this rig is aggregate-stable and pixel-unstable and does NOT drift between batches. 65 of 80 published cells never moved; the widest, valley.pctWarm, has a range of 0.014 pp. But the frames differ on 2.1-11.4% of their pixels with peak channel deltas near 400, so the cell table alone is false advertising and --analyse now refuses to print it without the pixel arm. The quantisation hypothesis was DISPROVED: at full float resolution valley.p999 spans exactly 0.0000. survival's +16.9 does NOT transfer to game2 and must not be quoted about it; cross-batch pixel difference is lower than within-batch on 5 of 5 shots and 0 of 15 moving cells put the true batch cut in the tail of its own 70-split null. LICENSED: tight-tolerance before/after on aggregate luma cells and renderer counters, no control arm needed. NOT LICENSED: any pixel-level comparison, floor 2.1-11.4% of frame, control arm mandatory \u2014 this covers --ab-object and verify-lantern-spill, neither of which has ever had one. ARM 2, the variance of a critic's verdict on one unchanged set, is NOT collected and is what remains of this task.",
+   "nextAction": "ARM 1 COMPLETE 2026-08-02, evidence in AI_DEVELOPMENT/EVIDENCE/kit-variance.md. Eight phone review captures on one frozen build (bfddbfad8eb8), 4+4 with batch B as the no-change control. Result: this rig is aggregate-stable and pixel-unstable and does NOT drift between batches. 65 of 80 published cells never moved; the widest, valley.pctWarm, has a range of 0.014 pp. But the frames differ on 2.1-11.4% of their pixels with peak channel deltas near 400, so the cell table alone is false advertising and --analyse now refuses to print it without the pixel arm. The quantisation hypothesis was DISPROVED: at full float resolution valley.p999 spans exactly 0.0000. survival's +16.9 does NOT transfer to game2 and must not be quoted about it; cross-batch pixel difference is lower than within-batch on 5 of 5 shots and 0 of 15 moving cells put the true batch cut in the tail of its own 70-split null. LICENSED: tight-tolerance before/after on aggregate luma cells and renderer counters, no control arm needed. NOT LICENSED: any pixel-level comparison, floor 2.1-11.4% of frame, control arm mandatory — this covers --ab-object and verify-lantern-spill, neither of which has ever had one. ARM 2, the variance of a critic's verdict on one unchanged set, is NOT collected and is what remains of this task.",
    "planNode": "KIT-SKILLS"
   },
   {
@@ -181,6 +181,18 @@
    "verification": "All four points checked against the other session's actual commits rather than assumed: (1) tools/CRITIC.md and the shared critic skill say the same thing, with no third document restating either; (2) survival's protocol reference to a fallback names a skill that was actually distributed; (3) the skills are present in every repository that should have them; (4) the evidence location and format can carry BOTH sessions' measurements.",
    "nextAction": "Measured 2026-08-02 09:0x UTC: remote-ahead-by=0 on claude/kit-rollout-skill-validation-rsenmi in all eight repositories, so I was first and there was nothing to reconcile against. Point 3 already measured: 9 skills in survival, Gptgame, Q, Cooky, game, exist-debug and kit, 10 in game2 (9 + round), 0 in Simple-browser-cookie-clicker-game, whose kit sits unmerged at 0.2.0 under the standing exclusion. Points 1, 2 and 4 need the other session's commits and must be re-checked once they land. Do not force-push; fetch, merge, re-run both test suites, then push.",
    "planNode": "KIT-SKILLS"
+  },
+  {
+   "id": "R17-GAMEPLAY",
+   "planNode": "R17-GAMEPLAY",
+   "status": "active",
+   "priority": 0,
+   "dependencies": [
+    "PHYS-NARROWPHASE"
+   ],
+   "objective": "Repair measured gameplay, input and progression defects without weakening the 62 benchmark criteria.",
+   "verification": "Focused before/after Node checks, production build, full DOM-input trace with >=20 encounters, coherent phone capture gates, independent review.",
+   "nextAction": "Finish and commit candidate, run CI evidence and review results."
   }
  ]
 }

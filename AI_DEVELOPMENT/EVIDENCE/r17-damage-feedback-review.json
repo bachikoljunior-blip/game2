@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "review": "R17 damage feedback independent review",
+  "reviewedDiffSha256": "4a1495ae22f193bdbd53f3fc206def425bfa34274862f4e3722b1682aef2cb12",
+  "verdict": "PASS",
+  "severity": { "blocker": 0, "major": 0, "minor": 0 },
+  "evidence": {
+    "emitter": "ARCHITECTURE §2 assigns damage-taken to Combat. Player returns undefined for Combat payloads; the normal, guard and late-parry paths emit exactly once.",
+    "incoming": {
+      "plain": { "events": 1, "amount": 12.75, "lensPulses": 1 },
+      "guard": { "events": 1, "amount": 1.7850000000000001, "lensPulses": 1 },
+      "lateParry": { "events": 1, "amount": 2.8049999999999997, "lensPulses": 1 }
+    },
+    "outgoing": "Enemy damage still emits once for blood, audio and shake; exact player identity prevents an added red lens pulse.",
+    "preserved": "The committed harness observes bloodImpact and impact shake for both event directions. Independent direct Effects and Audio handler execution also preserved enemy pain audio.",
+    "eventOrder": "Combat still emits hit before damage-taken for normal and late-parry contacts; guard emits damage-taken then clash."
+  },
+  "refutations": [
+    "Player and Combat do not double-emit.",
+    "Filtering the lens does not suppress enemy blood, impact shake or pain audio.",
+    "A distinct faction=player entity does not pulse the local-player lens.",
+    "Perfect parries still emit no damage feedback."
+  ],
+  "verification": ["node tools/check-combat-r17.mjs", "node --test tools/check-*-r17.mjs", "npm run check", "git diff --check"],
+  "limitations": ["No fresh rendered/audio/device capture has passed for this change yet.", "No overall game or R17 acceptance is claimed."]
+}

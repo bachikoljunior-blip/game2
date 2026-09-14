@@ -105,6 +105,12 @@ export class Input {
     this.state.moveMag = 0;
     this.state.guard = false;
     this.state.run = false;
+    this.state.lockHeld = false;
+    this.state.look.set(0, 0);
+    this._pendingLook.set(0, 0);
+    this.state.pressed.clear();
+    this.state.slashes.length = 0;
+    for (const zone of this._zones) if (zone.mode === 'hold') this.state[zone.name] = false;
   }
 
   // -------------------------------------------------------------- HUD zones
@@ -137,7 +143,7 @@ export class Input {
     if (touch) this.usingTouch = true;
 
     const x = e.clientX, y = e.clientY;
-    const zone = touch ? this._hitZone(x, y) : null;
+    const zone = touch || e.button === 0 ? this._hitZone(x, y) : null;
     const rec = {
       id: e.pointerId, type: e.pointerType, zone,
       x0: x, y0: y, x, y, px: x, py: y,
@@ -227,10 +233,11 @@ export class Input {
     if (!rec) return;
     this._pointers.delete(e.pointerId);
     const dt = performance.now() - rec.t0;
+    const cancelled = e.type === 'pointercancel' || !this.enabled;
 
     if (rec.role === 'zone') {
       if (rec.zone.mode === 'hold') this.state[rec.zone.name] = false;
-      this.state.pressed.add(rec.zone.name + ':up');
+      if (!cancelled) this.state.pressed.add(rec.zone.name + ':up');
       return;
     }
     if (rec.role === 'stick') {
@@ -244,7 +251,7 @@ export class Input {
       if (this._lookId === e.pointerId) this._lookId = null;
       const dx = rec.x - rec.x0, dy = rec.y - rec.y0;
       const dist = Math.hypot(dx, dy);
-      if (rec.type !== 'mouse') {
+      if (!cancelled && rec.type !== 'mouse') {
         if (dist >= SWIPE_MIN_DIST * this.uiScale && dt <= SWIPE_MAX_TIME) {
           // Power scales with gesture speed — a flick lands a heavier cut.
           const speed = dist / Math.max(40, dt);
@@ -263,8 +270,9 @@ export class Input {
   // ------------------------------------------------------------------ keys
 
   _key(e, down) {
-    if (!this.enabled) return;
+    if (!this.enabled || (down && e.defaultPrevented)) return;
     const k = e.code;
+    if (down) this.usingTouch = false;
     if (down && this._keys.has(k)) return;
     down ? this._keys.add(k) : this._keys.delete(k);
     if (!down) return;
@@ -300,7 +308,7 @@ export class Input {
       this._gpPrev[i] = p;
     };
     edge(0, 'dodge'); edge(2, 'attack'); edge(3, 'heavy');
-    edge(4, 'lockOn'); edge(5, 'special'); edge(9, 'pause');
+    edge(4, 'lockOn'); edge(5, 'special'); edge(8, 'interact'); edge(9, 'pause');
     this.state.guard = !!gp.buttons[6]?.pressed || (gp.buttons[6]?.value || 0) > 0.4;
     return true;
   }
@@ -315,7 +323,7 @@ export class Input {
       if (x || y) {
         this.state.move.set(x, y).normalize();
         this.state.moveMag = 1;
-      } else if (this._gamepadIndex === null) {
+      } else {
         this.state.move.set(0, 0);
         this.state.moveMag = 0;
       }

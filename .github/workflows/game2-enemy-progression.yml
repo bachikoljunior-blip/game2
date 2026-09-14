@@ -1,0 +1,49 @@
+name: Game2 normal enemy progression
+on:
+  push:
+    branches: [main, codex/game2-criteria-20260911, codex/game2-enemy-spawn-hotfix-20260912]
+    paths:
+      - src/gameplay/Combat.js
+      - src/gameplay/Physics.js
+      - src/gameplay/Player.js
+      - src/world/Level.js
+      - tools/check-enemy-progression.mjs
+      - tools/enemy-progression-capture.mjs
+      - .github/workflows/game2-enemy-progression.yml
+      - index.html
+      - docs/**
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: game2-enemy-progression-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  normal-progression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Check authored encounter and EnemyManager contract
+        run: node tools/check-enemy-progression.mjs
+      - run: npm run check
+      - run: npx playwright install --with-deps chromium
+      - name: Walk from the normal start until enemies appear and fight
+        # npm run check builds dist immediately above. Exercise those candidate
+        # bytes, not the last checked-in Pages payload in docs/.
+        run: node tools/enemy-progression-capture.mjs --root=dist --tag=enemy-local
+      - name: Verify the same flow on published Pages
+        if: github.ref == 'refs/heads/main'
+        run: node tools/enemy-progression-capture.mjs --root=docs --url=https://bachikoljunior-blip.github.io/game2/docs/ --tag=enemy-published
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: game2-enemy-progression-${{ github.sha }}
+          path: shots/enemy-*
+          if-no-files-found: error
+          retention-days: 14

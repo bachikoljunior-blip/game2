@@ -61,19 +61,20 @@ try {
   }));
   const wasAlreadyRunning = await page.evaluate(() => (
     document.querySelector('#boot')?.classList.contains('hidden')
-    && window.__kagerou?.engine?.running === true
+    && document.querySelector('#game-canvas')?.dataset.state === 'running'
   ));
   // `navigator.webdriver` deliberately autostarts the capture surface. A DOM click invokes
   // the same user control when still pending and is harmless after the idempotent start ran.
   await page.locator('#boot-start').evaluate((button) => button.click());
   await page.waitForFunction(() => (
     document.querySelector('#boot')?.classList.contains('hidden')
-    && window.__kagerou?.engine?.running === true
+    && document.querySelector('#game-canvas')?.dataset.state === 'running'
   ), null, { timeout });
   await page.waitForTimeout(750);
   const running = await page.evaluate(() => ({
     bootHidden: document.querySelector('#boot')?.classList.contains('hidden') || false,
-    engineRunning: window.__kagerou?.engine?.running === true,
+    engineRunning: document.querySelector('#game-canvas')?.dataset.state === 'running',
+    inspectionControlsExposed: typeof window.__kagerou !== 'undefined' || typeof window.__kagerouStart !== 'undefined',
     drawCalls: window.__kagerou?.engine?.stats?.drawCalls ?? null,
     triangles: window.__kagerou?.engine?.stats?.triangles ?? null,
   }));
@@ -103,6 +104,7 @@ if (!report.finalUrl.includes('/docs/')) failures.push(`not on production path: 
 if (!report.ready.ready || !report.ready.startReady || report.ready.bootStatus !== 'ready') failures.push('boot readiness failed');
 if (!/\/assets\/index-[^/]+\.js$/.test(report.ready.module || '')) failures.push(`unexpected module ${report.ready.module}`);
 if (!report.running.bootHidden || !report.running.engineRunning) failures.push('interactive start failed');
+if (report.running.inspectionControlsExposed) failures.push('capture controls exposed on the normal release surface');
 if (pageErrors.length) failures.push(`${pageErrors.length} page error(s)`);
 if (consoleErrors.length) failures.push(`${consoleErrors.length} console error(s)`);
 if (requestFailures.length) failures.push(`${requestFailures.length} request failure(s)`);

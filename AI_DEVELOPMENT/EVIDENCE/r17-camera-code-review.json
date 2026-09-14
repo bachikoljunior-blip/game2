@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "review": "Round 17 duel camera independent code review",
+  "baseSha": "9f7b70bc7b496964925c2b62035aadee2dc8bd35",
+  "reviewedDiffSha256": "b05e215e7bd2bfe636e91f31405f9ab407ee7573602b8ba74fadf5803013eb8d",
+  "verdict": "PASS_FOR_RENDERED_VERIFICATION",
+  "severity": {
+    "blocker": 0,
+    "major": 0,
+    "minor": 0
+  },
+  "scope": [
+    "src/gameplay/PlayerCamera.js",
+    "tools/check-player-r17.mjs",
+    "AI_DEVELOPMENT/EVIDENCE/r17-motion-9f7-review.json"
+  ],
+  "assessment": [
+    "The bounded 30 degree side offset directly addresses the independently observed axial fighter overlap.",
+    "Shoulder mirroring is symmetric and retains the existing collision fallback and orbit search.",
+    "No new per-frame allocation or architecture ownership violation was introduced.",
+    "The projected-centre assertion is a meaningful geometry guard: the exact old camera produced 0 of 840 qualifying landscape frames, while the repair produces 831 of 840.",
+    "The check is not rendered proof; the camera major remains open until a fresh native 180-frame combat capture passes independent review."
+  ],
+  "verification": {
+    "fixtures": 8,
+    "aspects": [
+      2.1641,
+      0.4621
+    ],
+    "shoulderSides": [
+      1,
+      -1
+    ],
+    "openAndCorner": true,
+    "lockedFramesPerFixture": 840,
+    "minimumReadablePairFrames": 831,
+    "minimumCentralBodyFrames": 802,
+    "targetOffFrames": 0,
+    "cameraColliderOverlaps": 0,
+    "worstJumpM": 0.7024,
+    "jumpLimitM": 1.5
+  },
+  "reviewCorrectionsApplied": [
+    "Corrected the immutable motion tier from HIGH to medium.",
+    "Removed an unsupported stranger-preference prediction where no matched footage or human blind study exists.",
+    "Added both shoulder sides to landscape, portrait, open-space and corner regression fixtures."
+  ],
+  "nextGate": "Fresh [motion] CI with five fixed phone frames, 20 encounters and 300 rendered frames, followed by independent native-frame review. No rendered or release PASS is claimed here."
+}

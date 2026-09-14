@@ -1,0 +1,1621 @@
+{
+  "schemaVersion": 1,
+  "at": "2026-09-11T13:52:41.199167+00:00",
+  "round": 17,
+  "overallVerdict": "FAIL",
+  "run": "https://github.com/bachikoljunior-blip/game2/actions/runs/34602120671",
+  "variants": {
+    "baseline": {
+      "revision": {
+        "sha": "4e6d23a40af33bb3ba409b3826e77666262ce353",
+        "branch": "",
+        "dirty": false
+      },
+      "build": {
+        "fingerprint": "69f5890f61b97100860f086837bad8c4808c7494ac3b7b7c3aa36006f104b45b"
+      },
+      "captureReportSHA256": "b1fcbb0412d93204e643e98339ad54fea46464bad44d5b0fbada174307aeee25",
+      "interactionReportSHA256": "3ecf7bea71c16dd7cff97497335ed424b3cad3a8abe411c579ca4ff13d41d635",
+      "sameBuild": true,
+      "capture": {
+        "perShot": {
+          "hero": {
+            "drawCalls": 116,
+            "triangles": 756802
+          },
+          "wide": {
+            "drawCalls": 116,
+            "triangles": 781386
+          },
+          "torii": {
+            "drawCalls": 120,
+            "triangles": 738346
+          },
+          "valley": {
+            "drawCalls": 86,
+            "triangles": 675963
+          },
+          "sun": {
+            "drawCalls": 99,
+            "triangles": 707058
+          }
+        },
+        "worstDrawCalls": 120,
+        "worstTriangles": 781386,
+        "histograms": {
+          "hero": {
+            "width": 2532,
+            "height": 1170,
+            "samples": 2962440,
+            "p01": 0,
+            "p1": 2,
+            "p10": 18,
+            "p25": 37,
+            "p50": 77,
+            "p75": 158,
+            "p90": 177,
+            "p99": 195,
+            "p999": 236,
+            "iqr": 121,
+            "pctBelow16": 8.19,
+            "pctAbove240": 0.049,
+            "pctWarm": 66.94,
+            "pctCool": 16.906,
+            "transparentSkipped": 0,
+            "blackOk": true,
+            "whiteOk": true
+          },
+          "wide": {
+            "width": 2532,
+            "height": 1170,
+            "samples": 2962440,
+            "p01": 11,
+            "p1": 17,
+            "p10": 33,
+            "p25": 49,
+            "p50": 89,
+            "p75": 146,
+            "p90": 161,
+            "p99": 200,
+            "p999": 222,
+            "iqr": 97,
+            "pctBelow16": 0.565,
+            "pctAbove240": 0.005,
+            "pctWarm": 62.49,
+            "pctCool": 14.168,
+            "transparentSkipped": 0,
+            "blackOk": true,
+            "whiteOk": true
+          },
+          "torii": {
+            "width": 2532,
+            "height": 1170,
+            "samples": 2962440,
+            "p01": 0,
+            "p1": 2,
+            "p10": 18,
+            "p25": 42,
+            "p50": 112,
+            "p75": 150,
+            "p90": 162,
+            "p99": 214,
+            "p999": 251,
+            "iqr": 108,
+            "pctBelow16": 8.944,
+            "pctAbove240": 0.306,
+            "pctWarm": 49.549,
+            "pctCool": 34.137,
+            "transparentSkipped": 0,
+            "blackOk": true,
+            "whiteOk": true
+          },
+          "valley": {
+            "width": 2532,
+            "height": 1170,
+            "samples": 2962440,
+            "p01": 0,
+            "p1": 0,
+            "p10": 4,
+            "p25": 31,
+            "p50": 60,
+            "p75": 117,
+            "p90": 194,
+            "p99": 216,
+            "p999": 240,
+            "iqr": 86,
+            "pctBelow16": 16.809,
+            "pctAbove240": 0.095,
+            "pctWarm": 68.647,
+            "pctCool": 5.196,
+            "transparentSkipped": 0,
+            "blackOk": true,
+            "whiteOk": true
+          },
+          "sun": {
+            "width": 2532,
+            "height": 1170,
+            "samples": 2962440,
+            "p01": 0,
+            "p1": 2,
+            "p10": 12,
+            "p25": 38,
+            "p50": 115,
+            "p75": 184,
+            "p90": 208,
+            "p99": 232,
+            "p999": 249,
+            "iqr": 146,
+            "pctBelow16": 13.086,
+            "pctAbove240": 0.238,
+            "pctWarm": 87.517,
+            "pctCool": 1.647,
+            "transparentSkipped": 0,
+            "blackOk": true,
+            "whiteOk": true
+          }
+        },
+        "programs": 117,
+        "errorMessages": [],
+        "images": {
+          "hero": "cec33b528d409a2977b1c6fa49f362909a530a5705a329cdeb948ccdefc657dc",
+          "wide": "b65551036da3c4a8005ef7b48b7340c48223d21584983a42f2afac0e6675b97b",
+          "torii": "f35416344da0dd58ca2886676ee4fa7d5d9881945f7bebeb600bafa06935cf01",
+          "valley": "2af5ccfbdbda7dc8762780743e8808276732f8a27bea54002b5f494bd8486ff2",
+          "sun": "5392c263da38ea26bcf9fbc852625268a7b54127a865f3a185f488d1d39abcb5"
+        }
+      },
+      "selfCheck": {
+        "determinism": {
+          "frames": 120,
+          "columns": {
+            "px": 0,
+            "pz": 0,
+            "pyaw": 0,
+            "pspeed": 0
+          },
+          "worstAbsoluteDivergence": 0,
+          "identical": true
+        },
+        "renderSubstitution": {
+          "frames": 120,
+          "columns": {
+            "px": 0,
+            "pz": 0,
+            "pyaw": 0,
+            "pspeed": 0
+          },
+          "worstAbsoluteDivergence": 0,
+          "identical": true,
+          "note": "sim-only vs fully-rendered run of an identical stimulus; a non-zero divergence invalidates every render:false trace in this report"
+        },
+        "agreementWithScreenshotRig": {
+          "pose": "hero",
+          "measuredHere": {
+            "draws": 118,
+            "tris": 748588,
+            "tier": "medium"
+          },
+          "screenshotRig": null,
+          "note": "no shots/report.json to compare against in this run"
+        }
+      },
+      "initialMetricSummary": {
+        "criteria": 18,
+        "verdicts": {
+          "pass": 7,
+          "fail": 8,
+          "inconclusive": 3
+        },
+        "elements": 12,
+        "elementsCovered": [
+          "E01-COMBAT",
+          "E02-MOVEMENT",
+          "E03-CAMERA",
+          "E04-EXPLORATION",
+          "E06-NARRATIVE",
+          "E07-CHARACTER",
+          "E08-CHOICE",
+          "E10-TOUCH",
+          "E12-ANIMATION",
+          "E13-AUDIO",
+          "E14-AI",
+          "E15-PERFORMANCE"
+        ],
+        "elementsWithAMeasurement": [
+          "E02-MOVEMENT",
+          "E03-CAMERA",
+          "E04-EXPLORATION",
+          "E06-NARRATIVE",
+          "E08-CHOICE",
+          "E10-TOUCH",
+          "E12-ANIMATION",
+          "E13-AUDIO",
+          "E14-AI",
+          "E15-PERFORMANCE"
+        ]
+      },
+      "initialResults": [
+        {
+          "criterion": "BM-MOVE-01",
+          "element": "E02-MOVEMENT",
+          "scenario": "move-speeds",
+          "method": "instrumented-runtime",
+          "verdict": "pass",
+          "measured": {
+            "rows": {
+              "walk": {
+                "target": 1.9,
+                "measuredFromPosition": 1.901,
+                "controllerSelfReport": 1.9,
+                "samples": 70
+              },
+              "run": {
+                "target": 5.4,
+                "measuredFromPosition": 5.4,
+                "controllerSelfReport": 5.4,
+                "samples": 70
+              },
+              "sprint": {
+                "target": 7.2,
+                "measuredFromPosition": 7.2,
+                "controllerSelfReport": 7.2,
+                "samples": 70
+              }
+            },
+            "clearance": [
+              {
+                "label": "speed:walk",
+                "metres": 24.89,
+                "blocked": true
+              },
+              {
+                "label": "speed:run",
+                "metres": 24.89,
+                "blocked": true
+              },
+              {
+                "label": "speed:sprint",
+                "metres": 24.89,
+                "blocked": true
+              }
+            ]
+          },
+          "threshold": "within ±5% of 1.9 / 5.4 / 7.2 m/s",
+          "detail": "all three speeds inside ±5%"
+        },
+        {
+          "criterion": "BM-MOVE-03",
+          "element": "E02-MOVEMENT",
+          "scenario": "move-reversal",
+          "method": "interaction-capture",
+          "verdict": "fail",
+          "measured": {
+            "reversals": [
+              {
+                "label": "reversal:0",
+                "turnMs": 283,
+                "responseLatencyMs": 17
+              },
+              {
+                "label": "reversal-back:0",
+                "turnMs": 283,
+                "responseLatencyMs": 17
+              },
+              {
+                "label": "reversal:1",
+                "turnMs": 283,
+                "responseLatencyMs": 17
+              },
+              {
+                "label": "reversal-back:1",
+                "turnMs": 283,
+                "responseLatencyMs": 17
+              },
+              {
+                "label": "reversal:2",
+                "turnMs": 283,
+                "responseLatencyMs": 17
+              },
+              {
+                "label": "reversal-back:2",
+                "turnMs": 283,
+                "responseLatencyMs": 17
+              },
+              {
+                "label": "reversal:3",
+                "turnMs": 283,
+                "responseLatencyMs": 17
+              },
+              {
+                "label": "reversal-back:3",
+                "turnMs": 283,
+                "responseLatencyMs": 17
+              }
+            ],
+            "slowestTurnMs": 283,
+            "worstResponseLatencyMs": 16.7
+          },
+          "threshold": "180° heading change ≤ 250 ms; no input-ignored window > 100 ms",
+          "detail": "all reversals completed"
+        },
+        {
+          "criterion": "BM-MOVE-02",
+          "element": "E02-MOVEMENT",
+          "scenario": "foot-plant",
+          "method": "interaction-capture",
+          "verdict": "fail",
+          "measured": {
+            "contactSamples": 187,
+            "p95DriftCm": 25.84,
+            "worstDriftCm": 29.9,
+            "contactFloorMetres": [
+              0.085,
+              0.085
+            ],
+            "bandMetres": 0.02,
+            "verticalStillnessMetres": 0.004,
+            "windows": 3,
+            "sampledFrames": 213
+          },
+          "threshold": "planted-foot world drift ≤ 2 cm per frame",
+          "detail": "187 contact samples across walk/run/sprint"
+        },
+        {
+          "criterion": "BM-CAMERA-02",
+          "element": "E03-CAMERA",
+          "scenario": "camera-traverse",
+          "method": "instrumented-runtime",
+          "verdict": "fail",
+          "measured": {
+            "frames": 1896,
+            "framesInsideGeometry": 36,
+            "worstFrameJumpM": 0.599,
+            "framesExcludedNearTeleports": 9
+          },
+          "threshold": "zero frames with the near plane inside a collider; no single-frame pull-in > 1.5 m",
+          "detail": "inside-geometry is a conservative proxy: a solid collider within one near-plane radius of the eye"
+        },
+        {
+          "criterion": "BM-CAMERA-01",
+          "element": "E03-CAMERA",
+          "scenario": "lockon-framing",
+          "method": "interaction-capture",
+          "verdict": "fail",
+          "measured": {
+            "lockedFrames": 220,
+            "bothInCentral80Pct": 0.95,
+            "framesTargetOffScreen": 7
+          },
+          "threshold": "both bodies inside the central 80% for ≥ 95% of the encounter; target never leaves frame",
+          "detail": "includes a scripted back-into-a-corner leg"
+        },
+        {
+          "criterion": "BM-CAMERA-04",
+          "element": "E03-CAMERA",
+          "scenario": "lockon-framing/lockon-noshake",
+          "method": "interaction-capture",
+          "verdict": "inconclusive",
+          "measured": {
+            "pairDivergenceM": 0.715
+          },
+          "threshold": "target centroid moves ≤ 4% of frame width from shake alone",
+          "detail": "the ablation pair did not stay in lockstep, so the difference is not attributable to shake"
+        },
+        {
+          "criterion": "BM-COMBAT-02",
+          "element": "E01-COMBAT",
+          "scenario": "encounters",
+          "method": "instrumented-runtime",
+          "verdict": "inconclusive",
+          "measured": {
+            "encounters": 20,
+            "enemyDeaths": 0,
+            "postureBreaks": 0,
+            "executions": 0,
+            "postureResolvedFraction": null
+          },
+          "threshold": "≥ 60% of enemy deaths follow a posture break, over ≥ 20 scripted encounters",
+          "detail": "played by the harness bot policy, not by a human — this is not a play test"
+        },
+        {
+          "criterion": "BM-AI-03",
+          "element": "E14-AI",
+          "scenario": "encounters",
+          "method": "instrumented-runtime",
+          "verdict": "pass",
+          "measured": {
+            "framesWith3PlusEngaged": 2151,
+            "withinLimitFraction": 1,
+            "peakSimultaneousAttackers": 2,
+            "authoredLimit": 2
+          },
+          "threshold": "simultaneous attack commitment inside the authored token limit for ≥ 95% of the encounter",
+          "detail": null
+        },
+        {
+          "criterion": "BM-TOUCH-03",
+          "element": "E10-TOUCH",
+          "scenario": "touch-drags",
+          "method": "interaction-capture",
+          "verdict": "fail",
+          "measured": {
+            "drags": 120,
+            "misfires": 0,
+            "misfireRate": 0,
+            "examples": [],
+            "edgeMargin": {
+              "viewport": {
+                "w": 844,
+                "h": 390
+              },
+              "zones": [
+                {
+                  "name": "guard",
+                  "mode": "hold",
+                  "x": 623.428440113981,
+                  "y": 321.8837209302326,
+                  "w": 72,
+                  "h": 72
+                },
+                {
+                  "name": "dodge",
+                  "mode": "press",
+                  "x": 642.0213959540765,
+                  "y": 251.26916487790345,
+                  "w": 72,
+                  "h": 72
+                },
+                {
+                  "name": "special",
+                  "mode": "press",
+                  "x": 693.1378829776119,
+                  "y": 197.40362677831956,
+                  "w": 72,
+                  "h": 72
+                },
+                {
+                  "name": "lockOn",
+                  "mode": "press",
+                  "x": 763.959900958555,
+                  "y": 175.0735302829626,
+                  "w": 72,
+                  "h": 72
+                },
+                {
+                  "name": "pause",
+                  "mode": "press",
+                  "x": 7.255813953488372,
+                  "y": 7.255813953488372,
+                  "w": 50,
+                  "h": 50
+                }
+              ],
+              "buttons": [
+                {
+                  "name": "guard",
+                  "cx": 659.428440113981,
+                  "cy": 357.8837209302326,
+                  "visualRadius": 28.11627906976744,
+                  "hitRadius": 36
+                },
+                {
+                  "name": "dodge",
+                  "cx": 678.0213959540765,
+                  "cy": 287.26916487790345,
+                  "visualRadius": 28.11627906976744,
+                  "hitRadius": 36
+                },
+                {
+                  "name": "special",
+                  "cx": 729.1378829776119,
+                  "cy": 233.40362677831956,
+                  "visualRadius": 28.11627906976744,
+                  "hitRadius": 36
+                },
+                {
+                  "name": "lockOn",
+                  "cx": 799.959900958555,
+                  "cy": 211.0735302829626,
+                  "visualRadius": 28.11627906976744,
+                  "hitRadius": 36
+                }
+              ],
+              "smallestVisualDiameterPx": 56.23255813953488,
+              "smallestHitDiameterPx": 72,
+              "zonesInsideEdgeMargin": 2,
+              "edgeMarginBasis": "visible control geometry",
+              "paddedRectsCrossingMargin": 3,
+              "edgeMarginPx": 16
+            }
+          },
+          "threshold": "< 1% of ≥ 100 camera drags produce an unintended slash or press; no gesture starts inside the OS edge margin",
+          "detail": "every drag is authored outside the flick and tap envelopes, so anything it fires is unintended by construction"
+        },
+        {
+          "criterion": "BM-TOUCH-04",
+          "element": "E10-TOUCH",
+          "scenario": "touch-latency",
+          "method": "instrumented-runtime",
+          "verdict": "pass",
+          "measured": {
+            "taps": 60,
+            "registered": 60,
+            "worstDeferralFrames": 0,
+            "histogram": {
+              "0": 60
+            }
+          },
+          "threshold": "a touch event is consumed by game state in the frame it arrives; never deferred more than one frame",
+          "detail": null
+        },
+        {
+          "criterion": "BM-ANIM-01",
+          "element": "E12-ANIMATION",
+          "scenario": "anim-startup",
+          "method": "interaction-capture",
+          "verdict": "fail",
+          "measured": {
+            "attacks": 17,
+            "shortestStartupMs": 0,
+            "medianStartupMs": 0,
+            "idleMotionFloorM": 0.024527
+          },
+          "threshold": "visible startup ≥ 140 ms (EnemyAI REACTION_FLOOR) for every enemy attack",
+          "detail": "startup taken from first frame of weapon-hand motion above 3× the idle floor"
+        },
+        {
+          "criterion": "BM-ANIM-02",
+          "element": "E12-ANIMATION",
+          "scenario": "blade-window",
+          "method": "instrumented-runtime",
+          "verdict": "pass",
+          "measured": {
+            "swings": 12,
+            "worstLeadFrames": 0,
+            "worstLagFrames": 0,
+            "sample": [
+              {
+                "activeStart": 60,
+                "activeEnd": 64,
+                "sweepStart": 60,
+                "sweepEnd": 64,
+                "leadFrames": 0,
+                "lagFrames": 0
+              },
+              {
+                "activeStart": 123,
+                "activeEnd": 131,
+                "sweepStart": 123,
+                "sweepEnd": 131,
+                "leadFrames": 0,
+                "lagFrames": 0
+              },
+              {
+                "activeStart": 184,
+                "activeEnd": 202,
+                "sweepStart": 184,
+                "sweepEnd": 202,
+                "leadFrames": 0,
+                "lagFrames": 0
+              },
+              {
+                "activeStart": 231,
+                "activeEnd": 249,
+                "sweepStart": 231,
+                "sweepEnd": 249,
+                "leadFrames": 0,
+                "lagFrames": 0
+              },
+              {
+                "activeStart": 300,
+                "activeEnd": 309,
+                "sweepStart": 300,
+                "sweepEnd": 309,
+                "leadFrames": 0,
+                "lagFrames": 0
+              }
+            ]
+          },
+          "threshold": "weapon-active frames coincide with the visible blade sweep within one frame at both ends",
+          "detail": null
+        },
+        {
+          "criterion": "BM-STORY-03",
+          "element": "E06-NARRATIVE",
+          "scenario": "control-continuity",
+          "method": "interaction-capture",
+          "verdict": "pass",
+          "measured": {
+            "longestNoControlSeconds": 0,
+            "startedAtFrame": -1,
+            "titleBeatSeconds": 4.2,
+            "playerDisplacementDuringTitleBeatM": 3.41
+          },
+          "threshold": "no non-interactive sequence longer than 5 s outside the title beat; every such beat is skippable",
+          "detail": "measured from a fresh boot with the intro deliberately NOT skipped. A non-zero displacement during the title beat means the beat never took control away, so skippability does not arise for it."
+        },
+        {
+          "criterion": "BM-CHOICE-02",
+          "element": "E08-CHOICE",
+          "scenario": "bell-accident",
+          "method": "interaction-capture",
+          "verdict": "fail",
+          "measured": {
+            "accidentalRingEvents": 0,
+            "deliberateRingEvents": 0,
+            "bellUsedFlagAfterRun": false,
+            "interactablesSeen": [
+              "bell:false",
+              "ema:false",
+              "rest:false"
+            ],
+            "objectiveEventsTotal": 0
+          },
+          "threshold": "the bell cannot be rung by accident during combat movement, and its consequence is signalled before the wave commits",
+          "detail": "the deliberate half of the scenario produced nothing either: the bell was never struck even when the mapped interact intent was pressed, so it is unreachable in play rather than protected"
+        },
+        {
+          "criterion": "BM-EXPLORE-01",
+          "element": "E04-EXPLORATION",
+          "scenario": "landmark-survey",
+          "method": "interaction-capture",
+          "verdict": "fail",
+          "measured": {
+            "points": 8,
+            "anchorsResolved": 4,
+            "pointsWithNoLandmark": 1,
+            "blindPoints": [
+              "east-edge"
+            ],
+            "perPoint": [
+              {
+                "name": "stair-top",
+                "visible": [
+                  "great-torii",
+                  "honden-roof",
+                  "bell-tower",
+                  "haiden-roof"
+                ]
+              },
+              {
+                "name": "first-torii",
+                "visible": [
+                  "great-torii",
+                  "honden-roof",
+                  "bell-tower",
+                  "haiden-roof"
+                ]
+              },
+              {
+                "name": "second-torii",
+                "visible": [
+                  "great-torii",
+                  "honden-roof",
+                  "bell-tower",
+                  "haiden-roof"
+                ]
+              },
+              {
+                "name": "arena",
+                "visible": [
+                  "honden-roof",
+                  "haiden-roof"
+                ]
+              },
+              {
+                "name": "chozuya",
+                "visible": [
+                  "honden-roof",
+                  "haiden-roof"
+                ]
+              },
+              {
+                "name": "ema-rack",
+                "visible": [
+                  "honden-roof",
+                  "bell-tower",
+                  "haiden-roof"
+                ]
+              },
+              {
+                "name": "west-edge",
+                "visible": [
+                  "honden-roof",
+                  "bell-tower",
+                  "haiden-roof"
+                ]
+              },
+              {
+                "name": "east-edge",
+                "visible": []
+              }
+            ]
+          },
+          "threshold": "from every spawn and approach point, ≥ 1 navigational landmark is visible",
+          "detail": "visibility = inside the frustum at eye height and not occluded on a ray to the landmark anchor; it does not judge whether the silhouette reads"
+        },
+        {
+          "criterion": "BM-CHAR-02",
+          "element": "E07-CHARACTER",
+          "scenario": "archetype-rim",
+          "method": "frame-measurement",
+          "verdict": "inconclusive",
+          "measured": null,
+          "threshold": "measured luma difference across the enemy edge in every combat framing",
+          "detail": "measurement did not run"
+        },
+        {
+          "criterion": "BM-AUDIO-03",
+          "element": "E13-AUDIO",
+          "scenario": "audio-peak",
+          "method": "instrumented-runtime",
+          "verdict": "pass",
+          "measured": {
+            "samplePeak": 0.23344,
+            "samplePeakDbfs": -12.64,
+            "oversampledEstimateDbfs": -12.64,
+            "windows": 6,
+            "impacts": [
+              "swordHitFlesh",
+              "swordHitArmor",
+              "swordHitWood",
+              "swordHitStone",
+              "clash"
+            ]
+          },
+          "threshold": "≤ -1 dBFS true peak with five simultaneous impacts plus the full bed",
+          "detail": "this is a SAMPLE peak taken post-limiter through an AnalyserNode, with a 4× interpolated estimate beside it. It is not an ITU-R BS.1770 true-peak meter and must not be recorded as one."
+        },
+        {
+          "criterion": "BM-PERF-05",
+          "element": "E15-PERFORMANCE",
+          "scenario": "js-frame-cost",
+          "method": "instrumented-runtime",
+          "verdict": "pass",
+          "measured": {
+            "msPerFrameNoEnemies": 0.872,
+            "msPerFrameThreeEnemies": 2.42,
+            "ratio": 2.8,
+            "heaviestSystem": {
+              "name": "Eh",
+              "msPerFrame": 1.0367
+            },
+            "narrowphaseChecksNoEnemies": 1259,
+            "narrowphaseChecksThreeEnemies": 7339,
+            "colliders": {
+              "statics": 5,
+              "byKind": {
+                "triangleMesh": 5
+              },
+              "triangleMeshTriangles": 2148
+            }
+          },
+          "threshold": "≤ 5 ms JS per frame at MEDIUM (ARCHITECTURE.md §7)",
+          "detail": "Measured in a container, not on a phone — the absolute milliseconds are not device evidence. What is device-independent is the shape: the whole static world is a handful of triangle-mesh colliders totalling ~2.1k triangles, and three engaged enemies drive hundreds of thousands of narrow-phase triangle tests in a single frame."
+        }
+      ],
+      "selfCheckControlSupplement": {
+        "method": "Post-run association of two unmodified independently recorded reports by build fingerprint; not an original in-run control.",
+        "screenshotRuntimeSnapshot": {
+          "drawCalls": 116,
+          "triangles": 732614,
+          "tier": 1
+        },
+        "sameFingerprint": true,
+        "scope": "Both pipelines reported positive actual draws and comparable geometry counts. Exact counter equality and identical scene state are not claimed. Future captures resolve the matching tagged file in-run."
+      }
+    },
+    "candidate": {
+      "revision": {
+        "sha": "7c2ed042b0b9cb3eeef5fb5ff99e691eee5fc140",
+        "branch": "codex/game2-criteria-20260911",
+        "dirty": false
+      },
+      "build": {
+        "fingerprint": "6c7515110a97af0f0f0292f5ea5676859d9829c874164ba9426b67a8da6cd4c7"
+      },
+      "captureReportSHA256": "c80e8f048922660e398ccfb31e0956ef77a1ae9246853a976f2200f7c947160a",
+      "interactionReportSHA256": "3eeccb7ec43b6e498602dceff2d5fdf38ae7ea12b452a31d7ca55c7748a84e10",
+      "sameBuild": true,
+      "capture": {
+        "perShot": {
+          "hero": {
+            "drawCalls": 106,
+            "triangles": 748644
+          },
+          "wide": {
+            "drawCalls": 119,
+            "triangles": 789214
+          },
+          "torii": {
+            "drawCalls": 110,
+            "triangles": 729520
+          },
+          "valley": {
+            "drawCalls": 83,
+            "triangles": 672151
+          },
+          "sun": {
+            "drawCalls": 99,
+            "triangles": 707594
+          }
+        },
+        "worstDrawCalls": 119,
+        "worstTriangles": 789214,
+        "histograms": {
+          "hero": {
+            "width": 2532,
+            "height": 1170,
+            "samples": 2962440,
+            "p01": 0,
+            "p1": 2,
+            "p10": 18,
+            "p25": 37,
+            "p50": 77,
+            "p75": 158,
+            "p90": 177,
+            "p99": 195,
+            "p999": 236,
+            "iqr": 121,
+            "pctBelow16": 8.151,
+            "pctAbove240": 0.047,
+            "pctWarm": 66.979,
+            "pctCool": 16.906,
+            "transparentSkipped": 0,
+            "blackOk": true,
+            "whiteOk": true
+          },
+          "wide": {
+            "width": 2532,
+            "height": 1170,
+            "samples": 2962440,
+            "p01": 11,
+            "p1": 17,
+            "p10": 33,
+            "p25": 49,
+            "p50": 89,
+            "p75": 146,
+            "p90": 161,
+            "p99": 200,
+            "p999": 222,
+            "iqr": 97,
+            "pctBelow16": 0.612,
+            "pctAbove240": 0.005,
+            "pctWarm": 62.513,
+            "pctCool": 14.166,
+            "transparentSkipped": 0,
+            "blackOk": true,
+            "whiteOk": true
+          },
+          "torii": {
+            "width": 2532,
+            "height": 1170,
+            "samples": 2962440,
+            "p01": 0,
+            "p1": 2,
+            "p10": 18,
+            "p25": 42,
+            "p50": 112,
+            "p75": 150,
+            "p90": 162,
+            "p99": 214,
+            "p999": 250,
+            "iqr": 108,
+            "pctBelow16": 9.001,
+            "pctAbove240": 0.285,
+            "pctWarm": 49.672,
+            "pctCool": 34.119,
+            "transparentSkipped": 0,
+            "blackOk": true,
+            "whiteOk": true
+          },
+          "valley": {
+            "width": 2532,
+            "height": 1170,
+            "samples": 2962440,
+            "p01": 0,
+            "p1": 0,
+            "p10": 4,
+            "p25": 31,
+            "p50": 60,
+            "p75": 116,
+            "p90": 194,
+            "p99": 216,
+            "p999": 240,
+            "iqr": 85,
+            "pctBelow16": 16.823,
+            "pctAbove240": 0.095,
+            "pctWarm": 68.612,
+            "pctCool": 5.213,
+            "transparentSkipped": 0,
+            "blackOk": true,
+            "whiteOk": true
+          },
+          "sun": {
+            "width": 2532,
+            "height": 1170,
+            "samples": 2962440,
+            "p01": 0,
+            "p1": 2,
+            "p10": 12,
+            "p25": 38,
+            "p50": 115,
+            "p75": 184,
+            "p90": 208,
+            "p99": 232,
+            "p999": 249,
+            "iqr": 146,
+            "pctBelow16": 13.064,
+            "pctAbove240": 0.239,
+            "pctWarm": 87.597,
+            "pctCool": 1.639,
+            "transparentSkipped": 0,
+            "blackOk": true,
+            "whiteOk": true
+          }
+        },
+        "programs": 117,
+        "errorMessages": [],
+        "images": {
+          "hero": "d1c002e9852b2b2086da8b045588854f2027f4d3978bbd07662eecd51120da75",
+          "wide": "45e1bdd68efdcec5ea5277e999e7107074ca806cc3682f548479ae08c7d741fa",
+          "torii": "ee8e83a417d40882064bf3423fd63e5d4170a667daa5f849a06f6ec0cd37ae20",
+          "valley": "7aa846d0da73b973fcde2f73ed127b770b738a3e296ad3dec65ffff5e4ae4aec",
+          "sun": "5623bb097823226f20d3bd29952f026cf69ef983ef57102aed0cf8c729f17aca"
+        }
+      },
+      "selfCheck": {
+        "determinism": {
+          "frames": 120,
+          "columns": {
+            "px": 0,
+            "pz": 0,
+            "pyaw": 0,
+            "pspeed": 0
+          },
+          "worstAbsoluteDivergence": 0,
+          "identical": true
+        },
+        "renderSubstitution": {
+          "frames": 120,
+          "columns": {
+            "px": 0,
+            "pz": 0,
+            "pyaw": 0,
+            "pspeed": 0
+          },
+          "worstAbsoluteDivergence": 0,
+          "identical": true,
+          "note": "sim-only vs fully-rendered run of an identical stimulus; a non-zero divergence invalidates every render:false trace in this report"
+        },
+        "agreementWithScreenshotRig": {
+          "pose": "hero",
+          "measuredHere": {
+            "draws": 109,
+            "tris": 754600,
+            "tier": "medium"
+          },
+          "screenshotRig": null,
+          "note": "no shots/report.json to compare against in this run"
+        }
+      },
+      "initialMetricSummary": {
+        "criteria": 18,
+        "verdicts": {
+          "pass": 14,
+          "fail": 2,
+          "inconclusive": 2
+        },
+        "elements": 12,
+        "elementsCovered": [
+          "E01-COMBAT",
+          "E02-MOVEMENT",
+          "E03-CAMERA",
+          "E04-EXPLORATION",
+          "E06-NARRATIVE",
+          "E07-CHARACTER",
+          "E08-CHOICE",
+          "E10-TOUCH",
+          "E12-ANIMATION",
+          "E13-AUDIO",
+          "E14-AI",
+          "E15-PERFORMANCE"
+        ],
+        "elementsWithAMeasurement": [
+          "E01-COMBAT",
+          "E02-MOVEMENT",
+          "E03-CAMERA",
+          "E04-EXPLORATION",
+          "E06-NARRATIVE",
+          "E08-CHOICE",
+          "E10-TOUCH",
+          "E12-ANIMATION",
+          "E13-AUDIO",
+          "E14-AI",
+          "E15-PERFORMANCE"
+        ]
+      },
+      "initialResults": [
+        {
+          "criterion": "BM-MOVE-01",
+          "element": "E02-MOVEMENT",
+          "scenario": "move-speeds",
+          "method": "instrumented-runtime",
+          "verdict": "pass",
+          "measured": {
+            "rows": {
+              "walk": {
+                "target": 1.9,
+                "measuredFromPosition": 1.9,
+                "controllerSelfReport": 1.9,
+                "samples": 70
+              },
+              "run": {
+                "target": 5.4,
+                "measuredFromPosition": 5.4,
+                "controllerSelfReport": 5.4,
+                "samples": 70
+              },
+              "sprint": {
+                "target": 7.2,
+                "measuredFromPosition": 7.2,
+                "controllerSelfReport": 7.2,
+                "samples": 70
+              }
+            },
+            "clearance": [
+              {
+                "label": "speed:walk",
+                "metres": 24.89,
+                "blocked": true
+              },
+              {
+                "label": "speed:run",
+                "metres": 24.89,
+                "blocked": true
+              },
+              {
+                "label": "speed:sprint",
+                "metres": 24.89,
+                "blocked": true
+              }
+            ]
+          },
+          "threshold": "within ±5% of 1.9 / 5.4 / 7.2 m/s",
+          "detail": "all three speeds inside ±5%"
+        },
+        {
+          "criterion": "BM-MOVE-03",
+          "element": "E02-MOVEMENT",
+          "scenario": "move-reversal",
+          "method": "interaction-capture",
+          "verdict": "pass",
+          "measured": {
+            "reversals": [
+              {
+                "label": "reversal:0",
+                "turnMs": 217,
+                "responseLatencyMs": 17
+              },
+              {
+                "label": "reversal-back:0",
+                "turnMs": 217,
+                "responseLatencyMs": 17
+              },
+              {
+                "label": "reversal:1",
+                "turnMs": 217,
+                "responseLatencyMs": 17
+              },
+              {
+                "label": "reversal-back:1",
+                "turnMs": 217,
+                "responseLatencyMs": 17
+              },
+              {
+                "label": "reversal:2",
+                "turnMs": 217,
+                "responseLatencyMs": 17
+              },
+              {
+                "label": "reversal-back:2",
+                "turnMs": 217,
+                "responseLatencyMs": 17
+              },
+              {
+                "label": "reversal:3",
+                "turnMs": 217,
+                "responseLatencyMs": 17
+              },
+              {
+                "label": "reversal-back:3",
+                "turnMs": 217,
+                "responseLatencyMs": 17
+              }
+            ],
+            "slowestTurnMs": 217,
+            "worstResponseLatencyMs": 16.7
+          },
+          "threshold": "180° heading change ≤ 250 ms; no input-ignored window > 100 ms",
+          "detail": "all reversals completed"
+        },
+        {
+          "criterion": "BM-MOVE-02",
+          "element": "E02-MOVEMENT",
+          "scenario": "foot-plant",
+          "method": "interaction-capture",
+          "verdict": "pass",
+          "measured": {
+            "contactSamples": 146,
+            "p95DriftCm": 0,
+            "worstDriftCm": 0.044,
+            "contactFloorMetres": [
+              0.085,
+              0.085
+            ],
+            "bandMetres": 0.02,
+            "verticalStillnessMetres": 0.004,
+            "windows": 3,
+            "sampledFrames": 213
+          },
+          "threshold": "planted-foot world drift ≤ 2 cm per frame",
+          "detail": "146 contact samples across walk/run/sprint"
+        },
+        {
+          "criterion": "BM-CAMERA-02",
+          "element": "E03-CAMERA",
+          "scenario": "camera-traverse",
+          "method": "instrumented-runtime",
+          "verdict": "pass",
+          "measured": {
+            "frames": 1896,
+            "framesInsideGeometry": 0,
+            "worstFrameJumpM": 0.14,
+            "framesExcludedNearTeleports": 9
+          },
+          "threshold": "zero frames with the near plane inside a collider; no single-frame pull-in > 1.5 m",
+          "detail": "inside-geometry is a conservative proxy: a solid collider within one near-plane radius of the eye"
+        },
+        {
+          "criterion": "BM-CAMERA-01",
+          "element": "E03-CAMERA",
+          "scenario": "lockon-framing",
+          "method": "interaction-capture",
+          "verdict": "pass",
+          "measured": {
+            "lockedFrames": 344,
+            "bothInCentral80Pct": 1,
+            "framesTargetOffScreen": 0
+          },
+          "threshold": "both bodies inside the central 80% for ≥ 95% of the encounter; target never leaves frame",
+          "detail": "includes a scripted back-into-a-corner leg"
+        },
+        {
+          "criterion": "BM-CAMERA-04",
+          "element": "E03-CAMERA",
+          "scenario": "lockon-framing/lockon-noshake",
+          "method": "interaction-capture",
+          "verdict": "inconclusive",
+          "measured": {
+            "pairDivergenceM": 2.508
+          },
+          "threshold": "target centroid moves ≤ 4% of frame width from shake alone",
+          "detail": "the ablation pair did not stay in lockstep, so the difference is not attributable to shake"
+        },
+        {
+          "criterion": "BM-COMBAT-02",
+          "element": "E01-COMBAT",
+          "scenario": "encounters",
+          "method": "instrumented-runtime",
+          "verdict": "fail",
+          "measured": {
+            "encounters": 20,
+            "enemyDeaths": 33,
+            "postureBreaks": 5,
+            "executions": 15,
+            "postureResolvedFraction": 0.1515
+          },
+          "threshold": "≥ 60% of enemy deaths follow a posture break, over ≥ 20 scripted encounters",
+          "detail": "played by the harness bot policy, not by a human — this is not a play test"
+        },
+        {
+          "criterion": "BM-AI-03",
+          "element": "E14-AI",
+          "scenario": "encounters",
+          "method": "instrumented-runtime",
+          "verdict": "pass",
+          "measured": {
+            "framesWith3PlusEngaged": 5296,
+            "withinLimitFraction": 1,
+            "peakSimultaneousAttackers": 2,
+            "authoredLimit": 2
+          },
+          "threshold": "simultaneous attack commitment inside the authored token limit for ≥ 95% of the encounter",
+          "detail": null
+        },
+        {
+          "criterion": "BM-TOUCH-03",
+          "element": "E10-TOUCH",
+          "scenario": "touch-drags",
+          "method": "interaction-capture",
+          "verdict": "pass",
+          "measured": {
+            "drags": 120,
+            "misfires": 0,
+            "misfireRate": 0,
+            "examples": [],
+            "edgeMargin": {
+              "viewport": {
+                "w": 844,
+                "h": 390
+              },
+              "zones": [
+                {
+                  "name": "guard",
+                  "mode": "hold",
+                  "x": 596,
+                  "y": 302,
+                  "w": 72,
+                  "h": 72
+                },
+                {
+                  "name": "dodge",
+                  "mode": "press",
+                  "x": 596,
+                  "y": 222,
+                  "w": 72,
+                  "h": 72
+                },
+                {
+                  "name": "special",
+                  "mode": "press",
+                  "x": 676,
+                  "y": 174,
+                  "w": 72,
+                  "h": 72
+                },
+                {
+                  "name": "lockOn",
+                  "mode": "press",
+                  "x": 756,
+                  "y": 142,
+                  "w": 72,
+                  "h": 72
+                },
+                {
+                  "name": "interact",
+                  "mode": "press",
+                  "rect": null
+                },
+                {
+                  "name": "pause",
+                  "mode": "press",
+                  "x": 16,
+                  "y": 16,
+                  "w": 64,
+                  "h": 64
+                }
+              ],
+              "buttons": [
+                {
+                  "name": "guard",
+                  "cx": 632,
+                  "cy": 338,
+                  "visualRadius": 28.11627906976744,
+                  "hitRadius": 36
+                },
+                {
+                  "name": "dodge",
+                  "cx": 632,
+                  "cy": 258,
+                  "visualRadius": 28.11627906976744,
+                  "hitRadius": 36
+                },
+                {
+                  "name": "special",
+                  "cx": 712,
+                  "cy": 210,
+                  "visualRadius": 28.11627906976744,
+                  "hitRadius": 36
+                },
+                {
+                  "name": "lockOn",
+                  "cx": 792,
+                  "cy": 178,
+                  "visualRadius": 28.11627906976744,
+                  "hitRadius": 36
+                }
+              ],
+              "smallestVisualDiameterPx": 56.23255813953488,
+              "smallestHitDiameterPx": 72,
+              "zonesInsideEdgeMargin": 0,
+              "edgeMarginBasis": "visible control geometry",
+              "paddedRectsCrossingMargin": 0,
+              "edgeMarginPx": 16
+            }
+          },
+          "threshold": "< 1% of ≥ 100 camera drags produce an unintended slash or press; no gesture starts inside the OS edge margin",
+          "detail": "every drag is authored outside the flick and tap envelopes, so anything it fires is unintended by construction"
+        },
+        {
+          "criterion": "BM-TOUCH-04",
+          "element": "E10-TOUCH",
+          "scenario": "touch-latency",
+          "method": "instrumented-runtime",
+          "verdict": "pass",
+          "measured": {
+            "taps": 60,
+            "registered": 60,
+            "worstDeferralFrames": 0,
+            "histogram": {
+              "0": 60
+            }
+          },
+          "threshold": "a touch event is consumed by game state in the frame it arrives; never deferred more than one frame",
+          "detail": null
+        },
+        {
+          "criterion": "BM-ANIM-01",
+          "element": "E12-ANIMATION",
+          "scenario": "anim-startup",
+          "method": "interaction-capture",
+          "verdict": "fail",
+          "measured": {
+            "attacks": 20,
+            "shortestStartupMs": 0,
+            "medianStartupMs": 450,
+            "idleMotionFloorM": 0.02307
+          },
+          "threshold": "visible startup ≥ 140 ms (EnemyAI REACTION_FLOOR) for every enemy attack",
+          "detail": "first motion above 3× each enemy idle floor within a new attack episode; held tells count, chained attack-clock resets delimit new tells"
+        },
+        {
+          "criterion": "BM-ANIM-02",
+          "element": "E12-ANIMATION",
+          "scenario": "blade-window",
+          "method": "instrumented-runtime",
+          "verdict": "pass",
+          "measured": {
+            "swings": 12,
+            "worstLeadFrames": 0,
+            "worstLagFrames": 0,
+            "sample": [
+              {
+                "activeStart": 60,
+                "activeEnd": 65,
+                "sweepStart": 60,
+                "sweepEnd": 65,
+                "leadFrames": 0,
+                "lagFrames": 0
+              },
+              {
+                "activeStart": 116,
+                "activeEnd": 124,
+                "sweepStart": 116,
+                "sweepEnd": 124,
+                "leadFrames": 0,
+                "lagFrames": 0
+              },
+              {
+                "activeStart": 184,
+                "activeEnd": 202,
+                "sweepStart": 184,
+                "sweepEnd": 202,
+                "leadFrames": 0,
+                "lagFrames": 0
+              },
+              {
+                "activeStart": 231,
+                "activeEnd": 249,
+                "sweepStart": 231,
+                "sweepEnd": 249,
+                "leadFrames": 0,
+                "lagFrames": 0
+              },
+              {
+                "activeStart": 300,
+                "activeEnd": 309,
+                "sweepStart": 300,
+                "sweepEnd": 309,
+                "leadFrames": 0,
+                "lagFrames": 0
+              }
+            ]
+          },
+          "threshold": "weapon-active frames coincide with the visible blade sweep within one frame at both ends",
+          "detail": null
+        },
+        {
+          "criterion": "BM-STORY-03",
+          "element": "E06-NARRATIVE",
+          "scenario": "control-continuity",
+          "method": "interaction-capture",
+          "verdict": "pass",
+          "measured": {
+            "longestNoControlSeconds": 0,
+            "startedAtFrame": -1,
+            "titleBeatSeconds": 4,
+            "playerDisplacementDuringTitleBeatM": 17.166
+          },
+          "threshold": "no non-interactive sequence longer than 5 s outside the title beat; every such beat is skippable",
+          "detail": "measured from a fresh boot with the intro deliberately NOT skipped. A non-zero displacement during the title beat means the beat never took control away, so skippability does not arise for it."
+        },
+        {
+          "criterion": "BM-CHOICE-02",
+          "element": "E08-CHOICE",
+          "scenario": "bell-accident",
+          "method": "interaction-capture",
+          "verdict": "pass",
+          "measured": {
+            "accidentalRingEvents": 0,
+            "deliberateRingEvents": 2,
+            "bellUsedFlagAfterRun": true,
+            "interactablesSeen": [
+              "bell:true",
+              "ema:false",
+              "rest:false",
+              "omikuji:false"
+            ],
+            "objectiveEventsTotal": 2
+          },
+          "threshold": "the bell cannot be rung by accident during combat movement, and its consequence is signalled before the wave commits",
+          "detail": null
+        },
+        {
+          "criterion": "BM-EXPLORE-01",
+          "element": "E04-EXPLORATION",
+          "scenario": "landmark-survey",
+          "method": "interaction-capture",
+          "verdict": "pass",
+          "measured": {
+            "points": 8,
+            "anchorsResolved": 4,
+            "pointsWithNoLandmark": 0,
+            "blindPoints": [],
+            "perPoint": [
+              {
+                "name": "stair-top",
+                "visible": [
+                  "great-torii",
+                  "haiden-roof",
+                  "honden-roof",
+                  "bell-tower"
+                ]
+              },
+              {
+                "name": "first-torii",
+                "visible": [
+                  "great-torii",
+                  "haiden-roof",
+                  "bell-tower"
+                ]
+              },
+              {
+                "name": "second-torii",
+                "visible": [
+                  "great-torii",
+                  "honden-roof",
+                  "bell-tower"
+                ]
+              },
+              {
+                "name": "arena",
+                "visible": [
+                  "haiden-roof",
+                  "honden-roof"
+                ]
+              },
+              {
+                "name": "chozuya",
+                "visible": [
+                  "haiden-roof",
+                  "honden-roof"
+                ]
+              },
+              {
+                "name": "ema-rack",
+                "visible": [
+                  "haiden-roof",
+                  "honden-roof",
+                  "bell-tower"
+                ]
+              },
+              {
+                "name": "west-edge",
+                "visible": [
+                  "haiden-roof",
+                  "honden-roof",
+                  "bell-tower"
+                ]
+              },
+              {
+                "name": "east-edge",
+                "visible": [
+                  "bell-tower"
+                ]
+              }
+            ]
+          },
+          "threshold": "from every spawn and approach point, ≥ 1 navigational landmark is visible",
+          "detail": "visibility = inside the frustum at eye height and not occluded on a ray to the landmark anchor; it does not judge whether the silhouette reads"
+        },
+        {
+          "criterion": "BM-CHAR-02",
+          "element": "E07-CHARACTER",
+          "scenario": "archetype-rim",
+          "method": "frame-measurement",
+          "verdict": "inconclusive",
+          "measured": null,
+          "threshold": "measured luma difference across the enemy edge in every combat framing",
+          "detail": "measurement did not run"
+        },
+        {
+          "criterion": "BM-AUDIO-03",
+          "element": "E13-AUDIO",
+          "scenario": "audio-peak",
+          "method": "instrumented-runtime",
+          "verdict": "pass",
+          "measured": {
+            "samplePeak": 0.22604,
+            "samplePeakDbfs": -12.92,
+            "oversampledEstimateDbfs": -12.92,
+            "windows": 6,
+            "impacts": [
+              "swordHitFlesh",
+              "swordHitArmor",
+              "swordHitWood",
+              "swordHitStone",
+              "clash"
+            ]
+          },
+          "threshold": "≤ -1 dBFS true peak with five simultaneous impacts plus the full bed",
+          "detail": "this is a SAMPLE peak taken post-limiter through an AnalyserNode, with a 4× interpolated estimate beside it. It is not an ITU-R BS.1770 true-peak meter and must not be recorded as one."
+        },
+        {
+          "criterion": "BM-PERF-05",
+          "element": "E15-PERFORMANCE",
+          "scenario": "js-frame-cost",
+          "method": "instrumented-runtime",
+          "verdict": "pass",
+          "measured": {
+            "msPerFrameNoEnemies": 1.196,
+            "msPerFrameThreeEnemies": 2.44,
+            "ratio": 2,
+            "heaviestSystem": {
+              "name": "Oh",
+              "msPerFrame": 0.8733
+            },
+            "narrowphaseChecksNoEnemies": 3661,
+            "narrowphaseChecksThreeEnemies": 7551,
+            "colliders": {
+              "statics": 5,
+              "byKind": {
+                "triangleMesh": 5
+              },
+              "triangleMeshTriangles": 2148
+            }
+          },
+          "threshold": "≤ 5 ms JS per frame at MEDIUM (ARCHITECTURE.md §7)",
+          "detail": "Measured in a container, not on a phone — the absolute milliseconds are not device evidence. What is device-independent is the shape: the whole static world is a handful of triangle-mesh colliders totalling ~2.1k triangles, and three engaged enemies drive hundreds of thousands of narrow-phase triangle tests in a single frame."
+        }
+      ],
+      "selfCheckControlSupplement": {
+        "method": "Post-run association of two unmodified independently recorded reports by build fingerprint; not an original in-run control.",
+        "screenshotRuntimeSnapshot": {
+          "drawCalls": 119,
+          "triangles": 791066,
+          "tier": 1
+        },
+        "sameFingerprint": true,
+        "scope": "Both pipelines reported positive actual draws and comparable geometry counts. Exact counter equality and identical scene state are not claimed. Future captures resolve the matching tagged file in-run."
+      }
+    }
+  },
+  "limits": [
+    "The two versions use different harness policies and metrics; differences are not identical-stimulus A/B treatment effects.",
+    "The 120-frame determinism/render-substitution comparison passed in both versions. The tagged screenshot file was not linked by the original self-check; original reports remain unchanged.",
+    "Official reference stills are being inspected by an independent version-blind model critic; this is not a human study.",
+    "Software rendering and container CPU times are not phone frame-rate, boot or thermal evidence.",
+    "Sample audio peak is not an ITU true-peak result; its initial metric PASS must not be promoted to verified BM-AUDIO-03."
+  ]
+}
