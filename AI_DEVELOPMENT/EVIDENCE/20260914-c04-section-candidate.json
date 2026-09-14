@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T07:26:09.478Z",
+  "baseRuntime": "3d5ecfa33df6c1a15b26403df71f18ef19573ac2",
+  "baseHead": "8610a367d4eb834f441c44f2d59f203979010337",
+  "requirements": "AI_DEVELOPMENT/FRESH_DESIGN.md:参照実画像から開始区間の生成方法を変更",
+  "diagnosis": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-actual-gap.json",
+  "implementation": [
+    "Shared triangulated terrain sampler for ground mesh, plant roots, actor feet and camera elevation; preserve level verified central combat path.",
+    "Regroup grass from6000 single blades x6triangles to3000clumps x3 tapered blades x4triangles, preserving36000 grass triangles; shared wind phase across grass and leaf crowns.",
+    "Generate broader pointed bamboo leaf sprays, side outcrops, soil-bank color patches and irregular stone courses; place lanterns outside the main combat strip.",
+    "Align sky sun and directional light; distinguish atmosphere and material values. Keep reference media completely outside runtime.",
+    "Shrink the decorative shrine plinth to its existing solid collision footprint so a stopped actor is not buried by a protruding cosmetic base."
+  ],
+  "preserved": [
+    "Three.js and all assets generated at startup; no external runtime media",
+    "Combat, enemy positions, damage, mission and180second checks unchanged",
+    "Fixed instructions, all ten comparison boundaries/references and sample thresholds unchanged"
+  ],
+  "localVerification": {
+    "tests": 42,
+    "result": "passed",
+    "build": "passed",
+    "bundleKb": 545.46,
+    "gzipKb": 143.38,
+    "warning": "Existing over500kB bundle warning retained; not suppressed",
+    "geometryVerification": "Raycasts against actual Three.js PlaneGeometry triangles agree with ground sampler within1e-5 across diagonal interior samples; level central corridor and solid footprint constraints passed."
+  },
+  "remoteVerification": null,
+  "independentReview": null,
+  "formalVerdict": "not measured",
+  "workUnitEnded": false,
+  "nextWork": "Verify the integrated C04 approach-section candidate on exact head once:42 tests/build, all real PC/touch mission and recovery checks, continuous video decode, plant-root agreement and unchanged grass triangle budget. Independently compare against3d5ecfa at ordinary start/approach/combat and ending, including plinth/foot visibility. Keep C04 and all ten whole-element verdicts not measured. Retain actual reference images and source-labelled gap diagnosis separately from runtime. Then acquire the identified official continuous media and complete the still-missing whole-element coverage."
+}

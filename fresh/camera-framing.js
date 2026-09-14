@@ -1,8 +1,10 @@
 import {SIGNAL} from './mission.js';
+import {groundHeightAt} from './terrain.js';
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
 
 export function computeCameraFrame(world,orbit,aspect,out){
   const p=world.player;
+  const ground=groundHeightAt(p.x,p.z);
   if(world.mode==='victory'){
     const portrait=aspect<.8;
     const wide=aspect>1.9;
@@ -26,19 +28,19 @@ export function computeCameraFrame(world,orbit,aspect,out){
     const side=portrait?1.25+close*1.45:clamp(1.55+aspect*.28,1.75,2.15)+close*1.95;
     const lead=Math.min(2.35,distance*.38);
     out.x=p.x-nx*back+nz*side;
-    out.y=p.hp>0?3:2.5;
+    out.y=ground+(p.hp>0?3:2.5);
     out.z=p.z-nz*back-nx*side;
     out.lookX=p.x+nx*lead;
-    out.lookY=1.25;
+    out.lookY=ground+1.25;
     out.lookZ=p.z+nz*lead;
     return out;
   }
   const cos=Math.cos(orbit),sin=Math.sin(orbit);
   out.x=p.x+.85*cos+5.8*sin;
-  out.y=(p.hp>0?0:-.3)+2.8;
+  out.y=ground+(p.hp>0?0:-.3)+2.8;
   out.z=p.z-.85*sin+5.8*cos;
   out.lookX=p.x;
-  out.lookY=1.25;
+  out.lookY=ground+1.25;
   out.lookZ=p.z-.6;
   return out;
 }

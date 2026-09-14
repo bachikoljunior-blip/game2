@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T07:26:09.478Z",
+  "element": "C04",
+  "reference": "GT",
+  "candidateRuntime": "3d5ecfa33df6c1a15b26403df71f18ef19573ac2",
+  "acquisition": {
+    "commit": "8610a367d4eb834f441c44f2d59f203979010337",
+    "run": 34816610445,
+    "url": "https://github.com/bachikoljunior-blip/game2/actions/runs/34816610445",
+    "artifact": {
+      "archive_download_url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10335584800/zip",
+      "created_at": "2026-09-14T07:10:36Z",
+      "digest": "sha256:bacdb7d30fb8dc1b84016e381a7cce1fa68cd2c5af21f7cc2d17a37335522024",
+      "expired": false,
+      "expires_at": "2026-12-13T07:10:25Z",
+      "id": 10335584800,
+      "name": "c04-reference-8610a367d4eb834f441c44f2d59f203979010337",
+      "size_in_bytes": 188241,
+      "updated_at": "2026-09-14T07:10:36Z",
+      "url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10335584800",
+      "workflow_run": {
+        "head_branch": "codex/game2-rebuild-20260913",
+        "head_repository_id": 1316876624,
+        "head_sha": "8610a367d4eb834f441c44f2d59f203979010337",
+        "id": 34816610445,
+        "repository_id": 1316876624
+      }
+    },
+    "report": {
+      "element": "C04",
+      "errors": [],
+      "finishedAt": "2026-09-14T07:10:35.270775+00:00",
+      "formalVerdict": "not measured",
+      "kind": "actual reference acquisition, not a quality verdict",
+      "materials": [
+        {
+          "article": "https://blog.playstation.com/2020/07/09/crafting-the-world-of-tsushima/",
+          "bytes": 98194,
+          "file": "world-20200709.jpg",
+          "finalUrl": "https://blog.playstation.com/tachyon/2020/07/200709-GoT-Env-Featured.jpg?crop_strategy=smart&resize=1088%2C612",
+          "id": "GT-WORLD-20200709",
+          "mime": "image/jpeg",
+          "retrievedAt": "2026-09-14T07:10:33.583433+00:00",
+          "scope": "Official article featured image. Confirm actual rendered content visually after acquisition; a promotional still does not establish a continuous retail play route.",
+          "sha256": "dcd4c0af283cf2c482d28a31d3813f54ce6f8de9f92d2102cd90df0e4a65db0b",
+          "status": "acquired",
+          "url": "https://blog.playstation.com/tachyon/2020/07/200709-GoT-Env-Featured.jpg?crop_strategy=smart&resize=1088%2C612"
+        },
+        {
+          "article": "https://blog.playstation.com/2021/01/12/how-stunning-visual-effects-bring-ghost-of-tsushima-to-life/",
+          "bytes": 94182,
+          "file": "effects-20210112.jpg",
+          "finalUrl": "https://blog.playstation.com/tachyon/2021/01/Ghost-VFX-FI.jpg?crop_strategy=smart&resize=1088%2C612",
+          "id": "GT-VFX-20210112",
+          "mime": "image/jpeg",
+          "retrievedAt": "2026-09-14T07:10:34.156523+00:00",
+          "scope": "Official post-release article featured image. Confirm actual rendered content visually; still imagery cannot measure wind, interaction, navigation, audio, or frame pacing.",
+          "sha256": "bc301f49a851c5cb60d745f022c5c09cfccbfe2afedfa17181e6f163dfe92c06",
+          "status": "acquired",
+          "url": "https://blog.playstation.com/tachyon/2021/01/Ghost-VFX-FI.jpg?crop_strategy=smart&resize=1088%2C612"
+        }
+      ],
+      "pageMedia": [
+        {
+          "article": "https://blog.playstation.com/2020/07/09/crafting-the-world-of-tsushima/",
+          "mediaLinks": [
+            "https://blog.playstation.com/2020/07/09/crafting-the-world-of-tsushima/",
+            "https://gfycat.com/ifr/crispshamelessalaskanhusky",
+            "https://gfycat.com/ifr/deafeningreasonablegrayling",
+            "https://gfycat.com/ifr/lankyeasybeaver",
+            "https://gfycat.com/ifr/oldfashionedjitteryantlion",
+            "https://gfycat.com/ifr/parchednecessarygardensnake",
+            "https://gfycat.com/ifr/plushimpurehairstreak"
+          ],
+          "status": "read"
+        },
+        {
+          "article": "https://blog.playstation.com/2021/01/12/how-stunning-visual-effects-bring-ghost-of-tsushima-to-life/",
+          "mediaLinks": [
+            "https://blog.playstation.com/2021/01/12/how-stunning-visual-effects-bring-ghost-of-tsushima-to-life/",
+            "https://stream.mux.com/00sY5fLi501LuG1XRvj02KBVmvENDAGhtcPkbi902CKyFjQ/capped-1080p.mp4",
+            "https://stream.mux.com/3W16fQURXw6lNzzb1fZ4KubX00hs4LjVFPZesIUhV4MY/capped-1080p.mp4",
+            "https://stream.mux.com/4q4xPWQ02U2Fz02SLo4QB1AtQK8VZU7tOD4s7vqF7yE00Q/capped-1080p.mp4",
+            "https://stream.mux.com/6UVkwcHlU4Pe2HjGARTtEHj41xTvw01fgAVFNqJutdKs/capped-1080p.mp4",
+            "https://stream.mux.com/6sxHzxd02E2qgDNre3WZFKbW9Lf02xko9kYTndhFv02hB4/capped-1080p.mp4",
+            "https://stream.mux.com/U01gJAlYTJfopfL8M026bF9Jqg02n5e9ARjnZiWz3Xy4uM/capped-1080p.mp4",
+            "https://stream.mux.com/W3iMGpb22H02Yv9GOxIx3VIIHOmKD7jZBXr01RNIEIYXw/capped-1080p.mp4",
+            "https://stream.mux.com/aMIPIFCMIXUynO00TvsM00CFX9Sw6O016JWPFZEzD02oTto/capped-1080p.mp4",
+            "https://stream.mux.com/uqADIZsrldzeyW1WwGiBUwAvCE02dJEidE4eUV02rDMqE/capped-1080p.mp4",
+            "https://stream.mux.com/zPwtxwYgOlDxEXshVCsxsSEIN8STWAFt0001p019Rg3d7k/capped-1080p.mp4"
+          ],
+          "status": "read"
+        }
+      ],
+      "result": "acquired; pixel inspection pending",
+      "sourceRevision": "8610a367d4eb834f441c44f2d59f203979010337",
+      "startedAt": "2026-09-14T07:10:32.951371+00:00"
+    },
+    "localDecode": "Both1088x612 JPEGs fully decoded; ZIP and image SHA-256 matched",
+    "localNetworkObservation": "Direct local image request timed out after30seconds. Normal authorized game2 comparison-acquisition CI retrieved both successfully; no access control or approval was bypassed.",
+    "storage": "AI_DEVELOPMENT/COMPARISON_MEDIA/C04/; comparison-only, outside the fresh Vite root and not imported into runtime."
+  },
+  "materialLimits": [
+    "Both images carry a PS4 Pro capture label and show actual rendered scenes; the2020 image predates release so exact retail-build equivalence is unverified.",
+    "The images are selected promotional stills with different perspectives and lighting. The first is an elevated vista; the second is a player-facing path. Neither is a continuous comparable route.",
+    "The source is known. No source-blind evaluator or whole-C04 verdict has been acquired.",
+    "The official2020 page links to Gfycat; one observed embedded link returned502. The2021 page currently exposes native Mux MP4 media, whose stable identifiers are preserved here; token-bearing query strings are omitted and must be refreshed from the page for retrieval."
+  ],
+  "independentDiagnosis": {
+    "reviewer": "review_capture",
+    "kind": "Source-labelled actual-image gap diagnosis",
+    "candidateImages": [
+      "encounter.png",
+      "mobile.png",
+      "desktop-sequence.jpg"
+    ],
+    "referenceImages": [
+      "world-20200709.jpg",
+      "effects-20210112.jpg"
+    ],
+    "priorityGaps": [
+      "Terrain, path and sightline composition: uniform straight paving and shallow land reveal the shrine with little change along the approach.",
+      "Vegetation, ground and architecture: isolated blades, thin planar bamboo leaves and uniform surfaces lack coherent cover and convincing ground contact.",
+      "Light and atmospheric depth: gray-green midtones flatten foreground, middle distance and background."
+    ],
+    "decision": "Make the first approach section as one terrain/path/vegetation/light unit; further panel micro-adjustments do not address these gaps. Compare normal approach and combat views and record production time.",
+    "limits": "Do not copy reference layouts, art or assets. Do not make the large vista's scale an extra scoring requirement. Motion, navigation, source concealment and full C04 remain unmeasured."
+  },
+  "formalVerdict": "not measured",
+  "workUnitEnded": false,
+  "nextWork": "Verify the integrated C04 approach-section candidate on exact head once:42 tests/build, all real PC/touch mission and recovery checks, continuous video decode, plant-root agreement and unchanged grass triangle budget. Independently compare against3d5ecfa at ordinary start/approach/combat and ending, including plinth/foot visibility. Keep C04 and all ten whole-element verdicts not measured. Retain actual reference images and source-labelled gap diagnosis separately from runtime. Then acquire the identified official continuous media and complete the still-missing whole-element coverage."
+}

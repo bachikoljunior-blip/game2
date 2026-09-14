@@ -50,6 +50,9 @@ const desktopRecording=recording('desktop',desktopSize);
 const desktopStarted=Date.now();
 try{
  await page.goto('http://127.0.0.1:4178/?diagnostic=1');await page.waitForFunction(()=>window.freshDiagnostics?.().render.calls>0);mark(desktopRecording,'title-ready',desktopSize);
+ report.landscape=await page.evaluate(()=>freshDiagnostics().landscape);
+ assert.ok(report.landscape.maxRootError<1e-5,'plant roots agree with the rendered ground');
+ assert.ok(report.landscape.grassTriangles<=36000,'clustered grass preserves its prior triangle budget');
  await page.screenshot({path:new URL('title.png',out).pathname});
  await page.click('#start');await page.keyboard.down('KeyW');
  await page.waitForFunction(()=>freshDiagnostics().world.player.z<8,{},{timeout:90000});await page.keyboard.up('KeyW');

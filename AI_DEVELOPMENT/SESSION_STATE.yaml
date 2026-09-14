@@ -10,11 +10,11 @@
     "workingBranch": "codex/game2-rebuild-20260913",
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
-    "activeTask": "FRESH-REFERENCE-MATERIAL-GAP",
-    "lastSuccessfulAction": "3d5ecfa / CI34815082823 passed39 tests/build, both real-input missions/retry and full video decode/provenance. Independent sampled image review confirmed removal of observed extreme overhead close-ups; foreground occlusion and sword readability remain.",
+    "activeTask": "FRESH-C04-APPROACH-SECTION",
+    "lastSuccessfulAction": "3d5ecfa / CI34815082823 passed39 tests/build, both real-input missions/retry and full video decode/provenance. Independent sampled image review confirmed removal of observed extreme overhead close-ups; foreground occlusion and sword readability remain. C04 retained-reference imagery acquired via8610a367 / CI34816610445; ZIP and both images decoded/hash-verified; independent diagnosis isolated terrain/sightline, vegetation/grounding and light-depth gaps.",
     "currentFailingAction": null,
     "currentHypothesis": null,
-    "nextAction": "Acquire actual paired reference material for retained C04 first, record what the material covers and lacks, and use independent diagnosis to identify the largest scene/actor gap. Keep full-element blind verdicts not measured until whole scope and source concealment are valid. Remaining demonstrated camera issues are foreground stone-lantern occlusion and thin weapon/contact readability; ending feet also look hidden by the shrine plinth. Do not repeat the successful 3d5ecfa CI.",
+    "nextAction": "Verify the integrated C04 approach-section candidate on exact head once:42 tests/build, all real PC/touch mission and recovery checks, continuous video decode, plant-root agreement and unchanged grass triangle budget. Independently compare against3d5ecfa at ordinary start/approach/combat and ending, including plinth/foot visibility. Keep C04 and all ten whole-element verdicts not measured. Retain actual reference images and source-labelled gap diagnosis separately from runtime. Then acquire the identified official continuous media and complete the still-missing whole-element coverage.",
     "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
     "pendingVerification": [
       "Whole-element actual candidate/reference pairs with valid source concealment",
@@ -26,17 +26,17 @@
       "Source-blind comparison for every whole concept element"
     ],
     "modifiedFiles": [
-      "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-camera-transition.json",
       "AI_DEVELOPMENT/FRESH_DESIGN.md",
-      "AI_DEVELOPMENT/REBUILD_STATE.yaml",
       "AI_DEVELOPMENT/SESSION_STATE.yaml",
-      "fresh/browser-smoke.mjs",
-      "fresh/camera-framing.js",
-      "fresh/camera-framing.test.js",
-      "fresh/main.js",
+      "AI_DEVELOPMENT/REBUILD_STATE.yaml",
+      "AI_DEVELOPMENT/EVIDENCE/20260914-c04-actual-gap.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260914-c04-section-candidate.json",
+      "fresh/terrain.js",
+      "fresh/terrain.test.mjs",
       "fresh/presentation.js",
-      "fresh/simulation.js",
-      "fresh/simulation.test.js"
+      "fresh/camera-framing.js",
+      "fresh/main.js",
+      "fresh/browser-smoke.mjs"
     ],
     "remotePushPendingAuthorization": false,
     "remoteReleaseAuthorized": true,
@@ -122,7 +122,9 @@
       "AI_DEVELOPMENT/EVIDENCE/20260914-production-refire-28ff67c.json",
       "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-victory-panel-candidate.json",
       "AI_DEVELOPMENT/EVIDENCE/20260914-unknown-method-change.json",
-      "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-camera-transition.json"
+      "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-camera-transition.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260914-c04-actual-gap.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260914-c04-section-candidate.json"
     ],
     "publicRuntimeRevision": "86512c3bfdc69e03b5b490d9b0d79ec9da141343"
   },
@@ -134,19 +136,20 @@
     "completion": "All concept elements satisfied by evidenced blind comparison.",
     "current_unit": "2026-09-13-fresh-design",
     "unit_status": "active",
-    "first_action": "Acquire actual paired reference material for retained C04 first, record what the material covers and lacks, and use independent diagnosis to identify the largest scene/actor gap. Keep full-element blind verdicts not measured until whole scope and source concealment are valid. Remaining demonstrated camera issues are foreground stone-lantern occlusion and thin weapon/contact readability; ending feet also look hidden by the shrine plinth. Do not repeat the successful 3d5ecfa CI.",
+    "first_action": "Verify the integrated C04 approach-section candidate on exact head once:42 tests/build, all real PC/touch mission and recovery checks, continuous video decode, plant-root agreement and unchanged grass triangle budget. Independently compare against3d5ecfa at ordinary start/approach/combat and ending, including plinth/foot visibility. Keep C04 and all ten whole-element verdicts not measured. Retain actual reference images and source-labelled gap diagnosis separately from runtime. Then acquire the identified official continuous media and complete the still-missing whole-element coverage.",
     "implementation_strategy": "Fresh design and implementation; needs-before-reuse, per latest direct user instruction.",
     "unitEndReason": null,
     "deadlineReassessment": {
-      "observedAt": "2026-09-14T07:04:29.685Z",
+      "observedAt": "2026-09-14T07:26:09.478Z",
       "prediction": "unknown; no actual whole-element source-blind verdict yet. This continues to trigger methods review and missing-evidence acquisition, not feasibility assurance.",
       "basis": "About145.5 hours remain. All ten verdicts are not measured and reference selection is incomplete. Four recent successful functional CIs established execution and narrower static issues, but produced no whole-element verdict. Previous browser evidence contains screenshots and state, not reviewable continuous gameplay files. This prevents an evidence-based estimate of the remaining quality gap and comparison throughput.",
-      "methodChange": "Keep PC/phone rendering isolated and their existing mission deadlines/assertions. Save the same real-input runs as continuous videos; independently decode every frame and record dimensions, duration, hashes and missing audio. Fix the already-recorded ending issues in the same candidate. Then prioritize actual reference/candidate comparison material over further isolated cosmetic passes. The saved continuous samples exposed a core combat defect: reproduce and correct homing-dodge reversals and camera orbit collapse as one input/camera change before further cosmetic work.",
+      "methodChange": "Keep PC/phone rendering isolated and their existing mission deadlines/assertions. Save the same real-input runs as continuous videos; independently decode every frame and record dimensions, duration, hashes and missing audio. Fix the already-recorded ending issues in the same candidate. Then prioritize actual reference/candidate comparison material over further isolated cosmetic passes. The saved continuous samples exposed a core combat defect: reproduce and correct homing-dodge reversals and camera orbit collapse as one input/camera change before further cosmetic work. Actual retained-reference images have now been acquired. Independent comparison diagnosed three dominant C04 gaps; production shifts to the generated approach section as one terrain, ground, vegetation and lighting unit. Roots and feet sample the actual triangulated height field, grass is regrouped within the prior triangle budget, and the shrine plinth uses the collision footprint.",
       "validation": "Two complete retrievable continuous files replace absent video evidence:98.12s/2453 decoded frames desktop and99.6s/2490 frames touch. Both missions/recordings passed in the same CI. Browser wall durations98.054s and99.114s versus prior97.242s/97.465s are single-run observations, not a controlled overhead estimate. Independent sampled review exposed close-combat overhead camera/actor overlap previously absent from saved stills. Typography and CTA gaps closed at the measured viewports. Whole-element forecast remains unknown until actual reference comparisons. New continuous records exposed reproducible dodge reversal/camera collapse; correction passed39 tests and actual missions. New camera minima5.9100/5.8055m and maximum down angles16.4944/16.7747deg, plus independent image review, confirm the observed overhead symptom improved. Obstacle/weapon/actor quality gaps remain. Neither small-fix throughput nor functional passes predict the whole-element deadline.",
       "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-unknown-method-change.json",
-      "remainingHoursAtObservation": 144.78980972222223,
-      "nextMethodChange": "Stop further isolated ending-polish iterations at this checkpoint. Acquire actual retained-reference material alongside the already recorded candidate, document whole-element coverage gaps, and independently identify the dominant production gap before allocating the next implementation effort.",
-      "cameraEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-camera-transition.json"
+      "remainingHoursAtObservation": 144.4287561111111,
+      "nextMethodChange": "Measure this integrated section against the previous actual play record and the diagnosed functions of depth, cover and material. Acquire continuous reference material from the media links verified in the official post-release page. No more panel-only changes as the principal C04 task.",
+      "cameraEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-camera-transition.json",
+      "c04Evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-actual-gap.json"
     },
     "latestDeadlineInstruction": {
       "userOriginal": "継続確認の後、期限内に達成できるか考え、できないや分からないと判断したならやり方が間違ってることを疑え",
