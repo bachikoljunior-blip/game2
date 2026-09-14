@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-14T11:32:47Z",
-  "phase": "fresh-c04-whole-element-coverage",
+  "updatedAt": "2026-09-14T15:06:00Z",
+  "phase": "fresh-c04-branching-route",
   "userInstruction": "一旦ゲーム自体はゼロから作り直してくれる？",
   "activeBranch": "codex/game2-rebuild-20260913",
   "fixedInstructions": "AI_DEVELOPMENT/FIXED_INSTRUCTIONS.md",
@@ -15,20 +15,20 @@
     "oldPr": 10,
     "optionalRebuildRouting": "ec2480166809f57fa623929bec0fbcb4d5a623a2"
   },
-  "continuation": "Batch encounter camera obstacle avoidance, lamp/player depth and actor form in one render cycle while acquiring an alternate ordinary-play C04 source that does not require age-gate or anti-bot bypass. Keep all10 formal elements not measured until valid source-blind pairs exist; prioritize completing the five dossiers and first whole-element blind comparison.",
+  "continuation": "Design and implement a readable physical C04 branch before the shrine, give both routes a perceivable landmark/consequence and reconvergence, verify both with actual PC/touch input, recapture the whole route and repeat the independent source-concealed material gate. Do not repeat the invalid straight-route packet.",
   "status": "not measured",
   "publication": "Keep old Pages until a verified replacement is ready. Fresh runtime is a work-branch candidate, not public product acceptance.",
   "procedureAuthority": "Fixed instructions and explicit user directives govern. Tests, task plans and architecture documents are tools chosen by the AI, not additional fixed rules.",
   "coordination": "Check recent commits and running CI; if another producer is active, read only. No force push or duplicate work.",
   "latestUserInstruction": "やっぱりゲーム自体はゼロから作り直して、作ろうとしたものが既存のものにあったら使える部分だけ取ってきて。既存のものを先に見てそのまま使うなどしないで",
   "decisionEvidence": "AI_DEVELOPMENT/FRESH_DESIGN.md",
-  "verifiedRuntime": "44ce5a67ad00f63ffc8c908d02db5c320d23d7ca",
-  "verificationScope": "47tests/build, actual PC/touch missions/ending/portrait/retry, silent recording integrity, and exact-revision before/after image diagnosis. Not full motion/audio, smartphone performance or source-blind acceptance.",
+  "verifiedRuntime": "c18a5fd1051b15471b3ca0ba3a129ccfc943596a",
+  "verificationScope": "49tests/build, actual Chromium PC/touch missions/ending/portrait/retry, foreground-post and actor-layer browser assertions, two silent recording decodes, exact-revision before/after images, and one independent anonymous material gate. Not audio, physical smartphone performance or a valid source-blind verdict.",
   "comparisonCatalog": "AI_DEVELOPMENT/COMPARISON_ELEMENTS.yaml",
   "referenceSelectionComplete": false,
-  "verificationEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-method-recovery-scene-actor.json",
+  "verificationEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-scene-c04-attempt.json",
   "pendingCandidate": null,
-  "methodChangeEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-method-recovery-scene-actor.json",
+  "methodChangeEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-scene-c04-attempt.json",
   "recoveryRole": {
     "userInstruction": "定期オートメーションは万が一実行が停止していたら、停止してしまう原因を全て潰してから再開する再発火役にしてください。",
     "status": "production_restarted_and_verified",
@@ -53,40 +53,79 @@
     "requiredEachRun": true,
     "userInstruction": "ゲーム制作をしている三つのオートメーションをそれぞれ定期実行時にその時点のゲーム実装状態をメインブランチに反映するようにして",
     "sourceBranch": "codex/game2-rebuild-20260913",
-    "sourceCheckpoint": "ce597b8bd7a697ce7a4abc176d41985eb0ea363f",
-    "verifiedRuntime": "44ce5a67ad00f63ffc8c908d02db5c320d23d7ca",
-    "pullRequest": 15,
-    "resultMainSha": "06a5a2ce7939f8d889bd54b28420d3fb3e8da1fd",
+    "sourceCheckpoint": "c18a5fd1051b15471b3ca0ba3a129ccfc943596a",
+    "verifiedRuntime": "c18a5fd1051b15471b3ca0ba3a129ccfc943596a",
+    "pullRequest": 17,
+    "resultMainSha": "38798e8508bdb4cfa96c419cd76a8ebc6c267d20",
     "postMergeTreeDifferenceFiles": 0,
     "sourceVerification": {
-      "run": 34838395942,
+      "run": 34857008423,
       "conclusion": "success",
-      "coverage": "47 tests, build, actual PC and touch full combat-to-signal-to-ending flow, portrait layout, retry and continuous recording decode"
+      "coverage": "49 tests, build, actual PC and touch full combat-to-signal-to-ending flow, foreground-post and actor-layer assertions, portrait layout, retry and two continuous recording decodes"
     },
     "mainIphone": {
-      "run": 34839153196,
+      "run": 34859690633,
       "conclusion": "success"
     },
     "pages": {
-      "run": 34839152328,
+      "run": 34859690176,
       "conclusion": "success"
     },
     "completionClaim": false,
-    "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-main-reflection-44ce5a67.json"
+    "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-scene-c04-attempt.json"
   },
   "deadlineReassessment": {
-    "observedAt": "2026-09-14T11:32:47Z",
+    "observedAt": "2026-09-14T15:06:00Z",
     "prediction": "not yet grounded as can meet; under the latest instruction this means the current method is defective.",
-    "basis": "Ten formal comparisons and five dossiers remain incomplete. Three ordinary-play acquisition routes were tested but yielded no actual media. Candidate44ce5a67 completed one integrated visual cycle and full functional verification.",
-    "methodChange": "Stop using the blocked C04 route as the only next step. Batch all independently observed scene/actor gaps per render cycle and pursue alternate lawful media routes alongside candidate capture, with the first valid whole-element blind pair as the next scheduling gate.",
-    "validation": "Candidate44ce5a67 reduced four stored visual gaps in one cycle. CI34838395942 passed47 tests, build, PC/touch missions and recording decode; exact images show cleared foreground grass, distinct blades, added actor forms and a sheathed calm ending. Formal uncertainty remains because no valid reference pair exists.",
-    "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-method-recovery-scene-actor.json",
-    "remainingHoursAtObservation": 140.32,
-    "nextMethodChange": "Reflect source44ce5a67 to main, then produce one batched camera/depth/actor candidate and obtain a comparison-ready ordinary-play source through a non-gated route. Start the first valid source-blind comparison before further isolated polish."
+    "basis": "Ten formal comparisons and five dossiers remain incomplete. A fully decoded continuous C04 reference now exists, but the first anonymous material gate proved that the candidate has no fork or selectable alternate route.",
+    "methodChange": "Batch the three stored screen-hierarchy defects, acquire lawful real comparison media in parallel, and place an independent material-validity gate before accepting any verdict. The gate changed the next priority from source hunting or isolated polish to candidate route structure.",
+    "validation": "c18a5fd reduced the stored occlusion/light/actor gaps and CI34857008423 passed49 tests, build, PC/touch missions and two recording decodes. Both reference files fully decoded. C04-BLIND-ATTEMPT-01 identified the missing candidate fork before source recognition or preference, preventing a false verdict.",
+    "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-scene-c04-attempt.json",
+    "remainingHoursAtObservation": 136.76,
+    "nextMethodChange": "Implement and verify the C04 branch before rebuilding the anonymous packet; do not retry the invalid straight-route comparison."
   },
   "localEnvironment": {
-    "status": "workspace_capacity_recovered_browser_flow_pending_ci",
-    "issue": "The previous ENOSPC condition is absent in the recovered workspace. The local Playwright browser cache is unavailable and workspace-path installation cannot maintain its directory lock.",
-    "consequence": "Fresh clone, npm ci, 47 tests and build succeed locally. Full PC/touch rendered flow must be measured by the unchanged GitHub workflow before this candidate is treated as verified."
+    "status": "clean_clone_local_checks_and_remote_rendered_flow_verified",
+    "issue": "The previous ENOSPC condition is absent in the recovered workspace. Local browser rendering was not used as physical-device evidence.",
+    "consequence": "Fresh clone, npm ci, 49 tests, build and project validation succeeded locally; GitHub CI34857008423 supplied the actual Chromium PC/touch flow and exact-revision artifacts."
+  },
+  "delegation": {
+    "instructionId": "ULTRA-CHILDREN-20260914-v3",
+    "userOriginals": [
+      "親はなんでもいい。子に全部やらせればいい。",
+      "確認したら、一旦game2 のオートメーションだけ有効にして、他は停止して"
+    ],
+    "requestedReasoningEffort": "ultra",
+    "integrator": "/root/game2_ultra_integrator",
+    "integratorSpawnArguments": {
+      "reasoning_effort": "ultra",
+      "fork_turns": "none",
+      "model": "omitted"
+    },
+    "children": [
+      "/root/game2_ultra_integrator/fresh_scene_review",
+      "/root/game2_ultra_integrator/c04_source_route",
+      "/root/game2_ultra_integrator/c04_blind_attempt"
+    ],
+    "childSpawnArguments": "reasoning_effort=ultra, fork_turns=none, model omitted",
+    "receipt": "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-scene-c04-attempt.json",
+    "automationGate": {
+      "game2ReceiptRemoteCommit": "08ef7e4ec11d4bcd334c63520e1ed5397f86aeb0",
+      "verifiedAt": "2026-09-14T15:15:02Z",
+      "crossRepoHeads": {
+        "survival": "b0f1dfb9860dbc00018c0c587d8f0934fadb6604",
+        "q": "89398313469f6f7c16e8a5c83cf95c6f58fae0cc"
+      },
+      "enabledReadback": "game2=true, survival=false, Q=false",
+      "otherSettingsPreserved": true,
+      "createdOrDeleted": false
+    }
+  },
+  "c04ComparisonAttempt": {
+    "id": "C04-BLIND-ATTEMPT-01",
+    "status": "material invalid",
+    "reason": "The candidate has no route fork or selectable alternate line between entry and shrine; source recognition and preference were not reached.",
+    "formalState": "not measured",
+    "next": "Implement a physical branch and verify both routes before a new packet."
   }
 }

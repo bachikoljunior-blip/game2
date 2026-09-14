@@ -1,0 +1,254 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T15:06:00Z",
+  "instruction": {
+    "id": "ULTRA-CHILDREN-20260914-v3",
+    "userOriginals": [
+      "親はなんでもいい。子に全部やらせればいい。",
+      "確認したら、一旦game2 のオートメーションだけ有効にして、他は停止して"
+    ],
+    "requestedReasoningEffort": "ultra",
+    "deadline": "2026-09-20T07:51:53Z"
+  },
+  "integrator": {
+    "id": "/root/game2_ultra_integrator",
+    "role": "game2 planning, continuation and deadline judgment, research, fresh design, implementation, verification, comparison preparation, integration, cross-repository gate and reporting",
+    "spawnArgumentsConfirmedByParent": {
+      "reasoning_effort": "ultra",
+      "fork_turns": "none",
+      "model": "omitted"
+    },
+    "accepted": true
+  },
+  "delegatedReceipts": [
+    {
+      "id": "/root/game2_ultra_integrator/fresh_scene_review",
+      "role": "read-only preimplementation screen-hierarchy review",
+      "spawnArguments": {
+        "reasoning_effort": "ultra",
+        "fork_turns": "none",
+        "model": "omitted"
+      },
+      "result": "Accepted Ultra; at ddfc33f identified torii occlusion, signal dominance and simple actor form as one screen-hierarchy unit; no edit, commit or push."
+    },
+    {
+      "id": "/root/game2_ultra_integrator/c04_source_route",
+      "role": "read-only lawful C04 ordinary-play acquisition route research",
+      "spawnArguments": {
+        "reasoning_effort": "ultra",
+        "fork_turns": "none",
+        "model": "omitted"
+      },
+      "result": "Accepted Ultra; found two public Gamersyde routes without age gate, CAPTCHA or anti-bot bypass and required non-public retention of downloaded comparison media."
+    },
+    {
+      "id": "/root/game2_ultra_integrator/c04_blind_attempt",
+      "receiptId": "C04-BLIND-ATTEMPT-01",
+      "role": "independent source-concealed whole-element material and preference gate",
+      "spawnArguments": {
+        "reasoning_effort": "ultra",
+        "fork_turns": "none",
+        "model": "omitted"
+      },
+      "result": "Accepted Ultra and reviewed both complete videos and fixed-five-frame sets. Stopped at material validity: packet B never presents a route fork or selectable alternate line; source recognition and preference were not evaluated."
+    }
+  ],
+  "continuationCheck": {
+    "observedAt": "2026-09-14T13:36:00Z",
+    "knownMainAtAssignment": "006f604ac676c7f8bc450654b553381dcfe0fd02",
+    "remoteSourceAtAssignment": "ddfc33faffdd18d84eb9eef5f531c90b1f20aa89",
+    "differenceFromKnownBase": "Three documentation-only Ultra delegation commits were read before work; game runtime remained at the known 006f604 tree.",
+    "activity": "stopped_after_bounded_execution",
+    "basis": "No workflow was running, no separate producer or uncommitted remote write was evidenced, and the latest branch commits were documentation-only. Work resumed from the saved 44ce5a67 visual frontier without duplicating a writer."
+  },
+  "deadlineAssessment": {
+    "prediction": "not grounded as can meet",
+    "basis": "All ten formal elements remain not measured, five reference-selection dossiers retain material unresolved items, and no valid whole-element blind comparison exists.",
+    "methodDefect": "The prior sequence left source acquisition and isolated visual polish as the gate without testing whether the candidate itself contained every C04 route component.",
+    "methodChangesExecuted": [
+      "Implemented the three stored visual gaps as one screen-hierarchy render unit instead of serial cosmetic edits.",
+      "Ran lawful C04 media acquisition in parallel through a new non-gated source route and fully decoded both acquired files.",
+      "Built actual role-neutral A/B videos plus fixed five frames and used an independent Ultra material-validity gate before accepting a preference verdict."
+    ],
+    "measuredEffect": "The source-media uncertainty was removed and the visual regressions were reduced. The attempted comparison isolated the next blocker as a candidate design defect: no route fork or selectable alternate line. Formal uncertainty decreased, but completion is still not forecast as achievable with evidence."
+  },
+  "implementation": {
+    "freshDesignOnly": true,
+    "oldGameOrPr10InspectedForDesign": false,
+    "verifiedRuntimeSha": "c18a5fd1051b15471b3ca0ba3a129ccfc943596a",
+    "changes": [
+      "Dedicated per-post render materials and a smooth near-camera torii-post fade while preserving both physical obstacle records.",
+      "Raised the mission signal, added generated bracket hardware and reduced point-light, emissive and halo dominance.",
+      "Rebuilt every fighter from generated layered torso cloth, armor plates, sash, split skirts, forearm wraps, hands, headband and face-direction forms while preserving combat state, feet, blade and scabbard contracts.",
+      "Added pure framing contracts and read-only camera/actor diagnostics to exact-revision browser verification."
+    ],
+    "files": [
+      "AI_DEVELOPMENT/FRESH_DESIGN.md",
+      "fresh/browser-smoke.mjs",
+      "fresh/camera-framing.js",
+      "fresh/main.js",
+      "fresh/presentation-contract.test.mjs",
+      "fresh/presentation.js"
+    ]
+  },
+  "verification": {
+    "local": {
+      "nodeTests": "49 passed, 0 failed",
+      "viteBuild": "passed",
+      "projectValidation": "passed: 52 criteria, 32 nodes, 15 frontier entries and 33 graph links"
+    },
+    "freshWorkflow": {
+      "run": 34857008423,
+      "url": "https://github.com/bachikoljunior-blip/game2/actions/runs/34857008423",
+      "conclusion": "success",
+      "artifactId": 10353790625,
+      "artifactDigest": "sha256:0bd5d9fb11f1e88fef05042d8c6bd49fd553f4773baea8cb4370eb9bf79265f9",
+      "coverage": "49 tests, Vite build, actual Chromium PC and touch input through all three enemies, arrival, signal, victory, portrait, clean retry, WebGL recovery and full decode of both continuous recordings"
+    },
+    "browserMetrics": {
+      "firstEncounterForegroundPostOpacity": 0.29885106610613277,
+      "generatedMeshPartsPerRig": 45,
+      "desktopRecording": {
+        "sha256": "04c377d92dcfdf9a39014d0de6d9a59062381a6c77d3d0580ac0e75bddc07b5e",
+        "durationSeconds": 133.56,
+        "decodedFrames": 3339
+      },
+      "touchRecording": {
+        "sha256": "808278033356e95d92abc29fe32cdd5cee61c709238eac8950e91734945c5f3f",
+        "durationSeconds": 130.96,
+        "decodedFrames": 3274
+      }
+    },
+    "imageReview": "At the same encounter state the previous left post covered nearly the full frame height and a large width; the new image removes that large left obstruction and keeps only the distant/right gate frame. Desktop, touch-landscape and portrait victory images separate the raised lamp from the actor head, materially reduce the halo, preserve the signal as readable, and show layered actor silhouettes. This source-known review is not a formal element verdict.",
+    "limitations": [
+      "The workflow uses SwiftShader and is not physical-device performance evidence.",
+      "The recordings are silent; audio quality is not measured.",
+      "Actor part count and post opacity are regression diagnostics, not blind quality verdicts."
+    ]
+  },
+  "comparisonAcquisition": {
+    "retention": "Raw reference videos, extracted frames and neutral packet were temporary comparison materials and were not committed or added to the public game payload because the source page disallows free re-upload.",
+    "stableSources": [
+      {
+        "page": "https://www.gamersyde.com/video_ghost_of_tsushima_ghost_of_tsushima_ps5_gameplay_4k_-45420_en.html",
+        "pagePublished": "2020-11-10T21:20:38+0100",
+        "pageSha256": "8678776e29dc29e139cd988e8997fb7d96ea064d8e78717731961432c8c2660c",
+        "mediaSha256": "0ff416df5ec94370fc5271073a322b30a5a383dfcab202b0fdf92cdb80369049",
+        "bytes": 306244225,
+        "video": "H.264 960x540 60fps, 788.130998 seconds, 47284 frames",
+        "fullDecode": "passed",
+        "fitness": "Post-release ordinary-play scenes are real, but the file is an edited multi-location montage and is not a single whole C04 route."
+      },
+      {
+        "page": "https://www.gamersyde.com/video_ghost_of_tsushima_ps4_pro_shrine_of_the_kami_of_fire-45075_en.html",
+        "pagePublished": "2020-07-16T14:00:00+0200",
+        "pageSha256": "43f24d1a54d17e4f15b0fe3dae63044c0a4d0867c22418e6ad196db385ba50f7",
+        "mediaSha256": "11a46c3526b29fac8fa227cae22bf9f9b33bddb49588d22cc57faa66bb1575e1",
+        "bytes": 75916859,
+        "video": "H.264 960x540 60fps, 201.595011 seconds, 12091 frames",
+        "fullDecode": "passed",
+        "fitness": "Continuous ordinary shrine approach with terrain traversal, a white-tree landmark, route choices and shrine arrival. It was published one day before the reference work's release, so final retail-build identity was not established."
+      }
+    ]
+  },
+  "blindAttempt": {
+    "id": "C04-BLIND-ATTEMPT-01",
+    "mappingConcealedFromEvaluator": {
+      "A": "reference 45075, seconds 5-120",
+      "B": "candidate CI recording, seconds 68-129"
+    },
+    "normalization": "Both actual videos were silent, 960x540, 30fps H.264 with metadata stripped and identical top-left, top-center, top-right and lower-right source-hint masks. Five frames came from each normalized video.",
+    "packetHashes": {
+      "A-route.mp4": "ce65c3f5487247b1c54aeb321b3fcd827bdbf7e6dc272a9c08b38b2ecf5b4018",
+      "B-route.mp4": "703ac7e1feb44dbf3ce69d306d5a7b65e45934c5bf5eb3cd7544e6f5932f54e6",
+      "A-five-frames.jpg": "3abf8ef2e05b18845feefcf148d381683fb08b0dd67f8758d604e6c29a43d9f5",
+      "B-five-frames.jpg": "4b3e9986960d5b943fe994c79551d24c7b052248de66a920df7dfab974b619a8"
+    },
+    "independentResult": "material invalid",
+    "finding": "B shows entry at about 00:02 and reaches the shrine signal at about 00:59, with combat stops around 00:11-00:20, 00:27-00:38 and 00:44-00:50, but never shows a route fork or selectable alternate line. Its five frames also show only one straight path.",
+    "sourceRecognition": "not reached",
+    "preference": "not reached",
+    "formalEffect": "No verdict; C04 remains not measured."
+  },
+  "mainIntegration": {
+    "pullRequest": 17,
+    "url": "https://github.com/bachikoljunior-blip/game2/pull/17",
+    "prIphoneRun": 34859610208,
+    "prIphoneConclusion": "success with WebKit harness steps skipped; not a physical iPhone result",
+    "mergeSha": "38798e8508bdb4cfa96c419cd76a8ebc6c267d20",
+    "mainIphoneRun": 34859690633,
+    "mainIphoneConclusion": "success",
+    "pagesRun": 34859690176,
+    "pagesConclusion": "success",
+    "sourceBranchFastForwardedToMerge": true,
+    "publicationScope": "The verified fresh candidate remains under fresh/. The existing root Pages route was not replaced and no fresh public-release claim is made."
+  },
+  "formalState": {
+    "statusCounts": {
+      "satisfied": 0,
+      "not satisfied": 0,
+      "not measured": 10
+    },
+    "incompleteReferenceSelectionDossiers": [
+      "C05",
+      "C06",
+      "C09",
+      "C11",
+      "C12"
+    ],
+    "nextExactWork": "Design and implement a readable, physically traversable C04 branch before the shrine, give the two routes a perceivable landmark/consequence and reconvergence, verify both routes with actual PC/touch input, then recapture the whole route and repeat the independent source-concealed material gate."
+  },
+  "crossRepositoryUltraGate": {
+    "observedAt": "2026-09-14T15:15:02Z",
+    "survival": {
+      "branchHead": "b0f1dfb9860dbc00018c0c587d8f0934fadb6604",
+      "source": "https://github.com/bachikoljunior-blip/survival/blob/claude/repo-instructions-constraints-r0070m/AI_DEVELOPMENT/SESSION_STATE.yaml",
+      "finding": "At the latest branch head, the v3 receipt, active Ultra integration owner /root/integration_decisions_ultra_v2, exact ultra/none/model-omitted spawn arguments, parent result-only role and concrete C30/C31/Floor verification and prior main-integration evidence are present. Current C32 CI/main work is explicitly assigned to that Ultra owner and is not counted as already executed."
+    },
+    "q": {
+      "mainHead": "89398313469f6f7c16e8a5c83cf95c6f58fae0cc",
+      "source": "https://github.com/bachikoljunior-blip/Q/blob/main/docs/PROJECT_STATE.md",
+      "finding": "v3 receipt, Ultra integrator /root/ultra_v2_integrator, exact ultra/none/model-omitted spawn arguments, concrete PR20/main/CI/Site integration and independent Ultra review receipts are present."
+    },
+    "game2": {
+      "branchHeadBeforeAutomation": "08ef7e4ec11d4bcd334c63520e1ed5397f86aeb0",
+      "source": "https://github.com/bachikoljunior-blip/game2/blob/codex/game2-rebuild-20260913/AI_DEVELOPMENT/SESSION_STATE.yaml",
+      "finding": "Remote readback found the two original user quotations, /root/game2_ultra_integrator, exact ultra/none/model-omitted spawn arguments, c18a5fd, CI34857008423, main38798e8 and C04-BLIND-ATTEMPT-01."
+    },
+    "gateDecision": "satisfied for the delegation switch only; this is not a claim that any game is complete",
+    "automationAction": {
+      "beforePeekAt": "2026-09-14T15:13:42Z",
+      "beforeEnabled": {
+        "game2": true,
+        "survival": true,
+        "q": true
+      },
+      "updates": [
+        {
+          "id": "6aa4047ea44c8191aa35d6c428969a7a",
+          "is_enabled": true,
+          "updated_at": "2026-09-14T15:13:42.315630+00:00"
+        },
+        {
+          "id": "6aa71e69ffec81919e059ecff6d98f82",
+          "is_enabled": false,
+          "updated_at": "2026-09-14T15:13:46.317117+00:00"
+        },
+        {
+          "id": "6aa72048f4388191a7448b249cf6578d",
+          "is_enabled": false,
+          "updated_at": "2026-09-14T15:13:50.024573+00:00"
+        }
+      ],
+      "readbackEnabled": {
+        "game2": true,
+        "survival": false,
+        "q": false
+      },
+      "settingsReadback": "For all three IDs, title, prompt, schedule, default_timezone, timing_mode, triggers, conversation_id, team_id, display_schedule, last_run_time and next_run_time were exactly equal before and after. Only is_enabled and the service-maintained updated_at changed.",
+      "deleted": false,
+      "created": false,
+      "unrelatedAutomationsChanged": false
+    }
+  }
+}
