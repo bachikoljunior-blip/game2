@@ -30,11 +30,11 @@
     "buildScope": "Spatial candidate build passed before the observational timestamp separation; final exact revision is checked by CI."
   },
   "remoteVerification": {
-    "revision": "7d5cfd5d2e55acd770fdc2ff73ebade2ca97b2c3",
-    "run": 34818667465,
+    "revision": "ce3615445aef7511917bcc9582b0c3a10da0a120",
+    "run": 34820020456,
     "result": "failed",
-    "detail": "PC full route passes; touch fails at180seconds",
-    "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-touch-cost.json"
+    "detail": "Spatial partition preserves scene and PC completes, old touch route defeated before deadline",
+    "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-spatial-result.json"
   },
   "independentReview": {
     "reviewer": "review_capture",
@@ -56,7 +56,7 @@
   },
   "formalVerdict": "not measured",
   "workUnitEnded": false,
-  "nextWork": "Verify the spatially partitioned C04 candidate on its exact head:44 tests/build and unchanged PC/touch full mission,180second limits,recovery,ending/retry and recording gates. Read raw rAF intervals separately from JS advance/render-call durations; inspect actual triangle/call changes and full touch outcome. Independently review sampled normal/combat/ending images for lost leaves, shadow continuity, foot contact and remaining vegetation occlusion. Then acquire identified actual continuous reference media and close whole-element comparison coverage; no panel-only loop.",
+  "nextWork": "Verify the defensive touch-route candidate at exact head:45 tests/build, real guard plus block/parry, actual dodge, attack,3kills,arrival,signal,ending and clean retry within unchanged180second mission deadline; desktop and zero-error/recovery/recording gates retained. Preserve ce36154's old dodge-route defeat as a separate failed observation. Then prioritize actual normal-play comparison coverage using the acquired native wind clips only within their limited nondebug scope; fix combat occlusion/darkness and complete remaining reference selection instead of resuming panel microchanges.",
   "failedAttempts": [
     {
       "revision": "ea295ff0400a9e58f1b95c19cac0683a1922d188",
@@ -67,7 +67,12 @@
       "revision": "7d5cfd5d2e55acd770fdc2ff73ebade2ca97b2c3",
       "run": 34818667465,
       "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-touch-cost.json"
+    },
+    {
+      "revision": "ce3615445aef7511917bcc9582b0c3a10da0a120",
+      "run": 34820020456,
+      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-spatial-result.json"
     }
   ],
-  "updatedAt": "2026-09-14T07:52:22.487Z"
+  "updatedAt": "2026-09-14T08:11:23.574Z"
 }

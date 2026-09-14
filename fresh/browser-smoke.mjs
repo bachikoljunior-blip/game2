@@ -2,6 +2,7 @@ import { chromium } from 'playwright';
 import { mkdir, rename, writeFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import { playthroughAction } from './playthrough-policy.mjs';
+import { touchPlaythroughAction } from './touch-playthrough-policy.mjs';
 import { ENDING_PHRASES } from './mission.js';
 const out=new URL('../AI_DEVELOPMENT/EVIDENCE/fresh-20260913/',import.meta.url);
 await mkdir(out,{recursive:true});
@@ -80,7 +81,10 @@ try{
  while(Date.now()<fullDeadline){
   const w=await page.evaluate(()=>freshDiagnostics().world);
   if(w.totals.kills!==lastKills){report.mission.checkpoints.push(w);lastKills=w.totals.kills;mark(desktopRecording,'kills',lastKills);}
-  if(w.mode!=='playing')break;
+  if(w.mode!=='playing'){
+   if(w.mode==='victory')report.mission.victoryObservedElapsedMs=Date.now()-(fullDeadline-180000);
+   break;
+  }
   const a=playthroughAction(w),wanted=new Set();
   if(a.x)wanted.add(a.x>0?'KeyD':'KeyA');if(a.z)wanted.add(a.z>0?'KeyS':'KeyW');
   for(const key of held)if(!wanted.has(key)){await page.keyboard.up(key);held.delete(key);}
@@ -91,6 +95,7 @@ try{
  }
  for(const key of held)await page.keyboard.up(key);
  report.mission.after=await page.evaluate(()=>freshDiagnostics().world);
+ assert.ok(Number.isFinite(report.mission.victoryObservedElapsedMs)&&report.mission.victoryObservedElapsedMs<=180000,'desktop victory must be observed within180seconds, not after the loop deadline');
  assert.equal(report.mission.after.mode,'victory');assert.equal(report.mission.after.signalLit,true);
  assert.equal(report.mission.after.totals.kills,3);
  assert.ok(report.mission.checkpoints.some(w=>w.totals.kills===3&&w.mode==='playing'),'last kill must leave the arrival objective active');
@@ -154,34 +159,46 @@ try{
  // are read-only; every state change below comes from a rendered control.
  await mobile.reload();await mobile.locator('#start').tap();
  const attackPoint=await point('[data-action=attack]'),lockPoint=await point('[data-action=lock]'),dodgePoint=await point('[data-action=dodge]');
- let tapId=10;
+ let tapId=10;const contacts=new Map();
+ const beginContact=async(id,p)=>{contacts.set(id,{...p,id});await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[...contacts.values()]});};
+ const endContact=async id=>{contacts.delete(id);await cdp.send('Input.dispatchTouchEvent',{type:contacts.size?'touchMove':'touchEnd',touchPoints:[...contacts.values()]});};
  const tapPoint=async p=>{
   const id=tapId++;
-  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...p,id}]});
+  await beginContact(id,p);
   await mobile.waitForTimeout(50);
-  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  await endContact(id);
   await mobile.waitForTimeout(110);
  };
- const touchDeadline=Date.now()+180000;report.touchMission={checkpoints:[]};let touchKills=-1;mark(mobileRecording,'full-mission-start');
+ const touchDeadline=Date.now()+180000;report.touchMission={policy:'held guard, actual dodge, recovery counters and early-windup interruption; prior dodge-only failures retained',guardObserved:false,blockOrParryObserved:false,checkpoints:[]};let touchKills=-1;mark(mobileRecording,'full-mission-start');
  while(Date.now()<touchDeadline){
   const w=await mobile.evaluate(()=>freshDiagnostics().world);
+  report.touchMission.guardObserved ||= w.player.state==='guard';
+  report.touchMission.blockOrParryObserved ||= w.events.some(e=>e.type==='block'||e.type==='parry');
   if(w.totals.kills!==touchKills){report.touchMission.checkpoints.push(w);touchKills=w.totals.kills;mark(mobileRecording,'kills',touchKills);}
-  if(w.mode!=='playing')break;
-  const a=playthroughAction(w);
-  const target=w.enemies.filter(e=>e.hp>0).sort((a,b)=>Math.hypot(a.x-w.player.x,a.z-w.player.z)-Math.hypot(b.x-w.player.x,b.z-w.player.z))[0];
-  const danger=target&&Math.hypot(target.x-w.player.x,target.z-w.player.z)<2.4&&target.state==='windup'&&w.player.state==='idle';
-  if(danger)await tapPoint(dodgePoint);
+  if(w.mode!=='playing'){
+   if(w.mode==='victory')report.touchMission.victoryObservedElapsedMs=Date.now()-(touchDeadline-180000);
+   break;
+  }
+  const a=touchPlaythroughAction(w);
+  if(a.guard&&!contacts.has(1))await beginContact(1,g);
+  if(!a.guard&&contacts.has(1))await endContact(1);
+  if(a.dodge)await tapPoint(dodgePoint);
   else if(a.lock)await tapPoint(lockPoint);
   else if(a.attack)await tapPoint(attackPoint);
   else if(a.x||a.z){
-   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...s,id:4}]});
-   await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:s.x+a.x*32,y:s.y+a.z*32,id:4}]});
+   await beginContact(4,s);
+   contacts.set(4,{x:s.x+a.x*32,y:s.y+a.z*32,id:4});
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[...contacts.values()]});
    await mobile.waitForTimeout(100);
-   await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});
+   await endContact(4);
    await mobile.waitForTimeout(40);
   }else await mobile.waitForTimeout(80);
  }
+ await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});contacts.clear();
  report.touchMission.after=await mobile.evaluate(()=>freshDiagnostics().world);
+ assert.ok(Number.isFinite(report.touchMission.victoryObservedElapsedMs)&&report.touchMission.victoryObservedElapsedMs<=180000,'touch victory must be observed within180seconds, not after the loop deadline');
+ assert.ok(Math.hypot(report.touchMission.after.player.dodgeX,report.touchMission.after.player.dodgeZ)>.5,'real touch route must actually trigger a dodge');
+ assert.ok(report.touchMission.guardObserved&&report.touchMission.blockOrParryObserved,'real route must include observed guarding and an actual block/parry');
  assert.equal(report.touchMission.after.mode,'victory');
  assert.equal(report.touchMission.after.signalLit,true);
  assert.equal(report.touchMission.after.totals.kills,3);

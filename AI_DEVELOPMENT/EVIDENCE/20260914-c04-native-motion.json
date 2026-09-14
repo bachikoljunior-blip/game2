@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-09-14T08:11:23.574Z",
+  "acquisitionRevision": "bf48518d426a91192753c84c8e7054468d2a79d5",
+  "run": 34820290196,
+  "url": "https://github.com/bachikoljunior-blip/game2/actions/runs/34820290196",
+  "report": {
+    "article": "https://blog.playstation.com/2021/01/12/how-stunning-visual-effects-bring-ghost-of-tsushima-to-life/",
+    "clips": [
+      {
+        "bytes": 2671249,
+        "file": "wind-01.mp4",
+        "id": "GT-WIND-01",
+        "mime": "video/mp4",
+        "retrievedAt": "2026-09-14T07:57:43.022630+00:00",
+        "sha256": "9a8acb0ee216ce67bceb032a1126cead5f4e070e71fa6904a5b03be761497f5f",
+        "source": "https://stream.mux.com/zPwtxwYgOlDxEXshVCsxsSEIN8STWAFt0001p019Rg3d7k/capped-1080p.mp4",
+        "status": "acquired"
+      },
+      {
+        "bytes": 2895337,
+        "file": "wind-02.mp4",
+        "id": "GT-WIND-02",
+        "mime": "video/mp4",
+        "retrievedAt": "2026-09-14T07:57:43.514102+00:00",
+        "sha256": "d3c371b5355a097a6dee8f4f059817648d129e7cba1ba1907a599b004c535016",
+        "source": "https://stream.mux.com/aMIPIFCMIXUynO00TvsM00CFX9Sw6O016JWPFZEzD02oTto/capped-1080p.mp4",
+        "status": "acquired"
+      }
+    ],
+    "element": "C04",
+    "errors": [],
+    "finishedAt": "2026-09-14T07:57:43.514381+00:00",
+    "formalVerdict": "not measured",
+    "identifiedLinks": [
+      "https://stream.mux.com/zPwtxwYgOlDxEXshVCsxsSEIN8STWAFt0001p019Rg3d7k/capped-1080p.mp4",
+      "https://stream.mux.com/aMIPIFCMIXUynO00TvsM00CFX9Sw6O016JWPFZEzD02oTto/capped-1080p.mp4"
+    ],
+    "result": "acquired; full decode and content inspection pending",
+    "scope": "Selected demonstration footage may contain debug views, cuts and non-retail builds. It is not a complete comparable navigation route, source-blind verdict, audio result or evidence of having played the reference. No reference content enters the runtime. Only normal source-provided media links from the Wind section; no age-gated sections.",
+    "section": "Wind",
+    "sourceRevision": "bf48518d426a91192753c84c8e7054468d2a79d5",
+    "startedAt": "2026-09-14T07:57:40.651746+00:00"
+  },
+  "artifacts": [
+    {
+      "archive_download_url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10337603606/zip",
+      "created_at": "2026-09-14T07:57:44Z",
+      "digest": "sha256:830d257e248efde08357a245a3177f8ebac29ae35e0bc201ddbe8efe3b6239ae",
+      "expired": false,
+      "expires_at": "2026-12-13T07:57:35Z",
+      "id": 10337603606,
+      "name": "c04-motion-bf48518d426a91192753c84c8e7054468d2a79d5",
+      "size_in_bytes": 5556710,
+      "updated_at": "2026-09-14T07:57:44Z",
+      "url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10337603606",
+      "workflow_run": {
+        "head_branch": "codex/game2-rebuild-20260913",
+        "head_repository_id": 1316876624,
+        "head_sha": "bf48518d426a91192753c84c8e7054468d2a79d5",
+        "id": 34820290196,
+        "repository_id": 1316876624
+      }
+    }
+  ],
+  "localVerification": {
+    "archiveSha256": "830d257e248efde08357a245a3177f8ebac29ae35e0bc201ddbe8efe3b6239ae",
+    "result": "ZIP hash and both file hashes match. Both videos fully decoded by ffmpeg with exit0.",
+    "clips": [
+      {
+        "file": "wind-01.mp4",
+        "width": 640,
+        "height": 360,
+        "duration": 27.961811,
+        "decodedFrames": 840,
+        "audioStreams": 0
+      },
+      {
+        "file": "wind-02.mp4",
+        "width": 640,
+        "height": 360,
+        "duration": 27.961811,
+        "decodedFrames": 840,
+        "audioStreams": 0
+      }
+    ]
+  },
+  "contentInspection": {
+    "method": "Actual one-second sample contact sheets inspected by producer; independent check pending",
+    "wind01": "Elevated view of wind particles across terrain and cliffs, with debug/editor marks and text. Not a retail player-navigation route.",
+    "wind02": "Third-person vegetation displacement; later section shows a colored debug trail and changes camera/scene. A short nondebug segment is present, but the whole clip is not uninterrupted ordinary play.",
+    "limits": "Both are source-identifiable and silent. Do not use debug parts or edits as a representative whole-element source-blind comparison. Wind/material behavior can inform a limited diagnostic; full C04 navigation, source concealment and audio remain unmeasured."
+  },
+  "formalVerdict": "not measured",
+  "next": "Identify usable ordinary-play intervals by closer frame inspection and retain their limitations; obtain a genuine continuous navigation route for whole C04 rather than treating these debug demonstrations as sufficient."
+}

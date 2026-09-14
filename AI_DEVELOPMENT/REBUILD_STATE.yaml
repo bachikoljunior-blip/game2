@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-14T07:52:22.487Z",
-  "phase": "fresh-c04-spatial-render",
+  "updatedAt": "2026-09-14T08:11:23.574Z",
+  "phase": "fresh-defensive-touch-verification",
   "userInstruction": "一旦ゲーム自体はゼロから作り直してくれる？",
   "activeBranch": "codex/game2-rebuild-20260913",
   "fixedInstructions": "AI_DEVELOPMENT/FIXED_INSTRUCTIONS.md",
@@ -15,7 +15,7 @@
     "oldPr": 10,
     "optionalRebuildRouting": "ec2480166809f57fa623929bec0fbcb4d5a623a2"
   },
-  "continuation": "Verify the spatially partitioned C04 candidate on its exact head:44 tests/build and unchanged PC/touch full mission,180second limits,recovery,ending/retry and recording gates. Read raw rAF intervals separately from JS advance/render-call durations; inspect actual triangle/call changes and full touch outcome. Independently review sampled normal/combat/ending images for lost leaves, shadow continuity, foot contact and remaining vegetation occlusion. Then acquire identified actual continuous reference media and close whole-element comparison coverage; no panel-only loop.",
+  "continuation": "Verify the defensive touch-route candidate at exact head:45 tests/build, real guard plus block/parry, actual dodge, attack,3kills,arrival,signal,ending and clean retry within unchanged180second mission deadline; desktop and zero-error/recovery/recording gates retained. Preserve ce36154's old dodge-route defeat as a separate failed observation. Then prioritize actual normal-play comparison coverage using the acquired native wind clips only within their limited nondebug scope; fix combat occlusion/darkness and complete remaining reference selection instead of resuming panel microchanges.",
   "status": "not measured",
   "publication": "Keep old Pages until a verified replacement is ready. Fresh runtime is a work-branch candidate, not public product acceptance.",
   "procedureAuthority": "Fixed instructions and explicit user directives govern. Tests, task plans and architecture documents are tools chosen by the AI, not additional fixed rules.",
@@ -27,7 +27,7 @@
   "comparisonCatalog": "AI_DEVELOPMENT/COMPARISON_ELEMENTS.yaml",
   "referenceSelectionComplete": false,
   "verificationEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-camera-transition.json",
-  "pendingCandidate": "Spatial vegetation partition and stage timing:44 local tests and build passed, exact-head actual input pending. Prior7d5cfd5 corrected initialization/PC but touch failed180second deadline.",
+  "pendingCandidate": "45 local tests pass with separately labelled guard/counter touch test player. Runtime stays spatial landscape fromce36154; actual full touch verification pending. Earlier dodge-only route defeat remains recorded.",
   "methodChangeEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-unknown-method-change.json",
   "recoveryRole": {
     "userInstruction": "定期オートメーションは万が一実行が停止していたら、停止してしまう原因を全て潰してから再開する再発火役にしてください。",
