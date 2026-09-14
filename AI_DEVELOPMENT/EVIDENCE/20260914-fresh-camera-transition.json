@@ -55,9 +55,247 @@
     "gzipKb": 134.91,
     "warning": "Existing over500kB warning retained"
   },
-  "remoteVerification": null,
-  "independentReview": null,
+  "remoteVerification": {
+    "run": 34815082823,
+    "url": "https://github.com/bachikoljunior-blip/game2/actions/runs/34815082823",
+    "conclusion": "success",
+    "tests": 39,
+    "build": "passed",
+    "realInputMissions": "PC and isolated touch: three kills, signal, victory, clean retry",
+    "sourceRevision": "3d5ecfa33df6c1a15b26403df71f18ef19573ac2",
+    "durationsMs": {
+      "desktop": 112535,
+      "mobile": 146036
+    },
+    "errors": [],
+    "desktopCamera": {
+      "frame": {
+        "lookX": -0.6123782449534368,
+        "lookY": 1.4894310446016035,
+        "lookZ": -19.083087128605445,
+        "x": 2.693432840838033,
+        "y": 3.23896300135957,
+        "z": -12.7416275526183
+      },
+      "lockedFrames": 91,
+      "maxDownAngleDegrees": 16.494355744345835,
+      "minHorizontalStandoff": 5.910028291936918
+    },
+    "touchCamera": {
+      "frame": {
+        "lookX": -1.316977348150126,
+        "lookY": 1.5377713388064902,
+        "lookZ": -19.627833211771073,
+        "x": 3.0803718004554037,
+        "y": 3.32758078789506,
+        "z": -13.066192106017933
+      },
+      "lockedFrames": 221,
+      "maxDownAngleDegrees": 16.774692887416602,
+      "minHorizontalStandoff": 5.80554585967617
+    },
+    "desktopTotals": {
+      "hits": 9,
+      "kills": 3,
+      "parries": 0,
+      "received": 0
+    },
+    "touchTotals": {
+      "hits": 9,
+      "kills": 3,
+      "parries": 0,
+      "received": 3
+    },
+    "recordings": [
+      {
+        "alignment": "Wall-clock event offsets are approximate; video/input synchronization has not been measured. Visual continuity must still be reviewed.",
+        "approximateIntervalSeconds": 112.535,
+        "audioTracks": 0,
+        "bytes": 12347127,
+        "decodedFrames": 2813,
+        "durationSeconds": 112.52,
+        "events": [
+          {
+            "detail": {
+              "height": 720,
+              "width": 1280
+            },
+            "event": "title-ready",
+            "offsetMs": 696
+          },
+          {
+            "event": "full-mission-start",
+            "offsetMs": 52571
+          },
+          {
+            "detail": 0,
+            "event": "kills",
+            "offsetMs": 52573
+          },
+          {
+            "detail": 1,
+            "event": "kills",
+            "offsetMs": 68146
+          },
+          {
+            "detail": 2,
+            "event": "kills",
+            "offsetMs": 81495
+          },
+          {
+            "detail": 3,
+            "event": "kills",
+            "offsetMs": 93003
+          },
+          {
+            "event": "victory",
+            "offsetMs": 99698
+          },
+          {
+            "event": "clean-retry",
+            "offsetMs": 112535
+          },
+          {
+            "event": "context-close",
+            "offsetMs": 112535
+          }
+        ],
+        "file": "desktop-continuous.webm",
+        "fullDecode": "passed",
+        "height": 720,
+        "id": "desktop",
+        "intervalToleranceSeconds": 2,
+        "sha256": "9e39c3a048e217480b9d38c9b0030df4806be30492d7973f405dabefb98a5ee5",
+        "width": 1280
+      },
+      {
+        "alignment": "Wall-clock event offsets are approximate; video/input synchronization has not been measured. Visual continuity must still be reviewed.",
+        "approximateIntervalSeconds": 146.036,
+        "audioTracks": 0,
+        "bytes": 16206254,
+        "decodedFrames": 3646,
+        "durationSeconds": 145.84,
+        "events": [
+          {
+            "detail": {
+              "height": 390,
+              "width": 844
+            },
+            "event": "landscape",
+            "offsetMs": 338
+          },
+          {
+            "event": "full-mission-start",
+            "offsetMs": 16663
+          },
+          {
+            "detail": 0,
+            "event": "kills",
+            "offsetMs": 16666
+          },
+          {
+            "detail": 1,
+            "event": "kills",
+            "offsetMs": 49308
+          },
+          {
+            "detail": 2,
+            "event": "kills",
+            "offsetMs": 82699
+          },
+          {
+            "detail": 3,
+            "event": "kills",
+            "offsetMs": 121171
+          },
+          {
+            "event": "victory",
+            "offsetMs": 130346
+          },
+          {
+            "detail": {
+              "height": 844,
+              "width": 390
+            },
+            "event": "portrait",
+            "offsetMs": 137937
+          },
+          {
+            "event": "clean-retry",
+            "offsetMs": 146036
+          },
+          {
+            "event": "context-close",
+            "offsetMs": 146036
+          }
+        ],
+        "file": "touch-continuous.webm",
+        "fullDecode": "passed",
+        "height": 844,
+        "id": "touch",
+        "intervalToleranceSeconds": 2,
+        "sha256": "076cf509637ce10d439fc840cb539721a407e77e597f78bd36c5451e12c75829",
+        "width": 844
+      }
+    ],
+    "artifact": {
+      "archive_download_url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10335164887/zip",
+      "created_at": "2026-09-14T06:55:24Z",
+      "digest": "sha256:7cc1e9fedbebf9ab34e7eb9aaec538405daa68c8436101932d689126edb6b0c7",
+      "expired": false,
+      "expires_at": "2026-12-13T06:49:36Z",
+      "id": 10335164887,
+      "name": "fresh-game-3d5ecfa33df6c1a15b26403df71f18ef19573ac2",
+      "size_in_bytes": 30333928,
+      "updated_at": "2026-09-14T06:55:24Z",
+      "url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10335164887",
+      "workflow_run": {
+        "head_branch": "codex/game2-rebuild-20260913",
+        "head_repository_id": 1316876624,
+        "head_sha": "3d5ecfa33df6c1a15b26403df71f18ef19573ac2",
+        "id": 34815082823,
+        "repository_id": 1316876624
+      }
+    },
+    "downloadVerification": {
+      "zipSha256": "7cc1e9fedbebf9ab34e7eb9aaec538405daa68c8436101932d689126edb6b0c7",
+      "zipMatched": true,
+      "bothVideoHashesMatched": true
+    },
+    "limits": [
+      "Silent software-rendered browser recordings; no smartphone performance claim.",
+      "Camera counts91/221 are locked rendered observations.2813/3646 decoded video frames may repeat and do not satisfy an independent300-frame performance sample requirement.",
+      "Camera standoff is measured to the smoothed focus, not directly to each actor. Geometry does not prove obstacle or weapon readability.",
+      "Single runs became112.535/146.036 seconds versus98.054/99.114 seconds; not a controlled timing or overhead comparison."
+    ]
+  },
+  "independentReview": {
+    "kind": "Independent AI code review and before/after5-second actual-image diagnosis; not source-blind comparison",
+    "reviewer": "review_capture",
+    "images": [
+      "desktop-sequence.jpg",
+      "touch-sequence.jpg",
+      "mobile-mission-victory.png",
+      "mobile-mission-victory-portrait.png"
+    ],
+    "baselineRevision": "d48a8d7a4648dab4d1b6a6f19ad1064f528dea7f",
+    "observations": [
+      "Old touch row2col2 and row3col5 extreme overhead close-ups are absent from new samples. New close combat shows whole bodies and surroundings from an oblique angle, making relative placement clearer.",
+      "New touch row4col1 and row5col4-5 retain foreground stone-lantern occlusion of bodies/feet.",
+      "Arms, thin swords and the opponent can still merge at contact; weapon/background separation is weak.",
+      "Landscape ending feet are not visible and the lower body appears hidden by or embedded in the shrine plinth; image alone does not identify cause. Portrait lower body remains dark.",
+      "Ending Japanese phrase breaks, heading tracking and retry-button readability remain improved."
+    ],
+    "limits": [
+      "Samples are5 seconds apart and not matched identical combat states.",
+      "No full-motion smoothness, absence of brief defects or subjective input-feel verdict.",
+      "All ten concept-element verdicts remain not measured."
+    ],
+    "codeReview": "No blocking issue found in latched dodge/angular interpolation. Independently reproduced neutral27-step backward3.15m dodge with zero reversals and finite camera outputs."
+  },
   "formalVerdict": "not measured",
   "workUnitEnded": false,
-  "nextWork": "Verify the new latched-dodge/angular-camera candidate once on exact head. Preserve previous d48a8d7 videos as baseline. Check every locked render's standoff/down angle, real PC/touch mission and both complete recordings; compare actual touch combat frames independently. Then move to remaining reference/actual paired material and the larger actor/scene/ending gaps. All10 elements remain not measured."
+  "nextWork": "Acquire actual paired reference material for retained C04 first, record what the material covers and lacks, and use independent diagnosis to identify the largest scene/actor gap. Keep full-element blind verdicts not measured until whole scope and source concealment are valid. Remaining demonstrated camera issues are foreground stone-lantern occlusion and thin weapon/contact readability; ending feet also look hidden by the shrine plinth. Do not repeat the successful 3d5ecfa CI.",
+  "updatedAt": "2026-09-14T07:04:29.685Z",
+  "verifiedRuntime": "3d5ecfa33df6c1a15b26403df71f18ef19573ac2"
 }

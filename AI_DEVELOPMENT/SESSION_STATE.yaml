@@ -10,32 +10,33 @@
     "workingBranch": "codex/game2-rebuild-20260913",
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
-    "activeTask": "FRESH-LOCK-CAMERA-TRANSITION",
-    "lastSuccessfulAction": "d48a8d7 / CI34813628212 passed35 tests/build, desktop/touch missions and retry, ending bounds/phrases/48px-or-larger CTA, two full-decodable continuous videos. Independent sampled review confirmed ending text improvements and exposed touch lock-camera overhead overlap.",
+    "activeTask": "FRESH-REFERENCE-MATERIAL-GAP",
+    "lastSuccessfulAction": "3d5ecfa / CI34815082823 passed39 tests/build, both real-input missions/retry and full video decode/provenance. Independent sampled image review confirmed removal of observed extreme overhead close-ups; foreground occlusion and sword readability remain.",
     "currentFailingAction": null,
     "currentHypothesis": null,
-    "nextAction": "Verify the new latched-dodge/angular-camera candidate once on exact head. Preserve previous d48a8d7 videos as baseline. Check every locked render's standoff/down angle, real PC/touch mission and both complete recordings; compare actual touch combat frames independently. Then move to remaining reference/actual paired material and the larger actor/scene/ending gaps. All10 elements remain not measured.",
+    "nextAction": "Acquire actual paired reference material for retained C04 first, record what the material covers and lacks, and use independent diagnosis to identify the largest scene/actor gap. Keep full-element blind verdicts not measured until whole scope and source concealment are valid. Remaining demonstrated camera issues are foreground stone-lantern occlusion and thin weapon/contact readability; ending feet also look hidden by the shrine plinth. Do not repeat the successful 3d5ecfa CI.",
     "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
     "pendingVerification": [
-      "Exact responsive victory typography/CTA/lamp-exposure frames and complete playable video files",
-      "Attack-only versus defense-led combat routes",
-      "WebKit / iOS Simulator behavior",
-      "Smartphone-targeted performance in the best available WebKit/iOS environment; distinguish measurement from inference",
-      "Audio and screen-reader behavior",
+      "Whole-element actual candidate/reference pairs with valid source concealment",
+      "Foreground obstacle visibility and weapon/contact readability across combat",
+      "Ending actor grounding, sheathing and light balance",
+      "Attack-only versus defense-led combat routes and required20battles",
+      "WebKit / iOS Simulator behavior and10-minute smartphone-targeted performance; separate measurement from inference",
+      "Audio capture, audio quality and screen-reader behavior",
       "Source-blind comparison for every whole concept element"
     ],
     "modifiedFiles": [
-      ".github/workflows/fresh-game.yml",
-      "AI_DEVELOPMENT/EVIDENCE/20260914-unknown-method-change.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-camera-transition.json",
       "AI_DEVELOPMENT/FRESH_DESIGN.md",
       "AI_DEVELOPMENT/REBUILD_STATE.yaml",
       "AI_DEVELOPMENT/SESSION_STATE.yaml",
       "fresh/browser-smoke.mjs",
+      "fresh/camera-framing.js",
+      "fresh/camera-framing.test.js",
       "fresh/main.js",
-      "fresh/mission.css",
-      "fresh/mission.js",
       "fresh/presentation.js",
-      "fresh/verify-recordings.mjs"
+      "fresh/simulation.js",
+      "fresh/simulation.test.js"
     ],
     "remotePushPendingAuthorization": false,
     "remoteReleaseAuthorized": true,
@@ -93,10 +94,10 @@
       "coordination": "Check recent commits and running CI; if another producer is active, read only. No force push, duplicate work, or duplicate CI.",
       "activeBranch": "codex/game2-rebuild-20260913",
       "latestSafeCheckpoint": {
-        "at": "2026-09-14T06:38:00Z",
-        "verifiedRevision": "d48a8d7a4648dab4d1b6a6f19ad1064f528dea7f",
-        "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-unknown-method-change.json",
-        "execution": "This foreground producer is continuing into the recorded camera defect; no separate background producer claimed."
+        "at": "2026-09-14T07:04:29.685Z",
+        "verifiedRevision": "3d5ecfa33df6c1a15b26403df71f18ef19573ac2",
+        "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-camera-transition.json",
+        "execution": "Same foreground producer continues into actual reference acquisition. This checkpoint does not claim any separate persistent background execution."
       }
     },
     "evidence": [
@@ -133,16 +134,19 @@
     "completion": "All concept elements satisfied by evidenced blind comparison.",
     "current_unit": "2026-09-13-fresh-design",
     "unit_status": "active",
-    "first_action": "Verify the new latched-dodge/angular-camera candidate once on exact head. Preserve previous d48a8d7 videos as baseline. Check every locked render's standoff/down angle, real PC/touch mission and both complete recordings; compare actual touch combat frames independently. Then move to remaining reference/actual paired material and the larger actor/scene/ending gaps. All10 elements remain not measured.",
+    "first_action": "Acquire actual paired reference material for retained C04 first, record what the material covers and lacks, and use independent diagnosis to identify the largest scene/actor gap. Keep full-element blind verdicts not measured until whole scope and source concealment are valid. Remaining demonstrated camera issues are foreground stone-lantern occlusion and thin weapon/contact readability; ending feet also look hidden by the shrine plinth. Do not repeat the successful 3d5ecfa CI.",
     "implementation_strategy": "Fresh design and implementation; needs-before-reuse, per latest direct user instruction.",
     "unitEndReason": null,
     "deadlineReassessment": {
-      "observedAt": "2026-09-14T06:38:00Z",
-      "prediction": "unknown; this triggers a method change, not a declaration of feasibility or impossibility",
+      "observedAt": "2026-09-14T07:04:29.685Z",
+      "prediction": "unknown; no actual whole-element source-blind verdict yet. This continues to trigger methods review and missing-evidence acquisition, not feasibility assurance.",
       "basis": "About145.5 hours remain. All ten verdicts are not measured and reference selection is incomplete. Four recent successful functional CIs established execution and narrower static issues, but produced no whole-element verdict. Previous browser evidence contains screenshots and state, not reviewable continuous gameplay files. This prevents an evidence-based estimate of the remaining quality gap and comparison throughput.",
       "methodChange": "Keep PC/phone rendering isolated and their existing mission deadlines/assertions. Save the same real-input runs as continuous videos; independently decode every frame and record dimensions, duration, hashes and missing audio. Fix the already-recorded ending issues in the same candidate. Then prioritize actual reference/candidate comparison material over further isolated cosmetic passes. The saved continuous samples exposed a core combat defect: reproduce and correct homing-dodge reversals and camera orbit collapse as one input/camera change before further cosmetic work.",
-      "validation": "Two complete retrievable continuous files replace absent video evidence:98.12s/2453 decoded frames desktop and99.6s/2490 frames touch. Both missions/recordings passed in the same CI. Browser wall durations98.054s and99.114s versus prior97.242s/97.465s are single-run observations, not a controlled overhead estimate. Independent sampled review exposed close-combat overhead camera/actor overlap previously absent from saved stills. Typography and CTA gaps closed at the measured viewports. Whole-element forecast remains unknown until actual reference comparisons.",
-      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-unknown-method-change.json"
+      "validation": "Two complete retrievable continuous files replace absent video evidence:98.12s/2453 decoded frames desktop and99.6s/2490 frames touch. Both missions/recordings passed in the same CI. Browser wall durations98.054s and99.114s versus prior97.242s/97.465s are single-run observations, not a controlled overhead estimate. Independent sampled review exposed close-combat overhead camera/actor overlap previously absent from saved stills. Typography and CTA gaps closed at the measured viewports. Whole-element forecast remains unknown until actual reference comparisons. New continuous records exposed reproducible dodge reversal/camera collapse; correction passed39 tests and actual missions. New camera minima5.9100/5.8055m and maximum down angles16.4944/16.7747deg, plus independent image review, confirm the observed overhead symptom improved. Obstacle/weapon/actor quality gaps remain. Neither small-fix throughput nor functional passes predict the whole-element deadline.",
+      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-unknown-method-change.json",
+      "remainingHoursAtObservation": 144.78980972222223,
+      "nextMethodChange": "Stop further isolated ending-polish iterations at this checkpoint. Acquire actual retained-reference material alongside the already recorded candidate, document whole-element coverage gaps, and independently identify the dominant production gap before allocating the next implementation effort.",
+      "cameraEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-camera-transition.json"
     },
     "latestDeadlineInstruction": {
       "userOriginal": "継続確認の後、期限内に達成できるか考え、できないや分からないと判断したならやり方が間違ってることを疑え",
