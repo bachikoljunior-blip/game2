@@ -1,0 +1,219 @@
+{
+  "schemaVersion": 1,
+  "id": "ULTRA-C04-TWO-ROUTES-20260914",
+  "recordedAt": "2026-09-14T20:15:44Z",
+  "status": "verified runtime checkpoint; anonymous material gate invalid",
+  "formalVerdict": "not measured",
+  "workUnitEnded": false,
+  "scope": "bachikoljunior-blip/game2 only",
+  "authority": "The fixed instructions and current direct instructions govern. This is a fresh-design checkpoint, not a completion or element-verdict claim.",
+  "start": {
+    "initialRemoteMain": "789401e2bac00868f527692beb32861048ea8bc2",
+    "initialRemoteSourceBranch": "789401e2bac00868f527692beb32861048ea8bc2",
+    "resumedVerifiedRuntime": "c18a5fd1051b15471b3ca0ba3a129ccfc943596a",
+    "sourceBranch": "codex/game2-rebuild-20260913",
+    "oldPullRequest10Restored": false,
+    "publicRootReplacementAttempted": false,
+    "writerRule": "One integration writer. Stale untracked browser evidence under AI_DEVELOPMENT/EVIDENCE/fresh-20260913 was not staged or altered as source evidence."
+  },
+  "delegation": {
+    "instructionId": "ULTRA-CHILDREN-20260914-v3",
+    "integrator": "/root/game2_ultra_routes",
+    "integratorSpawn": {
+      "requestedReasoningEffort": "ultra",
+      "forkTurns": "none",
+      "model": "omitted",
+      "accepted": true,
+      "effectiveInternalStrengthIndependentlyConfirmed": false
+    },
+    "independentEvaluator": {
+      "id": "/root/game2_ultra_routes/c04_blind_material_gate_02",
+      "requestedReasoningEffort": "ultra",
+      "forkTurns": "none",
+      "model": "omitted",
+      "accepted": true,
+      "input": "Only the neutral A/B packet and fixed material-validity questions; source mapping, repository, history and expected result were withheld.",
+      "effectiveInternalStrengthIndependentlyConfirmed": false
+    },
+    "readOnlyMonitors": [
+      {
+        "id": "/root/game2_ultra_routes/ci_1ded4_monitor",
+        "requestedReasoningEffort": "ultra",
+        "forkTurns": "none",
+        "model": "omitted",
+        "result": "Fresh CI and artifact success independently reported; final route facts were also rechecked directly by the integrator."
+      },
+      {
+        "id": "/root/game2_ultra_routes/pr19_ci_monitor",
+        "requestedReasoningEffort": "ultra",
+        "forkTurns": "none",
+        "model": "omitted",
+        "result": "Stopped after the integrator directly confirmed the required PR run; no mutation."
+      },
+      {
+        "id": "/root/game2_ultra_routes/main6eed_runs_monitor",
+        "requestedReasoningEffort": "ultra",
+        "forkTurns": "none",
+        "model": "omitted",
+        "result": "Main iPhone and Pages runs succeeded; public-root blobs were unchanged."
+      },
+      {
+        "id": "/root/game2_ultra_routes/state_schema_audit",
+        "requestedReasoningEffort": "ultra",
+        "forkTurns": "none",
+        "model": "omitted",
+        "result": "Read-only audit confirmed the canonical update locations, required not-measured preservation and the absence of a criteria change."
+      }
+    ],
+    "processIncident": {
+      "description": "An earlier implementation-review helper and a later CI monitor spawned diagnostic descendants. They were interrupted when discovered; no descendant result was used as an element verdict or as authority for the merge. The integrator directly rechecked the successful run, artifact digest, four reports/videos and remote heads.",
+      "preservedEarlierNames": [
+        "/root/game2_ultra_routes/implementation_review/runtime_audit",
+        "/root/game2_ultra_routes/implementation_review/tests_audit",
+        "/root/game2_ultra_routes/implementation_review/tests_audit/ci_only_audit"
+      ],
+      "resolution": "Keep future delegated tasks explicitly bounded and child-free where independence is required."
+    }
+  },
+  "implementation": {
+    "verifiedRuntime": "1ded4aae27f8331cec10975c8dbac9eb482460a9",
+    "tree": "3e50e73d482e0bebb4cc44b3e4a2e9c058a774bb",
+    "commitsAfterStart": [
+      {"sha": "0180e051", "purpose": "Physical central ridge, selectable left/right paths, route state, landmarks, consequences and reconvergence."},
+      {"sha": "b68cf382", "purpose": "PC/touch complementary route matrix and four continuous recordings."},
+      {"sha": "c5b9a730", "purpose": "Wait for the authored torii fade observation."},
+      {"sha": "5eb8dcadd", "purpose": "Activate enemies only in approach, chosen branch and reconverged phases."},
+      {"sha": "43cf16ce", "purpose": "Recover a delayed touch route after missed contact."},
+      {"sha": "7320f85d", "purpose": "Harden preliminary real-click timing under CI throttling."},
+      {"sha": "ef76ff8", "purpose": "Move route screenshots after live capture so image encoding cannot perturb held input."},
+      {"sha": "41b939ce", "purpose": "Acknowledge delayed touch recovery input."},
+      {"sha": "203fd4f", "purpose": "Make left-branch lock and spacing dodge atomic, require input acknowledgement and restrict ridge samples to the branch."},
+      {"sha": "b6c8dbc", "purpose": "Use separate clean mobile browsers for unrecorded preflight and the recorded mission; one-pulse lock acknowledgement and lifecycle diagnostics."},
+      {"sha": "1ded4aae", "purpose": "Prevent missed-contact attack before the first actual defensive contact; always run both browser and route-matrix apparatuses even when one fails."}
+    ],
+    "routeContract": {
+      "sharedApproach": true,
+      "centralShortcutBlockedBySolidRidge": true,
+      "left": {"label": "石灯の道", "landmark": "石灯", "consequence": "early-retainer", "relativeLength": "shorter"},
+      "right": {"label": "風布の道", "landmark": "風布", "consequence": "overlook-warden", "relativeLength": "longer"},
+      "reconvergesBeforeSignal": true,
+      "unchangedGameValues": "Enemy count, attack/defense values, signal position, torii, shrine collision and ending copy were not weakened to pass verification."
+    }
+  },
+  "localVerification": {
+    "revision": "1ded4aae27f8331cec10975c8dbac9eb482460a9",
+    "tests": "67/67 passed",
+    "freshBuild": "passed",
+    "catalogValidation": "passed",
+    "projectValidation": "passed",
+    "ownershipCheck": "passed",
+    "kitCheck": "passed",
+    "diffCheck": "passed",
+    "localActualChromium": "not available at the Playwright-reported local cache path; no local browser result was substituted for CI"
+  },
+  "failedFreshRunsPreserved": [
+    {"run": 34867259609, "failure": "Route choice and landmark could be observed in the same tick.", "response": "Enforce event ordering instead of lowering the route contract."},
+    {"run": 34868672086, "failure": "Torii fade observation raced the authored transition.", "response": "Wait for the rendered transition."},
+    {"run": 34869228628, "failure": "Touch was killed before choice because the retainer crossed the ridge.", "response": "Scope enemies to route phases."},
+    {"run": 34872778490, "failure": "Touch-left remained stuck on the sentinel.", "response": "Preserve failure and refine actual-input recovery."},
+    {"run": 34874270923, "failure": "Desktop preliminary click loop raced requestAnimationFrame under CI throttling.", "response": "Use deadline-driven observed real-click retries."},
+    {"run": 34875453803, "failure": "Desktop-left was perturbed by live screenshot encoding.", "response": "Capture route screenshots only after mission observation; artifact 10360199793 preserved."},
+    {"run": 34877361343, "failure": "Attempt1 touch-right browser closed transiently; attempt2 touch-left was defeated although the other apparatuses passed.", "response": "Keep failures distinct and strengthen delayed-input policy without changing game values; artifact 10362190957 preserved."},
+    {"run": 34882913763, "failure": "Desktop-right ridge evidence included post-rejoin samples and touch-left lost because guard and lock used separate round trips.", "response": "Branch-only samples and atomic lock+dodge with acknowledgement; artifact 10363439209 preserved."},
+    {"run": 34885335444, "failure": "Desktop-left succeeded and touch-right reached its route, then the reused browser/CDP target closed.", "response": "Separate unrecorded preflight from a fresh recorded mission browser; artifact 10365050080 preserved."},
+    {"run": 34887121184, "failure": "Desktop-left and isolated touch-right both reached victory, but touch showed guard without an actual block/parry; matrix then did not run under the old workflow.", "response": "Stage the first actual defense before missed-contact attack and make the workflow run both apparatuses regardless of one status; artifact 10365371417 digest sha256:016a4f11dc28c1024f420fb9b1da3b8f2676a724a3f87eb3803fbae912eb71aa preserved."}
+  ],
+  "successfulFreshRun": {
+    "run": 34889248280,
+    "url": "https://github.com/bachikoljunior-blip/game2/actions/runs/34889248280",
+    "job": 104127483697,
+    "revision": "1ded4aae27f8331cec10975c8dbac9eb482460a9",
+    "conclusion": "success",
+    "coverage": "67 tests, fresh build, Chromium/SwiftShader desktop-left and touch-right browser missions, desktop-right and touch-left complementary matrix, retry/context-close checks and four recording decodes",
+    "artifact": {
+      "id": 10366910045,
+      "name": "fresh-game-1ded4aae27f8331cec10975c8dbac9eb482460a9",
+      "bytes": 60845656,
+      "digest": "sha256:05253cfa128cececb0eb051f235157888d51d4abba6da52cd1f7d8422f13760d",
+      "downloadedZipDigestMatched": true,
+      "files": 34,
+      "note": "A live and decoded touch rejoin PNG share one pathname, so the final ZIP contains one such file. Reports and four-video validation are unaffected."
+    },
+    "recordings": [
+      {"id": "desktop", "input": "PC", "route": "left", "landmark": "石灯", "consequence": "early-retainer", "victory": true, "signalLit": true, "kills": 3, "durationSeconds": 112.8, "decodedFrames": 2820, "sha256": "b531b50d1357e4017012fc36ff327cee598f050a2ba935503597d842ceec8004"},
+      {"id": "touch", "input": "touch", "route": "right", "landmark": "風布", "consequence": "overlook-warden", "guardObserved": true, "blockOrParryObserved": true, "victory": true, "signalLit": true, "kills": 3, "durationSeconds": 105.12, "decodedFrames": 2628, "sha256": "eaa17b617c661a85c9fe205ed98d1c092325a293f1832ad8b489c03879f807eb"},
+      {"id": "desktop-right", "input": "PC", "route": "right", "landmark": "風布", "consequence": "overlook-warden", "victory": true, "signalLit": true, "kills": 3, "durationSeconds": 70.24, "decodedFrames": 1756, "sha256": "0f24fa7059b0e26a340ab566a2bbb6f9b2650a90921b1a30a1192460027c36d5"},
+      {"id": "touch-left", "input": "touch", "route": "left", "landmark": "石灯", "consequence": "early-retainer", "guardObserved": true, "blockOrParryObserved": true, "victory": true, "signalLit": true, "kills": 3, "durationSeconds": 89.8, "decodedFrames": 2245, "sha256": "7caf0ed484af38d9f354e7e204c7c1399bda9785e86e92971691e2134153559e"}
+    ],
+    "integratorFullDecode": "All four VP8 video streams decoded locally with ffmpeg without error after download; dimensions, durations, hashes and zero audio tracks matched recording-report.json.",
+    "claimLimits": "Real DOM keyboard/pointer/touch input in software-rendered Chromium. Not physical-phone performance, measured input latency, audio evidence or an element verdict."
+  },
+  "anonymousMaterialGate": {
+    "id": "C04-BLIND-ATTEMPT-02",
+    "evaluatedAt": "2026-09-14T20:13:31Z",
+    "evaluator": "/root/game2_ultra_routes/c04_blind_material_gate_02",
+    "packet": "Neutral A/B files only; equal 960x540 H.264 30fps normalization, common masks, silent continuous takes and five frame sets. No source mapping was supplied.",
+    "mappingHeldByIntegrator": {"A": "selected reference excerpt", "B": "fresh candidate desktop-left excerpt"},
+    "mediaCommitted": false,
+    "reasonNotCommitted": "Reference-media redistribution conditions; only hashes, method and verdict are recorded in the public repository.",
+    "materials": {
+      "A": {"sha256": "929dfaeee91f021e722f41448396d02a3e25265b8d1f5cf3d9df4f347e5c5ea7", "durationSeconds": 120.466667, "decodedFrames": 3614},
+      "B": {"sha256": "f2278a9ce4b6e4be775ce31efb27f67fdf57fa23f479ec50c6e0f85b2c493303", "durationSeconds": 59.166667, "decodedFrames": 1775, "sourceRecordingSha256": "b531b50d1357e4017012fc36ff327cee598f050a2ba935503597d842ceec8004", "continuousSourceRangeSeconds": [48.48, 107.64]}
+    },
+    "result": "MATERIAL INVALID",
+    "A": {
+      "items": {"1": "yes", "2": "no", "3": "no", "4": "no", "5": "no", "6": "no", "7": "no", "8": "no"},
+      "finding": "The approach and final shrine are visible, but the fire, overlook, fallen tree, burned footing and cliff form a sequential single obstacle route. No simultaneous alternate routes, route choice, route-specific outcome or reconvergence is visible; fixed frames do not cover that progression."
+    },
+    "B": {
+      "items": {"1": "yes", "2": "yes", "3": "yes", "4": "yes", "5": "yes", "6": "no", "7": "no", "8": "no"},
+      "finding": "The candidate visibly improves through entry, simultaneous paths around the ridge, a left commitment, stone-lamp identity and an isolated encounter. At the end, fence/rocks and camera occlusion hide the unused route joining the chosen route, and the take does not visibly establish post-rejoin destination arrival; the five frames omit the encounter and readable rejoin/arrival."
+    },
+    "recognitionAttempted": false,
+    "preferenceAttempted": false,
+    "formalElementEffect": "No satisfied/not satisfied verdict may be assigned. C04 and every other element remain not measured."
+  },
+  "comparisonState": {
+    "counts": {"satisfied": 0, "not satisfied": 0, "not measured": 10},
+    "c04": "not measured",
+    "completionClaim": false
+  },
+  "deadlineReassessment": {
+    "deadline": "2026-09-20T07:51:53Z",
+    "observedAt": "2026-09-14T20:15:44Z",
+    "remainingHours": 131.6,
+    "prediction": "not grounded as can meet; therefore the current method is treated as defective",
+    "basis": "All ten valid anonymous element comparisons and five complete selection dossiers are not finished. The new route mechanics are verified, but the strict gate now exposes both an invalid reference excerpt and insufficiently visible candidate reconvergence/arrival.",
+    "methodActuallyChanged": [
+      "Replaced the invalid candidate straight line with two physical, collision-enforced paths, distinct landmarks/consequences and stateful reconvergence.",
+      "Expanded one-path PC/touch smoke into the full PC-left, PC-right, touch-right and touch-left input matrix with four continuous decodes.",
+      "Separated browser preflight from recorded mobile context, acknowledged single input pulses, staged actual defense and made both apparatuses run after a sibling failure; no game value or criterion was weakened.",
+      "Placed a new independent per-material validity gate before recognition/preference and supplied actual video plus fixed frames instead of accepting state telemetry as visible evidence."
+    ],
+    "measuredEffect": "CI34889248280 passed all four routes and decodes where the prior ten runs isolated ordering, enemy-phase, observer, input-session, browser-lifecycle and first-defense failures. The anonymous gate moved the candidate from failing items2-6 in attempt01 to passing items1-5 in attempt02, while precisely exposing unreadable items6-8 and that the selected reference excerpt itself fails items2-8.",
+    "nextMethodChange": "Split material readiness from full pair comparison: first create a candidate-only visibility contract and take that visibly shows both route mouths reconverging and the signal/shrine arrival without fence/rock occlusion; in parallel replace the reference excerpt with lawfully obtained ordinary-play footage that visibly contains an actual two-route choice and reconvergence. Run separate anonymous single-material gates before assembling another A/B packet."
+  },
+  "mainReflection": {
+    "pullRequest": 19,
+    "url": "https://github.com/bachikoljunior-blip/game2/pull/19",
+    "sourceHead": "1ded4aae27f8331cec10975c8dbac9eb482460a9",
+    "requiredPrRun": {"name": "iPhone SE 3 round", "run": 34890692808, "conclusion": "success"},
+    "merged": true,
+    "resultMainSha": "6eed8c552f8955d4a45be0eda6e7b78eece09312",
+    "postMergeContainment": "Main merge tree equals the verified runtime tree and directly contains 1ded4aae as a parent.",
+    "mainIphone": {"run": 34890795976, "conclusion": "success"},
+    "pages": {"run": 34890794331, "conclusion": "success"},
+    "sourceBranchSync": "Fast-forwarded without force to 6eed8c552f8955d4a45be0eda6e7b78eece09312.",
+    "publicRoot": "Unchanged: root index.html and public/ retained their prior blobs. Fresh acceptance is incomplete and main integration is not a quality-pass claim."
+  },
+  "automationReadback": {
+    "observedAt": "2026-09-14T20:15:00Z",
+    "createdOrDeleted": false,
+    "updated": false,
+    "game2": {"id": "6aa4047ea44c8191aa35d6c428969a7a", "enabled": true, "title": "game2 制作を継続", "schedule": "DTSTART:20260911T134010Z; RRULE:FREQ=HOURLY", "timezone": "America/Los_Angeles", "timingMode": "condition_watch", "promptLength": 16454, "v3Marker": true},
+    "survival": {"id": "6aa71e69ffec81919e059ecff6d98f82", "enabled": false, "title": "survival 継続実行", "schedule": "DTSTART;TZID=Asia/Tokyo:20260914T080900; RRULE:FREQ=HOURLY", "timezone": "Asia/Tokyo", "timingMode": "condition_watch", "promptLength": 10461, "v3Marker": true},
+    "q": {"id": "6aa72048f4388191a7448b249cf6578d", "enabled": false, "title": "Qの制作を監視・復旧", "schedule": "DTSTART:20260913T221432Z; RRULE:FREQ=HOURLY;COUNT=168", "timezone": "America/Los_Angeles", "timingMode": "exact_schedule", "promptLength": 13116, "v3Marker": true},
+    "result": "Required true/false/false state and stored prompt/schedule markers were preserved."
+  },
+  "exactNextAction": "From main/source 6eed8c5, make reconvergence and post-rejoin shrine/signal arrival visually legible in the continuous candidate take without changing route physics or game values. Separately acquire a lawful reference excerpt with an actual simultaneous route decision and reconvergence. Pass each through an anonymous material-only gate before the next paired recognition/preference attempt."
+}
