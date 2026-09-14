@@ -89,6 +89,14 @@ test('a route choice cannot light the signal before physical reconvergence',()=>
   assert.equal(canLightSignal(w),false);
  }
 });
+test('branch enemies activate only after their route is chosen or paths reconverge',()=>{
+ const w=createWorld(),retainer=w.enemies.find(enemy=>enemy.id==='retainer'),warden=w.enemies.find(enemy=>enemy.id==='warden');
+ Object.assign(w.player,{x:0,z:0});Object.assign(retainer,{x:-2,z:0});Object.assign(warden,{x:2,z:0});
+ stepWorld(w);assert.equal(retainer.stride,0);assert.equal(warden.stride,0);
+ w.routeChoice='right';w.routePhase='branch';stepWorld(w);
+ assert.equal(retainer.stride,0);assert.ok(warden.stride>0);
+ w.routePhase='rejoined';stepWorld(w);assert.ok(retainer.stride>0);
+});
 test('signal activation uses distance, not only forward progress; batched time agrees',()=>{
  const a=createWorld(),b=createWorld();
  for(const w of [a,b]){w.routeChoice='right';w.routePhase='rejoined';w.enemies.forEach(e=>e.hp=0);w.player.x=3;w.player.z=SIGNAL.z+1;stepWorld(w);assert.equal(w.signalLit,false);}

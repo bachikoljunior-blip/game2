@@ -12,13 +12,12 @@ export function touchPlaythroughAction(world, preferredRoute='left') {
   // contact, then guard a strike and press the attack instead of waiting for a
   // narrow animation window which may have expired by delivery time.
   const press=p.posture>0||world.totals.hits>0;
-  // The short, crowded stone-lantern path needs one spacing dodge per
-  // encounter; the longer wind-cloth path retains the original single dodge.
-  // Both predicates are world-derived and cannot write or shortcut state.
-  const route=world.routeChoice||preferredRoute;
-  const dodge=(route==='left'
-    ? world.totals.dodges<=world.totals.kills
-    : !Math.hypot(p.dodgeX,p.dodgeZ))&&d<3;
-  return {...base,x:d>3?base.x:0,z:d>3?base.z:0,guard:d<=4.2,
+  // Read each stance rather than repeating defensive inputs: one spacing
+  // dodge remains sufficient, the quick retainer is traded with after the
+  // first posture contact, and the heavier opponents are held on guard.
+  // These predicates are world-derived and cannot write or shortcut state.
+  const dodge=!Math.hypot(p.dodgeX,p.dodgeZ)&&d<3;
+  const guard=d<=4.2&&(target.id!=='retainer'||p.posture<20);
+  return {...base,x:d>3?base.x:0,z:d>3?base.z:0,guard,
     dodge,attack:press&&d<=1.95};
 }
