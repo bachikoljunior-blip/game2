@@ -58,6 +58,7 @@ try{
  assert.equal(await page.locator('#menu h1').evaluate(node=>getComputedStyle(node).display),'none');
  assert.equal(await page.locator('.result-heading').evaluate(node=>getComputedStyle(node).display),'block');
  assert.match(await page.locator('.result-heading').innerText(),/灯、谷へ/);
+ await page.waitForTimeout(500);
  assert.equal(await page.locator('#hud').isHidden(),true);
  await page.screenshot({path:new URL('mission-victory.png',out).pathname});
  await page.click('#start');
@@ -137,7 +138,14 @@ try{
  assert.equal(report.touchMission.after.totals.kills,3);
  assert.ok(report.touchMission.checkpoints.some(w=>w.totals.kills===3&&w.mode==='playing'));
  assert.equal(await mobile.locator('#menu').getAttribute('data-mode'),'victory');
+ await mobile.waitForTimeout(500);
  await mobile.screenshot({path:new URL('mobile-mission-victory.png',out).pathname});
+ await mobile.setViewportSize({width:390,height:844});await mobile.waitForTimeout(500);
+ const portraitResult=await mobile.evaluate(()=>{const menu=document.querySelector('#menu'),message=document.querySelector('#message'),button=document.querySelector('#start');return {fontSize:parseFloat(getComputedStyle(message).fontSize),panelHeight:getComputedStyle(menu,'::before').height,message:message.getBoundingClientRect().toJSON(),button:button.getBoundingClientRect().toJSON(),viewport:{width:innerWidth,height:innerHeight}};});
+ assert.ok(portraitResult.fontSize>=14,'portrait result copy must remain phone-readable');
+ assert.ok(portraitResult.message.bottom<=portraitResult.viewport.height&&portraitResult.button.bottom<=portraitResult.viewport.height,'portrait result content must remain in the viewport');
+ report.portraitResult=portraitResult;report.checks.push('portrait victory result panel keeps readable copy and retry in viewport');
+ await mobile.screenshot({path:new URL('mobile-mission-victory-portrait.png',out).pathname});
  await mobile.locator('#start').tap();
  const touchRetry=await mobile.evaluate(()=>freshDiagnostics().world);
  assert.equal(touchRetry.signalLit,false);assert.equal(touchRetry.totals.kills,0);

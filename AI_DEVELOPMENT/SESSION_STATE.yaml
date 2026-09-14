@@ -10,11 +10,11 @@
     "workingBranch": "codex/game2-rebuild-20260913",
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
-    "activeTask": "FRESH-VICTORY-COMPOSITION-DESIGN",
+    "activeTask": "FRESH-VICTORY-PANEL-CANDIDATE-CI",
     "lastSuccessfulAction": "Production re-fired at b852f6a and CI34804385369 passed35 tests/build, desktop mission and isolated touch mission with no errors. Independent static review verified improved actor/background and encounter sword separation plus clearer desktop result order; victory hierarchy, small phone copy and a bright right-edge wedge remain.",
     "currentFailingAction": null,
     "currentHypothesis": null,
-    "nextAction": "Implement the independently recommended responsive foreground result panel with larger phone copy, stronger contrast and tighter actor/lamp composition excluding the bright wall edge. Verify exact desktop/phone frames, then continue remaining presentation gaps, unresolved C05/C06/C09/C11/C12 selection and source-blind continuous media. All elements remain not measured. Deadline2026-09-20T07:51:53Z.",
+    "nextAction": "Verify the responsive result panel, shifted signal/player composition and generated halo at its exact revision. Require desktop and touch mission, landscape plus390x844 portrait frames, text/bounds measurements and independent static review. Then continue remaining presentation gaps, unresolved C05/C06/C09/C11/C12 selection and source-blind continuous media. All elements remain not measured. Deadline2026-09-20T07:51:53Z.",
     "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
     "pendingVerification": [
       "Exact responsive victory composition desktop and touch-only full mission CI",
@@ -115,7 +115,8 @@
       "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-touch-failure-f2d81b7.json",
       "AI_DEVELOPMENT/EVIDENCE/20260914-production-recovery-9895e92.json",
       "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-landscape-foundation.json",
-      "AI_DEVELOPMENT/EVIDENCE/20260914-production-refire-28ff67c.json"
+      "AI_DEVELOPMENT/EVIDENCE/20260914-production-refire-28ff67c.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-victory-panel-candidate.json"
     ],
     "publicRuntimeRevision": "86512c3bfdc69e03b5b490d9b0d79ec9da141343"
   },
@@ -127,7 +128,7 @@
     "completion": "All concept elements satisfied by evidenced blind comparison.",
     "current_unit": "2026-09-13-fresh-design",
     "unit_status": "active",
-    "first_action": "Implement and verify the responsive victory/result composition, then continue unresolved reference selections and source-blind continuous media. All elements remain not measured. Deadline2026-09-20T07:51:53Z.",
+    "first_action": "Verify the responsive victory-panel candidate in exact-revision desktop, phone landscape and phone portrait evidence, then continue unresolved reference selections and source-blind continuous media. All elements remain not measured. Deadline2026-09-20T07:51:53Z.",
     "implementation_strategy": "Fresh design and implementation; needs-before-reuse, per latest direct user instruction.",
     "unitEndReason": null,
     "deadlineReassessment": {

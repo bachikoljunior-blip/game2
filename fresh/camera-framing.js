@@ -5,10 +5,11 @@ export function computeCameraFrame(world,orbit,aspect,out){
   const p=world.player;
   if(world.mode==='victory'){
     const portrait=aspect<.8;
-    out.x=SIGNAL.x+(portrait?3.35:5.15);
-    out.y=portrait?3.05:3.35;
-    out.z=SIGNAL.z+5.7;
-    out.lookX=(p.x+SIGNAL.x)*.5;
+    const wide=aspect>1.9;
+    out.x=SIGNAL.x+(portrait?2.4:3.2);
+    out.y=portrait?3.15:3.35;
+    out.z=SIGNAL.z+(portrait?6.25:6.5);
+    out.lookX=(p.x+SIGNAL.x)*.5-(wide?1.15:portrait?0:.7);
     out.lookY=1.55;
     out.lookZ=(p.z+SIGNAL.z)*.5-.25;
     return out;

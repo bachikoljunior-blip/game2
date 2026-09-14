@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T04:52:51Z",
+  "baseRevision": "a21ad1f5043088431e443a79b739dc6fffcda724",
+  "status": "candidate_pending_exact_head_ci",
+  "restart": {
+    "stopObservedAt": "2026-09-14T04:50:44Z",
+    "lastActivity": "a21ad1f saved the verified b852f6a result and exact next frontier at 2026-09-14T04:07:06Z",
+    "cause": "No separate production executor persists beyond the bounded invocation; no later branch activity or running CI was present.",
+    "remedy": "Use this enabled hourly re-fire surface and resume the exact saved victory-composition frontier. Preserve the candidate and verification frontier before this run ends.",
+    "verification": "Substantive implementation resumed; local35 tests and production build pass. Exact-head rendered CI remains pending."
+  },
+  "designBeforeImplementation": "AI_DEVELOPMENT/FRESH_DESIGN.md C05/C08 responsive ending composition",
+  "implementation": [
+    "opaque responsive result panel on the left in landscape and the lower region in portrait",
+    "minimum14px phone result copy and full-width portrait retry action",
+    "camera focus shifted so the signal and player occupy the open side rather than the building edge",
+    "generated additive signal halo visible only after the authored signal action",
+    "browser evidence adds an actual390x844 rotation of the unchanged victory state and checks text size and viewport bounds"
+  ],
+  "reuse": "No old game source or component was inspected or imported.",
+  "localVerification": {
+    "tests": "passed:35",
+    "productionBuild": "passed",
+    "bundle": "517.13 kB main JavaScript,134.48 kB gzip; existing over500kB warning retained",
+    "limitations": "Structural and build checks are not visual or element verdicts. Exact-revision browser frames remain pending."
+  },
+  "requiredNextEvidence": [
+    "Exact-revision desktop and touch mission completion",
+    "Desktop landscape, phone landscape and phone portrait victory images",
+    "Independent static image review against the b852f6a findings",
+    "Continue unresolved reference selection and actual source-blind continuous media"
+  ],
+  "formalVerdict": "not measured",
+  "workUnitEnded": false
+}
