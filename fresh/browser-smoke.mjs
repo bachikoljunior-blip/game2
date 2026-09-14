@@ -115,6 +115,7 @@ try{
  assert.deepEqual(errors,[]);report.result='passed';
 }catch(e){report.result='failed';report.failure=String(e);report.failureState=await page.evaluate(()=>window.freshDiagnostics?.()).catch(()=>null);process.exitCode=1;await page.screenshot({path:new URL('failure.png',out).pathname}).catch(()=>{});}
 report.durationsMs.desktop=Date.now()-desktopStarted;
+report.desktopTimings=await page.evaluate(()=>window.freshDiagnostics?.(true).timings).catch(()=>null);
 // Desktop and phone must not compete for the same software-rendering process. The
 // previous run kept the desktop WebGL page alive and advanced only 39.8 seconds of
 // simulation during a 180-second phone window. A clean browser also makes each
@@ -208,6 +209,7 @@ try{
  assert.deepEqual(errors,[]);
 }catch(e){report.result='failed';report.mobileFailure=String(e);report.mobileFailureState=await mobile.evaluate(()=>window.freshDiagnostics?.()).catch(()=>null);process.exitCode=1;}
 report.durationsMs.mobile=Date.now()-mobileStarted;
+report.touchTimings=await mobile.evaluate(()=>window.freshDiagnostics?.(true).timings).catch(()=>null);
 await finishRecording(phone,mobileVideo,mobileRecording);await mobileBrowser.close();
 }
 try{await run();}

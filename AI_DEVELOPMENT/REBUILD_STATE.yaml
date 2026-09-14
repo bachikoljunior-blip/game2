@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-14T07:36:16.485Z",
-  "phase": "fresh-c04-approach-section",
+  "updatedAt": "2026-09-14T07:52:22.487Z",
+  "phase": "fresh-c04-spatial-render",
   "userInstruction": "一旦ゲーム自体はゼロから作り直してくれる？",
   "activeBranch": "codex/game2-rebuild-20260913",
   "fixedInstructions": "AI_DEVELOPMENT/FIXED_INSTRUCTIONS.md",
@@ -15,7 +15,7 @@
     "oldPr": 10,
     "optionalRebuildRouting": "ec2480166809f57fa623929bec0fbcb4d5a623a2"
   },
-  "continuation": "Verify the integrated C04 approach-section candidate on exact head once:43 tests/build, all real PC/touch mission and recovery checks, continuous video decode, plant-root agreement and unchanged grass triangle budget. Independently compare against3d5ecfa at ordinary start/approach/combat and ending, including plinth/foot visibility. Keep C04 and all ten whole-element verdicts not measured. Retain actual reference images and source-labelled gap diagnosis separately from runtime. Then acquire the identified official continuous media and complete the still-missing whole-element coverage.",
+  "continuation": "Verify the spatially partitioned C04 candidate on its exact head:44 tests/build and unchanged PC/touch full mission,180second limits,recovery,ending/retry and recording gates. Read raw rAF intervals separately from JS advance/render-call durations; inspect actual triangle/call changes and full touch outcome. Independently review sampled normal/combat/ending images for lost leaves, shadow continuity, foot contact and remaining vegetation occlusion. Then acquire identified actual continuous reference media and close whole-element comparison coverage; no panel-only loop.",
   "status": "not measured",
   "publication": "Keep old Pages until a verified replacement is ready. Fresh runtime is a work-branch candidate, not public product acceptance.",
   "procedureAuthority": "Fixed instructions and explicit user directives govern. Tests, task plans and architecture documents are tools chosen by the AI, not additional fixed rules.",
@@ -27,7 +27,7 @@
   "comparisonCatalog": "AI_DEVELOPMENT/COMPARISON_ELEMENTS.yaml",
   "referenceSelectionComplete": false,
   "verificationEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-camera-transition.json",
-  "pendingCandidate": "C04 integrated scene failed its first browser initialization; preserved failure evidence and fixed mixed index batching without geometry loss.43 local tests pass; exact-head retry pending.",
+  "pendingCandidate": "Spatial vegetation partition and stage timing:44 local tests and build passed, exact-head actual input pending. Prior7d5cfd5 corrected initialization/PC but touch failed180second deadline.",
   "methodChangeEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-unknown-method-change.json",
   "recoveryRole": {
     "userInstruction": "定期オートメーションは万が一実行が停止していたら、停止してしまう原因を全て潰してから再開する再発火役にしてください。",

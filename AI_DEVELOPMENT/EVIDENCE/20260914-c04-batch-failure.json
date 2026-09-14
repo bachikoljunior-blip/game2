@@ -108,7 +108,13 @@
   "whyLocalTestsMissed": "42 tests covered terrain sampling, path/base contracts and prior input/camera logic, but did not construct a mixed indexed/unindexed material batch. Source-shape presence assertions did not exercise composition.",
   "correction": "Assign identity indices to previously non-indexed generated parts before batching. Preserve all positions, normals, UVs and triangle count. Add a real mixed Box/Cylinder/Dodecahedron batch regression.",
   "localCorrectionVerification": "43 tests passed; mixed actual geometries merge, with original rock positions, triangle count and all common vertex attribute counts preserved.",
-  "remaining": "Corrected exact-head browser initialization, shader compile and full PC/touch play are not yet verified.",
+  "remaining": "Mixed-index initialization cause verified resolved. Touch non-completion tracked separately in20260914-c04-touch-cost.json.",
   "productionState": "The foreground producer remained active and repaired this verification failure. It is not evidence of a separate producer stopping.",
-  "formalVerdict": "not measured"
+  "formalVerdict": "not measured",
+  "correctionVerification": {
+    "revision": "7d5cfd5d2e55acd770fdc2ff73ebade2ca97b2c3",
+    "run": 34818667465,
+    "initialization": "passed; no browser/console error, PC complete",
+    "wholeRun": "failed; separate touch180second deadline regression"
+  }
 }

@@ -5,6 +5,7 @@ import { SIGNAL } from './mission.js';
 import { computeCameraFrame, interpolateCameraFrame } from './camera-framing.js';
 import { groundHeightAt, terrainVertexHeight, shrineBaseSize } from './terrain.js';
 import { indexForBatch } from './batch-geometry.js';
+import { spatialCell, partitionInstances } from './spatial-batches.js';
 
 const clamp = T.MathUtils.clamp;
 export function createPresentation(canvas) {
@@ -50,10 +51,15 @@ export function createPresentation(canvas) {
   const groundMat=material('#d8cbb4');groundMat.map=texture;groundMat.vertexColors=true;
   const stoneTexture=texture.clone();stoneTexture.repeat.set(1.3,1.3);stone.map=stoneTexture;stone.bumpMap=stoneTexture;stone.bumpScale=.06;
   const batches=new Map();const matrix=new T.Matrix4(),q=new T.Quaternion(),s=new T.Vector3(),pos=new T.Vector3();
+  function queuePart(geometry,mat,x,z){
+    if(!batches.has(mat))batches.set(mat,new Map());
+    const cells=batches.get(mat),key=mat===leaf?spatialCell(x,z):'all';
+    if(!cells.has(key))cells.set(key,[]);cells.get(key).push(geometry);
+  }
   function staticPart(geometry,mat,x,y,z,sx=1,sy=1,sz=1,ry=0){
     indexForBatch(geometry);
     q.setFromAxisAngle(T.Object3D.DEFAULT_UP,ry);matrix.compose(pos.set(x,y,z),q,s.set(sx,sy,sz));geometry.applyMatrix4(matrix);
-    if(!batches.has(mat))batches.set(mat,[]);batches.get(mat).push(geometry);
+    queuePart(geometry,mat,x,z);
   }
   const box=(m,x,y,z,w,h,d,ry=0)=>staticPart(new T.BoxGeometry(1,1,1),m,x,y,z,w,h,d,ry);
   const column=(m,x,y,z,r,h)=>staticPart(new T.CylinderGeometry(r*.88,r,h,8),m,x,y,z);
@@ -64,7 +70,7 @@ export function createPresentation(canvas) {
     g.setAttribute('windWeight',new T.Float32BufferAttribute(weights,1));
     const rotation=new T.Quaternion().setFromUnitVectors(T.Object3D.DEFAULT_UP,delta.normalize());
     g.applyMatrix4(new T.Matrix4().compose(start.add(end).multiplyScalar(.5),rotation,new T.Vector3(1,1,1)));
-    if(!batches.has(leaf))batches.set(leaf,[]);batches.get(leaf).push(g);
+    queuePart(g,leaf,(x+endX)/2,(z+endZ)/2);
   }
   const groundGeometry=new T.PlaneGeometry(160,200,64,80);groundGeometry.rotateX(-Math.PI/2);
   const groundPosition=groundGeometry.getAttribute('position');
@@ -131,7 +137,13 @@ export function createPresentation(canvas) {
     }
   }
   leafCluster.dispose();
-  for(const [mat,geoms] of batches){const merged=mergeGeometries(geoms);const mesh=new T.Mesh(merged,mat);mesh.castShadow=mesh.receiveShadow=true;if(mat===leaf)mesh.customDepthMaterial=leafDepth;scene.add(mesh);geoms.forEach(g=>g.dispose());}
+  for(const [mat,cells] of batches)for(const geoms of cells.values()){
+    const merged=mergeGeometries(geoms);merged.computeBoundingSphere();
+    if(mat===leaf)merged.boundingSphere.radius+=.2;
+    const mesh=new T.Mesh(merged,mat);mesh.castShadow=mesh.receiveShadow=true;
+    if(mat===leaf)mesh.customDepthMaterial=leafDepth;
+    scene.add(mesh);geoms.forEach(g=>g.dispose());
+  }
   const grassMat=material('#b8b77d');grassMat.side=T.DoubleSide;
   grassMat.onBeforeCompile=shader=>{shader.uniforms.windTime=wind;shader.vertexShader='uniform float windTime;\n'+shader.vertexShader;shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n float gust=sin(windTime*1.15+instanceMatrix[3].x*.19+instanceMatrix[3].z*.13); vec2 gustDelta=vec2(.22,.12)*gust*position.y*position.y; vec2 localX=normalize(vec2(instanceMatrix[0].x,instanceMatrix[0].z)); vec2 localZ=normalize(vec2(instanceMatrix[2].x,instanceMatrix[2].z)); transformed.x+=dot(gustDelta,localX); transformed.z+=dot(gustDelta,localZ);');};
   const blades=[];
@@ -152,7 +164,8 @@ export function createPresentation(canvas) {
     rootError=Math.max(rootError,Math.abs(grass.instanceMatrix.array[i*16+13]-groundHeightAt(x,z)-.006));
   }
   const landscapeMetrics={grassClumps:3000,grassBlades:9000,grassTriangles:grassGeo.index.count/3*grass.count,maxRootError:rootError,baseFootprint:shrineBaseSize(OBSTACLES.find(o=>o.h>=5))};
-  grass.instanceMatrix.needsUpdate=true;scene.add(grass);
+  const grassGroups=partitionInstances(grass);grass.dispose();grassGroups.forEach(g=>scene.add(g));
+  landscapeMetrics.grassBatches=grassGroups.length;landscapeMetrics.leafBatches=batches.get(leaf).size;
   const rigs=new Map();
   // The hanging signal sits on the existing shrine wall, outside the walking path.
   const signalMaterial=material('#74624a');

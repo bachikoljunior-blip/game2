@@ -11,7 +11,8 @@
     "Generate broader pointed bamboo leaf sprays, side outcrops, soil-bank color patches and irregular stone courses; place lanterns outside the main combat strip.",
     "Align sky sun and directional light; distinguish atmosphere and material values. Keep reference media completely outside runtime.",
     "Shrink the decorative shrine plinth to its existing solid collision footprint so a stopped actor is not buried by a protruding cosmetic base.",
-    "Normalize index representation before static material batching, preserving geometry, after the first real-render initialization failure."
+    "Normalize index representation before static material batching, preserving geometry, after the first real-render initialization failure.",
+    "Partition leaf/branch and grass submissions by16m cells, conserving geometry/colors/wind and adding conservative culling bounds."
   ],
   "preserved": [
     "Three.js and all assets generated at startup; no external runtime media",
@@ -19,26 +20,54 @@
     "Fixed instructions, all ten comparison boundaries/references and sample thresholds unchanged"
   ],
   "localVerification": {
-    "tests": 43,
+    "tests": 44,
     "result": "passed",
     "build": "passed",
-    "bundleKb": 546.42,
-    "gzipKb": 143.75,
+    "bundleKb": 547.88,
+    "gzipKb": 144.4,
     "warning": "Existing over500kB bundle warning retained; not suppressed",
     "geometryVerification": "Raycasts against actual Three.js PlaneGeometry triangles agree with ground sampler within1e-5 across diagonal interior samples; level central corridor and solid footprint constraints passed. A mixed indexed Box/Cylinder and unindexed Dodecahedron batching regression now also preserves every vertex attribute and face.",
-    "buildScope": "Pre-index-fix final landscape build passed; corrected build rechecked by the next exact-head CI."
+    "buildScope": "Spatial candidate build passed before the observational timestamp separation; final exact revision is checked by CI."
   },
-  "remoteVerification": null,
-  "independentReview": null,
+  "remoteVerification": {
+    "revision": "7d5cfd5d2e55acd770fdc2ff73ebade2ca97b2c3",
+    "run": 34818667465,
+    "result": "failed",
+    "detail": "PC full route passes; touch fails at180seconds",
+    "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-touch-cost.json"
+  },
+  "independentReview": {
+    "reviewer": "review_capture",
+    "scope": "Known-source images and5-second touch samples; no blind verdict or full-motion review",
+    "improved": [
+      "Slope/outcrop and clustered grass/pointed bamboo leaf detail build a thicker path edge.",
+      "Soil/stone gaps and surface grain reduce uniform ground.",
+      "PC ending shows both feet on the paving in front of the plinth; no foot burial visible in that image."
+    ],
+    "regressions": [
+      "Darker actors/background and denser vegetation shadows reduce combat separation.",
+      "Foreground grass obscures actor/feet in sampled touch combat, including sequence row5 column1."
+    ],
+    "remaining": [
+      "Straight path and shrine reveal; plain distant forms.",
+      "Touch ending not reached; grounding there unverified.",
+      "Cannot identify input latency versus render cost from images alone."
+    ]
+  },
   "formalVerdict": "not measured",
   "workUnitEnded": false,
-  "nextWork": "Verify the integrated C04 approach-section candidate on exact head once:43 tests/build, all real PC/touch mission and recovery checks, continuous video decode, plant-root agreement and unchanged grass triangle budget. Independently compare against3d5ecfa at ordinary start/approach/combat and ending, including plinth/foot visibility. Keep C04 and all ten whole-element verdicts not measured. Retain actual reference images and source-labelled gap diagnosis separately from runtime. Then acquire the identified official continuous media and complete the still-missing whole-element coverage.",
+  "nextWork": "Verify the spatially partitioned C04 candidate on its exact head:44 tests/build and unchanged PC/touch full mission,180second limits,recovery,ending/retry and recording gates. Read raw rAF intervals separately from JS advance/render-call durations; inspect actual triangle/call changes and full touch outcome. Independently review sampled normal/combat/ending images for lost leaves, shadow continuity, foot contact and remaining vegetation occlusion. Then acquire identified actual continuous reference media and close whole-element comparison coverage; no panel-only loop.",
   "failedAttempts": [
     {
       "revision": "ea295ff0400a9e58f1b95c19cac0683a1922d188",
       "run": 34818148603,
       "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-batch-failure.json"
+    },
+    {
+      "revision": "7d5cfd5d2e55acd770fdc2ff73ebade2ca97b2c3",
+      "run": 34818667465,
+      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-touch-cost.json"
     }
   ],
-  "updatedAt": "2026-09-14T07:36:16.485Z"
+  "updatedAt": "2026-09-14T07:52:22.487Z"
 }
