@@ -10,15 +10,15 @@
     "workingBranch": "codex/game2-rebuild-20260913",
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
-    "activeTask": "FRESH-PRESENTATION-CI",
-    "lastSuccessfulAction": "From the recorded fresh design, implemented lock-aware parallax framing, an unobscured victory layout and opaque label backings. 33 node tests, build, structural catalog and state validation pass locally; no rendered candidate frame yet.",
-    "currentFailingAction": "Exact candidate CI/rendered review pending. Touch-only mission, portrait behavior, audio, physical-device performance and every source-blind element verdict remain unmeasured. Five reference selections remain incomplete.",
+    "activeTask": "FRESH-TOUCH-MISSION-CI",
+    "lastSuccessfulAction": "Runtime b851e80 passed exact CI 34796846310. Rendered frames show lock-on body/blade separation, opaque readable labels and an ending that leaves the lit signal visible. These are scoped observations, not whole-element verdicts.",
+    "currentFailingAction": "Touch-only complete mission test is implemented but not yet run at its exact revision. Primitive geometry, attack-only trivial route, audio, physical-device performance and all source-blind element comparisons remain unresolved.",
     "currentHypothesis": null,
-    "nextAction": "Inspect the exact CI and rendered artifacts for the commit containing EVIDENCE/20260914-fresh-presentation-checkpoint.json. Verify lock-on separation, unobscured signal ending and label/control layout; local rendered proof is unavailable. Do not reuse 4da1c60 images as candidate evidence. Then test touch-only full mission, diagnose attack-only completion, and finish remaining reference selection C05/C06/C09/C11/C12 plus actual blind media. All elements remain not measured; current work unit remains active. Deadline 2026-09-20T07:51:53Z.",
+    "nextAction": "Inspect the exact CI for the commit containing the touch-only browser flow added after b851e80. Require touch controls alone to complete all three fights, postcombat arrival, signal, ending and clean retry; do not mutate runtime state. Independently review the b851e80 rendered corrections. Then continue attack-only balance diagnosis, primitive generated presentation, remaining reference selection C05/C06/C09/C11/C12 and source-blind media. All elements remain not measured; current work unit remains active. Deadline 2026-09-20T07:51:53Z.",
     "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
     "pendingVerification": [
-      "Exact candidate CI and rendered before/after review",
-      "Touch-only full mission and signal completion",
+      "Exact candidate touch-only full mission CI",
+      "Independent review of b851e80 correction images",
       "Portrait/narrow viewport and orientation behavior",
       "Attack-only versus defense-led combat routes",
       "WebKit / iOS Simulator behavior",
@@ -34,7 +34,8 @@
       "fresh/presentation.js",
       "fresh/main.js",
       "fresh/mission.css",
-      "fresh/browser-smoke.mjs"
+      "fresh/browser-smoke.mjs",
+      "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-b851e80.json"
     ],
     "remotePushPendingAuthorization": false,
     "remoteReleaseAuthorized": true,
@@ -90,7 +91,8 @@
       "AI_DEVELOPMENT/EVIDENCE/20260913-reference-selection-c02.json",
       "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-mission.json",
       "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-4da1c60.json",
-      "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-presentation-checkpoint.json"
+      "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-presentation-checkpoint.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-b851e80.json"
     ],
     "publicRuntimeRevision": "86512c3bfdc69e03b5b490d9b0d79ec9da141343"
   },
@@ -102,7 +104,7 @@
     "completion": "All concept elements satisfied by evidenced blind comparison.",
     "current_unit": "2026-09-13-fresh-design",
     "unit_status": "active",
-    "first_action": "Inspect the exact CI and rendered artifacts for the commit containing EVIDENCE/20260914-fresh-presentation-checkpoint.json. Verify lock-on separation, unobscured signal ending and label/control layout; local rendered proof is unavailable. Do not reuse 4da1c60 images as candidate evidence. Then test touch-only full mission, diagnose attack-only completion, and finish remaining reference selection C05/C06/C09/C11/C12 plus actual blind media. All elements remain not measured; current work unit remains active. Deadline 2026-09-20T07:51:53Z.",
+    "first_action": "Inspect the exact CI for the commit containing the touch-only browser flow added after b851e80. Require touch controls alone to complete all three fights, postcombat arrival, signal, ending and clean retry; do not mutate runtime state. Independently review the b851e80 rendered corrections. Then continue attack-only balance diagnosis, primitive generated presentation, remaining reference selection C05/C06/C09/C11/C12 and source-blind media. All elements remain not measured; current work unit remains active. Deadline 2026-09-20T07:51:53Z.",
     "implementation_strategy": "Fresh design and implementation; needs-before-reuse, per latest direct user instruction.",
     "unitEndReason": null
   }

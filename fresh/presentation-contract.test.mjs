@@ -27,6 +27,8 @@ test('interface gives labels an opaque backing and keeps victory title off the l
   const css=readFileSync(new URL('./mission.css',import.meta.url),'utf8');
   const main=readFileSync(new URL('./main.js',import.meta.url),'utf8');
   assert.match(css,/#objective,#enemy\{[^}]*background:#10191d/);
+  assert.match(css,/#enemy:empty\{display:none\}/);
   assert.match(css,/#menu\[data-mode="victory"\] h1/);
   assert.match(main,/menu\.dataset\.mode=world\.mode/);
+  assert.match(main,/input\.setActive\(false\);hud\.hidden=true;menu\.hidden=false/);
 });

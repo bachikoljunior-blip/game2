@@ -1547,16 +1547,16 @@
     "SK": "SEKIRO: Shadows Die Twice (2019)"
   },
   "runtime": {
-    "basicEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-4da1c60.json",
+    "basicEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-b851e80.json",
     "branch": "codex/game2-rebuild-20260913",
     "formalEvidence": null,
     "legacyEvidenceReusableAsCurrent": false,
-    "revision": "4da1c6049bd682d6030c40a8b01802b4e8b2e692",
+    "revision": "b851e803e1af27e6e535b99a2b38b567a73e06dc",
     "verificationScope": "Basic functional browser evidence and source-aware static image review only; all whole-element blind verdicts remain not measured.",
     "pendingCandidate": {
-      "baseRevision": "5402a92330f5850089e14d7f7b044f579479b15e",
-      "checkpoint": "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-presentation-checkpoint.json",
-      "note": "revision/basicEvidence still describe the prior rendered runtime. Candidate must be verified at its own exact commit."
+      "baseRevision": "b851e803e1af27e6e535b99a2b38b567a73e06dc",
+      "checkpoint": "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-b851e80.json",
+      "note": "Runtime is unchanged; candidate expands actual touch verification and must pass at its own exact commit."
     }
   },
   "schemaVersion": 1,
@@ -1873,6 +1873,6 @@
     }
   ],
   "status": "not measured",
-  "updatedAt": "2026-09-14T01:42:21Z",
+  "updatedAt": "2026-09-14T01:46:31Z",
   "adoptionReview": "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-catalog-review.json"
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-14T01:42:21Z",
+  "updatedAt": "2026-09-14T01:46:31Z",
   "status": "active",
   "project": {
     "name": "KAGEROU 陽炎",
@@ -146,9 +146,9 @@
     ]
   },
   "currentWork": {
-    "activeTask": "FRESH-PRESENTATION-CI",
-    "lastCompletedTask": "Implemented source-observed presentation corrections; 33 local node tests and build pass. Exact-revision rendered evidence pending.",
-    "nextTask": "Inspect the exact CI and rendered artifacts for the commit containing EVIDENCE/20260914-fresh-presentation-checkpoint.json. Verify lock-on separation, unobscured signal ending and label/control layout; local rendered proof is unavailable. Do not reuse 4da1c60 images as candidate evidence. Then test touch-only full mission, diagnose attack-only completion, and finish remaining reference selection C05/C06/C09/C11/C12 plus actual blind media. All elements remain not measured; current work unit remains active. Deadline 2026-09-20T07:51:53Z.",
+    "activeTask": "FRESH-TOUCH-MISSION-CI",
+    "lastCompletedTask": "Runtime b851e80 passed exact CI and coordinator rendered inspection for the three targeted corrections; scope is functional/static, not blind acceptance.",
+    "nextTask": "Inspect the exact CI for the commit containing the touch-only browser flow added after b851e80. Require touch controls alone to complete all three fights, postcombat arrival, signal, ending and clean retry; do not mutate runtime state. Independently review the b851e80 rendered corrections. Then continue attack-only balance diagnosis, primitive generated presentation, remaining reference selection C05/C06/C09/C11/C12 and source-blind media. All elements remain not measured; current work unit remains active. Deadline 2026-09-20T07:51:53Z.",
     "nextStartingPoint": "AI_DEVELOPMENT/FRESH_DESIGN.md",
     "blockedBy": [],
     "remoteStateChangeAuthorized": true,

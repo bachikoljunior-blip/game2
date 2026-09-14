@@ -54,6 +54,7 @@ try{
  assert.match(await page.locator('#message').innerText(),/社の灯がともった/);
  assert.equal(await page.locator('#menu').getAttribute('data-mode'),'victory');
  assert.equal(await page.locator('#menu h1').evaluate(node=>getComputedStyle(node).display),'none');
+ assert.equal(await page.locator('#hud').isHidden(),true);
  await page.screenshot({path:new URL('mission-victory.png',out).pathname});
  await page.click('#start');
  const clean=await page.evaluate(()=>freshDiagnostics().world);
@@ -87,6 +88,36 @@ try{
  const stopped=await mobile.evaluate(()=>freshDiagnostics().world.player.z);await mobile.waitForTimeout(350);
  assert.equal(await mobile.evaluate(()=>freshDiagnostics().world.player.z),stopped);report.checks.push('mobile joystick movement and cancel stop');
  await mobile.screenshot({path:new URL('mobile.png',out).pathname});
+ // Run the complete authored objective through touch controls only. Diagnostics
+ // are read-only; every state change below comes from a rendered control.
+ await mobile.reload();await mobile.locator('#start').tap();
+ const touchDeadline=Date.now()+180000;report.touchMission={checkpoints:[]};let touchKills=-1;
+ while(Date.now()<touchDeadline){
+  const w=await mobile.evaluate(()=>freshDiagnostics().world);
+  if(w.totals.kills!==touchKills){report.touchMission.checkpoints.push(w);touchKills=w.totals.kills;}
+  if(w.mode!=='playing')break;
+  const a=playthroughAction(w);
+  if(a.lock)await mobile.locator('[data-action=lock]').tap();
+  else if(a.attack)await mobile.locator('[data-action=attack]').tap();
+  else if(a.x||a.z){
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...s,id:4}]});
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:s.x+a.x*32,y:s.y+a.z*32,id:4}]});
+   await mobile.waitForTimeout(100);
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});
+  }else await mobile.waitForTimeout(80);
+ }
+ report.touchMission.after=await mobile.evaluate(()=>freshDiagnostics().world);
+ assert.equal(report.touchMission.after.mode,'victory');
+ assert.equal(report.touchMission.after.signalLit,true);
+ assert.equal(report.touchMission.after.totals.kills,3);
+ assert.ok(report.touchMission.checkpoints.some(w=>w.totals.kills===3&&w.mode==='playing'));
+ assert.equal(await mobile.locator('#menu').getAttribute('data-mode'),'victory');
+ await mobile.screenshot({path:new URL('mobile-mission-victory.png',out).pathname});
+ await mobile.locator('#start').tap();
+ const touchRetry=await mobile.evaluate(()=>freshDiagnostics().world);
+ assert.equal(touchRetry.signalLit,false);assert.equal(touchRetry.totals.kills,0);
+ assert.equal(touchRetry.player.hp,100);assert.equal(touchRetry.player.z,18);
+ report.checks.push('touch-only full combat, arrival, signal, ending and clean retry');
  assert.deepEqual(errors,[]);
 }catch(e){report.result='failed';report.mobileFailure=String(e);report.mobileFailureState=await mobile.evaluate(()=>window.freshDiagnostics?.()).catch(()=>null);process.exitCode=1;}
 await writeFile(new URL('browser-report.json',out),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));await browser.close();

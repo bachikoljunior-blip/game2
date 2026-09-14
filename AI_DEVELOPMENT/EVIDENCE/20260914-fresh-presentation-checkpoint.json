@@ -36,8 +36,10 @@
       "fixedInstructionsUnchanged": true
     },
     "browser": {
-      "result": "pending exact-revision CI",
-      "workflow": ".github/workflows/fresh-game.yml"
+      "result": "success at b851e803e1af27e6e535b99a2b38b567a73e06dc",
+      "workflow": ".github/workflows/fresh-game.yml",
+      "run": 34796846310,
+      "resultEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-b851e80.json"
     }
   },
   "formalVerdict": "not measured",
@@ -50,5 +52,5 @@
     "pagesChanged": false,
     "reason": "Candidate lacks exact-revision rendered review and whole-element acceptance."
   },
-  "nextAction": "Inspect exact candidate CI and its title/encounter/mobile/victory images. Confirm that locked opponents and blades are visibly separated, the signal lamp remains unobscured in the ending, and opaque labels do not collide with controls. If observed, record only the measured rendering change; do not call a whole element satisfied. Then verify touch-only full mission and remaining initial reference selections C05/C06/C09/C11/C12. Deadline 2026-09-20T07:51:53Z."
+  "nextAction": "Rendered correction CI succeeded and is recorded in EVIDENCE/20260914-fresh-ci-b851e80.json. Verify the newly added touch-only full mission at its own exact revision. Continue remaining initial reference selections C05/C06/C09/C11/C12 and source-blind media. Deadline 2026-09-20T07:51:53Z."
 }
