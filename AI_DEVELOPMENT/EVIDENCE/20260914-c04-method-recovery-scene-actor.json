@@ -87,11 +87,43 @@
       "next": "Run the repository Fresh game verification workflow on the committed source checkpoint."
     }
   },
+  "remoteVerification": {
+    "revision": "44ce5a67ad00f63ffc8c908d02db5c320d23d7ca",
+    "run": 34838395942,
+    "result": "success",
+    "tests": 47,
+    "coverage": [
+      "production build",
+      "actual PC start, movement, combat, pause/resume, WebGL loss/restore, death, victory, signal and clean retry",
+      "actual touch multitouch ownership, joystick cancel, combat, signal, landscape-to-portrait result and clean retry",
+      "continuous recording decode and artifact upload"
+    ],
+    "measuredWallClockMs": {
+      "desktop": 80476,
+      "touch": 78228
+    },
+    "performanceScope": "Chromium with SwiftShader; not physical-device performance"
+  },
+  "independentImageDiagnosis": {
+    "method": "Exact-revision CI images were inspected beside the prior 5afdd48 images. Source identities were known, so this is diagnosis, not blind comparison.",
+    "improvementsObserved": [
+      "Tall foreground grass no longer crosses the encounter silhouettes while distant density remains visible.",
+      "The enemy and player blades separate from the dark ground more clearly.",
+      "Collar, belt and shoulder forms improve player/enemy silhouette distinction.",
+      "Victory no longer shows the player walking with a drawn blade; the scabbard and calm stance are visible."
+    ],
+    "remainingGaps": [
+      "A foreground torii post still occupies a large left portion of the encounter frame.",
+      "The victory lamp remains brighter than the character and the portrait frame stacks the character directly below it.",
+      "The generated actor is still geometrically simple compared with the selected reference quality."
+    ],
+    "effect": "Four stored visual gaps were reduced in one cycle, but C01/C04/C08 and all other formal elements remain not measured."
+  },
   "formalElementStatus": {
     "satisfied": 0,
     "notSatisfied": 0,
     "notMeasured": 10,
     "completionClaim": false
   },
-  "next": "Commit and push the candidate, require the full PC/touch recording workflow, inspect the exact-revision rendered artifacts, correct remaining visible regressions, then reflect the verified source into main through the protected workflow."
+  "next": "Reflect verified revision 44ce5a67 into main through the protected workflow. Then make encounter camera obstacle avoidance and lamp/player depth the next batched render change while continuing alternate ordinary-play reference acquisition."
 }
