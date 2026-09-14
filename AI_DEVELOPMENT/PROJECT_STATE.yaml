@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-14T00:00:09.835Z",
+  "updatedAt": "2026-09-14T01:42:21Z",
   "status": "active",
   "project": {
     "name": "KAGEROU 陽炎",
@@ -146,9 +146,9 @@
     ]
   },
   "currentWork": {
-    "activeTask": "FRESH-PRESENTATION-AND-TOUCH",
-    "lastCompletedTask": "Fresh mission runtime 4da1c6049bd682d6030c40a8b01802b4e8b2e692 passed exact-revision CI 34791254109 and independent code/static-image review. Quality shortcomings remain; not blind acceptance.",
-    "nextTask": "Continue from this exact runtime. Correct observed enemy occlusion, ending title over lamp and low-contrast labels; verify portrait/landscape touch mission through signal and retry. Test attack-only route against defense-led routes. Complete remaining initial reference selection C05/C06/C09/C11/C12 and actual matched blind media without changing goals. Deadline 2026-09-20T07:51:53Z. Read AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-4da1c60.json and fresh remote head first; no duplicate edits or CI. All elements remain not measured; current blind work unit remains active.",
+    "activeTask": "FRESH-PRESENTATION-CI",
+    "lastCompletedTask": "Implemented source-observed presentation corrections; 33 local node tests and build pass. Exact-revision rendered evidence pending.",
+    "nextTask": "Inspect the exact CI and rendered artifacts for the commit containing EVIDENCE/20260914-fresh-presentation-checkpoint.json. Verify lock-on separation, unobscured signal ending and label/control layout; local rendered proof is unavailable. Do not reuse 4da1c60 images as candidate evidence. Then test touch-only full mission, diagnose attack-only completion, and finish remaining reference selection C05/C06/C09/C11/C12 plus actual blind media. All elements remain not measured; current work unit remains active. Deadline 2026-09-20T07:51:53Z.",
     "nextStartingPoint": "AI_DEVELOPMENT/FRESH_DESIGN.md",
     "blockedBy": [],
     "remoteStateChangeAuthorized": true,

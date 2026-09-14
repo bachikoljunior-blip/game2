@@ -2,6 +2,7 @@ import * as T from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { OBSTACLES } from './simulation.js';
 import { SIGNAL } from './mission.js';
+import { computeCameraFrame } from './camera-framing.js';
 
 const clamp = T.MathUtils.clamp;
 export function createPresentation(canvas) {
@@ -106,7 +107,8 @@ export function createPresentation(canvas) {
     const signal=mesh(root,new T.OctahedronGeometry(.1),brass,0,2.1,0);signal.visible=false;
     rigs.set(id,{root,body,limbs,ring,signal});return rigs.get(id);
   }
-  const look=new T.Vector3();let initialized=false;
+  const look=new T.Vector3(),wanted=new T.Vector3(),lookWanted=new T.Vector3();
+  const cameraFrame={x:0,y:0,z:0,lookX:0,lookY:0,lookZ:0};let initialized=false;
   function resize(){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}
   resize();
   function render(world,dt,orbit=0){
@@ -126,11 +128,11 @@ export function createPresentation(canvas) {
       }
       if(a.state==='dodge')r.body.rotation.x=-.35;else r.body.rotation.x=0;
     }
-    const p=world.player, yaw=orbit;
-    const offset=new T.Vector3(.85,2.8,5.8).applyAxisAngle(T.Object3D.DEFAULT_UP,yaw);
-    const wanted=new T.Vector3(p.x,p.hp>0?0:-.3,p.z).add(offset);
+    computeCameraFrame(world,orbit,camera.aspect,cameraFrame);
+    wanted.set(cameraFrame.x,cameraFrame.y,cameraFrame.z);
+    lookWanted.set(cameraFrame.lookX,cameraFrame.lookY,cameraFrame.lookZ);
     const smooth=initialized?1-Math.exp(-Math.min(dt,.1)*8):1;
-    camera.position.lerp(wanted,smooth);look.lerp(new T.Vector3(p.x,1.25,p.z-.6),smooth);camera.lookAt(look);initialized=true;
+    camera.position.lerp(wanted,smooth);look.lerp(lookWanted,smooth);camera.lookAt(look);initialized=true;
     renderer.render(scene,camera);
   }
   return {render,resize,renderer,scene,camera};

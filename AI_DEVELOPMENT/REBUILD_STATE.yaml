@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-14T00:00:09.835Z",
-  "phase": "fresh-presentation-and-touch",
+  "updatedAt": "2026-09-14T01:42:21Z",
+  "phase": "fresh-presentation-ci",
   "userInstruction": "一旦ゲーム自体はゼロから作り直してくれる？",
   "activeBranch": "codex/game2-rebuild-20260913",
   "fixedInstructions": "AI_DEVELOPMENT/FIXED_INSTRUCTIONS.md",
@@ -15,7 +15,7 @@
     "oldPr": 10,
     "optionalRebuildRouting": "ec2480166809f57fa623929bec0fbcb4d5a623a2"
   },
-  "continuation": "Continue from this exact runtime. Correct observed enemy occlusion, ending title over lamp and low-contrast labels; verify portrait/landscape touch mission through signal and retry. Test attack-only route against defense-led routes. Complete remaining initial reference selection C05/C06/C09/C11/C12 and actual matched blind media without changing goals. Deadline 2026-09-20T07:51:53Z. Read AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-4da1c60.json and fresh remote head first; no duplicate edits or CI. All elements remain not measured; current blind work unit remains active.",
+  "continuation": "Inspect the exact CI and rendered artifacts for the commit containing EVIDENCE/20260914-fresh-presentation-checkpoint.json. Verify lock-on separation, unobscured signal ending and label/control layout; local rendered proof is unavailable. Do not reuse 4da1c60 images as candidate evidence. Then test touch-only full mission, diagnose attack-only completion, and finish remaining reference selection C05/C06/C09/C11/C12 plus actual blind media. All elements remain not measured; current work unit remains active. Deadline 2026-09-20T07:51:53Z.",
   "status": "not measured",
   "publication": "Keep old Pages until a verified replacement is ready. Fresh runtime is a work-branch candidate, not public product acceptance.",
   "procedureAuthority": "Fixed instructions and explicit user directives govern. Tests, task plans and architecture documents are tools chosen by the AI, not additional fixed rules.",
@@ -26,5 +26,6 @@
   "verificationScope": "Exact-revision basic functional browser checks and static image review only; not whole-game or source-blind acceptance.",
   "comparisonCatalog": "AI_DEVELOPMENT/COMPARISON_ELEMENTS.yaml",
   "referenceSelectionComplete": false,
-  "verificationEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-4da1c60.json"
+  "verificationEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-4da1c60.json",
+  "pendingCandidate": "Presentation correction checkpoint; verifiedRuntime 4da1c60 remains the last rendered runtime until exact candidate CI completes."
 }

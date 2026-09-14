@@ -10,22 +10,32 @@
     "workingBranch": "codex/game2-rebuild-20260913",
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
-    "activeTask": "FRESH-PRESENTATION-AND-TOUCH",
-    "lastSuccessfulAction": "Exact runtime 4da1c6049bd682d6030c40a8b01802b4e8b2e692 passed CI 34791254109: 30 node tests, build, real-input full combat/arrival/signal/ending/retry, WebGL recovery and mobile multi-touch/cancel. Independent code corrections verified; independent static image review recorded visible gaps.",
-    "currentFailingAction": "No whole-element blind pass. Static images show enemy occlusion, title obscuring lamp, weak label contrast and primitive geometry. Touch-only mission, portrait menus and audio remain unmeasured. Five reference selections remain incomplete.",
+    "activeTask": "FRESH-PRESENTATION-CI",
+    "lastSuccessfulAction": "From the recorded fresh design, implemented lock-aware parallax framing, an unobscured victory layout and opaque label backings. 33 node tests, build, structural catalog and state validation pass locally; no rendered candidate frame yet.",
+    "currentFailingAction": "Exact candidate CI/rendered review pending. Touch-only mission, portrait behavior, audio, physical-device performance and every source-blind element verdict remain unmeasured. Five reference selections remain incomplete.",
     "currentHypothesis": null,
-    "nextAction": "Continue from this exact runtime. Correct observed enemy occlusion, ending title over lamp and low-contrast labels; verify portrait/landscape touch mission through signal and retry. Test attack-only route against defense-led routes. Complete remaining initial reference selection C05/C06/C09/C11/C12 and actual matched blind media without changing goals. Deadline 2026-09-20T07:51:53Z. Read AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-4da1c60.json and fresh remote head first; no duplicate edits or CI. All elements remain not measured; current blind work unit remains active.",
+    "nextAction": "Inspect the exact CI and rendered artifacts for the commit containing EVIDENCE/20260914-fresh-presentation-checkpoint.json. Verify lock-on separation, unobscured signal ending and label/control layout; local rendered proof is unavailable. Do not reuse 4da1c60 images as candidate evidence. Then test touch-only full mission, diagnose attack-only completion, and finish remaining reference selection C05/C06/C09/C11/C12 plus actual blind media. All elements remain not measured; current work unit remains active. Deadline 2026-09-20T07:51:53Z.",
     "rollbackPoint": "4e6d23a40af33bb3ba409b3826e77666262ce353",
     "pendingVerification": [
-      "Source-blind comparison for any whole concept element",
+      "Exact candidate CI and rendered before/after review",
       "Touch-only full mission and signal completion",
-      "Portrait/narrow viewport menus and orientation changes",
+      "Portrait/narrow viewport and orientation behavior",
+      "Attack-only versus defense-led combat routes",
       "WebKit / iOS Simulator behavior",
       "Physical-device performance",
       "Audio and screen-reader behavior",
-      "Continuous camera/animation readability and before/after lamp imagery"
+      "Source-blind comparison for every whole concept element"
     ],
-    "modifiedFiles": [],
+    "modifiedFiles": [
+      "AI_DEVELOPMENT/FRESH_DESIGN.md",
+      "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-presentation-checkpoint.json",
+      "fresh/camera-framing.js",
+      "fresh/presentation-contract.test.mjs",
+      "fresh/presentation.js",
+      "fresh/main.js",
+      "fresh/mission.css",
+      "fresh/browser-smoke.mjs"
+    ],
     "remotePushPendingAuthorization": false,
     "remoteReleaseAuthorized": true,
     "remotePublicationStatus": "Old public runtime remains intact. Fresh runtime is a separate unaccepted work-branch candidate.",
@@ -79,7 +89,8 @@
       "AI_DEVELOPMENT/EVIDENCE/20260913-reference-selection-c08.json",
       "AI_DEVELOPMENT/EVIDENCE/20260913-reference-selection-c02.json",
       "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-mission.json",
-      "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-4da1c60.json"
+      "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-4da1c60.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-presentation-checkpoint.json"
     ],
     "publicRuntimeRevision": "86512c3bfdc69e03b5b490d9b0d79ec9da141343"
   },
@@ -91,7 +102,7 @@
     "completion": "All concept elements satisfied by evidenced blind comparison.",
     "current_unit": "2026-09-13-fresh-design",
     "unit_status": "active",
-    "first_action": "Continue from this exact runtime. Correct observed enemy occlusion, ending title over lamp and low-contrast labels; verify portrait/landscape touch mission through signal and retry. Test attack-only route against defense-led routes. Complete remaining initial reference selection C05/C06/C09/C11/C12 and actual matched blind media without changing goals. Deadline 2026-09-20T07:51:53Z. Read AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-4da1c60.json and fresh remote head first; no duplicate edits or CI. All elements remain not measured; current blind work unit remains active.",
+    "first_action": "Inspect the exact CI and rendered artifacts for the commit containing EVIDENCE/20260914-fresh-presentation-checkpoint.json. Verify lock-on separation, unobscured signal ending and label/control layout; local rendered proof is unavailable. Do not reuse 4da1c60 images as candidate evidence. Then test touch-only full mission, diagnose attack-only completion, and finish remaining reference selection C05/C06/C09/C11/C12 plus actual blind media. All elements remain not measured; current work unit remains active. Deadline 2026-09-20T07:51:53Z.",
     "implementation_strategy": "Fresh design and implementation; needs-before-reuse, per latest direct user instruction.",
     "unitEndReason": null
   }

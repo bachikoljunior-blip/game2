@@ -1552,7 +1552,12 @@
     "formalEvidence": null,
     "legacyEvidenceReusableAsCurrent": false,
     "revision": "4da1c6049bd682d6030c40a8b01802b4e8b2e692",
-    "verificationScope": "Basic functional browser evidence and source-aware static image review only; all whole-element blind verdicts remain not measured."
+    "verificationScope": "Basic functional browser evidence and source-aware static image review only; all whole-element blind verdicts remain not measured.",
+    "pendingCandidate": {
+      "baseRevision": "5402a92330f5850089e14d7f7b044f579479b15e",
+      "checkpoint": "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-presentation-checkpoint.json",
+      "note": "revision/basicEvidence still describe the prior rendered runtime. Candidate must be verified at its own exact commit."
+    }
   },
   "schemaVersion": 1,
   "sources": [
@@ -1868,6 +1873,6 @@
     }
   ],
   "status": "not measured",
-  "updatedAt": "2026-09-13T23:58:13.688Z",
+  "updatedAt": "2026-09-14T01:42:21Z",
   "adoptionReview": "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-catalog-review.json"
 }

@@ -8,13 +8,14 @@ const canvas=document.querySelector('#scene'),menu=document.querySelector('#menu
   message=document.querySelector('#message'),start=document.querySelector('#start'),notice=document.querySelector('#notice'),objective=document.querySelector('#objective');
 let view,world=createWorld(),running=false,paused=false,last=0,audio=null,lastSound=-1,contextLost=false;
 message.textContent=INTRO;
-function pause(){if(!running)return;running=false;paused=true;input.setActive(false);menu.hidden=false;message.textContent='風の中で、ひと息。';start.textContent='続ける';audio?.suspend();}
+menu.dataset.mode='intro';
+function pause(){if(!running)return;running=false;paused=true;input.setActive(false);menu.hidden=false;menu.dataset.mode='pause';message.textContent='風の中で、ひと息。';start.textContent='続ける';audio?.suspend();}
 const input=createInput(canvas,pause);
 try{view=createPresentation(canvas);}catch(e){message.textContent='描画を開始できませんでした。WebGLが利用可能なブラウザで再読み込みしてください。';start.disabled=true;throw e;}
 function sound(type){if(!audio||audio.state!=='running')return;const o=audio.createOscillator(),g=audio.createGain();o.type=type==='parry'?'triangle':'sine';o.frequency.setValueAtTime(type==='parry'?1500:160,audio.currentTime);o.frequency.exponentialRampToValueAtTime(70,audio.currentTime+.15);g.gain.setValueAtTime(.12,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+.2);o.connect(g).connect(audio.destination);o.start();o.stop(audio.currentTime+.21);o.onended=()=>{o.disconnect();g.disconnect();};}
 start.addEventListener('click',()=>{
   if(contextLost)return;
-  if(!paused){world=createWorld();lastSound=-1;}paused=false;running=true;menu.hidden=true;hud.hidden=false;notice.textContent='';input.setActive(true);last=performance.now();
+  if(!paused){world=createWorld();lastSound=-1;}paused=false;running=true;menu.hidden=true;menu.dataset.mode='playing';hud.hidden=false;notice.textContent='';input.setActive(true);last=performance.now();
   try{audio??=new AudioContext();audio.resume().catch(()=>{});}catch{/* Sound availability does not prevent playing. */}
 });
 document.querySelector('#pause').addEventListener('click',pause);
@@ -34,7 +35,7 @@ function frame(now){
     if(lockButton.textContent!==label)lockButton.textContent=label;
     const e=world.events.at(-1);if(e&&e.time>lastSound){lastSound=e.time;sound(e.type);notice.textContent=e.type==='parry'?'弾き':e.type==='block'?'受け':e.type==='death'?'決着':'';}
     if(!e)notice.textContent='';
-    if(world.mode!=='playing'){running=false;paused=false;input.setActive(false);menu.hidden=false;message.textContent=world.mode==='victory'?ENDING:'灯はまだ消えている。もう一度、山道へ。';start.textContent='もう一度';}
+    if(world.mode!=='playing'){running=false;paused=false;input.setActive(false);menu.hidden=false;menu.dataset.mode=world.mode;message.textContent=world.mode==='victory'?ENDING:'灯はまだ消えている。もう一度、山道へ。';start.textContent='もう一度';}
   }
   if(!contextLost)view.render(world,dt,input.orbit);
 }

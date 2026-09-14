@@ -52,6 +52,8 @@ try{
  assert.equal(report.mission.after.totals.kills,3);
  assert.ok(report.mission.checkpoints.some(w=>w.totals.kills===3&&w.mode==='playing'),'last kill must leave the arrival objective active');
  assert.match(await page.locator('#message').innerText(),/社の灯がともった/);
+ assert.equal(await page.locator('#menu').getAttribute('data-mode'),'victory');
+ assert.equal(await page.locator('#menu h1').evaluate(node=>getComputedStyle(node).display),'none');
  await page.screenshot({path:new URL('mission-victory.png',out).pathname});
  await page.click('#start');
  const clean=await page.evaluate(()=>freshDiagnostics().world);
