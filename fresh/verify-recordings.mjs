@@ -7,15 +7,19 @@ const out=new URL('../AI_DEVELOPMENT/EVIDENCE/fresh-20260913/',import.meta.url);
 const report={date:new Date().toISOString(),result:'passed',recordings:[],scope:'Video integrity and provenance only. Silent software-rendered browser recordings; no source-blind verdict, audio result or smartphone performance claim. Decoded frames can repeat.'};
 try{
  const browser=JSON.parse(await readFile(new URL('browser-report.json',out),'utf8'));
+ const matrix=JSON.parse(await readFile(new URL('route-matrix-report.json',out),'utf8'));
  report.sourceRevision=browser.sourceRevision;
  assert.match(process.env.GITHUB_SHA??'',/^[a-f0-9]{40}$/,'expected CI revision must be provided');
  assert.equal(browser.sourceRevision,process.env.GITHUB_SHA,'evidence must belong to this revision');
+ assert.equal(matrix.sourceRevision,process.env.GITHUB_SHA,'route-matrix evidence must belong to this revision');
  assert.equal(browser.result,'passed','a recording must not hide a failed browser mission');
- assert.deepEqual(browser.recordings.map(r=>r.id),['desktop','touch']);
- for(const item of browser.recordings){
+ assert.equal(matrix.result,'passed','a complementary route recording must not hide a failed mission');
+ const recordings=[...browser.recordings,...matrix.recordings];
+ assert.deepEqual(recordings.map(r=>r.id),['desktop','touch','desktop-right','touch-left']);
+ for(const item of recordings){
   assert.equal(item.status,'saved');
   assert.equal(item.file,`${item.id}-continuous.webm`);
-  assert.deepEqual(item.size,item.id==='desktop'?{width:1280,height:720}:{width:844,height:844});
+  assert.deepEqual(item.size,item.id.startsWith('desktop')?{width:1280,height:720}:{width:844,height:844});
   const file=new URL(item.file,out),bytes=await stat(file);
   const probe=JSON.parse(execFileSync('ffprobe',['-v','error','-count_frames','-show_streams','-show_format','-of','json',file.pathname],{encoding:'utf8',timeout:120000,maxBuffer:1048576}));
   const video=probe.streams.filter(s=>s.codec_type==='video'),audio=probe.streams.filter(s=>s.codec_type==='audio');
@@ -27,7 +31,21 @@ try{
   const eventNames=item.events.map(e=>e.event);
   let priorOffset=-1,priorIndex=-1;
   for(const event of item.events){assert.ok(Number.isFinite(event.offsetMs)&&event.offsetMs>=priorOffset,'event offsets must be finite and monotonic');priorOffset=event.offsetMs;}
-  for(const name of ['full-mission-start','victory','clean-retry','context-close']){
+  for(const name of ['full-mission-start','fork-entry','route-choice']){
+   const index=eventNames.indexOf(name);assert.ok(index>priorIndex,`missing or misordered ${name} checkpoint`);priorIndex=index;
+  }
+  const routeChoice=item.events.find(e=>e.event==='route-choice');
+  const landmark=item.events.find(e=>e.event==='route-landmark');
+  const consequence=item.events.find(e=>e.event==='route-consequence');
+  const rejoin=item.events.find(e=>e.event==='route-rejoin');
+  const expectedRoute=new Map([['desktop','left'],['touch','right'],['desktop-right','right'],['touch-left','left']]).get(item.id);
+  assert.equal(routeChoice.detail.route,expectedRoute);
+  for(const checkpoint of [landmark,consequence,rejoin]){
+   assert.ok(checkpoint&&checkpoint.offsetMs>=routeChoice.offsetMs,'route landmark, consequence and rejoin must follow the choice');
+  }
+  assert.ok(rejoin.offsetMs>=landmark.offsetMs&&rejoin.offsetMs>=consequence.offsetMs,'rejoin must follow both route-specific observations');
+  priorIndex=eventNames.indexOf('route-rejoin');
+  for(const name of ['victory','clean-retry','context-close']){
    const index=eventNames.indexOf(name);assert.ok(index>priorIndex,`missing or misordered ${name} checkpoint`);priorIndex=index;
   }
   assert.equal(eventNames.at(-1),'context-close');

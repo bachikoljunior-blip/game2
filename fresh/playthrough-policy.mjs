@@ -13,13 +13,15 @@ export function playthroughAction(world, preferredRoute='left') {
   const threatBoundary=ROUTE_FORK.obstacle.w/2-.25;
   const routeEnemy=live.find(e=>e.id===ROUTE_FORK[route].enemyId);
   const routeEnemyDistance=routeEnemy?Math.hypot(routeEnemy.x-p.x,routeEnemy.z-p.z):Infinity;
+  const outerBoundary=route==='right'?ROUTE_FORK.right.x+1.7:ROUTE_FORK.left.x-1.7;
+  const withinOuterBoundary=enemy=>route==='right'?enemy.x<=outerBoundary:enemy.x>=outerBoundary;
   // The short left route deliberately meets its retainer before the fork is
   // committed. Let that authored consequence approach and be fought instead
   // of walking blindly into it; the right route must not cross the ridge to
   // pursue the same enemy.
-  const earlyRouteThreat=route==='left'&&!world.routeChoice&&routeEnemyDistance<=10;
+  const earlyRouteThreat=route==='left'&&!world.routeChoice&&routeEnemyDistance<=10&&withinOuterBoundary(routeEnemy);
   const sameSideThreat=nearest&&nearestDistance<=3.2&&
-    (route==='right'?nearest.x>=threatBoundary:nearest.x<=-threatBoundary);
+    (route==='right'?nearest.x>=threatBoundary:nearest.x<=-threatBoundary)&&withinOuterBoundary(nearest);
   const routeGoal=authoredGoal&&!locked&&!earlyRouteThreat&&!sameSideThreat?authoredGoal:null;
   const target=routeGoal?null:locked||(earlyRouteThreat?routeEnemy:nearest);
   const goal=routeGoal||target||SIGNAL,dx=goal.x-p.x,dz=goal.z-p.z,d=Math.hypot(dx,dz);

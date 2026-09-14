@@ -128,14 +128,19 @@ export function stepWorld(w, input = {}) {
     }
   }
   const routeChoice = p.hp > 0 && routeChoiceAt(p);
+  let choseRoute = false;
   if (!w.routeChoice && routeChoice) {
     w.routeChoice = routeChoice;
     w.routePhase = 'branch';
     w.routeChoiceTime = w.time;
     w.routeChoicePosition = { x: p.x, z: p.z };
+    choseRoute = true;
     event(w, 'route', p, p, { route: routeChoice });
   }
-  if (w.routeChoice && w.routePhase === 'branch') {
+  // Choice is a distinct state transition. Route-specific observations begin
+  // on a later fixed tick, even when combat has pulled the player beside a
+  // marker before the corridor boundary is crossed.
+  if (w.routeChoice && w.routePhase === 'branch' && !choseRoute) {
     const route = ROUTE_FORK[w.routeChoice];
     if (!w.routeLandmark && route.markers.some(marker => Math.hypot(p.x - marker.x, p.z - marker.z) <= 1.8)) {
       w.routeLandmark = route.landmark; w.routeLandmarkTime = w.time;

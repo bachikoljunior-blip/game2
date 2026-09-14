@@ -34,6 +34,13 @@ test('route choice exists only beside the ridge and records its real position on
   assert.equal(w.events.filter(e=>e.type==='route').length,1);
 });
 
+test('choice is recorded before route-specific observations even at a landmark',()=>{
+  const w=createWorld();Object.assign(w.player,ROUTE_FORK.left.markers[0]);stepWorld(w);
+  assert.equal(w.routeChoice,'left');assert.equal(w.routeLandmark,null);
+  stepWorld(w);assert.equal(w.routeLandmark,'石灯');
+  assert.ok(w.routeChoiceTime<w.routeLandmarkTime);
+});
+
 test('unknown route ids are rejected instead of silently becoming the left route',()=>{
   assert.throws(()=>routeLabel('typo'),RangeError);
 });

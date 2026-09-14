@@ -152,7 +152,8 @@ try{
  const clean=await page.evaluate(()=>freshDiagnostics().world);
  assert.equal(clean.signalLit,false);assert.equal(clean.pathCleared,false);assert.equal(clean.totals.kills,0);
  assert.equal(clean.routeChoice,null);assert.equal(clean.routePhase,'approach');assert.equal(clean.routeChoiceTime,null);assert.equal(clean.routeChoicePosition,null);
- assert.equal(clean.routeLandmark,null);assert.equal(clean.routeConsequence,null);assert.equal(clean.routeRejoinTime,null);
+ assert.equal(clean.routeLandmark,null);assert.equal(clean.routeLandmarkTime,null);assert.equal(clean.routeConsequence,null);assert.equal(clean.routeConsequenceTime,null);
+ assert.equal(clean.routeRejoinTime,null);assert.equal(clean.routeRejoinPosition,null);
  assert.equal(clean.player.hp,100);assert.equal(clean.player.z,18);assert.ok(clean.enemies.every(e=>e.hp===100));
  await page.waitForFunction(()=>document.querySelector('#objective').textContent==='谷へ合図を送るため、鳥居の先へ');
  report.checks.push('real-input full combat, postcombat arrival, signal, ending and clean retry');
@@ -296,7 +297,8 @@ try{
  const touchRetry=await mobile.evaluate(()=>freshDiagnostics().world);
  assert.equal(touchRetry.signalLit,false);assert.equal(touchRetry.totals.kills,0);
  assert.equal(touchRetry.routeChoice,null);assert.equal(touchRetry.routePhase,'approach');assert.equal(touchRetry.routeChoiceTime,null);assert.equal(touchRetry.routeChoicePosition,null);
- assert.equal(touchRetry.routeLandmark,null);assert.equal(touchRetry.routeConsequence,null);assert.equal(touchRetry.routeRejoinTime,null);
+ assert.equal(touchRetry.routeLandmark,null);assert.equal(touchRetry.routeLandmarkTime,null);assert.equal(touchRetry.routeConsequence,null);assert.equal(touchRetry.routeConsequenceTime,null);
+ assert.equal(touchRetry.routeRejoinTime,null);assert.equal(touchRetry.routeRejoinPosition,null);
  assert.equal(touchRetry.player.hp,100);assert.equal(touchRetry.player.z,18);
  report.checks.push('touch-only full combat, arrival, signal, ending and clean retry');
  mark(mobileRecording,'clean-retry');

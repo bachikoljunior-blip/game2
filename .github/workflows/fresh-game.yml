@@ -33,6 +33,7 @@ jobs:
           SERVER_PID=$!
           trap 'kill "$SERVER_PID"' EXIT
           node fresh/browser-smoke.mjs
+          node fresh/route-matrix-smoke.mjs
       - name: Decode continuous play evidence
         if: always()
         run: node fresh/verify-recordings.mjs

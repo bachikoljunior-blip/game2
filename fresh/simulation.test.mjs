@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createWorld,stepWorld,advance,STEP,OBSTACLES} from './simulation.js';
-import {SIGNAL,objectiveText} from './mission.js';
+import {SIGNAL,canLightSignal,objectiveText} from './mission.js';
 import {playthroughAction} from './playthrough-policy.mjs';
 const ticks=(w,n,i={})=>{for(let t=0;t<n;t++)stepWorld(w,i);};
 test('read-only playthrough policy can complete combat and reach the signal without state shortcuts',()=>{
@@ -81,6 +81,13 @@ test('clearing the path requires a living arrival at the signal, not just the la
  assert.equal(alive.mode,'playing');assert.equal(alive.signalLit,false);
  const dead=createWorld();dead.enemies.forEach(e=>e.hp=0);dead.player.z=SIGNAL.z+1;dead.player.hp=0;stepWorld(dead);
  assert.equal(dead.mode,'defeat');assert.equal(dead.signalLit,false);
+});
+test('a route choice cannot light the signal before physical reconvergence',()=>{
+ for(const route of ['left','right']){
+  const w=createWorld();w.routeChoice=route;w.routePhase='branch';w.pathCleared=true;
+  w.enemies.forEach(enemy=>enemy.hp=0);Object.assign(w.player,{x:SIGNAL.x,z:SIGNAL.z});
+  assert.equal(canLightSignal(w),false);
+ }
 });
 test('signal activation uses distance, not only forward progress; batched time agrees',()=>{
  const a=createWorld(),b=createWorld();
