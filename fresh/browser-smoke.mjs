@@ -52,8 +52,10 @@ const desktopStarted=Date.now();
 try{
  await page.goto('http://127.0.0.1:4178/?diagnostic=1');await page.waitForFunction(()=>window.freshDiagnostics?.().render.calls>0);mark(desktopRecording,'title-ready',desktopSize);
  report.landscape=await page.evaluate(()=>freshDiagnostics().landscape);
+ report.actors=await page.evaluate(()=>freshDiagnostics().actors);
  assert.ok(report.landscape.maxRootError<1e-5,'plant roots agree with the rendered ground');
  assert.ok(report.landscape.grassTriangles<=36000,'clustered grass preserves its prior triangle budget');
+ assert.ok(Object.values(report.actors.partsByRig).length===4&&Object.values(report.actors.partsByRig).every(count=>count>=40),'every generated fighter keeps the authored layered silhouette');
  await page.screenshot({path:new URL('title.png',out).pathname});
  await page.click('#start');await page.keyboard.down('KeyW');
  await page.waitForFunction(()=>freshDiagnostics().world.player.z<8,{},{timeout:90000});await page.keyboard.up('KeyW');
@@ -66,6 +68,7 @@ try{
  report.combat=await page.evaluate(()=>freshDiagnostics());
  await page.screenshot({path:new URL('encounter.png',out).pathname});
  assert.ok(report.combat.world.totals.hits>0,'actual clicks must cause a hit');report.checks.push('real click causes enemy HP loss');
+ assert.ok(report.combat.camera.foregroundPostOpacity<=.35,'the verified near torii post must fade instead of covering the first duel');report.checks.push('near torii post fades while its collision remains authored');
  await page.keyboard.press('Escape');await page.waitForFunction(()=>freshDiagnostics().paused);
  const time=await page.evaluate(()=>freshDiagnostics().world.time);await page.waitForTimeout(400);assert.equal(await page.evaluate(()=>freshDiagnostics().world.time),time);
  await page.click('#start');await page.waitForFunction(()=>freshDiagnostics().running);report.checks.push('pause freezes simulation and resumes');
