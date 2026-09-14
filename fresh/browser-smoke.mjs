@@ -91,19 +91,32 @@ try{
  // Run the complete authored objective through touch controls only. Diagnostics
  // are read-only; every state change below comes from a rendered control.
  await mobile.reload();await mobile.locator('#start').tap();
+ const attackPoint=await point('[data-action=attack]'),lockPoint=await point('[data-action=lock]'),dodgePoint=await point('[data-action=dodge]');
+ let tapId=10;
+ const tapPoint=async p=>{
+  const id=tapId++;
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...p,id}]});
+  await mobile.waitForTimeout(50);
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  await mobile.waitForTimeout(110);
+ };
  const touchDeadline=Date.now()+180000;report.touchMission={checkpoints:[]};let touchKills=-1;
  while(Date.now()<touchDeadline){
   const w=await mobile.evaluate(()=>freshDiagnostics().world);
   if(w.totals.kills!==touchKills){report.touchMission.checkpoints.push(w);touchKills=w.totals.kills;}
   if(w.mode!=='playing')break;
   const a=playthroughAction(w);
-  if(a.lock)await mobile.locator('[data-action=lock]').tap();
-  else if(a.attack)await mobile.locator('[data-action=attack]').tap();
+  const target=w.enemies.filter(e=>e.hp>0).sort((a,b)=>Math.hypot(a.x-w.player.x,a.z-w.player.z)-Math.hypot(b.x-w.player.x,b.z-w.player.z))[0];
+  const danger=target&&Math.hypot(target.x-w.player.x,target.z-w.player.z)<2.4&&target.state==='windup'&&w.player.state==='idle';
+  if(danger)await tapPoint(dodgePoint);
+  else if(a.lock)await tapPoint(lockPoint);
+  else if(a.attack)await tapPoint(attackPoint);
   else if(a.x||a.z){
    await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...s,id:4}]});
    await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:s.x+a.x*32,y:s.y+a.z*32,id:4}]});
    await mobile.waitForTimeout(100);
    await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});
+   await mobile.waitForTimeout(40);
   }else await mobile.waitForTimeout(80);
  }
  report.touchMission.after=await mobile.evaluate(()=>freshDiagnostics().world);

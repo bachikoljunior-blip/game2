@@ -1554,9 +1554,9 @@
     "revision": "b851e803e1af27e6e535b99a2b38b567a73e06dc",
     "verificationScope": "Basic functional browser evidence and source-aware static image review only; all whole-element blind verdicts remain not measured.",
     "pendingCandidate": {
-      "baseRevision": "b851e803e1af27e6e535b99a2b38b567a73e06dc",
-      "checkpoint": "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-b851e80.json",
-      "note": "Runtime is unchanged; candidate expands actual touch verification and must pass at its own exact commit."
+      "baseRevision": "f2d81b7c222483cbc4cbef620ac8f5dcd11e1178",
+      "checkpoint": "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-touch-failure-f2d81b7.json",
+      "note": "First touch-only full mission failed. Corrected direct-contact driver is prepared and must pass at its own exact commit; criterion unchanged."
     }
   },
   "schemaVersion": 1,
@@ -1873,6 +1873,6 @@
     }
   ],
   "status": "not measured",
-  "updatedAt": "2026-09-14T01:46:31Z",
+  "updatedAt": "2026-09-14T01:56:53Z",
   "adoptionReview": "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-catalog-review.json"
 }

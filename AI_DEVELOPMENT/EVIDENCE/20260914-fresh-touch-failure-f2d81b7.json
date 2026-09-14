@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "f2d81b7c222483cbc4cbef620ac8f5dcd11e1178",
+  "run": 34797267416,
+  "url": "https://github.com/bachikoljunior-blip/game2/actions/runs/34797267416",
+  "conclusion": "failure",
+  "job": 103832687794,
+  "artifact": {
+    "id": 10329114701,
+    "name": "fresh-game-f2d81b7c222483cbc4cbef620ac8f5dcd11e1178",
+    "digest": "sha256:6d0102d66e1df1b6643431598a2e09ff9ccd963137dd0a6a32872e943fd33240",
+    "created_at": "2026-09-14T01:56:53Z",
+    "expires_at": "2026-12-13T01:51:37Z",
+    "size_in_bytes": 2185340
+  },
+  "passedBeforeFailure": [
+    "33 node tests",
+    "production build",
+    "desktop actual-input mission and recovery checks",
+    "mobile multi-touch release/cancel and joystick stop"
+  ],
+  "failure": {
+    "stage": "touch-only full mission",
+    "observed": "Player died at first encounter with 0 player hits, 5 hits received, sentinel HP66. A Playwright locator tap was waiting for the lock control when terminal state hid controls, then timed out.",
+    "world": {
+      "mode": "defeat",
+      "time": 18.666666666666888,
+      "playerHp": 0,
+      "playerZ": 7.577142857142817,
+      "locked": "sentinel",
+      "totals": {
+        "playerHits": 0,
+        "received": 5,
+        "parries": 0,
+        "kills": 0
+      }
+    },
+    "classification": "The first driver used immediate high-level locator taps without a frame wait or defensive response. It did not establish that touch attack was sampled. This is a failed measurement, not proof that the touch game is impossible or proof of a pass."
+  },
+  "correction": "Dispatch touch contacts directly to rendered action-button coordinates, hold each contact across frames, wait after release, and dodge an observable close windup. Continue to read state only through diagnostics.",
+  "formalVerdict": "not measured",
+  "workUnitEnded": false,
+  "nextAction": "Run corrected touch-only route at its exact commit. Preserve this failure even if the correction passes; do not lower the full mission criterion."
+}

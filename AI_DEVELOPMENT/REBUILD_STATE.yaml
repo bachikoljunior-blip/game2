@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-14T01:46:31Z",
-  "phase": "fresh-touch-mission-ci",
+  "updatedAt": "2026-09-14T01:56:53Z",
+  "phase": "fresh-touch-mission-retry",
   "userInstruction": "一旦ゲーム自体はゼロから作り直してくれる？",
   "activeBranch": "codex/game2-rebuild-20260913",
   "fixedInstructions": "AI_DEVELOPMENT/FIXED_INSTRUCTIONS.md",
@@ -15,7 +15,7 @@
     "oldPr": 10,
     "optionalRebuildRouting": "ec2480166809f57fa623929bec0fbcb4d5a623a2"
   },
-  "continuation": "Inspect the exact CI for the commit containing the touch-only browser flow added after b851e80. Require touch controls alone to complete all three fights, postcombat arrival, signal, ending and clean retry; do not mutate runtime state. Independently review the b851e80 rendered corrections. Then continue attack-only balance diagnosis, primitive generated presentation, remaining reference selection C05/C06/C09/C11/C12 and source-blind media. All elements remain not measured; current work unit remains active. Deadline 2026-09-20T07:51:53Z.",
+  "continuation": "Inspect EVIDENCE/20260914-fresh-touch-failure-f2d81b7.json, then run the corrected direct-contact touch-only route at its exact candidate revision. Require all three fights, explicit signal, ending and clean retry. Keep the failed attempt. If it passes, inspect mobile mission image and record environment limits. Then continue attack-only balance, primitive generated presentation, remaining C05/C06/C09/C11/C12 selection and source-blind media. All elements remain not measured. Deadline 2026-09-20T07:51:53Z.",
   "status": "not measured",
   "publication": "Keep old Pages until a verified replacement is ready. Fresh runtime is a work-branch candidate, not public product acceptance.",
   "procedureAuthority": "Fixed instructions and explicit user directives govern. Tests, task plans and architecture documents are tools chosen by the AI, not additional fixed rules.",
@@ -27,5 +27,5 @@
   "comparisonCatalog": "AI_DEVELOPMENT/COMPARISON_ELEMENTS.yaml",
   "referenceSelectionComplete": false,
   "verificationEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-b851e80.json",
-  "pendingCandidate": "Touch-only full mission browser verification added after b851e80; exact candidate CI pending."
+  "pendingCandidate": "f2d81b7 failed touch-only mission CI 34797267416. Corrected direct-contact touch driver is prepared but unverified; b851e80 remains last fully passing runtime evidence."
 }
