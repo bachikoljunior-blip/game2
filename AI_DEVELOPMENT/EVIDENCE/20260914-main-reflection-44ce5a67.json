@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-09-14T11:39:30Z",
+  "sourceBranch": "codex/game2-rebuild-20260913",
+  "verifiedRuntime": "44ce5a67ad00f63ffc8c908d02db5c320d23d7ca",
+  "sourceCheckpoint": "ce597b8bd7a697ce7a4abc176d41985eb0ea363f",
+  "pullRequest": 15,
+  "resultMainSha": "06a5a2ce7939f8d889bd54b28420d3fb3e8da1fd",
+  "changes": [
+    "Preserved 3000 grass instances while clearing the central combat corridor.",
+    "Added a subtle deterministic visual curve to the stone approach.",
+    "Separated player/enemy blade materials and enriched generated actor silhouettes.",
+    "Added a scabbard and a calm sheathed victory pose."
+  ],
+  "verification": {
+    "source": {
+      "run": 34838395942,
+      "conclusion": "success",
+      "coverage": "47 tests, production build, actual PC/touch combat-to-signal-to-ending flow, portrait result, retry and continuous recording decode"
+    },
+    "mainIphone": {
+      "run": 34839153196,
+      "conclusion": "success"
+    },
+    "pages": {
+      "run": 34839152328,
+      "conclusion": "success"
+    },
+    "postMergeCompare": {
+      "base": "ce597b8bd7a697ce7a4abc176d41985eb0ea363f",
+      "head": "06a5a2ce7939f8d889bd54b28420d3fb3e8da1fd",
+      "fileDifferences": 0
+    },
+    "sourceBranchSynchronizedToMain": true
+  },
+  "publication": "The fresh implementation is present under fresh/. The root Pages entry point remains the existing public runtime; fresh public acceptance is not claimed.",
+  "formalElementStatus": {
+    "satisfied": 0,
+    "notSatisfied": 0,
+    "notMeasured": 10,
+    "completionClaim": false
+  },
+  "next": "Batch encounter camera obstacle avoidance, lamp/player depth and actor form, while acquiring a non-gated ordinary-play C04 source and starting the first valid source-blind whole-element comparison."
+}
