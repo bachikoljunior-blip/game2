@@ -16,7 +16,7 @@
         "K00",
         "K01"
       ],
-      "currentGap": "新作 afc8bcd は基本動作の技術試作。要素全体の比較は未実施。旧ゲームの測定を新作の証拠には使用しない。",
+      "currentGap": "新作5afdd48は実入力PC/touchで3体撃破・点灯・結末・再挑戦を確認。守り・回避を含む別タッチ経路も完走したが、攻撃連打の有効性、構えの読み・間合い・反撃の品質と20戦の実比較は未検証。過去の敗北・タイムアウトを保持。全体ブラインド比較は未実施。",
       "freshDesignClauses": [
         "D01",
         "D02",
@@ -106,7 +106,7 @@
         "K01",
         "K02"
       ],
-      "currentGap": "新作 afc8bcd は基本動作の技術試作。要素全体の比較は未実施。旧ゲームの測定を新作の証拠には使用しない。",
+      "currentGap": "回避中の方向反転とカメラ軌道の潰れを実装・実描画で修正。最新PC/touchロック中の最小水平距離5.9583/5.7968m、最大俯角16.3680/16.7987度。障害物・人物と刀の分離・連続移動の品質を含むMGSVとの全体比較は未実施。",
       "diagnosticFacets": [
         {
           "id": "C02",
@@ -209,7 +209,7 @@
         "K03",
         "K06"
       ],
-      "currentGap": "新作 afc8bcd は基本動作の技術試作。要素全体の比較は未実施。旧ゲームの測定を新作の証拠には使用しない。",
+      "currentGap": "実参照画像と短い公式の風映像を取得し、起伏・土石・植生・光を新規生成で統合改善。新作全ミッションは5afdd48で再検証済み。比較診断では地表と植生密度が改善した一方、暗い戦闘、手前の草の遮蔽、直線的経路・遠景が残る。参照動画はデバッグ/編集を含み、通常探索全体の比較資料を満たしていない。",
       "diagnosticFacets": [
         {
           "id": "C04",
@@ -359,7 +359,7 @@
         "K00",
         "K06"
       ],
-      "currentGap": "独自の目的・社への到着・灯・結末の新規制作差分を追加。単体検査と実入力の確認は専用チェックポイントに記録する。機能追加はC05品質達成や物語全体の十分さの証拠ではなく、全要素は未測定。",
+      "currentGap": "目的・山道・点灯・結末を実入力で確認。谷の人々と剣士の行動の意味、文章と演技の一致、物語全体の満足は未比較。SKの2020/2022/2025年の後年評価を補強したが長期の基準性は独立監査でも未確定。",
       "freshDesignClauses": [
         "D01",
         "D07"
@@ -441,7 +441,7 @@
         "K03",
         "K06"
       ],
-      "currentGap": "新作 afc8bcd は基本動作の技術試作。要素全体の比較は未実施。旧ゲームの測定を新作の証拠には使用しない。",
+      "currentGap": "人物・刀の分離と足元の接地を修正したが、造形・材質・動作、接触時の視認性、結末文の納刀と実際の刀の扱いに差が残る。参照選定の不足と実際の全動作比較を解消する必要がある。",
       "freshDesignClauses": [
         "D01",
         "D05",
@@ -536,7 +536,7 @@
         "K00",
         "K02"
       ],
-      "currentGap": "新作 afc8bcd は基本動作の技術試作。要素全体の比較は未実施。旧ゲームの測定を新作の証拠には使用しない。",
+      "currentGap": "最新1280x720・844x390・390x844で結果本文15/14/15px、再挑戦55/48/55pxと文節単位の折り返しを実測。戦闘中情報の理解・誘導・画面全体の独立ブラインド比較は未実施。",
       "freshDesignClauses": [
         "D03",
         "D04",
@@ -619,7 +619,7 @@
         "K00",
         "K02"
       ],
-      "currentGap": "新作 afc8bcd は基本動作の技術試作。要素全体の比較は未実施。旧ゲームの測定を新作の証拠には使用しない。",
+      "currentGap": "実touchで同時接点・guard保持・cancel・移動・回避・全ミッションと再挑戦を確認。観測から入力配送までを分けた検証モデルへ修正し、操作経路を明示。実装入力遅延・初見の扱いやすさ・幅広い画面条件とGIとの全体比較は未測定。",
       "freshDesignClauses": [
         "D02",
         "D03"
@@ -707,7 +707,7 @@
         "K03",
         "K06"
       ],
-      "currentGap": "新作 afc8bcd は基本動作の技術試作。要素全体の比較は未実施。旧ゲームの測定を新作の証拠には使用しない。",
+      "currentGap": "連続映像は無音で、音響品質の証拠には使えない。新作と実参照の音を含む記録・遷移/定位/剣戟/情緒の全体比較が必要。",
       "freshDesignClauses": [
         "D01",
         "D05"
@@ -790,7 +790,7 @@
         "K02",
         "K03"
       ],
-      "currentGap": "新作 afc8bcd は基本動作の技術試作。要素全体の比較は未実施。旧ゲームの測定を新作の証拠には使用しない。",
+      "currentGap": "植生を空間分割し形状を保ったまま提出三角形を減らし、rAF間隔・JS更新・描画呼出時間を分けて記録。SwiftShaderの測定であり実機性能ではない。新作の10分スマートフォン向け検証と全体比較は未実施。",
       "freshDesignClauses": [
         "D04"
       ],
@@ -876,7 +876,7 @@
         "K00",
         "K02"
       ],
-      "currentGap": "新作 afc8bcd は基本動作の技術試作。要素全体の比較は未実施。旧ゲームの測定を新作の証拠には使用しない。",
+      "currentGap": "最新CIで初期化・pause/resume・WebGL loss/restore・敗北/勝利からの再挑戦・無エラーを確認。長時間・対象ブラウザ/画面/例外の比較は不足。ローカル容量不足は制作環境の障害で、ゲーム品質や制作完了と同一視しない。",
       "freshDesignClauses": [
         "D02",
         "D04",
@@ -1547,17 +1547,13 @@
     "SK": "SEKIRO: Shadows Die Twice (2019)"
   },
   "runtime": {
-    "basicEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-ci-b851e80.json",
+    "basicEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-verified-checkpoint.json",
     "branch": "codex/game2-rebuild-20260913",
     "formalEvidence": null,
     "legacyEvidenceReusableAsCurrent": false,
-    "revision": "b851e803e1af27e6e535b99a2b38b567a73e06dc",
-    "verificationScope": "Basic functional browser evidence and source-aware static image review only; all whole-element blind verdicts remain not measured.",
-    "pendingCandidate": {
-      "baseRevision": "f2d81b7c222483cbc4cbef620ac8f5dcd11e1178",
-      "checkpoint": "AI_DEVELOPMENT/EVIDENCE/20260914-fresh-touch-failure-f2d81b7.json",
-      "note": "First touch-only full mission failed. Corrected direct-contact driver is prepared and must pass at its own exact commit; criterion unchanged."
-    }
+    "revision": "5afdd48e56613adfdbd26f54e5b2c02a79b3ffc2",
+    "verificationScope": "46tests/build, actual PC/touch missions, ending/portrait/retry, silent recording integrity. Exact new visual review pending; no whole-element source-blind verdict.",
+    "pendingCandidate": null
   },
   "schemaVersion": 1,
   "sources": [
@@ -1873,6 +1869,6 @@
     }
   ],
   "status": "not measured",
-  "updatedAt": "2026-09-14T01:56:53Z",
+  "updatedAt": "2026-09-14T08:56:28.108Z",
   "adoptionReview": "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-catalog-review.json"
 }

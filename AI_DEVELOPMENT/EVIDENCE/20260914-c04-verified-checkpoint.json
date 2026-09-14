@@ -1,0 +1,627 @@
+{
+  "sourceRevision": "5afdd48e56613adfdbd26f54e5b2c02a79b3ffc2",
+  "sourceTree": "2e633956e64f1d6ab1ff5464f86b45762a7da583",
+  "run": 34823475645,
+  "url": "https://github.com/bachikoljunior-blip/game2/actions/runs/34823475645",
+  "status": "completed",
+  "conclusion": "success",
+  "finishedAt": "2026-09-14T08:39:56Z",
+  "tests": {
+    "count": 46,
+    "passed": 46,
+    "failed": 0,
+    "source": "Exact CI job103910115483 test log"
+  },
+  "build": "passed",
+  "browser": "passed",
+  "checks": [
+    "real start and keyboard movement through torii",
+    "real click causes enemy HP loss",
+    "pause freezes simulation and resumes",
+    "WebGL loss/restore and resume",
+    "death and real retry restore player",
+    "real-input full combat, postcombat arrival, signal, ending and clean retry",
+    "mobile simultaneous guard/lock release preserves guard; cancel releases",
+    "mobile joystick movement and cancel stop",
+    "portrait victory result panel keeps readable copy and retry in viewport",
+    "touch-only full combat, arrival, signal, ending and clean retry"
+  ],
+  "errors": [],
+  "desktop": {
+    "victoryObservedElapsedMs": 46808,
+    "totals": {
+      "hits": 9,
+      "kills": 3,
+      "parries": 0,
+      "received": 0
+    },
+    "hp": 100,
+    "mode": "victory",
+    "signalLit": true,
+    "camera": {
+      "frame": {
+        "lookX": -0.6531224472063991,
+        "lookY": 1.4894310446016035,
+        "lookZ": -18.957423524166376,
+        "x": 2.7077002000740693,
+        "y": 3.238959649847887,
+        "z": -12.710593620300013
+      },
+      "lockedFrames": 90,
+      "maxDownAngleDegrees": 16.36801686831212,
+      "minHorizontalStandoff": 5.95826746427288
+    }
+  },
+  "touch": {
+    "victoryObservedElapsedMs": 70457,
+    "totals": {
+      "hits": 9,
+      "kills": 3,
+      "parries": 0,
+      "received": 0
+    },
+    "hp": 100,
+    "mode": "victory",
+    "signalLit": true,
+    "guardObserved": true,
+    "blockOrParryObserved": true,
+    "dodgeDirection": [
+      -3.09895651723197e-17,
+      1
+    ],
+    "camera": {
+      "frame": {
+        "lookX": -1.4420595790308972,
+        "lookY": 1.5360234283444112,
+        "lookZ": -19.62696083436466,
+        "x": 3.050835611221091,
+        "y": 3.324376285298208,
+        "z": -13.057211054116465
+      },
+      "lockedFrames": 83,
+      "maxDownAngleDegrees": 16.798673598139366,
+      "minHorizontalStandoff": 5.796764630786627
+    },
+    "commandTimings": {
+      "max": 3915,
+      "min": 80,
+      "p50": 1002,
+      "p95": 2993,
+      "samples": 51,
+      "scope": "Read-only observed world followed by real touch commands. Decision commandStarted/Finished are wall offsets including command round trips and deliberate waits, not measured game input latency."
+    }
+  },
+  "durationsMs": {
+    "desktop": 111827,
+    "mobile": 102035
+  },
+  "typography": {
+    "desktop": {
+      "button": {
+        "bottom": 656,
+        "height": 55,
+        "left": 64,
+        "right": 294,
+        "top": 601,
+        "width": 230,
+        "x": 64,
+        "y": 601
+      },
+      "fontSize": 15,
+      "heading": {
+        "bottom": 515,
+        "height": 87,
+        "left": 64,
+        "right": 332.25,
+        "top": 428,
+        "width": 268.25,
+        "x": 64,
+        "y": 428
+      },
+      "message": {
+        "bottom": 581,
+        "height": 54,
+        "left": 64,
+        "right": 524.796875,
+        "top": 527,
+        "width": 460.796875,
+        "x": 64,
+        "y": 527
+      },
+      "phrases": [
+        {
+          "lineHeight": 27,
+          "rect": {
+            "bottom": 554,
+            "height": 27,
+            "left": 64,
+            "right": 204.40625,
+            "top": 527,
+            "width": 140.40625,
+            "x": 64,
+            "y": 527
+          },
+          "text": "社の灯がともった。"
+        },
+        {
+          "lineHeight": 27,
+          "rect": {
+            "bottom": 554,
+            "height": 27,
+            "left": 204.40625,
+            "right": 329.21875,
+            "top": 527,
+            "width": 124.8125,
+            "x": 204.40625,
+            "y": 527
+          },
+          "text": "谷で待つ人々に、"
+        },
+        {
+          "lineHeight": 27,
+          "rect": {
+            "bottom": 581,
+            "height": 27,
+            "left": 64,
+            "right": 266.8125,
+            "top": 554,
+            "width": 202.8125,
+            "x": 64,
+            "y": 554
+          },
+          "text": "山道が開いたことが伝わる。"
+        },
+        {
+          "lineHeight": 27,
+          "rect": {
+            "bottom": 581,
+            "height": 27,
+            "left": 266.8125,
+            "right": 422.8125,
+            "top": 554,
+            "width": 156,
+            "x": 266.8125,
+            "y": 554
+          },
+          "text": "刃を納め、風を聞く。"
+        }
+      ],
+      "viewport": {
+        "height": 720,
+        "width": 1280
+      }
+    },
+    "landscape": {
+      "button": {
+        "bottom": 370,
+        "height": 48,
+        "left": 24,
+        "right": 204,
+        "top": 322,
+        "width": 180,
+        "x": 24,
+        "y": 322
+      },
+      "fontSize": 14,
+      "heading": {
+        "bottom": 235.828125,
+        "height": 46,
+        "left": 24,
+        "right": 166.453125,
+        "top": 189.828125,
+        "width": 142.453125,
+        "x": 24,
+        "y": 189.828125
+      },
+      "message": {
+        "bottom": 310,
+        "height": 67.171875,
+        "left": 24,
+        "right": 344.71875,
+        "top": 242.828125,
+        "width": 320.71875,
+        "x": 24,
+        "y": 242.828125
+      },
+      "phrases": [
+        {
+          "lineHeight": 22.4,
+          "rect": {
+            "bottom": 265.21875,
+            "height": 22.390625,
+            "left": 24,
+            "right": 155.046875,
+            "top": 242.828125,
+            "width": 131.046875,
+            "x": 24,
+            "y": 242.828125
+          },
+          "text": "社の灯がともった。"
+        },
+        {
+          "lineHeight": 22.4,
+          "rect": {
+            "bottom": 265.21875,
+            "height": 22.390625,
+            "left": 155.046875,
+            "right": 271.53125,
+            "top": 242.828125,
+            "width": 116.484375,
+            "x": 155.046875,
+            "y": 242.828125
+          },
+          "text": "谷で待つ人々に、"
+        },
+        {
+          "lineHeight": 22.4,
+          "rect": {
+            "bottom": 287.609375,
+            "height": 22.390625,
+            "left": 24,
+            "right": 213.28125,
+            "top": 265.21875,
+            "width": 189.28125,
+            "x": 24,
+            "y": 265.21875
+          },
+          "text": "山道が開いたことが伝わる。"
+        },
+        {
+          "lineHeight": 22.4,
+          "rect": {
+            "bottom": 310,
+            "height": 22.390625,
+            "left": 24,
+            "right": 169.609375,
+            "top": 287.609375,
+            "width": 145.609375,
+            "x": 24,
+            "y": 287.609375
+          },
+          "text": "刃を納め、風を聞く。"
+        }
+      ],
+      "viewport": {
+        "height": 390,
+        "width": 844
+      }
+    },
+    "portrait": {
+      "button": {
+        "bottom": 816,
+        "height": 55,
+        "left": 22,
+        "right": 368,
+        "top": 761,
+        "width": 346,
+        "x": 22,
+        "y": 761
+      },
+      "fontSize": 15,
+      "heading": {
+        "bottom": 660.75,
+        "height": 51,
+        "left": 22,
+        "right": 181.09375,
+        "top": 609.75,
+        "width": 159.09375,
+        "x": 22,
+        "y": 609.75
+      },
+      "message": {
+        "bottom": 747,
+        "height": 74.25,
+        "left": 22,
+        "right": 368,
+        "top": 672.75,
+        "width": 346,
+        "x": 22,
+        "y": 672.75
+      },
+      "phrases": [
+        {
+          "lineHeight": 24.75,
+          "rect": {
+            "bottom": 697.5,
+            "height": 24.75,
+            "left": 22,
+            "right": 162.40625,
+            "top": 672.75,
+            "width": 140.40625,
+            "x": 22,
+            "y": 672.75
+          },
+          "text": "社の灯がともった。"
+        },
+        {
+          "lineHeight": 24.75,
+          "rect": {
+            "bottom": 697.5,
+            "height": 24.75,
+            "left": 162.40625,
+            "right": 287.21875,
+            "top": 672.75,
+            "width": 124.8125,
+            "x": 162.40625,
+            "y": 672.75
+          },
+          "text": "谷で待つ人々に、"
+        },
+        {
+          "lineHeight": 24.75,
+          "rect": {
+            "bottom": 722.25,
+            "height": 24.75,
+            "left": 22,
+            "right": 224.8125,
+            "top": 697.5,
+            "width": 202.8125,
+            "x": 22,
+            "y": 697.5
+          },
+          "text": "山道が開いたことが伝わる。"
+        },
+        {
+          "lineHeight": 24.75,
+          "rect": {
+            "bottom": 747,
+            "height": 24.75,
+            "left": 22,
+            "right": 178,
+            "top": 722.25,
+            "width": 156,
+            "x": 22,
+            "y": 722.25
+          },
+          "text": "刃を納め、風を聞く。"
+        }
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    }
+  },
+  "landscape": {
+    "baseFootprint": {
+      "depth": 7,
+      "height": 0.56,
+      "width": 10
+    },
+    "grassBatches": 20,
+    "grassBlades": 9000,
+    "grassClumps": 3000,
+    "grassTriangles": 36000,
+    "leafBatches": 35,
+    "maxRootError": 2.3295251173026388e-7
+  },
+  "encounterRender": {
+    "calls": 116,
+    "frame": 34,
+    "lines": 0,
+    "points": 0,
+    "triangles": 123278
+  },
+  "timingSummary": {
+    "desktop": {
+      "intervalMs": {
+        "max": 1600,
+        "mean": 648.8176923076921,
+        "n": 130,
+        "p50": 633.3999999999942,
+        "p95": 1133.4000000000015
+      },
+      "renderCallMs": {
+        "max": 1202.5,
+        "mean": 12.436923076922987,
+        "n": 130,
+        "p50": 2.2000000000116415,
+        "p95": 6.300000000017462
+      },
+      "samples": 130,
+      "simulationMs": {
+        "max": 0.7999999999883585,
+        "mean": 0.12769230769235246,
+        "n": 130,
+        "p50": 0.10000000000582077,
+        "p95": 0.29999999998835847
+      }
+    },
+    "touch": {
+      "intervalMs": {
+        "max": 833.3000000000002,
+        "mean": 357.25076923076927,
+        "n": 195,
+        "p50": 350.09999999999854,
+        "p95": 666.6999999999971
+      },
+      "renderCallMs": {
+        "max": 9.400000000023283,
+        "mean": 2.327692307696009,
+        "n": 195,
+        "p50": 1.7999999999883585,
+        "p95": 4.7000000000116415
+      },
+      "samples": 195,
+      "simulationMs": {
+        "max": 3,
+        "mean": 0.14153846153834213,
+        "n": 195,
+        "p50": 0.09999999997671694,
+        "p95": 0.20000000001164153
+      }
+    }
+  },
+  "recordings": {
+    "date": "2026-09-14T08:39:40.463Z",
+    "recordings": [
+      {
+        "alignment": "Wall-clock event offsets are approximate; video/input synchronization has not been measured. Visual continuity must still be reviewed.",
+        "approximateIntervalSeconds": 111.86,
+        "audioTracks": 0,
+        "bytes": 12817120,
+        "decodedFrames": 2794,
+        "durationSeconds": 111.76,
+        "events": [
+          {
+            "detail": {
+              "height": 720,
+              "width": 1280
+            },
+            "event": "title-ready",
+            "offsetMs": 670
+          },
+          {
+            "event": "full-mission-start",
+            "offsetMs": 51708
+          },
+          {
+            "detail": 0,
+            "event": "kills",
+            "offsetMs": 51710
+          },
+          {
+            "detail": 1,
+            "event": "kills",
+            "offsetMs": 67407
+          },
+          {
+            "detail": 2,
+            "event": "kills",
+            "offsetMs": 81268
+          },
+          {
+            "detail": 3,
+            "event": "kills",
+            "offsetMs": 92260
+          },
+          {
+            "event": "victory",
+            "offsetMs": 99076
+          },
+          {
+            "event": "clean-retry",
+            "offsetMs": 111827
+          },
+          {
+            "event": "context-close",
+            "offsetMs": 111860
+          }
+        ],
+        "file": "desktop-continuous.webm",
+        "fullDecode": "passed",
+        "height": 720,
+        "id": "desktop",
+        "intervalToleranceSeconds": 2,
+        "sha256": "47d9a03628cd56cff98cb29e353fb0c3596ed5867b77c2176ff46b32d4a4a89e",
+        "width": 1280
+      },
+      {
+        "alignment": "Wall-clock event offsets are approximate; video/input synchronization has not been measured. Visual continuity must still be reviewed.",
+        "approximateIntervalSeconds": 102.061,
+        "audioTracks": 0,
+        "bytes": 11251850,
+        "decodedFrames": 2559,
+        "durationSeconds": 102.36,
+        "events": [
+          {
+            "detail": {
+              "height": 390,
+              "width": 844
+            },
+            "event": "landscape",
+            "offsetMs": 309
+          },
+          {
+            "event": "full-mission-start",
+            "offsetMs": 16558
+          },
+          {
+            "detail": 0,
+            "event": "kills",
+            "offsetMs": 16561
+          },
+          {
+            "detail": 1,
+            "event": "kills",
+            "offsetMs": 39190
+          },
+          {
+            "detail": 2,
+            "event": "kills",
+            "offsetMs": 58969
+          },
+          {
+            "detail": 3,
+            "event": "kills",
+            "offsetMs": 75193
+          },
+          {
+            "event": "victory",
+            "offsetMs": 87526
+          },
+          {
+            "detail": {
+              "height": 844,
+              "width": 390
+            },
+            "event": "portrait",
+            "offsetMs": 94341
+          },
+          {
+            "event": "clean-retry",
+            "offsetMs": 102035
+          },
+          {
+            "event": "context-close",
+            "offsetMs": 102061
+          }
+        ],
+        "file": "touch-continuous.webm",
+        "fullDecode": "passed",
+        "height": 844,
+        "id": "touch",
+        "intervalToleranceSeconds": 2,
+        "sha256": "4571470255d0ce8a4a9334b10e438956e4ec066c53a4635a6a0c1e6f2d7e947d",
+        "width": 844
+      }
+    ],
+    "result": "passed",
+    "scope": "Video integrity and provenance only. Silent software-rendered browser recordings; no source-blind verdict, audio result or smartphone performance claim. Decoded frames can repeat.",
+    "sourceRevision": "5afdd48e56613adfdbd26f54e5b2c02a79b3ffc2"
+  },
+  "artifact": {
+    "archive_download_url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10338653945/zip",
+    "created_at": "2026-09-14T08:39:52Z",
+    "digest": "sha256:0178c96768bf1f04807d1833fb3275cd1515174d4f96f067b8ad3ce1308e8674",
+    "expired": false,
+    "expires_at": "2026-12-13T08:35:12Z",
+    "id": 10338653945,
+    "name": "fresh-game-5afdd48e56613adfdbd26f54e5b2c02a79b3ffc2",
+    "size_in_bytes": 26768953,
+    "updated_at": "2026-09-14T08:39:52Z",
+    "url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10338653945",
+    "workflow_run": {
+      "head_branch": "codex/game2-rebuild-20260913",
+      "head_repository_id": 1316876624,
+      "head_sha": "5afdd48e56613adfdbd26f54e5b2c02a79b3ffc2",
+      "id": 34823475645,
+      "repository_id": 1316876624
+    }
+  },
+  "independentVisualReview": {
+    "status": "pending",
+    "reason": "Local download/write failed from disk exhaustion; inspect the exact existing artifact via normal GitHub workflow."
+  },
+  "limits": [
+    "Chromium/SwiftShader, not physical smartphone performance.",
+    "Reported mission times are wall-clock observations, not a controlled speed comparison across runs.",
+    "Recorded frame counts include repeats; five-second samples do not establish full-motion quality or synchronized input latency.",
+    "Audio is absent from both recordings; no audio-quality result.",
+    "New touch-player route is identified separately; older timeout/defeat results remain failed.",
+    "All10 whole-element source-blind verdicts remain not measured."
+  ],
+  "formalVerdict": "not measured",
+  "workUnitEnded": false,
+  "updatedAt": "2026-09-14T08:55:34.716Z"
+}

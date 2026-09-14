@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-09-14T08:55:34.716Z",
+  "producerState": "foreground producer active; local filesystem-dependent stage blocked",
+  "lastVerifiedRevision": "5afdd48e56613adfdbd26f54e5b2c02a79b3ffc2",
+  "lastVerifiedRun": 34823475645,
+  "cause": {
+    "evidence": [
+      "curl23 Failure writing output to destination after704512bytes.",
+      "shutil.disk_usage: total33770192896,used33753415680,free0.",
+      "Subsequent standard exec failed before command execution: synthetic sandbox mount marker creation ENOSPC."
+    ],
+    "confirmed": "No available local storage prevented artifact writes and then ordinary execution startup.",
+    "unknown": [
+      "What other data or process exhausted the volume has not been established; do not claim all causes removed."
+    ]
+  },
+  "attempts": [
+    {
+      "action": "Delete only3 previously verified redownloadable archive replicas; keep expanded evidence and remote artifacts",
+      "result": "Not executed because ordinary sandbox startup failed."
+    },
+    {
+      "action": "Request normal permission escalation for that bounded cleanup",
+      "result": "Rejected by environment approval policy; no escalation or access-rule change occurred."
+    },
+    {
+      "action": "Remove the partial current download through ordinary workspace apply_patch",
+      "result": "Failed; filesystem helper also cannot start."
+    }
+  ],
+  "methodChange": "Use a separate bounded GitHub workflow solely to verify the already successful immutable artifact and publish original image/5-second contact-sheet Git blobs. No game rerun, artifact code execution, ref update or local permission bypass. Main/Pages remain preserved.",
+  "remoteInspection": {
+    "status": "independent static audit complete; execution pending",
+    "sourceRun": 34823475645,
+    "artifactId": 10338653945,
+    "script": "AI_DEVELOPMENT/TOOLS/snapshot_existing_artifact.py",
+    "workflow": ".github/workflows/snapshot-existing-evidence.yml",
+    "textTransport": "Confirmed github_fetch/github_fetch_blob accept UTF-8 only. Store a separate JSON/base64 text envelope for exact image display through the connector; binary Git blobs and original artifact hashes remain canonical. Never put image data, credentials or signed URLs in logs.",
+    "codeReview": {
+      "reviewer": "review_capture",
+      "scriptBlob": "9f5f3636bbafe86c8a8d55d3d159b07b1089b35b",
+      "result": "Final independent static audit confirmed all identified code issues corrected; no additional major issue found. Runtime and connector image display remain pending.",
+      "resolved": [
+        "NoRedirect on every authenticated API request",
+        "Exact required six PNG names and duplicate/count checks",
+        "Validate/convert every asset before first blob POST",
+        "Partial binary and completed transport receipts",
+        "Only custom fixed ValidationError message is logged; other exception details omitted"
+      ]
+    }
+  },
+  "remainingCauses": [
+    "Local disk exhaustion and sandbox startup failure unresolved."
+  ],
+  "futureLocalRecovery": "When ordinary execution is available, verify SHA256 and the retained expanded directories, remove only own redundant downloaded ZIP replicas, then confirm write/normal execution before materializing the latest remote checkpoint. Do not reset dirty/stale workspaces or repeat old runtime CI.",
+  "formalVerdict": "not measured",
+  "workUnitEnded": false
+}

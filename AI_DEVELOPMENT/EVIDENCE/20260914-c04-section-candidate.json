@@ -30,11 +30,11 @@
     "buildScope": "Spatial candidate build passed before the observational timestamp separation; final exact revision is checked by CI."
   },
   "remoteVerification": {
-    "revision": "9266736dee85e78d174c885190c38f8e7e570e7d",
-    "run": 34822773628,
-    "result": "failed after touch victory",
-    "detail": "The successful signal tap ended its final touch contact. An unconditional final touchCancel was then rejected by CDP because no touch sequence existed. This is a test cleanup error after game victory; previous tactical defeats remain separate.",
-    "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-delayed-touch.json"
+    "revision": "5afdd48e56613adfdbd26f54e5b2c02a79b3ffc2",
+    "run": 34823475645,
+    "result": "passed",
+    "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-verified-checkpoint.json",
+    "detail": "46tests/build and real PC/touch complete missions including ending/retry and video integrity passed. Same runtime landscape asce36154; tactical route/cleanup separated in delayed-touch evidence."
   },
   "independentReview": {
     "reviewer": "review_capture",
@@ -56,7 +56,7 @@
   },
   "formalVerdict": "not measured",
   "workUnitEnded": false,
-  "nextWork": "Verify terminal touch-contact cleanup at exact next CI: the9266736 route already reached3kills/signal/victory at95014ms withHP100, actual guard/block and dodge; its unconditional empty touchCancel failed before ending/retry. Keep46tests, same runtime/policy,strict180seconds and all ending/portrait/retry/recording checks. Save exact verification and independent review before boundary. Then prioritize ordinary-play comparison coverage, integrated combat visibility/audio and five remaining reference dossiers over further panel-only changes.",
+  "nextWork": "Inspect immutable5afdd48 / CI34823475645 original images and5-second recording samples via snapshot-existing-evidence workflow, then save independent visual diagnosis and exact blob/hash provenance. Gameplay CI passed; do not rerun it merely to retrieve images. Local disk exhaustion/sandbox-start failure remains unresolved. Use normal GitHub tools while retaining that limitation. After review, obtain ordinary-play reference/candidate coverage for the whole C04 boundary, then address the observed combat visibility/foreground vegetation and actor/weapon/ending gaps as one scene change. Five reference dossiers and all ten formal comparisons remain unfinished.",
   "failedAttempts": [
     {
       "revision": "ea295ff0400a9e58f1b95c19cac0683a1922d188",
@@ -84,5 +84,5 @@
       "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-c04-delayed-touch.json"
     }
   ],
-  "updatedAt": "2026-09-14T08:34:39.471Z"
+  "updatedAt": "2026-09-14T08:55:34.716Z"
 }
