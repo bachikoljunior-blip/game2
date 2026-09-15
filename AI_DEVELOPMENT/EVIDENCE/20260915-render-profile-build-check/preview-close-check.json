@@ -1,0 +1,17 @@
+{
+  "scope": "One actual Vite preview start, HTTP GET, documented close and same-port rebind; no Chrome or WebGL",
+  "startedAt": "2026-09-15T14:31:26.348Z",
+  "version": "6.4.3",
+  "sigtermBefore": 0,
+  "closeType": "function",
+  "port": 4197,
+  "httpStatus": 200,
+  "closeWallMs": 0.8074689999999975,
+  "listeningAfter": false,
+  "resolvedUrlsAfter": null,
+  "sigtermAfter": 0,
+  "samePortRebound": true,
+  "result": "passed",
+  "scriptSha256": "3d227f94b6eb993c21696bcc1ff195dfccdc38da62869045f11ec2d92175e7bf",
+  "finishedAt": "2026-09-15T14:31:26.394Z"
+}
