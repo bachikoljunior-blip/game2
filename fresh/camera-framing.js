@@ -5,12 +5,16 @@ const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
 
 export function usesRejoinVista(world){
   if(world.mode!=='playing'||world.routePhase!=='branch'||!isRouteId(world.routeChoice))return false;
+  // The authored vista belongs to this short junction. Optional valley walks
+  // must retain player-following control even when mission progress is unchanged.
+  if(world.player.z<ROUTE_FORK.rejoinZ-.25||Math.abs(world.player.x)>6.5)return false;
   const routeEnemy=world.enemies.find(enemy=>enemy.id===ROUTE_FORK[world.routeChoice].enemyId);
   return routeEnemy?.hp<=0&&world.player.z<=ROUTE_FORK.obstacleBackZ+1.4;
 }
 
 export const usesArrivalFrame=world=>world.mode==='playing'&&world.pathCleared&&
-  world.routePhase==='rejoined'&&!world.signalLit;
+  world.routePhase==='rejoined'&&!world.signalLit&&
+  Math.hypot(world.player.x-SIGNAL.x,world.player.z-SIGNAL.z)<=7.5;
 
 function signalFrame(world,aspect,out){
   const p=world.player,portrait=aspect<.8,wide=aspect>1.9;

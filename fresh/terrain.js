@@ -6,7 +6,12 @@ export function terrainVertexHeight(x,z){
   const edge=smooth(clamp((Math.abs(x)-5)/28,0,1));
   const ridge=4.3+Math.sin(z*.065+x*.07)*1.65+Math.sin(z*.13-x*.12)*.85;
   const shoulder=Math.exp(-((x+15)**2/100+(z-9)**2/330))*1.3;
-  return Math.max(0,(ridge+shoulder)*edge);
+  // Optional walks climb the valley shoulders and circle behind the shrine.
+  // Their continuous slopes share this exact surface with actors and roots.
+  const eastRise=Math.exp(-((x-29)**2/210+(z+6)**2/900))*2.5;
+  const westHollow=Math.exp(-((x+28)**2/100+(z-6)**2/500))*.8;
+  const backRise=smooth(clamp((-z-30)/14,0,1))*(1.5+Math.sin(x*.085)*.45);
+  return Math.max(0,(ridge+shoulder+eastRise-westHollow)*edge+backRise);
 }
 export function groundHeightAt(x,z){
   const gx=clamp((x+80)/2.5,0,64-1e-9),gz=clamp((z+100)/2.5,0,80-1e-9);

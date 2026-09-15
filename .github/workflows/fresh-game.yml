@@ -72,3 +72,46 @@ jobs:
           path: AI_DEVELOPMENT/EVIDENCE/fresh-20260913/
           if-no-files-found: error
           retention-days: 90
+  experience:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Same-source build
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          node node_modules/vite/bin/vite.js build --config fresh/vite.config.mjs
+          git diff --exit-code HEAD -- .
+      - name: Unambiguous touch input and optional exploration circuits
+        run: |
+          node node_modules/vite/bin/vite.js preview --config fresh/vite.config.mjs --host 127.0.0.1 --port 4178 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID"' EXIT
+          node fresh/experience-smoke.mjs
+      - name: Generate listening assets and capture actual game sound
+        if: always()
+        run: |
+          node fresh/audio-audition.mjs
+          node node_modules/vite/bin/vite.js preview --config fresh/vite.config.mjs --host 127.0.0.1 --port 4178 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID"' EXIT
+          node fresh/audio-browser-capture.mjs
+      - name: Render every actor motion and environmental movement
+        if: always()
+        run: node fresh/motion-capture.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fresh-experience-${{ github.sha }}
+          path: AI_DEVELOPMENT/EVIDENCE/fresh-20260913/
+          if-no-files-found: error
+          retention-days: 90

@@ -1,9 +1,14 @@
-export function createInput(canvas, onPause) {
-  const held=new Set(), pulse={attack:false,dodge:false,lock:false};let stick={x:0,z:0},orbit=0;
+// The canvas owns camera gestures. Only a short primary mouse click or the
+// dedicated attack button can attack; touch and pen releases never do.
+export const MOUSE_CLICK = Object.freeze({ travel: 6, duration: 350 });
+export function createInput(canvas,onPause){
+  const held=new Set(),pulse={attack:false,dodge:false,lock:false},guardPointers=new Set(),canvasPointers=new Set();
+  let stick={x:0,z:0},orbit=0,active=false,stickId=null,look=null;
   const touch=document.querySelector('#touch'),pad=document.querySelector('#stick'),knob=pad.querySelector('i');
-  const coarse=matchMedia('(pointer:coarse)').matches || navigator.maxTouchPoints>0;
-  let active=false,stickId=null,look=null;
-  const clear=()=>{held.clear();guardPointers.clear();stick={x:0,z:0};stickId=null;look=null;Object.keys(pulse).forEach(k=>pulse[k]=false);knob.style.transform='';};
+  const coarse=matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>0;
+  const capture=(element,id)=>{try{element.setPointerCapture(id);}catch{/* The browser may already have cancelled this pointer. */}};
+  const stamp=e=>Number.isFinite(e.timeStamp)?e.timeStamp:performance.now();
+  const clear=()=>{held.clear();guardPointers.clear();canvasPointers.clear();stick={x:0,z:0};stickId=null;look=null;Object.keys(pulse).forEach(k=>pulse[k]=false);knob.style.transform='';};
   window.addEventListener('blur',()=>{clear();onPause();});
   document.addEventListener('visibilitychange',()=>{if(document.hidden){clear();onPause();}});
   window.addEventListener('keydown',e=>{
@@ -13,17 +18,41 @@ export function createInput(canvas, onPause) {
     held.add(e.code);
   });
   window.addEventListener('keyup',e=>held.delete(e.code));
-  canvas.addEventListener('pointerdown',e=>{if(!active)return;canvas.setPointerCapture(e.pointerId);look={id:e.pointerId,x:e.clientX,y:e.clientY,travel:0};});
-  canvas.addEventListener('pointermove',e=>{if(look?.id!==e.pointerId)return;const dx=e.clientX-look.x;look.travel+=Math.abs(dx)+Math.abs(e.clientY-look.y);orbit-=dx*.006;look.x=e.clientX;look.y=e.clientY;});
-  canvas.addEventListener('pointerup',e=>{if(look?.id===e.pointerId){if(look.travel<15&&active)pulse.attack=true;look=null;}});
-  canvas.addEventListener('pointercancel',()=>{look=null;});
-  pad.addEventListener('pointerdown',e=>{if(!active||stickId!==null)return;stickId=e.pointerId;pad.setPointerCapture(e.pointerId);});
+  canvas.addEventListener('contextmenu',e=>e.preventDefault());
+  canvas.addEventListener('pointerdown',e=>{
+    if(!active)return;
+    // A second finger cannot take over the first gesture or revive its click.
+    canvasPointers.add(e.pointerId);
+    if(look){look.click=false;return;}
+    if(canvasPointers.size!==1)return;
+    e.preventDefault();capture(canvas,e.pointerId);
+    look={id:e.pointerId,x:e.clientX,y:e.clientY,travel:0,start:stamp(e),
+      click:e.pointerType==='mouse'&&e.button===0&&e.isPrimary!==false};
+  });
+  const track=e=>{
+    if(look?.id!==e.pointerId)return;
+    const dx=e.clientX-look.x,dy=e.clientY-look.y;
+    look.travel+=Math.hypot(dx,dy);if(look.travel>MOUSE_CLICK.travel)look.click=false;
+    orbit-=dx*.006;look.x=e.clientX;look.y=e.clientY;
+  };
+  canvas.addEventListener('pointermove',e=>{if(active)track(e);});
+  canvas.addEventListener('pointerup',e=>{
+    if(look?.id===e.pointerId){
+      track(e);
+      if(active&&look.click&&canvasPointers.size===1&&stamp(e)-look.start<=MOUSE_CLICK.duration)pulse.attack=true;
+      look=null;
+    }
+    canvasPointers.delete(e.pointerId);
+  });
+  for(const type of ['pointercancel','lostpointercapture'])canvas.addEventListener(type,e=>{
+    if(look?.id===e.pointerId)look=null;canvasPointers.delete(e.pointerId);
+  });
+  pad.addEventListener('pointerdown',e=>{if(!active||stickId!==null)return;e.preventDefault();stickId=e.pointerId;capture(pad,e.pointerId);});
   pad.addEventListener('pointermove',e=>{if(e.pointerId!==stickId)return;const b=pad.getBoundingClientRect(),x=(e.clientX-b.x-b.width/2)/35,z=(e.clientY-b.y-b.height/2)/35,n=Math.max(1,Math.hypot(x,z));stick={x:x/n,z:z/n};knob.style.transform=`translate(${stick.x*28}px,${stick.z*28}px)`;});
   const release=e=>{if(e.pointerId===stickId){stickId=null;stick={x:0,z:0};knob.style.transform='';}};
-  pad.addEventListener('pointerup',release);pad.addEventListener('pointercancel',release);pad.addEventListener('lostpointercapture',release);
-  const guardPointers=new Set();
+  for(const type of ['pointerup','pointercancel','lostpointercapture'])pad.addEventListener(type,release);
   for(const b of touch.querySelectorAll('button')){
-    b.addEventListener('pointerdown',e=>{if(!active)return;e.preventDefault();b.setPointerCapture(e.pointerId);const a=b.dataset.action;if(a==='guard'){guardPointers.add(e.pointerId);held.add('touchGuard');}else pulse[a]=true;});
+    b.addEventListener('pointerdown',e=>{if(!active)return;e.preventDefault();capture(b,e.pointerId);const a=b.dataset.action;if(a==='guard'){guardPointers.add(e.pointerId);held.add('touchGuard');}else if(a in pulse)pulse[a]=true;});
     for(const type of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(type,e=>{if(b.dataset.action==='guard'){guardPointers.delete(e.pointerId);if(!guardPointers.size)held.delete('touchGuard');}});
   }
   return {clear,get orbit(){return orbit;},setActive(v){active=v;touch.hidden=!v||!coarse;if(!v)clear();},

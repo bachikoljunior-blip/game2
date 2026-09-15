@@ -5,6 +5,21 @@ import {PerspectiveCamera,Vector3} from 'three';
 import {computeCameraFrame,foregroundObstacleOpacity,interpolateCameraFrame,usesArrivalFrame,usesRejoinVista} from './camera-framing.js';
 import {SIGNAL} from './mission.js';
 import {ROUTE_FORK,routeCenterAt} from './route-layout.js';
+import {createCharacterRig} from './character-rig.js';
+import {EXPLORATION} from './exploration.js';
+
+test('junction and arrival cameras release to player follow on every optional walk',()=>{
+  for(const place of EXPLORATION.points){
+    const world={mode:'playing',routeChoice:'left',routePhase:'branch',pathCleared:false,signalLit:false,locked:null,
+      player:{x:place.x,z:place.z,hp:100},enemies:[{id:'retainer',hp:0}]};
+    assert.equal(usesRejoinVista(world),false,place.id+' after chosen-route duel');
+    world.routePhase='rejoined';world.pathCleared=true;
+    assert.equal(usesArrivalFrame(world),false,place.id+' after all duels');
+    const frame=computeCameraFrame(world,0,844/390,{});
+    assert.ok(Math.hypot(frame.x-place.x,frame.z-place.z)<6,place.id+' keeps player-following distance');
+    assert.equal(frame.lookX,place.x);
+  }
+});
 
 const angle=(camera,a,b)=>{
   const ax=a.x-camera.x,az=a.z-camera.z,bx=b.x-camera.x,bz=b.z-camera.z;
@@ -197,7 +212,7 @@ test('generated landscape replaces flat background and cone bamboo without exter
   assert.match(source,/const leafCluster=mergeGeometries/);
   assert.match(source,/new T\.DodecahedronGeometry/);
   assert.match(source,/const rim=new T\.DirectionalLight/);
-  assert.match(source,/new T\.CircleGeometry\(\.46,20\)/);
+  assert.match(readFileSync(new URL('./character-rig.js',import.meta.url),'utf8'),/new T\.CircleGeometry\(\.46,20\)/);
   assert.match(source,/signalHalo\.visible=world\.signalLit/);
   assert.doesNotMatch(source,/new T\.ConeGeometry\(1\.6-j\*\.22,2\.5,5\)/);
   assert.doesNotMatch(source,/TextureLoader|\.glb|\.gltf|fetch\(/);
@@ -211,9 +226,13 @@ test('scene and actor pass preserves density while clearing combat silhouettes a
   assert.match(source,/playerBlade=material\('#e7f4f4'/);
   assert.match(source,/enemyBlade=material\('#ffe0a6'/);
   assert.match(source,/enemyBlade\.emissiveIntensity=\.24/);
-  assert.match(source,/const scabbard=mesh\(body/);
-  assert.match(source,/rigs\.set\(id,\{root,body,limbs,sword,scabbard,ring,signal\}\)/);
-  assert.match(source,/r\.sword\.visible=!\(world\.mode==='victory'&&a\.id==='player'\)/);
+  for(const id of ['player','sentinel','retainer','warden']){
+    const rig=createCharacterRig(id);
+    assert.ok(rig.metrics.generatedParts>=40,'all actors retain detailed generated bodies');
+    assert.equal(rig.scabbard.name,'scabbard');assert.equal(rig.blade.name,'curved-blade');
+    assert.equal(rig.limbs.length,2);assert.ok(rig.limbs.every(l=>l.knee&&l.ankle&&l.elbow&&l.wrist));
+  }
+  assert.match(source,/updateCharacterRig\(r,a,world,dt,\{animate,groundHeightAt\}\)/);
 });
 
 test('foreground, signal, actor and branching-route hierarchy use the shared gameplay geometry',()=>{
@@ -222,10 +241,8 @@ test('foreground, signal, actor and branching-route hierarchy use the shared gam
   assert.match(source,/const toriiPosts=\[\]/);
   assert.match(source,/foregroundObstacleOpacity\(smoothedFrame,look,post\.obstacle\)/);
   assert.match(source,/const SIGNAL_HEIGHT=3\.15/);
-  assert.match(source,/signalLight\.intensity=world\.signalLit\?3\.2:0/);
-  assert.match(source,/const skirtFront=/);
-  assert.match(source,/const forearmWrap=/);
-  assert.match(source,/const facePlane=/);
+  assert.match(source,/signalLight\.intensity=world\.signalLit\?flame\.light:0/);
+  assert.match(source,/const flame=signalFlame\(/);
   assert.match(simulation,/\{ x: -3\.5, z: 7, w: \.55, d: \.55, h: 4\.5, kind: 'torii' \}/);
   assert.match(simulation,/\{ x: 3\.5, z: 7, w: \.55, d: \.55, h: 4\.5, kind: 'torii' \}/);
   assert.match(simulation,/ROUTE_FORK\.obstacle/);
@@ -234,7 +251,7 @@ test('foreground, signal, actor and branching-route hierarchy use the shared gam
   assert.match(source,/const fork=ROUTE_FORK\.obstacle/);
   assert.match(source,/ROUTE_FORK\.left\.markers/);
   assert.match(source,/ROUTE_FORK\.right\.markers/);
-  assert.match(source,/routeCloth\.onBeforeCompile/);
+  assert.match(source,/installWindMaterial\(routeCloth,wind,'cloth'\)/);
   assert.match(source,/rejoinSightlineClearance/);
   assert.match(source,/rejoinFrameError/);
   assert.match(source,/arrivalFrameError/);
@@ -243,6 +260,7 @@ test('foreground, signal, actor and branching-route hierarchy use the shared gam
 test('route checkpoint images are decoded after capture instead of perturbing held movement',()=>{
   const browser=readFileSync(new URL('./browser-smoke.mjs',import.meta.url),'utf8');
   const matrix=readFileSync(new URL('./route-matrix-smoke.mjs',import.meta.url),'utf8');
+  const rejoin=readFileSync(new URL('./rejoin-evidence.mjs',import.meta.url),'utf8');
   const verifier=readFileSync(new URL('./verify-recordings.mjs',import.meta.url),'utf8');
   const workflow=readFileSync(new URL('../.github/workflows/fresh-game.yml',import.meta.url),'utf8');
   for(const source of [browser,matrix]){
@@ -258,7 +276,9 @@ test('route checkpoint images are decoded after capture instead of perturbing he
   assert.doesNotMatch(browser.slice(recordedTouchStart),/mobile\.reload\(/,'recorded touch mission must not reuse a preflight page through reload');
   assert.match(workflow,/browser-smoke\.mjs \|\| browser_status=\$\?[\s\S]*route-matrix-smoke\.mjs \|\| matrix_status=\$\?/,'one failed apparatus must not suppress the other route evidence');
   assert.match(verifier,/\['full-mission-start','fork-entry','route-choice','rejoin-approach','route-rejoin','rejoin-camera-settled','post-rejoin-shrine-view','destination-arrival','signal-input','signal-lit','victory','clean-retry','context-close'\]/);
-  for(const source of [browser,matrix])assert.match(source,/world\.locked===null&&world\.player\.state==='guard'&&Number\.isFinite\(downAngleDegrees\)&&downAngleDegrees<=30/,'all four real-input routes must receive guard and settle the continuous vista exit before locking');
+  for(const source of [browser,matrix])assert.match(source,/settleRejoinAndLock\(/,'both apparatuses use the tested guard, retreat, camera-descent and single-lock sequence');
+  assert.match(rejoin,/settled\.locked===null&&settled\.playerState==='guard'&&settled\.downAngleDegrees<=30/);
+  assert.match(rejoin,/await controls\.guard\(\)/);
   assert.match(matrix,/result\.camera=await cameraContract\(page\)/,'both complementary routes must retain the unchanged final camera contract');
   assert.match(verifier,/routeSpecificEvents=\[landmark,consequence\]\.sort\(\(a,b\)=>a\.detail\.time-b\.detail\.time/);
   assert.match(verifier,/\['fork-entry',\.\.\.routeSpecificEvents,'route-rejoin','destination-arrival'\]/);

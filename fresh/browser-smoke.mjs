@@ -7,6 +7,7 @@ import { createTouchPlaythroughSession, touchPlaythroughAction } from './touch-p
 import { ENDING_PHRASES, SIGNAL, canLightSignal } from './mission.js';
 import { usesRejoinVista } from './camera-framing.js';
 import { ROUTE_FORK } from './route-layout.js';
+import { waitForComposition as observeComposition, settleRejoinAndLock, keyboardRejoinControls, touchRejoinControls } from './rejoin-evidence.mjs';
 const out=new URL('../AI_DEVELOPMENT/EVIDENCE/fresh-20260913/',import.meta.url);
 await mkdir(out,{recursive:true});
 const launchBrowser=()=>chromium.launch({headless:true,executablePath:process.env.CHROME_PATH,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
@@ -20,30 +21,9 @@ function recording(id,size){
  report.recordings.push(item);return item;
 }
 function mark(item,event,detail){item.events.push({event,offsetMs:Date.now()-Date.parse(item.startedAt),...(detail===undefined?{}:{detail})});}
-async function waitForComposition(page,framesKey,compositionKey){
- await page.waitForFunction(([framesKey,compositionKey])=>{
-  const camera=freshDiagnostics().camera,composition=camera[compositionKey];
-  const composed=camera[framesKey]>0&&composition&&Object.values(composition).every(subject=>subject.inFrame);
-  return composed&&(framesKey==='rejoinVistaFrames'?camera.rejoinFrameError<=.18&&camera.rejoinSightlineClearance>.3:camera.arrivalFrameError<=.18);
- },[framesKey,compositionKey],{timeout:10000});
- return page.evaluate(([framesKey,compositionKey])=>{
-  const camera=freshDiagnostics().camera;
-  return {frames:camera[framesKey],composition:camera[compositionKey],frame:camera.frame};
- },[framesKey,compositionKey]);
-}
-async function waitForPostRejoinCamera(page){
- await page.waitForFunction(()=>{
-  const {world,camera}=freshDiagnostics(),frame=camera.frame;
-  const horizontal=Math.hypot(frame.x-frame.lookX,frame.z-frame.lookZ);
-  const downAngleDegrees=Math.atan2(frame.y-frame.lookY,horizontal)*180/Math.PI;
-  return world.mode!=='playing'||world.locked===null&&world.player.state==='guard'&&Number.isFinite(downAngleDegrees)&&downAngleDegrees<=30;
- },{},{timeout:10000});
- return page.evaluate(()=>{
-  const {world,camera}=freshDiagnostics(),frame=camera.frame;
-  const horizontal=Math.hypot(frame.x-frame.lookX,frame.z-frame.lookZ);
-  const downAngleDegrees=Math.atan2(frame.y-frame.lookY,horizontal)*180/Math.PI;
-  return {mode:world.mode,locked:world.locked,playerState:world.player.state,frame,horizontal,downAngleDegrees};
- });
+async function waitForComposition(page,framesKey,compositionKey,deadline){
+  const progress={};(report.cameraWaits??=[]).push(progress);
+  return observeComposition(page,framesKey,compositionKey,{deadline,progress});
 }
 async function finishRecording(context,video,item){
  try{
@@ -151,25 +131,24 @@ try{
   }
   if(!report.mission.route.rejoinApproach&&usesRejoinVista(w)){
    for(const key of held){await page.keyboard.up(key);held.delete(key);}
-   const camera=await waitForComposition(page,'rejoinVistaFrames','rejoinComposition');
+   const camera=await waitForComposition(page,'rejoinVistaFrames','rejoinComposition',fullDeadline);
    report.mission.route.rejoinApproach={time:w.time,position:{x:w.player.x,z:w.player.z},camera};
    mark(desktopRecording,'rejoin-approach',report.mission.route.rejoinApproach);await page.waitForTimeout(1200);continue;
   }
   if(report.mission.route.rejoin&&!report.mission.route.rejoinCameraSettled){
-   // The settled vista necessarily looks down more steeply than the combat
-   // contract permits. Release movement and hold the real guard control while
-   // the same continuous camera descends; only then may policy pulse lock.
    for(const key of held){await page.keyboard.up(key);held.delete(key);}
-   await page.keyboard.down('KeyQ');
-   try{report.mission.route.rejoinCameraSettled=await waitForPostRejoinCamera(page);}
-   finally{await page.keyboard.up('KeyQ');}
+   report.mission.route.rejoinDefense={};
+   await settleRejoinAndLock(page,keyboardRejoinControls(page,held),{
+    deadline:fullDeadline,progress:report.mission.route.rejoinDefense,
+    onSettled:camera=>{report.mission.route.rejoinCameraSettled=camera;mark(desktopRecording,'rejoin-camera-settled',camera);},
+    onLock:lock=>mark(desktopRecording,'rejoin-lock-acknowledged',lock)
+   });
    assert.equal(report.mission.route.rejoinCameraSettled.mode,'playing');assert.equal(report.mission.route.rejoinCameraSettled.locked,null);assert.equal(report.mission.route.rejoinCameraSettled.playerState,'guard');
-   assert.ok(report.mission.route.rejoinCameraSettled.downAngleDegrees<=30);
-   mark(desktopRecording,'rejoin-camera-settled',report.mission.route.rejoinCameraSettled);continue;
+   assert.ok(report.mission.route.rejoinCameraSettled.downAngleDegrees<=30);continue;
   }
   if(!report.mission.route.arrivalView&&canLightSignal(w)){
    for(const key of held){await page.keyboard.up(key);held.delete(key);}
-   const camera=await waitForComposition(page,'arrivalOverviewFrames','arrivalComposition');
+   const camera=await waitForComposition(page,'arrivalOverviewFrames','arrivalComposition',fullDeadline);
    report.mission.route.arrivalView={time:w.time,position:{x:w.player.x,z:w.player.z},camera};
    mark(desktopRecording,'post-rejoin-shrine-view',report.mission.route.arrivalView);await page.waitForTimeout(900);continue;
   }
@@ -354,22 +333,26 @@ try{
   }
   if(!report.touchMission.route.rejoinApproach&&usesRejoinVista(w)){
    if(contacts.size)await sendTouch('rejoin-vista-cancel',{type:'touchCancel',touchPoints:[]});contacts.clear();
-   const camera=await waitForComposition(mobile,'rejoinVistaFrames','rejoinComposition');
+   const camera=await waitForComposition(mobile,'rejoinVistaFrames','rejoinComposition',touchDeadline);
    report.touchMission.route.rejoinApproach={time:w.time,position:{x:w.player.x,z:w.player.z},camera};
    mark(mobileRecording,'rejoin-approach',report.touchMission.route.rejoinApproach);await mobile.waitForTimeout(1200);continue;
   }
   if(report.touchMission.route.rejoin&&!report.touchMission.route.rejoinCameraSettled){
    if(contacts.size)await sendTouch('rejoin-settle-cancel',{type:'touchCancel',touchPoints:[]});contacts.clear();
-   await beginContact(1,g);
-   try{report.touchMission.route.rejoinCameraSettled=await waitForPostRejoinCamera(mobile);}
-   finally{if(contacts.has(1))await endContact(1);}
+   report.touchMission.route.rejoinDefense={};
+   const controls=touchRejoinControls({contacts,begin:beginContact,end:endContact,
+    send:params=>sendTouch('rejoin-spacing-move',params),guard:g,stick:s,pulseLock:()=>tapPoint(lockPoint)});
+   await settleRejoinAndLock(mobile,controls,{
+    deadline:touchDeadline,progress:report.touchMission.route.rejoinDefense,
+    onSettled:camera=>{report.touchMission.route.rejoinCameraSettled=camera;mark(mobileRecording,'rejoin-camera-settled',camera);},
+    onLock:lock=>mark(mobileRecording,'rejoin-lock-acknowledged',lock)
+   });
    assert.equal(report.touchMission.route.rejoinCameraSettled.mode,'playing');assert.equal(report.touchMission.route.rejoinCameraSettled.locked,null);assert.equal(report.touchMission.route.rejoinCameraSettled.playerState,'guard');
-   assert.ok(report.touchMission.route.rejoinCameraSettled.downAngleDegrees<=30);
-   mark(mobileRecording,'rejoin-camera-settled',report.touchMission.route.rejoinCameraSettled);continue;
+   assert.ok(report.touchMission.route.rejoinCameraSettled.downAngleDegrees<=30);continue;
   }
   if(!report.touchMission.route.arrivalView&&canLightSignal(w)){
    if(contacts.size)await sendTouch('arrival-view-cancel',{type:'touchCancel',touchPoints:[]});contacts.clear();
-   const camera=await waitForComposition(mobile,'arrivalOverviewFrames','arrivalComposition');
+   const camera=await waitForComposition(mobile,'arrivalOverviewFrames','arrivalComposition',touchDeadline);
    report.touchMission.route.arrivalView={time:w.time,position:{x:w.player.x,z:w.player.z},camera};
    mark(mobileRecording,'post-rejoin-shrine-view',report.touchMission.route.arrivalView);await mobile.waitForTimeout(900);continue;
   }

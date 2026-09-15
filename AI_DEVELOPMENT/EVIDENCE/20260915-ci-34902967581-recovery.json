@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 1,
+  "task": "CI failure diagnosis, read only",
+  "reviewer": "/root/game2_ultra_seven_fixes/ci_recovery_review",
+  "delegation": {
+    "instructionId": "ULTRA-CHILDREN-20260914-v3",
+    "receivedAssignmentReports": {
+      "reasoning_effort": "ultra",
+      "fork_turns": "none",
+      "model": "omitted"
+    },
+    "acceptedCanonicalTaskId": "/root/game2_ultra_seven_fixes/ci_recovery_review",
+    "rawSpawnReceiptHeldByParent": true,
+    "effectiveInternalStrengthIndependentlyConfirmed": false
+  },
+  "repository": "bachikoljunior-blip/game2",
+  "sourceRevision": "923ac865f732a985ca679b036afdb8a1c06586d3",
+  "runId": 34902967581,
+  "jobId": 104172990958,
+  "links": {
+    "job": "https://github.com/bachikoljunior-blip/game2/actions/runs/34902967581/job/104172990958",
+    "artifact": "https://github.com/bachikoljunior-blip/game2/actions/runs/34902967581/artifacts/10372470117"
+  },
+  "provenance": {
+    "tools": [
+      "github_fetch_workflow_job_steps",
+      "github_fetch_workflow_job_logs",
+      "github_fetch_workflow_run_jobs",
+      "github_fetch_workflow_run_artifacts",
+      "github_download_workflow_artifact",
+      "github_fetch_file"
+    ],
+    "artifactId": 10372470117,
+    "artifactBytes": 64318393,
+    "expectedSha256": "232b12a277143ce301d67c45b59bf1509e6ec403be296632816910a694a65824",
+    "downloadedSha256": "232b12a277143ce301d67c45b59bf1509e6ec403be296632816910a694a65824",
+    "canonicalInstructionReads": [
+      "CLAUDE.md",
+      "AI_DEVELOPMENT/FIXED_INSTRUCTIONS.md",
+      "AI_DEVELOPMENT/REBUILD_STATE.yaml",
+      "AI_DEVELOPMENT/SESSION_STATE.yaml"
+    ],
+    "instructionReadRef": "923ac865f732a985ca679b036afdb8a1c06586d3"
+  },
+  "result": {
+    "unit": {
+      "tests": 72,
+      "pass": 72,
+      "fail": 0
+    },
+    "build": "success",
+    "browserInputStep": "failure",
+    "decodeEvidenceStep": "failure",
+    "consoleAndPageErrors": []
+  },
+  "recordingResults": [
+    {
+      "id": "desktop",
+      "route": "left",
+      "fullDecode": "passed",
+      "decodedFrames": 3298,
+      "durationSeconds": 131.92,
+      "failure": "missing or misordered rejoin-approach checkpoint",
+      "rootFailure": "TimeoutError: page.waitForFunction: Timeout 10000ms exceeded.",
+      "worldMode": "playing",
+      "hp": 100,
+      "kills": 2,
+      "rejoinVistaFrames": 11,
+      "rejoinFrameError": 4.2999699034751995,
+      "rejoinSightlineClearance": -0.6974614598084408,
+      "cameraY": 7.2000300965248005,
+      "targetCameraY": 11.5,
+      "extraPureInterpolationFramesToErrorGate": 11
+    },
+    {
+      "id": "desktop-right",
+      "route": "right",
+      "fullDecode": "passed",
+      "decodedFrames": 1564,
+      "durationSeconds": 62.56,
+      "failure": "missing or misordered rejoin-approach checkpoint",
+      "rootFailure": "TimeoutError: page.waitForFunction: Timeout 10000ms exceeded.",
+      "worldMode": "playing",
+      "hp": 100,
+      "kills": 2,
+      "rejoinVistaFrames": 13,
+      "rejoinFrameError": 3.496350417969536,
+      "rejoinSightlineClearance": -0.5023277622696192,
+      "cameraY": 8.003649582030464,
+      "targetCameraY": 11.5,
+      "extraPureInterpolationFramesToErrorGate": 9
+    },
+    {
+      "id": "touch-left",
+      "route": "left",
+      "fullDecode": "passed",
+      "decodedFrames": 3032,
+      "durationSeconds": 121.28,
+      "failure": "missing or misordered post-rejoin-shrine-view checkpoint",
+      "rootFailure": "Error: Mission ended before the warden lock was acknowledged",
+      "worldMode": "defeat",
+      "hp": 0,
+      "kills": 2,
+      "received": 5,
+      "wardenHp": 100,
+      "locked": null,
+      "arrivalOverviewFrames": 0,
+      "rejoinRecorded": true,
+      "cameraDescentRecorded": true,
+      "priorRetainerKillHp": 52,
+      "priorRetainerKillReceived": 2
+    },
+    {
+      "id": "touch",
+      "route": "right",
+      "fullDecode": "passed",
+      "decodedFrames": 3591,
+      "durationSeconds": 143.64,
+      "result": "full mission, signal, ending, portrait, clean retry and closure passed"
+    }
+  ],
+  "diagnosis": [
+    {
+      "id": "desktop-camera-budget",
+      "status": "supported by exact logs and source",
+      "sourcePaths": [
+        "fresh/camera-framing.js:interpolateCameraFrame",
+        "fresh/browser-smoke.mjs:waitForComposition",
+        "fresh/route-matrix-smoke.mjs:waitForComposition"
+      ],
+      "reason": "Camera interpolation caps dt at .1s and vertical movement at 4*step=.4 per rendered callback. The browser budget is 10000 wall ms. PC needed roughly22 callbacks to reach y11.5 from normal y2.8, but had only11 or13 vista frames; all composition probes inFrame yet sightline still passes through ridge. Runtime itself remains playing at full hp.",
+      "timingEvidence": {
+        "runningSamples": 134,
+        "rAFIntervalMedianMs": 858.25,
+        "rAFIntervalP95Ms": 1466.6
+      },
+      "minimalProposedRepair": "Keep composition, .18 frame-error, >.3 ridge-clearance and continuity limits unchanged. Give camera compositions a 30-45s bounded apparatus budget, record frame progress and terminal camera values, retain the overall finite mission deadline. Apply to both browser and route-matrix harnesses. This is an apparatus budget fix; actual device speed remains unmeasured.",
+      "pureReplayScope": "The exact pinned interpolation function with constant target and dt=.25 reaches frameError<=.18 in11/9 additional calls from the saved failure camera states. This is nonrendered and does not demonstrate a repaired real-input mission."
+    },
+    {
+      "id": "touch-left-rejoin-combat",
+      "status": "real defeat confirmed; exact lock event loss/timing not captured",
+      "sourcePaths": [
+        "fresh/route-matrix-smoke.mjs:runTouchLeft rejoin settle and tapLockUntilObserved",
+        "fresh/browser-smoke.mjs:touch rejoin settle",
+        "fresh/simulation.js:strike and stepWorld"
+      ],
+      "reason": "The surviving warden activates at routePhase=rejoined. Harness cancels movement, holds unlocked guard to wait for camera descent, then releases guard before resuming its decision loop. Guard does not orient player automatically: it blocks only if yaw faces the attacker within1.1rad. Saved death state has player yaw.7854 and warden direction differing by approximately1.524rad, so guard cannot block. Player entered final encounter with52hp and accumulated three further received hits before/while the lock acknowledgement failed.",
+      "visualEvidence": "Decoded touch-left samples from114,116,118,120 seconds show warden approaching from the player's rear/right while player faces shrine. Video/event timestamps are approximate; precise lock dispatch timing was not captured.",
+      "minimalProposedRepair": "Replace stationary unlocked dwell with a real-input guarded retreat/spacing stage away from the live remaining enemy, maintaining collision-safe distance while the camera descends. Then retain guard across a single lock pulse and its acknowledgement before ordinary combat. Share this stage across both browser apparatuses; preserve real inputs, remaining enemy behavior, HP/damage, camera pitch and checkpoint requirements. If map coordinates change, derive safe retreat from current actor/obstacle state instead of a hard-coded old waypoint.",
+      "verificationNeeded": "Run complete PC-left/right and touch-left/right on exact integrated source; prove live mission through rejoin guard/spacing, acknowledged lock, postcombat shrine view, signal and retry. Record hp/yaw/enemy state and touch command events around rejoin to distinguish invalid facing from a genuine missed lock pulse."
+    }
+  ],
+  "scope": {
+    "repositoryWrites": false,
+    "remoteMutations": false,
+    "automationChanges": false,
+    "subdelegation": false,
+    "implementedRepair": false,
+    "technicalStatus": "failed source remains failed",
+    "qualityStatus": "All10 whole-element source-blind comparisons remain not measured; this technical diagnosis is not a quality verdict.",
+    "audioStatus": "All recordings silent; no audio quality evidence",
+    "performanceStatus": "Chromium SwiftShader only; no physical-smartphone performance inference",
+    "deadline": "2026-09-20T07:51:53Z"
+  },
+  "scratchEvidence": {
+    "zip": "/workspace/scratch/27301e95ee53/ci-review/fresh-ci-34902967581.zip",
+    "pcFailureScreenshot": "/workspace/scratch/27301e95ee53/ci-review/failure.png",
+    "touchRejoinContactSheet": "/workspace/scratch/27301e95ee53/ci-review/touch-left-rejoin.png"
+  }
+}

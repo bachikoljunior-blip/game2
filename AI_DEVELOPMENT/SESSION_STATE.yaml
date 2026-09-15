@@ -10,11 +10,11 @@
     "workingBranch": "codex/game2-rebuild-20260913",
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
-    "activeTask": "FRESH-C04-VISIBLE-REJOIN-AND-REFERENCE-MATERIAL",
-    "lastSuccessfulAction": "Ultra integrator produced runtime1ded4aae with a collision-enforced two-route shrine approach. Fresh CI34889248280 passed67 tests/build and PC-left/right plus touch-left/right full missions; all4 recordings fully decoded. PR19 integrated the runtime to main6eed8c5, PR/main iPhone and Pages passed. C04-BLIND-ATTEMPT-02 then independently measured material readiness without issuing an element verdict.",
-    "currentFailingAction": "All10 formal comparisons and5reference-selection dossiers remain incomplete. C04-BLIND-ATTEMPT-02 was MATERIAL INVALID before recognition or preference: referenceA failed items2-8 and candidateB failed visible reconvergence, post-rejoin destination arrival and five-frame coverage in items6-8.",
+    "activeTask": "FRESH-SEVEN-FIXES-ALL-ANIMATION",
+    "lastSuccessfulAction": "Recovered exact source923ac865 and terminal CI34902967581; reproduced72 unit tests/build; independently diagnosed all four video decodes and actual camera/guard apparatus failures, then integrated guarded capture repair b28b9ae.",
+    "currentFailingAction": "Latest seven requests and all-animation extension are being implemented in isolated Ultra worktrees. Whole-element comparisons remain0 satisfied/0 not satisfied/10 not measured. Local Chromium launch ends with SIGTRAP, so rendered verification uses canonical CI.",
     "currentHypothesis": "The two-route mechanics and four input paths are now verified. The immediate C04 blockers are evidence readability in the candidate capture and an unsuitable reference excerpt, not absent route physics: both materials need separate readiness gates before another paired blind comparison.",
-    "nextAction": "From main/source6eed8c5, make the candidate's two-route reconvergence and subsequent shrine/signal arrival visually readable without changing physics, values or criteria. In parallel acquire lawful reference footage with an actual simultaneous route choice and reconvergence. Pass candidate and reference through separate anonymous single-material gates before rebuilding the paired packet; keep all10 not measured.",
+    "nextAction": "Integrate detailed actor motion, coherent wind/exploration and generated audio/input; run same-source four-way missions, real gesture/side-circuit inputs, synthetic-state rendered motion and actual sound capture, independent review, then main integration.",
     "rollbackPoint": "1ded4aae27f8331cec10975c8dbac9eb482460a9",
     "pendingVerification": [
       "C04 candidate capture that visibly shows both routes entering one reconvergence point and continues through shrine/signal arrival",
@@ -175,16 +175,19 @@
       "AI_DEVELOPMENT/EVIDENCE/20260914-c04-method-recovery-scene-actor.json",
       "AI_DEVELOPMENT/EVIDENCE/20260914-main-reflection-44ce5a67.json",
       "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-scene-c04-attempt.json",
-      "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-c04-two-routes.json"
+      "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-c04-two-routes.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260915-seven-fixes-intake.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260915-ci-34902967581-recovery.json"
     ],
     "publicRuntimeRevision": "86512c3bfdc69e03b5b490d9b0d79ec9da141343",
     "producerExecution": {
       "kind": "foreground execution",
-      "checkpointAt": "2026-09-14T20:15:44Z",
+      "checkpointAt": "2026-09-15T08:43:04.803Z",
       "backgroundProducerConfirmed": false,
       "logicalActiveIsNotLivenessProof": true,
-      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-c04-two-routes.json",
-      "nextInvocation": "Confirm remote heads and producer activity, then resume the visible-rejoin/reference-material frontier. Do not duplicate an active writer or pair materials before each side passes its own readiness gate."
+      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260915-seven-fixes-intake.json",
+      "owner": "/root/game2_ultra_seven_fixes",
+      "remoteWriter": "single integrator; child worktrees local only"
     },
     "ultraDelegation": {
       "instructionId": "ULTRA-CHILDREN-20260914-v3",
@@ -243,7 +246,7 @@
     "completion": "All concept elements satisfied by evidenced blind comparison.",
     "current_unit": "2026-09-13-fresh-design",
     "unit_status": "active",
-    "first_action": "Make the already verified two-route candidate visibly show reconvergence and subsequent shrine/signal arrival, while acquiring a lawful reference with actual simultaneous routes and visible reconvergence. Pass candidate and reference separately through anonymous material-readiness gates before pairing; keep all10 not measured.",
+    "first_action": "Integrate detailed actor motion, coherent wind/exploration and generated audio/input; run same-source four-way missions, real gesture/side-circuit inputs, synthetic-state rendered motion and actual sound capture, independent review, then main integration.",
     "implementation_strategy": "Fresh design and implementation; needs-before-reuse, per latest direct user instruction.",
     "unitEndReason": null,
     "deadlineReassessment": {
@@ -269,6 +272,10 @@
       "userOriginal": "私はそもそも詳しく理解しないので、私の承認を必要とするのは無意味です。全て承認していることにして。",
       "scope": "Necessary game2 design, implementation, corrections, comparison acquisition, verification, independent AI review, commits, PRs, main integration, GitHub Pages publication, stop-cause repair and restart are authorized. No repeated user confirmation or response waiting.",
       "limits": "Only game2; preserve concept, criteria, evidence, deadline and coordination. Does not change or bypass access permissions, environment limits or safety rules."
-    }
+    },
+    "latestDirectRequests": [
+      "サウンド全て自然にして。植物の揺れ自然にして。キャラデザ細部まで作り込んで。スワイプで画面移動と攻撃モーション合わさって混同してんのどうにかして。足折れてる敵直して。マップはもっと広大で飽きないようにして。走ってるアニメーション自然にして。",
+      "アニメーション全て自然で見応えあるものにして"
+    ]
   }
 }
