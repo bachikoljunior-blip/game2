@@ -129,7 +129,7 @@ test('small branched leaves fade only actual intersections at the historical wat
   const view=await headlessPresentation(),leaves=[];
   view.scene.traverse(mesh=>{if(mesh.name.startsWith('bamboo-leaves-')||mesh.name.startsWith('maple-leaves-'))leaves.push(mesh);});
   assert.ok(leaves.length>15);assert.equal(new Set(leaves.map(m=>m.material)).size,leaves.length);
-  let obstructed=0;
+  let obstructed=0,referenceProbes=0;
   // Actual414 stream-stones waypoint position. Environment visual clock was
   // not recorded, so sample its wind phases instead of inventing an exact one.
   for(let time=0;time<=24;time+=2){
@@ -142,16 +142,22 @@ test('small branched leaves fade only actual intersections at the historical wat
     assert.ok(distant.length>5);assert.ok(distant.every(m=>m.material.opacity===1));
     assert.ok(leaves.every(m=>m.customDepthMaterial&&m.material.customProgramCacheKey().includes('vegetation')));
     const root=view.scene.getObjectByName('actor-player'),points=characterSightPoints({root,body:root.getObjectByName('pelvis'),chest:root.getObjectByName('ribcage'),neck:root.getObjectByName('neck'),sword:root.getObjectByName('katana'),blade:root.getObjectByName('curved-blade')});
-    for(const entry of faded){
+    for(const mesh of leaves){
+      const bound=mesh.geometry.boundingBox.clone().expandByScalar(1.4);
+      const relevant=points.some(point=>{const delta=point.clone().sub(view.camera.position),length=delta.length(),hit=new T.Ray(view.camera.position,delta.normalize()).intersectBox(bound,new T.Vector3());return bound.containsPoint(view.camera.position)||(hit&&hit.distanceTo(view.camera.position)<=length);});
+      if(!relevant)continue;
       // render's environment clock adds the existing clamped 0.1 s after a
       // fresh world's time; use that same leaf phase as the visible shader.
-      const mesh=leaves.find(m=>m.name===entry.id),reference=referenceGeometry(mesh,view.vegetation,time+.1);
-      assert.equal(referenceHit(reference,view.camera.position,points),true,'every faded cell contains an actual fully deformed leaf/branch intersection');
+      const reference=referenceGeometry(mesh,view.vegetation,time+.1),expected=referenceHit(reference,view.camera.position,points);
+      assert.equal(faded.some(entry=>entry.id===mesh.name),expected,'both faded and clear nearby cells agree with full deformed geometry');referenceProbes++;
       reference.geometry.dispose();reference.material.dispose();
     }
   }
-  assert.ok(obstructed>0,'the new short lateral shoots provide a real route intersection control');
-  t.diagnostic(`Branched small leaves: ${obstructed}/13 wind phases intersect; every faded cell verified against full deformation.`);
+  // The inclined crown moved the former horizontal side-shoot intersection
+  // clear of this historical ray. Keep it as an explicit negative fixture;
+  // the following moving-leaf tests retain actual positive ray intersections.
+  assert.equal(obstructed,0);assert.ok(referenceProbes>=13);
+  t.diagnostic(`Inclined small leaves: ${obstructed}/13 wind phases intersect; ${referenceProbes} nearby cells verified against full deformation.`);
 });
 
 test('per-leaf broad phase matches full deformed geometry across leaf hits and misses while avoiding unrelated vertex work',async t=>{

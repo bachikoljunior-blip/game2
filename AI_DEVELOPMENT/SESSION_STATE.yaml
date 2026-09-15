@@ -11,10 +11,10 @@
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
     "activeTask": "FRESH-ART-SOUND-PHYSICS-REVISION",
-    "lastSuccessfulAction": "Frozen integrated runtime passed230 local tests, a clean7-file production build and independent finite neck/guard/rock/fade/mip source rechecks. Exact fresh index tree7e6eda4aea523982c3fb6f102d8b95bb684b1abb. Native gameplay/render-cost/material/animation acceptance is pending nextCI; preview remains the previously publisheda672.",
-    "currentFailingAction": "No unclosed confirmed source blocker in the frozen candidate. The last actually rendered e188 ordinary candidate still has failed/incomplete route and capture gates and below-target visual quality; the new candidate has not yet established native recovery.",
-    "currentHypothesis": "The first imported anatomy improved real facial shape but exposed rigid-neck tailoring defects; small isolated leaves lost canopy mass and expensive leaf shadows increased completed-render cost. Join the lower neck to chest with the actual anatomical deformation weights, preserve closed cloth, render support-bound fronds at distance with consistent mask/fade and retain separate woody and leaf dynamics.",
-    "nextAction": "Run native exact-source Fresh verification and completed-pixel rendering diagnosis for this frozen candidate, recover original images/videos/audio, independently inspect ordinary scenes, cloth and8neck pose views, then integrate PR24 and publish the identical7-file build with4PNG hash/readiness verification at the actual preview URL.",
+    "lastSuccessfulAction": "906 native art, plants, assets and experience jobs passed; 230tests and three ordinary PC/touch routes passed, all four raw recordings decoded. Integrated finite bamboo/maple inclination repairs and a same-host six-pass comparison; clean seven-file build passed.",
+    "currentFailingAction": "906 touch-left did not reach shrine/signal within180seconds. Native ordinary canopy mass and whole-scene PS4 visual quality remain insufficient; next inclination candidate is not yet rendered.",
+    "currentHypothesis": "The leaf-count and cutout approach did not address nearly horizontal leaf planes seen edge-on from ordinary cameras. Rotate the entire supported spray and spread maple inclinations without extra leaf count; validate render cost and actual perception on the same host.",
+    "nextAction": "Run exact-source native Fresh CI and six same-host profiles. Reject ordinary route failures or unresolved major visual regressions before actual main/preview integration. Retain PS4 and perceptual-audio limits explicitly.",
     "rollbackPoint": "1ded4aae27f8331cec10975c8dbac9eb482460a9",
     "pendingVerification": [
       "C04 candidate capture that visibly shows both routes entering one reconvergence point and continues through shrine/signal arrival",
@@ -382,17 +382,18 @@
       "どんだけ風吹いてんの？おと。足音重すぎ木の葉っぱとみきの揺れ方は違うし物理を考えて揺れ方考えるべき。人の造形もおざなりps4のげーむのビジュアルくらいのクオリティにして"
     ],
     "latestForegroundDeadlineReassessment": {
-      "deadline": "2026-09-20T07:51:53Z",
-      "remainingHours": 112.88733124416666,
-      "satisfied": 0,
-      "notSatisfied": 0,
-      "notMeasured": 10,
-      "prediction": "Not grounded as can meet: formal comparisons remain unmeasured and actual e188 ordinary scenes remain materially below the PS4 visual goal.",
-      "methodDefect": "Native anatomy alone left cloth/skin connection defects; simply shrinking individually modeled foliage reduced canopy mass while software-rendered completed pixels became slower. Earlier gl.finish probe did not wait for completed pixels.",
-      "changedMethod": "Keep actual CC0 anatomy, replace rigid lower neck with chest-weighted deformation and closed leg cloth; use connected distant frond cutouts and consistent mask/fade. Replace invalid finish timing with synchronous full-image readPixels and retain original failures. Integrated scene fractures and grounded litter are awaiting actual image inspection, not treated as visual success.",
-      "measuredEffect": "CI34983898913 full warm render plus readback median baseline1057ms/e1881397.95ms; e188 no-leaf-shadow1057.55ms and no-leaves914.45ms in one candidate browser. Readback includes transfer/synchronization and separate jobs do not prove identical hardware. New local fixes have not yet been profiled.",
-      "observedAt": "2026-09-15T14:58:38.607521+00:00"
-    }
+      "deadline": "2026-09-20T07:51:53+00:00",
+      "remainingHours": 111.90675984444444,
+      "prediction": "Not grounded as can meet whole fixed comparisons and PS4 visual target; preserve criteria and change the method where evidence shows defects.",
+      "fixedTen": {
+        "satisfied": 0,
+        "notSatisfied": 0,
+        "notMeasured": 10
+      },
+      "changedMethod": "Replace the shared nearly horizontal canopy plane with distributed support-fixed inclinations; measure same-source gameplay and actual ordinary frames, and replace different-host comparison with one-host counterbalanced serial samples.",
+      "observedAt": "2026-09-15T15:57:28.664560+00:00"
+    },
+    "latestArtSoundPhysicsBoundary": "AI_DEVELOPMENT/EVIDENCE/20260915-906-native-results-and-canopy-repair.json"
   },
-  "updatedAt": "2026-09-15T15:23:21.267802+00:00"
+  "updatedAt": "2026-09-15T15:57:28.664560+00:00"
 }

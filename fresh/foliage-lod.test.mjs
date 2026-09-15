@@ -56,7 +56,12 @@ test('original atlas masks have gaps, preserve near wood opacity and share alpha
 test('added foliage carries finite modal mass and measured projected-area loads while roots, woody stiffness and damping remain fixed',async t=>{
  const view=await ready,physics=view.vegetation;let loaded=0,totalMass=0,maxStrain=0;
  for(const beam of physics.beams){const spec=VEGETATION_MODELS[beam.kind];assert.equal(beam.stiffness,spec.stiffness/(beam.length/spec.length)**3);assert.equal(beam.damping,spec.damping);
-  if(beam.foliageLoad){loaded++;const l=beam.foliageLoad;assert.ok(l.newArea>l.oldArea*5);assert.ok(l.newCrosswindArea<l.newArea*.3);assert.ok(l.extraDragArea>0&&l.extraDragArea<(l.newArea-l.oldArea)*.3);assert.ok(l.extraMass>0);totalMass+=l.extraMass;}
+  if(beam.foliageLoad){loaded++;const l=beam.foliageLoad;assert.ok(l.newArea>l.oldArea*5);
+   // Inclined crowns expose more area than the former horizontal leaves. The
+   // eight-azimuth mean projection of any triangle is at most .654 of its area;
+   // overlap can only decrease it. This geometric bound replaces the obsolete
+   // horizontal-only .3 ratio; the dynamic strain bound below is unchanged.
+   assert.ok(l.newCrosswindArea<l.newArea*.66);assert.ok(l.extraDragArea>0&&l.extraDragArea<l.shelter*(l.newArea*.66+(l.newArea-l.oldArea)*l.verticalEddyFraction));assert.ok(l.extraMass>0);totalMass+=l.extraMass;}
  }
  assert.equal(loaded,900);
  for(let i=0;i<=1200;i++){physics.update(i/60);if(i%30===0)for(const beam of physics.beams)if(beam.attachmentSegments)for(const [a,b] of beam.attachmentSegments.slice(1)){

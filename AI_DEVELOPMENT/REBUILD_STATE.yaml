@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-15T15:23:21.267802+00:00",
+  "updatedAt": "2026-09-15T15:57:28.664560+00:00",
   "phase": "fresh-art-sound-physics-revision",
   "userInstruction": "一旦ゲーム自体はゼロから作り直してくれる？",
   "activeBranch": "codex/game2-rebuild-20260913",
@@ -15,7 +15,7 @@
     "oldPr": 10,
     "optionalRebuildRouting": "ec2480166809f57fa623929bec0fbcb4d5a623a2"
   },
-  "continuation": "Run native exact-source Fresh verification and completed-pixel rendering diagnosis for this frozen candidate, recover original images/videos/audio, independently inspect ordinary scenes, cloth and8neck pose views, then integrate PR24 and publish the identical7-file build with4PNG hash/readiness verification at the actual preview URL.",
+  "continuation": "Run exact-source native Fresh CI and six same-host profiles. Reject ordinary route failures or unresolved major visual regressions before actual main/preview integration. Retain PS4 and perceptual-audio limits explicitly.",
   "status": "not measured",
   "publication": "Same-byte verified a672 preview published at https://bachikoljunior-blip.github.io/game2/preview/ through PR22/maina213ed5. Pages34961958960 and actual publicCI34962622024 pass. Existing root/docs/public preserved. Whole-product quality remains not measured.",
   "procedureAuthority": "Fixed instructions and explicit user directives govern. Tests, task plans and architecture documents are tools chosen by the AI, not additional fixed rules.",
@@ -167,43 +167,47 @@
     "remainingHours": 114.51263382916667
   },
   "latestArtSoundPhysicsBoundary": {
-    "sourceCheckpoint": "e42674349963d756617acdbb0be351d922e69b92",
-    "runtimeAtCheckpoint": "e18820165d6008fedfca28d2cc7073a9c4b74b28",
+    "sourceCheckpoint": "9068522520b0f269cc937057b444f06c7c187978",
     "mainStill": "b06ade1ad5ab8b72de9bb9996f323a063f5db5ef",
     "previewStill": "a6722c5cf7b1933f1956c6c33ec4edc6adf47640",
+    "evidence": "AI_DEVELOPMENT/EVIDENCE/20260915-906-native-results-and-canopy-repair.json",
     "normalCI": {
-      "run": 34978382509,
+      "run": 34988388555,
       "result": "failure",
-      "individualJobCancellationSeparate": true
-    },
-    "correctedRenderingDiagnosis": {
-      "run": 34983898913,
-      "result": "success",
-      "scope": "Synchronous completed image readback, not pure GPU or physical device performance; new local candidate unmeasured."
+      "jobs": {
+        "fresh": "failure",
+        "art": "success",
+        "vegetation": "success",
+        "asset-readiness": "success",
+        "experience": "success"
+      },
+      "unitTests": 230,
+      "successfulRoutes": [
+        "PC-left",
+        "PC-right",
+        "touch-right"
+      ],
+      "failedRoute": "touch-left: playing after the unchanged 180-second mission loop; all three enemies defeated but no shrine arrival or lit signal",
+      "recording": "All four raw recordings fully decoded; three derived successful-route clips; touch-left missing arrival checkpoints is semantic failure, not codec corruption"
     },
     "pendingLocalComponents": [
-      "f869fc24 closed cloth",
-      "f428e4f8 continuous lower neck and cleared guard/lining",
-      "374e9b1 inspection update draw selection",
-      "1dd29a7 supported fronds with26a7b47fade and57a2d75mips",
-      "613efa56 ground material and d7b5845 grounded fractured rock"
+      {
+        "author": "vegetation_physics",
+        "commit": "ef36bc10a117a6e193b9bf59d0c271dd43289df4",
+        "scope": "Incline complete bamboo support-bound sprays; preserve leaves, wood stiffness/damping, roots, cutout mips and drawables."
+      },
+      {
+        "author": "vegetation_physics",
+        "commit": "2b5b1baf946f8708b75993a7a0458812e4f46914",
+        "scope": "Distribute maple leaf inclination around the same fixed petioles without changing physical leaf dimensions or counts."
+      },
+      {
+        "author": "c06_reference_material",
+        "commit": "271b830397f64918e676abd046057a32d6fa31b2",
+        "scope": "Six serial full profiles acf/906/event/event/906/acf on one host, identical immutable readPixels tool, immediate original media recovery, original18minute cap."
+      }
     ],
     "formalCompletion": false,
-    "nextAction": "Run native exact-source Fresh verification and completed-pixel rendering diagnosis for this frozen candidate, recover original images/videos/audio, independently inspect ordinary scenes, cloth and8neck pose views, then integrate PR24 and publish the identical7-file build with4PNG hash/readiness verification at the actual preview URL.",
-    "localValidation": {
-      "at": "2026-09-15T15:23:21.267802+00:00",
-      "frozenRuntimeIndexFreshTree": "7e6eda4aea523982c3fb6f102d8b95bb684b1abb",
-      "command": "node --test fresh/*.test.mjs",
-      "tests": 230,
-      "passed": 230,
-      "failed": 0,
-      "cancelled": 0,
-      "skipped": 0,
-      "durationMs": 163098.116396,
-      "testLogSha256": "28f72c99926f271d9a6daeea8bcb40c6d4c88be941cdb6631ad94dceea20ae17",
-      "cleanBuild": "passed",
-      "cleanBuildFiles": 7,
-      "sourceScope": "Local frozen-index runtime; native exact-source CI and public update still pending."
-    }
+    "nextAction": "Run exact-source native Fresh CI and six same-host profiles. Reject ordinary route failures or unresolved major visual regressions before actual main/preview integration. Retain PS4 and perceptual-audio limits explicitly."
   }
 }

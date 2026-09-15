@@ -13,14 +13,6 @@ jobs:
   profile:
     runs-on: ubuntu-latest
     timeout-minutes: 18
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - label: baseline
-            revision: acf0f9ec86996245ad712d6adc72e5d6159f6711
-          - label: candidate
-            revision: current
     steps:
       - uses: actions/checkout@v4
         with:
@@ -32,51 +24,205 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - name: Prepare the immutable comparison source
-        env:
-          PROFILE_REVISION: ${{ matrix.revision }}
+      - name: Measure six serial full scenes on the same host
+        id: serial
+        continue-on-error: true
         run: |
-          if [ "$PROFILE_REVISION" = current ]; then PROFILE_REVISION="$GITHUB_SHA"; fi
-          git worktree add --detach ../profile-runtime "$PROFILE_REVISION"
-          ln -s "$GITHUB_WORKSPACE/node_modules" ../profile-runtime/node_modules
-          test "$(git -C ../profile-runtime rev-parse HEAD)" = "$PROFILE_REVISION"
-      - name: Measure ordinary rendering and explicitly separate diagnostic variants
-        env:
-          PROFILE_SOURCE_ROOT: ${{ github.workspace }}/../profile-runtime
-          PROFILE_OUTPUT: ${{ github.workspace }}/AI_DEVELOPMENT/EVIDENCE/fresh-render-profile/${{ matrix.label }}
-          PROFILE_VARIANTS: ${{ matrix.label == 'candidate' && 'full,no-leaf-shadows,no-leaves' || 'full' }}
-        run: node tools/fresh-render-profile.mjs
+          python - <<'PY'
+          import base64, datetime, hashlib, io, json, math, os, pathlib, platform, re, subprocess, sys, zipfile
+
+          workspace = pathlib.Path(os.environ['GITHUB_WORKSPACE']).resolve()
+          output = workspace / 'AI_DEVELOPMENT/EVIDENCE/fresh-render-profile/serial'
+          output.mkdir(parents=True, exist_ok=False)  # Fresh checkout only; never mix old output.
+          now = lambda: datetime.datetime.now(datetime.timezone.utc).isoformat()
+          sha = lambda data: hashlib.sha256(data).hexdigest()
+          def save(path, value):
+              path.write_text(json.dumps(value, indent=2) + '\n')
+          def command(*args, cwd=workspace, **kwargs):
+              return subprocess.run(args, cwd=cwd, check=True, text=True, capture_output=True, **kwargs).stdout.strip()
+
+          event = os.environ['GITHUB_SHA']
+          assert re.fullmatch('[0-9a-f]{40}', event), 'event SHA must be an exact commit'
+          assert command('git', 'rev-parse', 'HEAD') == event, 'checkout must match the event commit'
+          acf = 'acf0f9ec86996245ad712d6adc72e5d6159f6711'
+          previous = '9068522520b0f269cc937057b444f06c7c187978'
+          order = [('acf', acf), ('906', previous), ('current', event), ('current', event), ('906', previous), ('acf', acf)]
+          source_trees = {}
+          for revision in dict(order).values():
+              assert command('git', 'rev-parse', '--verify', revision + '^{commit}') == revision
+              source_trees[revision] = command('git', 'rev-parse', revision + ':fresh')
+          tool = workspace / 'tools/fresh-render-profile.mjs'
+          tool_sha = sha(tool.read_bytes())
+          dependencies = {name: json.loads((workspace / 'node_modules' / name / 'package.json').read_text())['version'] for name in ('three', 'vite', 'playwright')}
+          cpu = {}
+          try:
+              for line in pathlib.Path('/proc/cpuinfo').read_text().splitlines():
+                  key, sep, value = line.partition(':')
+                  if sep and key.strip() in ('vendor_id', 'model name', 'cpu family', 'model', 'stepping'):
+                      cpu.setdefault(key.strip(), value.strip())
+          except OSError:
+              cpu['availability'] = 'CPU detail unavailable'
+          host = {'os': platform.system(), 'osRelease': platform.release(), 'osVersion': platform.version(),
+                  'machine': platform.machine(), 'logicalCpuCount': os.cpu_count(), 'cpu': cpu,
+                  'runnerOS': os.environ.get('RUNNER_OS'), 'runnerArch': os.environ.get('RUNNER_ARCH'),
+                  'imageOS': os.environ.get('ImageOS'), 'imageVersion': os.environ.get('ImageVersion')}
+          manifest = {'schemaVersion': 1, 'startedAt': now(), 'eventRevision': event,
+                      'run': os.environ['GITHUB_RUN_ID'], 'attempt': os.environ.get('GITHUB_RUN_ATTEMPT'),
+                      'job': os.environ.get('GITHUB_JOB'), 'host': host, 'hostRecordSha256': sha(json.dumps(host, sort_keys=True).encode()),
+                      'nodeVersion': command('node', '--version'), 'dependencies': dependencies, 'apparatusSha256': tool_sha,
+                      'viewport': {'width': 960, 'height': 720, 'dpr': 1}, 'variants': ['full'],
+                      'comparisonReason': 'Use 906 as the preceding rendered candidate to isolate the forthcoming fixed foliage-placement change. Historical e188 measurements remain separate and unchanged.',
+                      'order': [{'ordinal': i, 'label': label, 'revision': revision, 'freshTree': source_trees[revision]} for i, (label, revision) in enumerate(order, 1)],
+                      'scope': 'Six serial independent browser processes in one job/host. Same tool and dependencies; full 13 frames each. Cold frame and warm 12 remain separate. SwiftShader readback, not physical-device or pure GPU timing.',
+                      'limits': 'Job limit remains 18 minutes including setup. Original tool operation/build limits are unchanged. Hard cancellation can leave later ordinals unattempted; completed ordinals are emitted immediately.'}
+          save(output / 'manifest.json', manifest)
+          summary = {'schemaVersion': 1, 'result': 'running', 'eventRevision': event, 'hostRecordSha256': manifest['hostRecordSha256'],
+                     'order': manifest['order'], 'ordinals': [], 'pairs': [], 'comparisonComplete': False}
+          save(output / 'summary.json', summary)
+
+          def read_allowed(folder, name):
+              allowed = ('manifest.json', 'summary.json') if folder == output else ('report.json', 'full.png', 'ordinal.json')
+              assert name in allowed and not folder.is_symlink()
+              assert folder == output or (folder.parent == output and folder.name in [f'{i:02d}-{label}' for i, (label, _) in enumerate(order, 1)])
+              path = folder / name
+              if not path.exists() and not path.is_symlink():
+                  return None
+              assert not path.is_symlink() and path.is_file() and path.resolve().parent == folder.resolve(), 'unsafe evidence path: ' + name
+              assert path.stat().st_size <= 12000000, 'evidence exceeds original per-file bound: ' + name
+              return path.read_bytes()
+
+          def emit(items, version, extra):
+              assert items
+              buf = io.BytesIO()
+              with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as archive:
+                  for name, data in items:
+                      archive.writestr(name, data)
+              data = buf.getvalue()
+              envelope = {'version': version, 'runnerRevision': event, 'run': os.environ['GITHUB_RUN_ID'],
+                          'bytes': len(data), 'sha256': sha(data), 'files': [{'path': name, 'bytes': len(value), 'sha256': sha(value)} for name, value in items], **extra}
+              print('MEDIA_ARCHIVE_BEGIN ' + json.dumps(envelope), flush=True)
+              encoded = base64.b64encode(data).decode()
+              for offset in range(0, len(encoded), 6000):
+                  print('MEDIA_BYTES ' + encoded[offset:offset+6000], flush=True)
+              print('MEDIA_ARCHIVE_END', flush=True)
+
+          def inspect_report(data, png, revision):
+              assert data['result'] == 'passed', 'original report did not pass'
+              assert data['sourceRevision'] == revision and data['sourceFreshTree'] == source_trees[revision], 'source identity mismatch'
+              assert data['apparatusSha256'] == tool_sha and data['dependencies'] == dependencies, 'apparatus/dependency mismatch'
+              assert data['sourceUnchanged'] is True and data['restoration']['restored'] is True
+              assert data['variants'] == ['full'] and data['viewport'] == manifest['viewport']
+              assert not data['errors'] and not data['glErrorDiagnostics'] and not data['consoleErrors'] and not data['pageErrors'] and not data['requestFailures']
+              assert all(data['cleanup'].get(key) is True for key in ('browserClosed', 'browserProcessClosed', 'serverClosed')), 'owned browser/preview cleanup did not complete'
+              assert len(data['cases']) == 1
+              case = data['cases'][0]
+              assert case['variant'] == 'full' and case['result'] == 'measured' and len(case['samples']) == 13
+              assert case['firstCompileFrame']['frame'] == 0 and case['capture']['result'] == 'passed'
+              assert png is not None and sha(png) == case['capture']['sha256'], 'original full PNG missing or hash mismatch'
+              for frame, sample in enumerate(case['samples']):
+                  assert sample['frame'] == frame and sample['result'] == 'measured' and sample['pixels']['nontrivial'] is True
+                  assert sample['gl']['beforeError'] == 0 and sample['gl']['afterError'] == 0
+                  assert sample['gl']['defaultReadFramebuffer'] is True and not sample['gl']['beforeContextLost'] and not sample['gl']['afterContextLost']
+                  assert all(isinstance(sample[key], (int, float)) and math.isfinite(sample[key]) and sample[key] >= 0 for key in ('cpuRenderMs', 'readbackWallMs', 'totalWallMs'))
+              return {'firstCompileFrame': {key: case['firstCompileFrame'][key] for key in ('cpuRenderMs', 'readbackWallMs', 'totalWallMs')},
+                      'warm12Summary': case['warm12Summary']}
+
+          for ordinal, (label, revision) in enumerate(order, 1):
+              name = f'{ordinal:02d}-{label}'
+              folder = output / name
+              folder.mkdir()
+              source = workspace.parent / ('profile-runtime-' + name)
+              record = {'ordinal': ordinal, 'label': label, 'revision': revision, 'freshTree': source_trees[revision],
+                        'eventRevision': event, 'run': manifest['run'], 'attempt': manifest['attempt'], 'job': manifest['job'],
+                        'hostRecordSha256': manifest['hostRecordSha256'], 'startedAt': now(), 'result': 'preparing',
+                        'toolExitCode': None, 'errors': [], 'observations': None, 'files': []}
+              try:
+                  record['hostLoadAverageAtStart'] = list(os.getloadavg())
+              except OSError:
+                  record['hostLoadAverageAtStart'] = None
+              save(folder / 'ordinal.json', record)
+              summary['ordinals'].append(record)
+              save(output / 'summary.json', summary)
+              created = False
+              try:
+                  assert sha(tool.read_bytes()) == tool_sha, 'measurement tool changed between ordinals'
+                  command('git', 'worktree', 'add', '--detach', str(source), revision)
+                  created = True
+                  (source / 'node_modules').symlink_to(workspace / 'node_modules', target_is_directory=True)
+                  assert command('git', '-C', str(source), 'rev-parse', 'HEAD') == revision
+                  env = dict(os.environ, PROFILE_SOURCE_ROOT=str(source), PROFILE_OUTPUT=str(folder), PROFILE_VARIANTS='full')
+                  record['result'] = 'measuring'
+                  save(folder / 'ordinal.json', record)
+                  # No timeout override, background process, retry, or concurrent browser.
+                  completed = subprocess.run(['node', str(tool)], cwd=workspace, env=env, check=False)
+                  record['toolExitCode'] = completed.returncode
+                  if completed.returncode:
+                      record['errors'].append('Original tool exit code: ' + str(completed.returncode))
+                  assert command('git', '-C', str(source), 'rev-parse', 'HEAD') == revision
+              except Exception as error:
+                  record['errors'].append(type(error).__name__ + ': ' + str(error))
+              finally:
+                  if created:
+                      try:
+                          link = source / 'node_modules'
+                          if link.is_symlink() and link.resolve() == (workspace / 'node_modules').resolve():
+                              link.unlink()
+                          command('git', 'worktree', 'remove', str(source))  # Never force removal of changed source.
+                          record['sourceWorktreeRemoved'] = True
+                      except Exception as error:
+                          record['sourceWorktreeRemoved'] = False
+                          record['errors'].append('Owned worktree cleanup: ' + str(error))
+              raw = {}
+              for filename in ('report.json', 'full.png'):
+                  try:
+                      value = read_allowed(folder, filename)
+                      if value is not None:
+                          raw[filename] = value
+                          record['files'].append({'path': filename, 'bytes': len(value), 'sha256': sha(value)})
+                  except Exception as error:
+                      record['errors'].append('Evidence retention: ' + str(error))
+              try:
+                  data = json.loads(raw['report.json'])
+                  record['originalReportResult'] = data.get('result')
+                  record['observations'] = inspect_report(data, raw.get('full.png'), revision)
+              except Exception as error:
+                  record['errors'].append('Original report gate: ' + str(error))
+              record['result'] = 'failed' if record['errors'] else 'passed'
+              record['finishedAt'] = now()
+              save(folder / 'ordinal.json', record)
+              save(output / 'summary.json', summary)
+              # Original report/PNG bytes are never rewritten or replaced by this wrapper.
+              items = [(name + '/' + filename, value) for filename, value in raw.items()]
+              items.append((name + '/ordinal.json', read_allowed(folder, 'ordinal.json')))
+              emit(items, 'render-profile-' + name, {'ordinal': ordinal, 'sourceRevision': revision, 'hostRecordSha256': manifest['hostRecordSha256']})
+              print('SERIAL_PROFILE_ORDINAL ' + json.dumps({'ordinal': ordinal, 'revision': revision, 'result': record['result'], 'errors': record['errors']}), flush=True)
+
+          for label, indices in [('acf', (1, 6)), ('906', (2, 5)), ('current', (3, 4))]:
+              pair = [summary['ordinals'][i-1] for i in indices]
+              summary['pairs'].append({'label': label, 'ordinals': list(indices), 'revision': pair[0]['revision'],
+                                       'results': [item['result'] for item in pair], 'observations': [item['observations'] for item in pair]})
+          summary['result'] = 'passed' if all(item['result'] == 'passed' for item in summary['ordinals']) else 'failed'
+          summary['comparisonComplete'] = len(summary['ordinals']) == 6 and summary['result'] == 'passed'
+          summary['finishedAt'] = now()
+          save(output / 'summary.json', summary)
+          emit([(name, read_allowed(output, name)) for name in ('manifest.json', 'summary.json')], 'render-profile-serial-summary', {'hostRecordSha256': manifest['hostRecordSha256']})
+          print('SERIAL_PROFILE_RESULT ' + json.dumps({'result': summary['result'], 'order': [item['revision'] for item in summary['ordinals']]}), flush=True)
+          sys.exit(0 if summary['result'] == 'passed' else 1)
+          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: fresh-render-profile-${{ matrix.label }}-${{ github.sha }}
-          path: AI_DEVELOPMENT/EVIDENCE/fresh-render-profile/${{ matrix.label }}/
+          name: fresh-render-profile-serial-${{ github.sha }}
+          path: |
+            AI_DEVELOPMENT/EVIDENCE/fresh-render-profile/serial/manifest.json
+            AI_DEVELOPMENT/EVIDENCE/fresh-render-profile/serial/summary.json
+            AI_DEVELOPMENT/EVIDENCE/fresh-render-profile/serial/*/ordinal.json
+            AI_DEVELOPMENT/EVIDENCE/fresh-render-profile/serial/*/report.json
+            AI_DEVELOPMENT/EVIDENCE/fresh-render-profile/serial/*/full.png
           if-no-files-found: error
           retention-days: 90
-      - name: Read back the original bounded profile evidence
+      - name: Retain every failed ordinal in the final job result
         if: always()
         env:
-          PROFILE_LABEL: ${{ matrix.label }}
-        run: |
-          python - <<'PY'
-          import os, pathlib, hashlib, json, io, zipfile, base64
-          label=os.environ['PROFILE_LABEL']
-          assert label in ('baseline','candidate')
-          root=pathlib.Path('AI_DEVELOPMENT/EVIDENCE/fresh-render-profile')/label
-          items=[]
-          for name in ('report.json','full.png'):
-              p=root/name
-              if not p.exists(): continue
-              assert not p.is_symlink() and p.is_file() and p.resolve().parent==root.resolve()
-              b=p.read_bytes(); assert len(b)<=12000000
-              items.append((name,b))
-          assert items
-          buf=io.BytesIO()
-          with zipfile.ZipFile(buf,'w',zipfile.ZIP_DEFLATED) as z:
-              for name,b in items: z.writestr(name,b)
-          b=buf.getvalue()
-          print('MEDIA_ARCHIVE_BEGIN '+json.dumps({'version':'render-profile-'+label,'runnerRevision':os.environ['GITHUB_SHA'],'run':os.environ['GITHUB_RUN_ID'],'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest(),'files':[{'path':n,'bytes':len(v),'sha256':hashlib.sha256(v).hexdigest()} for n,v in items]}))
-          encoded=base64.b64encode(b).decode()
-          for i in range(0,len(encoded),6000): print('MEDIA_BYTES '+encoded[i:i+6000])
-          print('MEDIA_ARCHIVE_END')
-          PY
+          SERIAL_OUTCOME: ${{ steps.serial.outcome }}
+        run: test "$SERIAL_OUTCOME" = success

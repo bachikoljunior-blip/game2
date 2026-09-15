@@ -348,10 +348,18 @@ export function createPresentation(canvas,{characterResources}={}) {
       old.rotateZ((k%2?1:-1)*(.62+.21*Math.sin(k*1.7+variant)));old.rotateX(-Math.PI/2+.14*Math.sin(k*2.1+variant+shootIndex));old.applyQuaternion(turn);old.translate(...shoots[shootIndex].start.clone().lerp(shoots[shootIndex].end,.16+k*.155).toArray());
       for(let i=0;i<old.index.count;i+=3){const [a,b,c]=[0,1,2].map(n=>new T.Vector3().fromBufferAttribute(p,old.index.getX(i+n))),cross=b.sub(a).cross(c.sub(a));oldArea+=cross.length()*.5;oldCrosswindArea+=Math.hypot(cross.x,cross.z)/Math.PI;}oldParts.push(old);
     }
-    const frond=frondAtlas.bake(leafParts,variant);oldCrosswindArea=projectedFrondDragArea(oldParts);frond.crosswindArea=projectedFrondDragArea(leafParts);oldParts.forEach(g=>g.dispose());leafParts.forEach(remapBambooLeafUv);parts.push(frond.geometry);
-    const geometry=mergeGeometries(parts);parts.forEach(g=>g.dispose());return {geometry,length,shoots,area:frond.area,oldArea,crosswindArea:frond.crosswindArea,oldCrosswindArea,collapsedDepth:frond.collapsedDepth};
+    const frond=frondAtlas.bake(leafParts,variant);oldCrosswindArea=projectedFrondDragArea(oldParts);oldParts.forEach(g=>g.dispose());leafParts.forEach(remapBambooLeafUv);parts.push(frond.geometry);
+    // Fixed crown inclination about the unchanged supporting twig axis. The
+    // former uniformly horizontal sprays collapsed to roughly one pixel high
+    // in the normal arrival camera. Leaves, short side shoots and their baked
+    // projection receive the same rigid rotation; this is no facing billboard.
+    const crownRoll=[-1.10,1.24,-1.35][variant],inclination=new T.Matrix4().makeRotationX(crownRoll);
+    for(const g of parts)transformLeafGeometry(g,inclination);
+    for(const shoot of shoots){shoot.start.applyMatrix4(inclination);shoot.end.applyMatrix4(inclination);}
+    frond.crosswindArea=projectedFrondDragArea(leafParts);
+    const geometry=mergeGeometries(parts);parts.forEach(g=>g.dispose());return {geometry,length,shoots,crownRoll,area:frond.area,oldArea,crosswindArea:frond.crosswindArea,oldCrosswindArea,collapsedDepth:frond.collapsedDepth};
   });
-  foliageMetrics.atlas=frondAtlas.finish();installFrondCutout(leaf);foliageMetrics.frondTemplates=bambooClusters.map(({area,oldArea,crosswindArea,oldCrosswindArea,collapsedDepth})=>({area,oldArea,crosswindArea,oldCrosswindArea,collapsedDepth}));
+  foliageMetrics.atlas=frondAtlas.finish();installFrondCutout(leaf);foliageMetrics.frondTemplates=bambooClusters.map(({area,oldArea,crosswindArea,oldCrosswindArea,collapsedDepth,crownRoll})=>({area,oldArea,crosswindArea,oldCrosswindArea,collapsedDepth,crownRoll}));
   bambooLeafDepth=installFrondCutout(installWindMaterial(new T.MeshDepthMaterial({depthPacking:T.RGBADepthPacking,side:T.DoubleSide,map:leaf.map,alphaTest:leaf.alphaTest}),wind));
   const stemProfiles={bamboo:[[0,1],[.3,.91],[.55,.73],[.76,.48],[.9,.24],[.97,.09],[1,.014]],
     wood:[[0,1],[.16,.76],[.34,.48],[.52,.25],[.7,.12],[.85,.047],[1,.008]]};
@@ -419,7 +427,10 @@ export function createPresentation(canvas,{characterResources}={}) {
             width=.073+.024*(.5+.5*Math.sin(leafSeed*2.3)),bladeLength=.066+.018*(.5+.5*Math.cos(leafSeed*1.7)),
             petiole=.024+.008*(.5+.5*Math.sin(leafSeed)),g=createMapleLeafGeometry({width,bladeLength,petiole,seed:leafSeed}),u=.19+pair*.146;
           const local=new T.Matrix4().makeTranslation(delta.length()*u,0,0);
-          local.multiply(new T.Matrix4().makeRotationX(-Math.PI/2+.24*Math.sin(phase+pair*1.23)+leafSide*.12+(tilt-.5)*.12));
+          // Fixed petiole inclinations distribute lamina normals through the
+          // crown. The former narrow horizontal band was edge-on in the whole
+          // tree view although the same leaves looked broad from above.
+          local.multiply(new T.Matrix4().makeRotationX(-Math.PI/2+.92*Math.sin(phase+pair*2.399+leafSide*.47)+(tilt-.5)*.30));
           local.multiply(new T.Matrix4().makeRotationZ(leafSide*(.89+.2*Math.sin(phase+pair*1.9))));
           transformLeafGeometry(g,new T.Matrix4().compose(start,rotation,new T.Vector3(1,1,1)).multiply(local));parts.push(g);
           foliageMetrics.mapleLeaves++;foliageMetrics.mapleWidthRange[0]=Math.min(foliageMetrics.mapleWidthRange[0],width);foliageMetrics.mapleWidthRange[1]=Math.max(foliageMetrics.mapleWidthRange[1],width);

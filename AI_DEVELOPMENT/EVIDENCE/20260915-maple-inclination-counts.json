@@ -1,0 +1,141 @@
+{
+  "scope": "Actual deformed near triangles projected into unchanged original native inspection cameras; unshaded numeric geometry, not native appearance or GPU time.",
+  "results": [
+    {
+      "name": "before",
+      "cases": [
+        {
+          "name": "whole",
+          "camera": [
+            -14.212534234788277,
+            6.03363304163433,
+            11
+          ],
+          "fullyVisibleLeaves": 972,
+          "medianArea": 4.005733683845018,
+          "medianHeight": 3.0719524485668046,
+          "medianFace": 0.13640499321177413,
+          "p10Face": 0.0779830598364581,
+          "belowPointOne": 310,
+          "submittedMapleTriangles": 67104
+        },
+        {
+          "name": "close",
+          "camera": [
+            -22.653732723345136,
+            6.160202290925306,
+            9.707858565434153
+          ],
+          "fullyVisibleLeaves": 150,
+          "medianArea": 608.3643249185211,
+          "medianHeight": 41.4131904350607,
+          "medianFace": 0.8367357586371866,
+          "p10Face": 0.5590216351575467,
+          "belowPointOne": 0,
+          "submittedMapleTriangles": 69984
+        },
+        {
+          "name": "whole-opposite",
+          "camera": [
+            -29.787465765211724,
+            6.03363304163433,
+            11
+          ],
+          "fullyVisibleLeaves": 972,
+          "medianArea": 10.093271069824686,
+          "medianHeight": 4.185807735576589,
+          "medianFace": 0.36513239591523944,
+          "p10Face": 0.1459838728247932,
+          "belowPointOne": 45,
+          "submittedMapleTriangles": 69984
+        }
+      ]
+    },
+    {
+      "name": "after",
+      "cases": [
+        {
+          "name": "whole",
+          "camera": [
+            -14.212534234788277,
+            6.03363304163433,
+            11
+          ],
+          "fullyVisibleLeaves": 972,
+          "medianArea": 9.436037067915631,
+          "medianHeight": 5.290761923625354,
+          "medianFace": 0.35291324707537824,
+          "p10Face": 0.09208781912285796,
+          "belowPointOne": 124,
+          "submittedMapleTriangles": 67104
+        },
+        {
+          "name": "close",
+          "camera": [
+            -22.653732723345136,
+            6.160202290925306,
+            9.707858565434153
+          ],
+          "fullyVisibleLeaves": 150,
+          "medianArea": 556.4596463264501,
+          "medianHeight": 40.22347614345966,
+          "medianFace": 0.7335014960151897,
+          "p10Face": 0.22162903454599625,
+          "belowPointOne": 8,
+          "submittedMapleTriangles": 69984
+        },
+        {
+          "name": "whole-opposite",
+          "camera": [
+            -29.787465765211724,
+            6.03363304163433,
+            11
+          ],
+          "fullyVisibleLeaves": 972,
+          "medianArea": 10.312148869222417,
+          "medianHeight": 5.3861356145295645,
+          "medianFace": 0.37416788517672794,
+          "p10Face": 0.10077674642452497,
+          "belowPointOne": 96,
+          "submittedMapleTriangles": 69984
+        }
+      ]
+    }
+  ],
+  "baseRevision": "ef36bc10a117a6e193b9bf59d0c271dd43289df4",
+  "preservation": {
+    "before": {
+      "physicsHash": "f3dd684e3146d5784b8b9b3d6adc6f0a3becd9ddae8f1d0ff2f4e9e128e85937",
+      "woodHash": "b5f9173cdf2bbe279bc46dc4db0bdf1d6e541841e572541db9fe02625b234d04",
+      "pivotsHash": "4045ab750c8f7c6f0699cbd83a72aa426005f3a66630aafac73c4d5327a98910",
+      "grassHash": "70733f5d139fb4d7f2a898540bcd3e16a2e6dd1bbc08efc4951cbed3507c81c1",
+      "textureHash": "921b942aa774b35659ccf47b59af03fb57319d6906099db3ca86cfba2e05b8db",
+      "mapleLeaves": 3888,
+      "vertices": 440338,
+      "triangles": 408812,
+      "batches": 112
+    },
+    "after": {
+      "physicsHash": "f3dd684e3146d5784b8b9b3d6adc6f0a3becd9ddae8f1d0ff2f4e9e128e85937",
+      "woodHash": "b5f9173cdf2bbe279bc46dc4db0bdf1d6e541841e572541db9fe02625b234d04",
+      "pivotsHash": "4045ab750c8f7c6f0699cbd83a72aa426005f3a66630aafac73c4d5327a98910",
+      "grassHash": "70733f5d139fb4d7f2a898540bcd3e16a2e6dd1bbc08efc4951cbed3507c81c1",
+      "textureHash": "921b942aa774b35659ccf47b59af03fb57319d6906099db3ca86cfba2e05b8db",
+      "mapleLeaves": 3888,
+      "vertices": 440338,
+      "triangles": 408812,
+      "batches": 112
+    },
+    "equal": {
+      "physicsHash": true,
+      "woodHash": true,
+      "pivotsHash": true,
+      "grassHash": true,
+      "textureHash": true,
+      "mapleLeaves": true,
+      "vertices": true,
+      "triangles": true,
+      "batches": true
+    }
+  }
+}

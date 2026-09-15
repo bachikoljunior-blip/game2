@@ -169,8 +169,8 @@ export function installFrondCutout(material){
 export function addBambooCrownLoad(beam,oldArea,newArea,oldCrosswindArea,newCrosswindArea,beams){
   const extraArea=Math.max(0,newArea-oldArea),arealMass=.06,shelter=.65;
   // Horizontal projected lamina area is the union of actual leaf triangles,
-  // sampled at eight wind azimuths. Nearly horizontal blades do not
-  // expose their entire face to the scene's horizontal airflow. The residual
+  // sampled at eight wind azimuths after the crown's fixed inclination.
+  // Inclined blades expose more area than the former horizontal sprays. The residual
   // 3% area models unresolved vertical eddies; shelter models mutual overlap.
   const extraDragArea=(Math.max(0,newCrosswindArea-oldCrosswindArea)+extraArea*.03)*shelter;
   beam.foliageLoad={oldArea,newArea,oldCrosswindArea,newCrosswindArea,extraMass:extraArea*arealMass,extraDragArea,arealMass,shelter,verticalEddyFraction:.03};
