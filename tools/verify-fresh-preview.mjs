@@ -50,10 +50,14 @@ try {
   finally { await pc.keyboard.up('KeyW'); }
   report.states.pcMoved = await state(pc);
   assert.equal(report.states.pcMoved.totals.swings, 0);
+  const beforeDrag = await state(pc);
   await pc.mouse.move(800, 250); await pc.mouse.down(); await pc.mouse.move(875, 250, { steps: 4 }); await pc.mouse.up();
+  const dragReleasedAt = (await state(pc)).worldTime;
+  await pc.waitForFunction(t => freshDiagnostics().world.time > t + .3, dragReleasedAt);
   await pc.waitForFunction(() => Math.abs(freshDiagnostics().input.orbit) > .2);
-  assert.equal((await state(pc)).totals.swings, 0);
-  await pc.mouse.click(800, 250); await pc.waitForFunction(() => freshDiagnostics().world.totals.swings === 1);
+  assert.equal((await state(pc)).totals.swings, beforeDrag.totals.swings);
+  const beforeClick = (await state(pc)).totals.swings;
+  await pc.mouse.click(800, 250); await pc.waitForFunction(n => freshDiagnostics().world.totals.swings === n + 1, beforeClick);
   report.states.pcAttack = await state(pc);
   await pc.screenshot({ path: new URL('pc-moved-attack.png', out).pathname });
   report.checks.push('public PC starts and moves by keyboard; drag rotates without attacking; click attacks once');
@@ -69,15 +73,20 @@ try {
     await touch('touchStart', [{ id: 11, x: 540, y: 145 }]);
     await touch('touchMove', [{ id: 11, x, y: 147 }]);
     await touch('touchEnd', []);
-    await page.waitForFunction(t => freshDiagnostics().world.time > t + .3, before.worldTime);
+    const releasedAt = (await state(page)).worldTime;
+    await page.waitForFunction(t => freshDiagnostics().world.time > t + .3, releasedAt);
     const after = await state(page); assert.equal(after.totals.swings, before.totals.swings, `${name} swipe must not attack`);
     if (name === 'long') assert.ok(Math.abs(after.orbit - before.orbit) > .2);
     report.states[`touch${name}Swipe`] = after;
   }
+  const beforeCancel = await state(page);
   await touch('touchStart', [{ id: 11, x: 540, y: 145 }]); await touch('touchCancel', []);
-  assert.equal((await state(page)).totals.swings, 0);
+  const cancelledAt = (await state(page)).worldTime;
+  await page.waitForFunction(t => freshDiagnostics().world.time > t + .3, cancelledAt);
+  assert.equal((await state(page)).totals.swings, beforeCancel.totals.swings);
   await page.screenshot({ path: new URL('touch-view-rotated.png', out).pathname });
-  await page.tap('[data-action=attack]'); await page.waitForFunction(() => freshDiagnostics().world.totals.swings === 1);
+  const beforeButton = (await state(page)).totals.swings;
+  await page.tap('[data-action=attack]'); await page.waitForFunction(n => freshDiagnostics().world.totals.swings === n + 1, beforeButton);
   report.states.touchAttack = await state(page);
   await page.screenshot({ path: new URL('touch-dedicated-attack.png', out).pathname });
   report.checks.push('public touch starts; short/long/cancelled canvas gestures do not attack; long swipe rotates; dedicated button attacks once');
