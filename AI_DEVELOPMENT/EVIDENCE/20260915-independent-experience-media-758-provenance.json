@@ -1,0 +1,112 @@
+{
+  "sourceRevision": "7583f3b49f681091d2aaed5882b181e87d7ba012",
+  "runId": 34957022718,
+  "artifactId": 10392221327,
+  "scope": "finite implementation visual diagnostics; not formal reference comparison; no audio listening",
+  "motionFramesActuallyInspected": 474,
+  "motionSheetsActuallyInspected": 36,
+  "explorationPeriodicFramesActuallyInspected": 61,
+  "nativePOIsActuallyInspected": 6,
+  "files": [
+    {
+      "path": "/workspace/scratch/27301e95ee53/ci-review/34957022718/experience/experience-report.json",
+      "sha256": "27d0b4f2b21865880376a50efb989cf09cb2e8eed5323b4295a15a3e6684dbad"
+    },
+    {
+      "path": "/workspace/scratch/27301e95ee53/ci-review/34957022718/experience/motion-study/report.json",
+      "sha256": "d659e2f36dbbbe65b0d66b2d35e3b833ff797823813dc07ef72f21f347741d60"
+    },
+    {
+      "path": "/workspace/scratch/27301e95ee53/ci-review/34957022718/experience/motion-study/attack.mp4",
+      "sha256": "1c432ba18c254238743e282c919a9122fb63c6f2e28bdbd367f0c38820a0dc07"
+    },
+    {
+      "path": "/workspace/scratch/27301e95ee53/ci-review/34957022718/experience/motion-study/block.mp4",
+      "sha256": "bff05b6e25bddcc24e6b39c938a0de3546b6b89b2aea487754da7dacbccd00d0"
+    },
+    {
+      "path": "/workspace/scratch/27301e95ee53/ci-review/34957022718/experience/motion-study/broken.mp4",
+      "sha256": "149ce02ea509fa60b4e8a6bc5148ad18aebb1fc4e0ef6b9371a0a6eb2abddc66"
+    },
+    {
+      "path": "/workspace/scratch/27301e95ee53/ci-review/34957022718/experience/motion-study/death.mp4",
+      "sha256": "dd2722bbd2918d43c10cdf09f438ee84cb251df50b7cfcba7624d3f3b9dd0281"
+    },
+    {
+      "path": "/workspace/scratch/27301e95ee53/ci-review/34957022718/experience/motion-study/dodge.mp4",
+      "sha256": "a6aaf46c81105dc0f36f29f80bc53f75c844d372b320bacc3c2c66dae45a779f"
+    },
+    {
+      "path": "/workspace/scratch/27301e95ee53/ci-review/34957022718/experience/motion-study/guard.mp4",
+      "sha256": "e4b85d992abf86c609d7a334d859d12f3ec67a2992a58debd8a9fe110f51c1aa"
+    },
+    {
+      "path": "/workspace/scratch/27301e95ee53/ci-review/34957022718/experience/motion-study/hit.mp4",
+      "sha256": "57bb4edc387f744d27ee8b12277c759a057bd19c608b4d4358e4e14774cdd0f1"
+    },
+    {
+      "path": "/workspace/scratch/27301e95ee53/ci-review/34957022718/experience/motion-study/idle.mp4",
+      "sha256": "7f4799b3ccbcbdab2a2dcd22e9acb8939af0583bc769b6ab855f7c511e5a9718"
+    },
+    {
+      "path": "/workspace/scratch/27301e95ee53/ci-review/34957022718/experience/motion-study/parry.mp4",
+      "sha256": "ede222f33e4c675b657961ab70faba61b41cfe946113061313f7882533d3b790"
+    },
+    {
+      "path": "/workspace/scratch/27301e95ee53/ci-review/34957022718/experience/motion-study/start-run-stop.mp4",
+      "sha256": "eb103791e2228b7ea9c1c5783e841f480feeb2f85df9ddc831a3e9b1e1eac210"
+    },
+    {
+      "path": "/workspace/scratch/27301e95ee53/ci-review/34957022718/experience/motion-study/turn.mp4",
+      "sha256": "f0e5c476003428c0e27316e301cb02507e3b036ef83bea281bf6171df95b9735"
+    },
+    {
+      "path": "/workspace/scratch/27301e95ee53/ci-review/34957022718/experience/motion-study/victory.mp4",
+      "sha256": "e19ccbeb839e8430c166c6b815e040db24c5b00e4027680ff3af3d30897dcf96"
+    },
+    {
+      "path": "/workspace/scratch/27301e95ee53/ci-review/34957022718/experience/motion-study/wind.mp4",
+      "sha256": "e950b48282b1eb527dc695698690a2a4f01e4ff2b6f19037e571a2f6379dcc7f"
+    },
+    {
+      "path": "/workspace/scratch/27301e95ee53/ci-review/34957022718/experience/motion-study/windup-attack.mp4",
+      "sha256": "7b9f8f0006fd23fa7cbc9656508cfc65bbf3542eb496bb72eb522d0d1dad5146"
+    },
+    {
+      "path": "/workspace/scratch/27301e95ee53/ci-review/34957022718/experience/exploration-memory.webm",
+      "sha256": "1cc9266fff40ed68b22a0b9c52a981db488c588a6b86bfcbd8d9b58b80a5e6d0"
+    },
+    {
+      "path": "/workspace/scratch/27301e95ee53/ci-review/34957022718/experience/exploration-ridge.webm",
+      "sha256": "971db5f55210e1a239690b1a2c0a8d56c642ca60c4767747bf70810167b7df46"
+    },
+    {
+      "path": "/workspace/scratch/27301e95ee53/ci-review/34957022718/experience/exploration-water.webm",
+      "sha256": "8a12ffb2b47a9517a898594de465199c57db2e66a8420751f76d23e15b5b5b47"
+    },
+    {
+      "path": "/workspace/scratch/27301e95ee53/ci-review/34957022718/experience/explore-old-waystone.png",
+      "sha256": "9530849938edd23400af1cd7c8f5a1c015161029c455d9e1e26ded1e52add58d"
+    },
+    {
+      "path": "/workspace/scratch/27301e95ee53/ci-review/34957022718/experience/explore-spring-basin.png",
+      "sha256": "537d24cd10bbd5b16591a5acccb90ab1baa3a784eccc20924508c937014ae7ea"
+    },
+    {
+      "path": "/workspace/scratch/27301e95ee53/ci-review/34957022718/experience/explore-stream-stones.png",
+      "sha256": "f375f777bdf6d4a354bdd27adb8a493cbafc5cd0c67db05c9dd3c33a2179e1de"
+    },
+    {
+      "path": "/workspace/scratch/27301e95ee53/ci-review/34957022718/experience/explore-sun-ring.png",
+      "sha256": "37fba194dcb5c64a3d9778bdd07698b3f39dbca0d4e739fe82750e9599168ca1"
+    },
+    {
+      "path": "/workspace/scratch/27301e95ee53/ci-review/34957022718/experience/explore-valley-frame.png",
+      "sha256": "90ae23ead4daca9b3a71e96e35adba45ced3fb9c42ca32f20d596f3e765eb639"
+    },
+    {
+      "path": "/workspace/scratch/27301e95ee53/ci-review/34957022718/experience/explore-white-tree.png",
+      "sha256": "c44f60e8741a862c0e6ba57915d03fa3c1989629ad0a3f2b88d7997b4eba5c89"
+    }
+  ]
+}

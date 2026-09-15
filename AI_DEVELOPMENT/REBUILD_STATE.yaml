@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-15T10:10:13.397281Z",
+  "updatedAt": "2026-09-15T10:41:16.074488Z",
   "phase": "fresh-seven-fixes-all-animation",
   "userInstruction": "一旦ゲーム自体はゼロから作り直してくれる？",
   "activeBranch": "codex/game2-rebuild-20260913",
@@ -15,7 +15,7 @@
     "oldPr": 10,
     "optionalRebuildRouting": "ec2480166809f57fa623929bec0fbcb4d5a623a2"
   },
-  "continuation": "Publish the tested repaired runtime, obtain matching14motion/three-exploration/four-mission CI media, independently recheck only the evidenced obstruction/body-reaction/grass differences, then merge PR21 with expected head and verify canonical main/tree. Do not change paused automations.",
+  "continuation": "Verify the matching repaired candidate in actual DOM4routes,3exploration loops and14motion media. Independently close the known wood obstruction/arrival controller defects, merge PR21 with expected head, verify main and record the bounded checkpoint. Naturalness still has stylistic limits; no whole-game quality acceptance or automation change.",
   "status": "not measured",
   "publication": "Keep old Pages until a verified replacement is ready. Fresh runtime is a work-branch candidate, not public product acceptance.",
   "procedureAuthority": "Fixed instructions and explicit user directives govern. Tests, task plans and architecture documents are tools chosen by the AI, not additional fixed rules.",
@@ -141,9 +141,16 @@
     "baselineSource": "923ac865f732a985ca679b036afdb8a1c06586d3",
     "evidence": "AI_DEVELOPMENT/EVIDENCE/20260915-seven-fixes-intake.json",
     "automation": "Latest direct instruction preserved in CLAUDE d9370e3 is game2 stopped, survival stopped, Q enabled. This foreground work does not alter or reenable any automation; older enabled=true records below are historical.",
-    "localRuntime": "55d2e6ad16d9b83b6b7cb04c1df079415303f02f",
-    "localVerification": "168full tests/build/root-preservation pass. Concrete sign, foreground, run/reaction and grass repairs integrated; final exact-source rendered verification pending.",
-    "lastRemoteSourceAtPreparation": "927743f0fe3d31d207d43362907ce30eaf8d5e99"
+    "localRuntime": "ca0a11a87a62e29f4644750f0a9c7e31cd961a69",
+    "localVerification": "Wood repair:169full tests/build/root-preservation pass; controller-only repair:29focused tests with24conditions and6actual failure-state replays pass. Matching final-source CI pending.",
+    "lastRemoteSourceAtPreparation": "7583f3b49f681091d2aaed5882b181e87d7ba012",
+    "localCheckpoint": "66cdd6f",
+    "lastRemoteCi": {
+      "run": 34957022718,
+      "conclusion": "failure",
+      "experience": "success",
+      "fresh": "left arrival failed; raw4decode/right2derived success"
+    }
   },
   "pendingCandidate": null
 }

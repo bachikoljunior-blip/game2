@@ -1,7 +1,7 @@
 {
   "id": "GAME2-SEVEN-FIXES-ALL-ANIMATION-20260915",
   "recordedAt": "2026-09-15T08:35:00Z",
-  "status": "Concrete rendered-review repairs integrated;168full tests/build/root-preservation passed at local55d2e6ad. Final matching CI and independent visual recheck pending before PR21 merge.",
+  "status": "758 experience passed and was independently reviewed in all474motion frames, six POIs and normal exploration. Fresh left arrival failed at shrine west side. Exact failure is repaired only in the test-player navigation; one maple-wood visibility registration also repairs the remaining POI obstruction. Matching final candidate CI pending.",
   "userOriginals": [
     "サウンド全て自然にして。植物の揺れ自然にして。キャラデザ細部まで作り込んで。スワイプで画面移動と攻撃モーション合わさって混同してんのどうにかして。足折れてる敵直して。マップはもっと広大で飽きないようにして。走ってるアニメーション自然にして。",
     "アニメーション全て自然で見応えあるものにして"
@@ -142,7 +142,12 @@
     "foregroundIntegration": "9c254e8",
     "grassShapeRepair": "5279331edb1fa4aead8f786d40431aad544df6ad",
     "grassPresentationIntegration": "6d3dbff",
-    "supportDrivenBodyAndReactions": "f72d452e7493cb1de9e7aad34a7683d1d0442ee9"
+    "supportDrivenBodyAndReactions": "f72d452e7493cb1de9e7aad34a7683d1d0442ee9",
+    "mapleWoodRegistration": "822f908258aaa9471b728273f6050dc101574a0b",
+    "mapleWoodIntegration": "ca0a11a87a62e29f4644750f0a9c7e31cd961a69",
+    "arrivalControllerRepair": "8adfad48fe0d875e5ec45492697685ecb32b19d9",
+    "arrivalControllerIntegration": "66cdd6f",
+    "arrivalFixtureIdentityRepair": "e3c1630b6b52c84da9b89d242543364cfd10b2dc"
   },
   "limitations": {
     "audioInput": "The actual audio item returned: audio content omitted because you do not support audio input. Generated audition audio and real game master-bus recording are available for replay; this executor cannot truthfully claim listening or perceptual naturalness. PCM tests and independent source/audio-lifecycle review are only technical evidence.",
@@ -152,9 +157,9 @@
   "independentDiagnostic": "AI_DEVELOPMENT/EVIDENCE/20260915-independent-runtime-initial.md",
   "firstRenderedCiEvidence": "AI_DEVELOPMENT/EVIDENCE/20260915-seven-fixes-first-rendered-ci.json",
   "latestLocalVerification": {
-    "unitTests": 168,
-    "passed": 168,
-    "freshBuild": "passed;621.38kB/173.05kB gzip",
+    "unitTests": 169,
+    "passed": 169,
+    "freshBuild": "passed;621.41kB/173.06kB gzip",
     "rootSourceDifferenceFromPreservedBaseline": 0,
     "actorGrounding": "Existing1680action poses and24run-stop paths pass; new support-driven run and parry/block terrain tests pass;1.86mm block reach regression repaired in the pose without relaxing limits.",
     "cadence": "3.8m/s run3.3929steps/s,20.4percent sampled flight; world.time phases agree at4/50/60/120Hz and shared audio steps agree at60Hz/250ms",
@@ -162,19 +167,29 @@
     "additionalFocusedChecks": {
       "startup": "63focused tests/build pass; independent start/retry phase delta <=2.22e-16 and same-side contacts",
       "memoryApproach": "8exploration tests pass; exact90ms controller fails before at240s, passes after at34.11modelseconds with2discoveries and HP100",
-      "scope": "These are not new full-suite totals or physical/browser performance measurements."
-    }
+      "scope": "These are not new full-suite totals or physical/browser performance measurements.",
+      "arrivalController": "29focused tests pass, including24position/side/cadence/device-policy conditions. Six exact failure-state replays: old policy stalled for180model seconds; new policy reached ordinary signal/victory in1.32–2.00model seconds, unchanged HP/kills/collision."
+    },
+    "testedRuntime": "ca0a11a87a62e29f4644750f0a9c7e31cd961a69"
   },
   "secondRenderedCiEvidence": "AI_DEVELOPMENT/EVIDENCE/20260915-ci-34952868959-recovery.json",
   "independentActualRouteReview": "AI_DEVELOPMENT/EVIDENCE/20260915-independent-route-media-414.md",
   "startupIndependentClosure": "AI_DEVELOPMENT/EVIDENCE/20260915-startup-phase-independent-closure.md",
   "currentPending": {
-    "remoteSource": "927743f0fe3d31d207d43362907ce30eaf8d5e99",
-    "ci": 34953686508,
-    "meaning": "927is a preserved precursor whose fresh job passes153tests/four routes, but memory timeout matches414. Local55d2e6ad includes sign,14-case guard fixture, foreground, run/reaction and grass repairs. Publish its tested runtime tree and obtain new exact-source media.",
+    "remoteSource": "7583f3b49f681091d2aaed5882b181e87d7ba012",
+    "ci": 34957022718,
+    "conclusion": "failure",
+    "fresh": "failure: desktop-left/touch-left stop at shrine west face x=-5.35 after three kills; raw4decodepass, derivedright2only",
+    "experience": "success:9inputgroups+3loops/6discoveries,14motion474frames,actualaudio+mutednegative",
     "pr": 21,
     "main": "bc37e9665a3eab6a369ce77b13b3219f8df2e602",
-    "localRuntime": "55d2e6ad16d9b83b6b7cb04c1df079415303f02f",
-    "preparedAt": "2026-09-15T10:10:13.397281Z"
-  }
+    "localRuntime": "ca0a11a87a62e29f4644750f0a9c7e31cd961a69",
+    "next": "Publish tested wood visibility and controller-only arrival fixes; obtain matching actual4route/3loop/14motion media; independently close concrete branch/arrival defects; merge PR21 and read canonical main.",
+    "recordedAt": "2026-09-15T10:41:16.074488Z",
+    "localCheckpoint": "c9c480c"
+  },
+  "independentActualExperienceReview": "AI_DEVELOPMENT/EVIDENCE/20260915-independent-experience-media-758.md",
+  "qualityJudgment": "474native frames show less rigid running, clear stopping and stronger load-transfer hit reaction, staged fall and sheathing, narrower varied grass. Remaining light/regular gait, subtle parry/block distinction and repetitive grass are honest stylistic limits, not a formal quality completion claim. The specific waystone branch P2 is repaired locally and awaits native closure.",
+  "reportingCorrection": "This integrator briefly inferred success from fresh entering its always-run decode step. The actual terminal fresh failure was read and corrected to the parent before integration. Stage transition is not a success conclusion.",
+  "latestRenderedCiEvidence": "AI_DEVELOPMENT/EVIDENCE/20260915-ci-34957022718-recovery.json"
 }

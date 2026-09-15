@@ -151,3 +151,37 @@ test('actual generated water-route leaf cells protect the unlocked actor without
   }
   assert.ok(obstructed>0,'the source-generated leaf that covers the unlocked actor is detected');
 });
+
+test('recorded old-waystone wood fades locally, freezes when paused and restores on retry',async t=>{
+  const view=await headlessPresentation(),wood=[];
+  view.scene.traverse(mesh=>{if(mesh.name.startsWith('maple-wood-'))wood.push(mesh);});
+  assert.equal(wood.length,3);assert.equal(new Set(wood.map(m=>m.material)).size,3);
+  const source=wood.map(m=>({positions:m.geometry.attributes.position.array.slice(),depth:m.customDepthMaterial}));
+  const near=wood.find(m=>m.name==='maple-wood--1,-3'),other=wood.filter(m=>m!==near);
+  assert.ok(near);assert.equal(near.geometry.attributes.windRoot.getX(0),-10);
+  assert.equal(near.geometry.attributes.windRoot.getZ(0),-34);
+  // Actual758 memory-route waypoint. Its visual wind clock was not logged;
+  // test the recorded position across the same finite phase set as the repro.
+  let blocked=0;
+  for(let time=0;time<=24;time+=2){
+    const world=createWorld();world.time=time;
+    Object.assign(world.player,{x:-12.152201271544866,z:-38.75898447460243,yaw:0,age:19.066666666666865});
+    view.beginWorld(world);view.render(world,.25);
+    const opaque=other.map(m=>m.material.opacity);assert.deepEqual(opaque,[1,1]);
+    if(near.material.opacity<.2){
+      blocked++;assert.equal(near.material.depthWrite,false);
+      const opacity=near.material.opacity;
+      view.render(world,.25,0,{animate:false});assert.equal(near.material.opacity,opacity,'pause freezes the fade');
+    }
+    const retry=createWorld();view.beginWorld(retry);
+    assert.ok(wood.every(m=>m.material.opacity===1&&m.material.depthWrite&&m.castShadow));
+    view.render(retry,.25);assert.ok(wood.every(m=>m.material.opacity===1),'retry at the start has no residual wood fade');
+  }
+  assert.ok(blocked>=7,'the repeatedly obstructing branch is registered in the real scene');
+  wood.forEach((m,i)=>{
+    assert.deepEqual(m.geometry.attributes.position.array,source[i].positions);
+    assert.equal(m.customDepthMaterial,source[i].depth);
+    assert.equal(m.material.customProgramCacheKey(),'valley-wind-v2-vegetation');
+  });
+  t.diagnostic(`Recorded position: maple wood detected in ${blocked}/13 wind phases; other two cells remain opaque.`);
+});

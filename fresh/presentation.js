@@ -361,7 +361,7 @@ export function createPresentation(canvas) {
     if(vegetationMaterials.has(mat))merged.boundingSphere.radius+=1.4;
     const mesh=new T.Mesh(merged,mat);mesh.castShadow=mesh.receiveShadow=true;
     if(vegetationMaterials.has(mat))mesh.customDepthMaterial=leafDepth;
-    if(mat===leaf||mat===autumnLeaf)foreground.add(mesh,{vegetation:true,id:`${mat===leaf?'bamboo-leaves':'maple-leaves'}-${cell}`});
+    if(mat===leaf||mat===autumnLeaf||mat===mapleBark)foreground.add(mesh,{vegetation:true,id:`${mat===leaf?'bamboo-leaves':mat===mapleBark?'maple-wood':'maple-leaves'}-${cell}`});
     scene.add(mesh);geoms.forEach(g=>g.dispose());
   }
   const grassMat=material('#b8b77d');grassMat.side=T.DoubleSide;

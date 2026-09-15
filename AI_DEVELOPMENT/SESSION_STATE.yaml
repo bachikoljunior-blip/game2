@@ -11,10 +11,10 @@
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
     "activeTask": "FRESH-SEVEN-FIXES-ALL-ANIMATION",
-    "lastSuccessfulAction": "Integrated concrete independent-media repairs: sign approach, local cloth/ridge/leaves visibility, support-driven torso/arms and readable hit/parry/block, varied narrow grass. Local55d2e6ad passes168tests/build/root-preservation.",
-    "currentFailingAction": "No new local failing gate. Matching final-source normal-input and14motion media plus independent recheck remain pending; do not call naturalness complete from tests.",
-    "currentHypothesis": "Passing mission scripts and fixed checkpoints did not ensure continuously readable combat. Use actual mid-combat native frames and per-actor sightlines to repair and verify only the evidenced foreground obstruction.",
-    "nextAction": "Publish the tested repaired runtime, obtain matching14motion/three-exploration/four-mission CI media, independently recheck only the evidenced obstruction/body-reaction/grass differences, then merge PR21 with expected head and verify canonical main/tree. Do not change paused automations.",
+    "lastSuccessfulAction": "758 actual experience passed:9DOM input groups,3loops/6discoveries,14motion474frames,actualaudio and muted control. Independent native review confirms concrete body/grass improvements and right cloth/ridge visibility. Localca0a11a/66cdd6f repairs one remaining wood material and left-arrival test-driver path;169full+29focused checks/build passed.",
+    "currentFailingAction": "758 fresh failed both left arrivals at shrine west face. Runtime wood repair and controller-only arrival repair require matching final CI/native closure before merge.",
+    "currentHypothesis": "Direct test-driver navigation to the signal after a side retreat leaves z inside the axis deadzone and continuously presses x into the solid shrine. Normal-input front waypoint fixes the exact reproduced failure without changing geometry,180s deadline or arrival gate.",
+    "nextAction": "Publish the precise wood/controller repairs, obtain same-source actual CI media, independently confirm branch and arrival closure, then merge PR21 and read main. Keep automations unchanged.",
     "rollbackPoint": "1ded4aae27f8331cec10975c8dbac9eb482460a9",
     "pendingVerification": [
       "C04 candidate capture that visibly shows both routes entering one reconvergence point and continues through shrine/signal arrival",
@@ -50,7 +50,7 @@
     ],
     "remotePushPendingAuthorization": false,
     "remoteReleaseAuthorized": true,
-    "remotePublicationStatus": "At preparation main remainsbc37 and source927 is a preserved precursor. Local55d2e6ad is the tested runtime prepared for canonical tree-equivalent publication and final CI. PR21 integration and main readback remain required.",
+    "remotePublicationStatus": "mainbc37 and source758 are preserved.758CI34957022718 is failed overall: experience succeeds, left normal arrivals fail. Localca0a11a runtime plus66cdd6f controller repair prepared for new canonical candidate and actual verification.",
     "publishedMainSha": "bc37e9665a3eab6a369ce77b13b3219f8df2e602",
     "publishedUrl": "https://bachikoljunior-blip.github.io/game2/",
     "startPositionHotfix": {

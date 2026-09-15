@@ -1,0 +1,17 @@
+# Independent CPU recheck — foreground 1c87e806
+
+Exact source: `1c87e8066ea9b524aa44276f8c4d45dd578acceb` in `game2-foreground-fix`. Read-only implementation diagnosis. No new rendered media, audio listening, physical-device timing, or formal anonymous reference comparison is claimed.
+
+Result: the original cloth/ridge P1 and close-leaf P2 have working CPU visibility mitigation at the recorded positions. No new blocker was found in this bounded review. Final native media closure remains pending.
+
+- Built the actual presentation scene in Node, replacing only WebGL submission and Canvas2D painting with stubs. Inspected 66 relevant cloth/rock/leaf objects and their material identities. The independent executable and all measured outputs are adjacent to this report.
+- Loaded the actual414 touch checkpoint from the recovered browser report. The checkpoint is after a kill, so explicitly restored the preceding live warden encounter at the recorded positions; examined player guard age.25 and attack ages.18/.25. Full presentation processing fades route-cloth-0/1 to approximately.084 after.25s; route-cloth-2 remains opaque. This is a nearby live-pose reconstruction, not a claim of exact video-pose synchronization.
+- Loaded the exact recorded desktop first-lock camera/player/enemy values from `rejoinDefense.last` (world25.966666666666473). An independent Three Raycaster against the actual22 generated rocks detects route-rock-20 on an actor sightline. The visibility helper fades only that rock; the other21 remain opaque. This establishes the original opaque-geometry obstruction and its CPU response from a recorded camera, not correspondence to a particular raw73–74s frame.
+- At the actual stream-stones position, unlocked follow detects one bamboo leaf cell at sampled wind phases0/4/8/12/16/24. At phase20 the leaf no longer intersects and remains opaque. Other leaf-cell materials remain opaque. The source did not record the exact historical wind clock, so multiple phases are reported honestly rather than inventing a synchronized one.
+- Full presentation pause for12 renders preserves opacity, transparency, depthWrite and castShadow. Resume continues response. Leaving the obstruction in the same world restores original values; `beginWorld` retry restores them immediately. Faded foreground objects temporarily disable their cast shadow by design; shadow settings are restored on release/reset.
+- Original render geometry vertices, visible wind compile hooks, program cache keys, custom depth-material identities and `OBSTACLES` remain unchanged by proxy processing. Materials are independently owned; no common source-material opacity is altered.
+- Existing foreground test suite:6/6 pass. Independent full-scene and recorded-camera diagnosis:12 cases pass. No additional optional performance or unrelated tests were added.
+
+Source review also checked CPU cloth/leaf bending against the supplied wind transform and the main pause/retry call order. The retained16m leaf cell is the fade unit, so this can make other leaves in that same cell translucent; only actual native rendering can establish whether that transition looks acceptable. This is an explicit remaining visual check, not a new CPU blocker.
+
+The following prior media intervals must be re-inspected on the final corrected SHA: touch-right second duel raw68–76s, desktop-right final duel raw73–74s, and stream-stones discovery/water raw58s. They refer to old414 recordings; exact wall-clock event and video time synchronization was unavailable.
