@@ -1,0 +1,33 @@
+{
+  "url": "https://bachikoljunior-blip.github.io/game2/preview/",
+  "observedAt": "2026-09-15T11:19:13.275Z",
+  "dom": "- generic \"山の社の剣戟\"\n- paragraph: 風が止む、その一瞬に。\n- heading \"陽炎\" [level=1]\n- paragraph: K A G E R O U\n- paragraph: 描画を開始できませんでした。WebGLが利用可能なブラウザで再読み込みしてください。\n- button \"社へ入る →\" [disabled]\n- paragraph:\n  - text: 移動 WASD ／ 斬撃 クリック ／ 防御 Q\n  - text: 回避 Space ／ 注視 E ／ 停止 Esc\n  - text: タッチ：左で移動、画面をスワイプして視点\n  - text: 斬撃は「斬」ボタン ／ PCはドラッグで視点\n- generic: 新規制作中の試作 — 品質基準の達成前\n- status",
+  "errors": [
+    {
+      "level": "error",
+      "message": "THREE.WebGLRenderer: A WebGL context could not be created. Reason:  Could not create a WebGL context, VENDOR = 0xffff, DEVICE = 0xffff, GL_VENDOR = Disabled, GL_RENDERER = Disabled, Sandboxed = yes, Optimus = no, AMD switchable = no, Reset notification strategy = 0x0000, ErrorMessage = BindToCurrentSequence failed: .",
+      "timestamp": "2026-09-15T11:14:10.931Z",
+      "url": "https://bachikoljunior-blip.github.io/game2/preview/assets/index-uU7e7s1r.js"
+    },
+    {
+      "level": "error",
+      "message": "THREE.WebGLRenderer: Error creating WebGL context.",
+      "timestamp": "2026-09-15T11:14:10.931Z",
+      "url": "https://bachikoljunior-blip.github.io/game2/preview/assets/index-uU7e7s1r.js"
+    },
+    {
+      "level": "error",
+      "message": "Error: Error creating WebGL context.\n    at new A_ (https://bachikoljunior-blip.github.io/game2/preview/assets/index-uU7e7s1r.js:3840:20778)\n    at sx (https://bachikoljunior-blip.github.io/game2/preview/assets/index-uU7e7s1r.js:3876:35856)\n    at https://bachikoljunior-blip.github.io/game2/preview/assets/index-uU7e7s1r.js:3876:72496",
+      "timestamp": "2026-09-15T11:14:10.942Z",
+      "url": "https://bachikoljunior-blip.github.io/game2/preview/assets/index-uU7e7s1r.js"
+    },
+    {
+      "level": "error",
+      "message": "Error sending browser metadata to extension: Object",
+      "timestamp": "2026-09-15T11:14:10.946Z",
+      "url": "chrome-extension://kcdongibgcplmaagnmgpjhpjgmmaaaaa/content-script.bundle.js"
+    }
+  ],
+  "result": "unavailable for rendered input validation",
+  "interpretation": "This Cloud Browser reports GL_VENDOR and GL_RENDERER Disabled and cannot create WebGL. One reload reproduced the same limitation. This is not a site bot block, and the preview's actual public-input verification is delegated to the already-working GitHub Chromium/SwiftShader environment. No browser security or graphics settings were changed."
+}

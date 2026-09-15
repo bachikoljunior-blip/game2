@@ -1,0 +1,647 @@
+{
+  "id": "CI34959408734-FINAL-A672",
+  "recordedAt": "2026-09-15T11:01:17.729666+00:00",
+  "sourceRevision": "a6722c5cf7b1933f1956c6c33ec4edc6adf47640",
+  "run": 34959408734,
+  "url": "https://github.com/bachikoljunior-blip/game2/actions/runs/34959408734",
+  "conclusion": "success",
+  "jobs": {
+    "fresh": {
+      "id": 104349149410,
+      "conclusion": "success"
+    },
+    "experience": {
+      "id": 104349149744,
+      "conclusion": "success"
+    }
+  },
+  "unitTests": {
+    "passed": 171,
+    "failed": 0
+  },
+  "build": {
+    "result": "passed",
+    "javascriptBytes": 621405,
+    "gzipApproximateBytes": 173060
+  },
+  "rootPreservation": "Exact source, ownership/catalog/project gates and unchanged docs/index.html/public/src/package/config verification passed in CI.",
+  "artifacts": [
+    {
+      "id": 10393350876,
+      "name": "fresh-game-a6722c5cf7b1933f1956c6c33ec4edc6adf47640",
+      "bytes": 114689519,
+      "sha256": "f655d427bb466f96983d9af0e4a75173cf51bf19f028c5e95597aac4b4b0340c",
+      "digestVerified": true
+    },
+    {
+      "id": 10393525961,
+      "name": "fresh-experience-a6722c5cf7b1933f1956c6c33ec4edc6adf47640",
+      "bytes": 70475946,
+      "sha256": "4e50a55b3bfa1f1bcd52f8ec888caf7a6939d22a153c9dc68628e39164b5940e",
+      "digestVerified": true
+    }
+  ],
+  "normalInput": {
+    "result": "passed",
+    "browserErrors": [],
+    "matrixErrors": [],
+    "rawFullDecodes": 4,
+    "derivedFullDecodes": 4,
+    "recordingFailures": [],
+    "routes": [
+      {
+        "id": "desktop",
+        "raw": {
+          "file": "desktop-continuous.webm",
+          "sha256": "df0d2bce4475d6e40eb42984820bddb390c8d2ff3c8551c5565236d2ca64d0f3",
+          "bytes": 22424908,
+          "durationSeconds": 206.24,
+          "decodedFrames": 5156,
+          "fullDecode": "passed",
+          "audioTracks": 0
+        },
+        "derived": {
+          "file": "derived/desktop-fork-to-signal.mp4",
+          "sha256": "1a0bc550c3769f815b377e806c66ded6be0a3b3356c42db07f10d246b85dd048",
+          "bytes": 4888766,
+          "durationSeconds": 92.8,
+          "fullDecode": "passed",
+          "touchViewportCrop": null
+        },
+        "arrivalEvents": [
+          {
+            "event": "full-mission-start",
+            "offsetMs": 74282
+          },
+          {
+            "event": "destination-arrival",
+            "offsetMs": 188333,
+            "detail": {
+              "time": 34.39999999999933,
+              "position": {
+                "x": -0.8632661460226966,
+                "z": -18.645434331629083
+              },
+              "distance": 1.2870213883620185,
+              "objective": "E または「灯す」で、谷へ合図を送る"
+            }
+          },
+          {
+            "event": "signal-input",
+            "offsetMs": 189244,
+            "detail": {
+              "time": 34.64999999999932,
+              "input": "KeyE",
+              "position": {
+                "x": -0.8632661460226966,
+                "z": -18.645434331629083
+              }
+            }
+          },
+          {
+            "event": "signal-lit",
+            "offsetMs": 190135,
+            "detail": {
+              "time": 34.66666666666598,
+              "position": {
+                "x": -0.8184827165475486,
+                "z": -18.690217761104233
+              },
+              "event": {
+                "type": "signal",
+                "time": 34.66666666666598,
+                "source": "player",
+                "target": "player",
+                "x": -0.8184827165475486,
+                "z": -18.690217761104233
+              }
+            }
+          },
+          {
+            "event": "victory",
+            "offsetMs": 190696
+          },
+          {
+            "event": "clean-retry",
+            "offsetMs": 206151
+          }
+        ],
+        "missionWallSecondsUntilVictory": 116.414
+      },
+      {
+        "id": "touch",
+        "raw": {
+          "file": "touch-continuous.webm",
+          "sha256": "7d8c33babcbb7c3cdefe6a68da2e09f20d74a05ece59b89eba78031952901104",
+          "bytes": 15746724,
+          "durationSeconds": 165.24,
+          "decodedFrames": 4131,
+          "fullDecode": "passed",
+          "audioTracks": 0
+        },
+        "derived": {
+          "file": "derived/touch-fork-to-signal.mp4",
+          "sha256": "3a99cf38a27c695c465e38b335e0889b3ada23ef23d946821ad9cb9434e75a60",
+          "bytes": 4625445,
+          "durationSeconds": 94.48,
+          "fullDecode": "passed",
+          "touchViewportCrop": {
+            "source": "844x844",
+            "crop": "844x390+0+0",
+            "output": "960x540 with 48px top/bottom padding"
+          }
+        },
+        "arrivalEvents": [
+          {
+            "event": "full-mission-start",
+            "offsetMs": 4059
+          },
+          {
+            "event": "destination-arrival",
+            "offsetMs": 141573,
+            "detail": {
+              "time": 66.49999999999751,
+              "position": {
+                "x": -0.2963094727139357,
+                "z": -18.537369801261175
+              },
+              "distance": 1.1031691814457696,
+              "objective": "E または「灯す」で、谷へ合図を送る"
+            }
+          },
+          {
+            "event": "signal-input",
+            "offsetMs": 142477,
+            "detail": {
+              "time": 66.7499999999975,
+              "input": "touch-lock",
+              "position": {
+                "x": -0.2963094727139357,
+                "z": -18.537369801261175
+              }
+            }
+          },
+          {
+            "event": "signal-lit",
+            "offsetMs": 144643,
+            "detail": {
+              "time": 67.26666666666414,
+              "position": {
+                "x": -0.2963094727139357,
+                "z": -18.537369801261175
+              },
+              "event": {
+                "type": "signal",
+                "time": 67.26666666666414,
+                "source": "player",
+                "target": "player",
+                "x": -0.2963094727139357,
+                "z": -18.537369801261175
+              }
+            }
+          },
+          {
+            "event": "victory",
+            "offsetMs": 145164
+          },
+          {
+            "event": "clean-retry",
+            "offsetMs": 164986
+          }
+        ],
+        "missionWallSecondsUntilVictory": 141.105
+      },
+      {
+        "id": "desktop-right",
+        "raw": {
+          "file": "desktop-right-continuous.webm",
+          "sha256": "354fd9c89e89890b9a692b65590440bf70e5a166914553e9b8b920cbfcfd00d9",
+          "bytes": 12923966,
+          "durationSeconds": 122.28,
+          "decodedFrames": 3057,
+          "fullDecode": "passed",
+          "audioTracks": 0
+        },
+        "derived": {
+          "file": "derived/desktop-right-fork-to-signal.mp4",
+          "sha256": "f96a2c8d839201a11fa4f69533f4434c9d78eb7dc14769277afc9d61c71db5ed",
+          "bytes": 4145665,
+          "durationSeconds": 81.56,
+          "fullDecode": "passed",
+          "touchViewportCrop": null
+        },
+        "arrivalEvents": [
+          {
+            "event": "full-mission-start",
+            "offsetMs": 6245
+          },
+          {
+            "event": "destination-arrival",
+            "offsetMs": 108178,
+            "detail": {
+              "time": 30.49999999999955,
+              "position": {
+                "x": -0.11199334368516425,
+                "z": -18.593738028108053
+              },
+              "distance": 1.0124750194971015,
+              "objective": "E または「灯す」で、谷へ合図を送る"
+            }
+          },
+          {
+            "event": "signal-input",
+            "offsetMs": 109089,
+            "detail": {
+              "time": 30.749999999999535,
+              "input": "KeyE",
+              "position": {
+                "x": -0.11199334368516425,
+                "z": -18.593738028108053
+              }
+            }
+          },
+          {
+            "event": "signal-lit",
+            "offsetMs": 110070,
+            "detail": {
+              "time": 30.7666666666662,
+              "position": {
+                "x": -0.11199334368516425,
+                "z": -18.657071361441385
+              },
+              "event": {
+                "type": "signal",
+                "time": 30.7666666666662,
+                "source": "player",
+                "target": "player",
+                "x": -0.11199334368516425,
+                "z": -18.657071361441385
+              }
+            }
+          },
+          {
+            "event": "victory",
+            "offsetMs": 110080
+          },
+          {
+            "event": "clean-retry",
+            "offsetMs": 122141
+          }
+        ],
+        "missionWallSecondsUntilVictory": 103.835
+      },
+      {
+        "id": "touch-left",
+        "raw": {
+          "file": "touch-left-continuous.webm",
+          "sha256": "3c54123f21bc16e35bd77d4bf3ddb93f72ca27ab40b4dc71d0166b799e657aaf",
+          "bytes": 20474286,
+          "durationSeconds": 181.4,
+          "decodedFrames": 4535,
+          "fullDecode": "passed",
+          "audioTracks": 0
+        },
+        "derived": {
+          "file": "derived/touch-left-fork-to-signal.mp4",
+          "sha256": "ee5b76b41d7c9fc439df31065acc1baea5b0b37f0dbb35687ec8963413daad8f",
+          "bytes": 7590897,
+          "durationSeconds": 119.2,
+          "fullDecode": "passed",
+          "touchViewportCrop": {
+            "source": "844x844",
+            "crop": "844x390+0+0",
+            "output": "960x540 with 48px top/bottom padding"
+          }
+        },
+        "arrivalEvents": [
+          {
+            "event": "full-mission-start",
+            "offsetMs": 5672
+          },
+          {
+            "event": "destination-arrival",
+            "offsetMs": 170976,
+            "detail": {
+              "time": 79.26666666666345,
+              "position": {
+                "x": 0.4559075776086925,
+                "z": -18.567815416823056
+              },
+              "distance": 1.128386783452018,
+              "objective": "E または「灯す」で、谷へ合図を送る"
+            }
+          },
+          {
+            "event": "signal-input",
+            "offsetMs": 171886,
+            "detail": {
+              "time": 79.76666666666343,
+              "input": "touch-lock",
+              "position": {
+                "x": 0.4559075776086925,
+                "z": -18.567815416823056
+              }
+            }
+          },
+          {
+            "event": "signal-lit",
+            "offsetMs": 173695,
+            "detail": {
+              "time": 80.14999999999674,
+              "position": {
+                "x": 0.4559075776086925,
+                "z": -18.567815416823056
+              },
+              "event": {
+                "type": "signal",
+                "time": 80.14999999999674,
+                "source": "player",
+                "target": "player",
+                "x": 0.4559075776086925,
+                "z": -18.567815416823056
+              }
+            }
+          },
+          {
+            "event": "victory",
+            "offsetMs": 174218
+          },
+          {
+            "event": "clean-retry",
+            "offsetMs": 180812
+          }
+        ],
+        "missionWallSecondsUntilVictory": 168.546
+      }
+    ]
+  },
+  "experience": {
+    "result": "passed",
+    "errors": [],
+    "inputGroupsPassed": 9,
+    "checks": [
+      "touch short gesture: no attack",
+      "touch vertical gesture: no attack",
+      "touch long gesture: no attack",
+      "touch return gesture: no attack",
+      "native touch cancel causes no attack",
+      "two canvas fingers cannot synthesize an attack",
+      "lost canvas pointer capture cannot attack",
+      "guard survives camera swipe and dedicated attack; own cancellation releases it",
+      "desktop drag rotates without attack; click attacks once",
+      "ordinary keyboard circuit water: both discoveries and loop completion",
+      "ordinary keyboard circuit ridge: both discoveries and loop completion",
+      "ordinary keyboard circuit memory: both discoveries and loop completion"
+    ],
+    "loops": [
+      {
+        "id": "water",
+        "result": "passed",
+        "pointsReached": 9,
+        "discovered": [
+          "spring-basin",
+          "stream-stones"
+        ],
+        "completed": [
+          "water"
+        ]
+      },
+      {
+        "id": "ridge",
+        "result": "passed",
+        "pointsReached": 9,
+        "discovered": [
+          "valley-frame",
+          "sun-ring"
+        ],
+        "completed": [
+          "ridge"
+        ]
+      },
+      {
+        "id": "memory",
+        "result": "passed",
+        "pointsReached": 9,
+        "discovered": [
+          "old-waystone",
+          "white-tree"
+        ],
+        "completed": [
+          "memory"
+        ]
+      }
+    ]
+  },
+  "motion": {
+    "result": "passed",
+    "scope": "Actual generated rig/environment rendered at authored 12 fps in an isolated study, with synthetic scene states on the ordinary approach and an inspection camera. Victory inspects the salute/sheathing motion here; the four normal-input route films verify the actual shrine ending. Not normal-input gameplay, real-time performance, or source-blind reference comparison.",
+    "fps": 12,
+    "errors": [],
+    "cases": [
+      {
+        "name": "idle",
+        "frames": 36,
+        "compositionChecks": 36,
+        "fullDecode": "passed",
+        "video": "idle.mp4"
+      },
+      {
+        "name": "start-run-stop",
+        "frames": 48,
+        "compositionChecks": 48,
+        "fullDecode": "passed",
+        "video": "start-run-stop.mp4"
+      },
+      {
+        "name": "turn",
+        "frames": 36,
+        "compositionChecks": 36,
+        "fullDecode": "passed",
+        "video": "turn.mp4"
+      },
+      {
+        "name": "guard",
+        "frames": 24,
+        "compositionChecks": 24,
+        "fullDecode": "passed",
+        "video": "guard.mp4"
+      },
+      {
+        "name": "windup-attack",
+        "frames": 36,
+        "compositionChecks": 36,
+        "fullDecode": "passed",
+        "video": "windup-attack.mp4"
+      },
+      {
+        "name": "attack",
+        "frames": 36,
+        "compositionChecks": 36,
+        "fullDecode": "passed",
+        "video": "attack.mp4"
+      },
+      {
+        "name": "dodge",
+        "frames": 24,
+        "compositionChecks": 24,
+        "fullDecode": "passed",
+        "video": "dodge.mp4"
+      },
+      {
+        "name": "hit",
+        "frames": 24,
+        "compositionChecks": 24,
+        "fullDecode": "passed",
+        "video": "hit.mp4"
+      },
+      {
+        "name": "parry",
+        "frames": 24,
+        "compositionChecks": 24,
+        "fullDecode": "passed",
+        "video": "parry.mp4"
+      },
+      {
+        "name": "block",
+        "frames": 24,
+        "compositionChecks": 24,
+        "fullDecode": "passed",
+        "video": "block.mp4"
+      },
+      {
+        "name": "broken",
+        "frames": 30,
+        "compositionChecks": 30,
+        "fullDecode": "passed",
+        "video": "broken.mp4"
+      },
+      {
+        "name": "death",
+        "frames": 36,
+        "compositionChecks": 36,
+        "fullDecode": "passed",
+        "video": "death.mp4"
+      },
+      {
+        "name": "victory",
+        "frames": 48,
+        "compositionChecks": 48,
+        "fullDecode": "passed",
+        "video": "victory.mp4"
+      },
+      {
+        "name": "wind",
+        "frames": 48,
+        "compositionChecks": 48,
+        "fullDecode": "passed",
+        "video": "wind.mp4"
+      }
+    ],
+    "totalFrames": 474
+  },
+  "audio": {
+    "result": "passed",
+    "provenance": {
+      "sourceSha": "a6722c5cf7b1933f1956c6c33ec4edc6adf47640",
+      "ciSha": "a6722c5cf7b1933f1956c6c33ec4edc6adf47640",
+      "requestedUrl": "http://127.0.0.1:4178/?diagnostic=1",
+      "bundles": [
+        {
+          "url": "http://127.0.0.1:4178/assets/index-uU7e7s1r.js",
+          "name": "index-uU7e7s1r.js",
+          "status": 200,
+          "bytes": 621405,
+          "sha256": "e10155850538226ba23645e4b8949eda8e480d76922b8531ee0dc242aaa5a5f4"
+        }
+      ],
+      "actualUrl": "http://127.0.0.1:4178/?diagnostic=1",
+      "documentSha256": "54a9e19d127241d06bc0bb2807b2e36703865cf2e79cc2a3b20bf5e2f47c1e23"
+    },
+    "recording": {
+      "webm": "actual-gameplay-audio.webm",
+      "wav": "actual-gameplay-audio.wav",
+      "bytes": 117053,
+      "sha256": "77f3c0bc996856676ba6e75ecc393404d2dada639825d9613ad175c3d66946dc",
+      "decode": "passed",
+      "scope": "Actual generated master bus from normal Start, movement, swing, dodge, pause and resume. No guaranteed coverage of combat contact or every sound category."
+    },
+    "pcm": {
+      "valid": true,
+      "failures": [],
+      "samples": 443520,
+      "sampleRate": 24000,
+      "channels": 2,
+      "seconds": 9.24,
+      "peak": 0.1822049617767334,
+      "rms": 0.012684605647187807,
+      "nonfinite": 0,
+      "clipped": 0,
+      "clipFraction": 0,
+      "activeFraction": 0.7614402958152958,
+      "limits": {
+        "minSeconds": 0.5,
+        "minRms": 0.0001,
+        "minPeak": 0.003,
+        "minActiveFraction": 0.001,
+        "maxClipFraction": 0.001,
+        "maxPeak": 1.01
+      }
+    },
+    "negative": {
+      "file": "muted-negative-probe.webm",
+      "decode": "passed",
+      "pcm": {
+        "valid": false,
+        "failures": [
+          "silent or inaudible PCM"
+        ],
+        "samples": 57600,
+        "sampleRate": 24000,
+        "channels": 2,
+        "seconds": 1.2,
+        "peak": 0,
+        "rms": 0,
+        "nonfinite": 0,
+        "clipped": 0,
+        "clipFraction": 0,
+        "activeFraction": 0,
+        "limits": {
+          "minSeconds": 0.5,
+          "minRms": 0.0001,
+          "minPeak": 0.003,
+          "minActiveFraction": 0.001,
+          "maxClipFraction": 0.001,
+          "maxPeak": 1.01
+        }
+      },
+      "rejected": true
+    },
+    "events": [
+      "started",
+      "actual-movement",
+      "swing-and-dodge",
+      "paused-all-voices-stopped",
+      "resumed"
+    ],
+    "generatedCategoryCount": 22,
+    "listeningQuality": "not measured"
+  },
+  "iphoneWrapper": {
+    "run": 34959412212,
+    "conclusion": "success",
+    "actualWebkitAndComparison": "NOT RUN: harness absent; WebKit installation, drive and compare steps skipped. Wrapper success is not iPhone validation."
+  },
+  "independentNativeReview": "AI_DEVELOPMENT/EVIDENCE/20260915-independent-final-media-a672.md",
+  "formalQuality": {
+    "satisfied": 0,
+    "not satisfied": 0,
+    "not measured": 10
+  },
+  "limits": [
+    "The motion study uses authored synthetic states at12fps, not normal player input or real-time performance.",
+    "Normal browser videos are silent. Separate actual audio capture covers start, movement, swing, dodge, pause, resume; not every combat sound.",
+    "Wall-clock event offsets are approximate and are not a measured exact video/input synchronization.",
+    "Technical success is not naturalness, entertainment or source-blind quality acceptance."
+  ],
+  "independentNativeReviewResult": "Limited native sequence confirmation: both left routes arrive and visibly light the lamp; new waystone dwell retains readable head/chest with partial branch overlap. Event-tagged signal images precede visible lighting; raw later frames are the visual evidence."
+}
