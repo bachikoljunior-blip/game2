@@ -10,11 +10,11 @@
     "workingBranch": "codex/game2-rebuild-20260913",
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
-    "activeTask": "FRESH-SEVEN-FIXES-ALL-ANIMATION",
+    "activeTask": "FRESH-ART-SOUND-PHYSICS-REVISION",
     "lastSuccessfulAction": "a672 exact-source CI34959408734 succeeded:171tests/build,PC/touch left/right missions,4raw+4derived decodes,9input groups,3loops/6discoveries,14motion474frames,9.24s actual PCM and silent negative. Independent raw review observed left2 arrival and lit endings, and readable head/chest in new waystone dwell. PR21 merged to main1e19caa with0file differences. Separate preview PR22 merged to a213ed5; Pages34961958960 succeeded. Direct-public checkerdb20986a/CI34962622024 verified matching public assets,PC/touch start,movement and separated camera/attack; errors0.",
     "currentFailingAction": null,
-    "currentHypothesis": "Remaining quality limits include light regular running, subtle parry/block distinction, repetitive grass, and branch/head-top/shoulder overlap outside the verified dwell range. Audio listening and formal whole-element comparisons are not measured.",
-    "nextAction": "Preserve this bounded foreground checkpoint; next authorized production should address remaining motion/contact and vegetation gaps, obtain supported perceptual sound evidence, and continue lawful anonymous readiness/comparison. No persistent producer or automation reactivation is claimed.",
+    "currentHypothesis": "Direct user evidence confirms wind sounds too strong, footsteps too heavy, unified plant motion physically wrong and character modeling coarse. Dedicated sound/mechanics/coherent-surface redesign is now in progress.",
+    "nextAction": "Save the locally verified 191-test runtime, run exact-source native-media and input CI, independently review pixels and motion, then publish byte-matched preview and verify actual public input.",
     "rollbackPoint": "1ded4aae27f8331cec10975c8dbac9eb482460a9",
     "pendingVerification": [
       "C04 candidate capture that visibly shows both routes entering one reconvergence point and continues through shrine/signal arrival",
@@ -248,17 +248,18 @@
       "AI_DEVELOPMENT/EVIDENCE/20260915-ci-34959408734-final.json",
       "AI_DEVELOPMENT/EVIDENCE/20260915-independent-final-media-a672.md",
       "AI_DEVELOPMENT/EVIDENCE/20260915-public-preview-verified.json",
-      "AI_DEVELOPMENT/EVIDENCE/20260915-public-preview-cloud-browser.json"
+      "AI_DEVELOPMENT/EVIDENCE/20260915-public-preview-cloud-browser.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260915-art-sound-physics-intake.json"
     ],
     "publicRuntimeRevision": "86512c3bfdc69e03b5b490d9b0d79ec9da141343",
     "producerExecution": {
-      "kind": "bounded authorized foreground checkpoint; no persistent background executor claimed",
-      "checkpointAt": "2026-09-15T11:23:04.684386+00:00",
+      "kind": "authorized foreground production",
+      "owner": "/root/game2_ultra_art_sound_physics",
+      "remoteWriter": "single integrator; children edit explicit disjoint files only",
+      "checkpointAt": "2026-09-15T11:53:14.662530+00:00",
       "backgroundProducerConfirmed": false,
-      "logicalActiveIsNotLivenessProof": true,
-      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260915-final-validation-integration-a672.json",
-      "owner": "/root/game2_ultra_finish_validation",
-      "remoteWriter": "single integrator; independent reviewer has no remote write"
+      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260915-art-sound-physics-intake.json",
+      "logicalActiveIsNotLivenessProof": true
     },
     "ultraDelegation": {
       "instructionId": "ULTRA-CHILDREN-20260914-v3",
@@ -315,6 +316,29 @@
       "sourceRevision": "a6722c5cf7b1933f1956c6c33ec4edc6adf47640",
       "mainIntegration": "a213ed5cc6013759320d6f15fda588821878d127",
       "evidence": "AI_DEVELOPMENT/EVIDENCE/20260915-public-preview-verified.json"
+    },
+    "priorForegroundCheckpoint": {
+      "kind": "bounded authorized foreground checkpoint; no persistent background executor claimed",
+      "checkpointAt": "2026-09-15T11:23:04.684386+00:00",
+      "backgroundProducerConfirmed": false,
+      "logicalActiveIsNotLivenessProof": true,
+      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260915-final-validation-integration-a672.json",
+      "owner": "/root/game2_ultra_finish_validation",
+      "remoteWriter": "single integrator; independent reviewer has no remote write"
+    },
+    "latestForegroundDelegation": {
+      "instructionId": "ULTRA-CHILDREN-20260914-v3",
+      "integrator": "/root/game2_ultra_art_sound_physics",
+      "actualSpawnArguments": {
+        "task_name": "game2_ultra_art_sound_physics",
+        "reasoning_effort": "ultra",
+        "fork_turns": "none",
+        "model": "omitted"
+      },
+      "acceptedTaskName": "/root/game2_ultra_art_sound_physics",
+      "allNewChildArguments": "reasoning_effort=ultra, fork_turns=none, model omitted; exact receipts in intake evidence",
+      "effectiveInternalStrengthIndependentlyConfirmed": false,
+      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260915-art-sound-physics-intake.json"
     }
   },
   "work": {
@@ -325,7 +349,7 @@
     "completion": "All concept elements satisfied by evidenced blind comparison.",
     "current_unit": "2026-09-13-fresh-design",
     "unit_status": "active",
-    "first_action": "Preserve this bounded foreground checkpoint; next authorized production should address remaining motion/contact and vegetation gaps, obtain supported perceptual sound evidence, and continue lawful anonymous readiness/comparison. No persistent producer or automation reactivation is claimed.",
+    "first_action": "Integrate the bounded audio, vegetation mechanics and coherent character surfaces; inspect exact-source native media, complete required CI, publish matching preview, verify actual served bytes and controls.",
     "implementation_strategy": "Fresh design and implementation; needs-before-reuse, per latest direct user instruction.",
     "unitEndReason": null,
     "deadlineReassessment": {
@@ -354,14 +378,19 @@
     },
     "latestDirectRequests": [
       "サウンド全て自然にして。植物の揺れ自然にして。キャラデザ細部まで作り込んで。スワイプで画面移動と攻撃モーション合わさって混同してんのどうにかして。足折れてる敵直して。マップはもっと広大で飽きないようにして。走ってるアニメーション自然にして。",
-      "アニメーション全て自然で見応えあるものにして"
+      "アニメーション全て自然で見応えあるものにして",
+      "どんだけ風吹いてんの？おと。足音重すぎ木の葉っぱとみきの揺れ方は違うし物理を考えて揺れ方考えるべき。人の造形もおざなりps4のげーむのビジュアルくらいのクオリティにして"
     ],
     "latestForegroundDeadlineReassessment": {
-      "at": "2026-09-15T11:23:04.684386+00:00",
       "deadline": "2026-09-20T07:51:53Z",
-      "judgment": "Cannot ground complete quality acceptance by the deadline while all10formal comparisons and listening quality remain unmeasured.",
-      "methodChangeMeasured": "Recovered exact saved candidate instead of redoing production; used independent finite native review, corrected verification timing defect, and verified the same-byte public deployment on the already-working graphics environment when CloudBrowser had disabled WebGL.",
-      "nextMethod": "Use supported perceptual sound evaluation and valid candidate/reference material-readiness before paired comparison, alongside the concrete remaining motion-weight/vegetation gaps. Do not weaken criteria or reenable paused automation."
+      "remainingHours": 115.97731595861111,
+      "satisfied": 0,
+      "notSatisfied": 0,
+      "notMeasured": 10,
+      "prediction": "Not grounded as can meet; user again identified substantive perceptual gaps after prior implementation.",
+      "methodDefect": "Primitive-detail accumulation and technical PCM/CI checks were insufficient to establish the requested perceptual quality.",
+      "changedMethod": "Independent anatomy surface redesign, branch/leaf mechanical modeling and low-frequency/contact audio redesign in parallel; acquire matched native close/whole/gameplay renders, isolated audio before-after measurements and actual public byte/input verification before reporting."
     }
-  }
+  },
+  "updatedAt": "2026-09-15T12:28:10.626132+00:00"
 }

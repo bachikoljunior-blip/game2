@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {SOUND_CATEGORIES,EVENT_SOUNDS,soundForEvent,footSurfaceAt,generateSound,createEventReader,createFootstepTracker,createGameAudio} from './audio.js';
+import {SOUND_CATEGORIES,EVENT_SOUNDS,soundForEvent,footSurfaceAt,generateSound,createEventReader,createFootstepTracker,createGameAudio,ambienceIntensity,footstepMix} from './audio.js';
+import {measureSound} from './audio-analysis.mjs';
 import {createWorld} from './simulation.js';
 
 // PCM and scheduling regressions; neither is an independent listening verdict.
@@ -71,10 +72,10 @@ test('steady walk and run contact counts are independent of 60Hz versus 250ms de
   }
 });
 class Parameter{constructor(){this.value=0;}cancelScheduledValues(){}setValueAtTime(value){this.value=value;}linearRampToValueAtTime(value){this.value=value;}setTargetAtTime(value){this.value=value;}}
-class Node{constructor(){this.gain=new Parameter();this.pan=new Parameter();this.playbackRate=new Parameter();this.connected=true;this.stopped=false;}connect(node){return node;}disconnect(){this.connected=false;}start(){this.started=true;}stop(){this.stopped=true;}}
+class Node{constructor(){this.gain=new Parameter();this.pan=new Parameter();this.playbackRate=new Parameter();this.connected=true;this.stopped=false;}connect(node){this.destination=node;return node;}disconnect(){this.connected=false;}start(at){this.started=true;this.at=at;}stop(){this.stopped=true;}}
 class Context{
-  constructor(){this.state='suspended';this.currentTime=0;this.destination=new Node();this.sources=[];}
-  createGain(){return new Node();}createStereoPanner(){return new Node();}
+  constructor(){this.state='suspended';this.currentTime=0;this.destination=new Node();this.sources=[];this.gains=[];}
+  createGain(){const gain=new Node();this.gains.push(gain);return gain;}createStereoPanner(){return new Node();}
   createBuffer(channels,length,sampleRate){return{copyToChannel(){},duration:length/sampleRate};}
   createBufferSource(){const node=new Node();this.sources.push(node);return node;}
   resume(){this.state='running';return Promise.resolve();}suspend(){this.state='suspended';return Promise.resolve();}
@@ -96,6 +97,53 @@ test('audio lifecycle consumes all events, cancels all voices, and starts one am
   const retry=createWorld();await audio.resume(retry);audio.update(retry,.01);
   assert.equal(audio.diagnostics().categories.wind,3);assert.equal(audio.diagnostics().steps,0);
   audio.pause();
+});
+
+test('band measurement locates a known low tone and a known fibre-band tone',()=>{
+  for(const [hz,band] of [[100,'below200Hz'],[2000,'1000to4000Hz']]){
+    const tone=Float32Array.from({length:24000},(_,i)=>Math.sin(2*Math.PI*hz*i/24000)*.2),measurement=measureSound(tone);
+    assert.ok(measurement.bands[band].energyFraction>.99);
+    assert.ok(Math.abs(measurement.rms-.2/Math.sqrt(2))<1e-6);
+  }
+});
+test('air and woven-sole spectra do not regain the old sub-200Hz roar or heel thump',()=>{
+  for(let variant=0;variant<4;variant++)for(const name of ['wind','footStone','footEarth']){
+    const {data,sampleRate}=generateSound(name,variant),m=measureSound(data,sampleRate);
+    assert.ok(m.bands.below200Hz.energyFraction<.14,`${name}/${variant} low-frequency energy ${m.bands.below200Hz.energyFraction}`);
+    assert.ok(m.bands['200to1000Hz'].energyFraction>.10,`${name}/${variant} must retain contact/air body, not only hiss`);
+    if(name!=='wind')assert.ok(m.energy10to90Ms<100,`${name}/${variant} contact became a sustained impact`);
+  }
+});
+test('leaf packets have audible pauses within the buffer instead of a continuous dense wash',()=>{
+  for(let variant=0;variant<3;variant++){
+    const m=measureSound(generateSound('leaves',variant).data);
+    assert.ok(m.active20msFramesFraction<.6);
+  }
+});
+test('walk and run change contact force without transposing the sole into a bass impact',()=>{
+  const walk=footstepMix(1.8),run=footstepMix(3.8);
+  assert.ok(run.gain>walk.gain&&walk.gain>footstepMix(.4).gain);
+  assert.ok(run.gain/walk.gain<1.5);
+  assert.ok(walk.rate>.98&&run.rate<1.06);
+  assert.ok(run.clothGain<run.gain*.2);
+});
+test('wind has its own bounded slow bus and sparse schedule while contacts keep the master gain',async()=>{
+  const context=new Context(),audio=createGameAudio({context}),world=createWorld();await audio.resume(world);audio.update(world,0);
+  const master=context.gains[0],air=context.gains[1],wind=context.sources[0];
+  assert.equal(wind.destination.destination.destination,air);
+  assert.equal(air.destination,master);assert.equal(master.gain.value,.78);
+  assert.ok(ambienceIntensity(-1)>=.55);assert.ok(ambienceIntensity(2)<=.8);
+  world.time=.4;world.player.x+=.72;context.currentTime=.4;audio.update(world,.4);
+  const foot=context.sources.find(source=>source.buffer.duration===SOUND_CATEGORIES.footStone);
+  assert.ok(foot);assert.equal(foot.destination.destination.destination,master);
+  assert.ok(foot.destination.gain.value<.8);
+  for(let i=5;i<=900;i++){world.time=context.currentTime=i/10;audio.update(world,.1);}
+  for(const [duration,minimum,maximum] of [[SOUND_CATEGORIES.wind,9.6,10.5],[SOUND_CATEGORIES.leaves,5.8,11.1]]){
+    const times=context.sources.filter(source=>source.buffer.duration===duration).map(source=>source.at);
+    assert.ok(times.length>=5);
+    for(let i=1;i<times.length;i++){const gap=times[i]-times[i-1];assert.ok(gap>=minimum-1e-8&&gap<=maximum+1e-8,`ambient interval ${gap}`);}
+  }
+  assert.equal(master.gain.value,.78);audio.pause();assert.equal(audio.diagnostics().liveVoices,0);
 });
 
 test('foot materials follow both branch tiles, rejoin, paving ends and optional stone pads',()=>{

@@ -43,7 +43,9 @@ jobs:
       - name: Fresh unit contracts
         run: node --test fresh/*.test.mjs
       - name: Fresh production build
-        run: node node_modules/vite/bin/vite.js build --config fresh/vite.config.mjs
+        run: |
+          node node_modules/vite/bin/vite.js build --config fresh/vite.config.mjs
+          node fresh/build-fingerprint.mjs
       - run: npx playwright install --with-deps chromium
       - name: Tested worktree is still the exact revision
         run: |
@@ -70,6 +72,51 @@ jobs:
         with:
           name: fresh-game-${{ github.sha }}
           path: AI_DEVELOPMENT/EVIDENCE/fresh-20260913/
+          if-no-files-found: error
+          retention-days: 90
+  art:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Capture identical views of the previous production figures
+        run: |
+          git worktree add --detach ../art-baseline b06ade1ad5ab8b72de9bb9996f323a063f5db5ef
+          ln -s "$GITHUB_WORKSPACE/node_modules" ../art-baseline/node_modules
+          ART_SOURCE_ROOT="$GITHUB_WORKSPACE/../art-baseline" ART_OUTPUT="$GITHUB_WORKSPACE/AI_DEVELOPMENT/EVIDENCE/fresh-20260915-art/before" node fresh/art-direction-capture.mjs
+      - name: Capture the exact candidate figures with matching lights and cameras
+        if: always()
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          ART_OUTPUT="$GITHUB_WORKSPACE/AI_DEVELOPMENT/EVIDENCE/fresh-20260915-art/after" node fresh/art-direction-capture.mjs
+          git diff --exit-code HEAD -- .
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fresh-figures-${{ github.sha }}
+          path: |
+            AI_DEVELOPMENT/EVIDENCE/fresh-20260915-art/before/
+            AI_DEVELOPMENT/EVIDENCE/fresh-20260915-art/after/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Inspect trunk, branch and leaf motion in the production landscape
+        if: always()
+        run: node fresh/vegetation-capture.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fresh-art-${{ github.sha }}
+          path: AI_DEVELOPMENT/EVIDENCE/fresh-20260915-art/
           if-no-files-found: error
           retention-days: 90
   experience:

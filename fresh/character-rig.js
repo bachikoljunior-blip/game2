@@ -1,38 +1,42 @@
 import * as T from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { surface,loft,headSculpt,facePoint,eyeSurface,faceRibbon,hakamaPanel,clothRibbon,
+  breastplate,shoulderPlate,hairCap,scalpLock,earSculpt,handSculpt,fingerSculpt,footSculpt,createSurfaceTextures } from './character-sculpt.js';
 
 // Fresh, boot-generated figures. Anatomical joints are separate from clothing,
-// so a sleeve or a rigid skirt panel never substitutes for a knee or an elbow.
+// so clothing never substitutes for an anatomical knee or elbow.
 export const ANATOMY = Object.freeze({ thigh: .43, shin: .43, sole: .09, upperArm: .32, forearm: .30, hipWidth: .15 });
 const palettes = {
-  player: { cloth:'#365a70', shadow:'#243b4a', armor:'#27373b', trim:'#b9bbab', cord:'#aaa581', skin:'#bd9c81' },
+  player: { cloth:'#426781', shadow:'#273e50', armor:'#343e43', trim:'#a8ad9f', cord:'#9e987d', skin:'#bb9276' },
   sentinel: { cloth:'#774934', shadow:'#472b25', armor:'#42382d', trim:'#bb9868', cord:'#b99d73', skin:'#b79577' },
   retainer: { cloth:'#656253', shadow:'#373e39', armor:'#313a39', trim:'#b8ad83', cord:'#9eaa96', skin:'#af9076' },
   warden: { cloth:'#724640', shadow:'#412c2d', armor:'#303439', trim:'#bba071', cord:'#bba07b', skin:'#b49176' },
 };
 
 export function createCharacterResources() {
-  // A tiny deterministic woven height field shared by all cloth. No URL loads.
-  const size=64,data=new Uint8Array(size*size*4);
-  for(let y=0;y<size;y++)for(let x=0;x<size;x++){
-    const i=(y*size+x)*4,v=135+(x%4<2?17:-17)+(y%4<2?11:-11)+((x*13+y*7)%9);
-    data[i]=data[i+1]=data[i+2]=v;data[i+3]=255;
-  }
-  const weave=new T.DataTexture(data,size,size,T.RGBAFormat);weave.wrapS=weave.wrapT=T.RepeatWrapping;weave.repeat.set(3,3);weave.needsUpdate=true;
-  const materials=new Map();
-  function material(color,roughness=.8,metalness=0,fabric=false){
-    const key=[color,roughness,metalness,fabric].join(':');
-    if(!materials.has(key))materials.set(key,new T.MeshStandardMaterial({color,roughness,metalness,...(fabric?{bumpMap:weave,bumpScale:.012}:{} )}));
+  const textures=createSurfaceTextures(),materials=new Map();
+  function material(color,roughness=.8,metalness=0,type=null,doubleSided=false){
+    if(type===true)type='cloth';
+    const key=[color,roughness,metalness,type,doubleSided].join(':');
+    if(!materials.has(key)){
+      const maps=textures[type]||{},bumpScale=type==='cloth'?.00025:type==='skin'?.00012:type==='hair'?.0006:.00035;
+      const m=new T.MeshStandardMaterial({color,roughness,metalness,...maps,bumpScale});
+      m.name=`character-${type||'plain'}-${color}`;
+      // Open garment cuts and thin armour must cast the same two-sided shadow
+      // as the visible surface; no shader-only displacement is used.
+      if(type==='cloth'||type==='hair'||type==='metal'||doubleSided)m.side=T.DoubleSide;
+      materials.set(key,m);
+    }
     return materials.get(key);
   }
-  return { material, weave };
+  return { material,textures,weave:textures.cloth.bumpMap };
 }
 
 export function createCharacterRig(id, resources=createCharacterResources()) {
   const colors=palettes[id]||palettes.sentinel,mat=resources.material;
-  const cloth=mat(colors.cloth,.9,0,true),shadow=mat(colors.shadow,.95,0,true),armor=mat(colors.armor,.53,.22),
-    trim=mat(colors.trim,.64,.15),cord=mat(colors.cord,.87),skin=mat(colors.skin,.88),dark=mat('#191f23',.88),
-    hair=mat('#22221f',.96),lip=mat('#74534a',.94),eyes=mat('#1c1c19',.73),white=mat('#c4bba6',.9),
+  const cloth=mat(colors.cloth,.99,0,'cloth'),shadow=mat(colors.shadow,1,0,'cloth'),armor=mat(colors.armor,.78,.38,'metal'),
+    trim=mat(colors.trim,.92,0,'cloth'),cord=mat(colors.cord,.98,0,'cord'),skin=mat(colors.skin,.97,0,'skin'),dark=mat('#242523',.95,0,'leather'),
+    hair=mat('#252420',.89,0,'hair'),lip=mat('#866055',.89),eyes=mat('#241e18',.47),white=mat('#928c76',1,0,'cloth'),
     steel=mat(id==='player'?'#e7f4f4':'#ffe0a6',.2,.85),edge=mat('#eff4e5',.13,.92),brass=mat('#b7955b',.34,.7);
   steel.emissive.set(id==='player'?'#7397a1':'#a64b24');steel.emissiveIntensity=id==='player'?.13:.24;
   const root=new T.Group();root.name=`actor-${id}`;
@@ -49,98 +53,136 @@ export function createCharacterRig(id, resources=createCharacterResources()) {
     if(!bucket.has(material))bucket.set(material,[]);bucket.get(material).push(nonindexed);generatedParts++;
   }
   const box=(p,m,x,y,z,w,h,d,rx=0,ry=0,rz=0)=>part(p,new T.BoxGeometry(w,h,d),m,x,y,z,1,1,1,rx,ry,rz);
-  const ellipsoid=(p,m,x,y,z,w,h,d)=>part(p,new T.SphereGeometry(1,12,9),m,x,y,z,w,h,d);
   const cylinder=(p,m,x,y,z,r1,r2,h,rx=0,ry=0,rz=0)=>part(p,new T.CylinderGeometry(r1,r2,h,10),m,x,y,z,1,1,1,rx,ry,rz);
 
-  // A tapered torso, crossed collar, stitched cloth seams and restrained armor.
-  part(chest,new T.CylinderGeometry(.235,.265,.43,14),cloth,0,0,0,1,1,.72);
-  ellipsoid(chest,shadow,0,-.16,.005,.247,.14,.167);
-  box(chest,armor,0,.025,-.142,.385,.275,.075);
-  for(let row=0;row<4;row++){
-    box(chest,armor,0,.145-row*.065,-.19,.36-row*.012,.043,.027);
-    for(const side of [-1,1])cylinder(chest,cord,side*.117,.145-row*.065,-.212,.008,.008,.037,0,0,.45*side);
+  // Continuous tailored volumes preserve the skeletal pivots and reach. The
+  // cloth is broad over ribs/scapulae and compressed into the waist sash.
+  part(chest,loft([[-.25,.183,.119,0],[-.18,.204,.140,.005],[-.075,.215,.151,.008],
+    [.045,.229,.159,.008],[.157,.236,.146,.006],[.216,.198,.116,.002],[.252,.111,.083,0]],
+    {fold:.006,folds:11,segments:24,rows:16,deform:(p,u,v)=>{
+      p[2]+=.009*Math.max(0,Math.cos(u*Math.PI*2))*Math.sin(v*Math.PI);return p;
+    }}),cloth);
+  // The cuirass follows the ribcage. Its lames overlap vertically while the
+  // collar stays cloth, keeping the neck/shoulder transition soft and narrow.
+  for(let row=0;row<5;row++){
+    const top=.110-row*.051,bottom=top-.056,width=.315+(row<2?row*.009:(4-row)*.009);
+    part(chest,breastplate(top,bottom,width,row*.001),armor);
+    for(const side of [-1,1]){
+      const x=side*(.104+row*.001);
+      part(chest,clothRibbon([[x,top-.009,-.204],[x+side*.009,top-.020,-.211],[x,top-.032,-.207]],.0045,{steps:8}),cord);
+    }
   }
-  for(const side of [-1,1]){
-    box(chest,white,side*.061,.178,-.161,.061,.29,.031,0,0,side*.38);
-    box(chest,trim,side*.093,.17,-.18,.018,.28,.021,0,0,side*.38);
-    box(chest,shadow,side*.188,-.032,.117,.014,.34,.018,0,0,-side*.12);
-    // Laced shoulder lamellae remain attached to the upper arm below.
-  }
-  part(body,new T.CylinderGeometry(.255,.27,.135,14),shadow,0,.045,0,1,1,.76);
-  part(body,new T.CylinderGeometry(.271,.275,.065,14),trim,0,.043,0,1,1,.78);
-  for(const side of [-1,1])box(body,cord,side*.065,.055,-.226,.13,.033,.035,0,0,side*.18);
-  ellipsoid(body,cord,0,.056,-.236,.039,.027,.032);
+  part(chest,clothRibbon([[-.083,.258,-.076],[-.064,.205,-.136],[.006,.10,-.181],[.09,-.018,-.182]],.043),trim);
+  part(chest,clothRibbon([[.083,.258,-.076],[.062,.207,-.139],[-.008,.110,-.190],[-.10,-.012,-.191]],.047),cloth);
+  part(chest,clothRibbon([[.081,.258,-.082],[.060,.207,-.145],[-.013,.106,-.195],[-.099,-.012,-.197]],.006),trim);
+  // Folded cloth at the back collar and seams moulds to the body, not a box.
+  part(chest,loft([[.229,.114,.080,0],[.259,.087,.075,0],[.276,.072,.065,0]],{segments:24,rows:6}),shadow);
+  for(const side of [-1,1])part(chest,clothRibbon([[side*.179,.180,.083],[side*.201,.057,.142],
+    [side*.173,-.096,.126],[side*.157,-.210,.104]],.007),shadow);
+  part(body,loft([[-.032,.224,.161,0],[.015,.230,.169,0],[.095,.224,.161,0],[.113,.213,.151,0]],
+    {fold:.0025,folds:14,rows:8}),shadow);
+  for(let band=0;band<3;band++)part(body,loft([[.014+band*.026,.231,.170,0],[.035+band*.026,.229,.170,0]],
+    {segments:28,rows:2}),cord);
+  part(body,clothRibbon([[-.14,.064,-.163],[-.06,.043,-.182],[.037,.069,-.183],[.104,.043,-.167]],.025),cord);
+  part(body,clothRibbon([[-.017,.063,-.182],[.012,.088,-.198],[.031,.053,-.196],[.006,.038,-.187]],.027),cord);
 
-  // Face volumes include cheek/jaw planes, eyelids and a narrow mouth. Hair
-  // follows the skull; the rear knot and ties make the rear silhouette readable.
-  cylinder(neck,skin,0,.022,0,.065,.076,.12);
-  ellipsoid(neck,skin,0,.13,-.008,.124,.158,.116);
-  ellipsoid(neck,skin,0,.058,-.04,.095,.074,.079);
+  part(neck,loft([[-.131,.067,.062,.014],[-.070,.055,.054,.006],[.012,.051,.050,0],[.056,.050,.046,0]],
+    {segments:24,rows:16}),skin);
+  part(neck,headSculpt(),skin);
   for(const side of [-1,1]){
-    ellipsoid(neck,skin,side*.073,.108,-.078,.048,.055,.045);
-    ellipsoid(neck,skin,side*.12,.126,0,.025,.041,.02);
-    ellipsoid(neck,lip,side*.132,.126,-.004,.006,.021,.012);
-    box(neck,eyes,side*.049,.159,-.11,.038,.009,.01,0,0,side*.07);
-    box(neck,skin,side*.049,.165,-.112,.043,.008,.012,0,0,side*.07);
-    box(neck,hair,side*.05,.18,-.107,.048,.01,.012,0,0,-side*.13);
+    part(neck,earSculpt(side),skin);
+    part(neck,eyeSurface(side),mat('#b8a696',.63));
+    const pupil=surface(12,6,(u,v)=>{
+      const x=side*.038+(u-.5)*.0088,y=.158+(v-.5)*.0056*Math.sin(u*Math.PI);
+      return facePoint(x,y,.0017);
+    },{flip:true});
+    part(neck,pupil,eyes);
+    part(neck,eyeSurface(side,{lid:true,upper:true}),skin);
+    part(neck,eyeSurface(side,{lid:true,upper:false}),skin);
+    part(neck,faceRibbon([[side*.018,.178,.002],[side*.037,.182,.002],[side*.061,.178,.002]],.0048),hair);
+    part(neck,faceRibbon([[side*.006,.107,.0018],[side*.012,.106,.002],[side*.019,.109,.0015]],.0022),lip);
   }
-  ellipsoid(neck,skin,0,.122,-.121,.019,.043,.025);
-  box(neck,lip,0,.077,-.11,.05,.006,.008);
-  part(neck,new T.SphereGeometry(.127,14,10,0,Math.PI*2,0,Math.PI*.58),hair,0,.171,.003,1,1.03,.98);
-  for(const side of [-1,1])ellipsoid(neck,hair,side*.1,.19,.033,.035,.073,.06);
-  ellipsoid(neck,hair,0,.263,.051,.054,.047,.061);
-  part(neck,new T.TorusGeometry(.128,.012,5,20),trim,0,.186,0,1,.92,1,Math.PI/2);
-  for(let s=-1;s<=1;s++)box(neck,dark,s*.036,.25,.083,.014,.012,.09,-.15,0,s*.09);
+  part(neck,faceRibbon([[-.025,.079,.0014],[-.010,.080,.0016],[0,.0785,.0018],[.011,.080,.0016],[.025,.079,.0014]],.0028),lip);
+  part(neck,faceRibbon([[-.024,.076,.0018],[0,.075,.002],[.024,.076,.0018]],.0012),mat('#523f36',.92));
+  part(neck,hairCap(),hair);
+  // Swept locks join the cranial mass; their tapered silhouette breaks the
+  // helmet outline, and the rear hair gathers into a restrained tied knot.
+  for(const side of [-1,1]){
+    for(let sector=0;sector<3;sector++)part(neck,scalpLock(side,sector),hair);
+  }
+  part(neck,loft([[.214,.009,.014,.082],[.232,.039,.033,.090],[.265,.042,.030,.081],[.291,.019,.020,.067],[.296,.002,.004,.062]],
+    {segments:24,rows:14,fold:.002,folds:9}),hair);
+  part(neck,loft([[.260,.043,.032,.080],[.270,.037,.029,.078]],{segments:24,rows:2}),cord);
+  // Narrow, shaped fabric band. It follows the hairline without a torus halo.
+  part(neck,loft([[.184,.095,.109,.014],[.197,.093,.107,.014]],{segments:40,rows:2}),shadow);
   if(id==='warden'){
-    // A distinct practical crest and lower face guard, not a copied costume.
-    part(neck,new T.SphereGeometry(.139,14,8,0,Math.PI*2,0,Math.PI*.48),armor,0,.185,.01,1,1,.99);
-    box(neck,brass,0,.284,-.051,.037,.085,.025,0,0,-.16);
-    box(neck,armor,0,.061,-.102,.135,.075,.04);
+    part(neck,surface(36,14,(u,v)=>{
+      const theta=u*Math.PI*2,phi=.1+v*1.24;
+      return [Math.sin(theta)*Math.sin(phi)*.102,.177+Math.cos(phi)*.119,.017+Math.cos(theta)*Math.sin(phi)*.112];
+    },{wrap:true,flip:true}),armor);
+    part(neck,clothRibbon([[0,.289,-.025],[0,.282,-.060],[0,.233,-.100]],.018),brass);
+    part(neck,surface(24,10,(u,v)=>{
+      const x=(u-.5)*.143,y=.031+v*.059;return facePoint(x,y,.007);
+    },{flip:true}),armor);
   }
 
   const limbs=[],panels=[],ties=[];
   for(const side of [-1,1]){
     const hip=new T.Group();hip.name=side<0?'left-hip':'right-hip';hip.position.set(side*ANATOMY.hipWidth,0,0);body.add(hip);
-    part(hip,new T.CylinderGeometry(.132,.105,ANATOMY.thigh,12),shadow,0,-.205,0,1,1,1.03);
-    for(let pleat=-1;pleat<=1;pleat++)box(hip,cloth,pleat*.06,-.23,-.114,.012,.34,.017,0,0,pleat*.07);
+    part(hip,loft([[-.435,.077,.080,0],[-.360,.107,.106,.003],[-.255,.125,.116,.003],
+      [-.112,.123,.112,0],[.023,.113,.110,0]],{fold:.008,folds:9,rows:22,phase:side*.3}),shadow);
     const knee=new T.Group();knee.name='knee';knee.position.y=-ANATOMY.thigh;hip.add(knee);
-    ellipsoid(knee,shadow,0,.007,-.007,.104,.095,.104);
-    cylinder(knee,dark,0,-.205,0,.086,.066,.37);
-    box(knee,armor,0,-.19,-.071,.108,.26,.042);
-    for(let wrap=0;wrap<3;wrap++)cylinder(knee,cord,0,-.07-wrap*.112,0,.09-wrap*.006,.09-wrap*.006,.025);
+    part(knee,loft([[-.397,.052,.059,.006],[-.303,.061,.071,.012],[-.202,.073,.082,.014],[-.090,.078,.080,.004],[.035,.079,.080,0]],
+      {segments:24,rows:20,fold:.003,folds:7}),shadow);
+    part(knee,surface(16,10,(u,v)=>{
+      const angle=(u-.5)*1.65,y=-.320+v*.269,r=.062+Math.sin(v*Math.PI)*.017;
+      return [Math.sin(angle)*r,y,-Math.cos(angle)*(r+.004)];
+    }),armor);
+    for(let wrap=0;wrap<4;wrap++){
+      const y=-.055-wrap*.085,r=.080-wrap*.007;
+      part(knee,loft([[y-.015,r,r+.003,.006],[y+.012,r+.001,r+.004,.006]],{segments:22,rows:2}),cord);
+    }
     const ankle=new T.Group();ankle.name='ankle';ankle.position.y=-ANATOMY.shin;knee.add(ankle);
-    ellipsoid(ankle,white,0,-.031,-.05,.075,.05,.143);
-    box(ankle,cord,0,-.071,-.052,.163,.028,.305);
-    box(ankle,dark,0,-.085,-.052,.17,.009,.31);
-    for(const strap of [-1,1])box(ankle,dark,strap*.027,-.002,-.09,.028,.018,.15,-.11,strap*.45);
-    box(ankle,dark,0,-.023,-.186,.005,.044,.034);
+    part(ankle,footSculpt({side}),white);part(ankle,footSculpt({sole:true,side}),cord);
+    part(ankle,loft([[-.029,.048,.050,.024],[.023,.049,.050,.022],[.076,.047,.047,.018]],{segments:22,rows:12,fold:.0018,folds:8}),white);
+    for(const strap of [-1,1])part(ankle,clothRibbon([[strap*.057,-.032,-.024],[strap*.032,.006,-.055],[0,-.023,-.127]],.012),dark);
+    part(ankle,clothRibbon([[side*.020,-.043,-.184],[side*.018,-.027,-.164],[side*.017,-.015,-.139]],.0025),dark);
     const arm=new T.Group();arm.name=side<0?'left-shoulder':'right-shoulder';arm.position.set(side*.265,.2,0);chest.add(arm);
-    part(arm,new T.CylinderGeometry(.115,.096,ANATOMY.upperArm,12),cloth,0,-.15,0);
-    for(let plate=0;plate<3;plate++)box(arm,armor,side*.068,-.005-plate*.044,.0,.165,.044,.24,0,0,-side*.09);
-    box(arm,trim,side*.077,.019,0,.17,.017,.24,0,0,-side*.09);
+    part(arm,loft([[-.335,.082,.075,.002],[-.282,.104,.098,.008],[-.204,.098,.091,.004],
+      [-.119,.094,.091,0],[-.025,.098,.095,0],[.046,.058,.068,0]],{segments:24,rows:22,fold:.008,folds:8,phase:side}),cloth);
+    const shoulderRows=id==='player'?2:id==='warden'?4:3;
+    for(let plate=0;plate<shoulderRows;plate++)part(arm,shoulderPlate(side,plate),armor);
+    part(arm,loft([[-.329,.085,.079,.002],[-.305,.094,.089,.005]],{segments:26,rows:2}),shadow);
     const elbow=new T.Group();elbow.name='elbow';elbow.position.y=-ANATOMY.upperArm;arm.add(elbow);
-    ellipsoid(elbow,shadow,0,0,0,.078,.075,.075);
-    cylinder(elbow,skin,0,-.115,0,.073,.054,.24);
-    cylinder(elbow,shadow,0,-.114,0,.078,.068,.18);
-    box(elbow,armor,0,-.127,-.063,.087,.155,.032);
-    for(let wrap=0;wrap<3;wrap++)cylinder(elbow,cord,0,-.066-wrap*.047,0,.078-wrap*.004,.078-wrap*.004,.015);
+    part(elbow,loft([[-.296,.031,.031,0],[-.259,.042,.038,0],[-.180,.058,.052,.002],[-.074,.066,.059,.003],[.024,.067,.062,0]],
+      {segments:22,rows:18,fold:.0015,folds:6}),skin);
+    part(elbow,loft([[-.244,.044,.040,0],[-.175,.061,.055,.002],[-.058,.070,.064,.003]],
+      {segments:24,rows:16,fold:.0025,folds:8}),shadow);
+    part(elbow,surface(16,10,(u,v)=>{
+      const angle=(u-.5)*1.55,y=-.222+v*.155,r=.047+v*.020;
+      return [Math.sin(angle)*r,y,-Math.cos(angle)*(r+.003)];
+    }),armor);
+    for(let wrap=0;wrap<3;wrap++){
+      const y=-.091-wrap*.052,r=.068-wrap*.009;
+      part(elbow,loft([[y-.008,r,r*.94,.002],[y+.006,r+.001,r*.94+.001,.002]],{segments:22,rows:2}),cord);
+    }
     const wrist=new T.Group();wrist.name='wrist';wrist.position.y=-ANATOMY.forearm;elbow.add(wrist);
-    ellipsoid(wrist,skin,0,0,0,.05,.064,.038);
-    for(let finger=0;finger<4;finger++)ellipsoid(wrist,skin,(finger-1.5)*.021,-.018,-.025,.013,.031,.016);
-    ellipsoid(wrist,skin,side*.049,.018,-.017,.019,.034,.022);
+    part(wrist,handSculpt(side),skin);
+    for(let finger=0;finger<4;finger++)part(wrist,fingerSculpt(finger,side),skin);
+    part(wrist,new T.TubeGeometry(new T.CatmullRomCurve3([
+      new T.Vector3(side*.035,.024,.006),new T.Vector3(side*.050,.004,-.012),
+      new T.Vector3(side*.034,-.009,-.035),new T.Vector3(side*.021,-.007,-.037)]),16,.012,8,false),skin);
     limbs.push({side,hip,knee,ankle,arm,elbow,wrist,hand:wrist});
     for(const front of [-1,1]){
-      const panel=new T.Group();panel.name=front<0?'hakama-front':'hakama-back';panel.position.set(side*.13,-.045,front*.135);body.add(panel);
-      box(panel,front<0?shadow:cloth,0,-.235,0,.232,.47,.033,0,0,-side*.025);
-      for(let fold=-1;fold<=1;fold++)box(panel,front<0?cloth:shadow,fold*.065,-.238,front*.021,.01,.434,.008,0,0,fold*.023);
-      box(panel,trim,0,-.462,0,.225,.013,.036);
-      panels.push({node:panel,side,front});
+      const panel=new T.Group();panel.name=front<0?'hakama-front':'hakama-back';panel.position.set(side*.123,-.041,front*.113);body.add(panel);
+      part(panel,hakamaPanel(side,front),cloth);panels.push({node:panel,side,front});
     }
-    const tie=new T.Group();tie.name='headband-tail';tie.position.set(side*.054,.177,.115);neck.add(tie);
-    box(tie,trim,0,-.108,.022,.027,.22,.008,-.17,0,side*.14);ties.push(tie);
+    const tie=new T.Group();tie.name='headband-tail';tie.position.set(side*.022,.188,.122);neck.add(tie);
+    part(tie,clothRibbon([[0,0,0],[side*.009,-.052,.012],[side*.014,-.126,.017],[side*.020,-.169,.005]],.017,{fray:.0005}),shadow);ties.push(tie);
   }
-  const sash=new T.Group();sash.name='sash-tail';sash.position.set(-.19,.03,.16);body.add(sash);
-  box(sash,cord,0,-.14,.011,.063,.29,.012,-.11,0,.1);ties.push(sash);
+  const sash=new T.Group();sash.name='sash-tail';sash.position.set(-.19,.030,.138);body.add(sash);
+  part(sash,clothRibbon([[0,0,0],[-.006,-.09,.015],[.013,-.18,.021],[.026,-.262,.012]],.048,{fray:.0008}),
+    mat(colors.cord,.98,0,'cord',true));ties.push(sash);
 
   const scabbard=new T.Group();scabbard.name='scabbard';scabbard.position.set(-.225,.04,.045);scabbard.rotation.set(1.76,0,-.11);body.add(scabbard);
   cylinder(scabbard,dark,0,.525,0,.035,.044,1.05);
@@ -188,7 +230,12 @@ export function createCharacterRig(id, resources=createCharacterResources()) {
     geometry.userData.contactPositions=new Float32Array(contactPositions);
     const mesh=new T.Mesh(geometry,material);mesh.castShadow=mesh.receiveShadow=true;parent.add(mesh);
   }
-  let meshes=0;root.traverse(node=>{if(node.isMesh)meshes++;});
+  let meshes=0,triangles=0,groundContactPoints=0;
+  root.traverse(node=>{if(node.isMesh){
+    meshes++;triangles+=(node.geometry.index?.count||node.geometry.attributes.position.count)/3;
+    groundContactPoints+=(node.geometry.userData.contactPositions?.length||0)/3;
+  }});
   return {id,root,body,chest,neck,limbs,panels,ties,sword,blade,scabbard,ring,signal,contact,
-    metrics:{generatedParts,drawMeshes:meshes,articulatedJoints:24,externalRuntimeAssets:0},motion:null};
+    metrics:{generatedParts,drawMeshes:meshes,triangles,groundContactPoints,articulatedJoints:24,
+      surfaceConstruction:'anatomical-section-sculpt-and-draped-cuts',externalRuntimeAssets:0},motion:null};
 }

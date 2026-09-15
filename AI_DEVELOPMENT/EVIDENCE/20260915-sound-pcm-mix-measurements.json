@@ -1,0 +1,1442 @@
+{
+  "kind": "PCM spectral and temporal measurements",
+  "perceptualQuality": "not measured",
+  "formalComparison": "not measured",
+  "baselineSourceSha256": "13603d10e07c4427502de698a56bfc15ee111bdb59e3915368795406b159d8f3",
+  "candidateSourceSha256": "d38cc9a7e5055c6c8bfa4c849bfbab27046790327223e55dff098f293ecc5dcf",
+  "sampleRate": 24000,
+  "method": "Whole-clip zero-padded radix-2 FFT; one-sided energy; no normalization or mastering. RMS in digital full scale, not physical SPL. Variant 0 deltas plus all four variants.",
+  "versions": {
+    "before": {
+      "wind": [
+        {
+          "variant": 0,
+          "seconds": 11.3,
+          "rms": 0.022513911357490483,
+          "peak": 0.16555754840373993,
+          "energy10to90Ms": 7037.333333333334,
+          "centroidHz": 419.49912069109797,
+          "active20msFramesFraction": 0.8707964601769912,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.7382239138527561,
+              "rms": 0.019343943124611233
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.16794902104243134,
+              "rms": 0.009226557448715431
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.06999220909374311,
+              "rms": 0.005956289557930486
+            },
+            "above4000Hz": {
+              "energyFraction": 0.023834856011074924,
+              "rms": 0.0034758195224133186
+            }
+          }
+        },
+        {
+          "variant": 1,
+          "seconds": 11.3,
+          "rms": 0.020784113380838617,
+          "peak": 0.11033166199922562,
+          "energy10to90Ms": 6851.5,
+          "centroidHz": 423.7758691617928,
+          "active20msFramesFraction": 0.9168141592920354,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.7349569527466885,
+              "rms": 0.017818143582032583
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.16916645974050865,
+              "rms": 0.008548474749294764
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.07181946353006353,
+              "rms": 0.005569966475627509
+            },
+            "above4000Hz": {
+              "energyFraction": 0.02405712398273857,
+              "rms": 0.0032236906239093517
+            }
+          }
+        },
+        {
+          "variant": 2,
+          "seconds": 11.3,
+          "rms": 0.023105268521378168,
+          "peak": 0.1504552662372589,
+          "energy10to90Ms": 7830.333333333332,
+          "centroidHz": 415.96249196052565,
+          "active20msFramesFraction": 0.8884955752212389,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.7417278746677188,
+              "rms": 0.019899094767682677
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.1662357215811502,
+              "rms": 0.00942048357183973
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.06841246775373745,
+              "rms": 0.006043362540901987
+            },
+            "above4000Hz": {
+              "energyFraction": 0.023623935997398253,
+              "rms": 0.0035512982617200324
+            }
+          }
+        },
+        {
+          "variant": 3,
+          "seconds": 11.3,
+          "rms": 0.021598611172931395,
+          "peak": 0.11820141226053238,
+          "energy10to90Ms": 6993.791666666667,
+          "centroidHz": 409.7751841716278,
+          "active20msFramesFraction": 0.8973451327433628,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.7483538784641675,
+              "rms": 0.01868440761023936
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.16021205921781675,
+              "rms": 0.00864516780415529
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.06820665559496882,
+              "rms": 0.005640780544283556
+            },
+            "above4000Hz": {
+              "energyFraction": 0.023227406723071067,
+              "rms": 0.0032917450300937
+            }
+          }
+        }
+      ],
+      "leaves": [
+        {
+          "variant": 0,
+          "seconds": 3.4,
+          "rms": 0.04694554637257591,
+          "peak": 0.1800343096256256,
+          "energy10to90Ms": 2178.6666666666665,
+          "centroidHz": 5055.129200144812,
+          "active20msFramesFraction": 0.7823529411764706,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.04846798530903817,
+              "rms": 0.010335271309893066
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.14405560170138343,
+              "rms": 0.017818021281997398
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.26204704928000605,
+              "rms": 0.024031674600747784
+            },
+            "above4000Hz": {
+              "energyFraction": 0.5454293637095714,
+              "rms": 0.03467078344440224
+            }
+          }
+        },
+        {
+          "variant": 1,
+          "seconds": 3.4,
+          "rms": 0.04270983250227302,
+          "peak": 0.19595418870449066,
+          "energy10to90Ms": 2317.5,
+          "centroidHz": 5088.722649681736,
+          "active20msFramesFraction": 0.7470588235294118,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.0487547731473995,
+              "rms": 0.00943053732395564
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.13996708366824578,
+              "rms": 0.015978677269120303
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.2596703916737795,
+              "rms": 0.0217640184168527
+            },
+            "above4000Hz": {
+              "energyFraction": 0.5516077515105706,
+              "rms": 0.031720720881371574
+            }
+          }
+        },
+        {
+          "variant": 2,
+          "seconds": 3.4,
+          "rms": 0.04610180519512993,
+          "peak": 0.2638217806816101,
+          "energy10to90Ms": 2415.375,
+          "centroidHz": 5058.173764247486,
+          "active20msFramesFraction": 0.8058823529411765,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.051044766443507916,
+              "rms": 0.010415821815832402
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.14538633373033782,
+              "rms": 0.017578415421633267
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.2596738076216374,
+              "rms": 0.023492649773669872
+            },
+            "above4000Hz": {
+              "energyFraction": 0.5438950922045203,
+              "rms": 0.03399973258757664
+            }
+          }
+        },
+        {
+          "variant": 3,
+          "seconds": 3.4,
+          "rms": 0.0515392005651704,
+          "peak": 0.2155861258506775,
+          "energy10to90Ms": 2186.2083333333335,
+          "centroidHz": 5055.490171114208,
+          "active20msFramesFraction": 0.8235294117647058,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.0478823727270671,
+              "rms": 0.011277829104084371
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.14271597833603544,
+              "rms": 0.01947035981159941
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.2609087309417892,
+              "rms": 0.026325824637699894
+            },
+            "above4000Hz": {
+              "energyFraction": 0.5484929179951087,
+              "rms": 0.038170090536280586
+            }
+          }
+        }
+      ],
+      "cloth": [
+        {
+          "variant": 0,
+          "seconds": 0.38,
+          "rms": 0.0421401621891261,
+          "peak": 0.2836315631866455,
+          "energy10to90Ms": 106,
+          "centroidHz": 1928.4525355127741,
+          "active20msFramesFraction": 0.5789473684210527,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.14012945404782706,
+              "rms": 0.015774693066187933
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.404000005350781,
+              "rms": 0.026784706276334735
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.30867311468006214,
+              "rms": 0.02341238218274043
+            },
+            "above4000Hz": {
+              "energyFraction": 0.1471974259213317,
+              "rms": 0.01616762809484408
+            }
+          }
+        },
+        {
+          "variant": 1,
+          "seconds": 0.38,
+          "rms": 0.03654664161548888,
+          "peak": 0.2348887175321579,
+          "energy10to90Ms": 125.58333333333333,
+          "centroidHz": 1994.153614365442,
+          "active20msFramesFraction": 0.631578947368421,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.15574895747072498,
+              "rms": 0.014423147623559599
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.3869938760092259,
+              "rms": 0.02273523882925674
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.3006947253473433,
+              "rms": 0.020040584292725618
+            },
+            "above4000Hz": {
+              "energyFraction": 0.1565624411726979,
+              "rms": 0.014460764937678642
+            }
+          }
+        },
+        {
+          "variant": 2,
+          "seconds": 0.38,
+          "rms": 0.0458370223119282,
+          "peak": 0.26175254583358765,
+          "energy10to90Ms": 104.25,
+          "centroidHz": 1983.2727770729382,
+          "active20msFramesFraction": 0.5263157894736842,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.18887624866587946,
+              "rms": 0.01992072183775248
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.3392817658603715,
+              "rms": 0.02669910214880037
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.3128275330767707,
+              "rms": 0.02563709908870661
+            },
+            "above4000Hz": {
+              "energyFraction": 0.15901445239698173,
+              "rms": 0.01827825349016868
+            }
+          }
+        },
+        {
+          "variant": 3,
+          "seconds": 0.38,
+          "rms": 0.03413959942643438,
+          "peak": 0.19528670608997345,
+          "energy10to90Ms": 143.95833333333331,
+          "centroidHz": 2118.814517038005,
+          "active20msFramesFraction": 0.7368421052631579,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.13292083539862473,
+              "rms": 0.012446720925772543
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.3780446682231706,
+              "rms": 0.020990847802846435
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.31931225776650063,
+              "rms": 0.019291509730497283
+            },
+            "above4000Hz": {
+              "energyFraction": 0.1697222386117072,
+              "rms": 0.014064613326686376
+            }
+          }
+        }
+      ],
+      "footEarth": [
+        {
+          "variant": 0,
+          "seconds": 0.25,
+          "rms": 0.04085324783283712,
+          "peak": 0.1967838704586029,
+          "energy10to90Ms": 82.29166666666667,
+          "centroidHz": 4246.560387877834,
+          "active20msFramesFraction": 0.6153846153846154,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.31279495808841673,
+              "rms": 0.022848435115929374
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.05631423673490315,
+              "rms": 0.009694729360366543
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.16933550948194215,
+              "rms": 0.01681127328124746
+            },
+            "above4000Hz": {
+              "energyFraction": 0.46155529569473264,
+              "rms": 0.027754822725732358
+            }
+          }
+        },
+        {
+          "variant": 1,
+          "seconds": 0.25,
+          "rms": 0.0501936487010713,
+          "peak": 0.20921307802200317,
+          "energy10to90Ms": 62,
+          "centroidHz": 4591.059685168166,
+          "active20msFramesFraction": 0.46153846153846156,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.2600556697290852,
+              "rms": 0.025596579275916836
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.058580275497359724,
+              "rms": 0.012148550733276734
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.16699381228741894,
+              "rms": 0.02051157250042019
+            },
+            "above4000Hz": {
+              "energyFraction": 0.5143702424861354,
+              "rms": 0.03599868897528446
+            }
+          }
+        },
+        {
+          "variant": 2,
+          "seconds": 0.25,
+          "rms": 0.03760947697028531,
+          "peak": 0.23902738094329834,
+          "energy10to90Ms": 78.33333333333333,
+          "centroidHz": 4349.201901670095,
+          "active20msFramesFraction": 0.6153846153846154,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.2550847994931143,
+              "rms": 0.018995012499532553
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.0926251156613552,
+              "rms": 0.011446209102038429
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.16752129319086884,
+              "rms": 0.015393320161674023
+            },
+            "above4000Hz": {
+              "energyFraction": 0.4847687916546632,
+              "rms": 0.026185726068101264
+            }
+          }
+        },
+        {
+          "variant": 3,
+          "seconds": 0.25,
+          "rms": 0.04739290650040862,
+          "peak": 0.2760683000087738,
+          "energy10to90Ms": 71.625,
+          "centroidHz": 4813.8693037447365,
+          "active20msFramesFraction": 0.46153846153846156,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.2226303961915827,
+              "rms": 0.02236173895912533
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.055478862211952924,
+              "rms": 0.0111629021195451
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.17356592220348016,
+              "rms": 0.019744474247506905
+            },
+            "above4000Hz": {
+              "energyFraction": 0.5483248193929867,
+              "rms": 0.03509395347120937
+            }
+          }
+        }
+      ],
+      "footStone": [
+        {
+          "variant": 0,
+          "seconds": 0.22,
+          "rms": 0.026398142544381827,
+          "peak": 0.2130022495985031,
+          "energy10to90Ms": 28.166666666666668,
+          "centroidHz": 1681.6432315189259,
+          "active20msFramesFraction": 0.2727272727272727,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.4908173806897159,
+              "rms": 0.018494105738954433
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.16648317540613897,
+              "rms": 0.01077106247738226
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.1874038531680954,
+              "rms": 0.01142779990940763
+            },
+            "above4000Hz": {
+              "energyFraction": 0.1552955907360465,
+              "rms": 0.010402864271379457
+            }
+          }
+        },
+        {
+          "variant": 1,
+          "seconds": 0.22,
+          "rms": 0.02962294555346149,
+          "peak": 0.3235445022583008,
+          "energy10to90Ms": 22.25,
+          "centroidHz": 1417.6164078525483,
+          "active20msFramesFraction": 0.2727272727272727,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.5862819489849775,
+              "rms": 0.0226820081314771
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.1549075423507152,
+              "rms": 0.011659086442377018
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.13043710393933108,
+              "rms": 0.010698645914025223
+            },
+            "above4000Hz": {
+              "energyFraction": 0.1283734047249783,
+              "rms": 0.010613674638052756
+            }
+          }
+        },
+        {
+          "variant": 2,
+          "seconds": 0.22,
+          "rms": 0.037202282910397746,
+          "peak": 0.3575729429721832,
+          "energy10to90Ms": 20.208333333333336,
+          "centroidHz": 886.6339847524112,
+          "active20msFramesFraction": 0.2727272727272727,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.7228577084394381,
+              "rms": 0.031629767487857216
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.11545280190600074,
+              "rms": 0.012640720528530245
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.08398245688295938,
+              "rms": 0.010781119972792866
+            },
+            "above4000Hz": {
+              "energyFraction": 0.07770703277160244,
+              "rms": 0.010370501389094193
+            }
+          }
+        },
+        {
+          "variant": 3,
+          "seconds": 0.22,
+          "rms": 0.030547261198468182,
+          "peak": 0.2557358145713806,
+          "energy10to90Ms": 20.749999999999996,
+          "centroidHz": 1291.898613635045,
+          "active20msFramesFraction": 0.18181818181818182,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.6133205819468129,
+              "rms": 0.02392302245729644
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.14056821583019666,
+              "rms": 0.01145290991474609
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.13164977464890762,
+              "rms": 0.0110836381399177
+            },
+            "above4000Hz": {
+              "energyFraction": 0.11446142757408287,
+              "rms": 0.010334794787667658
+            }
+          }
+        }
+      ]
+    },
+    "after": {
+      "wind": [
+        {
+          "variant": 0,
+          "seconds": 11.3,
+          "rms": 0.010922447299311548,
+          "peak": 0.06080758944153786,
+          "energy10to90Ms": 6164.666666666665,
+          "centroidHz": 1503.8703320965328,
+          "active20msFramesFraction": 0.8849557522123894,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.013911502229593944,
+              "rms": 0.001288270235202815
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.44806779985719253,
+              "rms": 0.007311253213774448
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.48392375505919877,
+              "rms": 0.007598159896490512
+            },
+            "above4000Hz": {
+              "energyFraction": 0.054096942854015034,
+              "rms": 0.0025404246571714625
+            }
+          }
+        },
+        {
+          "variant": 1,
+          "seconds": 11.3,
+          "rms": 0.010561985043681405,
+          "peak": 0.06482762098312378,
+          "energy10to90Ms": 5852.458333333333,
+          "centroidHz": 1505.8792174869318,
+          "active20msFramesFraction": 0.9026548672566371,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.013292249965995295,
+              "rms": 0.0012177125950327237
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.44393389380848525,
+              "rms": 0.007037277879183613
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.48898431251414576,
+              "rms": 0.007385722929883976
+            },
+            "above4000Hz": {
+              "energyFraction": 0.05378954371135792,
+              "rms": 0.0024495960795579436
+            }
+          }
+        },
+        {
+          "variant": 2,
+          "seconds": 11.3,
+          "rms": 0.010760683745691812,
+          "peak": 0.05643623322248459,
+          "energy10to90Ms": 5568.208333333335,
+          "centroidHz": 1492.8361380719512,
+          "active20msFramesFraction": 0.9097345132743363,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.014113961861832214,
+              "rms": 0.0012783928634083285
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.45804573911027235,
+              "rms": 0.007282731380361777
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.4741888971937196,
+              "rms": 0.007409954790627919
+            },
+            "above4000Hz": {
+              "energyFraction": 0.05365140183419128,
+              "rms": 0.0024924726686422465
+            }
+          }
+        },
+        {
+          "variant": 3,
+          "seconds": 11.3,
+          "rms": 0.01056581633565758,
+          "peak": 0.05169735103845596,
+          "energy10to90Ms": 5871.541666666667,
+          "centroidHz": 1505.7145193555596,
+          "active20msFramesFraction": 0.904424778761062,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.014434411812104697,
+              "rms": 0.0012694120099776922
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.44157007770595513,
+              "rms": 0.00702106308684157
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.48995350571345675,
+              "rms": 0.007395720533713126
+            },
+            "above4000Hz": {
+              "energyFraction": 0.05404200476850045,
+              "rms": 0.0024562285939178454
+            }
+          }
+        }
+      ],
+      "leaves": [
+        {
+          "variant": 0,
+          "seconds": 2.1,
+          "rms": 0.006483384058876973,
+          "peak": 0.05180216580629349,
+          "energy10to90Ms": 1349.5000000000002,
+          "centroidHz": 4231.1557164735095,
+          "active20msFramesFraction": 0.29523809523809524,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.0001829955381231165,
+              "rms": 0.00008770452467640534
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.03804570180723734,
+              "rms": 0.0012646039927735366
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.5445701582153597,
+              "rms": 0.004784413071713174
+            },
+            "above4000Hz": {
+              "energyFraction": 0.4172011444392724,
+              "rms": 0.004187689705784368
+            }
+          }
+        },
+        {
+          "variant": 1,
+          "seconds": 2.1,
+          "rms": 0.006811467162404647,
+          "peak": 0.06009286642074585,
+          "energy10to90Ms": 1238.0833333333335,
+          "centroidHz": 4157.329753230644,
+          "active20msFramesFraction": 0.3142857142857143,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.0001991420020911087,
+              "rms": 0.00009612184578478788
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.03885270149480602,
+              "rms": 0.0013426143293302315
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.5488765673314925,
+              "rms": 0.005046357480402242
+            },
+            "above4000Hz": {
+              "energyFraction": 0.4120715891716095,
+              "rms": 0.004372471662337581
+            }
+          }
+        },
+        {
+          "variant": 2,
+          "seconds": 2.1,
+          "rms": 0.006010909857032229,
+          "peak": 0.05114120617508888,
+          "energy10to90Ms": 1294.1250000000002,
+          "centroidHz": 4149.731977997105,
+          "active20msFramesFraction": 0.2857142857142857,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.0001741536831041977,
+              "rms": 0.00007932435453126284
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.0392015491323598,
+              "rms": 0.001190122949230996
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.5593870609875576,
+              "rms": 0.004495690688973021
+            },
+            "above4000Hz": {
+              "energyFraction": 0.4012372361969805,
+              "rms": 0.003807508050016505
+            }
+          }
+        },
+        {
+          "variant": 3,
+          "seconds": 2.1,
+          "rms": 0.005987308089199992,
+          "peak": 0.05483173206448555,
+          "energy10to90Ms": 1449.7499999999998,
+          "centroidHz": 4221.591195439727,
+          "active20msFramesFraction": 0.29523809523809524,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.00018139185545978267,
+              "rms": 0.0000806381392704128
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.03007736546424072,
+              "rms": 0.001038368494725349
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.553559694225139,
+              "rms": 0.004454652556474833
+            },
+            "above4000Hz": {
+              "energyFraction": 0.4161815484551604,
+              "rms": 0.003862540241311242
+            }
+          }
+        }
+      ],
+      "cloth": [
+        {
+          "variant": 0,
+          "seconds": 0.3,
+          "rms": 0.005137867870051047,
+          "peak": 0.032367508858442307,
+          "energy10to90Ms": 66.33333333333334,
+          "centroidHz": 3969.2541886856297,
+          "active20msFramesFraction": 0.4666666666666667,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.0010498327576994324,
+              "rms": 0.00016647268770831418
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.04474715815597663,
+              "rms": 0.0010868401177658116
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.5773348365234837,
+              "rms": 0.0039038831790668836
+            },
+            "above4000Hz": {
+              "energyFraction": 0.3768681725628414,
+              "rms": 0.003154116005628759
+            }
+          }
+        },
+        {
+          "variant": 1,
+          "seconds": 0.3,
+          "rms": 0.004698538191531733,
+          "peak": 0.031189123168587685,
+          "energy10to90Ms": 70.29166666666667,
+          "centroidHz": 4093.1072761695546,
+          "active20msFramesFraction": 0.4666666666666667,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.0011190014739027158,
+              "rms": 0.00015717305351389
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.05120953804729411,
+              "rms": 0.0010632568526238886
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.5467570680569521,
+              "rms": 0.0034742411852201767
+            },
+            "above4000Hz": {
+              "energyFraction": 0.4009143924218564,
+              "rms": 0.002975011062298722
+            }
+          }
+        },
+        {
+          "variant": 2,
+          "seconds": 0.3,
+          "rms": 0.005264341582879182,
+          "peak": 0.030009102076292038,
+          "energy10to90Ms": 67.12499999999999,
+          "centroidHz": 4062.5107984508836,
+          "active20msFramesFraction": 0.4666666666666667,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.001873594554372256,
+              "rms": 0.00022786722787472701
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.04036892840281038,
+              "rms": 0.0010577125851168388
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.5606763319389827,
+              "rms": 0.003941850716783549
+            },
+            "above4000Hz": {
+              "energyFraction": 0.3970811451038316,
+              "rms": 0.003317291943976285
+            }
+          }
+        },
+        {
+          "variant": 3,
+          "seconds": 0.3,
+          "rms": 0.004563622853077343,
+          "peak": 0.02439846843481064,
+          "energy10to90Ms": 75.45833333333333,
+          "centroidHz": 4118.66296301754,
+          "active20msFramesFraction": 0.5333333333333333,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.0005976108311941953,
+              "rms": 0.00011156268971344563
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.04742682911312353,
+              "rms": 0.0009938521714435698
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.5491855166470283,
+              "rms": 0.0033819663639975436
+            },
+            "above4000Hz": {
+              "energyFraction": 0.40279004340865454,
+              "rms": 0.0028963371153061307
+            }
+          }
+        }
+      ],
+      "footEarth": [
+        {
+          "variant": 0,
+          "seconds": 0.19,
+          "rms": 0.007911695366380648,
+          "peak": 0.06800931692123413,
+          "energy10to90Ms": 60.04166666666667,
+          "centroidHz": 2472.4198452709284,
+          "active20msFramesFraction": 0.5,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.00802637620022539,
+              "rms": 0.0007088091455395156
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.24394857452511243,
+              "rms": 0.0039076773635383
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.5738922368053094,
+              "rms": 0.005993558267046331
+            },
+            "above4000Hz": {
+              "energyFraction": 0.17413281246934612,
+              "rms": 0.0033014890712554363
+            }
+          }
+        },
+        {
+          "variant": 1,
+          "seconds": 0.19,
+          "rms": 0.0089366078532284,
+          "peak": 0.0857774168252945,
+          "energy10to90Ms": 47.79166666666667,
+          "centroidHz": 2068.5591410388697,
+          "active20msFramesFraction": 0.4,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.0028514744764157043,
+              "rms": 0.00047720770302844747
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.3994641855526364,
+              "rms": 0.0056482202720164664
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.4628493658198903,
+              "rms": 0.0060798454217664555
+            },
+            "above4000Hz": {
+              "energyFraction": 0.13483497415105697,
+              "rms": 0.0032815118675332384
+            }
+          }
+        },
+        {
+          "variant": 2,
+          "seconds": 0.19,
+          "rms": 0.009406976014612451,
+          "peak": 0.07560296356678009,
+          "energy10to90Ms": 41.66666666666667,
+          "centroidHz": 2257.685345080022,
+          "active20msFramesFraction": 0.4,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.00913191814486739,
+              "rms": 0.0008989406956514612
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.2941849305528789,
+              "rms": 0.005102232536991439
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.5478047035899447,
+              "rms": 0.006962463238538691
+            },
+            "above4000Hz": {
+              "energyFraction": 0.14887844771231215,
+              "rms": 0.003629660060619882
+            }
+          }
+        },
+        {
+          "variant": 3,
+          "seconds": 0.19,
+          "rms": 0.008364938617164306,
+          "peak": 0.06462234258651733,
+          "energy10to90Ms": 45.125,
+          "centroidHz": 2364.490017374251,
+          "active20msFramesFraction": 0.4,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.010912953436155677,
+              "rms": 0.0008738440017255134
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.3537992665223402,
+              "rms": 0.004975551462274526
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.4460576350335821,
+              "rms": 0.005586737257892734
+            },
+            "above4000Hz": {
+              "energyFraction": 0.18923014500792007,
+              "rms": 0.0036387977667226715
+            }
+          }
+        }
+      ],
+      "footStone": [
+        {
+          "variant": 0,
+          "seconds": 0.16,
+          "rms": 0.009776573164357004,
+          "peak": 0.08630625903606415,
+          "energy10to90Ms": 21.124999999999996,
+          "centroidHz": 2024.2634198403684,
+          "active20msFramesFraction": 0.375,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.0036689275799024765,
+              "rms": 0.0005921833935696348
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.3104437762069711,
+              "rms": 0.005447260359421131
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.5704577732953555,
+              "rms": 0.00738411422055963
+            },
+            "above4000Hz": {
+              "energyFraction": 0.11542952291776855,
+              "rms": 0.0033215829691299113
+            }
+          }
+        },
+        {
+          "variant": 1,
+          "seconds": 0.16,
+          "rms": 0.0093885821777332,
+          "peak": 0.08785605430603027,
+          "energy10to90Ms": 20.916666666666668,
+          "centroidHz": 2135.6633736501403,
+          "active20msFramesFraction": 0.375,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.008149797519123503,
+              "rms": 0.000847565794488843
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.2967416325421723,
+              "rms": 0.005114335953387921
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.5783590784110997,
+              "rms": 0.007140009514368439
+            },
+            "above4000Hz": {
+              "energyFraction": 0.11674949152759963,
+              "rms": 0.0032079494108656643
+            }
+          }
+        },
+        {
+          "variant": 2,
+          "seconds": 0.16,
+          "rms": 0.009762739241565356,
+          "peak": 0.08916239440441132,
+          "energy10to90Ms": 20.541666666666668,
+          "centroidHz": 1983.0459622592111,
+          "active20msFramesFraction": 0.375,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.011299847123652203,
+              "rms": 0.0010377863965802445
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.39087904518845656,
+              "rms": 0.006103695845028155
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.4776360477961144,
+              "rms": 0.006747148017326732
+            },
+            "above4000Hz": {
+              "energyFraction": 0.12018505989178069,
+              "rms": 0.003384518807385097
+            }
+          }
+        },
+        {
+          "variant": 3,
+          "seconds": 0.16,
+          "rms": 0.009402282961249281,
+          "peak": 0.0891055092215538,
+          "energy10to90Ms": 17.208333333333332,
+          "centroidHz": 2116.3106227291482,
+          "active20msFramesFraction": 0.375,
+          "bands": {
+            "below200Hz": {
+              "energyFraction": 0.0043177071838920444,
+              "rms": 0.0006178170796005228
+            },
+            "200to1000Hz": {
+              "energyFraction": 0.3483581058759731,
+              "rms": 0.005549403163068679
+            },
+            "1000to4000Hz": {
+              "energyFraction": 0.5312024226984887,
+              "rms": 0.006852725579774359
+            },
+            "above4000Hz": {
+              "energyFraction": 0.11612176424165123,
+              "rms": 0.0032039824596246484
+            }
+          }
+        }
+      ]
+    }
+  },
+  "changes": {
+    "wind": {
+      "rmsDbChange": -6.282619878347376,
+      "lowBandDbChange": -23.53076067666214,
+      "beforeLowEnergyPct": 73.82239138527561,
+      "afterLowEnergyPct": 1.3911502229593944,
+      "beforeEnergy10to90Ms": 7037.333333333334,
+      "afterEnergy10to90Ms": 6164.666666666665
+    },
+    "leaves": {
+      "rmsDbChange": -17.195852981741528,
+      "lowBandDbChange": -41.42599765051921,
+      "beforeLowEnergyPct": 4.846798530903817,
+      "afterLowEnergyPct": 0.018299553812311648,
+      "beforeEnergy10to90Ms": 2178.6666666666665,
+      "afterEnergy10to90Ms": 1349.5000000000002
+    },
+    "cloth": {
+      "rmsDbChange": -18.27826542830473,
+      "lowBandDbChange": -39.53235852967432,
+      "beforeLowEnergyPct": 14.012945404782705,
+      "afterLowEnergyPct": 0.10498327576994324,
+      "beforeEnergy10to90Ms": 106,
+      "afterEnergy10to90Ms": 66.33333333333334
+    },
+    "footEarth": {
+      "rmsDbChange": -14.259140638108132,
+      "lowBandDbChange": -30.166542964322147,
+      "beforeLowEnergyPct": 31.279495808841673,
+      "afterLowEnergyPct": 0.802637620022539,
+      "beforeEnergy10to90Ms": 82.29166666666667,
+      "afterEnergy10to90Ms": 60.04166666666667
+    },
+    "footStone": {
+      "rmsDbChange": -8.627734298110731,
+      "lowBandDbChange": -29.89154223850717,
+      "beforeLowEnergyPct": 49.08173806897159,
+      "afterLowEnergyPct": 0.3668927579902477,
+      "beforeEnergy10to90Ms": 28.166666666666668,
+      "afterEnergy10to90Ms": 21.124999999999996
+    }
+  },
+  "modeledMix": {
+    "before": {
+      "seconds": 60,
+      "channels": 2,
+      "sampleRate": 24000,
+      "constantPressure": 0.45,
+      "method": "Controlled authored schedule, cyclic material variants and nominal contact gain/rate; environmental random seed 9331. Not actual browser PCM or a simulation event trace.",
+      "stepGroups": "20 stone walk at 5s; 20 earth walk at 17s; 20 stone run at 31s; 20 earth run at 40s",
+      "combat": "swish/parry at 50/50.18s, swish/block 52/52.18s, swish/hit 54/54.18s",
+      "measured": {
+        "wind": {
+          "rms": 0.009884828230555065,
+          "rmsDbFS": -40.10061746108861,
+          "peak": 0.07372980564832687,
+          "max50msRms": 0.021806767276580638,
+          "max50msRmsDbFS": -33.22817422441987,
+          "fraction50msFramesAboveMinus60dBFS": 0.9975
+        },
+        "leaves": {
+          "rms": 0.009422350907519592,
+          "rmsDbFS": -40.5168145157286,
+          "peak": 0.0992974191904068,
+          "max50msRms": 0.029575993569403974,
+          "max50msRmsDbFS": -30.581213137238805,
+          "fraction50msFramesAboveMinus60dBFS": 0.7983333333333333
+        },
+        "steps": {
+          "rms": 0.009562979553062276,
+          "rmsDbFS": -40.38813545605714,
+          "peak": 0.16325005888938904,
+          "max50msRms": 0.04161891259755945,
+          "max50msRmsDbFS": -27.614185421002446,
+          "fraction50msFramesAboveMinus60dBFS": 0.30083333333333334
+        },
+        "cloth": {
+          "rms": 0.003606573197730467,
+          "rmsDbFS": -48.858104981953915,
+          "peak": 0.035980068147182465,
+          "max50msRms": 0.01192004927862686,
+          "max50msRmsDbFS": -38.47443898354068,
+          "fraction50msFramesAboveMinus60dBFS": 0.375
+        },
+        "combat": {
+          "rms": 0.0062785436917134835,
+          "rmsDbFS": -44.04282158384664,
+          "peak": 0.3688396215438843,
+          "max50msRms": 0.09720511753946574,
+          "max50msRmsDbFS": -20.246217405045375,
+          "fraction50msFramesAboveMinus60dBFS": 0.0425
+        },
+        "quiet": {
+          "rms": 0.01704032174024088,
+          "rmsDbFS": -35.37044419057408,
+          "peak": 0.179466113448143,
+          "max50msRms": 0.04617226519348198,
+          "max50msRmsDbFS": -26.712376372136024,
+          "fraction50msFramesAboveMinus60dBFS": 0.9975
+        },
+        "full": {
+          "rms": 0.018162328093644604,
+          "rmsDbFS": -34.816569665396536,
+          "peak": 0.36615878343582153,
+          "max50msRms": 0.0982389862689778,
+          "max50msRmsDbFS": -20.15432255354931,
+          "fraction50msFramesAboveMinus60dBFS": 0.9975
+        }
+      },
+      "wind": {
+        "starts": [
+          0,
+          8.117647594795562,
+          16.44874184310902,
+          25.054796190047636,
+          33.45523793827742,
+          41.94445195328444,
+          50.48808939075097,
+          58.85840066352393
+        ],
+        "overlapSeconds": [
+          3.1823524052044387,
+          2.968905751686542,
+          2.693945653061384,
+          2.899558251770216,
+          2.8107859849929753,
+          2.756362562533468,
+          1.1415993364760695
+        ],
+        "totalOverlapSeconds": 18.453509945725095,
+        "scheduledContinuousAir": true
+      },
+      "leaves": {
+        "starts": [
+          0.6,
+          4.36265544113703,
+          8.224159821448847,
+          11.62759950873442,
+          16.705383387580515,
+          19.43667106437497,
+          23.84539529224858,
+          27.83497093075421,
+          31.720614082179967,
+          34.17801964068786,
+          36.96468832718674,
+          42.63788503615651,
+          45.496167697058986,
+          49.08394552080426,
+          54.46456148435826,
+          57.187977541727
+        ]
+      },
+      "balance": {
+        "footPeak50msAboveWindAverageDb": 12.486432040086164,
+        "combatPeak50msAboveWindAverageDb": 19.854400056043236
+      }
+    },
+    "after": {
+      "seconds": 60,
+      "channels": 2,
+      "sampleRate": 24000,
+      "constantPressure": 0.45,
+      "method": "Controlled authored schedule, cyclic material variants and nominal contact gain/rate; environmental random seed 9331. Not actual browser PCM or a simulation event trace.",
+      "stepGroups": "20 stone walk at 5s; 20 earth walk at 17s; 20 stone run at 31s; 20 earth run at 40s",
+      "combat": "swish/parry at 50/50.18s, swish/block 52/52.18s, swish/hit 54/54.18s",
+      "measured": {
+        "wind": {
+          "rms": 0.0016291738731395169,
+          "rmsDbFS": -55.760651265144816,
+          "peak": 0.010314562357962132,
+          "max50msRms": 0.0024835736203825897,
+          "max50msRmsDbFS": -52.098459234397716,
+          "fraction50msFramesAboveMinus60dBFS": 0.8308333333333333
+        },
+        "leaves": {
+          "rms": 0.00027184598429485585,
+          "rmsDbFS": -71.31354156014011,
+          "peak": 0.006074594799429178,
+          "max50msRms": 0.0018510157683004039,
+          "max50msRmsDbFS": -54.651797631892904,
+          "fraction50msFramesAboveMinus60dBFS": 0.035833333333333335
+        },
+        "steps": {
+          "rms": 0.001594323543481456,
+          "rmsDbFS": -55.948470811995186,
+          "peak": 0.03940315172076225,
+          "max50msRms": 0.007229011589172417,
+          "max50msRmsDbFS": -42.81842158028652,
+          "fraction50msFramesAboveMinus60dBFS": 0.12
+        },
+        "cloth": {
+          "rms": 0.00020816359397482883,
+          "rmsDbFS": -73.631904451203,
+          "peak": 0.002499291440472007,
+          "max50msRms": 0.0008467229448292458,
+          "max50msRmsDbFS": -61.445173427746,
+          "fraction50msFramesAboveMinus60dBFS": 0
+        },
+        "combat": {
+          "rms": 0.0062785436917134835,
+          "rmsDbFS": -44.04282158384664,
+          "peak": 0.3688396215438843,
+          "max50msRms": 0.09720511753946574,
+          "max50msRmsDbFS": -20.246217405045375,
+          "fraction50msFramesAboveMinus60dBFS": 0.0425
+        },
+        "quiet": {
+          "rms": 0.0023034907404990727,
+          "rmsDbFS": -52.75227058342673,
+          "peak": 0.043064963072538376,
+          "max50msRms": 0.0075604255821044445,
+          "max50msRmsDbFS": -42.429075140882205,
+          "fraction50msFramesAboveMinus60dBFS": 0.8658333333333333
+        },
+        "full": {
+          "rms": 0.006686277142293171,
+          "rmsDbFS": -43.49631252234093,
+          "peak": 0.37062346935272217,
+          "max50msRms": 0.09715411187243776,
+          "max50msRmsDbFS": -20.25077627890212,
+          "fraction50msFramesAboveMinus60dBFS": 0.885
+        }
+      },
+      "wind": {
+        "starts": [
+          0,
+          9.620168679766357,
+          19.484276392124592,
+          29.662624217197298,
+          39.6059862151742,
+          49.65080223232508,
+          59.75781644657254
+        ],
+        "overlapSeconds": [
+          1.6798313202336441,
+          1.4358922876417637,
+          1.121652174927295,
+          1.3566380020231037,
+          1.2551839828491183,
+          0.24218355342745923
+        ],
+        "totalOverlapSeconds": 7.091381321102384,
+        "scheduledContinuousAir": true
+      },
+      "leaves": {
+        "starts": [
+          0.6,
+          8.277558663673698,
+          18.624878809042272,
+          25.833283726964144,
+          35.651301440503445,
+          43.38765916749835,
+          49.23072163369506,
+          55.89442177079618
+        ]
+      },
+      "balance": {
+        "footPeak50msAboveWindAverageDb": 12.942229684858297,
+        "combatPeak50msAboveWindAverageDb": 35.514433860099444
+      }
+    },
+    "dbChanges": {
+      "wind": {
+        "rmsDb": -15.660033804056205,
+        "peak50msDb": -18.87028500997785
+      },
+      "leaves": {
+        "rmsDb": -30.79672704441151,
+        "peak50msDb": -24.0705844946541
+      },
+      "steps": {
+        "rmsDb": -15.560335355938044,
+        "peak50msDb": -15.204236159284072
+      },
+      "cloth": {
+        "rmsDb": -24.773799469249084,
+        "peak50msDb": -22.97073444420532
+      },
+      "combat": {
+        "rmsDb": 0,
+        "peak50msDb": 0
+      },
+      "quiet": {
+        "rmsDb": -17.381826392852652,
+        "peak50msDb": -15.71669876874618
+      },
+      "full": {
+        "rmsDb": -8.679742856944394,
+        "peak50msDb": -0.09645372535280927
+      }
+    }
+  },
+  "mix": {
+    "before": {
+      "windGain": 0.7,
+      "windIntervalSeconds": [
+        8.1,
+        8.8
+      ],
+      "leafIntervalSeconds": [
+        2.3,
+        5.8
+      ],
+      "footGainAllSpeeds": 0.8,
+      "master": 0.78
+    },
+    "after": {
+      "windGain": 0.4,
+      "leafGain": 0.24,
+      "windInterval": 9.6,
+      "windJitter": 0.8,
+      "leafInterval": 5.8,
+      "leafJitter": 5.2,
+      "airBusAtPressure045": 0.6465909090909091,
+      "walk": {
+        "gain": 0.5764705882352941,
+        "rate": 1.0029411764705882,
+        "clothGain": 0.09882352941176471
+      },
+      "run": {
+        "gain": 0.8,
+        "rate": 1.05,
+        "clothGain": 0.14
+      },
+      "master": 0.78
+    }
+  }
+}

@@ -1,5 +1,5 @@
 import * as T from 'three';
-import {clothDisplacement,sampleWind} from './wind.js';
+import {clothDisplacement} from './wind.js';
 
 // The authored ridge keeps its seed, transforms and solid footprint. Separate
 // drawables let an intervening rock fade without changing the distant spine.
@@ -35,23 +35,11 @@ export function characterSightPoints(rig,out=[]){
   return out;
 }
 
-// CPU counterpart of VEGETATION_TRANSFORM then stemWind. It is used only for
-// nearby leaf cells whose conservative bounds already meet a subject ray.
-function bendLeaves(geometry,source,time){
-  const p=geometry.attributes.position,r=source.attributes.windRoot,b=source.attributes.windBranch,l=source.attributes.windLeaf;
-  const original=source.attributes.position,branches=new Map();
-  for(let i=0;i<p.count;i++){
-    const rx=r.getX(i),ry=r.getY(i),rz=r.getZ(i),height=r.getW(i);
-    const key=rx+','+rz;
-    let wind=branches.get(key);if(!wind){wind=sampleWind(rx,rz,time-.35);branches.set(key,wind);}
-    let x=original.getX(i),y=original.getY(i),z=original.getZ(i);
-    const reach=(x-b.getX(i))**2+(z-b.getZ(i))**2,flex=reach*b.getW(i);
-    x+=wind.x*.035*flex;y-=wind.pressure*.028*flex;z+=wind.z*.035*flex;
-    y+=Math.sin(time*3.3-l.getX(i)*.51-l.getZ(i)*.37)*l.getW(i)*.025*wind.pressure;
-    const h=Math.max(0,y-ry),u=Math.max(0,Math.min(1,h/height)),stem=sampleWind(rx,rz,time-u*.32);
-    const dx=stem.x*height*.042*u*u,dz=stem.z*height*.042*u*u;
-    p.setXYZ(i,x+dx,y-(dx*dx+dz*dz)/Math.max(.2,2*h),z+dz);
-  }
+// The render and intersection passes read the SAME current support state.
+// Re-solving an old wind formula here would fade leaves that are not on the ray.
+function bendLeaves(geometry,source,time,physics){
+  const p=geometry.attributes.position;
+  for(let i=0;i<p.count;i++)p.setXYZ(i,...physics.deformVertex(source,i,time));
   geometry.computeBoundingSphere();geometry.computeBoundingBox();
 }
 
@@ -59,15 +47,15 @@ function bendLeaves(geometry,source,time){
 // have smaller branch bounds, so a near cell does not animate all its leaves
 // on the CPU merely because one branch is in front of the camera.
 function leafProxies(source,material){
-  const groups=new Map(),r=source.attributes.windRoot,b=source.attributes.windBranch;
+  const groups=new Map(),support=source.attributes.windSupport,names=['position','windSupport','leafPivot','leafAxis','leafDirection'];
   const vertexGroup=[],localIndex=[];
   for(let i=0;i<source.attributes.position.count;i++){
-    const key=[r.getX(i),r.getZ(i),b.getX(i),b.getY(i),b.getZ(i)].join(',');
+    const key=support.getW(i);
     let group=groups.get(key);
-    if(!group){group={positions:[],windRoot:[],windBranch:[],windLeaf:[],indices:[]};groups.set(key,group);}
-    vertexGroup[i]=group;localIndex[i]=group.positions.length/3;
-    for(const [name,target] of [['position','positions'],['windRoot','windRoot'],['windBranch','windBranch'],['windLeaf','windLeaf']]){
-      const a=source.attributes[name];for(let k=0;k<a.itemSize;k++)group[target].push(a.array[i*a.itemSize+k]);
+    if(!group){group=Object.fromEntries([...names,'indices'].map(name=>[name,[]]));groups.set(key,group);}
+    vertexGroup[i]=group;localIndex[i]=group.position.length/3;
+    for(const name of names){
+      const a=source.attributes[name];for(let k=0;k<a.itemSize;k++)group[name].push(a.array[i*a.itemSize+k]);
     }
   }
   const count=source.index?source.index.count:source.attributes.position.count;
@@ -76,8 +64,7 @@ function leafProxies(source,material){
   }
   return [...groups.values()].map(group=>{
     const source=new T.BufferGeometry();
-    source.setAttribute('position',new T.Float32BufferAttribute(group.positions,3));
-    for(const name of ['windRoot','windBranch','windLeaf'])source.setAttribute(name,new T.Float32BufferAttribute(group[name],4));
+    for(const name of names)source.setAttribute(name,new T.Float32BufferAttribute(group[name],name==='position'?3:4));
     source.setIndex(group.indices);source.computeBoundingBox();
     const proxy=new T.Mesh(source.clone(),material);proxy.matrixAutoUpdate=false;
     return {source,proxy,bounds:source.boundingBox.clone().expandByScalar(1.4),worldBounds:new T.Box3()};
@@ -140,7 +127,7 @@ export function createForegroundVisibility(){
       if(nearby&&entry.vegetation)for(const part of entry.leafParts){
         part.worldBounds.copy(part.bounds).applyMatrix4(mesh.matrixWorld);
         if(!meetsSightline(part.worldBounds))continue;
-        part.proxy.matrixWorld.copy(mesh.matrixWorld);bendLeaves(part.proxy.geometry,part.source,windTime);proxies.push(part.proxy);
+        part.proxy.matrixWorld.copy(mesh.matrixWorld);bendLeaves(part.proxy.geometry,part.source,windTime,entry.vegetation);proxies.push(part.proxy);
       }
       entry.blocked=false;
       if(nearby)for(const point of points){

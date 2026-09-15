@@ -235,6 +235,15 @@ function groundPenetration(group,heightAt){
     box.copy(geometry.boundingBox).applyMatrix4(mesh.matrixWorld);
     const x=(box.min.x+box.max.x)/2,z=(box.min.z+box.max.z)/2,h=heightAt(x,z),span=.04;
     const gx=(heightAt(x+span,z)-heightAt(x-span,z))/(2*span),gz=(heightAt(x,z+span)-heightAt(x,z-span))/(2*span);
+    if(typeof heightAt.maximumInRect==='function'){
+      // Preserve both branches of the existing contact algorithm: its exact
+      // terrain lookup and its locally fitted plane (including seam tolerance).
+      // Bounding the plane as well avoids changing even that approximation.
+      let maximum=heightAt.maximumInRect(box.min.x,box.min.z,box.max.x,box.max.z);
+      for(const px of [box.min.x,box.max.x])for(const pz of [box.min.z,box.max.z])maximum=Math.max(maximum,h+gx*(px-x)+gz*(pz-z));
+      const rounding=Number.EPSILON*Math.max(1,Math.abs(maximum),Math.abs(box.min.y))*32;
+      if(maximum+rounding-box.min.y<=penetration)return;
+    }
     let planar=true;
     for(const px of [box.min.x,x,box.max.x])for(const pz of [box.min.z,z,box.max.z]){
       if(Math.abs(heightAt(px,pz)-(h+gx*(px-x)+gz*(pz-z)))>1e-6)planar=false;

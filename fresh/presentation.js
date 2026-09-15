@@ -14,6 +14,7 @@ import { seedCharacterRig, updateCharacterRig } from './character-motion.js';
 import { followSunShadow, SUN_SHADOW } from './sun-shadow.js';
 import { addForegroundRidge, characterSightPoints, createForegroundVisibility } from './foreground-visibility.js';
 import { createGrassClumpGeometry } from './grass-shape.js';
+import { createVegetationPhysics, setLeafAttachment, transformLeafGeometry } from './vegetation-physics.js';
 
 const clamp = T.MathUtils.clamp;
 export function createPresentation(canvas) {
@@ -41,6 +42,8 @@ export function createPresentation(canvas) {
   enemyBlade.emissive.set('#a64b24');enemyBlade.emissiveIntensity=.24;
   leaf.side=T.DoubleSide;
   const wind={value:0};
+  const vegetation=createVegetationPhysics(sampleWind);wind.vegetation=vegetation;
+  const vegetationSpecimens={};scene.userData.vegetationSpecimens=vegetationSpecimens;
   const environmentClock=createEnvironmentClock(),encounterClocks=new Map();let signalIgnition=null;
   const bambooBark=bark.clone(),autumnLeaf=material('#ae6734');autumnLeaf.side=T.DoubleSide;
   const vegetationMaterials=new Set([leaf,bambooBark,bambooNode,autumnLeaf]);
@@ -84,30 +87,21 @@ export function createPresentation(canvas) {
   }
   const box=(m,x,y,z,w,h,d,ry=0)=>staticPart(new T.BoxGeometry(1,1,1),m,x,y,z,w,h,d,ry);
   const column=(m,x,y,z,r,h)=>staticPart(new T.CylinderGeometry(r*.88,r,h,8),m,x,y,z);
-  function windAttributes(g,root,branch,flutter=0){
-    const p=g.getAttribute('position'),roots=[],branches=[],leaves=[];
-    for(let i=0;i<p.count;i++){
-      roots.push(root.x,root.y,root.z,root.height);
-      branches.push(branch.x,branch.y,branch.z,branch.flex??0);
-      leaves.push(p.getX(i),p.getY(i),p.getZ(i),flutter*(g.getAttribute('windWeight')?.getX(i)??0));
-    }
-    g.deleteAttribute('windWeight');
-    g.setAttribute('windRoot',new T.Float32BufferAttribute(roots,4));
-    g.setAttribute('windBranch',new T.Float32BufferAttribute(branches,4));
-    g.setAttribute('windLeaf',new T.Float32BufferAttribute(leaves,4));
-    return g;
+  function vegetationRoot(x,y,z,height,kind){
+    return {x,y,z,height,kind,beam:vegetation.addBeam({kind,start:[x,y,z],end:[x,y+height,z]})};
   }
-  function windPart(g,mat,root,branch,x,y,z,sx=1,sy=1,sz=1,ry=0,flutter=0){
+  function windPart(g,mat,beam,x,y,z,sx=1,sy=1,sz=1,ry=0){
     indexForBatch(g);q.setFromAxisAngle(T.Object3D.DEFAULT_UP,ry);
-    g.applyMatrix4(new T.Matrix4().compose(new T.Vector3(x,y,z),q,new T.Vector3(sx,sy,sz)));
-    windAttributes(g,root,branch,flutter);queuePart(g,mat,x,z);
+    transformLeafGeometry(g,new T.Matrix4().compose(new T.Vector3(x,y,z),q,new T.Vector3(sx,sy,sz)));
+    vegetation.bindGeometry(g,beam);queuePart(g,mat,x,z);
   }
-  function leafBranch(x,y,z,endX,endY,endZ,root,mat=leaf,thickness=.023){
+  function leafBranch(x,y,z,endX,endY,endZ,root,mat=leaf,thickness=.023,parent=root.beam,kind=root.kind==='bamboo'?'bambooBranch':'woodBranch'){
     const start=new T.Vector3(x,y,z),end=new T.Vector3(endX,endY,endZ),delta=end.clone().sub(start),length=delta.length();
+    const beam=vegetation.addBeam({kind,start:start.toArray(),end:end.toArray(),parent});
     const g=new T.CylinderGeometry(thickness*.35,thickness,length,5,2,true);
     const rotation=new T.Quaternion().setFromUnitVectors(T.Object3D.DEFAULT_UP,delta.normalize());
     g.applyMatrix4(new T.Matrix4().compose(start.add(end).multiplyScalar(.5),rotation,new T.Vector3(1,1,1)));
-    windAttributes(g,root,{x,y,z,flex:1});queuePart(g,mat,(x+endX)/2,(z+endZ)/2);
+    vegetation.bindGeometry(g,beam);queuePart(g,mat,(x+endX)/2,(z+endZ)/2);return beam;
   }
   const groundGeometry=new T.PlaneGeometry(160,200,64,80);groundGeometry.rotateX(-Math.PI/2);
   const groundPosition=groundGeometry.getAttribute('position');
@@ -287,10 +281,10 @@ export function createPresentation(canvas) {
       const cairn=explorationSolid('old-cairn');
       for(let i=0;i<5;i++)staticPart(new T.DodecahedronGeometry(1,0),stone,cairn.x,y+.12+i*.13,cairn.z,cairn.radius-i*.045,.12,.35-i*.04,i);
     }else if(place.id==='white-tree'){
-      const prop=explorationSolid('white-tree'),tx=prop.x,tz=prop.z,ty=groundHeightAt(tx,tz),root={x:tx,y:ty,z:tz,height:5.2};
+      const prop=explorationSolid('white-tree'),tx=prop.x,tz=prop.z,ty=groundHeightAt(tx,tz),root=vegetationRoot(tx,ty,tz,5.2,'wood');
       // The pale tree's woody core shares the same anchored deformation.
       const treeMat=paleBark.clone();vegetationMaterials.add(treeMat);installWindMaterial(treeMat,wind);
-      windPart(new T.CylinderGeometry(.12,prop.radius,4.7,7,8),treeMat,root,{x:tx,y:ty,z:tz,flex:0},tx,ty+2.35,tz);
+      windPart(new T.CylinderGeometry(.12,prop.radius,4.7,7,8),treeMat,root.beam,tx,ty+2.35,tz);
       for(const side of [-1,1]){
         leafBranch(tx,ty+2.8,tz,tx+side*1.8,ty+4.7,tz-.4,root,treeMat,.12);
         postCloth(explorationSolid(side<0?'white-cloth-left':'white-cloth-right'),2.5);
@@ -313,46 +307,56 @@ export function createPresentation(canvas) {
   }
   const leafParts=[];
   for(let k=0;k<7;k++){
-    const shape=new T.Shape();shape.moveTo(0,0);shape.quadraticCurveTo(.34,.14,.82,.025);shape.quadraticCurveTo(.4,-.10,0,0);
-    const g=new T.ShapeGeometry(shape,3),weights=[];
-    for(let n=0;n<g.getAttribute('position').count;n++)weights.push(clamp(g.getAttribute('position').getX(n)/.82,0,1)**2);
-    g.setAttribute('windWeight',new T.Float32BufferAttribute(weights,1));g.rotateZ((k%2?-1:1)*(.25+k*.10));g.translate(k*.11,(k%2?1:-1)*.025,0);g.rotateX(-.42);leafParts.push(g);
-    const crossed=g.clone();crossed.rotateY(.9);leafParts.push(crossed);
+    // Fourteen alternate lanceolate blades keep the leaf count. Each petiole
+    // actually meets the supporting twig; no duplicated crossed star cards.
+    for(const side of [-1,1]){
+      const length=.39-k*.019,width=.048-k*.003,shape=new T.Shape();
+      shape.moveTo(0,0);shape.quadraticCurveTo(length*.46,width,length,.008);shape.quadraticCurveTo(length*.48,-width*.65,0,0);
+      const g=new T.ShapeGeometry(shape,3);setLeafAttachment(g,{length,kind:1,seed:k*1.73+side*.81});
+      const leafTransform=new T.Matrix4().makeRotationX(-.42+side*.12);
+      leafTransform.multiply(new T.Matrix4().makeTranslation(k*.096+(side>0?.037:0),0,0));
+      leafTransform.multiply(new T.Matrix4().makeRotationZ(side*(.73+k*.072)));
+      transformLeafGeometry(g,leafTransform);leafParts.push(g);
+    }
   }
-  const twig=new T.CylinderGeometry(.009,.015,.75,5,1,true);twig.rotateZ(-Math.PI/2);twig.translate(.375,0,0);
-  twig.setAttribute('windWeight',new T.Float32BufferAttribute(new Float32Array(twig.getAttribute('position').count),1));leafParts.push(twig);
+  const twig=new T.CylinderGeometry(.009,.015,.75,3,3,true);twig.rotateZ(-Math.PI/2);twig.translate(.375,0,0);
+  setLeafAttachment(twig);leafParts.push(twig);
   const leafCluster=mergeGeometries(leafParts);leafParts.forEach(g=>g.dispose());
   for(let i=0;i<150;i++){
     const side=random()<.5?-1:1;let x,z;
     do{x=side*(8+random()*30);z=-53+random()*88;}while(explorationClearingDistance(x,z)<1.2);
-    const h=5.5+random()*6.5,y=groundHeightAt(x,z),root={x,y,z,height:h},fixed={x,y,z,flex:0};
-    windPart(new T.CylinderGeometry(.079,.09,h,7,6),bambooBark,root,fixed,x,y+h/2,z);
-    for(let dy=.8;dy<h;dy+=1.15)windPart(new T.CylinderGeometry(.098,.105,.04,7),bambooNode,root,fixed,x,y+dy,z);
+    const h=5.5+random()*6.5,y=groundHeightAt(x,z),root=vegetationRoot(x,y,z,h,'bamboo');
+    if(!vegetationSpecimens.bamboo||Math.hypot(x+22,z-11)<Math.hypot(vegetationSpecimens.bamboo.x+22,vegetationSpecimens.bamboo.z-11))vegetationSpecimens.bamboo={x,y,z,height:h};
+    windPart(new T.CylinderGeometry(.079,.09,h,7,6),bambooBark,root.beam,x,y+h/2,z);
+    for(let dy=.8;dy<h;dy+=1.15)windPart(new T.CylinderGeometry(.098,.105,.04,7),bambooNode,root.beam,x,y+dy,z);
     for(let j=0;j<6;j++){
       const a=random()*Math.PI*2,reach=.55+random()*1.2;
       const endX=x+Math.sin(a)*reach,endY=y+h*.32+j*h*.095,endZ=z+Math.cos(a)*reach;
-      leafBranch(x,endY-.24,z,endX,endY,endZ,root);
-      windPart(leafCluster.clone(),leaf,root,{x,y:endY-.24,z,flex:1},endX,endY,endZ,1+random()*.7,1+random()*.4,1+random()*.7,a,1);
+      const branch=leafBranch(x,endY-.24,z,endX,endY,endZ,root);
+      const sx=1+random()*.7,sy=1+random()*.4,sz=1+random()*.7;
+      const leafSupport=vegetation.addBeam({kind:'twig',start:[endX,endY,endZ],end:[endX+.75*sx*Math.cos(a),endY,endZ-.75*sx*Math.sin(a)],parent:branch});
+      windPart(leafCluster.clone(),leaf,leafSupport,endX,endY,endZ,sx,sy,sz,a);
     }
   }
   leafCluster.dispose();
   const mapleShape=new T.Shape();
   [[0,0],[-.1,.12],[-.3,.17],[-.18,.25],[-.34,.44],[-.09,.38],[0,.64],[.1,.39],[.34,.45],[.19,.23],[.3,.15],[.09,.11]].forEach(([x,y],i)=>i?mapleShape.lineTo(x,y):mapleShape.moveTo(x,y));mapleShape.closePath();
-  const mapleGeometry=new T.ShapeGeometry(mapleShape),mapleWeights=[];
-  for(let i=0;i<mapleGeometry.getAttribute('position').count;i++)mapleWeights.push((mapleGeometry.getAttribute('position').getY(i)/.64)**2);
-  mapleGeometry.setAttribute('windWeight',new T.Float32BufferAttribute(mapleWeights,1));
+  const mapleGeometry=new T.ShapeGeometry(mapleShape);
+  setLeafAttachment(mapleGeometry,{axis:[1,0,0],direction:[0,1,0],length:.64,kind:2});
   const mapleBark=material('#675647');vegetationMaterials.add(mapleBark);installWindMaterial(mapleBark,wind);
   for(let treeIndex=0;treeIndex<4;treeIndex++){
     const prop=explorationSolid(`maple-${treeIndex}`),{x,z}=prop;
-    const y=groundHeightAt(x,z),h=4.8+exploreRandom(),root={x,y,z,height:h},fixed={x,y,z,flex:0};
-    windPart(new T.CylinderGeometry(.11,prop.radius,h*.8,7,7),mapleBark,root,fixed,x,y+h*.4,z);
+    const y=groundHeightAt(x,z),h=4.8+exploreRandom(),root=vegetationRoot(x,y,z,h,'wood');
+    if(treeIndex===0)vegetationSpecimens.maple={x,y,z,height:h};
+    windPart(new T.CylinderGeometry(.11,prop.radius,h*.8,7,7),mapleBark,root.beam,x,y+h*.4,z);
     for(let i=0;i<9;i++){
       const a=i*2.399,reach=1.2+(i%3)*.45,bx=x+Math.sin(a)*reach,bz=z+Math.cos(a)*reach,by=y+h*(.58+(i%3)*.14);
-      leafBranch(x,y+h*.49,z,bx,by,bz,root,mapleBark,.09);
+      const branch=leafBranch(x,y+h*.49,z,bx,by,bz,root,mapleBark,.09);
       for(let n=0;n<9;n++){
-        const g=mapleGeometry.clone();g.rotateZ(exploreRandom()*6.28);g.rotateX(-.6+exploreRandom()*1.1);
+        const g=mapleGeometry.clone();transformLeafGeometry(g,new T.Matrix4().makeRotationZ(exploreRandom()*6.28));transformLeafGeometry(g,new T.Matrix4().makeRotationX(-.6+exploreRandom()*1.1));
         const lx=bx+(exploreRandom()-.5)*1.25,ly=by+(exploreRandom()-.5)*.55,lz=bz+(exploreRandom()-.5)*1.25;
-        windPart(g,autumnLeaf,root,{x,y:y+h*.49,z,flex:.32},lx,ly,lz,.7,.7,.7,a,1);
+        const twig=leafBranch(bx,by,bz,lx,ly,lz,root,mapleBark,.006,branch,'twig');
+        windPart(g,autumnLeaf,twig,lx,ly,lz,.7,.7,.7,a);
       }
     }
   }
@@ -361,13 +365,14 @@ export function createPresentation(canvas) {
     if(vegetationMaterials.has(mat))merged.boundingSphere.radius+=1.4;
     const mesh=new T.Mesh(merged,mat);mesh.castShadow=mesh.receiveShadow=true;
     if(vegetationMaterials.has(mat))mesh.customDepthMaterial=leafDepth;
-    if(mat===leaf||mat===autumnLeaf||mat===mapleBark)foreground.add(mesh,{vegetation:true,id:`${mat===leaf?'bamboo-leaves':mat===mapleBark?'maple-wood':'maple-leaves'}-${cell}`});
+    if(mat===leaf||mat===autumnLeaf||mat===mapleBark)foreground.add(mesh,{vegetation,id:`${mat===leaf?'bamboo-leaves':mat===mapleBark?'maple-wood':'maple-leaves'}-${cell}`});
     scene.add(mesh);geoms.forEach(g=>g.dispose());
   }
   const grassMat=material('#b8b77d');grassMat.side=T.DoubleSide;
   installWindMaterial(grassMat,wind,'grass');
   const grassDepth=installWindMaterial(new T.MeshDepthMaterial({depthPacking:T.RGBADepthPacking,side:T.DoubleSide}),wind,'grass');
   const grassGeo=createGrassClumpGeometry();
+  grassGeo.setAttribute('grassBlade',new T.Float32BufferAttribute(Array.from({length:grassGeo.getAttribute('position').count},(_,i)=>Math.floor(i/6)),1));
   const grass=new T.InstancedMesh(grassGeo,grassMat,3000),grassColor=new T.Color();
   let rootError=0,minGrassRouteClearance=Infinity;
   for(let i=0;i<3000;i++){
@@ -387,7 +392,8 @@ export function createPresentation(canvas) {
       left:{landmark:ROUTE_FORK.left.landmark,markers:ROUTE_FORK.left.markers.length,pathLength:routePathLength('left')},
       right:{landmark:ROUTE_FORK.right.landmark,markers:routeBanners.length,pathLength:routePathLength('right')}}};
   landscapeMetrics.exploration={loops:EXPLORATION.loops.length,places:EXPLORATION.points.length,sideTrailMeters,sideTrailTriangles,bounds:EXPLORATION.bounds};
-  landscapeMetrics.wind={sharedField:true,rootAnchored:true,pinnedClothEdge:true,shadowDeformation:true};
+  vegetation.update(0);
+  landscapeMetrics.wind={sharedField:true,rootAnchored:true,pinnedClothEdge:true,shadowDeformation:true,normalDeformation:true,physics:vegetation.metrics,specimens:vegetationSpecimens};
   landscapeMetrics.sunShadow={followsPlayer:true,width:SUN_SHADOW.width,height:SUN_SHADOW.height,mapSize:SUN_SHADOW.mapSize,texelSnapped:true};
   const grassGroups=partitionInstances(grass);grass.dispose();grassGroups.forEach(g=>{g.customDepthMaterial=grassDepth;scene.add(g);});
   landscapeMetrics.grassBatches=grassGroups.length;landscapeMetrics.leafBatches=batches.get(leaf).size;
@@ -481,6 +487,7 @@ export function createPresentation(canvas) {
     landscapeMetrics.sunShadow.center=followSunShadow(sun,{x:world.player.x,y:groundHeightAt(world.player.x,world.player.z)+.8,z:world.player.z});
     if(advanceEnvironmentClock(environmentClock,world,dt,options.animate!==false)){encounterClocks.clear();signalIgnition=null;}
     wind.value=environmentClock.value;
+    vegetation.update(wind.value);
     updateEnvironment(world);
     signalMaterial.emissive.set(world.signalLit?'#ffb84f':'#000000');
     if(world.signalLit&&signalIgnition===null)signalIgnition=wind.value;
@@ -556,5 +563,13 @@ export function createPresentation(canvas) {
     }
     renderer.render(scene,camera);
   }
-  return {beginWorld,render,resize,renderer,scene,camera,cameraDiagnostics:()=>({...cameraMetrics,frame:{...smoothedFrame}}),landscapeDiagnostics:()=>({...landscapeMetrics}),actorDiagnostics:()=>JSON.parse(JSON.stringify(actorMetrics))};
+  // Inspection apparatus only. A new inspection camera must not inherit the
+  // gameplay camera's transparent foliage or disabled shadows. Normal play
+  // never calls this method and retains its existing occlusion decisions.
+  function renderInspection(position,target){
+    foreground.reset();
+    for(const post of toriiPosts){post.opacity=1;post.mesh.material.opacity=1;post.mesh.material.depthWrite=true;post.mesh.castShadow=true;}
+    camera.position.copy(position);camera.lookAt(target.x,target.y,target.z);camera.updateMatrixWorld();renderer.render(scene,camera);
+  }
+  return {beginWorld,render,renderInspection,resize,renderer,scene,camera,vegetation,cameraDiagnostics:()=>({...cameraMetrics,frame:{...smoothedFrame}}),landscapeDiagnostics:()=>({...landscapeMetrics}),actorDiagnostics:()=>JSON.parse(JSON.stringify(actorMetrics))};
 }

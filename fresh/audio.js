@@ -3,9 +3,10 @@
 import { advanceLocomotionPhase } from './character-motion.js';
 import { distanceFromRoute } from './route-layout.js';
 import { EXPLORATION } from './exploration.js';
+import { sampleWind } from './wind.js';
 const TAU=Math.PI*2;
 export const SOUND_CATEGORIES=Object.freeze({
-  wind:11.3,leaves:3.4,cloth:.38,footEarth:.25,footStone:.22,swish:.38,
+  wind:11.3,leaves:2.1,cloth:.30,footEarth:.19,footStone:.16,swish:.38,
   parry:1.3,block:.68,hit:.34,death:1.15,dodge:.52,evade:.26,
   signal:2.6,victory:4.8,defeat:2.1,route:.38,landmark:.75,rejoin:.55,consequence:.42,water:4.7,birds:2.8,discovery:.9,
 });
@@ -16,6 +17,14 @@ export function soundForEvent(event){return event.type==='environment-encounter'
 export function randomSource(seed){let s=seed>>>0;return()=>{s+=0x6D2B79F5;let t=s;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;};}
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const envelope=(t,attack,decay)=>t<0?0:(1-Math.exp(-t/attack))*Math.exp(-t/decay);
+// Pressure is the vegetation field's normalized load, not pascals. A dedicated
+// air bus follows it slowly; weapon contact and foot weight do not pump with wind.
+export const AMBIENCE_MIX=Object.freeze({windGain:.40,leafGain:.24,windInterval:9.6,windJitter:.8,leafInterval:5.8,leafJitter:5.2});
+export function ambienceIntensity(pressure){return .55+.25*clamp((pressure-.28)/.44,0,1);}
+export function footstepMix(speed){
+  const pace=clamp((speed-.4)/3.4,0,1);
+  return {gain:.42+.38*pace,rate:.97+.08*pace,clothGain:.07+.07*pace};
+}
 export function generateSound(name,variant=0,sampleRate=24000){
   if(!(name in SOUND_CATEGORIES))throw new Error(`Unknown generated sound: ${name}`);
   const duration=SOUND_CATEGORIES[name],data=new Float32Array(Math.ceil(duration*sampleRate));
@@ -29,23 +38,54 @@ export function generateSound(name,variant=0,sampleRate=24000){
   const bell=modes(name==='victory'?246:344,[1,2.71,4.09,5.43],name==='victory'?1.25:.52);
   const harmony=bell.map(m=>({...m,hz:m.hz*1.5})),wood=modes(name==='landmark'?420:240,name==='landmark'?[1,1.83,3.2]:[1,2.18,3.45],name==='landmark'?.09:.065);
   const chirps=Array.from({length:4},(_,index)=>({at:.18+index*.43+random()*.13,hz:2650+random()*1800,length:.048+random()*.046,sweep:600+random()*1300}));
+  // Band-limited stochastic material excitation; no bass oscillator represents
+  // a sole, and quiet air carries midrange turbulence rather than mic rumble.
+  const lowpass=hz=>{let state=0;const a=1-Math.exp(-TAU*hz/sampleRate);return n=>(state+=a*(n-state));};
+  const airTop=lowpass(1700),airTop2=lowpass(1700),airFloor=lowpass(200),airFloor2=lowpass(200);
+  const soleTop=lowpass(1900),soleTop2=lowpass(1900),soleFloor=lowpass(220),soleFloor2=lowpass(220);
+  const fibreTop=lowpass(3900),fibreTop2=lowpass(3900),fibreFloor=lowpass(1000),fibreFloor2=lowpass(1000);
+  const materialRandom=randomSource(seed+11317);
+  const leafBursts=Array.from({length:5},(_,i)=>({at:.12+i*.35+materialRandom()*.18,width:.035+materialRandom()*.055,gain:.45+materialRandom()*.55}));
+  const grit=Array.from({length:7},(_,i)=>({at:.009+i*.013+materialRandom()*.009,width:.002+materialRandom()*.004,gain:.4+materialRandom()*.6}));
+  const settle=.027+materialRandom()*.012;
+  const contactMaterial=['leaves','cloth','footEarth','footStone'].includes(name);
+  const usePockets=name!=='wind'&&!['leaves','footEarth','footStone'].includes(name);
   let low=0,mid=0;
   const resonance=(t,set)=>t<0?0:set.reduce((sum,m)=>sum+Math.sin(TAU*m.hz*t)*Math.exp(-t/m.decay)*m.level,0);
   for(let i=0;i<data.length;i++){
     const t=i/sampleRate,n=random()*2-1;
     low+=.012*(n-low);mid+=.18*(n-mid);const high=n-mid;
+    let air=0,sole=0,fibre=0;
+    if(name==='wind'){const base=airTop2(airTop(n)),high=base-airFloor(base);air=high-airFloor2(high);}
+    if(contactMaterial){
+      const base=soleTop2(soleTop(n)),high=base-soleFloor(base);sole=high-soleFloor2(high);
+      const top=fibreTop2(fibreTop(n)),fine=top-fibreFloor(top);fibre=fine-fibreFloor2(fine);
+    }
     let pockets=0;
-    for(const grain of grains){const q=(t-grain.at)/grain.width;if(Math.abs(q)<3)pockets+=grain.strength*Math.exp(-q*q*3);}
+    if(usePockets)for(const grain of grains){const q=(t-grain.at)/grain.width;if(Math.abs(q)<3)pockets+=grain.strength*Math.exp(-q*q*3);}
     let value=0;
     switch(name){
-      case 'wind':value=(low*1.1+mid*.08)*(.26+pockets*.11);break;
-      case 'leaves':value=(high*.052+mid*.11)*pockets;break;
+      case 'wind':{
+        const swell=.69+.17*Math.sin(t*.49+detune*4)+.09*Math.sin(t*1.07+variant);
+        value=air*.110*swell;break;
+      }
+      case 'leaves':{
+        let flutter=0;for(const burst of leafBursts){const q=(t-burst.at)/burst.width;flutter+=burst.gain*Math.exp(-q*q*2);}
+        value=(fibre*.14+sole*.014)*flutter;break;
+      }
       case 'water':value=(mid*.075+high*.042+low*.19)*(.5+pockets*.2);break;
       case 'birds':for(const chirp of chirps){const q=t-chirp.at;if(q>0&&q<chirp.length){const f=q/chirp.length;value+=(Math.sin(TAU*(chirp.hz*q+chirp.sweep*q*q/(2*chirp.length)))+high*.07)*Math.pow(Math.sin(Math.PI*f),2)*.042;}}break;
       case 'discovery':value=resonance(t-.08,bell)*.023*envelope(t-.08,.004,.36)+(mid*.06+high*.01)*envelope(t,.04,.19);break;
-      case 'cloth':value=(mid*.42+high*.018)*envelope(t,.014,.105)*(1+pockets*.4);break;
-      case 'footEarth':value=(low*2.3+mid*.19)*envelope(t,.002,.024)+high*.06*envelope(t-.018,.005,.057)*(1+pockets);break;
-      case 'footStone':value=(low*2.1+mid*.42)*envelope(t,.001,.018)+high*.062*envelope(t-.012,.002,.031)+Math.sin(TAU*153*detune*t)*.05*envelope(t,.001,.02);break;
+      case 'cloth':value=(fibre*.11+sole*.032)*envelope(t,.020,.052)*(1+pockets*.12);break;
+      case 'footEarth':case 'footStone':{
+        const stone=name==='footStone';
+        // Woven sandal contact -> forefoot settlement -> scattered soil/fibre
+        // grains. Softer earth spreads the contact; paving has a shorter edge.
+        value=(sole*(stone?.40:.29)+fibre*(stone?.041:.025))*envelope(t,stone?.0018:.0035,stone?.010:.015);
+        value+=(sole*(stone?.062:.048)+fibre*(stone?.036:.052))*envelope(t-settle,.006,stone?.019:.031);
+        let debris=0;for(const grain of grit){const q=(t-grain.at)/grain.width;debris+=grain.gain*Math.exp(-q*q*2);}
+        value+=fibre*debris*(stone?.007:.026);break;
+      }
       case 'swish':value=(mid*.18+high*.20)*Math.exp(-Math.pow((t-.17)/.055,2))*(.7+pockets*.22);break;
       case 'parry':case 'block':value=resonance(t,metal)*.12*envelope(t,.0008,2)+high*.36*envelope(t,.0007,.018)+mid*.27*envelope(t,.001,.044);break;
       case 'hit':value=(low*3+mid*.42)*envelope(t,.001,.04)+high*.10*envelope(t,.001,.018)+mid*.20*envelope(t-.035,.012,.09);break;
@@ -62,8 +102,8 @@ export function generateSound(name,variant=0,sampleRate=24000){
     }
     // Both ends reach zero; independently seeded ambience grains overlap and
     // crossfade, rather than repeating a short noise buffer with a hard seam.
-    const fadeIn=name==='wind'?.9:name==='leaves'?.09:.001;
-    const fadeOut=name==='wind'?1.8:name==='leaves'?.5:.025;
+    const fadeIn=name==='wind'?2.2:name==='leaves'?.09:.001;
+    const fadeOut=name==='wind'?2.5:name==='leaves'?.35:.025;
     data[i]=value*Math.min(1,t/fadeIn)*Math.min(1,(duration-t)/fadeOut);
   }
   let sum=0,peak=0;for(const value of data)sum+=value;
@@ -109,14 +149,14 @@ export function createFootstepTracker(){
       track.cycles=advanceLocomotionPhase(track.cycles,distance,seconds);
       const contact=Math.floor(track.cycles*2);
       for(let index=previousContact+1;index<=contact;index++)
-        steps.push({actor,right:index%2===1,surface:footSurfaceAt(actor.x,actor.z)});
+        steps.push({actor,right:index%2===1,surface:footSurfaceAt(actor.x,actor.z),speed:distance/seconds});
     }
     return steps;
   }};
 }
 
 export function createGameAudio(options={}){
-  let context=options.context??null,master=null,bank=null,active=false,ready=false,muted=false,worldRef=null,epoch=0;
+  let context=options.context??null,master=null,airBus=null,bank=null,active=false,ready=false,muted=false,worldRef=null,epoch=0;
   let nextWind=0,nextLeaves=0,sequence=0,lastMode='playing',orbit=0;
   const pending=[],voices=new Set(),events=createEventReader(),feet=createFootstepTracker(),random=randomSource(8173);
   const counters={events:0,steps:0,unknownEvents:[],categories:{}};
@@ -125,6 +165,7 @@ export function createGameAudio(options={}){
     try{
       context??=new (globalThis.AudioContext||globalThis.webkitAudioContext)();
       master=context.createGain();master.gain.value=0;master.connect(context.destination);
+      airBus=context.createGain();airBus.gain.value=ambienceIntensity(.45);airBus.connect(master);
       bank={};
       for(const name of Object.keys(SOUND_CATEGORIES)){
         bank[name]=Array.from({length:name==='wind'||name==='leaves'?3:4},(_,variant)=>{
@@ -152,7 +193,8 @@ export function createGameAudio(options={}){
     const source=context.createBufferSource(),level=context.createGain(),nodes=[source,level];
     source.buffer=bank[name][sequence++%bank[name].length];source.playbackRate.value=rate;
     level.gain.value=gain;source.connect(level);
-    if(context.createStereoPanner){const panner=context.createStereoPanner();panner.pan.value=pan;level.connect(panner);panner.connect(master);nodes.push(panner);}else level.connect(master);
+    const destination=name==='wind'||name==='leaves'?airBus:master;
+    if(context.createStereoPanner){const panner=context.createStereoPanner();panner.pan.value=pan;level.connect(panner);panner.connect(destination);nodes.push(panner);}else level.connect(destination);
     const voice={source,nodes};voices.add(voice);
     source.onended=()=>{for(const node of nodes)node.disconnect();voices.delete(voice);};
     source.start(at);counters.categories[name]=(counters.categories[name]??0)+1;
@@ -192,21 +234,23 @@ export function createGameAudio(options={}){
     if(!ready||!bank||context.state!=='running')return fresh;
     if(ready&&bank&&context.state==='running'){
       const now=context.currentTime;
-      if(now>=nextWind){play('wind',{gain:.7,pan:random()*.4-.2});nextWind=now+8.1+random()*.7;}
-      if(now>=nextLeaves){play('leaves',{gain:.35+random()*.18,pan:random()*1.4-.7,rate:.88+random()*.24});nextLeaves=now+2.3+random()*3.5;}
+      airBus.gain.setTargetAtTime(ambienceIntensity(sampleWind(world.player.x,world.player.z,world.time).pressure),now,.65);
+      if(now>=nextWind){play('wind',{gain:AMBIENCE_MIX.windGain,pan:random()*.4-.2});nextWind=now+AMBIENCE_MIX.windInterval+random()*AMBIENCE_MIX.windJitter;}
+      if(now>=nextLeaves){play('leaves',{gain:AMBIENCE_MIX.leafGain*(.8+random()*.4),pan:random()*1.4-.7,rate:.96+random()*.08});nextLeaves=now+AMBIENCE_MIX.leafInterval+random()*AMBIENCE_MIX.leafJitter;}
     }
     for(const event of pending.splice(0)){
       const name=soundForEvent(event);
       if(!name){if(!counters.unknownEvents.includes(event.type))counters.unknownEvents.push(event.type);continue;}
       const actor=[world.player,...world.enemies].find(a=>a.id===(event.type==='swing'||event.type==='dodge'?event.source:event.target));
       const position=spatial(actor,world);
-      play(name,{...position,rate:name==='signal'?1:.96+random()*.08});
+      const environmentGain=name==='wind'?.24:name==='leaves'?.34:1;
+      play(name,{...position,gain:position.gain*environmentGain,rate:name==='signal'||name==='wind'?1:.96+random()*.08});
       if(name==='swish'||name==='dodge')play('cloth',{...position,gain:position.gain*.45});
     }
     if(world.mode==='playing')for(const step of feet.update(world)){
-      counters.steps++;const position=spatial(step.actor,world);
-      play(step.surface,{...position,gain:position.gain*.8,pan:clamp(position.pan+(step.right?.045:-.045),-1,1),rate:.94+random()*.12});
-      play('cloth',{...position,gain:position.gain*.23,rate:.88+random()*.16});
+      counters.steps++;const position=spatial(step.actor,world),contact=footstepMix(step.speed);
+      play(step.surface,{...position,gain:position.gain*contact.gain*(.96+random()*.08),pan:clamp(position.pan+(step.right?.045:-.045),-1,1),rate:contact.rate*(.985+random()*.03)});
+      play('cloth',{...position,gain:position.gain*contact.clothGain,rate:.96+random()*.08});
     }
     if(world.mode!==lastMode){if(world.mode==='victory'||world.mode==='defeat')play(world.mode);lastMode=world.mode;}
     return fresh;

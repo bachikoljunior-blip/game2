@@ -132,7 +132,7 @@ async function headlessPresentation(){
   try{return createPresentation({});}finally{keys.forEach((k,i)=>before[i]?Object.defineProperty(globalThis,k,before[i]):delete globalThis[k]);}
 }
 
-test('actual generated water-route leaf cells protect the unlocked actor without shared-material fading',async()=>{
+test('slender generated leaves no longer obscure the historical water-route position or trigger false fades',async()=>{
   const view=await headlessPresentation(),leaves=[];
   view.scene.traverse(mesh=>{if(mesh.name.startsWith('bamboo-leaves-')||mesh.name.startsWith('maple-leaves-'))leaves.push(mesh);});
   assert.ok(leaves.length>15);assert.equal(new Set(leaves.map(m=>m.material)).size,leaves.length);
@@ -149,17 +149,53 @@ test('actual generated water-route leaf cells protect the unlocked actor without
     assert.ok(distant.length>5);assert.ok(distant.every(m=>m.material.opacity===1));
     assert.ok(leaves.every(m=>m.customDepthMaterial&&m.material.customProgramCacheKey().includes('vegetation')));
   }
-  assert.ok(obstructed>0,'the source-generated leaf that covers the unlocked actor is detected');
+  assert.equal(obstructed,0,'shorter alternate blades no longer occupy the old oversized crossed-card obstruction');
+});
+
+test('actual animated leaf triangles have matching positive/negative CPU ray proxies after the wind moves them',async()=>{
+  const view=await headlessPresentation(),visibility=createForegroundVisibility();let mesh;
+  view.scene.traverse(m=>{if(!mesh&&m.name.startsWith('bamboo-leaves-'))mesh=m;});
+  assert.ok(mesh);visibility.add(mesh,{vegetation:view.vegetation,id:'actual-leaf-positive-control'});
+  const source=mesh.geometry.attributes.position.array.slice(),g=mesh.geometry,indices=g.index.array;
+  let firstCenter,lastCenter;
+  for(const time of [0,1.7,4.2,7.1]){
+    view.vegetation.update(time);
+    const points=[...indices.slice(0,3)].map(i=>new T.Vector3(...view.vegetation.deformVertex(g,i,time))),
+      center=points[0].clone().add(points[1]).add(points[2]).multiplyScalar(1/3),
+      normal=points[1].clone().sub(points[0]).cross(points[2].clone().sub(points[0])).normalize(),
+      camera=center.clone().addScaledVector(normal,.65),target=center.clone().addScaledVector(normal,-.65);
+    firstCenter??=center.clone();lastCenter=center.clone();
+    visibility.reset();visibility.update(camera,[target],1/60,time);
+    assert.ok(mesh.material.opacity<1&&visibility.diagnostics()[0]?.blocked,'a ray crosses the actual displaced triangle');
+    visibility.reset();visibility.update(camera.clone().add(new T.Vector3(0,100,0)),[target.clone().add(new T.Vector3(0,100,0))],1/60,time);
+    assert.equal(mesh.material.opacity,1,'the same parallel ray outside the foliage stays clear');
+  }
+  assert.ok(firstCenter.distanceTo(lastCenter)>.001,'the positive control includes real model movement');
+  assert.deepEqual(mesh.geometry.attributes.position.array,source,'intersection never overwrites render geometry');
 });
 
 test('recorded old-waystone wood fades locally, freezes when paused and restores on retry',async t=>{
   const view=await headlessPresentation(),wood=[];
   view.scene.traverse(mesh=>{if(mesh.name.startsWith('maple-wood-'))wood.push(mesh);});
-  assert.equal(wood.length,3);assert.equal(new Set(wood.map(m=>m.material)).size,3);
+  const expectedCells=new Set(),seenSupports=new Set();
+  for(const mesh of wood){
+    const a=mesh.geometry.attributes.windSupport,p=mesh.geometry.attributes.position,cell=mesh.name.replace('maple-wood-','');
+    for(let i=0;i<a.count;i++){
+      const id=a.getW(i),beam=view.vegetation.beams[id],local=new T.Vector3(a.getX(i),a.getY(i),a.getZ(i)),rest=new T.Quaternion(...beam.restRotation);
+      local.applyQuaternion(rest).add(new T.Vector3(...beam.restOrigin));
+      assert.ok(local.distanceTo(new T.Vector3(p.getX(i),p.getY(i),p.getZ(i)))<.000006,'every submitted wood vertex retains its bind position');
+      if(seenSupports.has(id))continue;seenSupports.add(id);
+      const middle=new T.Vector3(0,beam.length/2,0).applyQuaternion(rest).add(new T.Vector3(...beam.restOrigin)),expected=`${Math.floor(middle.x/16)},${Math.floor(middle.z/16)}`;
+      expectedCells.add(expected);assert.equal(cell,expected,'every support belongs to its actual spatial cell');
+    }
+  }
+  assert.equal(seenSupports.size,4+36+324,'all four trunks, 36 branches and 324 attached leaf twigs are submitted');
+  assert.equal(wood.length,expectedCells.size);assert.equal(new Set(wood.map(m=>m.material)).size,wood.length);
   const source=wood.map(m=>({positions:m.geometry.attributes.position.array.slice(),depth:m.customDepthMaterial}));
   const near=wood.find(m=>m.name==='maple-wood--1,-3'),other=wood.filter(m=>m!==near);
-  assert.ok(near);assert.equal(near.geometry.attributes.windRoot.getX(0),-10);
-  assert.equal(near.geometry.attributes.windRoot.getZ(0),-34);
+  assert.ok(near);assert.equal(near.geometry.attributes.windSupport.itemSize,4);
+  assert.ok(near.geometry.boundingBox.min.x<-10&&near.geometry.boundingBox.max.x>-10);
+  assert.ok(near.geometry.boundingBox.min.z<-34&&near.geometry.boundingBox.max.z>-34);
   // Actual758 memory-route waypoint. Its visual wind clock was not logged;
   // test the recorded position across the same finite phase set as the repro.
   let blocked=0;
@@ -167,7 +203,7 @@ test('recorded old-waystone wood fades locally, freezes when paused and restores
     const world=createWorld();world.time=time;
     Object.assign(world.player,{x:-12.152201271544866,z:-38.75898447460243,yaw:0,age:19.066666666666865});
     view.beginWorld(world);view.render(world,.25);
-    const opaque=other.map(m=>m.material.opacity);assert.deepEqual(opaque,[1,1]);
+    assert.ok(other.every(m=>m.material.opacity===1));
     if(near.material.opacity<.2){
       blocked++;assert.equal(near.material.depthWrite,false);
       const opacity=near.material.opacity;
@@ -181,7 +217,7 @@ test('recorded old-waystone wood fades locally, freezes when paused and restores
   wood.forEach((m,i)=>{
     assert.deepEqual(m.geometry.attributes.position.array,source[i].positions);
     assert.equal(m.customDepthMaterial,source[i].depth);
-    assert.equal(m.material.customProgramCacheKey(),'valley-wind-v2-vegetation');
+    assert.equal(m.material.customProgramCacheKey(),'valley-wind-v3-modal-vegetation');
   });
-  t.diagnostic(`Recorded position: maple wood detected in ${blocked}/13 wind phases; other two cells remain opaque.`);
+  t.diagnostic(`Recorded position: maple wood detected in ${blocked}/13 wind phases; other ${other.length} cells remain opaque. All ${seenSupports.size} supports occupy ${expectedCells.size} correct spatial cells.`);
 });
