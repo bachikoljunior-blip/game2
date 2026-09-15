@@ -1,8 +1,8 @@
 import * as T from 'three';
-import {createNativeCharacterResources,nativeFigure,nativeHand,nativeGeometry,nativeCollar} from './character-assets.js';
+import {createNativeCharacterResources,nativeFigure,nativeHand,nativeGeometry,nativeCollar,tailoredHead,prepareAnchoredHead} from './character-assets.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { surface,loft,headSculpt,facePoint,eyeSurface,eyeDisc,faceRibbon,hakamaPanel,clothRibbon,
-  breastplate,shoulderPlate,hairCap,scalpLock,earSculpt,handSculpt,fingerSculpt,footSculpt,createSurfaceTextures } from './character-sculpt.js';
+  breastplate,shoulderPlate,tunicSurface,tunicLapel,upperSleeve,tiedHair,hairTie,hairCap,scalpLock,earSculpt,handSculpt,fingerSculpt,footSculpt,createSurfaceTextures } from './character-sculpt.js';
 
 // CC0 native head/neck and hands join original generated clothing and weapons.
 // Anatomical joints are separate from clothing,
@@ -59,11 +59,7 @@ export function createCharacterRig(id, resources=createCharacterResources()) {
 
   // Continuous tailored volumes preserve the skeletal pivots and reach. The
   // cloth is broad over ribs/scapulae and compressed into the waist sash.
-  part(chest,loft([[-.25,.183,.119,0],[-.18,.204,.140,.005],[-.075,.215,.151,.008],
-    [.045,.229,.159,.008],[.157,.247,.146,.006],[.207,.250,.132,.002],[.246,.190,.107,0],[.280,.095,.075,0]],
-    {fold:.006,folds:11,segments:24,rows:16,deform:(p,u,v)=>{
-      p[2]+=.009*Math.max(0,Math.cos(u*Math.PI*2))*Math.sin(v*Math.PI);return p;
-    }}),cloth);
+  part(chest,tunicSurface(),cloth);
   // The cuirass follows the ribcage. Its lames overlap vertically while the
   // collar stays cloth, keeping the neck/shoulder transition soft and narrow.
   for(let row=0;row<5;row++){
@@ -74,11 +70,8 @@ export function createCharacterRig(id, resources=createCharacterResources()) {
       part(chest,clothRibbon([[x,top-.009,-.204],[x+side*.009,top-.020,-.211],[x,top-.032,-.207]],.0045,{steps:8}),cord);
     }
   }
-  part(chest,clothRibbon([[-.083,.258,-.076],[-.064,.205,-.136],[.006,.10,-.181],[.09,-.018,-.182]],.043),trim);
-  part(chest,clothRibbon([[.083,.258,-.076],[.062,.207,-.139],[-.008,.110,-.190],[-.10,-.012,-.191]],.047),cloth);
-  part(chest,clothRibbon([[.081,.258,-.082],[.060,.207,-.145],[-.013,.106,-.195],[-.099,-.012,-.197]],.006),trim);
-  // Folded cloth at the back collar and seams moulds to the body, not a box.
-  part(chest,loft([[.242,.126,.092,0],[.272,.092,.078,0],[.288,.077,.066,0]],{segments:24,rows:6}),shadow);
+  part(chest,tunicLapel(-1,.022,0,.66),trim);
+  part(chest,tunicLapel(1,.041,.003),cloth);
   for(const side of [-1,1])part(chest,clothRibbon([[side*.179,.180,.083],[side*.201,.057,.142],
     [side*.173,-.096,.126],[side*.157,-.210,.104]],.007),shadow);
   part(body,loft([[-.032,.224,.161,0],[.015,.230,.169,0],[.095,.224,.161,0],[.113,.213,.151,0]],
@@ -91,16 +84,17 @@ export function createCharacterRig(id, resources=createCharacterResources()) {
   const figure=nativeFigure(id);
   // The collar follows the imported lower neck and hides its extraction cut.
   // It is carried by the chest; the exposed head/neck retains its own pivot.
-  part(chest,nativeCollar(figure.head),cloth,0,neck.position.y,0);
-  part(neck,nativeGeometry(figure.head),resources.native.skin);
+  part(chest,nativeCollar(figure.head,{from:.10}),cloth,0,neck.position.y,0);
+  part(chest,nativeCollar(figure.head,{to:.12,offset:-.0005}),trim,0,neck.position.y,0);
+  const headSkin=new T.Mesh(prepareAnchoredHead(tailoredHead(figure.head)),resources.native.skin);
+  headSkin.name='anchored-native-head-neck';headSkin.castShadow=headSkin.receiveShadow=true;neck.add(headSkin);generatedParts++;
   part(neck,nativeGeometry(figure.eyes),resources.native.eyes);
   part(neck,nativeGeometry(figure.hair),resources.native.hair);
   part(neck,nativeGeometry(figure.brows),resources.native.brows);
   // The fitted hairline is the CC0 short04 asset. The tied rear lock is an
   // original, modest addition; this pilot does not claim a finished hairstyle.
-  part(neck,loft([[.245,.012,.013,.049],[.268,.031,.027,.053],[.291,.032,.025,.043],[.308,.016,.014,.028],[.310,.002,.003,.024]],
-    {segments:22,rows:12,fold:.001,folds:9}),hair);
-  part(neck,loft([[.279,.034,.027,.048],[.287,.032,.025,.045]],{segments:22,rows:2}),cord);
+  part(neck,tiedHair(),hair);
+  part(neck,hairTie(),mat(colors.cord,.98,0,'cord',true));
   if(id==='warden'){
     part(neck,surface(36,14,(u,v)=>{
       const theta=u*Math.PI*2,phi=.10+v*1.24;
@@ -136,8 +130,7 @@ export function createCharacterRig(id, resources=createCharacterResources()) {
     for(const strap of [-1,1])part(ankle,clothRibbon([[strap*.057,-.032,-.024],[strap*.032,.006,-.055],[0,-.023,-.127]],.012),dark);
     part(ankle,clothRibbon([[side*.020,-.043,-.184],[side*.018,-.027,-.164],[side*.017,-.015,-.139]],.0025),dark);
     const arm=new T.Group();arm.name=side<0?'left-shoulder':'right-shoulder';arm.position.set(side*.265,.2,0);chest.add(arm);
-    part(arm,loft([[-.335,.082,.075,.002],[-.282,.104,.098,.008],[-.204,.098,.091,.004],
-      [-.119,.094,.091,0],[-.025,.098,.095,0],[.035,.087,.085,0],[.073,.020,.026,0]],{segments:24,rows:22,fold:.006,folds:8,phase:side}),cloth);
+    part(arm,upperSleeve(side),cloth);
     const shoulderRows=id==='player'?2:id==='warden'?4:3;
     for(let plate=0;plate<shoulderRows;plate++)part(arm,shoulderPlate(side,plate),armor);
     part(arm,loft([[-.329,.085,.079,.002],[-.305,.094,.089,.005]],{segments:26,rows:2}),shadow);
@@ -164,8 +157,9 @@ export function createCharacterRig(id, resources=createCharacterResources()) {
     const gripOffset=new T.Vector3(...importedHand.gripOffset);
     limbs.push({side,hip,knee,ankle,arm,elbow,wrist,hand:wrist,gripOffset});
     for(const front of [-1,1]){
-      const panel=new T.Group();panel.name=front<0?'hakama-front':'hakama-back';panel.position.set(side*.128,-.041,front*.139);body.add(panel);
-      part(panel,hakamaPanel(side,front),cloth);panels.push({node:panel,side,front});
+      const panel=new T.Group();panel.name=front<0?'hakama-front':'hakama-back';panel.position.set(side*ANATOMY.hipWidth,0,0);body.add(panel);
+      const mesh=new T.Mesh(hakamaPanel(side,front),cloth);mesh.name='articulated-hakama-surface';mesh.castShadow=mesh.receiveShadow=true;panel.add(mesh);generatedParts++;
+      panels.push({node:panel,side,front,mesh});
     }
 
   }
@@ -224,7 +218,7 @@ export function createCharacterRig(id, resources=createCharacterResources()) {
     meshes++;triangles+=(node.geometry.index?.count||node.geometry.attributes.position.count)/3;
     groundContactPoints+=(node.geometry.userData.contactPositions?.length||0)/3;
   }});
-  return {id,root,body,chest,neck,limbs,panels,ties,sword,blade,scabbard,ring,signal,contact,
+  return {id,root,body,chest,neck,headSkin,limbs,panels,ties,sword,blade,scabbard,ring,signal,contact,
     metrics:{generatedParts,drawMeshes:meshes,triangles,groundContactPoints,articulatedJoints:24,
       surfaceConstruction:'CC0-native-head-neck-hands-and-original-draped-clothing',externalRuntimeAssets:5,
       importedTextureAssets:4,importedGeometryAssets:1,

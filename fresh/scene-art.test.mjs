@@ -10,6 +10,33 @@ import {updateCharacterRig} from './character-motion.js';
 import {groundHeightAt} from './terrain.js';
 
 const stage=()=>{const scene=new T.Scene(),visibility=createForegroundVisibility(),art=createSceneArt(scene,visibility);return {scene,visibility,art};};
+test('the fractured ridge has actual side contact through the ground, with no low air tunnel',()=>{
+  const {scene,art}=stage(),fork=ROUTE_FORK.obstacle,rocks=art.addRidge(fork);scene.updateMatrixWorld(true);
+  for(const mesh of rocks){
+    const p=mesh.geometry.attributes.position;let minimum=Infinity;
+    for(let i=0;i<p.count;i++)minimum=Math.min(minimum,p.getY(i)-groundHeightAt(p.getX(i),p.getZ(i)));
+    assert.ok(minimum<-.07,'each fade section must extend into the actual terrain');
+  }
+  const ray=new T.Raycaster();ray.far=6;
+  for(const y of [0,.025,.054,.056]){
+    ray.set(new T.Vector3(-3,y,-9.25),new T.Vector3(1,0,0));
+    assert.ok(ray.intersectObjects(rocks).length>0,`air tunnel at y=${y}`);
+    ray.set(new T.Vector3(3,y,-9.25),new T.Vector3(-1,0,0));
+    assert.ok(ray.intersectObjects(rocks).length>0,`open opposite side at y=${y}`);
+  }
+  for(const [origin,direction] of [
+    [[-3,-.09,-9.25],[1,0,0]], [[-3,3,-9.25],[1,0,0]],
+    [[-3,.025,fork.z+fork.d/2+.1],[1,0,0]], [[-3,.025,fork.z-fork.d/2-.1],[1,0,0]],
+  ]){
+    ray.set(new T.Vector3(...origin),new T.Vector3(...direction));
+    assert.equal(ray.intersectObjects(rocks).length,0,'contact repair cannot extend below its base or outside the unchanged envelope');
+  }
+  // Each end also needs a closed lateral face, not only the two long sides.
+  for(const side of [-1,1]){
+    ray.set(new T.Vector3(0,.025,fork.z+side*(fork.d/2+1)),new T.Vector3(0,0,-side));
+    assert.ok(ray.intersectObjects(rocks).length>0,'open end beneath the ridge');
+  }
+});
 test('new exposed rock triangles cover the collision spine and leave both walking corridors clear',()=>{
   const {scene,art}=stage(),fork=ROUTE_FORK.obstacle,rocks=art.addRidge(fork);scene.updateMatrixWorld(true);
   const bounds=new T.Box3().setFromObject(scene),ray=new T.Raycaster();

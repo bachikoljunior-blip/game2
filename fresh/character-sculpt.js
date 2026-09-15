@@ -138,18 +138,116 @@ export function faceRibbon(points,width){
   },{flip:points.at(-1)[0]>=points[0][0]});
 }
 
-// Draped panels have curved hems and a cross-section of broad pleats with
-// narrow valleys. The waist stays fixed; silhouette narrows between the legs.
+// Each front/back half joins at the side seams to make one wide trouser leg.
+// The rolled hem turns inward. Its animated surface remains a volume around
+// the knee, rather than two disconnected boards hanging from the pelvis.
 export function hakamaPanel(side,front){
-  return surface(26,22,(u,v)=>{
-    const fall=1-v,width=.226+fall*.028;
-    const x=(u-.5)*width+side*fall*.012;
-    const crease=Math.sin(u*Math.PI*7+.25)*.010*(.35+.65*fall);
-    const broad=.032*Math.cos((u-.5)*Math.PI);
-    const z=front*(broad+crease+fall*.012+Math.sin(fall*4+u*2)*.006);
-    const y=-fall*(.465+.017*Math.cos(u*Math.PI*2))-.012*Math.sin(u*Math.PI);
-    return [x,y,z];
-  },{flip:front<0});
+  const columns=26,rows=22;
+  const geometry=surface(columns,rows,(u,v)=>{
+    const fall=1-v,angle=(front<0?Math.PI:0)+(u-.5)*Math.PI;
+    const width=.112+.043*Math.sin(Math.PI*fall*.83),depth=.134+.008*Math.sin(fall*Math.PI);
+    const crease=Math.sin(angle*8+side*.2)*.009*(.25+.75*fall);
+    return [Math.sin(angle)*(width+crease)+side*.004*Math.sin(fall*Math.PI),
+      .070-fall*.610+.004*Math.cos(angle*2)*fall,Math.cos(angle)*(depth+crease)];
+  });
+  const positions=Array.from(geometry.attributes.position.array),uv=Array.from(geometry.attributes.uv.array),indices=Array.from(geometry.index.array);
+  const start=positions.length/3;
+  for(let i=0;i<=columns;i++){
+    const x=positions[i*3],y=positions[i*3+1],z=positions[i*3+2],r=Math.hypot(x,z);
+    positions.push(x*(1-.003/r),y+.011,z*(1-.003/r));uv.push(i/columns,.018);
+  }
+  for(let i=0;i<columns;i++)indices.push(i+1,i,start+i,i+1,start+i,start+i+1);
+  geometry.setAttribute('position',new T.Float32BufferAttribute(positions,3));
+  geometry.setAttribute('uv',new T.Float32BufferAttribute(uv,2));geometry.setIndex(indices);geometry.deleteAttribute('normal');geometry.computeVertexNormals();
+  geometry.userData.restPositions=geometry.attributes.position.array.slice();
+  geometry.userData.contactPositions=geometry.attributes.position.array;
+  geometry.computeBoundingBox();geometry.computeBoundingSphere();
+  return geometry;
+}
+
+function capsuleOutside(point,a,b,radius,scratch){
+  const axis=scratch.axis.copy(b).sub(a),lengthSquared=axis.lengthSq();
+  const along=lengthSquared?clamp(scratch.delta.copy(point).sub(a).dot(axis)/lengthSquared):0;
+  const closest=scratch.closest.copy(a).addScaledVector(axis,along),delta=scratch.delta.copy(point).sub(closest),distance=delta.length();
+  if(distance<radius){
+    if(distance<1e-8)delta.set(0,0,1);else delta.multiplyScalar(1/distance);
+    point.copy(closest).addScaledVector(delta,radius);
+  }
+}
+
+// CPU-visible surface posing. The same current vertex array drives draw,
+// normals, bounds and contact; no stale rest cache or GPU-only skinning exists.
+export function deformHakamaPanel(panel,limb,body,{cloth=0,fall=0,time=0,groundHeightAt}){
+  const geometry=panel.mesh?.geometry,rest=geometry?.userData.restPositions;
+  if(!rest)return false;
+  const s=panel.surfaceScratch||(panel.surfaceScratch={
+    hip:new T.Matrix4(),knee:new T.Matrix4(),bindKnee:new T.Matrix4(),bindOffset:new T.Matrix4(),world:new T.Matrix4(),inverse:new T.Matrix4(),
+    p:new T.Vector3(),h:new T.Vector3(),k:new T.Vector3(),fixed:new T.Vector3(),worldPoint:new T.Vector3(),gravity:new T.Vector3(),radial:new T.Vector3(),
+    hipPoint:new T.Vector3(),kneePoint:new T.Vector3(),anklePoint:new T.Vector3(),axis:new T.Vector3(),delta:new T.Vector3(),closest:new T.Vector3(),sphereWorld:new T.Vector3(),
+    worldBox:new T.Box3(),rotation:new T.Quaternion(),hipRotation:new T.Quaternion(),kneeRotation:new T.Quaternion(),mixedRotation:new T.Quaternion(),posedRotation:new T.Quaternion(),
+  });
+  limb.hip.updateMatrix();limb.knee.updateMatrix();body.updateWorldMatrix(true,false);
+  s.hip.copy(limb.hip.matrix);s.knee.multiplyMatrices(s.hip,limb.knee.matrix);
+  s.hipRotation.setFromRotationMatrix(s.hip);s.kneeRotation.setFromRotationMatrix(s.knee);
+  s.bindKnee.copy(s.knee).multiply(s.bindOffset.makeTranslation(0,-limb.knee.position.y,0));
+  s.hipPoint.setFromMatrixPosition(s.hip);s.kneePoint.setFromMatrixPosition(s.knee);
+  s.anklePoint.set(0,limb.ankle.position.y,0).applyMatrix4(s.knee);
+  s.gravity.set(0,-1,0).applyQuaternion(body.getWorldQuaternion(s.rotation).invert());
+  panel.node.rotation.set(0,0,0);panel.node.updateMatrix();
+  s.world.multiplyMatrices(body.matrixWorld,panel.node.matrix);s.inverse.copy(s.world).invert();
+  const positions=geometry.attributes.position;
+  for(let i=0;i<positions.count;i++){
+    s.p.fromArray(rest,i*3);const depth=Math.max(0,-s.p.y),hem=clamp(depth/.54),hipWeight=smooth(clamp(depth/.19)),kneeWeight=smooth(clamp((depth-.29)/.25));
+    if(depth===0){positions.setXYZ(i,rest[i*3],rest[i*3+1],rest[i*3+2]);continue;}
+    // Blend the centreline and rotation separately so a sharply folded knee
+    // does not collapse a cloth ring as ordinary linear vertex skinning does.
+    s.radial.set(s.p.x,0,s.p.z);s.h.set(0,s.p.y,0).applyMatrix4(s.hip);s.k.set(0,s.p.y,0).applyMatrix4(s.bindKnee);
+    s.fixed.set(0,s.p.y,0).add(panel.node.position);s.p.copy(s.fixed).lerp(s.h.lerp(s.k,kneeWeight),hipWeight);
+    s.mixedRotation.copy(s.hipRotation).slerp(s.kneeRotation,kneeWeight);s.posedRotation.identity().slerp(s.mixedRotation,hipWeight);
+    s.p.add(s.radial.applyQuaternion(s.posedRotation));
+    // Cloth lags the body and hangs in world gravity. The waist has no drift.
+    s.p.z+=cloth*hem*hem*.18;
+    s.p.addScaledVector(s.gravity,fall*.045*hem*hem);
+    const crease=fall*.009*Math.sin(depth*36+rest[i*3]*31)*hem*hem;
+    s.p.x+=crease*panel.side;s.p.z+=Math.sin(time*1.25+rest[i*3]*13)*.003*hem*hem*(1-fall);
+    if(depth>.07){capsuleOutside(s.p,s.hipPoint,s.kneePoint,.116,s);capsuleOutside(s.p,s.kneePoint,s.anklePoint,.093,s);}
+    s.p.sub(panel.node.position);positions.setXYZ(i,s.p.x,s.p.y,s.p.z);
+  }
+  geometry.computeBoundingBox();s.worldBox.copy(geometry.boundingBox).applyMatrix4(s.world);
+  const maximum=groundHeightAt.maximumInRect?.(s.worldBox.min.x,s.worldBox.min.z,s.worldBox.max.x,s.worldBox.max.z);
+  let groundSamples=0;
+  if(maximum===undefined||s.worldBox.min.y<maximum+.003){
+    for(let i=0;i<positions.count;i++){
+      if(rest[i*3+1]>=0)continue; // fixed waist is carried by the body contact solve
+      s.worldPoint.fromBufferAttribute(positions,i).applyMatrix4(s.world);
+      let touched=false;
+      for(let iteration=0;iteration<3;iteration++){
+        const floor=groundHeightAt(s.worldPoint.x,s.worldPoint.z)+.003;groundSamples++;
+        if(s.worldPoint.y>=floor)break;
+        s.worldPoint.y=floor;touched=true;
+        // At ground contact, a vertical push alone can drive cloth back into
+        // the knee. Move along the floor/capsule intersection instead.
+        for(const [a,b,radius] of [[s.hipPoint,s.kneePoint,.116],[s.kneePoint,s.anklePoint,.093]]){
+          s.p.copy(s.worldPoint).applyMatrix4(s.inverse).add(panel.node.position);
+          s.axis.copy(b).sub(a);const t=clamp(s.delta.copy(s.p).sub(a).dot(s.axis)/s.axis.lengthSq());
+          s.closest.copy(a).addScaledVector(s.axis,t);
+          if(s.p.distanceToSquared(s.closest)>=radius*radius)continue;
+          s.sphereWorld.copy(s.closest).applyMatrix4(body.matrixWorld);
+          const dy=s.worldPoint.y-s.sphereWorld.y,needed=Math.sqrt(Math.max(0,radius*radius-dy*dy));
+          let dx=s.worldPoint.x-s.sphereWorld.x,dz=s.worldPoint.z-s.sphereWorld.z,d=Math.hypot(dx,dz);
+          if(d<1e-8){dx=panel.side;dz=panel.front;d=Math.SQRT2;}
+          s.worldPoint.x=s.sphereWorld.x+dx/d*needed;s.worldPoint.z=s.sphereWorld.z+dz/d*needed;
+        }
+      }
+      if(touched){
+        s.worldPoint.y=Math.max(s.worldPoint.y,groundHeightAt(s.worldPoint.x,s.worldPoint.z)+.003);groundSamples++;
+        s.worldPoint.applyMatrix4(s.inverse);positions.setXYZ(i,s.worldPoint.x,s.worldPoint.y,s.worldPoint.z);
+      }
+    }
+  }
+  positions.needsUpdate=true;geometry.computeVertexNormals();geometry.computeBoundingBox();geometry.computeBoundingSphere();
+  geometry.userData.contactPositions=positions.array;
+  panel.surfaceMetrics={vertices:positions.count,groundSamples};return true;
 }
 
 export function clothRibbon(points,width,{steps=20,fray=0}={}){
@@ -171,13 +269,59 @@ export function breastplate(top,bottom,width,depthOffset=0){
   },{flip:true});
 }
 
+const tunicProfile=[[-.25,.183,.119,0],[-.18,.204,.140,.005],[-.075,.215,.151,.008],
+  [.045,.229,.159,.008],[.157,.247,.146,.006],[.207,.263,.132,.002],[.246,.214,.107,0],[.280,.095,.075,0]];
+export function tunicPoint(angle,y){
+  const [w,d,z]=section(tunicProfile,y),v=clamp((y+.25)/.53);
+  const fold=.006*Math.sin(angle*11+Math.sin(v*5+angle*2)*.42)*Math.sin(Math.PI*v)**.65;
+  return [Math.sin(angle)*(w+fold),y,Math.cos(angle)*(d+fold)+z+.009*Math.max(0,Math.cos(angle))*Math.sin(v*Math.PI)];
+}
+export function tunicSurface(){return loft(tunicProfile,{segments:32,rows:24,fold:.006,folds:11,deform:(p,u,v)=>{p[2]+=.009*Math.max(0,Math.cos(u*TAU))*Math.sin(v*Math.PI);return p;}});}
+export function tunicLapel(side,width,offset=0,end=1){
+  const path=new T.CatmullRomCurve3([[side*.062,.246,0],[side*.044,.208,0],[side*.008,.156,0],[-side*.048,.096,0]] .map(p=>new T.Vector3(...p)));
+  return surface(6,24,(u,v)=>{
+    const p=path.getPoint(v*end),t=path.getTangent(v*end),edge=(u-.5)*width;
+    p.add(new T.Vector3(t.y,-t.x,0).normalize().multiplyScalar(edge));
+    const w=section(tunicProfile,p.y)[0],angle=Math.PI-Math.asin(clamp(p.x/w,-.98,.98));
+    p.z=tunicPoint(angle,p.y)[2]-.0025-offset-Math.sin(u*Math.PI)*.001;
+    return p.toArray();
+  },{flip:true});
+}
+
+const sleeveProfile=[[-.335,.082,.075,.002],[-.282,.104,.098,.008],[-.204,.098,.091,.004],
+  [-.119,.097,.094,0],[-.025,.104,.101,0],[.025,.086,.083,0],[.052,.060,.057,0],[.073,.025,.023,0],[.081,.001,.001,0]];
+function sleevePoint(angle,y,side){
+  const [w,d,z]=section(sleeveProfile,y),v=clamp((y+.335)/.416);
+  const fold=.004*Math.sin(angle*8+side+Math.sin(v*5+angle*2)*.42)*Math.sin(Math.PI*v)**.65;
+  return [Math.sin(angle)*(w+fold),y,Math.cos(angle)*(d+fold)+z];
+}
+export function upperSleeve(side){return loft(sleeveProfile,{segments:32,rows:26,fold:.004,folds:8,phase:side});}
+
+// Give a thin fitted patch an inner face and an actual narrow edge. The
+// perimeter is closed; it does not appear as an unsupported open hoop.
+export function shellSurface(outer,thickness=.002){
+  const p=outer.attributes.position,n=outer.attributes.normal,uv=outer.attributes.uv,count=p.count;
+  const positions=Array.from(p.array),uvs=Array.from(uv.array),indices=Array.from(outer.index.array),edges=new Map();
+  for(let i=0;i<count;i++){positions.push(p.getX(i)-n.getX(i)*thickness,p.getY(i)-n.getY(i)*thickness,p.getZ(i)-n.getZ(i)*thickness);uvs.push(uv.getX(i),uv.getY(i));}
+  for(let i=0;i<outer.index.count;i+=3){
+    const a=outer.index.getX(i),b=outer.index.getX(i+1),c=outer.index.getX(i+2);indices.push(c+count,b+count,a+count);
+    for(const [from,to] of [[a,b],[b,c],[c,a]]){const key=from<to?`${from}:${to}`:`${to}:${from}`;if(edges.has(key))edges.get(key).count++;else edges.set(key,{a:from,b:to,count:1});}
+  }
+  for(const {a,b,count:n} of edges.values())if(n===1)indices.push(b,a,a+count,b,a+count,b+count);
+  const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(positions,3));geometry.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));geometry.setIndex(indices);geometry.computeVertexNormals();outer.dispose();return geometry;
+}
 export function shoulderPlate(side,row){
-  return surface(20,4,(u,v)=>{
-    const angle=(u-.5)*Math.PI*1.22,radius=.096+row*.003+Math.sin(v*Math.PI)*.003;
-    const x=side*(.014+Math.cos(angle)*radius),z=Math.sin(angle)*radius*1.12;
-    const y=.043-row*.045-v*.046-Math.sin(angle)**2*.017;
-    return [x,y,z];
-  },{flip:side<0});
+  return shellSurface(surface(24,5,(u,v)=>{
+    const angle=side*Math.PI/2+(u-.5)*2.60,y=.039-row*.044-v*.047-Math.sin((u-.5)*Math.PI)**2*.007;
+    const p=sleevePoint(angle,y,side),raise=.0032+Math.sin(v*Math.PI)*.0008;
+    p[0]+=Math.sin(angle)*raise;p[2]+=Math.cos(angle)*raise;return p;
+  },{flip:true}),.002);
+}
+
+const knotProfile=[[.249,.013,.014,.041],[.263,.024,.022,.042],[.283,.030,.026,.039],[.302,.020,.018,.029],[.313,.001,.001,.020]];
+export function tiedHair(){return loft(knotProfile,{segments:28,rows:20,fold:.0007,folds:9});}
+export function hairTie(){
+  return surface(28,3,(u,v)=>{const y=.260+v*.006,[w,d,z]=section(knotProfile,y),a=u*TAU;return [Math.sin(a)*(w+.0008),y,Math.cos(a)*(d+.0008)+z];},{wrap:true});
 }
 
 export function hairCap(){

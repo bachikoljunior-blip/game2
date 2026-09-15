@@ -19,6 +19,7 @@ if group in {'before', 'after'}:
     root /= 'fresh-20260915-art/' + group
     prefix = group + '/'
     allowed = {'report.json'} | {f'{actor}-{view}.png' for actor in ['player', 'sentinel', 'retainer', 'warden'] for view in ['full', 'back', 'face-front', 'face-threequarter', 'face-profile']}
+    allowed |= {f'player-{state}-neck-{side}.png' for state in ['broken', 'dead', 'victory', 'stagger'] for side in ['front', 'back']} | {'warden-face-profile-left.png'}
 elif group == 'vegetation':
     root /= 'fresh-20260915-art/vegetation'
     lengths = {'maple': 144, 'maple-leaf': 72, 'bamboo': 144}
@@ -30,6 +31,7 @@ elif group == 'experience':
 elif group == 'fresh':
     root /= 'fresh-20260913'
     allowed = {'browser-report.json', 'route-matrix-report.json', 'recording-report.json', 'build-fingerprint.json'} | {name + '.png' for name in ['encounter', 'mobile-mission-victory-portrait', 'mission-victory', 'title', 'mobile', 'desktop-right-victory', 'touch-left-victory', 'mobile-mission-victory']} | {f'derived/{name}{suffix}' for name in ['desktop', 'touch', 'desktop-right', 'touch-left'] for suffix in ['-fixed-five.json', '-fork-to-signal.mp4']}
+    allowed |= {f'decoded/decoded-{name}-{event}.png' for name in ['desktop', 'touch', 'desktop-right', 'touch-left'] for event in ['destination-arrival', 'signal-lit']}
 elif group == 'asset-readiness':
     root /= 'fresh-asset-readiness'
     allowed = {'report.json', 'normal.png', 'failed.png'}

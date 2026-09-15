@@ -1,0 +1,122 @@
+{
+  "at": "2026-09-15T15:21:05.765500+00:00",
+  "sourceCheckpointBeforeIntegrationCommit": "e42674349963d756617acdbb0be351d922e69b92",
+  "frozenRuntimeIndexFreshTree": "7e6eda4aea523982c3fb6f102d8b95bb684b1abb",
+  "freshUnstagedDifferences": [],
+  "build": "passed",
+  "files": [
+    {
+      "path": "assets/brown-eye-DsUMil5J.png",
+      "bytes": 610817,
+      "sha256": "4659691c7295ad6206c78b003e5fd0e5f91dcd53032fa914a229bb48cabe424b"
+    },
+    {
+      "path": "assets/eyebrows-CAObckBg.png",
+      "bytes": 89619,
+      "sha256": "9940f7d0b1b223709a19b05156ba6f6e9e4dbdbced02d7574f4d51d72c58967b"
+    },
+    {
+      "path": "assets/index-BOFPNQPG.js",
+      "bytes": 558557,
+      "sha256": "d9784d196dfb021e0cdc8fc1cc005e3730863b1c6679766df9a7bd4a1784845b"
+    },
+    {
+      "path": "assets/index-BTA3_FCJ.js",
+      "bytes": 611217,
+      "sha256": "5cc732f88eb154a8de0307219154249bdb92e541c2717adf165d46eaf04ec5d1"
+    },
+    {
+      "path": "assets/index-BV37DVKn.js",
+      "bytes": 645505,
+      "sha256": "33bf9cccb13d38d8322ed8e8fe3b47dd18ffb5901b8d315d3b4a954a55d90fca"
+    },
+    {
+      "path": "assets/index-BWzy9cuA.js",
+      "bytes": 612273,
+      "sha256": "74db45e7fb1dee700259e5eab4992c90b0434fd7e21f3f9346d4ee72c8a70a98"
+    },
+    {
+      "path": "assets/index-C3eJwLod.js",
+      "bytes": 610869,
+      "sha256": "a79b10b787e43d5a4d955abc2ad02a5ea458a22b64494d6f6b4d5e462c46da41"
+    },
+    {
+      "path": "assets/index-CQAN5tKT.js",
+      "bytes": 602331,
+      "sha256": "4f9f0cdbdf942bc2c3d88171d59fedc66f9c29eaf7b3133766e7f4cc4849a3de"
+    },
+    {
+      "path": "assets/index-CZmy07Ja.js",
+      "bytes": 3828531,
+      "sha256": "78dfdf835799058e7d041ccd9d429ae4a658edaa869b2b00aea5847da53f0b74"
+    },
+    {
+      "path": "assets/index-CaXCJhF9.js",
+      "bytes": 647956,
+      "sha256": "9d31fc3c31d7ea109209501b782aa1c201ab35b6dfd9346b48923e6a34903656"
+    },
+    {
+      "path": "assets/index-Ck_X98_2.css",
+      "bytes": 6472,
+      "sha256": "7c991e93c0471bdc554ebd9e79cd027afc380ee964520eb5fbc278319f16da3d"
+    },
+    {
+      "path": "assets/index-Ckjzv-es.js",
+      "bytes": 619495,
+      "sha256": "d02e1ac26ad60021af3c4cac77b574fa69eaaf5f8ab6e678818bd653d2d74a23"
+    },
+    {
+      "path": "assets/index-DG38851A.js",
+      "bytes": 4042294,
+      "sha256": "e6dbec3eeb7ae36a2b593a4601e819a2cd67716cf05219aa189f07000596ce95"
+    },
+    {
+      "path": "assets/index-DiLrAgPh.js",
+      "bytes": 621377,
+      "sha256": "582f2552ada6f52eeaab14de0006d2dea060019ac8d8ef239b76b1fe8892e7ab"
+    },
+    {
+      "path": "assets/index-cGSHziRz.js",
+      "bytes": 612450,
+      "sha256": "083f34a1a1aa39388e59a81f998bd8a0e7d25a6fc417cc84891f7c0bc1a74b0d"
+    },
+    {
+      "path": "assets/index-dCS3W-d-.js",
+      "bytes": 645526,
+      "sha256": "fe5d98cf35a585fba14df6a624a45ed496db30d245d33553f27b34906f97751c"
+    },
+    {
+      "path": "assets/index-p-GxVTiw.js",
+      "bytes": 646830,
+      "sha256": "0e4112ed5aee4812f2c798760ff2b999b9a0a6b684c1f9643d9a009d26d95ff9"
+    },
+    {
+      "path": "assets/index-uU7e7s1r.js",
+      "bytes": 621405,
+      "sha256": "e10155850538226ba23645e4b8949eda8e480d76922b8531ee0dc242aaa5a5f4"
+    },
+    {
+      "path": "assets/index-yhF1yzzg.css",
+      "bytes": 5868,
+      "sha256": "6136d7368e4bd6b94575061f931dbac539db94638ae8a856c5015cd087a5573d"
+    },
+    {
+      "path": "assets/short-hair-hshXq62u.png",
+      "bytes": 2308132,
+      "sha256": "0bef7fc0e403db5a40fabb2111ebfa6f7e8158e204c6e56b8da98e9ef527846e"
+    },
+    {
+      "path": "assets/young-asian-male-CWnOsWsU.png",
+      "bytes": 3593099,
+      "sha256": "f50016a5507fc687dc8df06599c8ea48de950cd185de33a71cafc1319ddab4d5"
+    },
+    {
+      "path": "index.html",
+      "bytes": 1772,
+      "sha256": "ae74be22db1a47163828272e41bfafbca1e2e53463a0e58212e733de79f300bb"
+    }
+  ],
+  "scope": "Local frozen-index working-tree production build before official candidate commit; exact CI comparison and publication remain pending.",
+  "localOutputCondition": "The pre-existing fresh-dist contains15 stale hashed outputs in addition to the7 new build files. This mixed directory is NOT a publication payload; a new previously absent output directory is built separately.",
+  "publicationPayloadAccepted": false
+}

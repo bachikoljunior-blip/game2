@@ -1,0 +1,57 @@
+[
+  {
+    "path": "fresh/scene-art.js",
+    "sha256": "133f04ae9f7ad3d081e7ca4d4380e82c35328a24852a6d298ad8a41d36c22e6c",
+    "bytes": 17652
+  },
+  {
+    "path": "fresh/scene-art.test.mjs",
+    "sha256": "a05ab0ed4e9d967e763a9feaf1c4a4d83ff15e9fb154d664bb1105b0503e5fc0",
+    "bytes": 5554
+  },
+  {
+    "path": "fresh/scene-surface.js",
+    "sha256": "0a4cbbba6b312fa1f0956ae04cfdf5e1c455390c4b198074d23514cd1b2d8c80",
+    "bytes": 3828
+  },
+  {
+    "path": "fresh/presentation.js",
+    "sha256": "6fed03147015c50dcad593899e869abff0cca57ff52f74cf45ac05b227149cef",
+    "bytes": 42099
+  },
+  {
+    "path": "fresh/terrain.js",
+    "sha256": "8d33d411734ca5cc7a46d15dd63057856acca8df0bb3ba9634da49fd41a0fdb2",
+    "bytes": 3166
+  },
+  {
+    "path": "fresh/route-layout.js",
+    "sha256": "8a25b3a609bb3bb230270f9c49a692d5c0228b25e5f6faafc11292c94f580d4b",
+    "bytes": 4333
+  },
+  {
+    "path": "fresh-dist/assets/index-COupR98v.js",
+    "sha256": "7ea4438d76d2d007ae99ad1e0f26d4176918ecc40a5bc8569889aa1bd3538f0e",
+    "bytes": 657944
+  },
+  {
+    "path": "fresh-dist/assets/index-CZO7hwZ8.js",
+    "sha256": "87c3edb85c1c3c1b4a934ac35e87c77fdd45877fd080cf357020b170bcea8160",
+    "bytes": 661671
+  },
+  {
+    "path": "fresh-dist/assets/index-Ck_X98_2.css",
+    "sha256": "7c991e93c0471bdc554ebd9e79cd027afc380ee964520eb5fbc278319f16da3d",
+    "bytes": 6472
+  },
+  {
+    "path": "fresh-dist/assets/index-DaO6IJCE.js",
+    "sha256": "a3b2e2cf2f3c8cb91bd288d60f176ef923ba0582df8a58f2aa7f2e5b42ee6c63",
+    "bytes": 661777
+  },
+  {
+    "path": "fresh-dist/index.html",
+    "sha256": "8ffeb6f71c026611c05f1f0fd93ad4544d818cee803dea8aad0e4f61ff8dcfb3",
+    "bytes": 1772
+  }
+]

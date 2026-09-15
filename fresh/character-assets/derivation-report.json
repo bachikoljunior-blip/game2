@@ -36,7 +36,9 @@
         0.1238055,
         0.28007650000000006,
         0.07844949999999999
-      ]
+      ],
+      "cheekGuardTriangles": 4112,
+      "cheekGuardConstruction": "original formed cheek-and-chin shell fitted outside CC0 native anatomy; continuous open-face rim; 2 mm solid edge"
     },
     "sentinel": {
       "headVertices": 4604,
@@ -50,7 +52,9 @@
         0.1238055,
         0.28007650000000006,
         0.07844949999999999
-      ]
+      ],
+      "cheekGuardTriangles": 4112,
+      "cheekGuardConstruction": "original formed cheek-and-chin shell fitted outside CC0 native anatomy; continuous open-face rim; 2 mm solid edge"
     },
     "retainer": {
       "headVertices": 4604,
@@ -64,7 +68,9 @@
         0.1238055,
         0.28007650000000006,
         0.07844949999999999
-      ]
+      ],
+      "cheekGuardTriangles": 4112,
+      "cheekGuardConstruction": "original formed cheek-and-chin shell fitted outside CC0 native anatomy; continuous open-face rim; 2 mm solid edge"
     },
     "warden": {
       "headVertices": 4604,
@@ -78,7 +84,9 @@
         0.1238055,
         0.28007650000000006,
         0.07844949999999999
-      ]
+      ],
+      "cheekGuardTriangles": 4112,
+      "cheekGuardConstruction": "original formed cheek-and-chin shell fitted outside CC0 native anatomy; continuous open-face rim; 2 mm solid edge"
     }
   },
   "hands": {
@@ -511,5 +519,5 @@
       }
     }
   },
-  "outputSha256": "b0300de3b9e1a554af7d4586dff412857e262c9a4e88ffb3510b14dbb8ca001b"
+  "outputSha256": "1ba22c09d05f7bfee14766e70a22b90dac3694697f05ed8127252f6abf6c3adc"
 }

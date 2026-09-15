@@ -721,3 +721,148 @@ Additional tail frames personally displayed:
 | 599 | 23.96 | `478a16d9b83da4b8e8e056d319d1486b5b8112e3cb1d9cec994242594e1fb323` |
 
 Repository change scope: this owned evidence file only; no runtime/other author edits, staging, commit, remote or automation actions. Recovered-tail review appended at: 2026-09-15T14:41:07.885566+00:00
+
+
+## Independent foliage LOD geometry/atlas review — 1dd29a7, with alpha repair 26a7b47
+
+### Receipt, provenance and limits
+
+- Finite independent reviewer task received for isolated `game2-foliage-pilot`, frozen **1dd29a763a6521e0aadb52a8d5d8fba1df471b4e**, parent **374e9b1e907a4aefbe965a320d6c4847d4b363a6**. The integrator identified canonical diagnostic HEAD e426 and runtime origin e188; this review does not silently evaluate later combined character/runtime changes.
+- Read actual `fresh/bamboo-frond.js`, `foliage-lod.js`, `foreground-visibility.js`, relevant presentation/inspection/leaf-surface diffs, LOD tests, author `20260915-foliage-lod.md` and counts, and installed Three shader chunks. Author-reported 51 passing tests are receipt information, not this reviewer's independent test evidence.
+- Personally displayed `.foliage-check/atlas.png` at original **512×512**, then an independently generated alpha-channel data visualization at original size. The PNG contains three narrow, pointed, feather-like frond silhouettes with internal leaf gaps and an opaque fourth tile. It is a CPU-generated atlas, **not a game/WebGL render**. No native game image for 1dd or 26a7 was supplied or viewed here.
+- Atlas PNG SHA-256: `c02acf5a39e19d56762612b33e73a344a1ffd133d25b489c4096f2954b79c5cd`. Actual independently generated raw RGBA bytes match `.foliage-check/atlas.rgba`: `126038f7144af047a3a1b247ae0a5a0146c79d75e3f9d575375ad2643bc13b7e` (1,048,576 bytes). Outside-repository temporary `independent-foliage-lod/atlas-alpha.png` SHA-256: `3ea53e6788566ccde9fb165a9ee70fc81b0af3252553fef41e2b7b69cf6c104e`.
+- This is known-source technical/appearance diagnosis. It is not an anonymous reference comparison. Formal ten elements, PS4-equivalent visual quality, GPU time, shader compilation, native LOD transition appearance and natural motion remain **not measured**. Earlier e188 ordinary-screen bare bamboo remains the measured motivation, not proof that this new candidate repairs it.
+
+### Independent geometry, attachment and CPU-ray results
+
+| Check actually performed | Result and scope |
+|---|---|
+| All detailed leaf roots to actual support line / attachment segments | **36,288 leaves** (32,400 bamboo, 3,888 maple); maximum distance **0.000002705342270525232 m**. No detached root was found by this finite geometric measure. |
+| Frond tile assignment and triangle types | **900** fronds, **300** per tile 0/1/2; no mixed-kind triangle, no near/far woody-index mismatch. 36 bamboo and 3 maple LOD meshes; their actual world matrices are identity. |
+| Independently deformed triangles and bilinear base-alpha reference vs optimized CPU ray | **612 queries**, 3 atlas variants, near/far representations, times **0, 1.37, 6.83 s**; **180 positive**, **432 negative**, including **126 geometric-card-hit holes**; **0 mismatches**. The alpha reference was separately written, not the production `foliageAlphaAt`/`foliageHitIsOpaque` helper. This checks selected rays, not every possible ray or GPU mip filtering. |
+| Support hierarchy/rest/physical parameter preservation against 374 | **2,317 supports**, equal stable-field hash `e4e7b304825e97421edad8b81ef743cbc0b7af1f966070c436ae24039544a01b`. Actual 374 presentation was instantiated using common current dependencies for construction; this is a stable geometry/hierarchy check, not a full old-runtime rendering or performance run. |
+| Grass preservation | **3,000 instances**, equal hash `70733f5d139fb4d7f2a898540bcd3e16a2e6dd1bbc08efc4951cbed3507c81c1`. Relevant source diff against 374 was empty for wind, vegetation physics, grass shape, terrain, route layout and simulation modules. |
+| Independent 20 s / 60 Hz physics integration | Root drift **0**; side-chord samples every 0.5 s had maximum strain **0.0016684072374864023** (0.1668407%, below existing 0.2% bound). Final maximum tip offsets by kind: wood 0.0008008541 m, woodBranch 0.0058519798 m, bamboo 0.0529916374 m, bambooBranch 0.0112589852 m, twig 0.0171942805 m. These numeric distinctions do not establish perceived naturalness. |
+| Actual transformed lamina area vs load approximation | Detailed bamboo triangle area sum **61.53968031838697 m²**; added mass sum **3.1595769577481696 kg**. Authored newArea / independently measured per-instance transformed area ratio **0.9895544463–1.165917428**. The maximum-axis scaling is an approximation, up to about 16.6% high, not exact transformed-area measurement. |
+
+Near bamboo now has 36 small leaves per twig / 216 per tree, connected through existing short side shoots. Those shoots remain in their twig's transported support field; they do not add independent oscillators. Far fronds come from the same near triangles projected into a mean plane, with the same support and placement. They deliberately omit individual far-leaf hinge/curl motion and depth; source identity does not mean identical shading or motion. At the first actual instance for each tile, maximum near-vertex distance to the frond plane was **0.0381002 / 0.0420723 / 0.0403862 m**. The maple far index retains major lobes but simplifies minor edge vertices. Both selected geometry and CPU ray indices follow the active representation; no restored shared trunk/leaf sine was found. `forceSinglePass` applies to the foliage materials, including the bamboo material's thin woody twig members; it is not a global opaque-wood setting.
+
+Bamboo thresholds remain 6/8 projected individual-leaf pixels and 0.11/0.07 facing hysteresis; maple uses 7/10 pixels. Rest-bound/rest-normal selection and the deliberately collapsed frond plane leave motion, grazing-angle and shading transitions for native inspection. Existing 1.4 m outer bounds, the inner leaf guard, route/root/grass data and full modal support model are retained within the inspected source/numerical scope.
+
+### Major alpha/fade defect found in 1dd, then separately repaired
+
+**1dd major:** Three physical shading begins with opacity in `diffuseColor.a`; its map chunk multiplies that by sampled texture alpha; the old conditional alpha-test then tested this product. Foreground target opacity is 0.08 but alpha-test threshold is 0.4. Thus an otherwise opaque frond pixel is discarded whenever fade opacity drops below 0.4, while CPU base-mask rays continue to report it opaque. Existing fade integration at 60 Hz yields opacity **0.717597, 0.521881, 0.386241** on the first three updates: all frond pixels therefore disappear at the third update instead of retaining the intended translucent coverage. This source/numeric defect was sent immediately to integrator and vegetation author.
+
+Received frozen repair **26a7b47cda779980a968ceb3a48a1ae44e8a8b49**, directly after 1dd. Reviewed its complete three-file diff: `bamboo-frond.js`, new `frond-fade.test.mjs`, and author evidence. It changes the shader hook and cache version, not geometry, atlas generation, physics, routes or LOD thresholds. The author-reported 14 tests/build success is separate from the independent checks below.
+
+**Independent repair verification:** Instantiated the actual scene headlessly; applied actual visible and depth hooks to installed Three physical/depth shader sources; recursively expanded include chunks. Independently executed their selected alpha operations in source order, with the actual three-component vertex-color condition, across **14,672 scalar cases**:
+
+- Physical and depth material; map enabled and absent; wood/detailed-leaf vs cutout-frond kind.
+- Every 8-bit alpha value plus exact 0.4, adjacent floating-point values, 0 and 1.
+- Entry opacity **0, 0.08, 0.2, 0.399999, 0.4, 0.5, 1**.
+
+All matched the independent expected contract: discard is based only on the frond mask below 0.4; surviving output alpha retains entry opacity; wood is not discarded by the atlas mask. Both real material hooks have cache key `valley-wind-v3-modal-vegetation-frond-cutout-v2`; visible/depth/CPU share the map. There is exactly one existing map texture sample in each expanded shader. `alphaMap` is null, `alphaToCoverage` and `premultipliedAlpha` are false. **10,609** independently checked base-texel centers across all four atlas tiles matched CPU acceptance. Full base accepted counts were **10,865 / 10,815 / 10,667 / 65,536**. Atlas byte hash remained unchanged. Source hash at completion matched frozen 26a7.
+
+An initial reviewer-only subset harness stopped because its preprocessor did not yet handle Three's `#if defined` vertex-color branch; it produced no pass claim. The corrected independent harness handles that branch and completed with exit 0. No product file was edited to obtain these results.
+
+**Closure:** the reported opacity-product defect is closed at the reviewed **source/alpha-numeric** level for 26a7. This is not GLSL compilation, GPU rasterization, physical-device performance or native visual closure. Later mip work is not included in this closure.
+
+### Remaining measured atlas differences and finite priorities
+
+1. **Medium: mip RGB brightening, potentially ordinary-distance relevant.** Base accepted-frond pixels have mean linear luminance (byte units, 0.2126R + 0.7152G + 0.0722B) **50.9835 / 50.8113 / 50.7479**. At global 64×64 mip these become **63.7297 / 63.2499 / 62.2871**, about **23–25%** higher; global 32×32 gives **71.5349 / 71.0872 / 69.2836**, about **36–40%** higher. Transparent RGB gutter `[92,111,60]` mixes into downsampled leaf color. The measurement uses each mip's accepted pixels, so it is a stored-field discrepancy, not a measured on-screen luminance delta. With a 246-texel tile span, approximately front-facing/isotropic projection would select these scales for frond quads of roughly **31 / 15 pixels**; LOD-transition or ordinary distant foliage can plausibly reach them. Exact world distances and GPU derivative/mip selection were not measured.
+2. **Medium distant-loss risk: smallest mip removes frond coverage.** Global 4×4 and 2×2 have no pixels at alpha ≥ 0.4 in any of the three frond tiles; the final global 1×1 pixel alpha is **98/255**, also below threshold. Front-facing isotropic scale is roughly a **2-pixel** frond dimension or smaller; grazing minification may reach the relevant derivative sooner. The new opacity separation does not fix this base-mask disappearance. Native visibility/severity and exact onset remain unmeasured. The integrator requested a separate finite mip repair after receipt of these measurements.
+3. **Low: raster union undercoverage.** Independently OR-ed four subpixel coverage bits per actual projected near triangle, instead of the implementation's per-triangle maximum. Expected covered pixels **10,929 / 10,880 / 10,725**; actual atlas misses **65 / 66 / 58** and has **1 / 1 / 0** extras (the tiny extras can be Float32 projection rounding). Misses are about **0.6%**, including **3 / 7 / 3** pixels whose independent four-sample union is fully covered. This remains an explicit silhouette approximation; it is not treated as a standalone pre-CI blocker in this finite review.
+4. **Native verification still required:** canopy volume at ordinary game distance; near/far color and silhouette transition; rigid frond vs detailed-leaf movement; potential aliasing; CPU base-mask vs filtered GPU mip boundaries; continued actual performance. Source and CPU atlas alone do not establish that the previously sparse canopy looks natural or reaches the PS4 target.
+
+For transparency, the longer geometry/ray/physics process imported the original 1dd module before the author edited the shader hook. Its start hash was the original `04d45...`; the end file hash was repaired `debb20...`. The full frozen diff confirms only the hook changed in that source, and the other checked geometry/LOD/CPU source hashes were unchanged. Those results therefore remain scoped to the loaded 1dd geometry/physics. The separate repair run above started and ended with the frozen 26a7 source hash and unchanged atlas bytes.
+
+### Frozen inspected source hashes
+
+| Frozen source | SHA-256 |
+|---|---|
+| 1dd `fresh/bamboo-frond.js` | `04d45b5e2a69aa556b5f2afdbcfefc8371edfcf04706bfd1394220be47057c6b` |
+| 26a7 `fresh/bamboo-frond.js` | `debb20ec16840f10df67fa9017210fed9bc39ae7dc38371056e7748b87b3bf29` |
+| Both `fresh/foliage-lod.js` | `7b20c8cacbe1113cd6c7048c628f4a970ff16bc349b0d7579ee629a9af43d76c` |
+| Both `fresh/foreground-visibility.js` | `770bc22b9470782ee7dddd382b49b091bf552945fae05efde35ff584e393aac3` |
+| Both `fresh/presentation.js` | `d2b634942eb54de38a390d5ac958a419f1e5a5beeb12ee03caf409986e0750e2` |
+| 26a7 `fresh/frond-fade.test.mjs` (read, not used as independent oracle) | `d41a4fe3f33ceb41318a5f483a75c7560368838ededc9a1ebe9ca37e539bb8a6` |
+
+Repository mutation by this reviewer: this owned evidence file only. No runtime/author test/other author evidence changes, staging, commits, remote operations or redelegation. Temporary numerical/image inspection files stayed outside the repository. Existing root/docs/older untracked work was preserved. This round is complete pending separately supplied frozen mip repair or native media.
+
+LOD / alpha-repair review appended at: 2026-09-15T15:08:35.114886+00:00
+
+
+## Independent finite mip repair review — 57a2d75
+
+### Frozen receipt and source scope
+
+Received frozen **57a2d750a003c593e00429279da9ea348e581732**, directly after **26a7b47cda779980a968ceb3a48a1ae44e8a8b49**, in the authorized isolated `game2-foliage-pilot` worktree. Reviewed the full five-file diff, author receipt/metrics, new mip test, installed Three `WebGLTextures` upload path and the official Khronos ES specification. Author-reported results are distinct from the independent executions below. No new native image, game video, physical-device measurement or actual GPU shader/texture execution was supplied for this review.
+
+The runtime change is limited to tile-local transparent RGB extension, original-alpha-weighted mip color, filtered coverage adjustment, alpha-zero coarse tile guards, and seven manual levels ending at 8×8. `installFrondCutout`, `remapBambooLeafUv`, `projectedFrondDragArea` and `addBambooCrownLoad` function bodies exactly match frozen 26a7. Git diff is empty for presentation, foliage LOD, foreground visibility, vegetation physics, wind, leaf surface and grass shape modules. Thus this follow-up does not change the near geometry, physics hierarchy/load, root data, LOD thresholds, CPU ray algorithm or separated opacity/mask hook within the inspected source scope; no new full physics run is claimed.
+
+### Same-input independent reproduction and repair verification
+
+Loaded the retained exact original 512×512 raw atlas bytes (`126038f7144af047a3a1b247ae0a5a0146c79d75e3f9d575375ad2643bc13b7e`). Imported the actual old builder from frozen `git show 26a7b47:fresh/bamboo-frond.js` and the actual frozen new builder. Ran both on separate copies. The old builder reproduced the preceding review's luminance and texel-center coverage figures.
+
+The new base atlas changes **0 alpha bytes**, **0 painted RGB bytes** (all alpha > 0 pixels), and **0 bytes in the opaque detailed-leaf fourth tile**. Exactly **486,948** transparent RGB channel bytes change. The new raw base SHA-256 is **dbddcabf4b17da028c38dc21055b38180f2fbeff8c3d7031b870896345ca3323**. Separately instantiated the actual scene headlessly: its base and all seven mip buffers matched these independently generated bytes exactly; visible/depth/CPU references share the same map.
+
+The table uses the **same accepted texel-center luminance metric as the first review**: mean linear luminance in byte units over alpha ≥ 102 pixels. This is texture-data arithmetic, not an actual screen luminance measurement.
+
+| Global mip | Old mean luminance, tile 0 / 1 / 2 | New mean luminance, tile 0 / 1 / 2 |
+|---|---|---|
+| 512 base | 50.9835 / 50.8113 / 50.7479 | 50.9835 / 50.8113 / 50.7479 |
+| 64 | 63.7297 / 63.2499 / 62.2871 | 50.5736 / 50.4132 / 50.4637 |
+| 32 | 71.5349 / 71.0872 / 69.2836 | 50.0816 / 50.0780 / 50.2683 |
+| 8 | 80.0401 / 77.6841 / 78.4216 | 50.5648 / 50.7243 / 50.3860 |
+| 4 / 2 | No accepted frond texel centers | These levels are not allocated |
+| 1 | Alpha 98/255, below threshold everywhere | This level is not allocated |
+
+Independently integrated original base-alpha-weighted color directly over each accepted new mip pixel's base footprint, without using the recursive mip routine or corrected mip alpha as an oracle. **94,932 RGB channel comparisons** had maximum deviation **0.5 byte**, consistent with final rounding. The old +23–40% covered-color brightening is absent in these stored mip values.
+
+Independently wrote the clamped four-neighbor bilinear sampler, rather than calling the production coverage/CPU helper. Used a **257×257** lattice per tile/mip; new filtered coverage is:
+
+| Global mip | Tile 0 / 1 / 2 filtered covered fraction |
+|---|---|
+| 512 base | 0.1625006 / 0.1630153 / 0.1615316 |
+| 64 | 0.1679813 / 0.1688141 / 0.1618041 |
+| 32 | 0.1673303 / 0.1658011 / 0.1650290 |
+| 8 terminal | 0.1661342 / 0.1643780 / 0.1625611 |
+
+All allocated levels retain accepted frond pixels. The terminal mip has **4/16 = 25% texel-center coverage** in each tile; its bilinearly filtered area is about **16.26–16.61%**. Those two metrics are not interchangeable. Additional **54** independent adjacent-mip blend cases (six intervals × fractions 0.2/0.5/0.8 × three tiles, each **131×131** samples) had coverage **0.1578579–0.1677641** and accepted luminance **50.4394–50.9695**. No all-empty intermediate field appeared in those finite samples.
+
+**Clarification of the old minimum-mip result:** the prior 4×4/2×2 zero-coverage statement was about frond texel centers. This new independent bilinear check also reproduces false coverage near the opaque neighboring tile: in the old 2×2 level, tiles 1 and 2 each have about **0.1724931** filtered acceptance although their own texel is below cutoff. Old 4×4 similarly gives about 0.10854/0.10978 for those two tiles. This is cross-tile mask leakage, not surviving original leaves. Old final 1×1 alpha 98 still rejects everywhere. New coarse guards were independently checked at **4,032** boundary entries across all four tiles/six reduced levels, all exactly alpha zero; the empty/mixed 4/2/1 levels are no longer allocated. This refines the old source diagnosis without claiming any unseen GPU appearance.
+
+### Actual Three upload path and normative partial-chain check
+
+Independently executed installed `three/src/renderers/webgl/WebGLTextures.js` with a recording substitute that captures both raw GL and Three state calls. This is real uploader JavaScript with stubbed GL calls, not a driver:
+
+- One `texStorage2D(TEXTURE_2D, 7, RGBA8, 512, 512)` allocation.
+- Seven `texSubImage2D` uploads at levels 0–6 with dimensions **512, 256, 128, 64, 32, 16, 8**; each upload receives the exact corresponding mip byte buffer.
+- **0** mutable `texImage2D` calls and **0** `generateMipmap` calls on either recording interface.
+- Rebinding the unchanged texture causes **0** additional allocations/uploads.
+
+Read the [official Khronos OpenGL ES 3.0.6 specification](https://registry.khronos.org/OpenGL/specs/es/3.0/es_spec_3.0.pdf), §3.8.7 equation **3.15**, printed p.150 (PDF page 163). Its effective maximum level for immutable textures is clamped by the allocated immutable level count minus one. Section 3.8.10.4 also identifies the last immutable array by that count. With seven allocated levels and unchanged base level 0, this supports level 6 as the effective terminal level; a full chain to 1×1 is not required by that rule. The actual JavaScript upload path matches that allocation. **Driver texture completeness and raster behavior remain unmeasured.** No screenshot of a specification page is counted as gameplay evidence.
+
+Reviewer additionally executed existing `frond-mip.test.mjs` and `frond-fade.test.mjs`: **3 passed, 0 failed, exit 0**, about **4.19 s**. Those author-authored fixtures cover poison RGB, mip/three-upload behavior and visible/depth opacity separation; they supplement the independent checks above and are not relabeled as independently designed tests.
+
+### Conclusion and remaining limits
+
+**The two reported defects are closed within this frozen source/CPU-data scope:** old ordinary-mip color brightening is reproduced and removed; the old completely rejecting terminal mip is replaced by a valid seven-level allocation whose terminal filtered mask retains coverage. No new static blocker was found in this finite follow-up. The prior opacity/mask separation is preserved, with its regression fixture passing.
+
+This does not establish stable subpixel raster visibility: the retained 4×4 tile can still alias/shimmer as the frond becomes very small. It also does not prove natural canopy volume, correct perceived near/far switching or shadows, GPU performance, complete input routes or PS4-equivalent visual quality. Those require the next native CI material. The approximately 0.6% base-union undercoverage remains unchanged because the base mask/near geometry are unchanged. Formal ten-element comparison remains **not measured**; this is known-source technical diagnosis.
+
+### Inspected byte fingerprints
+
+| New generated level | SHA-256 |
+|---|---|
+| 512 | `dbddcabf4b17da028c38dc21055b38180f2fbeff8c3d7031b870896345ca3323` |
+| 256 | `80a8dd421a7189bbf4185c74ebbfe7b83076fbb17b00cdbb5126a33b05c0b22e` |
+| 128 | `02b2e031906aff5e8cb48b09b112be4de8236248e6e6d46d2f73108eb22bc44c` |
+| 64 | `a489bf7e68f8ad3f644e753aad3d79d6a6fd1f11a800744ee8038bc8fa1de400` |
+| 32 | `1cda42f9f3965d1fe4c9adea3eb1b546f51aac967a1ff1950dde5dbc62673bb0` |
+| 16 | `c37f887fd39199ebfe49247d80cde6e19c25c2c991f96a3f4cc157acf83c8c1e` |
+| 8 | `12f93142d6965f68e66b1eb6e70e7daace8535287f48886780ef635c9f92a28a` |
+
+Frozen `fresh/bamboo-frond.js` SHA-256 **77e3f3932b2d23ac3fd2f0f47e0ff5fc0aa32d8e8304d304ab18d33b71746922**, independently checked at script start/end and in the separate upload/unchanged-source check. The only repository edit by this reviewer is this evidence append. No runtime/test/other author evidence edits, staging, commits, remote operations or redelegation.
+
+Finite mip-repair review appended at: 2026-09-15T15:24:08.569369+00:00

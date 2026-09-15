@@ -1,0 +1,3485 @@
+{
+  "schemaVersion": 1,
+  "author": "/root/game2_ultra_art_sound_physics/sound_revision",
+  "createdAt": "2026-09-15T15:00:48.391979+00:00",
+  "ciRun": 34983898913,
+  "jobs": {
+    "baseline": 104430942556,
+    "candidate": 104430942964
+  },
+  "provenanceScope": "Parent recovered original CI JSON/PNG; this author read local recovered bytes, independently decoded PNGs/recomputed raw samples, and copied only original JSON bytes. No remote write or runtime edit.",
+  "apparatusSha256": "1e915d1ed590327b0528efb39ed3cd815815ecfaada08900acc8428033da6651",
+  "environment": {
+    "python": "3.12.14",
+    "pillow": "12.3.0",
+    "numpy": "2.3.5"
+  },
+  "measurementScope": "CPU-render plus synchronous 960x720 RGBA readPixels, including pending GPU work, synchronization/IPC, and 2,764,800-byte transfer. Not pure GPU time or physical-device/gameplay FPS.",
+  "limits": [
+    "Separate GitHub Actions jobs are not guaranteed to use the same physical host.",
+    "Candidate full warm12 and diagnostic six-frame groups differ in sample count, authored time span and prior cache/warm state; diagnostic order was fixed.",
+    "No-leaves disables whole drawables containing leaf vertices, including mixed woody twigs; physics/leaf-ray CPU work remains.",
+    "Full frame0 includes first compilation/draw/readback; full warm12 excludes it.",
+    "No formal source-blind whole-element comparison was performed."
+  ],
+  "formalJudgments": "all 10 not measured",
+  "deadline": "2026-09-20T07:51:53Z",
+  "sides": {
+    "baseline": {
+      "sourceRevision": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+      "runnerRevision": "e42674349963d756617acdbb0be351d922e69b92",
+      "sourceFreshTree": "7b4ca3643630ee9420ce2423b69190ac80ed8db4",
+      "sourceFingerprint": "206f474d9c81779beb142d59680574f0cdc1d0fb6bd04b205424c7aeff88ad47",
+      "dependencies": {
+        "three": "0.180.0",
+        "vite": "6.4.3",
+        "playwright": "1.56.1"
+      },
+      "browserVersion": "141.0.7390.37",
+      "gl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "vendor": "WebKit",
+        "renderer": "WebKit WebGL",
+        "unmaskedRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      },
+      "report": {
+        "sourcePath": ".review/34983898913/render-profile-baseline/report.json",
+        "savedPath": "AI_DEVELOPMENT/EVIDENCE/20260915-render-profile-readback-original/baseline-report.json",
+        "sha256": "1711732db3d9f78341f3b35604a52cce76b15b1d969607a0f25083adbec2f0da",
+        "bytes": 147458,
+        "byteIdenticalCopy": true
+      },
+      "readback": {
+        "width": 960,
+        "height": 720,
+        "format": "RGBA",
+        "type": "UNSIGNED_BYTE",
+        "bytes": 2764800,
+        "bufferAllocations": 1,
+        "scope": "Synchronous full drawing-buffer pixels: pending GPU work plus synchronization/IPC and 2,764,800-byte transfer; not a pure GPU timer. Stats use bottom-left pixel coordinates. Buffer reset and CPU analysis are timed separately."
+      },
+      "cases": [
+        {
+          "variant": "full",
+          "diagnosticOnly": false,
+          "fixture": {
+            "variant": "full",
+            "worldTime": 0,
+            "player": {
+              "x": 0,
+              "z": 18
+            },
+            "enemies": [
+              {
+                "id": "sentinel",
+                "x": 0,
+                "z": 1
+              },
+              {
+                "id": "retainer",
+                "x": -3,
+                "z": -9
+              },
+              {
+                "id": "warden",
+                "x": 3,
+                "z": -16
+              }
+            ],
+            "diagnosticOnly": false
+          },
+          "groupScope": "full frames1..12; excludes initial compile/draw/readback frame0",
+          "sampleCount": 13,
+          "firstFrame": {
+            "variant": "full",
+            "frame": 0,
+            "worldTime": 0,
+            "result": "measured",
+            "gl": {
+              "beforeError": 0,
+              "beforeContextLost": false,
+              "afterError": 0,
+              "afterContextLost": false,
+              "defaultReadFramebuffer": true
+            },
+            "bufferResetCpuMs": 1.900000000023283,
+            "cpuRenderMs": 716.1999999999534,
+            "readbackWallMs": 1817.8000000000466,
+            "totalWallMs": 2534,
+            "render": {
+              "frame": 1,
+              "calls": 409,
+              "triangles": 362586,
+              "points": 0,
+              "lines": 0
+            },
+            "memory": {
+              "geometries": 414,
+              "textures": 25
+            },
+            "programs": 19,
+            "camera": [
+              0.85,
+              2.8,
+              23.8
+            ],
+            "cameraQuaternion": [
+              -0.11728161974882405,
+              0.0655146424677563,
+              0.007754187696219561,
+              0.9909050034511815
+            ],
+            "contextLost": false,
+            "pixels": {
+              "pixelCount": 691200,
+              "nonzeroRgbPixels": 691200,
+              "nonzeroAlphaPixels": 691200,
+              "opaquePixels": 691200,
+              "rgbDifferentFromFirst": 690901,
+              "min": [
+                1,
+                0,
+                0,
+                255
+              ],
+              "max": [
+                248,
+                235,
+                212,
+                255
+              ],
+              "mean": [
+                76.01766493055555,
+                63.3992259837963,
+                43.20995225694445,
+                255
+              ],
+              "variance": [
+                1304.6867915381918,
+                964.6084759633986,
+                754.7562368900813,
+                0
+              ],
+              "representativePixels": [
+                {
+                  "x": 0,
+                  "y": 0,
+                  "rgba": [
+                    67,
+                    45,
+                    22,
+                    255
+                  ]
+                },
+                {
+                  "x": 959,
+                  "y": 0,
+                  "rgba": [
+                    65,
+                    40,
+                    15,
+                    255
+                  ]
+                },
+                {
+                  "x": 0,
+                  "y": 719,
+                  "rgba": [
+                    53,
+                    65,
+                    71,
+                    255
+                  ]
+                },
+                {
+                  "x": 959,
+                  "y": 719,
+                  "rgba": [
+                    69,
+                    73,
+                    68,
+                    255
+                  ]
+                },
+                {
+                  "x": 480,
+                  "y": 360,
+                  "rgba": [
+                    12,
+                    47,
+                    76,
+                    255
+                  ]
+                },
+                {
+                  "x": 240,
+                  "y": 180,
+                  "rgba": [
+                    103,
+                    72,
+                    39,
+                    255
+                  ]
+                },
+                {
+                  "x": 720,
+                  "y": 540,
+                  "rgba": [
+                    83,
+                    85,
+                    78,
+                    255
+                  ]
+                },
+                {
+                  "x": 480,
+                  "y": 180,
+                  "rgba": [
+                    21,
+                    16,
+                    6,
+                    255
+                  ]
+                }
+              ],
+              "nontrivial": true
+            },
+            "pixelAnalysisCpuMs": 23.29999999998836,
+            "nodeRoundTripWallMs": 2584.117363
+          },
+          "aggregate": {
+            "cpuRenderMs": {
+              "count": 12,
+              "min": 13.399999999965075,
+              "median": 17.89999999999418,
+              "mean": 18.133333333336243,
+              "max": 22.800000000046566,
+              "sum": 217.60000000003492
+            },
+            "readbackWallMs": {
+              "count": 12,
+              "min": 856.1000000000349,
+              "median": 1038.8000000000175,
+              "mean": 983.7083333333236,
+              "max": 1101.0999999999767,
+              "sum": 11804.499999999884
+            },
+            "totalWallMs": {
+              "count": 12,
+              "min": 872.4000000000233,
+              "median": 1057.0,
+              "mean": 1001.8416666666599,
+              "max": 1119.2999999999884,
+              "sum": 12022.099999999919
+            },
+            "bufferResetCpuMs": {
+              "count": 12,
+              "min": 0,
+              "median": 0.10000000000582077,
+              "mean": 0.08333333333818398,
+              "max": 0.19999999995343387,
+              "sum": 1.0000000000582077
+            },
+            "pixelAnalysisCpuMs": {
+              "count": 12,
+              "min": 15.900000000023283,
+              "median": 30.39999999999418,
+              "mean": 32.6249999999903,
+              "max": 44.09999999997672,
+              "sum": 391.4999999998836
+            },
+            "nodeRoundTripWallMs": {
+              "count": 12,
+              "min": 908.0805389999996,
+              "median": 1092.8670565000002,
+              "mean": 1039.4018473333333,
+              "max": 1155.2289509999991,
+              "sum": 12472.822168
+            }
+          },
+          "rawTimingSamples": [
+            {
+              "frame": 0,
+              "worldTime": 0,
+              "cpuRenderMs": 716.1999999999534,
+              "readbackWallMs": 1817.8000000000466,
+              "totalWallMs": 2534,
+              "bufferResetCpuMs": 1.900000000023283,
+              "pixelAnalysisCpuMs": 23.29999999998836,
+              "nodeRoundTripWallMs": 2584.117363,
+              "render": {
+                "frame": 1,
+                "calls": 409,
+                "triangles": 362586,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 1,
+              "worldTime": 0.016666666666666666,
+              "cpuRenderMs": 22.800000000046566,
+              "readbackWallMs": 864.5999999999767,
+              "totalWallMs": 887.4000000000233,
+              "bufferResetCpuMs": 0.19999999995343387,
+              "pixelAnalysisCpuMs": 15.900000000023283,
+              "nodeRoundTripWallMs": 908.0805389999996,
+              "render": {
+                "frame": 2,
+                "calls": 409,
+                "triangles": 362586,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 2,
+              "worldTime": 0.03333333333333333,
+              "cpuRenderMs": 22.20000000001164,
+              "readbackWallMs": 856.5999999999767,
+              "totalWallMs": 878.7999999999884,
+              "bufferResetCpuMs": 0.1000000000349246,
+              "pixelAnalysisCpuMs": 40.79999999998836,
+              "nodeRoundTripWallMs": 924.4053210000002,
+              "render": {
+                "frame": 3,
+                "calls": 409,
+                "triangles": 362586,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 3,
+              "worldTime": 0.05,
+              "cpuRenderMs": 16.29999999998836,
+              "readbackWallMs": 856.1000000000349,
+              "totalWallMs": 872.4000000000233,
+              "bufferResetCpuMs": 0,
+              "pixelAnalysisCpuMs": 30.399999999965075,
+              "nodeRoundTripWallMs": 908.1794579999996,
+              "render": {
+                "frame": 4,
+                "calls": 409,
+                "triangles": 362586,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 4,
+              "worldTime": 0.06666666666666667,
+              "cpuRenderMs": 14.799999999988358,
+              "readbackWallMs": 859.7999999999884,
+              "totalWallMs": 874.5999999999767,
+              "bufferResetCpuMs": 0.1000000000349246,
+              "pixelAnalysisCpuMs": 30.100000000034925,
+              "nodeRoundTripWallMs": 908.9818369999994,
+              "render": {
+                "frame": 5,
+                "calls": 409,
+                "triangles": 362586,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 5,
+              "worldTime": 0.08333333333333333,
+              "cpuRenderMs": 16.20000000001164,
+              "readbackWallMs": 1044.899999999965,
+              "totalWallMs": 1061.0999999999767,
+              "bufferResetCpuMs": 0.09999999997671694,
+              "pixelAnalysisCpuMs": 42.09999999997672,
+              "nodeRoundTripWallMs": 1109.2125290000004,
+              "render": {
+                "frame": 6,
+                "calls": 409,
+                "triangles": 362586,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 6,
+              "worldTime": 0.1,
+              "cpuRenderMs": 20.099999999976717,
+              "readbackWallMs": 1040.4000000000233,
+              "totalWallMs": 1060.5,
+              "bufferResetCpuMs": 0.1000000000349246,
+              "pixelAnalysisCpuMs": 30.399999999965075,
+              "nodeRoundTripWallMs": 1096.8105579999992,
+              "render": {
+                "frame": 7,
+                "calls": 409,
+                "triangles": 362586,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 7,
+              "worldTime": 0.11666666666666667,
+              "cpuRenderMs": 17.599999999976717,
+              "readbackWallMs": 1041.5999999999767,
+              "totalWallMs": 1059.1999999999534,
+              "bufferResetCpuMs": 0.1000000000349246,
+              "pixelAnalysisCpuMs": 30.400000000023283,
+              "nodeRoundTripWallMs": 1094.3145820000009,
+              "render": {
+                "frame": 8,
+                "calls": 409,
+                "triangles": 362586,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 8,
+              "worldTime": 0.13333333333333333,
+              "cpuRenderMs": 16.400000000023283,
+              "readbackWallMs": 1041.5999999999767,
+              "totalWallMs": 1058,
+              "bufferResetCpuMs": 0,
+              "pixelAnalysisCpuMs": 44.09999999997672,
+              "nodeRoundTripWallMs": 1106.8336290000007,
+              "render": {
+                "frame": 9,
+                "calls": 409,
+                "triangles": 362586,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 9,
+              "worldTime": 0.15,
+              "cpuRenderMs": 19.5,
+              "readbackWallMs": 1037.2000000000116,
+              "totalWallMs": 1056.7000000000116,
+              "bufferResetCpuMs": 0.09999999997671694,
+              "pixelAnalysisCpuMs": 30.20000000001164,
+              "nodeRoundTripWallMs": 1091.4195309999996,
+              "render": {
+                "frame": 10,
+                "calls": 409,
+                "triangles": 362586,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 10,
+              "worldTime": 0.16666666666666666,
+              "cpuRenderMs": 20.100000000034925,
+              "readbackWallMs": 1016.6999999999534,
+              "totalWallMs": 1036.7999999999884,
+              "bufferResetCpuMs": 0,
+              "pixelAnalysisCpuMs": 30.29999999998836,
+              "nodeRoundTripWallMs": 1071.4712010000003,
+              "render": {
+                "frame": 11,
+                "calls": 409,
+                "triangles": 362586,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 11,
+              "worldTime": 0.18333333333333332,
+              "cpuRenderMs": 18.20000000001164,
+              "readbackWallMs": 1101.0999999999767,
+              "totalWallMs": 1119.2999999999884,
+              "bufferResetCpuMs": 0.09999999997671694,
+              "pixelAnalysisCpuMs": 31.399999999965075,
+              "nodeRoundTripWallMs": 1155.2289509999991,
+              "render": {
+                "frame": 12,
+                "calls": 409,
+                "triangles": 362586,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 12,
+              "worldTime": 0.2,
+              "cpuRenderMs": 13.399999999965075,
+              "readbackWallMs": 1043.9000000000233,
+              "totalWallMs": 1057.2999999999884,
+              "bufferResetCpuMs": 0.1000000000349246,
+              "pixelAnalysisCpuMs": 35.399999999965075,
+              "nodeRoundTripWallMs": 1097.8840320000018,
+              "render": {
+                "frame": 13,
+                "calls": 409,
+                "triangles": 362586,
+                "points": 0,
+                "lines": 0
+              }
+            }
+          ],
+          "pixelChecks": {
+            "allSamplesNontrivial": true,
+            "allPixelsOpaquePerSample": 691200,
+            "minDifferentRgbCount": 690901,
+            "maxDifferentRgbCount": 690901,
+            "minRgbVariances": [
+              1304.0839476596639,
+              964.2629337191361,
+              754.6226673174071
+            ],
+            "maxRgbVariances": [
+              1304.8642910574117,
+              964.7210233675705,
+              754.8878621645326
+            ]
+          },
+          "reportedSummaryMatchesIndependent": true
+        }
+      ],
+      "allSampleCount": 13,
+      "allSamplesMeasured": true,
+      "allSampleGlErrorsZero": true,
+      "allSampleContextsNotLost": true,
+      "allSampleDefaultFramebuffer": true,
+      "allSamplePixelChecksPassed": true,
+      "consoleWarnings": [
+        {
+          "text": "[.WebGL-0x12e40011b000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        },
+        {
+          "text": "[.WebGL-0x12e40011b000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        },
+        {
+          "text": "[.WebGL-0x12e40011b000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        },
+        {
+          "text": "[.WebGL-0x12e40011b000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        }
+      ],
+      "errors": [],
+      "cleanup": {
+        "browserClosed": true,
+        "browserProcessClosed": true,
+        "serverClosed": true
+      },
+      "restoration": {
+        "restored": true
+      },
+      "sourceUnchanged": true,
+      "leafDrawableScope": {
+        "geometryCount": 115,
+        "verticesVisited": 180640,
+        "meshes": [
+          {
+            "name": "bamboo-leaves-2,-2",
+            "uuid": "ccbbf810-1fe8-41ff-b0eb-e657d216b0c1",
+            "leafVertices": 2016,
+            "totalVertices": 2814,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 2236,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--2,-1",
+            "uuid": "ce8c6630-a85f-433f-9748-5404e9638cce",
+            "leafVertices": 2436,
+            "totalVertices": 3458,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 2766,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--2,0",
+            "uuid": "2e47c6ab-2a24-4248-a3c0-c0d120d46289",
+            "leafVertices": 5124,
+            "totalVertices": 7180,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 5714,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-0,1",
+            "uuid": "0d6359f5-d4fe-452a-9181-84174d642b1b",
+            "leafVertices": 1596,
+            "totalVertices": 2278,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 1826,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-1,1",
+            "uuid": "f384960c-0e38-4853-ac1d-e8e9ffd945ba",
+            "leafVertices": 5124,
+            "totalVertices": 7180,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 5714,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-1,-1",
+            "uuid": "39977812-c1c3-40ef-8280-81bc7f64d113",
+            "leafVertices": 2352,
+            "totalVertices": 3304,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 2632,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-1,0",
+            "uuid": "7d8d3970-ca52-407a-8827-cace6718ca80",
+            "leafVertices": 3360,
+            "totalVertices": 4774,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 3820,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--3,-3",
+            "uuid": "52b66638-c131-4997-a965-8d3a22af3c3c",
+            "leafVertices": 2436,
+            "totalVertices": 3512,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 2826,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-2,-3",
+            "uuid": "3732287f-d5b8-4549-9138-4d7ed4bf4edd",
+            "leafVertices": 1932,
+            "totalVertices": 2804,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 2262,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-1,-2",
+            "uuid": "2972e8d2-132e-433d-befb-8f707738ac76",
+            "leafVertices": 2520,
+            "totalVertices": 3540,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 2820,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-1,-3",
+            "uuid": "48e130ba-f5d8-4ad7-b3d8-63572ff00398",
+            "leafVertices": 3864,
+            "totalVertices": 5464,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 4364,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--3,-1",
+            "uuid": "5bd91ec1-1fdd-4816-84f0-f7f5c1bdff02",
+            "leafVertices": 1848,
+            "totalVertices": 2614,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 2088,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--2,-2",
+            "uuid": "17b51e3f-78e0-4bdb-af72-feb30104c569",
+            "leafVertices": 4956,
+            "totalVertices": 7034,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 5626,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--1,1",
+            "uuid": "dd56b575-2d0b-47cd-b778-e7e45ab12584",
+            "leafVertices": 2352,
+            "totalVertices": 3286,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 2612,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--1,2",
+            "uuid": "25b2c522-082f-4c9a-9998-fe94a966f85a",
+            "leafVertices": 504,
+            "totalVertices": 708,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 564,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--3,-2",
+            "uuid": "a9ce3227-bda9-4c7d-b328-6b2043ce057f",
+            "leafVertices": 2436,
+            "totalVertices": 3260,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 2546,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-1,2",
+            "uuid": "b02408a3-3486-4c53-a9d9-ca04e5c67925",
+            "leafVertices": 1512,
+            "totalVertices": 2124,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 1692,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--2,1",
+            "uuid": "b37209ac-6c37-4666-a2b6-f7db1d8f4533",
+            "leafVertices": 3528,
+            "totalVertices": 4956,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 3948,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-2,1",
+            "uuid": "943f433b-00d2-4582-a49a-4c8bd7f2f962",
+            "leafVertices": 2184,
+            "totalVertices": 3140,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 2524,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-2,-1",
+            "uuid": "d61eae1f-2cf1-4104-a507-e3a9cea3304a",
+            "leafVertices": 504,
+            "totalVertices": 708,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 564,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--1,-1",
+            "uuid": "d0a44180-5a10-4378-8235-5f79db71d0ef",
+            "leafVertices": 1176,
+            "totalVertices": 1634,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 1296,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-0,0",
+            "uuid": "8ef2355e-116a-422f-8e99-b3f6cb0b443c",
+            "leafVertices": 2856,
+            "totalVertices": 3922,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 3096,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-1,-4",
+            "uuid": "f2d533c2-39b9-40e8-b3b3-52f04ca2093e",
+            "leafVertices": 2100,
+            "totalVertices": 2950,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 2350,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--2,-3",
+            "uuid": "fc44b16d-ee4d-491c-afd6-3706c38ad57b",
+            "leafVertices": 3864,
+            "totalVertices": 5446,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 4344,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--1,-2",
+            "uuid": "b0e8bb7e-9773-4d5b-bad6-06789a851aee",
+            "leafVertices": 1764,
+            "totalVertices": 2478,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 1974,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--2,-4",
+            "uuid": "476904bf-6a87-43b2-acad-37bb2973349d",
+            "leafVertices": 1848,
+            "totalVertices": 2524,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 1988,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--2,2",
+            "uuid": "48fc04c0-335d-488d-8c3d-46ab6efb1991",
+            "leafVertices": 420,
+            "totalVertices": 572,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 450,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-0,-4",
+            "uuid": "e9f188e0-20bf-4eee-9f6b-acfe2e1b4b87",
+            "leafVertices": 1008,
+            "totalVertices": 1416,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 1128,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-0,-1",
+            "uuid": "bc7abfc1-1618-4c2a-9303-7a620c206b4e",
+            "leafVertices": 2016,
+            "totalVertices": 2814,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 2236,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--1,0",
+            "uuid": "f17c962b-9f79-4f55-b4f2-8424b237daa8",
+            "leafVertices": 504,
+            "totalVertices": 708,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 564,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-0,-3",
+            "uuid": "7a4fff78-8a30-423e-97b4-ce0daf5ebe64",
+            "leafVertices": 840,
+            "totalVertices": 1144,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 900,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-0,-2",
+            "uuid": "568b08f7-b8f7-4493-a019-55d411c3efce",
+            "leafVertices": 840,
+            "totalVertices": 1108,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 860,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-2,0",
+            "uuid": "58cf1f99-8403-45fc-a216-787471153230",
+            "leafVertices": 2184,
+            "totalVertices": 3032,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 2404,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--1,-4",
+            "uuid": "eb6f9b74-9a84-4023-a472-fe253a11709b",
+            "leafVertices": 840,
+            "totalVertices": 1288,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 1060,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--1,-3",
+            "uuid": "63ffd287-6b3e-4636-b1a7-a369dcb27431",
+            "leafVertices": 336,
+            "totalVertices": 436,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 336,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--3,-4",
+            "uuid": "7cb50d12-f67f-4282-a2a6-a2a100b2e923",
+            "leafVertices": 168,
+            "totalVertices": 200,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 148,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--3,1",
+            "uuid": "a1918cc2-ee57-4dfd-a86f-b2cb10c4193e",
+            "leafVertices": 252,
+            "totalVertices": 390,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 322,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "maple-leaves--2,0",
+            "uuid": "f9ff46a3-75aa-4e16-bcde-8a8bd22bb074",
+            "leafVertices": 1944,
+            "totalVertices": 1944,
+            "mixed": false,
+            "instances": 1,
+            "triangles": 1620,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "maple-leaves--1,-3",
+            "uuid": "7d1c7300-fe85-4d95-9514-c89f1f101305",
+            "leafVertices": 924,
+            "totalVertices": 924,
+            "mixed": false,
+            "instances": 1,
+            "triangles": 770,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "maple-leaves--1,-2",
+            "uuid": "63f19d2e-a6f4-4ae5-aa99-321ebf906ca4",
+            "leafVertices": 48,
+            "totalVertices": 48,
+            "mixed": false,
+            "instances": 1,
+            "triangles": 40,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "maple-leaves-0,-3",
+            "uuid": "4164da7c-d291-4f89-a3c9-c4072f0d7c19",
+            "leafVertices": 972,
+            "totalVertices": 972,
+            "mixed": false,
+            "instances": 1,
+            "triangles": 810,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "",
+            "uuid": "5715e22d-7722-43df-b72b-252e4cc78257",
+            "leafVertices": 12,
+            "totalVertices": 12,
+            "mixed": false,
+            "instances": 64,
+            "triangles": 640,
+            "castShadow": false,
+            "visible": true
+          }
+        ],
+        "scope": "Whole drawables containing at least one leafPivot.w > 0.5 vertex, including mixed woody side branches; not isolated leaf triangles",
+        "meshCount": 42,
+        "triangles": 88480
+      },
+      "png": {
+        "path": ".review/34983898913/render-profile-baseline/full.png",
+        "sha256": "f00eeb892729a2e46ae9b370fddb49394aae025128dd410183673ee79bdac824",
+        "bytes": 647140,
+        "originalMode": "RGB",
+        "decodedStats": {
+          "pixelCount": 691200,
+          "nonzeroRgbPixels": 691200,
+          "nonzeroAlphaPixels": 691200,
+          "opaquePixels": 691200,
+          "rgbDifferentFromFirst": 690901,
+          "min": [
+            1,
+            0,
+            0,
+            255
+          ],
+          "max": [
+            248,
+            235,
+            212,
+            255
+          ],
+          "mean": [
+            76.03397858796296,
+            63.41000434027778,
+            43.21953125,
+            255.0
+          ],
+          "variance": [
+            1304.8642910574117,
+            964.7094731191937,
+            754.8878621645326,
+            0.0
+          ]
+        },
+        "fullFrame12StatsMatch": true,
+        "varianceMaximumAbsoluteDifference": 0.0,
+        "representativePixels": [
+          {
+            "x": 0,
+            "y": 0,
+            "rgba": [
+              67,
+              45,
+              22,
+              255
+            ],
+            "pngTopLeftY": 719,
+            "pngRgba": [
+              67,
+              45,
+              22,
+              255
+            ],
+            "matches": true
+          },
+          {
+            "x": 959,
+            "y": 0,
+            "rgba": [
+              65,
+              40,
+              15,
+              255
+            ],
+            "pngTopLeftY": 719,
+            "pngRgba": [
+              65,
+              40,
+              15,
+              255
+            ],
+            "matches": true
+          },
+          {
+            "x": 0,
+            "y": 719,
+            "rgba": [
+              53,
+              65,
+              71,
+              255
+            ],
+            "pngTopLeftY": 0,
+            "pngRgba": [
+              53,
+              65,
+              71,
+              255
+            ],
+            "matches": true
+          },
+          {
+            "x": 959,
+            "y": 719,
+            "rgba": [
+              69,
+              73,
+              68,
+              255
+            ],
+            "pngTopLeftY": 0,
+            "pngRgba": [
+              69,
+              73,
+              68,
+              255
+            ],
+            "matches": true
+          },
+          {
+            "x": 480,
+            "y": 360,
+            "rgba": [
+              13,
+              48,
+              76,
+              255
+            ],
+            "pngTopLeftY": 359,
+            "pngRgba": [
+              13,
+              48,
+              76,
+              255
+            ],
+            "matches": true
+          },
+          {
+            "x": 240,
+            "y": 180,
+            "rgba": [
+              103,
+              72,
+              39,
+              255
+            ],
+            "pngTopLeftY": 539,
+            "pngRgba": [
+              103,
+              72,
+              39,
+              255
+            ],
+            "matches": true
+          },
+          {
+            "x": 720,
+            "y": 540,
+            "rgba": [
+              83,
+              85,
+              78,
+              255
+            ],
+            "pngTopLeftY": 179,
+            "pngRgba": [
+              83,
+              85,
+              78,
+              255
+            ],
+            "matches": true
+          },
+          {
+            "x": 480,
+            "y": 180,
+            "rgba": [
+              21,
+              16,
+              6,
+              255
+            ],
+            "pngTopLeftY": 539,
+            "pngRgba": [
+              21,
+              16,
+              6,
+              255
+            ],
+            "matches": true
+          }
+        ],
+        "captureElapsedMs": 307.7196240000012,
+        "visualInspection": "Author viewed the original PNG: normal third-person player, stone path, torii, shrine and surrounding bamboo are visibly present; this is correspondence/nonempty review, not a visual-quality or blind comparison."
+      },
+      "formerFinishCI": {
+        "run": 34982421501,
+        "reportSha256": "eecb297dfd4262ddd73894e2c163e282b04bc62fb7544571e78f653a9ca2a763",
+        "sourceRevision": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+        "result": "passed",
+        "fullWarmFinishMedianMs": 0,
+        "finishProxyValid": false,
+        "captureElapsedMs": 7025.551922000001,
+        "cleanup": {
+          "browserClosed": true,
+          "browserProcessClosed": true,
+          "serverClosed": true
+        },
+        "fullPngBytesIdentical": true,
+        "freshFingerprintIdentical": true,
+        "differenceScope": "Former finishWait is not comparable to readPixels completion/transfer cost. New capture wall time is shorter after per-frame synchronization; source and full PNG are unchanged. This is not runtime optimization evidence."
+      }
+    },
+    "candidate": {
+      "sourceRevision": "e42674349963d756617acdbb0be351d922e69b92",
+      "runnerRevision": "e42674349963d756617acdbb0be351d922e69b92",
+      "sourceFreshTree": "fba4359ccf034502acc04eff43201fe065cc79ba",
+      "sourceFingerprint": "622288cc0d41bd6846ccf4ad0041fd19cde632d368572057f4292f67b227fd48",
+      "dependencies": {
+        "three": "0.180.0",
+        "vite": "6.4.3",
+        "playwright": "1.56.1"
+      },
+      "browserVersion": "141.0.7390.37",
+      "gl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "vendor": "WebKit",
+        "renderer": "WebKit WebGL",
+        "unmaskedRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      },
+      "report": {
+        "sourcePath": ".review/34983898913/render-profile-candidate/report.json",
+        "savedPath": "AI_DEVELOPMENT/EVIDENCE/20260915-render-profile-readback-original/candidate-report.json",
+        "sha256": "713e12c525319d8508745476756a583a35251293d89b75af53e5050de40faaf9",
+        "bytes": 245414,
+        "byteIdenticalCopy": true
+      },
+      "readback": {
+        "width": 960,
+        "height": 720,
+        "format": "RGBA",
+        "type": "UNSIGNED_BYTE",
+        "bytes": 2764800,
+        "bufferAllocations": 1,
+        "scope": "Synchronous full drawing-buffer pixels: pending GPU work plus synchronization/IPC and 2,764,800-byte transfer; not a pure GPU timer. Stats use bottom-left pixel coordinates. Buffer reset and CPU analysis are timed separately."
+      },
+      "cases": [
+        {
+          "variant": "full",
+          "diagnosticOnly": false,
+          "fixture": {
+            "variant": "full",
+            "worldTime": 0,
+            "player": {
+              "x": 0,
+              "z": 18
+            },
+            "enemies": [
+              {
+                "id": "sentinel",
+                "x": 0,
+                "z": 1
+              },
+              {
+                "id": "retainer",
+                "x": -3,
+                "z": -9
+              },
+              {
+                "id": "warden",
+                "x": 3,
+                "z": -16
+              }
+            ],
+            "diagnosticOnly": false
+          },
+          "groupScope": "full frames1..12; excludes initial compile/draw/readback frame0",
+          "sampleCount": 13,
+          "firstFrame": {
+            "variant": "full",
+            "frame": 0,
+            "worldTime": 0,
+            "result": "measured",
+            "gl": {
+              "beforeError": 0,
+              "beforeContextLost": false,
+              "afterError": 0,
+              "afterContextLost": false,
+              "defaultReadFramebuffer": true
+            },
+            "bufferResetCpuMs": 1.3000000000029104,
+            "cpuRenderMs": 946.1999999999971,
+            "readbackWallMs": 2338.3000000000175,
+            "totalWallMs": 3284.5000000000146,
+            "render": {
+              "frame": 1,
+              "calls": 374,
+              "triangles": 458822,
+              "points": 0,
+              "lines": 0
+            },
+            "memory": {
+              "geometries": 379,
+              "textures": 34
+            },
+            "programs": 22,
+            "camera": [
+              0.85,
+              2.8,
+              23.8
+            ],
+            "cameraQuaternion": [
+              -0.11728161974882405,
+              0.0655146424677563,
+              0.007754187696219561,
+              0.9909050034511815
+            ],
+            "contextLost": false,
+            "pixels": {
+              "pixelCount": 691200,
+              "nonzeroRgbPixels": 691200,
+              "nonzeroAlphaPixels": 691200,
+              "opaquePixels": 691200,
+              "rgbDifferentFromFirst": 690936,
+              "min": [
+                1,
+                0,
+                0,
+                255
+              ],
+              "max": [
+                248,
+                235,
+                212,
+                255
+              ],
+              "mean": [
+                80.46053819444444,
+                67.44554398148148,
+                47.8106640625,
+                255
+              ],
+              "variance": [
+                1151.83805792794,
+                957.0460391716779,
+                882.272194437493,
+                0
+              ],
+              "representativePixels": [
+                {
+                  "x": 0,
+                  "y": 0,
+                  "rgba": [
+                    78,
+                    52,
+                    24,
+                    255
+                  ]
+                },
+                {
+                  "x": 959,
+                  "y": 0,
+                  "rgba": [
+                    62,
+                    40,
+                    17,
+                    255
+                  ]
+                },
+                {
+                  "x": 0,
+                  "y": 719,
+                  "rgba": [
+                    53,
+                    65,
+                    71,
+                    255
+                  ]
+                },
+                {
+                  "x": 959,
+                  "y": 719,
+                  "rgba": [
+                    69,
+                    73,
+                    68,
+                    255
+                  ]
+                },
+                {
+                  "x": 480,
+                  "y": 360,
+                  "rgba": [
+                    12,
+                    47,
+                    76,
+                    255
+                  ]
+                },
+                {
+                  "x": 240,
+                  "y": 180,
+                  "rgba": [
+                    85,
+                    59,
+                    31,
+                    255
+                  ]
+                },
+                {
+                  "x": 720,
+                  "y": 540,
+                  "rgba": [
+                    83,
+                    85,
+                    78,
+                    255
+                  ]
+                },
+                {
+                  "x": 480,
+                  "y": 180,
+                  "rgba": [
+                    22,
+                    17,
+                    8,
+                    255
+                  ]
+                }
+              ],
+              "nontrivial": true
+            },
+            "pixelAnalysisCpuMs": 20.39999999999418,
+            "nodeRoundTripWallMs": 3311.3032670000002
+          },
+          "aggregate": {
+            "cpuRenderMs": {
+              "count": 12,
+              "min": 13.799999999988358,
+              "median": 19.54999999998836,
+              "mean": 20.49166666666133,
+              "max": 35.10000000000582,
+              "sum": 245.89999999993597
+            },
+            "readbackWallMs": {
+              "count": 12,
+              "min": 1075.8999999999942,
+              "median": 1376.8999999999942,
+              "mean": 1328.6166666666638,
+              "max": 1442.7999999999884,
+              "sum": 15943.399999999965
+            },
+            "totalWallMs": {
+              "count": 12,
+              "min": 1089.6999999999825,
+              "median": 1397.949999999997,
+              "mean": 1349.1083333333252,
+              "max": 1469.1000000000058,
+              "sum": 16189.299999999901
+            },
+            "bufferResetCpuMs": {
+              "count": 12,
+              "min": 0.10000000000582077,
+              "median": 0.19999999999708962,
+              "mean": 0.17500000000776103,
+              "max": 0.3000000000174623,
+              "sum": 2.1000000000931323
+            },
+            "pixelAnalysisCpuMs": {
+              "count": 12,
+              "min": 15,
+              "median": 29.54999999998836,
+              "mean": 31.05000000000291,
+              "max": 44.80000000001746,
+              "sum": 372.6000000000349
+            },
+            "nodeRoundTripWallMs": {
+              "count": 12,
+              "min": 1124.9002059999984,
+              "median": 1433.8871275000001,
+              "mean": 1387.1761756666667,
+              "max": 1488.9545899999994,
+              "sum": 16646.114108
+            }
+          },
+          "rawTimingSamples": [
+            {
+              "frame": 0,
+              "worldTime": 0,
+              "cpuRenderMs": 946.1999999999971,
+              "readbackWallMs": 2338.3000000000175,
+              "totalWallMs": 3284.5000000000146,
+              "bufferResetCpuMs": 1.3000000000029104,
+              "pixelAnalysisCpuMs": 20.39999999999418,
+              "nodeRoundTripWallMs": 3311.3032670000002,
+              "render": {
+                "frame": 1,
+                "calls": 374,
+                "triangles": 458822,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 1,
+              "worldTime": 0.016666666666666666,
+              "cpuRenderMs": 26.300000000017462,
+              "readbackWallMs": 1442.7999999999884,
+              "totalWallMs": 1469.1000000000058,
+              "bufferResetCpuMs": 0.10000000000582077,
+              "pixelAnalysisCpuMs": 15,
+              "nodeRoundTripWallMs": 1488.9545899999994,
+              "render": {
+                "frame": 2,
+                "calls": 374,
+                "triangles": 458822,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 2,
+              "worldTime": 0.03333333333333333,
+              "cpuRenderMs": 22.5,
+              "readbackWallMs": 1381.2999999999884,
+              "totalWallMs": 1403.7999999999884,
+              "bufferResetCpuMs": 0.10000000000582077,
+              "pixelAnalysisCpuMs": 40.80000000001746,
+              "nodeRoundTripWallMs": 1449.1990889999997,
+              "render": {
+                "frame": 3,
+                "calls": 374,
+                "triangles": 458822,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 3,
+              "worldTime": 0.05,
+              "cpuRenderMs": 20.89999999999418,
+              "readbackWallMs": 1372,
+              "totalWallMs": 1392.8999999999942,
+              "bufferResetCpuMs": 0.3000000000174623,
+              "pixelAnalysisCpuMs": 29.10000000000582,
+              "nodeRoundTripWallMs": 1428.7767050000002,
+              "render": {
+                "frame": 4,
+                "calls": 374,
+                "triangles": 458822,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 4,
+              "worldTime": 0.06666666666666667,
+              "cpuRenderMs": 35.10000000000582,
+              "readbackWallMs": 1385.6999999999825,
+              "totalWallMs": 1420.7999999999884,
+              "bufferResetCpuMs": 0.3000000000174623,
+              "pixelAnalysisCpuMs": 29.39999999999418,
+              "nodeRoundTripWallMs": 1475.4027780000015,
+              "render": {
+                "frame": 5,
+                "calls": 374,
+                "triangles": 458822,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 5,
+              "worldTime": 0.08333333333333333,
+              "cpuRenderMs": 22,
+              "readbackWallMs": 1385.6999999999825,
+              "totalWallMs": 1407.6999999999825,
+              "bufferResetCpuMs": 0.20000000001164153,
+              "pixelAnalysisCpuMs": 44.80000000001746,
+              "nodeRoundTripWallMs": 1458.4245039999987,
+              "render": {
+                "frame": 6,
+                "calls": 374,
+                "triangles": 458822,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 6,
+              "worldTime": 0.1,
+              "cpuRenderMs": 17.5,
+              "readbackWallMs": 1385.5,
+              "totalWallMs": 1403,
+              "bufferResetCpuMs": 0.1999999999825377,
+              "pixelAnalysisCpuMs": 30.10000000000582,
+              "nodeRoundTripWallMs": 1438.99755,
+              "render": {
+                "frame": 7,
+                "calls": 374,
+                "triangles": 458822,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 7,
+              "worldTime": 0.11666666666666667,
+              "cpuRenderMs": 19.199999999982538,
+              "readbackWallMs": 1392.5,
+              "totalWallMs": 1411.6999999999825,
+              "bufferResetCpuMs": 0.10000000000582077,
+              "pixelAnalysisCpuMs": 35.89999999999418,
+              "nodeRoundTripWallMs": 1452.924342000002,
+              "render": {
+                "frame": 8,
+                "calls": 374,
+                "triangles": 458822,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 8,
+              "worldTime": 0.13333333333333333,
+              "cpuRenderMs": 17.29999999998836,
+              "readbackWallMs": 1370.5,
+              "totalWallMs": 1387.7999999999884,
+              "bufferResetCpuMs": 0.10000000000582077,
+              "pixelAnalysisCpuMs": 29.5,
+              "nodeRoundTripWallMs": 1422.4984330000007,
+              "render": {
+                "frame": 9,
+                "calls": 374,
+                "triangles": 458822,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 9,
+              "worldTime": 0.15,
+              "cpuRenderMs": 19.89999999999418,
+              "readbackWallMs": 1372.5,
+              "totalWallMs": 1392.3999999999942,
+              "bufferResetCpuMs": 0.20000000001164153,
+              "pixelAnalysisCpuMs": 29.599999999976717,
+              "nodeRoundTripWallMs": 1427.8971949999977,
+              "render": {
+                "frame": 10,
+                "calls": 374,
+                "triangles": 458822,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 10,
+              "worldTime": 0.16666666666666666,
+              "cpuRenderMs": 17.599999999976717,
+              "readbackWallMs": 1301.8000000000175,
+              "totalWallMs": 1319.3999999999942,
+              "bufferResetCpuMs": 0.20000000001164153,
+              "pixelAnalysisCpuMs": 29.300000000017462,
+              "nodeRoundTripWallMs": 1353.1508460000005,
+              "render": {
+                "frame": 11,
+                "calls": 374,
+                "triangles": 458822,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 11,
+              "worldTime": 0.18333333333333332,
+              "cpuRenderMs": 13.799999999988358,
+              "readbackWallMs": 1077.2000000000116,
+              "totalWallMs": 1091,
+              "bufferResetCpuMs": 0.10000000000582077,
+              "pixelAnalysisCpuMs": 29.70000000001164,
+              "nodeRoundTripWallMs": 1124.9002059999984,
+              "render": {
+                "frame": 12,
+                "calls": 374,
+                "triangles": 458822,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 12,
+              "worldTime": 0.2,
+              "cpuRenderMs": 13.799999999988358,
+              "readbackWallMs": 1075.8999999999942,
+              "totalWallMs": 1089.6999999999825,
+              "bufferResetCpuMs": 0.20000000001164153,
+              "pixelAnalysisCpuMs": 29.39999999999418,
+              "nodeRoundTripWallMs": 1124.9878700000008,
+              "render": {
+                "frame": 13,
+                "calls": 374,
+                "triangles": 458822,
+                "points": 0,
+                "lines": 0
+              }
+            }
+          ],
+          "pixelChecks": {
+            "allSamplesNontrivial": true,
+            "allPixelsOpaquePerSample": 691200,
+            "minDifferentRgbCount": 690934,
+            "maxDifferentRgbCount": 690941,
+            "minRgbVariances": [
+              1151.6825067271302,
+              956.7786177896387,
+              882.0036644803185
+            ],
+            "maxRgbVariances": [
+              1151.9324794160784,
+              957.0503463328978,
+              882.2849306704588
+            ]
+          },
+          "reportedSummaryMatchesIndependent": true
+        },
+        {
+          "variant": "no-leaf-shadows",
+          "diagnosticOnly": true,
+          "fixture": {
+            "variant": "no-leaf-shadows",
+            "worldTime": 0,
+            "player": {
+              "x": 0,
+              "z": 18
+            },
+            "enemies": [
+              {
+                "id": "sentinel",
+                "x": 0,
+                "z": 1
+              },
+              {
+                "id": "retainer",
+                "x": -3,
+                "z": -9
+              },
+              {
+                "id": "warden",
+                "x": 3,
+                "z": -16
+              }
+            ],
+            "diagnosticOnly": true
+          },
+          "groupScope": "six frames0..5 at authored0..5/60 after full case; cached programs/textures possible, not full-warm12 equivalent",
+          "sampleCount": 6,
+          "firstFrame": {
+            "variant": "no-leaf-shadows",
+            "frame": 0,
+            "worldTime": 0,
+            "result": "measured",
+            "gl": {
+              "beforeError": 0,
+              "beforeContextLost": false,
+              "afterError": 0,
+              "afterContextLost": false,
+              "defaultReadFramebuffer": true
+            },
+            "bufferResetCpuMs": 0.10000000000582077,
+            "cpuRenderMs": 16.29999999998836,
+            "readbackWallMs": 1044.2999999999884,
+            "totalWallMs": 1060.5999999999767,
+            "render": {
+              "frame": 14,
+              "calls": 374,
+              "triangles": 458822,
+              "points": 0,
+              "lines": 0
+            },
+            "memory": {
+              "geometries": 379,
+              "textures": 34
+            },
+            "programs": 22,
+            "camera": [
+              0.85,
+              2.8,
+              23.8
+            ],
+            "cameraQuaternion": [
+              -0.11728161974882405,
+              0.0655146424677563,
+              0.007754187696219561,
+              0.9909050034511815
+            ],
+            "contextLost": false,
+            "pixels": {
+              "pixelCount": 691200,
+              "nonzeroRgbPixels": 691200,
+              "nonzeroAlphaPixels": 691200,
+              "opaquePixels": 691200,
+              "rgbDifferentFromFirst": 690919,
+              "min": [
+                1,
+                0,
+                0,
+                255
+              ],
+              "max": [
+                248,
+                235,
+                212,
+                255
+              ],
+              "mean": [
+                80.57225115740741,
+                67.52542824074074,
+                47.860355902777776,
+                255
+              ],
+              "variance": [
+                1154.592386830438,
+                957.6653400943878,
+                881.8635203594445,
+                0
+              ],
+              "representativePixels": [
+                {
+                  "x": 0,
+                  "y": 0,
+                  "rgba": [
+                    78,
+                    52,
+                    24,
+                    255
+                  ]
+                },
+                {
+                  "x": 959,
+                  "y": 0,
+                  "rgba": [
+                    62,
+                    40,
+                    17,
+                    255
+                  ]
+                },
+                {
+                  "x": 0,
+                  "y": 719,
+                  "rgba": [
+                    53,
+                    65,
+                    71,
+                    255
+                  ]
+                },
+                {
+                  "x": 959,
+                  "y": 719,
+                  "rgba": [
+                    69,
+                    73,
+                    68,
+                    255
+                  ]
+                },
+                {
+                  "x": 480,
+                  "y": 360,
+                  "rgba": [
+                    12,
+                    47,
+                    76,
+                    255
+                  ]
+                },
+                {
+                  "x": 240,
+                  "y": 180,
+                  "rgba": [
+                    85,
+                    59,
+                    31,
+                    255
+                  ]
+                },
+                {
+                  "x": 720,
+                  "y": 540,
+                  "rgba": [
+                    83,
+                    85,
+                    78,
+                    255
+                  ]
+                },
+                {
+                  "x": 480,
+                  "y": 180,
+                  "rgba": [
+                    22,
+                    17,
+                    8,
+                    255
+                  ]
+                }
+              ],
+              "nontrivial": true
+            },
+            "pixelAnalysisCpuMs": 29.699999999982538,
+            "nodeRoundTripWallMs": 1095.3129880000015
+          },
+          "aggregate": {
+            "cpuRenderMs": {
+              "count": 6,
+              "min": 14.89999999999418,
+              "median": 16.750000000014552,
+              "mean": 16.783333333335275,
+              "max": 18.89999999999418,
+              "sum": 100.70000000001164
+            },
+            "readbackWallMs": {
+              "count": 6,
+              "min": 1035.8999999999942,
+              "median": 1040.8499999999913,
+              "mean": 1043.6166666666638,
+              "max": 1058.2999999999884,
+              "sum": 6261.6999999999825
+            },
+            "totalWallMs": {
+              "count": 6,
+              "min": 1051.1000000000058,
+              "median": 1057.5499999999884,
+              "mean": 1060.399999999999,
+              "max": 1075.2000000000116,
+              "sum": 6362.399999999994
+            },
+            "bufferResetCpuMs": {
+              "count": 6,
+              "min": 0.09999999997671694,
+              "median": 0.19999999999708962,
+              "mean": 0.5999999999961195,
+              "max": 2.7000000000116415,
+              "sum": 3.599999999976717
+            },
+            "pixelAnalysisCpuMs": {
+              "count": 6,
+              "min": 29.199999999982538,
+              "median": 29.35000000000582,
+              "mean": 29.39999999999903,
+              "max": 29.699999999982538,
+              "sum": 176.39999999999418
+            },
+            "nodeRoundTripWallMs": {
+              "count": 6,
+              "min": 1084.4742860000006,
+              "median": 1092.0966750000025,
+              "mean": 1094.5568066666674,
+              "max": 1109.0330209999993,
+              "sum": 6567.340840000004
+            }
+          },
+          "rawTimingSamples": [
+            {
+              "frame": 0,
+              "worldTime": 0,
+              "cpuRenderMs": 16.29999999998836,
+              "readbackWallMs": 1044.2999999999884,
+              "totalWallMs": 1060.5999999999767,
+              "bufferResetCpuMs": 0.10000000000582077,
+              "pixelAnalysisCpuMs": 29.699999999982538,
+              "nodeRoundTripWallMs": 1095.3129880000015,
+              "render": {
+                "frame": 14,
+                "calls": 374,
+                "triangles": 458822,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 1,
+              "worldTime": 0.016666666666666666,
+              "cpuRenderMs": 14.89999999999418,
+              "readbackWallMs": 1036.2000000000116,
+              "totalWallMs": 1051.1000000000058,
+              "bufferResetCpuMs": 0.20000000001164153,
+              "pixelAnalysisCpuMs": 29.199999999982538,
+              "nodeRoundTripWallMs": 1084.4742860000006,
+              "render": {
+                "frame": 15,
+                "calls": 374,
+                "triangles": 458822,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 2,
+              "worldTime": 0.03333333333333333,
+              "cpuRenderMs": 16.900000000023283,
+              "readbackWallMs": 1058.2999999999884,
+              "totalWallMs": 1075.2000000000116,
+              "bufferResetCpuMs": 0.09999999997671694,
+              "pixelAnalysisCpuMs": 29.60000000000582,
+              "nodeRoundTripWallMs": 1109.0330209999993,
+              "render": {
+                "frame": 16,
+                "calls": 374,
+                "triangles": 458822,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 3,
+              "worldTime": 0.05,
+              "cpuRenderMs": 18.89999999999418,
+              "readbackWallMs": 1049.6000000000058,
+              "totalWallMs": 1068.5,
+              "bufferResetCpuMs": 0.1999999999825377,
+              "pixelAnalysisCpuMs": 29.20000000001164,
+              "nodeRoundTripWallMs": 1101.5216550000005,
+              "render": {
+                "frame": 17,
+                "calls": 374,
+                "triangles": 458822,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 4,
+              "worldTime": 0.06666666666666667,
+              "cpuRenderMs": 17.10000000000582,
+              "readbackWallMs": 1037.3999999999942,
+              "totalWallMs": 1054.5,
+              "bufferResetCpuMs": 0.29999999998835847,
+              "pixelAnalysisCpuMs": 29.39999999999418,
+              "nodeRoundTripWallMs": 1088.118527999999,
+              "render": {
+                "frame": 18,
+                "calls": 374,
+                "triangles": 458822,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 5,
+              "worldTime": 0.08333333333333333,
+              "cpuRenderMs": 16.60000000000582,
+              "readbackWallMs": 1035.8999999999942,
+              "totalWallMs": 1052.5,
+              "bufferResetCpuMs": 2.7000000000116415,
+              "pixelAnalysisCpuMs": 29.300000000017462,
+              "nodeRoundTripWallMs": 1088.8803620000035,
+              "render": {
+                "frame": 19,
+                "calls": 374,
+                "triangles": 458822,
+                "points": 0,
+                "lines": 0
+              }
+            }
+          ],
+          "pixelChecks": {
+            "allSamplesNontrivial": true,
+            "allPixelsOpaquePerSample": 691200,
+            "minDifferentRgbCount": 690919,
+            "maxDifferentRgbCount": 690919,
+            "minRgbVariances": [
+              1154.4059190529624,
+              957.5305631962501,
+              881.7724236603722
+            ],
+            "maxRgbVariances": [
+              1154.6040060156984,
+              957.6722394759563,
+              881.8642536527659
+            ]
+          },
+          "reportedSummaryMatchesIndependent": true
+        },
+        {
+          "variant": "no-leaves",
+          "diagnosticOnly": true,
+          "fixture": {
+            "variant": "no-leaves",
+            "worldTime": 0,
+            "player": {
+              "x": 0,
+              "z": 18
+            },
+            "enemies": [
+              {
+                "id": "sentinel",
+                "x": 0,
+                "z": 1
+              },
+              {
+                "id": "retainer",
+                "x": -3,
+                "z": -9
+              },
+              {
+                "id": "warden",
+                "x": 3,
+                "z": -16
+              }
+            ],
+            "diagnosticOnly": true
+          },
+          "groupScope": "six frames0..5 at authored0..5/60 after full case; cached programs/textures possible, not full-warm12 equivalent",
+          "sampleCount": 6,
+          "firstFrame": {
+            "variant": "no-leaves",
+            "frame": 0,
+            "worldTime": 0,
+            "result": "measured",
+            "gl": {
+              "beforeError": 0,
+              "beforeContextLost": false,
+              "afterError": 0,
+              "afterContextLost": false,
+              "defaultReadFramebuffer": true
+            },
+            "bufferResetCpuMs": 0.10000000000582077,
+            "cpuRenderMs": 16.60000000000582,
+            "readbackWallMs": 1066.5999999999767,
+            "totalWallMs": 1083.1999999999825,
+            "render": {
+              "frame": 20,
+              "calls": 348,
+              "triangles": 301086,
+              "points": 0,
+              "lines": 0
+            },
+            "memory": {
+              "geometries": 379,
+              "textures": 34
+            },
+            "programs": 22,
+            "camera": [
+              0.85,
+              2.8,
+              23.8
+            ],
+            "cameraQuaternion": [
+              -0.11728161974882405,
+              0.0655146424677563,
+              0.007754187696219561,
+              0.9909050034511815
+            ],
+            "contextLost": false,
+            "pixels": {
+              "pixelCount": 691200,
+              "nonzeroRgbPixels": 691200,
+              "nonzeroAlphaPixels": 691200,
+              "opaquePixels": 691200,
+              "rgbDifferentFromFirst": 690919,
+              "min": [
+                1,
+                0,
+                0,
+                255
+              ],
+              "max": [
+                248,
+                235,
+                212,
+                255
+              ],
+              "mean": [
+                80.5620558449074,
+                67.53034722222222,
+                47.89383391203704,
+                255
+              ],
+              "variance": [
+                1154.219285646187,
+                957.6203637683266,
+                883.4495794562108,
+                0
+              ],
+              "representativePixels": [
+                {
+                  "x": 0,
+                  "y": 0,
+                  "rgba": [
+                    78,
+                    52,
+                    24,
+                    255
+                  ]
+                },
+                {
+                  "x": 959,
+                  "y": 0,
+                  "rgba": [
+                    62,
+                    40,
+                    17,
+                    255
+                  ]
+                },
+                {
+                  "x": 0,
+                  "y": 719,
+                  "rgba": [
+                    53,
+                    65,
+                    71,
+                    255
+                  ]
+                },
+                {
+                  "x": 959,
+                  "y": 719,
+                  "rgba": [
+                    69,
+                    73,
+                    68,
+                    255
+                  ]
+                },
+                {
+                  "x": 480,
+                  "y": 360,
+                  "rgba": [
+                    12,
+                    47,
+                    76,
+                    255
+                  ]
+                },
+                {
+                  "x": 240,
+                  "y": 180,
+                  "rgba": [
+                    85,
+                    59,
+                    31,
+                    255
+                  ]
+                },
+                {
+                  "x": 720,
+                  "y": 540,
+                  "rgba": [
+                    83,
+                    85,
+                    78,
+                    255
+                  ]
+                },
+                {
+                  "x": 480,
+                  "y": 180,
+                  "rgba": [
+                    22,
+                    17,
+                    8,
+                    255
+                  ]
+                }
+              ],
+              "nontrivial": true
+            },
+            "pixelAnalysisCpuMs": 34.20000000001164,
+            "nodeRoundTripWallMs": 1121.3319000000047
+          },
+          "aggregate": {
+            "cpuRenderMs": {
+              "count": 6,
+              "min": 13.400000000023283,
+              "median": 15.949999999982538,
+              "mean": 15.39999999999903,
+              "max": 17,
+              "sum": 92.39999999999418
+            },
+            "readbackWallMs": {
+              "count": 6,
+              "min": 879.8999999999942,
+              "median": 899.6999999999971,
+              "mean": 923.8333333333285,
+              "max": 1066.5999999999767,
+              "sum": 5542.999999999971
+            },
+            "totalWallMs": {
+              "count": 6,
+              "min": 895.6999999999825,
+              "median": 914.4499999999971,
+              "mean": 939.2333333333276,
+              "max": 1083.1999999999825,
+              "sum": 5635.399999999965
+            },
+            "bufferResetCpuMs": {
+              "count": 6,
+              "min": 0.10000000000582077,
+              "median": 0.19999999999708962,
+              "mean": 0.1833333333391541,
+              "max": 0.3000000000174623,
+              "sum": 1.1000000000349246
+            },
+            "pixelAnalysisCpuMs": {
+              "count": 6,
+              "min": 29.10000000000582,
+              "median": 29.5,
+              "mean": 30.183333333334303,
+              "max": 34.20000000001164,
+              "sum": 181.10000000000582
+            },
+            "nodeRoundTripWallMs": {
+              "count": 6,
+              "min": 929.0927929999962,
+              "median": 948.2221580000005,
+              "mean": 973.7960773333325,
+              "max": 1121.3319000000047,
+              "sum": 5842.776463999995
+            }
+          },
+          "rawTimingSamples": [
+            {
+              "frame": 0,
+              "worldTime": 0,
+              "cpuRenderMs": 16.60000000000582,
+              "readbackWallMs": 1066.5999999999767,
+              "totalWallMs": 1083.1999999999825,
+              "bufferResetCpuMs": 0.10000000000582077,
+              "pixelAnalysisCpuMs": 34.20000000001164,
+              "nodeRoundTripWallMs": 1121.3319000000047,
+              "render": {
+                "frame": 20,
+                "calls": 348,
+                "triangles": 301086,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 1,
+              "worldTime": 0.016666666666666666,
+              "cpuRenderMs": 16.099999999976717,
+              "readbackWallMs": 885.6000000000058,
+              "totalWallMs": 901.6999999999825,
+              "bufferResetCpuMs": 0.20000000001164153,
+              "pixelAnalysisCpuMs": 29.29999999998836,
+              "nodeRoundTripWallMs": 935.4494659999982,
+              "render": {
+                "frame": 21,
+                "calls": 348,
+                "triangles": 301086,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 2,
+              "worldTime": 0.03333333333333333,
+              "cpuRenderMs": 13.400000000023283,
+              "readbackWallMs": 913.7999999999884,
+              "totalWallMs": 927.2000000000116,
+              "bufferResetCpuMs": 0.1999999999825377,
+              "pixelAnalysisCpuMs": 29.5,
+              "nodeRoundTripWallMs": 960.9948500000028,
+              "render": {
+                "frame": 22,
+                "calls": 348,
+                "triangles": 301086,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 3,
+              "worldTime": 0.05,
+              "cpuRenderMs": 13.5,
+              "readbackWallMs": 915.2000000000116,
+              "totalWallMs": 928.7000000000116,
+              "bufferResetCpuMs": 0.10000000000582077,
+              "pixelAnalysisCpuMs": 29.5,
+              "nodeRoundTripWallMs": 963.3059689999936,
+              "render": {
+                "frame": 23,
+                "calls": 348,
+                "triangles": 301086,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 4,
+              "worldTime": 0.06666666666666667,
+              "cpuRenderMs": 15.799999999988358,
+              "readbackWallMs": 879.8999999999942,
+              "totalWallMs": 895.6999999999825,
+              "bufferResetCpuMs": 0.20000000001164153,
+              "pixelAnalysisCpuMs": 29.10000000000582,
+              "nodeRoundTripWallMs": 929.0927929999962,
+              "render": {
+                "frame": 24,
+                "calls": 348,
+                "triangles": 301086,
+                "points": 0,
+                "lines": 0
+              }
+            },
+            {
+              "frame": 5,
+              "worldTime": 0.08333333333333333,
+              "cpuRenderMs": 17,
+              "readbackWallMs": 881.8999999999942,
+              "totalWallMs": 898.8999999999942,
+              "bufferResetCpuMs": 0.3000000000174623,
+              "pixelAnalysisCpuMs": 29.5,
+              "nodeRoundTripWallMs": 932.6014859999996,
+              "render": {
+                "frame": 25,
+                "calls": 348,
+                "triangles": 301086,
+                "points": 0,
+                "lines": 0
+              }
+            }
+          ],
+          "pixelChecks": {
+            "allSamplesNontrivial": true,
+            "allPixelsOpaquePerSample": 691200,
+            "minDifferentRgbCount": 690919,
+            "maxDifferentRgbCount": 690919,
+            "minRgbVariances": [
+              1154.0484507230785,
+              957.5191158559455,
+              883.3934210502948
+            ],
+            "maxRgbVariances": [
+              1154.219285646187,
+              957.6203637683266,
+              883.4495794562108
+            ]
+          },
+          "reportedSummaryMatchesIndependent": true
+        }
+      ],
+      "allSampleCount": 25,
+      "allSamplesMeasured": true,
+      "allSampleGlErrorsZero": true,
+      "allSampleContextsNotLost": true,
+      "allSampleDefaultFramebuffer": true,
+      "allSamplePixelChecksPassed": true,
+      "consoleWarnings": [
+        {
+          "text": "[.WebGL-0x223c00137000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        },
+        {
+          "text": "[.WebGL-0x223c00137000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        },
+        {
+          "text": "[.WebGL-0x223c00137000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        },
+        {
+          "text": "[.WebGL-0x223c00137000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        }
+      ],
+      "errors": [],
+      "cleanup": {
+        "browserClosed": true,
+        "browserProcessClosed": true,
+        "serverClosed": true
+      },
+      "restoration": {
+        "restored": true
+      },
+      "sourceUnchanged": true,
+      "leafDrawableScope": {
+        "geometryCount": 113,
+        "verticesVisited": 307162,
+        "meshes": [
+          {
+            "name": "bamboo-leaves-2,-2",
+            "uuid": "244a3d36-2bcf-4364-a399-0ca34e1bae60",
+            "leafVertices": 3312,
+            "totalVertices": 4628,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 4304,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--2,-1",
+            "uuid": "ca2abf39-2756-46f9-b5aa-21dbf83a925e",
+            "leafVertices": 4464,
+            "totalVertices": 6262,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 5828,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-0,1",
+            "uuid": "c2e4e591-936f-4ef8-a278-5718371be17c",
+            "leafVertices": 2736,
+            "totalVertices": 3928,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 3672,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-1,1",
+            "uuid": "4f17111a-ec3f-49e9-92b6-fa9a0ae4ee76",
+            "leafVertices": 8640,
+            "totalVertices": 12120,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 11280,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-1,-1",
+            "uuid": "d664c4b6-8fa8-4577-a109-32511203dfaf",
+            "leafVertices": 4032,
+            "totalVertices": 5656,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 5264,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-1,0",
+            "uuid": "bed77d68-7835-4029-9e05-3aae3359f61e",
+            "leafVertices": 6048,
+            "totalVertices": 8520,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 7936,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--3,-3",
+            "uuid": "64e5c471-3acf-4350-887b-cee55712da9e",
+            "leafVertices": 4752,
+            "totalVertices": 6684,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 6224,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-2,-3",
+            "uuid": "652cdc38-61e8-4f3e-8cbd-30c0385bf362",
+            "leafVertices": 3888,
+            "totalVertices": 5490,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 5116,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--3,-1",
+            "uuid": "f2dc1069-397d-40ab-9937-356fa6e26e97",
+            "leafVertices": 3168,
+            "totalVertices": 4462,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 4156,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--2,-2",
+            "uuid": "9049179b-e243-4e25-8d0a-36d9368ce4e7",
+            "leafVertices": 8928,
+            "totalVertices": 12560,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 11696,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-1,-3",
+            "uuid": "3b6f5d68-cd39-4ec7-9532-93851a5720cf",
+            "leafVertices": 7056,
+            "totalVertices": 9916,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 9232,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--2,0",
+            "uuid": "277d5190-2615-4af8-97b4-28233c0f3445",
+            "leafVertices": 8640,
+            "totalVertices": 12120,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 11280,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--1,1",
+            "uuid": "1f449d25-c7f0-4fb1-b168-2eed775728e7",
+            "leafVertices": 3888,
+            "totalVertices": 5436,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 5056,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-1,2",
+            "uuid": "d433cb0f-712f-4f80-b2b3-7236b51dbb6d",
+            "leafVertices": 2592,
+            "totalVertices": 3636,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 3384,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--2,1",
+            "uuid": "70cabdbf-5d64-4507-bde1-032698f85a6d",
+            "leafVertices": 6192,
+            "totalVertices": 8668,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 8064,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-2,1",
+            "uuid": "467ab7c5-08c0-45c3-82bb-54a72b1534f2",
+            "leafVertices": 4320,
+            "totalVertices": 6060,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 5640,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-2,-1",
+            "uuid": "1c60e1db-3635-422c-a66a-b38444238e0a",
+            "leafVertices": 864,
+            "totalVertices": 1212,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 1128,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--3,-2",
+            "uuid": "a0e5f02c-98ee-44bb-b6c6-5cac58d1dabb",
+            "leafVertices": 3168,
+            "totalVertices": 4408,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 4096,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--1,-1",
+            "uuid": "74b263ff-b0a6-4030-a433-a25dd8361201",
+            "leafVertices": 1872,
+            "totalVertices": 2608,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 2424,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-0,0",
+            "uuid": "1f874ac7-6e9f-41a7-88ea-ee64b8ee529f",
+            "leafVertices": 4464,
+            "totalVertices": 6136,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 5688,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-1,-4",
+            "uuid": "8c170b00-f4df-4100-8a18-6845ac714093",
+            "leafVertices": 3600,
+            "totalVertices": 5050,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 4700,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--2,-3",
+            "uuid": "da1898ad-92c4-4b9b-ba10-210b4b69f635",
+            "leafVertices": 6912,
+            "totalVertices": 9696,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 9024,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--1,-2",
+            "uuid": "be491ba8-5da1-4ee9-9af9-8baca3943c14",
+            "leafVertices": 3024,
+            "totalVertices": 4224,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 3928,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--2,-4",
+            "uuid": "500ecd59-ba8b-4003-975d-f7f6a1135325",
+            "leafVertices": 2592,
+            "totalVertices": 3636,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 3384,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--2,2",
+            "uuid": "cab7b7ad-d766-43e3-bc99-ad908126b933",
+            "leafVertices": 720,
+            "totalVertices": 992,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 920,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-0,-4",
+            "uuid": "7abd4a0c-75c2-4e6d-99a0-194dbc3d18fe",
+            "leafVertices": 1728,
+            "totalVertices": 2424,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 2256,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--1,2",
+            "uuid": "4bad8837-07fb-4789-baa1-ab23b0a0ddf2",
+            "leafVertices": 864,
+            "totalVertices": 1212,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 1128,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-0,-1",
+            "uuid": "2477a3a6-5508-4490-8ff1-ea91f97c9a7d",
+            "leafVertices": 3456,
+            "totalVertices": 4848,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 4512,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--1,0",
+            "uuid": "694d45e3-9023-4d38-8462-83b9e0b483f1",
+            "leafVertices": 864,
+            "totalVertices": 1212,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 1128,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-0,-2",
+            "uuid": "533f0336-3919-4ae8-89aa-a2fbc0b6b373",
+            "leafVertices": 864,
+            "totalVertices": 1212,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 1128,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-2,0",
+            "uuid": "27065006-636a-401b-a56d-d5ee8a00d0b0",
+            "leafVertices": 3456,
+            "totalVertices": 4848,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 4512,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-1,-2",
+            "uuid": "9fb99d70-99a5-4e38-b7e2-e254494c9249",
+            "leafVertices": 4320,
+            "totalVertices": 6060,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 5640,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves-0,-3",
+            "uuid": "281d764d-336f-44aa-8ff6-30ef30f993dd",
+            "leafVertices": 1152,
+            "totalVertices": 1580,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 1464,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--1,-4",
+            "uuid": "f9df214a-9bbc-4929-8f17-9cc4557827c7",
+            "leafVertices": 2304,
+            "totalVertices": 3268,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 3048,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--1,-3",
+            "uuid": "2ae88086-f424-4101-bafb-7f1aa2f6e24a",
+            "leafVertices": 288,
+            "totalVertices": 368,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 336,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "bamboo-leaves--3,1",
+            "uuid": "f6cf3d24-4dd1-4eab-abde-de9937ebd2a9",
+            "leafVertices": 432,
+            "totalVertices": 660,
+            "mixed": true,
+            "instances": 1,
+            "triangles": 624,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "maple-leaves--2,0",
+            "uuid": "fef3b2ff-8dde-489f-89ed-10e518762f76",
+            "leafVertices": 46656,
+            "totalVertices": 46656,
+            "mixed": false,
+            "instances": 1,
+            "triangles": 44712,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "maple-leaves--1,-3",
+            "uuid": "1566f556-987b-47ed-a1fc-3cea788c973b",
+            "leafVertices": 23328,
+            "totalVertices": 23328,
+            "mixed": false,
+            "instances": 1,
+            "triangles": 22356,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "maple-leaves-0,-3",
+            "uuid": "c8880770-30b9-4db7-b9a7-c63b5de92f22",
+            "leafVertices": 23328,
+            "totalVertices": 23328,
+            "mixed": false,
+            "instances": 1,
+            "triangles": 22356,
+            "castShadow": true,
+            "visible": true
+          },
+          {
+            "name": "",
+            "uuid": "ae7b4906-aba4-4c79-825c-0b7e9e8a5248",
+            "leafVertices": 24,
+            "totalVertices": 24,
+            "mixed": false,
+            "instances": 64,
+            "triangles": 1472,
+            "castShadow": false,
+            "visible": true
+          }
+        ],
+        "scope": "Whole drawables containing at least one leafPivot.w > 0.5 vertex, including mixed woody side branches; not isolated leaf triangles",
+        "meshCount": 40,
+        "triangles": 260096
+      },
+      "png": {
+        "path": ".review/34983898913/render-profile-candidate/full.png",
+        "sha256": "d2e2b5a318adcb94e0d20bd956fbca02576d30938ecc690fa397fd1b923f6eaa",
+        "bytes": 622817,
+        "originalMode": "RGB",
+        "decodedStats": {
+          "pixelCount": 691200,
+          "nonzeroRgbPixels": 691200,
+          "nonzeroAlphaPixels": 691200,
+          "opaquePixels": 691200,
+          "rgbDifferentFromFirst": 690938,
+          "min": [
+            1,
+            0,
+            0,
+            255
+          ],
+          "max": [
+            248,
+            235,
+            212,
+            255
+          ],
+          "mean": [
+            80.4673191550926,
+            67.45019386574074,
+            47.811484375,
+            255.0
+          ],
+          "variance": [
+            1151.9324794160784,
+            956.953315066583,
+            882.1105150998715,
+            0.0
+          ]
+        },
+        "fullFrame12StatsMatch": true,
+        "varianceMaximumAbsoluteDifference": 0.0,
+        "representativePixels": [
+          {
+            "x": 0,
+            "y": 0,
+            "rgba": [
+              78,
+              52,
+              24,
+              255
+            ],
+            "pngTopLeftY": 719,
+            "pngRgba": [
+              78,
+              52,
+              24,
+              255
+            ],
+            "matches": true
+          },
+          {
+            "x": 959,
+            "y": 0,
+            "rgba": [
+              62,
+              40,
+              17,
+              255
+            ],
+            "pngTopLeftY": 719,
+            "pngRgba": [
+              62,
+              40,
+              17,
+              255
+            ],
+            "matches": true
+          },
+          {
+            "x": 0,
+            "y": 719,
+            "rgba": [
+              53,
+              65,
+              71,
+              255
+            ],
+            "pngTopLeftY": 0,
+            "pngRgba": [
+              53,
+              65,
+              71,
+              255
+            ],
+            "matches": true
+          },
+          {
+            "x": 959,
+            "y": 719,
+            "rgba": [
+              69,
+              73,
+              68,
+              255
+            ],
+            "pngTopLeftY": 0,
+            "pngRgba": [
+              69,
+              73,
+              68,
+              255
+            ],
+            "matches": true
+          },
+          {
+            "x": 480,
+            "y": 360,
+            "rgba": [
+              13,
+              48,
+              76,
+              255
+            ],
+            "pngTopLeftY": 359,
+            "pngRgba": [
+              13,
+              48,
+              76,
+              255
+            ],
+            "matches": true
+          },
+          {
+            "x": 240,
+            "y": 180,
+            "rgba": [
+              85,
+              59,
+              31,
+              255
+            ],
+            "pngTopLeftY": 539,
+            "pngRgba": [
+              85,
+              59,
+              31,
+              255
+            ],
+            "matches": true
+          },
+          {
+            "x": 720,
+            "y": 540,
+            "rgba": [
+              83,
+              85,
+              78,
+              255
+            ],
+            "pngTopLeftY": 179,
+            "pngRgba": [
+              83,
+              85,
+              78,
+              255
+            ],
+            "matches": true
+          },
+          {
+            "x": 480,
+            "y": 180,
+            "rgba": [
+              22,
+              17,
+              8,
+              255
+            ],
+            "pngTopLeftY": 539,
+            "pngRgba": [
+              22,
+              17,
+              8,
+              255
+            ],
+            "matches": true
+          }
+        ],
+        "captureElapsedMs": 245.92441999999937,
+        "visualInspection": "Author viewed the original PNG: normal third-person player, stone path, torii, shrine and surrounding bamboo are visibly present; this is correspondence/nonempty review, not a visual-quality or blind comparison."
+      },
+      "formerFinishCI": {
+        "run": 34982421501,
+        "reportSha256": "61cca5cdf1899aaae42687b2a1dd0ab7d3536091d0369081f4a4b4b58854aef8",
+        "sourceRevision": "e18820165d6008fedfca28d2cc7073a9c4b74b28",
+        "result": "failed",
+        "fullWarmFinishMedianMs": 0,
+        "finishProxyValid": false,
+        "captureElapsedMs": 16913.162486,
+        "cleanup": {
+          "browserClosed": true,
+          "browserProcessError": "Error: owned browser close exceeded 10000ms\n    at Timeout.<anonymous> (file:///home/runner/work/game2/game2/tools/fresh-render-profile.mjs:18:128)\n    at listOnTimeout (node:internal/timers:585:17)\n    at process.processTimers (node:internal/timers:521:7)",
+          "browserKilled": true,
+          "serverClosed": true
+        },
+        "fullPngBytesIdentical": true,
+        "freshFingerprintIdentical": true,
+        "differenceScope": "Former finishWait is not comparable to readPixels completion/transfer cost. New capture wall time is shorter after per-frame synchronization; source and full PNG are unchanged. This is not runtime optimization evidence."
+      }
+    }
+  },
+  "crossJobFullWarmMedianObservations": {
+    "cpuRenderMs": {
+      "baselineMs": 17.89999999999418,
+      "candidateMs": 19.54999999998836,
+      "candidateMinusBaselineMs": 1.6499999999941792,
+      "candidateToBaselineRatio": 1.0921787709494255
+    },
+    "readbackWallMs": {
+      "baselineMs": 1038.8000000000175,
+      "candidateMs": 1376.8999999999942,
+      "candidateMinusBaselineMs": 338.0999999999767,
+      "candidateToBaselineRatio": 1.3254716981131796
+    },
+    "totalWallMs": {
+      "baselineMs": 1057.0,
+      "candidateMs": 1397.949999999997,
+      "candidateMinusBaselineMs": 340.9499999999971,
+      "candidateToBaselineRatio": 1.3225638599810758
+    }
+  },
+  "candidateDiagnosticMedianObservations": [
+    {
+      "variant": "full",
+      "sampleCount": 12,
+      "cpuRenderMs": 19.54999999998836,
+      "readbackWallMs": 1376.8999999999942,
+      "totalWallMs": 1397.949999999997,
+      "totalRelativeToFullWarm12": 1.0,
+      "scope": "Fixed-order diagnostic observation; differs in warm state, sample count/time range from full warm12. Not an isolated leaf GPU benchmark."
+    },
+    {
+      "variant": "no-leaf-shadows",
+      "sampleCount": 6,
+      "cpuRenderMs": 16.750000000014552,
+      "readbackWallMs": 1040.8499999999913,
+      "totalWallMs": 1057.5499999999884,
+      "totalRelativeToFullWarm12": 0.7565005901498556,
+      "scope": "Fixed-order diagnostic observation; differs in warm state, sample count/time range from full warm12. Not an isolated leaf GPU benchmark."
+    },
+    {
+      "variant": "no-leaves",
+      "sampleCount": 6,
+      "cpuRenderMs": 15.949999999982538,
+      "readbackWallMs": 899.6999999999971,
+      "totalWallMs": 914.4499999999971,
+      "totalRelativeToFullWarm12": 0.654136414034836,
+      "scope": "Fixed-order diagnostic observation; differs in warm state, sample count/time range from full warm12. Not an isolated leaf GPU benchmark."
+    }
+  ],
+  "candidateRuntimeTreeIdentity": {
+    "e188FreshTree": "fba4359ccf034502acc04eff43201fe065cc79ba",
+    "e426FreshTree": "fba4359ccf034502acc04eff43201fe065cc79ba",
+    "same": true
+  },
+  "validation": {
+    "result": "passed",
+    "assertionCount": 215,
+    "checks": [
+      "baseline: original JSON copied byte-identically",
+      "baseline: schema2 passed",
+      "baseline: exact corrected apparatus",
+      "baseline: immutable source and restored flags",
+      "baseline: clean close without kill/error",
+      "baseline: errors empty",
+      "baseline: consoleErrors empty",
+      "baseline: pageErrors empty",
+      "baseline: requestFailures empty",
+      "baseline: glErrorDiagnostics empty",
+      "baseline: all four performance warnings retained",
+      "baseline: full reused RGBA buffer",
+      "baseline: exact case/sample counts",
+      "baseline/full: measured",
+      "baseline/full/0: authored time/frame",
+      "baseline/full/0: successful default-buffer read and GL/context state",
+      "baseline/full/0: timing identity",
+      "baseline/full/0: full opaque nonuniform actual pixels",
+      "baseline/full/1: authored time/frame",
+      "baseline/full/1: successful default-buffer read and GL/context state",
+      "baseline/full/1: timing identity",
+      "baseline/full/1: full opaque nonuniform actual pixels",
+      "baseline/full/2: authored time/frame",
+      "baseline/full/2: successful default-buffer read and GL/context state",
+      "baseline/full/2: timing identity",
+      "baseline/full/2: full opaque nonuniform actual pixels",
+      "baseline/full/3: authored time/frame",
+      "baseline/full/3: successful default-buffer read and GL/context state",
+      "baseline/full/3: timing identity",
+      "baseline/full/3: full opaque nonuniform actual pixels",
+      "baseline/full/4: authored time/frame",
+      "baseline/full/4: successful default-buffer read and GL/context state",
+      "baseline/full/4: timing identity",
+      "baseline/full/4: full opaque nonuniform actual pixels",
+      "baseline/full/5: authored time/frame",
+      "baseline/full/5: successful default-buffer read and GL/context state",
+      "baseline/full/5: timing identity",
+      "baseline/full/5: full opaque nonuniform actual pixels",
+      "baseline/full/6: authored time/frame",
+      "baseline/full/6: successful default-buffer read and GL/context state",
+      "baseline/full/6: timing identity",
+      "baseline/full/6: full opaque nonuniform actual pixels",
+      "baseline/full/7: authored time/frame",
+      "baseline/full/7: successful default-buffer read and GL/context state",
+      "baseline/full/7: timing identity",
+      "baseline/full/7: full opaque nonuniform actual pixels",
+      "baseline/full/8: authored time/frame",
+      "baseline/full/8: successful default-buffer read and GL/context state",
+      "baseline/full/8: timing identity",
+      "baseline/full/8: full opaque nonuniform actual pixels",
+      "baseline/full/9: authored time/frame",
+      "baseline/full/9: successful default-buffer read and GL/context state",
+      "baseline/full/9: timing identity",
+      "baseline/full/9: full opaque nonuniform actual pixels",
+      "baseline/full/10: authored time/frame",
+      "baseline/full/10: successful default-buffer read and GL/context state",
+      "baseline/full/10: timing identity",
+      "baseline/full/10: full opaque nonuniform actual pixels",
+      "baseline/full/11: authored time/frame",
+      "baseline/full/11: successful default-buffer read and GL/context state",
+      "baseline/full/11: timing identity",
+      "baseline/full/11: full opaque nonuniform actual pixels",
+      "baseline/full/12: authored time/frame",
+      "baseline/full/12: successful default-buffer read and GL/context state",
+      "baseline/full/12: timing identity",
+      "baseline/full/12: full opaque nonuniform actual pixels",
+      "baseline/full: raw-sample summary independently matches",
+      "baseline: independently decoded PNG dimensions",
+      "baseline: PNG full-frame12 pixelCount exactly matches readPixels stats",
+      "baseline: PNG full-frame12 nonzeroRgbPixels exactly matches readPixels stats",
+      "baseline: PNG full-frame12 nonzeroAlphaPixels exactly matches readPixels stats",
+      "baseline: PNG full-frame12 opaquePixels exactly matches readPixels stats",
+      "baseline: PNG full-frame12 rgbDifferentFromFirst exactly matches readPixels stats",
+      "baseline: PNG full-frame12 min exactly matches readPixels stats",
+      "baseline: PNG full-frame12 max exactly matches readPixels stats",
+      "baseline: PNG full-frame12 mean exactly matches readPixels stats",
+      "baseline: PNG variance matches readPixels stats",
+      "baseline: all eight actual PNG/readPixels representatives match",
+      "baseline: actual PNG SHA matches report",
+      "baseline: original full PNG byte-identical to former finish CI",
+      "baseline: fresh source fingerprint same as former finish CI",
+      "candidate: original JSON copied byte-identically",
+      "candidate: schema2 passed",
+      "candidate: exact corrected apparatus",
+      "candidate: immutable source and restored flags",
+      "candidate: clean close without kill/error",
+      "candidate: errors empty",
+      "candidate: consoleErrors empty",
+      "candidate: pageErrors empty",
+      "candidate: requestFailures empty",
+      "candidate: glErrorDiagnostics empty",
+      "candidate: all four performance warnings retained",
+      "candidate: full reused RGBA buffer",
+      "candidate: exact case/sample counts",
+      "candidate/full: measured",
+      "candidate/full/0: authored time/frame",
+      "candidate/full/0: successful default-buffer read and GL/context state",
+      "candidate/full/0: timing identity",
+      "candidate/full/0: full opaque nonuniform actual pixels",
+      "candidate/full/1: authored time/frame",
+      "candidate/full/1: successful default-buffer read and GL/context state",
+      "candidate/full/1: timing identity",
+      "candidate/full/1: full opaque nonuniform actual pixels",
+      "candidate/full/2: authored time/frame",
+      "candidate/full/2: successful default-buffer read and GL/context state",
+      "candidate/full/2: timing identity",
+      "candidate/full/2: full opaque nonuniform actual pixels",
+      "candidate/full/3: authored time/frame",
+      "candidate/full/3: successful default-buffer read and GL/context state",
+      "candidate/full/3: timing identity",
+      "candidate/full/3: full opaque nonuniform actual pixels",
+      "candidate/full/4: authored time/frame",
+      "candidate/full/4: successful default-buffer read and GL/context state",
+      "candidate/full/4: timing identity",
+      "candidate/full/4: full opaque nonuniform actual pixels",
+      "candidate/full/5: authored time/frame",
+      "candidate/full/5: successful default-buffer read and GL/context state",
+      "candidate/full/5: timing identity",
+      "candidate/full/5: full opaque nonuniform actual pixels",
+      "candidate/full/6: authored time/frame",
+      "candidate/full/6: successful default-buffer read and GL/context state",
+      "candidate/full/6: timing identity",
+      "candidate/full/6: full opaque nonuniform actual pixels",
+      "candidate/full/7: authored time/frame",
+      "candidate/full/7: successful default-buffer read and GL/context state",
+      "candidate/full/7: timing identity",
+      "candidate/full/7: full opaque nonuniform actual pixels",
+      "candidate/full/8: authored time/frame",
+      "candidate/full/8: successful default-buffer read and GL/context state",
+      "candidate/full/8: timing identity",
+      "candidate/full/8: full opaque nonuniform actual pixels",
+      "candidate/full/9: authored time/frame",
+      "candidate/full/9: successful default-buffer read and GL/context state",
+      "candidate/full/9: timing identity",
+      "candidate/full/9: full opaque nonuniform actual pixels",
+      "candidate/full/10: authored time/frame",
+      "candidate/full/10: successful default-buffer read and GL/context state",
+      "candidate/full/10: timing identity",
+      "candidate/full/10: full opaque nonuniform actual pixels",
+      "candidate/full/11: authored time/frame",
+      "candidate/full/11: successful default-buffer read and GL/context state",
+      "candidate/full/11: timing identity",
+      "candidate/full/11: full opaque nonuniform actual pixels",
+      "candidate/full/12: authored time/frame",
+      "candidate/full/12: successful default-buffer read and GL/context state",
+      "candidate/full/12: timing identity",
+      "candidate/full/12: full opaque nonuniform actual pixels",
+      "candidate/full: raw-sample summary independently matches",
+      "candidate/no-leaf-shadows: measured",
+      "candidate/no-leaf-shadows/0: authored time/frame",
+      "candidate/no-leaf-shadows/0: successful default-buffer read and GL/context state",
+      "candidate/no-leaf-shadows/0: timing identity",
+      "candidate/no-leaf-shadows/0: full opaque nonuniform actual pixels",
+      "candidate/no-leaf-shadows/1: authored time/frame",
+      "candidate/no-leaf-shadows/1: successful default-buffer read and GL/context state",
+      "candidate/no-leaf-shadows/1: timing identity",
+      "candidate/no-leaf-shadows/1: full opaque nonuniform actual pixels",
+      "candidate/no-leaf-shadows/2: authored time/frame",
+      "candidate/no-leaf-shadows/2: successful default-buffer read and GL/context state",
+      "candidate/no-leaf-shadows/2: timing identity",
+      "candidate/no-leaf-shadows/2: full opaque nonuniform actual pixels",
+      "candidate/no-leaf-shadows/3: authored time/frame",
+      "candidate/no-leaf-shadows/3: successful default-buffer read and GL/context state",
+      "candidate/no-leaf-shadows/3: timing identity",
+      "candidate/no-leaf-shadows/3: full opaque nonuniform actual pixels",
+      "candidate/no-leaf-shadows/4: authored time/frame",
+      "candidate/no-leaf-shadows/4: successful default-buffer read and GL/context state",
+      "candidate/no-leaf-shadows/4: timing identity",
+      "candidate/no-leaf-shadows/4: full opaque nonuniform actual pixels",
+      "candidate/no-leaf-shadows/5: authored time/frame",
+      "candidate/no-leaf-shadows/5: successful default-buffer read and GL/context state",
+      "candidate/no-leaf-shadows/5: timing identity",
+      "candidate/no-leaf-shadows/5: full opaque nonuniform actual pixels",
+      "candidate/no-leaf-shadows: raw-sample summary independently matches",
+      "candidate/no-leaves: measured",
+      "candidate/no-leaves/0: authored time/frame",
+      "candidate/no-leaves/0: successful default-buffer read and GL/context state",
+      "candidate/no-leaves/0: timing identity",
+      "candidate/no-leaves/0: full opaque nonuniform actual pixels",
+      "candidate/no-leaves/1: authored time/frame",
+      "candidate/no-leaves/1: successful default-buffer read and GL/context state",
+      "candidate/no-leaves/1: timing identity",
+      "candidate/no-leaves/1: full opaque nonuniform actual pixels",
+      "candidate/no-leaves/2: authored time/frame",
+      "candidate/no-leaves/2: successful default-buffer read and GL/context state",
+      "candidate/no-leaves/2: timing identity",
+      "candidate/no-leaves/2: full opaque nonuniform actual pixels",
+      "candidate/no-leaves/3: authored time/frame",
+      "candidate/no-leaves/3: successful default-buffer read and GL/context state",
+      "candidate/no-leaves/3: timing identity",
+      "candidate/no-leaves/3: full opaque nonuniform actual pixels",
+      "candidate/no-leaves/4: authored time/frame",
+      "candidate/no-leaves/4: successful default-buffer read and GL/context state",
+      "candidate/no-leaves/4: timing identity",
+      "candidate/no-leaves/4: full opaque nonuniform actual pixels",
+      "candidate/no-leaves/5: authored time/frame",
+      "candidate/no-leaves/5: successful default-buffer read and GL/context state",
+      "candidate/no-leaves/5: timing identity",
+      "candidate/no-leaves/5: full opaque nonuniform actual pixels",
+      "candidate/no-leaves: raw-sample summary independently matches",
+      "candidate: independently decoded PNG dimensions",
+      "candidate: PNG full-frame12 pixelCount exactly matches readPixels stats",
+      "candidate: PNG full-frame12 nonzeroRgbPixels exactly matches readPixels stats",
+      "candidate: PNG full-frame12 nonzeroAlphaPixels exactly matches readPixels stats",
+      "candidate: PNG full-frame12 opaquePixels exactly matches readPixels stats",
+      "candidate: PNG full-frame12 rgbDifferentFromFirst exactly matches readPixels stats",
+      "candidate: PNG full-frame12 min exactly matches readPixels stats",
+      "candidate: PNG full-frame12 max exactly matches readPixels stats",
+      "candidate: PNG full-frame12 mean exactly matches readPixels stats",
+      "candidate: PNG variance matches readPixels stats",
+      "candidate: all eight actual PNG/readPixels representatives match",
+      "candidate: actual PNG SHA matches report",
+      "candidate: original full PNG byte-identical to former finish CI",
+      "candidate: fresh source fingerprint same as former finish CI",
+      "candidate e426 fresh tree exactly equals e188 runtime tree"
+    ],
+    "totalFrames": 38,
+    "recoveredReportAndPngUnmodified": true
+  }
+}

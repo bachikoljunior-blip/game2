@@ -5,6 +5,7 @@ import * as T from 'three';
 import {readFileSync,writeFileSync} from 'node:fs';
 import {gunzipSync} from 'node:zlib';
 import {createHash} from 'node:crypto';
+import {surface,shellSurface} from '../character-sculpt.js';
 
 const root=new URL('../character-assets/',import.meta.url);
 const read=name=>{const b=readFileSync(new URL(name,root));return (name.endsWith('.gz')?gunzipSync(b):b).toString();};
@@ -101,6 +102,40 @@ function pack(vertices,uv,faces,normals=null){
   return {position,normal,uv:texcoord,index,sourceVertex};
 }
 const figures={};
+function fittedCheekGuard(head){
+  const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(head.position,3));geometry.setIndex(head.index);
+  const mesh=new T.Mesh(geometry,new T.MeshBasicMaterial({side:T.DoubleSide}));mesh.updateMatrixWorld(true);
+  const columns=48,rows=20,fields=[];
+  const angleAt=(u,v)=>(u-.5)*2.65*(1-.28*T.MathUtils.smoothstep(v,.2,1));
+  const height=(angle,v)=>{
+    const side=Math.abs(Math.sin(angle)),earRelief=.018*T.MathUtils.smoothstep(Math.abs(angle),.98,1.325);
+    return T.MathUtils.lerp(.045+.033*side**.9,.098+.040*side**.9-earRelief,v);
+  };
+  for(let i=0;i<=columns;i++){
+    const radii=[];
+    for(let j=0;j<=rows;j++){
+      const angle=angleAt(i/columns,j/rows),axis=V(Math.sin(angle),0,-Math.cos(angle));
+      const y=height(angle,j/rows),origin=axis.clone().multiplyScalar(.35).add(V(0,y,.010));
+      const hit=new T.Raycaster(origin,axis.clone().negate(),0,.35).intersectObject(mesh,false)[0];
+      if(!hit)throw Error(`Missing cheek guard fitting surface ${i}/${j}`);
+      radii.push(Math.hypot(hit.point.x,hit.point.z-.010)+.0055);
+    }
+    // A formed plate bridges the mouth's local relief. Fit a smooth bowed
+    // column outside the sampled anatomy; do not recolor its lips and nose.
+    const low=Math.max(...radii.slice(0,6)),high=Math.max(...radii.slice(-6));let bow=.001;
+    for(let j=1;j<rows;j++)bow=Math.max(bow,(radii[j]-T.MathUtils.lerp(low,high,j/rows))/Math.sin(Math.PI*j/rows));
+    fields.push({low,high,bow});
+  }
+  const outer=surface(columns,rows,(u,v)=>{
+    const i=Math.round(u*columns),angle=angleAt(u,v),{low,high,bow}=fields[i];
+    const radius=T.MathUtils.lerp(low,high,v)+bow*Math.sin(v*Math.PI);
+    return [Math.sin(angle)*radius,height(angle,v),.010-Math.cos(angle)*radius];
+  },{flip:true});
+  const shell=shellSurface(outer,.002),a=shell.attributes;
+  const result={position:Array.from(a.position.array,round),normal:Array.from(a.normal.array,round),uv:Array.from(a.uv.array,round),index:Array.from(shell.index.array),
+    sourceVertex:Array(a.position.count).fill(-1),construction:'original formed cheek-and-chin shell fitted outside CC0 native anatomy; continuous open-face rim; 2 mm solid edge'};
+  shell.dispose();geometry.dispose();mesh.material.dispose();return result;
+}
 for(const [id,profile] of Object.entries(profiles)){
   const vertices=shape(profile),neck=joint('joint-neck',vertices),headScale=.105;
   const toHead=p=>V(-p.x*headScale,(p.y-neck.y)*headScale+.025,-(p.z-neck.z)*headScale+.010);
@@ -110,6 +145,8 @@ for(const [id,profile] of Object.entries(profiles)){
   // the garment collar, while the visible throat, jaw and skull stay joined.
   const headFaces=bodyFaces.filter(f=>f.corners.every(([i])=>headWeights[i]>.18&&hp[i].y>-.065));
   const headNormals=smoothNormals(hp,bodyFaces),head=pack(hp,base.uv,headFaces,headNormals);
+  const sourceHeadWeights=new Map(weights.head);
+  head.headRotationWeight=head.sourceVertex.map(i=>round(sourceHeadWeights.get(i)||0));
   const eyes=fitAsset('eyes',vertices),hair=fitAsset('hair',vertices),brows=fitAsset('brows',vertices);
   const eyeGeometry=pack(eyes.vertices.map(toHead),eyes.uv,eyes.faces);
   // The source brown texture is saturated amber. An iris-only vertex tint
@@ -124,9 +161,7 @@ for(const [id,profile] of Object.entries(profiles)){
   }
   const hairGeometry=pack(hair.vertices.map(toHead),hair.uv,hair.faces);
   const browGeometry=pack(brows.vertices.map(toHead),brows.uv,brows.faces);
-  const maskFaces=headFaces.filter(f=>f.corners.every(([i])=>hp[i].y>.028&&hp[i].y<.135&&hp[i].z<-.010));
-  const maskVertices=hp.map((p,i)=>p.clone().addScaledVector(headNormals[i],.006));
-  const mask=pack(maskVertices,base.uv,maskFaces,headNormals);
+  const mask=fittedCheekGuard(head);
   figures[id]={head,eyes:eyeGeometry,hair:hairGeometry,brows:browGeometry,mask,profile,
     neckSource:neck.toArray(),headScale,headBounds:new T.Box3().setFromPoints(head.sourceVertex.map(i=>hp[i])).min.toArray().concat(new T.Box3().setFromPoints(head.sourceVertex.map(i=>hp[i])).max.toArray())};
 }
@@ -192,7 +227,8 @@ const data={schema:1,source:'MakeHuman MPFB hm08',license:'CC0-1.0',figures,hand
 const output='// Derived CC0 MPFB mesh/UV data. Rebuild with character-tools/derive-mpfb.mjs.\nexport default '+JSON.stringify(data)+';\n';
 writeFileSync(new URL('native-data.js',root),output);
 const report={sourceVertices:base.vertices.length,sourceBodyFaces:bodyFaces.length,profiles,
-  figures:Object.fromEntries(Object.entries(figures).map(([id,f])=>[id,{headVertices:f.head.position.length/3,headTriangles:f.head.index.length/3,eyeTriangles:f.eyes.index.length/3,hairTriangles:f.hair.index.length/3,headBounds:f.headBounds}])),
+  figures:Object.fromEntries(Object.entries(figures).map(([id,f])=>[id,{headVertices:f.head.position.length/3,headTriangles:f.head.index.length/3,eyeTriangles:f.eyes.index.length/3,hairTriangles:f.hair.index.length/3,headBounds:f.headBounds,
+    cheekGuardTriangles:f.mask.index.length/3,cheekGuardConstruction:f.mask.construction}])),
   hands:Object.fromEntries(Object.entries(hands).map(([id,h])=>[id,{vertices:h.geometry.position.length/3,triangles:h.geometry.index.length/3,gripOffset:h.gripOffset,bounds:h.bounds,landmarks:h.landmarks}])),
   outputSha256:createHash('sha256').update(output).digest('hex')};
 writeFileSync(new URL('derivation-report.json',root),JSON.stringify(report,null,2)+'\n');

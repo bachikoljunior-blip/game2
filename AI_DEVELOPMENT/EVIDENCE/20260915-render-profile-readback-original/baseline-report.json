@@ -1,0 +1,5894 @@
+{
+  "schemaVersion": 2,
+  "result": "passed",
+  "startedAt": "2026-09-15T14:46:54.843Z",
+  "sourceRoot": "/home/runner/work/game2/profile-runtime",
+  "variants": [
+    "full"
+  ],
+  "viewport": {
+    "width": 960,
+    "height": 720,
+    "dpr": 1
+  },
+  "apparatusSha256": "1e915d1ed590327b0528efb39ed3cd815815ecfaada08900acc8428033da6651",
+  "limits": {
+    "operationMs": 60000,
+    "fullFrames": 13,
+    "diagnosticFramesEach": 6
+  },
+  "scope": "Production createPresentation/createWorld, built by Vite, Chromium SwiftShader. Fixed initial world and normal animation/camera. Diagnostic flags never enter the source runtime. Not physical-device performance or visual quality acceptance.",
+  "retiredMeasurement": {
+    "finishWaitMs": "Invalid as a GPU-completion proxy: Chromium current source maps finish to Flush. Historical measurements are preserved separately; this is not a verified Chromium 141 tag claim."
+  },
+  "formulas": {
+    "cpuRenderMs": "t_after_view_render - t_before_view_render; JS plus any driver/compiler blocking inside render, not pure CPU execution",
+    "readbackWallMs": "t_after_readPixels - t_before_readPixels; actual full RGBA drawing-buffer readback, pending GPU work plus synchronization/IPC and 2,764,800-byte transfer; not pure GPU time",
+    "totalWallMs": "cpuRenderMs + readbackWallMs; excludes buffer reset, GL status queries, and pixel analysis",
+    "bufferResetCpuMs": "Zeroing the same allocated RGBA buffer before rendering; outside render/readback timing",
+    "pixelAnalysisCpuMs": "Full CPU pixel statistics after readback timing; raw pixels are not returned over JSON",
+    "authoredTime": "world.time = frame / 60; dt = 1/60; actor age = frame/60; no simulation advance",
+    "firstFrame": "full frame 0 includes first renderer shader/program compilation, first draw and its readback; initial WebGL construction and asset loading are reported separately",
+    "variants": "Each begins with a fresh createWorld + beginWorld at the same positions. Six frames use time 0..5/60. These are diagnostic samples, not twelve-frame warmed benchmark equivalents; programs/textures may be cached from full. Leaf ray/physics CPU work remains active."
+  },
+  "cases": [
+    {
+      "variant": "full",
+      "diagnosticOnly": false,
+      "samples": [
+        {
+          "variant": "full",
+          "frame": 0,
+          "worldTime": 0,
+          "result": "measured",
+          "gl": {
+            "beforeError": 0,
+            "beforeContextLost": false,
+            "afterError": 0,
+            "afterContextLost": false,
+            "defaultReadFramebuffer": true
+          },
+          "bufferResetCpuMs": 1.900000000023283,
+          "cpuRenderMs": 716.1999999999534,
+          "readbackWallMs": 1817.8000000000466,
+          "totalWallMs": 2534,
+          "render": {
+            "frame": 1,
+            "calls": 409,
+            "triangles": 362586,
+            "points": 0,
+            "lines": 0
+          },
+          "memory": {
+            "geometries": 414,
+            "textures": 25
+          },
+          "programs": 19,
+          "camera": [
+            0.85,
+            2.8,
+            23.8
+          ],
+          "cameraQuaternion": [
+            -0.11728161974882405,
+            0.0655146424677563,
+            0.007754187696219561,
+            0.9909050034511815
+          ],
+          "contextLost": false,
+          "pixels": {
+            "pixelCount": 691200,
+            "nonzeroRgbPixels": 691200,
+            "nonzeroAlphaPixels": 691200,
+            "opaquePixels": 691200,
+            "rgbDifferentFromFirst": 690901,
+            "min": [
+              1,
+              0,
+              0,
+              255
+            ],
+            "max": [
+              248,
+              235,
+              212,
+              255
+            ],
+            "mean": [
+              76.01766493055555,
+              63.3992259837963,
+              43.20995225694445,
+              255
+            ],
+            "variance": [
+              1304.6867915381918,
+              964.6084759633986,
+              754.7562368900813,
+              0
+            ],
+            "representativePixels": [
+              {
+                "x": 0,
+                "y": 0,
+                "rgba": [
+                  67,
+                  45,
+                  22,
+                  255
+                ]
+              },
+              {
+                "x": 959,
+                "y": 0,
+                "rgba": [
+                  65,
+                  40,
+                  15,
+                  255
+                ]
+              },
+              {
+                "x": 0,
+                "y": 719,
+                "rgba": [
+                  53,
+                  65,
+                  71,
+                  255
+                ]
+              },
+              {
+                "x": 959,
+                "y": 719,
+                "rgba": [
+                  69,
+                  73,
+                  68,
+                  255
+                ]
+              },
+              {
+                "x": 480,
+                "y": 360,
+                "rgba": [
+                  12,
+                  47,
+                  76,
+                  255
+                ]
+              },
+              {
+                "x": 240,
+                "y": 180,
+                "rgba": [
+                  103,
+                  72,
+                  39,
+                  255
+                ]
+              },
+              {
+                "x": 720,
+                "y": 540,
+                "rgba": [
+                  83,
+                  85,
+                  78,
+                  255
+                ]
+              },
+              {
+                "x": 480,
+                "y": 180,
+                "rgba": [
+                  21,
+                  16,
+                  6,
+                  255
+                ]
+              }
+            ],
+            "nontrivial": true
+          },
+          "pixelAnalysisCpuMs": 23.29999999998836,
+          "nodeRoundTripWallMs": 2584.117363
+        },
+        {
+          "variant": "full",
+          "frame": 1,
+          "worldTime": 0.016666666666666666,
+          "result": "measured",
+          "gl": {
+            "beforeError": 0,
+            "beforeContextLost": false,
+            "afterError": 0,
+            "afterContextLost": false,
+            "defaultReadFramebuffer": true
+          },
+          "bufferResetCpuMs": 0.19999999995343387,
+          "cpuRenderMs": 22.800000000046566,
+          "readbackWallMs": 864.5999999999767,
+          "totalWallMs": 887.4000000000233,
+          "render": {
+            "frame": 2,
+            "calls": 409,
+            "triangles": 362586,
+            "points": 0,
+            "lines": 0
+          },
+          "memory": {
+            "geometries": 414,
+            "textures": 25
+          },
+          "programs": 19,
+          "camera": [
+            0.8500000000000001,
+            2.8,
+            23.8
+          ],
+          "cameraQuaternion": [
+            -0.11728161974882405,
+            0.0655146424677563,
+            0.007754187696219561,
+            0.9909050034511815
+          ],
+          "contextLost": false,
+          "pixels": {
+            "pixelCount": 691200,
+            "nonzeroRgbPixels": 691200,
+            "nonzeroAlphaPixels": 691200,
+            "opaquePixels": 691200,
+            "rgbDifferentFromFirst": 690901,
+            "min": [
+              1,
+              0,
+              0,
+              255
+            ],
+            "max": [
+              248,
+              235,
+              212,
+              255
+            ],
+            "mean": [
+              76.01737991898148,
+              63.399036458333335,
+              43.21007667824074,
+              255
+            ],
+            "variance": [
+              1304.798102162954,
+              964.5975407382534,
+              754.7290723610188,
+              0
+            ],
+            "representativePixels": [
+              {
+                "x": 0,
+                "y": 0,
+                "rgba": [
+                  67,
+                  45,
+                  22,
+                  255
+                ]
+              },
+              {
+                "x": 959,
+                "y": 0,
+                "rgba": [
+                  65,
+                  40,
+                  15,
+                  255
+                ]
+              },
+              {
+                "x": 0,
+                "y": 719,
+                "rgba": [
+                  53,
+                  65,
+                  71,
+                  255
+                ]
+              },
+              {
+                "x": 959,
+                "y": 719,
+                "rgba": [
+                  69,
+                  73,
+                  68,
+                  255
+                ]
+              },
+              {
+                "x": 480,
+                "y": 360,
+                "rgba": [
+                  13,
+                  47,
+                  76,
+                  255
+                ]
+              },
+              {
+                "x": 240,
+                "y": 180,
+                "rgba": [
+                  103,
+                  72,
+                  39,
+                  255
+                ]
+              },
+              {
+                "x": 720,
+                "y": 540,
+                "rgba": [
+                  83,
+                  85,
+                  78,
+                  255
+                ]
+              },
+              {
+                "x": 480,
+                "y": 180,
+                "rgba": [
+                  21,
+                  16,
+                  6,
+                  255
+                ]
+              }
+            ],
+            "nontrivial": true
+          },
+          "pixelAnalysisCpuMs": 15.900000000023283,
+          "nodeRoundTripWallMs": 908.0805389999996
+        },
+        {
+          "variant": "full",
+          "frame": 2,
+          "worldTime": 0.03333333333333333,
+          "result": "measured",
+          "gl": {
+            "beforeError": 0,
+            "beforeContextLost": false,
+            "afterError": 0,
+            "afterContextLost": false,
+            "defaultReadFramebuffer": true
+          },
+          "bufferResetCpuMs": 0.1000000000349246,
+          "cpuRenderMs": 22.20000000001164,
+          "readbackWallMs": 856.5999999999767,
+          "totalWallMs": 878.7999999999884,
+          "render": {
+            "frame": 3,
+            "calls": 409,
+            "triangles": 362586,
+            "points": 0,
+            "lines": 0
+          },
+          "memory": {
+            "geometries": 414,
+            "textures": 25
+          },
+          "programs": 19,
+          "camera": [
+            0.8500000000000002,
+            2.8,
+            23.8
+          ],
+          "cameraQuaternion": [
+            -0.11728161974882405,
+            0.06551464246775632,
+            0.007754187696219563,
+            0.9909050034511815
+          ],
+          "contextLost": false,
+          "pixels": {
+            "pixelCount": 691200,
+            "nonzeroRgbPixels": 691200,
+            "nonzeroAlphaPixels": 691200,
+            "opaquePixels": 691200,
+            "rgbDifferentFromFirst": 690901,
+            "min": [
+              1,
+              0,
+              0,
+              255
+            ],
+            "max": [
+              248,
+              235,
+              212,
+              255
+            ],
+            "mean": [
+              76.03034722222222,
+              63.40825954861111,
+              43.21647569444445,
+              255
+            ],
+            "variance": [
+              1304.3989285831403,
+              964.3173707266155,
+              754.6428489218624,
+              0
+            ],
+            "representativePixels": [
+              {
+                "x": 0,
+                "y": 0,
+                "rgba": [
+                  67,
+                  45,
+                  22,
+                  255
+                ]
+              },
+              {
+                "x": 959,
+                "y": 0,
+                "rgba": [
+                  65,
+                  40,
+                  15,
+                  255
+                ]
+              },
+              {
+                "x": 0,
+                "y": 719,
+                "rgba": [
+                  53,
+                  65,
+                  71,
+                  255
+                ]
+              },
+              {
+                "x": 959,
+                "y": 719,
+                "rgba": [
+                  69,
+                  73,
+                  68,
+                  255
+                ]
+              },
+              {
+                "x": 480,
+                "y": 360,
+                "rgba": [
+                  13,
+                  47,
+                  76,
+                  255
+                ]
+              },
+              {
+                "x": 240,
+                "y": 180,
+                "rgba": [
+                  103,
+                  72,
+                  39,
+                  255
+                ]
+              },
+              {
+                "x": 720,
+                "y": 540,
+                "rgba": [
+                  83,
+                  85,
+                  78,
+                  255
+                ]
+              },
+              {
+                "x": 480,
+                "y": 180,
+                "rgba": [
+                  21,
+                  16,
+                  6,
+                  255
+                ]
+              }
+            ],
+            "nontrivial": true
+          },
+          "pixelAnalysisCpuMs": 40.79999999998836,
+          "nodeRoundTripWallMs": 924.4053210000002
+        },
+        {
+          "variant": "full",
+          "frame": 3,
+          "worldTime": 0.05,
+          "result": "measured",
+          "gl": {
+            "beforeError": 0,
+            "beforeContextLost": false,
+            "afterError": 0,
+            "afterContextLost": false,
+            "defaultReadFramebuffer": true
+          },
+          "bufferResetCpuMs": 0,
+          "cpuRenderMs": 16.29999999998836,
+          "readbackWallMs": 856.1000000000349,
+          "totalWallMs": 872.4000000000233,
+          "render": {
+            "frame": 4,
+            "calls": 409,
+            "triangles": 362586,
+            "points": 0,
+            "lines": 0
+          },
+          "memory": {
+            "geometries": 414,
+            "textures": 25
+          },
+          "programs": 19,
+          "camera": [
+            0.8500000000000004,
+            2.8,
+            23.8
+          ],
+          "cameraQuaternion": [
+            -0.11728161974882405,
+            0.06551464246775633,
+            0.007754187696219565,
+            0.9909050034511815
+          ],
+          "contextLost": false,
+          "pixels": {
+            "pixelCount": 691200,
+            "nonzeroRgbPixels": 691200,
+            "nonzeroAlphaPixels": 691200,
+            "opaquePixels": 691200,
+            "rgbDifferentFromFirst": 690901,
+            "min": [
+              1,
+              0,
+              0,
+              255
+            ],
+            "max": [
+              248,
+              235,
+              212,
+              255
+            ],
+            "mean": [
+              76.02987702546297,
+              63.40931568287037,
+              43.217484085648145,
+              255
+            ],
+            "variance": [
+              1304.7233420277007,
+              964.5924042481452,
+              754.7709486470271,
+              0
+            ],
+            "representativePixels": [
+              {
+                "x": 0,
+                "y": 0,
+                "rgba": [
+                  67,
+                  45,
+                  22,
+                  255
+                ]
+              },
+              {
+                "x": 959,
+                "y": 0,
+                "rgba": [
+                  65,
+                  40,
+                  15,
+                  255
+                ]
+              },
+              {
+                "x": 0,
+                "y": 719,
+                "rgba": [
+                  53,
+                  65,
+                  71,
+                  255
+                ]
+              },
+              {
+                "x": 959,
+                "y": 719,
+                "rgba": [
+                  69,
+                  73,
+                  68,
+                  255
+                ]
+              },
+              {
+                "x": 480,
+                "y": 360,
+                "rgba": [
+                  13,
+                  47,
+                  76,
+                  255
+                ]
+              },
+              {
+                "x": 240,
+                "y": 180,
+                "rgba": [
+                  103,
+                  72,
+                  39,
+                  255
+                ]
+              },
+              {
+                "x": 720,
+                "y": 540,
+                "rgba": [
+                  83,
+                  85,
+                  78,
+                  255
+                ]
+              },
+              {
+                "x": 480,
+                "y": 180,
+                "rgba": [
+                  21,
+                  16,
+                  6,
+                  255
+                ]
+              }
+            ],
+            "nontrivial": true
+          },
+          "pixelAnalysisCpuMs": 30.399999999965075,
+          "nodeRoundTripWallMs": 908.1794579999996
+        },
+        {
+          "variant": "full",
+          "frame": 4,
+          "worldTime": 0.06666666666666667,
+          "result": "measured",
+          "gl": {
+            "beforeError": 0,
+            "beforeContextLost": false,
+            "afterError": 0,
+            "afterContextLost": false,
+            "defaultReadFramebuffer": true
+          },
+          "bufferResetCpuMs": 0.1000000000349246,
+          "cpuRenderMs": 14.799999999988358,
+          "readbackWallMs": 859.7999999999884,
+          "totalWallMs": 874.5999999999767,
+          "render": {
+            "frame": 5,
+            "calls": 409,
+            "triangles": 362586,
+            "points": 0,
+            "lines": 0
+          },
+          "memory": {
+            "geometries": 414,
+            "textures": 25
+          },
+          "programs": 19,
+          "camera": [
+            0.8500000000000006,
+            2.8,
+            23.8
+          ],
+          "cameraQuaternion": [
+            -0.11728161974882405,
+            0.06551464246775635,
+            0.0077541876962195656,
+            0.9909050034511815
+          ],
+          "contextLost": false,
+          "pixels": {
+            "pixelCount": 691200,
+            "nonzeroRgbPixels": 691200,
+            "nonzeroAlphaPixels": 691200,
+            "opaquePixels": 691200,
+            "rgbDifferentFromFirst": 690901,
+            "min": [
+              1,
+              0,
+              0,
+              255
+            ],
+            "max": [
+              248,
+              235,
+              212,
+              255
+            ],
+            "mean": [
+              76.0388599537037,
+              63.415831886574075,
+              43.22175636574074,
+              255
+            ],
+            "variance": [
+              1304.7152433762194,
+              964.7210233675705,
+              754.8535671698094,
+              0
+            ],
+            "representativePixels": [
+              {
+                "x": 0,
+                "y": 0,
+                "rgba": [
+                  67,
+                  45,
+                  22,
+                  255
+                ]
+              },
+              {
+                "x": 959,
+                "y": 0,
+                "rgba": [
+                  65,
+                  40,
+                  15,
+                  255
+                ]
+              },
+              {
+                "x": 0,
+                "y": 719,
+                "rgba": [
+                  53,
+                  65,
+                  71,
+                  255
+                ]
+              },
+              {
+                "x": 959,
+                "y": 719,
+                "rgba": [
+                  69,
+                  73,
+                  68,
+                  255
+                ]
+              },
+              {
+                "x": 480,
+                "y": 360,
+                "rgba": [
+                  13,
+                  47,
+                  76,
+                  255
+                ]
+              },
+              {
+                "x": 240,
+                "y": 180,
+                "rgba": [
+                  103,
+                  72,
+                  39,
+                  255
+                ]
+              },
+              {
+                "x": 720,
+                "y": 540,
+                "rgba": [
+                  83,
+                  85,
+                  78,
+                  255
+                ]
+              },
+              {
+                "x": 480,
+                "y": 180,
+                "rgba": [
+                  21,
+                  16,
+                  6,
+                  255
+                ]
+              }
+            ],
+            "nontrivial": true
+          },
+          "pixelAnalysisCpuMs": 30.100000000034925,
+          "nodeRoundTripWallMs": 908.9818369999994
+        },
+        {
+          "variant": "full",
+          "frame": 5,
+          "worldTime": 0.08333333333333333,
+          "result": "measured",
+          "gl": {
+            "beforeError": 0,
+            "beforeContextLost": false,
+            "afterError": 0,
+            "afterContextLost": false,
+            "defaultReadFramebuffer": true
+          },
+          "bufferResetCpuMs": 0.09999999997671694,
+          "cpuRenderMs": 16.20000000001164,
+          "readbackWallMs": 1044.899999999965,
+          "totalWallMs": 1061.0999999999767,
+          "render": {
+            "frame": 6,
+            "calls": 409,
+            "triangles": 362586,
+            "points": 0,
+            "lines": 0
+          },
+          "memory": {
+            "geometries": 414,
+            "textures": 25
+          },
+          "programs": 19,
+          "camera": [
+            0.8500000000000008,
+            2.8,
+            23.8
+          ],
+          "cameraQuaternion": [
+            -0.11728161974882405,
+            0.06551464246775636,
+            0.007754187696219567,
+            0.9909050034511815
+          ],
+          "contextLost": false,
+          "pixels": {
+            "pixelCount": 691200,
+            "nonzeroRgbPixels": 691200,
+            "nonzeroAlphaPixels": 691200,
+            "opaquePixels": 691200,
+            "rgbDifferentFromFirst": 690901,
+            "min": [
+              1,
+              0,
+              0,
+              255
+            ],
+            "max": [
+              248,
+              235,
+              212,
+              255
+            ],
+            "mean": [
+              76.04384403935185,
+              63.41868489583333,
+              43.222934027777775,
+              255
+            ],
+            "variance": [
+              1304.3571590080837,
+              964.3834428306868,
+              754.6226673174071,
+              0
+            ],
+            "representativePixels": [
+              {
+                "x": 0,
+                "y": 0,
+                "rgba": [
+                  67,
+                  45,
+                  22,
+                  255
+                ]
+              },
+              {
+                "x": 959,
+                "y": 0,
+                "rgba": [
+                  65,
+                  40,
+                  15,
+                  255
+                ]
+              },
+              {
+                "x": 0,
+                "y": 719,
+                "rgba": [
+                  53,
+                  65,
+                  71,
+                  255
+                ]
+              },
+              {
+                "x": 959,
+                "y": 719,
+                "rgba": [
+                  69,
+                  73,
+                  68,
+                  255
+                ]
+              },
+              {
+                "x": 480,
+                "y": 360,
+                "rgba": [
+                  13,
+                  47,
+                  76,
+                  255
+                ]
+              },
+              {
+                "x": 240,
+                "y": 180,
+                "rgba": [
+                  103,
+                  72,
+                  39,
+                  255
+                ]
+              },
+              {
+                "x": 720,
+                "y": 540,
+                "rgba": [
+                  83,
+                  85,
+                  78,
+                  255
+                ]
+              },
+              {
+                "x": 480,
+                "y": 180,
+                "rgba": [
+                  21,
+                  16,
+                  6,
+                  255
+                ]
+              }
+            ],
+            "nontrivial": true
+          },
+          "pixelAnalysisCpuMs": 42.09999999997672,
+          "nodeRoundTripWallMs": 1109.2125290000004
+        },
+        {
+          "variant": "full",
+          "frame": 6,
+          "worldTime": 0.1,
+          "result": "measured",
+          "gl": {
+            "beforeError": 0,
+            "beforeContextLost": false,
+            "afterError": 0,
+            "afterContextLost": false,
+            "defaultReadFramebuffer": true
+          },
+          "bufferResetCpuMs": 0.1000000000349246,
+          "cpuRenderMs": 20.099999999976717,
+          "readbackWallMs": 1040.4000000000233,
+          "totalWallMs": 1060.5,
+          "render": {
+            "frame": 7,
+            "calls": 409,
+            "triangles": 362586,
+            "points": 0,
+            "lines": 0
+          },
+          "memory": {
+            "geometries": 414,
+            "textures": 25
+          },
+          "programs": 19,
+          "camera": [
+            0.8500000000000008,
+            2.8,
+            23.8
+          ],
+          "cameraQuaternion": [
+            -0.11728161974882405,
+            0.06551464246775636,
+            0.007754187696219567,
+            0.9909050034511815
+          ],
+          "contextLost": false,
+          "pixels": {
+            "pixelCount": 691200,
+            "nonzeroRgbPixels": 691200,
+            "nonzeroAlphaPixels": 691200,
+            "opaquePixels": 691200,
+            "rgbDifferentFromFirst": 690901,
+            "min": [
+              1,
+              0,
+              0,
+              255
+            ],
+            "max": [
+              248,
+              235,
+              212,
+              255
+            ],
+            "mean": [
+              76.03747685185185,
+              63.41416087962963,
+              43.220361689814816,
+              255
+            ],
+            "variance": [
+              1304.6122442124279,
+              964.5023162518964,
+              754.659583086773,
+              0
+            ],
+            "representativePixels": [
+              {
+                "x": 0,
+                "y": 0,
+                "rgba": [
+                  67,
+                  45,
+                  22,
+                  255
+                ]
+              },
+              {
+                "x": 959,
+                "y": 0,
+                "rgba": [
+                  65,
+                  40,
+                  15,
+                  255
+                ]
+              },
+              {
+                "x": 0,
+                "y": 719,
+                "rgba": [
+                  53,
+                  65,
+                  71,
+                  255
+                ]
+              },
+              {
+                "x": 959,
+                "y": 719,
+                "rgba": [
+                  69,
+                  73,
+                  68,
+                  255
+                ]
+              },
+              {
+                "x": 480,
+                "y": 360,
+                "rgba": [
+                  13,
+                  47,
+                  76,
+                  255
+                ]
+              },
+              {
+                "x": 240,
+                "y": 180,
+                "rgba": [
+                  103,
+                  72,
+                  39,
+                  255
+                ]
+              },
+              {
+                "x": 720,
+                "y": 540,
+                "rgba": [
+                  83,
+                  85,
+                  78,
+                  255
+                ]
+              },
+              {
+                "x": 480,
+                "y": 180,
+                "rgba": [
+                  21,
+                  16,
+                  6,
+                  255
+                ]
+              }
+            ],
+            "nontrivial": true
+          },
+          "pixelAnalysisCpuMs": 30.399999999965075,
+          "nodeRoundTripWallMs": 1096.8105579999992
+        },
+        {
+          "variant": "full",
+          "frame": 7,
+          "worldTime": 0.11666666666666667,
+          "result": "measured",
+          "gl": {
+            "beforeError": 0,
+            "beforeContextLost": false,
+            "afterError": 0,
+            "afterContextLost": false,
+            "defaultReadFramebuffer": true
+          },
+          "bufferResetCpuMs": 0.1000000000349246,
+          "cpuRenderMs": 17.599999999976717,
+          "readbackWallMs": 1041.5999999999767,
+          "totalWallMs": 1059.1999999999534,
+          "render": {
+            "frame": 8,
+            "calls": 409,
+            "triangles": 362586,
+            "points": 0,
+            "lines": 0
+          },
+          "memory": {
+            "geometries": 414,
+            "textures": 25
+          },
+          "programs": 19,
+          "camera": [
+            0.8500000000000008,
+            2.8,
+            23.8
+          ],
+          "cameraQuaternion": [
+            -0.11728161974882405,
+            0.06551464246775636,
+            0.007754187696219567,
+            0.9909050034511815
+          ],
+          "contextLost": false,
+          "pixels": {
+            "pixelCount": 691200,
+            "nonzeroRgbPixels": 691200,
+            "nonzeroAlphaPixels": 691200,
+            "opaquePixels": 691200,
+            "rgbDifferentFromFirst": 690901,
+            "min": [
+              1,
+              0,
+              0,
+              255
+            ],
+            "max": [
+              248,
+              235,
+              212,
+              255
+            ],
+            "mean": [
+              76.03308015046296,
+              63.41027777777778,
+              43.218521412037035,
+              255
+            ],
+            "variance": [
+              1304.0839476596639,
+              964.2629337191361,
+              754.6413022119261,
+              0
+            ],
+            "representativePixels": [
+              {
+                "x": 0,
+                "y": 0,
+                "rgba": [
+                  67,
+                  45,
+                  22,
+                  255
+                ]
+              },
+              {
+                "x": 959,
+                "y": 0,
+                "rgba": [
+                  65,
+                  40,
+                  15,
+                  255
+                ]
+              },
+              {
+                "x": 0,
+                "y": 719,
+                "rgba": [
+                  53,
+                  65,
+                  71,
+                  255
+                ]
+              },
+              {
+                "x": 959,
+                "y": 719,
+                "rgba": [
+                  69,
+                  73,
+                  68,
+                  255
+                ]
+              },
+              {
+                "x": 480,
+                "y": 360,
+                "rgba": [
+                  13,
+                  47,
+                  76,
+                  255
+                ]
+              },
+              {
+                "x": 240,
+                "y": 180,
+                "rgba": [
+                  103,
+                  72,
+                  39,
+                  255
+                ]
+              },
+              {
+                "x": 720,
+                "y": 540,
+                "rgba": [
+                  83,
+                  85,
+                  78,
+                  255
+                ]
+              },
+              {
+                "x": 480,
+                "y": 180,
+                "rgba": [
+                  21,
+                  16,
+                  6,
+                  255
+                ]
+              }
+            ],
+            "nontrivial": true
+          },
+          "pixelAnalysisCpuMs": 30.400000000023283,
+          "nodeRoundTripWallMs": 1094.3145820000009
+        },
+        {
+          "variant": "full",
+          "frame": 8,
+          "worldTime": 0.13333333333333333,
+          "result": "measured",
+          "gl": {
+            "beforeError": 0,
+            "beforeContextLost": false,
+            "afterError": 0,
+            "afterContextLost": false,
+            "defaultReadFramebuffer": true
+          },
+          "bufferResetCpuMs": 0,
+          "cpuRenderMs": 16.400000000023283,
+          "readbackWallMs": 1041.5999999999767,
+          "totalWallMs": 1058,
+          "render": {
+            "frame": 9,
+            "calls": 409,
+            "triangles": 362586,
+            "points": 0,
+            "lines": 0
+          },
+          "memory": {
+            "geometries": 414,
+            "textures": 25
+          },
+          "programs": 19,
+          "camera": [
+            0.8500000000000008,
+            2.8,
+            23.8
+          ],
+          "cameraQuaternion": [
+            -0.11728161974882405,
+            0.06551464246775636,
+            0.007754187696219567,
+            0.9909050034511815
+          ],
+          "contextLost": false,
+          "pixels": {
+            "pixelCount": 691200,
+            "nonzeroRgbPixels": 691200,
+            "nonzeroAlphaPixels": 691200,
+            "opaquePixels": 691200,
+            "rgbDifferentFromFirst": 690901,
+            "min": [
+              1,
+              0,
+              0,
+              255
+            ],
+            "max": [
+              248,
+              235,
+              212,
+              255
+            ],
+            "mean": [
+              76.033125,
+              63.410157696759256,
+              43.21933738425926,
+              255
+            ],
+            "variance": [
+              1304.4158558593754,
+              964.5155423651781,
+              754.799865648903,
+              0
+            ],
+            "representativePixels": [
+              {
+                "x": 0,
+                "y": 0,
+                "rgba": [
+                  67,
+                  45,
+                  22,
+                  255
+                ]
+              },
+              {
+                "x": 959,
+                "y": 0,
+                "rgba": [
+                  65,
+                  40,
+                  15,
+                  255
+                ]
+              },
+              {
+                "x": 0,
+                "y": 719,
+                "rgba": [
+                  53,
+                  65,
+                  71,
+                  255
+                ]
+              },
+              {
+                "x": 959,
+                "y": 719,
+                "rgba": [
+                  69,
+                  73,
+                  68,
+                  255
+                ]
+              },
+              {
+                "x": 480,
+                "y": 360,
+                "rgba": [
+                  13,
+                  47,
+                  76,
+                  255
+                ]
+              },
+              {
+                "x": 240,
+                "y": 180,
+                "rgba": [
+                  103,
+                  72,
+                  39,
+                  255
+                ]
+              },
+              {
+                "x": 720,
+                "y": 540,
+                "rgba": [
+                  83,
+                  85,
+                  78,
+                  255
+                ]
+              },
+              {
+                "x": 480,
+                "y": 180,
+                "rgba": [
+                  21,
+                  16,
+                  6,
+                  255
+                ]
+              }
+            ],
+            "nontrivial": true
+          },
+          "pixelAnalysisCpuMs": 44.09999999997672,
+          "nodeRoundTripWallMs": 1106.8336290000007
+        },
+        {
+          "variant": "full",
+          "frame": 9,
+          "worldTime": 0.15,
+          "result": "measured",
+          "gl": {
+            "beforeError": 0,
+            "beforeContextLost": false,
+            "afterError": 0,
+            "afterContextLost": false,
+            "defaultReadFramebuffer": true
+          },
+          "bufferResetCpuMs": 0.09999999997671694,
+          "cpuRenderMs": 19.5,
+          "readbackWallMs": 1037.2000000000116,
+          "totalWallMs": 1056.7000000000116,
+          "render": {
+            "frame": 10,
+            "calls": 409,
+            "triangles": 362586,
+            "points": 0,
+            "lines": 0
+          },
+          "memory": {
+            "geometries": 414,
+            "textures": 25
+          },
+          "programs": 19,
+          "camera": [
+            0.8500000000000008,
+            2.8,
+            23.8
+          ],
+          "cameraQuaternion": [
+            -0.11728161974882405,
+            0.06551464246775636,
+            0.007754187696219567,
+            0.9909050034511815
+          ],
+          "contextLost": false,
+          "pixels": {
+            "pixelCount": 691200,
+            "nonzeroRgbPixels": 691200,
+            "nonzeroAlphaPixels": 691200,
+            "opaquePixels": 691200,
+            "rgbDifferentFromFirst": 690901,
+            "min": [
+              1,
+              0,
+              0,
+              255
+            ],
+            "max": [
+              248,
+              235,
+              212,
+              255
+            ],
+            "mean": [
+              76.03915653935185,
+              63.414149305555554,
+              43.222175925925924,
+              255
+            ],
+            "variance": [
+              1304.5729126566303,
+              964.6024184314115,
+              754.8365811449762,
+              0
+            ],
+            "representativePixels": [
+              {
+                "x": 0,
+                "y": 0,
+                "rgba": [
+                  67,
+                  45,
+                  22,
+                  255
+                ]
+              },
+              {
+                "x": 959,
+                "y": 0,
+                "rgba": [
+                  65,
+                  40,
+                  15,
+                  255
+                ]
+              },
+              {
+                "x": 0,
+                "y": 719,
+                "rgba": [
+                  53,
+                  65,
+                  71,
+                  255
+                ]
+              },
+              {
+                "x": 959,
+                "y": 719,
+                "rgba": [
+                  69,
+                  73,
+                  68,
+                  255
+                ]
+              },
+              {
+                "x": 480,
+                "y": 360,
+                "rgba": [
+                  13,
+                  47,
+                  76,
+                  255
+                ]
+              },
+              {
+                "x": 240,
+                "y": 180,
+                "rgba": [
+                  103,
+                  72,
+                  39,
+                  255
+                ]
+              },
+              {
+                "x": 720,
+                "y": 540,
+                "rgba": [
+                  83,
+                  85,
+                  78,
+                  255
+                ]
+              },
+              {
+                "x": 480,
+                "y": 180,
+                "rgba": [
+                  21,
+                  16,
+                  6,
+                  255
+                ]
+              }
+            ],
+            "nontrivial": true
+          },
+          "pixelAnalysisCpuMs": 30.20000000001164,
+          "nodeRoundTripWallMs": 1091.4195309999996
+        },
+        {
+          "variant": "full",
+          "frame": 10,
+          "worldTime": 0.16666666666666666,
+          "result": "measured",
+          "gl": {
+            "beforeError": 0,
+            "beforeContextLost": false,
+            "afterError": 0,
+            "afterContextLost": false,
+            "defaultReadFramebuffer": true
+          },
+          "bufferResetCpuMs": 0,
+          "cpuRenderMs": 20.100000000034925,
+          "readbackWallMs": 1016.6999999999534,
+          "totalWallMs": 1036.7999999999884,
+          "render": {
+            "frame": 11,
+            "calls": 409,
+            "triangles": 362586,
+            "points": 0,
+            "lines": 0
+          },
+          "memory": {
+            "geometries": 414,
+            "textures": 25
+          },
+          "programs": 19,
+          "camera": [
+            0.8500000000000008,
+            2.8,
+            23.8
+          ],
+          "cameraQuaternion": [
+            -0.11728161974882405,
+            0.06551464246775636,
+            0.007754187696219567,
+            0.9909050034511815
+          ],
+          "contextLost": false,
+          "pixels": {
+            "pixelCount": 691200,
+            "nonzeroRgbPixels": 691200,
+            "nonzeroAlphaPixels": 691200,
+            "opaquePixels": 691200,
+            "rgbDifferentFromFirst": 690901,
+            "min": [
+              1,
+              0,
+              0,
+              255
+            ],
+            "max": [
+              248,
+              235,
+              212,
+              255
+            ],
+            "mean": [
+              76.04910011574074,
+              63.42072627314815,
+              43.22690248842593,
+              255
+            ],
+            "variance": [
+              1304.551886053634,
+              964.5755762086387,
+              754.855724462135,
+              0
+            ],
+            "representativePixels": [
+              {
+                "x": 0,
+                "y": 0,
+                "rgba": [
+                  67,
+                  45,
+                  22,
+                  255
+                ]
+              },
+              {
+                "x": 959,
+                "y": 0,
+                "rgba": [
+                  65,
+                  40,
+                  15,
+                  255
+                ]
+              },
+              {
+                "x": 0,
+                "y": 719,
+                "rgba": [
+                  53,
+                  65,
+                  71,
+                  255
+                ]
+              },
+              {
+                "x": 959,
+                "y": 719,
+                "rgba": [
+                  69,
+                  73,
+                  68,
+                  255
+                ]
+              },
+              {
+                "x": 480,
+                "y": 360,
+                "rgba": [
+                  13,
+                  47,
+                  76,
+                  255
+                ]
+              },
+              {
+                "x": 240,
+                "y": 180,
+                "rgba": [
+                  103,
+                  72,
+                  39,
+                  255
+                ]
+              },
+              {
+                "x": 720,
+                "y": 540,
+                "rgba": [
+                  83,
+                  85,
+                  78,
+                  255
+                ]
+              },
+              {
+                "x": 480,
+                "y": 180,
+                "rgba": [
+                  21,
+                  16,
+                  6,
+                  255
+                ]
+              }
+            ],
+            "nontrivial": true
+          },
+          "pixelAnalysisCpuMs": 30.29999999998836,
+          "nodeRoundTripWallMs": 1071.4712010000003
+        },
+        {
+          "variant": "full",
+          "frame": 11,
+          "worldTime": 0.18333333333333332,
+          "result": "measured",
+          "gl": {
+            "beforeError": 0,
+            "beforeContextLost": false,
+            "afterError": 0,
+            "afterContextLost": false,
+            "defaultReadFramebuffer": true
+          },
+          "bufferResetCpuMs": 0.09999999997671694,
+          "cpuRenderMs": 18.20000000001164,
+          "readbackWallMs": 1101.0999999999767,
+          "totalWallMs": 1119.2999999999884,
+          "render": {
+            "frame": 12,
+            "calls": 409,
+            "triangles": 362586,
+            "points": 0,
+            "lines": 0
+          },
+          "memory": {
+            "geometries": 414,
+            "textures": 25
+          },
+          "programs": 19,
+          "camera": [
+            0.8500000000000008,
+            2.8,
+            23.8
+          ],
+          "cameraQuaternion": [
+            -0.11728161974882405,
+            0.06551464246775636,
+            0.007754187696219567,
+            0.9909050034511815
+          ],
+          "contextLost": false,
+          "pixels": {
+            "pixelCount": 691200,
+            "nonzeroRgbPixels": 691200,
+            "nonzeroAlphaPixels": 691200,
+            "opaquePixels": 691200,
+            "rgbDifferentFromFirst": 690901,
+            "min": [
+              1,
+              0,
+              0,
+              255
+            ],
+            "max": [
+              248,
+              235,
+              212,
+              255
+            ],
+            "mean": [
+              76.04442418981482,
+              63.41760850694445,
+              43.22442997685185,
+              255
+            ],
+            "variance": [
+              1304.760150333951,
+              964.6763597900203,
+              754.8758493567864,
+              0
+            ],
+            "representativePixels": [
+              {
+                "x": 0,
+                "y": 0,
+                "rgba": [
+                  67,
+                  45,
+                  22,
+                  255
+                ]
+              },
+              {
+                "x": 959,
+                "y": 0,
+                "rgba": [
+                  65,
+                  40,
+                  15,
+                  255
+                ]
+              },
+              {
+                "x": 0,
+                "y": 719,
+                "rgba": [
+                  53,
+                  65,
+                  71,
+                  255
+                ]
+              },
+              {
+                "x": 959,
+                "y": 719,
+                "rgba": [
+                  69,
+                  73,
+                  68,
+                  255
+                ]
+              },
+              {
+                "x": 480,
+                "y": 360,
+                "rgba": [
+                  13,
+                  47,
+                  76,
+                  255
+                ]
+              },
+              {
+                "x": 240,
+                "y": 180,
+                "rgba": [
+                  103,
+                  72,
+                  39,
+                  255
+                ]
+              },
+              {
+                "x": 720,
+                "y": 540,
+                "rgba": [
+                  83,
+                  85,
+                  78,
+                  255
+                ]
+              },
+              {
+                "x": 480,
+                "y": 180,
+                "rgba": [
+                  21,
+                  16,
+                  6,
+                  255
+                ]
+              }
+            ],
+            "nontrivial": true
+          },
+          "pixelAnalysisCpuMs": 31.399999999965075,
+          "nodeRoundTripWallMs": 1155.2289509999991
+        },
+        {
+          "variant": "full",
+          "frame": 12,
+          "worldTime": 0.2,
+          "result": "measured",
+          "gl": {
+            "beforeError": 0,
+            "beforeContextLost": false,
+            "afterError": 0,
+            "afterContextLost": false,
+            "defaultReadFramebuffer": true
+          },
+          "bufferResetCpuMs": 0.1000000000349246,
+          "cpuRenderMs": 13.399999999965075,
+          "readbackWallMs": 1043.9000000000233,
+          "totalWallMs": 1057.2999999999884,
+          "render": {
+            "frame": 13,
+            "calls": 409,
+            "triangles": 362586,
+            "points": 0,
+            "lines": 0
+          },
+          "memory": {
+            "geometries": 414,
+            "textures": 25
+          },
+          "programs": 19,
+          "camera": [
+            0.8500000000000008,
+            2.8,
+            23.8
+          ],
+          "cameraQuaternion": [
+            -0.11728161974882405,
+            0.06551464246775636,
+            0.007754187696219567,
+            0.9909050034511815
+          ],
+          "contextLost": false,
+          "pixels": {
+            "pixelCount": 691200,
+            "nonzeroRgbPixels": 691200,
+            "nonzeroAlphaPixels": 691200,
+            "opaquePixels": 691200,
+            "rgbDifferentFromFirst": 690901,
+            "min": [
+              1,
+              0,
+              0,
+              255
+            ],
+            "max": [
+              248,
+              235,
+              212,
+              255
+            ],
+            "mean": [
+              76.03397858796296,
+              63.41000434027778,
+              43.21953125,
+              255
+            ],
+            "variance": [
+              1304.8642910574117,
+              964.7094731191937,
+              754.8878621645326,
+              0
+            ],
+            "representativePixels": [
+              {
+                "x": 0,
+                "y": 0,
+                "rgba": [
+                  67,
+                  45,
+                  22,
+                  255
+                ]
+              },
+              {
+                "x": 959,
+                "y": 0,
+                "rgba": [
+                  65,
+                  40,
+                  15,
+                  255
+                ]
+              },
+              {
+                "x": 0,
+                "y": 719,
+                "rgba": [
+                  53,
+                  65,
+                  71,
+                  255
+                ]
+              },
+              {
+                "x": 959,
+                "y": 719,
+                "rgba": [
+                  69,
+                  73,
+                  68,
+                  255
+                ]
+              },
+              {
+                "x": 480,
+                "y": 360,
+                "rgba": [
+                  13,
+                  48,
+                  76,
+                  255
+                ]
+              },
+              {
+                "x": 240,
+                "y": 180,
+                "rgba": [
+                  103,
+                  72,
+                  39,
+                  255
+                ]
+              },
+              {
+                "x": 720,
+                "y": 540,
+                "rgba": [
+                  83,
+                  85,
+                  78,
+                  255
+                ]
+              },
+              {
+                "x": 480,
+                "y": 180,
+                "rgba": [
+                  21,
+                  16,
+                  6,
+                  255
+                ]
+              }
+            ],
+            "nontrivial": true
+          },
+          "pixelAnalysisCpuMs": 35.399999999965075,
+          "nodeRoundTripWallMs": 1097.8840320000018
+        }
+      ],
+      "result": "measured",
+      "fixture": {
+        "variant": "full",
+        "worldTime": 0,
+        "player": {
+          "x": 0,
+          "z": 18
+        },
+        "enemies": [
+          {
+            "id": "sentinel",
+            "x": 0,
+            "z": 1
+          },
+          {
+            "id": "retainer",
+            "x": -3,
+            "z": -9
+          },
+          {
+            "id": "warden",
+            "x": 3,
+            "z": -16
+          }
+        ],
+        "diagnosticOnly": false
+      },
+      "firstCompileFrame": {
+        "variant": "full",
+        "frame": 0,
+        "worldTime": 0,
+        "result": "measured",
+        "gl": {
+          "beforeError": 0,
+          "beforeContextLost": false,
+          "afterError": 0,
+          "afterContextLost": false,
+          "defaultReadFramebuffer": true
+        },
+        "bufferResetCpuMs": 1.900000000023283,
+        "cpuRenderMs": 716.1999999999534,
+        "readbackWallMs": 1817.8000000000466,
+        "totalWallMs": 2534,
+        "render": {
+          "frame": 1,
+          "calls": 409,
+          "triangles": 362586,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 414,
+          "textures": 25
+        },
+        "programs": 19,
+        "camera": [
+          0.85,
+          2.8,
+          23.8
+        ],
+        "cameraQuaternion": [
+          -0.11728161974882405,
+          0.0655146424677563,
+          0.007754187696219561,
+          0.9909050034511815
+        ],
+        "contextLost": false,
+        "pixels": {
+          "pixelCount": 691200,
+          "nonzeroRgbPixels": 691200,
+          "nonzeroAlphaPixels": 691200,
+          "opaquePixels": 691200,
+          "rgbDifferentFromFirst": 690901,
+          "min": [
+            1,
+            0,
+            0,
+            255
+          ],
+          "max": [
+            248,
+            235,
+            212,
+            255
+          ],
+          "mean": [
+            76.01766493055555,
+            63.3992259837963,
+            43.20995225694445,
+            255
+          ],
+          "variance": [
+            1304.6867915381918,
+            964.6084759633986,
+            754.7562368900813,
+            0
+          ],
+          "representativePixels": [
+            {
+              "x": 0,
+              "y": 0,
+              "rgba": [
+                67,
+                45,
+                22,
+                255
+              ]
+            },
+            {
+              "x": 959,
+              "y": 0,
+              "rgba": [
+                65,
+                40,
+                15,
+                255
+              ]
+            },
+            {
+              "x": 0,
+              "y": 719,
+              "rgba": [
+                53,
+                65,
+                71,
+                255
+              ]
+            },
+            {
+              "x": 959,
+              "y": 719,
+              "rgba": [
+                69,
+                73,
+                68,
+                255
+              ]
+            },
+            {
+              "x": 480,
+              "y": 360,
+              "rgba": [
+                12,
+                47,
+                76,
+                255
+              ]
+            },
+            {
+              "x": 240,
+              "y": 180,
+              "rgba": [
+                103,
+                72,
+                39,
+                255
+              ]
+            },
+            {
+              "x": 720,
+              "y": 540,
+              "rgba": [
+                83,
+                85,
+                78,
+                255
+              ]
+            },
+            {
+              "x": 480,
+              "y": 180,
+              "rgba": [
+                21,
+                16,
+                6,
+                255
+              ]
+            }
+          ],
+          "nontrivial": true
+        },
+        "pixelAnalysisCpuMs": 23.29999999998836,
+        "nodeRoundTripWallMs": 2584.117363
+      },
+      "warm12Summary": {
+        "cpuRenderMs": {
+          "min": 13.399999999965075,
+          "median": 17.89999999999418,
+          "max": 22.800000000046566
+        },
+        "readbackWallMs": {
+          "min": 856.1000000000349,
+          "median": 1038.8000000000175,
+          "max": 1101.0999999999767
+        },
+        "totalWallMs": {
+          "min": 872.4000000000233,
+          "median": 1057,
+          "max": 1119.2999999999884
+        },
+        "bufferResetCpuMs": {
+          "min": 0,
+          "median": 0.10000000000582077,
+          "max": 0.19999999995343387
+        },
+        "pixelAnalysisCpuMs": {
+          "min": 15.900000000023283,
+          "median": 30.39999999999418,
+          "max": 44.09999999997672
+        }
+      },
+      "capture": {
+        "startedAt": "2026-09-15T14:47:13.114Z",
+        "timeoutMs": 60000,
+        "result": "passed",
+        "elapsedMs": 307.7196240000012,
+        "sha256": "f00eeb892729a2e46ae9b370fddb49394aae025128dd410183673ee79bdac824"
+      }
+    }
+  ],
+  "errors": [],
+  "consoleErrors": [],
+  "consoleWarnings": [
+    {
+      "text": "[.WebGL-0x12e40011b000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+      "location": {
+        "url": "http://127.0.0.1:4196/",
+        "lineNumber": 0,
+        "columnNumber": 0
+      }
+    },
+    {
+      "text": "[.WebGL-0x12e40011b000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+      "location": {
+        "url": "http://127.0.0.1:4196/",
+        "lineNumber": 0,
+        "columnNumber": 0
+      }
+    },
+    {
+      "text": "[.WebGL-0x12e40011b000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+      "location": {
+        "url": "http://127.0.0.1:4196/",
+        "lineNumber": 0,
+        "columnNumber": 0
+      }
+    },
+    {
+      "text": "[.WebGL-0x12e40011b000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)",
+      "location": {
+        "url": "http://127.0.0.1:4196/",
+        "lineNumber": 0,
+        "columnNumber": 0
+      }
+    }
+  ],
+  "pageErrors": [],
+  "requestFailures": [],
+  "cleanup": {
+    "browserClosed": true,
+    "browserProcessClosed": true,
+    "serverClosed": true
+  },
+  "sourceRevision": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+  "runnerRevision": "e42674349963d756617acdbb0be351d922e69b92",
+  "sourceFreshTree": "7b4ca3643630ee9420ce2423b69190ac80ed8db4",
+  "sourceFingerprint": {
+    "sha256": "206f474d9c81779beb142d59680574f0cdc1d0fb6bd04b205424c7aeff88ad47",
+    "files": [
+      {
+        "path": "fresh/README.md",
+        "bytes": 881,
+        "sha256": "d7ee116741844f3c76dab4d372561501585c7ef9aaf033ba1a88e716c1794e99"
+      },
+      {
+        "path": "fresh/art-direction-capture.mjs",
+        "bytes": 5976,
+        "sha256": "f5ee943aff0daa8ee4955ce1a658dda79a0b80b05b3e5421e4452738eab5badb"
+      },
+      {
+        "path": "fresh/audio-analysis.mjs",
+        "bytes": 10276,
+        "sha256": "30197433e5fca30e2506d65fbe276374b75b8fe31a32beba4fa5ae37498fbc8e"
+      },
+      {
+        "path": "fresh/audio-audition.mjs",
+        "bytes": 5676,
+        "sha256": "1310b6f918da6facadc193b3c0420d56d4ebcc636c453ab70862456d5910b6e2"
+      },
+      {
+        "path": "fresh/audio-browser-capture.mjs",
+        "bytes": 8548,
+        "sha256": "12b47a415f3a6d393013e4eb667a4af040fe3bd511f97d82360295eec45ed1f4"
+      },
+      {
+        "path": "fresh/audio-capture-clock.mjs",
+        "bytes": 765,
+        "sha256": "c8e79d18a1267e9cfda6eebff46aa6c97d20b0fb90eba132cc1fe9faccecd97f"
+      },
+      {
+        "path": "fresh/audio-capture-clock.test.mjs",
+        "bytes": 1015,
+        "sha256": "0a2b67130516fd74b3c3521e3bf54d84ecf9ef049b52e4c4e5e5886b31e10ad0"
+      },
+      {
+        "path": "fresh/audio-pcm.mjs",
+        "bytes": 1819,
+        "sha256": "1956541201b5019ff47bbf1ab23d5633d4f33a14990b0dab7c4bf14a641c8c94"
+      },
+      {
+        "path": "fresh/audio-pcm.test.mjs",
+        "bytes": 1543,
+        "sha256": "4f0eec0ee23cd06d0f74f8f0dbfc6ee76c88f4307f92a4053a1bd88149f24f9b"
+      },
+      {
+        "path": "fresh/audio.js",
+        "bytes": 18319,
+        "sha256": "d38cc9a7e5055c6c8bfa4c849bfbab27046790327223e55dff098f293ecc5dcf"
+      },
+      {
+        "path": "fresh/audio.test.mjs",
+        "bytes": 12772,
+        "sha256": "a0bd20ac425b18dd3992709251f8d87c84fccd4eb11b9863e83d53809db6c684"
+      },
+      {
+        "path": "fresh/batch-geometry.js",
+        "bytes": 257,
+        "sha256": "9fd07a3b5eadb1eca4b9a548ad0421b2e3fb1cefb98d195eb6a3c6e372f3418f"
+      },
+      {
+        "path": "fresh/batch-geometry.test.mjs",
+        "bytes": 1061,
+        "sha256": "f3738d76d45c0345296f549ebb273899de789bc99f54ce0c0313c2c421d86ffc"
+      },
+      {
+        "path": "fresh/browser-smoke.mjs",
+        "bytes": 40257,
+        "sha256": "abbef0903b5ce3f4b7dc6a68d514eba36b8dc9756a105415cb277869036dc56a"
+      },
+      {
+        "path": "fresh/build-fingerprint.mjs",
+        "bytes": 1300,
+        "sha256": "035720c5dbe7c2acefba0050956e716ad7938a34cdb4c34547c72fc1c01cf19f"
+      },
+      {
+        "path": "fresh/camera-framing.js",
+        "bytes": 6497,
+        "sha256": "f487995074a702bf3989cba853e4585b7d3064e7112d984385d09c204765357a"
+      },
+      {
+        "path": "fresh/character-motion.js",
+        "bytes": 34388,
+        "sha256": "bf2b523fe34c33df5af25bc7deb9864393b5caabe831996ff3796de10fda0a7b"
+      },
+      {
+        "path": "fresh/character-motion.test.mjs",
+        "bytes": 21857,
+        "sha256": "0d51decfb14f1a2323228ddf5b045dc6740ad79a07283caec66768b26e913866"
+      },
+      {
+        "path": "fresh/character-rig.js",
+        "bytes": 16852,
+        "sha256": "4d3ee3249123879c35dfc4a617f28e74e3489669098ee93a4ff6ee6f57315f65"
+      },
+      {
+        "path": "fresh/character-sculpt.js",
+        "bytes": 13666,
+        "sha256": "0d40059bcb748e47c08f2ec66163aafb266d5eff7729b671070722b727479639"
+      },
+      {
+        "path": "fresh/character-sculpt.test.mjs",
+        "bytes": 3340,
+        "sha256": "2140f00718f85027d07d1cac8abdb7488ab01231a818ab5537e28ca41d7df907"
+      },
+      {
+        "path": "fresh/character-terrain.test.mjs",
+        "bytes": 6450,
+        "sha256": "bc0481ea8bea92791f6a734bea8ed6d59ddfc55c14688e552a7f3b2823ef0fdb"
+      },
+      {
+        "path": "fresh/experience-smoke.mjs",
+        "bytes": 7940,
+        "sha256": "043bc93dc3c9d8f76d25991d34f14b9bde0f613c1c59cc1baefe4bcee5f50987"
+      },
+      {
+        "path": "fresh/exploration.js",
+        "bytes": 10741,
+        "sha256": "5b613424d2e2c86ac2b09f8822a430398a48dff749f27e28107771ed491bccfb"
+      },
+      {
+        "path": "fresh/exploration.test.mjs",
+        "bytes": 9407,
+        "sha256": "2c164ac60ea0984e56d3d678debab8cc61c81eb3df89ff3ac6168a9c9cb0e1de"
+      },
+      {
+        "path": "fresh/foreground-visibility.js",
+        "bytes": 8378,
+        "sha256": "eac57b378bdbdfa26c949d834667b6065f131bee33f85afcc539f6376029eec5"
+      },
+      {
+        "path": "fresh/foreground-visibility.test.mjs",
+        "bytes": 16395,
+        "sha256": "e080652b4ef451d834cd1229b41fa073784085866f5a807912e911c9d89a7376"
+      },
+      {
+        "path": "fresh/grass-shape.js",
+        "bytes": 1143,
+        "sha256": "184cb8b268d3bbdd3e273f5aa22711611e0917f3a87319c0104cc16f71326085"
+      },
+      {
+        "path": "fresh/grass-shape.test.mjs",
+        "bytes": 3297,
+        "sha256": "60bad109f7b8b092e098d74353f5ca02feb29f05b359530fee239815e69bfbeb"
+      },
+      {
+        "path": "fresh/index.html",
+        "bytes": 1666,
+        "sha256": "82358a6001fef556b5751c06a967580960f64932f37203a6c370e96acb102904"
+      },
+      {
+        "path": "fresh/input-hud.test.mjs",
+        "bytes": 7815,
+        "sha256": "92463f904f34577b491e5f6ee899a9cce8665484561bda3b57c3ec6aa5d68cd5"
+      },
+      {
+        "path": "fresh/input-observation.mjs",
+        "bytes": 2168,
+        "sha256": "e7455432f66621d0c78d1b45cc3927895f9b67d9fbb0bb1af593fe79f3376a8d"
+      },
+      {
+        "path": "fresh/input-observation.test.mjs",
+        "bytes": 3536,
+        "sha256": "9bfff0b910d86346a0735be94afb81a64c700ec44a8df318a93be3d25ff43a42"
+      },
+      {
+        "path": "fresh/input.js",
+        "bytes": 4499,
+        "sha256": "a146f59e40edcae46a7eed3e5a6f2b526cfc0b49098eff368d88c29e42a9f661"
+      },
+      {
+        "path": "fresh/main.js",
+        "bytes": 5415,
+        "sha256": "9c49ffd5bb30675dd1404c3f381f937fb4cdbbab36d21b3749814ddc02899b87"
+      },
+      {
+        "path": "fresh/mission.css",
+        "bytes": 2728,
+        "sha256": "7cb0c06aa5dd297d1b73d9f897227cf92691e88978a5a74d933a5cdce192fa0f"
+      },
+      {
+        "path": "fresh/mission.js",
+        "bytes": 1926,
+        "sha256": "4cf30e351b7ef95d433f46c5093ff85a3441a9c40fcaa5ebf0ee18be443637f2"
+      },
+      {
+        "path": "fresh/motion-capture.mjs",
+        "bytes": 12053,
+        "sha256": "b722ac60bbd9c95fc2ff19dd1f3006577e5bb81e24aacb66136e5f2ad4c293cb"
+      },
+      {
+        "path": "fresh/playthrough-arrival.test.mjs",
+        "bytes": 2845,
+        "sha256": "a7b0857799fc9ca586916e00b810dfcabc0ab188ad3b999b46ccdb56731dcfc3"
+      },
+      {
+        "path": "fresh/playthrough-policy.mjs",
+        "bytes": 2449,
+        "sha256": "108fa67aa55aaaaf876f97d1da87d0e513e8b17e012ed74f1401d0f1e343d020"
+      },
+      {
+        "path": "fresh/presentation-contract.test.mjs",
+        "bytes": 20980,
+        "sha256": "a726d24e0ccee7eac95b76dfc3a84ae4984c0827c5095dab83adfc12bc6c6e5a"
+      },
+      {
+        "path": "fresh/presentation.js",
+        "bytes": 42474,
+        "sha256": "7f5930db8bd48045ca5b6fbadc8a9e8061429603bb434eec8edd89388e4473a6"
+      },
+      {
+        "path": "fresh/rejoin-evidence.mjs",
+        "bytes": 9646,
+        "sha256": "f04d6d1cfd97717ea542adbf7ef65dfbf40adaef0ea4df718ee613946667f4c0"
+      },
+      {
+        "path": "fresh/rejoin-evidence.test.mjs",
+        "bytes": 8405,
+        "sha256": "80a8b5331c27b1c260bb3e79251cb8c96d9cab662115b3d64efc9d92bd4d235c"
+      },
+      {
+        "path": "fresh/route-layout.js",
+        "bytes": 4333,
+        "sha256": "8a25b3a609bb3bb230270f9c49a692d5c0228b25e5f6faafc11292c94f580d4b"
+      },
+      {
+        "path": "fresh/route-layout.test.mjs",
+        "bytes": 3957,
+        "sha256": "d612c1ce0e27c32b0359dc5b3f12da89add50e2ae94ba16f6a038fe25cab1217"
+      },
+      {
+        "path": "fresh/route-matrix-smoke.mjs",
+        "bytes": 22888,
+        "sha256": "a9ff6dd8f63c2c870ccc86acb2872bf6fe2ba6320cfc5ee40417423669488c69"
+      },
+      {
+        "path": "fresh/simulation.js",
+        "bytes": 9714,
+        "sha256": "611c60a7aba6cbd13e2b7d677c6630ad68bb76aeed1e10c2ec1b1a7bd82e7583"
+      },
+      {
+        "path": "fresh/simulation.test.mjs",
+        "bytes": 8888,
+        "sha256": "3392bdd222dd134af69d88eccfc7726d3f3b6f2bf24e7dd132a7ae98b31b94a2"
+      },
+      {
+        "path": "fresh/spatial-batches.js",
+        "bytes": 1192,
+        "sha256": "839ed9ca5899b2f5a310f539dd55694329bf70bea807930c1c910b4ddfc5f92b"
+      },
+      {
+        "path": "fresh/spatial-batches.test.mjs",
+        "bytes": 1370,
+        "sha256": "791486ea000198183d35f138eefb484c9831fbfa927f21e2f498179099b098fa"
+      },
+      {
+        "path": "fresh/styles.css",
+        "bytes": 3823,
+        "sha256": "1533dc44b0afe656a9180f52defa4b2d21f1459f11c697b766d494b1a4910498"
+      },
+      {
+        "path": "fresh/sun-shadow.js",
+        "bytes": 1345,
+        "sha256": "ea58aba395f11e7c74b6de7a56e34ee611e3b58e156d90eb6b13826e1ca58810"
+      },
+      {
+        "path": "fresh/sun-shadow.test.mjs",
+        "bytes": 2474,
+        "sha256": "7c999d66965ac9e36f9bd52424054c0063221dfaa43d78f3f55a59e384a1e4e0"
+      },
+      {
+        "path": "fresh/terrain-contact-bound.test.mjs",
+        "bytes": 5208,
+        "sha256": "a423300963fd7f43a33fe916bfc5a22e407272455ace90350379ef80e25edcf8"
+      },
+      {
+        "path": "fresh/terrain.js",
+        "bytes": 3166,
+        "sha256": "8d33d411734ca5cc7a46d15dd63057856acca8df0bb3ba9634da49fd41a0fdb2"
+      },
+      {
+        "path": "fresh/terrain.test.mjs",
+        "bytes": 1501,
+        "sha256": "cb9d66da106d9d319771f18fed7cc0b87d561742fe0d04f9666c0eb12f9840f0"
+      },
+      {
+        "path": "fresh/touch-playthrough-policy.mjs",
+        "bytes": 4340,
+        "sha256": "a1e42b9b3d8054e8a3eef6ae991dc1f354dfb66b25d7aef457f149c133450b94"
+      },
+      {
+        "path": "fresh/touch-playthrough-policy.test.mjs",
+        "bytes": 13821,
+        "sha256": "92469aeeca3490c7dee561d8b95062b6ae7b88c1f8d2d830e70bd3f06c84daa4"
+      },
+      {
+        "path": "fresh/vegetation-capture.mjs",
+        "bytes": 5244,
+        "sha256": "086ad8c75f070766225585fcdd852a38d634789dcc797a64e5dd8b2ce2807c02"
+      },
+      {
+        "path": "fresh/vegetation-physics.js",
+        "bytes": 16573,
+        "sha256": "1d43d75891d9ac065e7126b4022052b24b103f66f8bdd7ffe75ada4467cf11be"
+      },
+      {
+        "path": "fresh/vegetation-physics.test.mjs",
+        "bytes": 8448,
+        "sha256": "2c44719dbb89945b8da2cd2d0bd76c7832738899d697eb78e2ddb1c58e744ca7"
+      },
+      {
+        "path": "fresh/verify-recordings.mjs",
+        "bytes": 11975,
+        "sha256": "90b8be817bf6e7cb56011d57dd4205319fc390468b5fa27d487b8dcf50a3ca78"
+      },
+      {
+        "path": "fresh/vite.config.mjs",
+        "bytes": 274,
+        "sha256": "b7f462b98fb4c45a397a977bfb441212d8ae840b17025bf6da3a82bff4217f86"
+      },
+      {
+        "path": "fresh/wind.js",
+        "bytes": 5815,
+        "sha256": "1aa335cbff255dac5b27011b7d6c4960009e3984fc3e8a57e6a5c9b0699cba2e"
+      },
+      {
+        "path": "fresh/wind.test.mjs",
+        "bytes": 4500,
+        "sha256": "64f0db3f9e45322327c65001ab18d52266f84bba80488c01ba3222fb29637632"
+      }
+    ]
+  },
+  "dependencies": {
+    "three": "0.180.0",
+    "vite": "6.4.3",
+    "playwright": "1.56.1"
+  },
+  "buildWallMs": 1626.779115,
+  "inspectionBuild": [
+    {
+      "path": "assets/index-BaAcOrg1.js",
+      "bytes": 627521,
+      "sha256": "69791d349fc292462e7a79d2257ac487f11e8b44c201e6a3b936865f3bd5edcf"
+    },
+    {
+      "path": "index.html",
+      "bytes": 270,
+      "sha256": "ace7ece73736f0397d38b31fd4200462ca9370aa083106c05e8518aef6c5ab07"
+    }
+  ],
+  "browserVersion": "141.0.7390.37",
+  "pageSetup": {
+    "status": "ready",
+    "samples": [],
+    "errors": [],
+    "restored": false,
+    "createPresentationCpuMs": 742.8999999999651,
+    "assetWaitWallMs": 0,
+    "assets": {
+      "state": "no-external-character-assets-at-baseline",
+      "textureCount": 0
+    },
+    "actorRigCount": 4,
+    "worldFixture": {
+      "player": {
+        "id": "player",
+        "x": 0,
+        "z": 18,
+        "yaw": 0,
+        "hp": 100,
+        "posture": 0,
+        "state": "idle",
+        "age": 0,
+        "guardAge": 99,
+        "hit": [],
+        "cooldown": 0,
+        "stride": 0,
+        "dodgeX": 0,
+        "dodgeZ": 0
+      },
+      "enemies": [
+        {
+          "id": "sentinel",
+          "x": 0,
+          "z": 1,
+          "yaw": 0,
+          "hp": 100,
+          "posture": 0,
+          "state": "idle",
+          "age": 0,
+          "guardAge": 99,
+          "hit": [],
+          "cooldown": 0,
+          "stride": 0,
+          "dodgeX": 0,
+          "dodgeZ": 0
+        },
+        {
+          "id": "retainer",
+          "x": -3,
+          "z": -9,
+          "yaw": 0,
+          "hp": 100,
+          "posture": 0,
+          "state": "idle",
+          "age": 0,
+          "guardAge": 99,
+          "hit": [],
+          "cooldown": 0,
+          "stride": 0,
+          "dodgeX": 0,
+          "dodgeZ": 0
+        },
+        {
+          "id": "warden",
+          "x": 3,
+          "z": -16,
+          "yaw": 0,
+          "hp": 100,
+          "posture": 0,
+          "state": "idle",
+          "age": 0,
+          "guardAge": 99,
+          "hit": [],
+          "cooldown": 0,
+          "stride": 0,
+          "dodgeX": 0,
+          "dodgeZ": 0
+        }
+      ],
+      "mode": "playing",
+      "locked": null
+    },
+    "leafScan": {
+      "geometryCount": 115,
+      "verticesVisited": 180640,
+      "meshes": [
+        {
+          "name": "bamboo-leaves-2,-2",
+          "uuid": "ccbbf810-1fe8-41ff-b0eb-e657d216b0c1",
+          "leafVertices": 2016,
+          "totalVertices": 2814,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 2236,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--2,-1",
+          "uuid": "ce8c6630-a85f-433f-9748-5404e9638cce",
+          "leafVertices": 2436,
+          "totalVertices": 3458,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 2766,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--2,0",
+          "uuid": "2e47c6ab-2a24-4248-a3c0-c0d120d46289",
+          "leafVertices": 5124,
+          "totalVertices": 7180,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 5714,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-0,1",
+          "uuid": "0d6359f5-d4fe-452a-9181-84174d642b1b",
+          "leafVertices": 1596,
+          "totalVertices": 2278,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 1826,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-1,1",
+          "uuid": "f384960c-0e38-4853-ac1d-e8e9ffd945ba",
+          "leafVertices": 5124,
+          "totalVertices": 7180,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 5714,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-1,-1",
+          "uuid": "39977812-c1c3-40ef-8280-81bc7f64d113",
+          "leafVertices": 2352,
+          "totalVertices": 3304,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 2632,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-1,0",
+          "uuid": "7d8d3970-ca52-407a-8827-cace6718ca80",
+          "leafVertices": 3360,
+          "totalVertices": 4774,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 3820,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--3,-3",
+          "uuid": "52b66638-c131-4997-a965-8d3a22af3c3c",
+          "leafVertices": 2436,
+          "totalVertices": 3512,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 2826,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-2,-3",
+          "uuid": "3732287f-d5b8-4549-9138-4d7ed4bf4edd",
+          "leafVertices": 1932,
+          "totalVertices": 2804,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 2262,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-1,-2",
+          "uuid": "2972e8d2-132e-433d-befb-8f707738ac76",
+          "leafVertices": 2520,
+          "totalVertices": 3540,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 2820,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-1,-3",
+          "uuid": "48e130ba-f5d8-4ad7-b3d8-63572ff00398",
+          "leafVertices": 3864,
+          "totalVertices": 5464,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 4364,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--3,-1",
+          "uuid": "5bd91ec1-1fdd-4816-84f0-f7f5c1bdff02",
+          "leafVertices": 1848,
+          "totalVertices": 2614,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 2088,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--2,-2",
+          "uuid": "17b51e3f-78e0-4bdb-af72-feb30104c569",
+          "leafVertices": 4956,
+          "totalVertices": 7034,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 5626,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--1,1",
+          "uuid": "dd56b575-2d0b-47cd-b778-e7e45ab12584",
+          "leafVertices": 2352,
+          "totalVertices": 3286,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 2612,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--1,2",
+          "uuid": "25b2c522-082f-4c9a-9998-fe94a966f85a",
+          "leafVertices": 504,
+          "totalVertices": 708,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 564,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--3,-2",
+          "uuid": "a9ce3227-bda9-4c7d-b328-6b2043ce057f",
+          "leafVertices": 2436,
+          "totalVertices": 3260,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 2546,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-1,2",
+          "uuid": "b02408a3-3486-4c53-a9d9-ca04e5c67925",
+          "leafVertices": 1512,
+          "totalVertices": 2124,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 1692,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--2,1",
+          "uuid": "b37209ac-6c37-4666-a2b6-f7db1d8f4533",
+          "leafVertices": 3528,
+          "totalVertices": 4956,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 3948,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-2,1",
+          "uuid": "943f433b-00d2-4582-a49a-4c8bd7f2f962",
+          "leafVertices": 2184,
+          "totalVertices": 3140,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 2524,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-2,-1",
+          "uuid": "d61eae1f-2cf1-4104-a507-e3a9cea3304a",
+          "leafVertices": 504,
+          "totalVertices": 708,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 564,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--1,-1",
+          "uuid": "d0a44180-5a10-4378-8235-5f79db71d0ef",
+          "leafVertices": 1176,
+          "totalVertices": 1634,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 1296,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-0,0",
+          "uuid": "8ef2355e-116a-422f-8e99-b3f6cb0b443c",
+          "leafVertices": 2856,
+          "totalVertices": 3922,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 3096,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-1,-4",
+          "uuid": "f2d533c2-39b9-40e8-b3b3-52f04ca2093e",
+          "leafVertices": 2100,
+          "totalVertices": 2950,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 2350,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--2,-3",
+          "uuid": "fc44b16d-ee4d-491c-afd6-3706c38ad57b",
+          "leafVertices": 3864,
+          "totalVertices": 5446,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 4344,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--1,-2",
+          "uuid": "b0e8bb7e-9773-4d5b-bad6-06789a851aee",
+          "leafVertices": 1764,
+          "totalVertices": 2478,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 1974,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--2,-4",
+          "uuid": "476904bf-6a87-43b2-acad-37bb2973349d",
+          "leafVertices": 1848,
+          "totalVertices": 2524,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 1988,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--2,2",
+          "uuid": "48fc04c0-335d-488d-8c3d-46ab6efb1991",
+          "leafVertices": 420,
+          "totalVertices": 572,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 450,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-0,-4",
+          "uuid": "e9f188e0-20bf-4eee-9f6b-acfe2e1b4b87",
+          "leafVertices": 1008,
+          "totalVertices": 1416,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 1128,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-0,-1",
+          "uuid": "bc7abfc1-1618-4c2a-9303-7a620c206b4e",
+          "leafVertices": 2016,
+          "totalVertices": 2814,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 2236,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--1,0",
+          "uuid": "f17c962b-9f79-4f55-b4f2-8424b237daa8",
+          "leafVertices": 504,
+          "totalVertices": 708,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 564,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-0,-3",
+          "uuid": "7a4fff78-8a30-423e-97b4-ce0daf5ebe64",
+          "leafVertices": 840,
+          "totalVertices": 1144,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 900,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-0,-2",
+          "uuid": "568b08f7-b8f7-4493-a019-55d411c3efce",
+          "leafVertices": 840,
+          "totalVertices": 1108,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 860,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-2,0",
+          "uuid": "58cf1f99-8403-45fc-a216-787471153230",
+          "leafVertices": 2184,
+          "totalVertices": 3032,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 2404,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--1,-4",
+          "uuid": "eb6f9b74-9a84-4023-a472-fe253a11709b",
+          "leafVertices": 840,
+          "totalVertices": 1288,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 1060,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--1,-3",
+          "uuid": "63ffd287-6b3e-4636-b1a7-a369dcb27431",
+          "leafVertices": 336,
+          "totalVertices": 436,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 336,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--3,-4",
+          "uuid": "7cb50d12-f67f-4282-a2a6-a2a100b2e923",
+          "leafVertices": 168,
+          "totalVertices": 200,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 148,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--3,1",
+          "uuid": "a1918cc2-ee57-4dfd-a86f-b2cb10c4193e",
+          "leafVertices": 252,
+          "totalVertices": 390,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 322,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "maple-leaves--2,0",
+          "uuid": "f9ff46a3-75aa-4e16-bcde-8a8bd22bb074",
+          "leafVertices": 1944,
+          "totalVertices": 1944,
+          "mixed": false,
+          "instances": 1,
+          "triangles": 1620,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "maple-leaves--1,-3",
+          "uuid": "7d1c7300-fe85-4d95-9514-c89f1f101305",
+          "leafVertices": 924,
+          "totalVertices": 924,
+          "mixed": false,
+          "instances": 1,
+          "triangles": 770,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "maple-leaves--1,-2",
+          "uuid": "63f19d2e-a6f4-4ae5-aa99-321ebf906ca4",
+          "leafVertices": 48,
+          "totalVertices": 48,
+          "mixed": false,
+          "instances": 1,
+          "triangles": 40,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "maple-leaves-0,-3",
+          "uuid": "4164da7c-d291-4f89-a3c9-c4072f0d7c19",
+          "leafVertices": 972,
+          "totalVertices": 972,
+          "mixed": false,
+          "instances": 1,
+          "triangles": 810,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "",
+          "uuid": "5715e22d-7722-43df-b72b-252e4cc78257",
+          "leafVertices": 12,
+          "totalVertices": 12,
+          "mixed": false,
+          "instances": 64,
+          "triangles": 640,
+          "castShadow": false,
+          "visible": true
+        }
+      ],
+      "scope": "Whole drawables containing at least one leafPivot.w > 0.5 vertex, including mixed woody side branches; not isolated leaf triangles",
+      "meshCount": 42,
+      "triangles": 88480
+    },
+    "gl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "vendor": "WebKit",
+      "renderer": "WebKit WebGL",
+      "unmaskedRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+    },
+    "viewport": {
+      "width": 960,
+      "height": 720,
+      "devicePixelRatio": 1,
+      "rendererPixelRatio": 1,
+      "drawingBuffer": [
+        960,
+        720
+      ]
+    },
+    "readback": {
+      "width": 960,
+      "height": 720,
+      "format": "RGBA",
+      "type": "UNSIGNED_BYTE",
+      "bytes": 2764800,
+      "bufferAllocations": 1,
+      "scope": "Synchronous full drawing-buffer pixels: pending GPU work plus synchronization/IPC and 2,764,800-byte transfer; not a pure GPU timer. Stats use bottom-left pixel coordinates. Buffer reset and CPU analysis are timed separately."
+    }
+  },
+  "finalPage": {
+    "status": "ready",
+    "samples": [
+      {
+        "variant": "full",
+        "frame": 0,
+        "worldTime": 0,
+        "result": "measured",
+        "gl": {
+          "beforeError": 0,
+          "beforeContextLost": false,
+          "afterError": 0,
+          "afterContextLost": false,
+          "defaultReadFramebuffer": true
+        },
+        "bufferResetCpuMs": 1.900000000023283,
+        "cpuRenderMs": 716.1999999999534,
+        "readbackWallMs": 1817.8000000000466,
+        "totalWallMs": 2534,
+        "render": {
+          "frame": 1,
+          "calls": 409,
+          "triangles": 362586,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 414,
+          "textures": 25
+        },
+        "programs": 19,
+        "camera": [
+          0.85,
+          2.8,
+          23.8
+        ],
+        "cameraQuaternion": [
+          -0.11728161974882405,
+          0.0655146424677563,
+          0.007754187696219561,
+          0.9909050034511815
+        ],
+        "contextLost": false,
+        "pixels": {
+          "pixelCount": 691200,
+          "nonzeroRgbPixels": 691200,
+          "nonzeroAlphaPixels": 691200,
+          "opaquePixels": 691200,
+          "rgbDifferentFromFirst": 690901,
+          "min": [
+            1,
+            0,
+            0,
+            255
+          ],
+          "max": [
+            248,
+            235,
+            212,
+            255
+          ],
+          "mean": [
+            76.01766493055555,
+            63.3992259837963,
+            43.20995225694445,
+            255
+          ],
+          "variance": [
+            1304.6867915381918,
+            964.6084759633986,
+            754.7562368900813,
+            0
+          ],
+          "representativePixels": [
+            {
+              "x": 0,
+              "y": 0,
+              "rgba": [
+                67,
+                45,
+                22,
+                255
+              ]
+            },
+            {
+              "x": 959,
+              "y": 0,
+              "rgba": [
+                65,
+                40,
+                15,
+                255
+              ]
+            },
+            {
+              "x": 0,
+              "y": 719,
+              "rgba": [
+                53,
+                65,
+                71,
+                255
+              ]
+            },
+            {
+              "x": 959,
+              "y": 719,
+              "rgba": [
+                69,
+                73,
+                68,
+                255
+              ]
+            },
+            {
+              "x": 480,
+              "y": 360,
+              "rgba": [
+                12,
+                47,
+                76,
+                255
+              ]
+            },
+            {
+              "x": 240,
+              "y": 180,
+              "rgba": [
+                103,
+                72,
+                39,
+                255
+              ]
+            },
+            {
+              "x": 720,
+              "y": 540,
+              "rgba": [
+                83,
+                85,
+                78,
+                255
+              ]
+            },
+            {
+              "x": 480,
+              "y": 180,
+              "rgba": [
+                21,
+                16,
+                6,
+                255
+              ]
+            }
+          ],
+          "nontrivial": true
+        },
+        "pixelAnalysisCpuMs": 23.29999999998836
+      },
+      {
+        "variant": "full",
+        "frame": 1,
+        "worldTime": 0.016666666666666666,
+        "result": "measured",
+        "gl": {
+          "beforeError": 0,
+          "beforeContextLost": false,
+          "afterError": 0,
+          "afterContextLost": false,
+          "defaultReadFramebuffer": true
+        },
+        "bufferResetCpuMs": 0.19999999995343387,
+        "cpuRenderMs": 22.800000000046566,
+        "readbackWallMs": 864.5999999999767,
+        "totalWallMs": 887.4000000000233,
+        "render": {
+          "frame": 2,
+          "calls": 409,
+          "triangles": 362586,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 414,
+          "textures": 25
+        },
+        "programs": 19,
+        "camera": [
+          0.8500000000000001,
+          2.8,
+          23.8
+        ],
+        "cameraQuaternion": [
+          -0.11728161974882405,
+          0.0655146424677563,
+          0.007754187696219561,
+          0.9909050034511815
+        ],
+        "contextLost": false,
+        "pixels": {
+          "pixelCount": 691200,
+          "nonzeroRgbPixels": 691200,
+          "nonzeroAlphaPixels": 691200,
+          "opaquePixels": 691200,
+          "rgbDifferentFromFirst": 690901,
+          "min": [
+            1,
+            0,
+            0,
+            255
+          ],
+          "max": [
+            248,
+            235,
+            212,
+            255
+          ],
+          "mean": [
+            76.01737991898148,
+            63.399036458333335,
+            43.21007667824074,
+            255
+          ],
+          "variance": [
+            1304.798102162954,
+            964.5975407382534,
+            754.7290723610188,
+            0
+          ],
+          "representativePixels": [
+            {
+              "x": 0,
+              "y": 0,
+              "rgba": [
+                67,
+                45,
+                22,
+                255
+              ]
+            },
+            {
+              "x": 959,
+              "y": 0,
+              "rgba": [
+                65,
+                40,
+                15,
+                255
+              ]
+            },
+            {
+              "x": 0,
+              "y": 719,
+              "rgba": [
+                53,
+                65,
+                71,
+                255
+              ]
+            },
+            {
+              "x": 959,
+              "y": 719,
+              "rgba": [
+                69,
+                73,
+                68,
+                255
+              ]
+            },
+            {
+              "x": 480,
+              "y": 360,
+              "rgba": [
+                13,
+                47,
+                76,
+                255
+              ]
+            },
+            {
+              "x": 240,
+              "y": 180,
+              "rgba": [
+                103,
+                72,
+                39,
+                255
+              ]
+            },
+            {
+              "x": 720,
+              "y": 540,
+              "rgba": [
+                83,
+                85,
+                78,
+                255
+              ]
+            },
+            {
+              "x": 480,
+              "y": 180,
+              "rgba": [
+                21,
+                16,
+                6,
+                255
+              ]
+            }
+          ],
+          "nontrivial": true
+        },
+        "pixelAnalysisCpuMs": 15.900000000023283
+      },
+      {
+        "variant": "full",
+        "frame": 2,
+        "worldTime": 0.03333333333333333,
+        "result": "measured",
+        "gl": {
+          "beforeError": 0,
+          "beforeContextLost": false,
+          "afterError": 0,
+          "afterContextLost": false,
+          "defaultReadFramebuffer": true
+        },
+        "bufferResetCpuMs": 0.1000000000349246,
+        "cpuRenderMs": 22.20000000001164,
+        "readbackWallMs": 856.5999999999767,
+        "totalWallMs": 878.7999999999884,
+        "render": {
+          "frame": 3,
+          "calls": 409,
+          "triangles": 362586,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 414,
+          "textures": 25
+        },
+        "programs": 19,
+        "camera": [
+          0.8500000000000002,
+          2.8,
+          23.8
+        ],
+        "cameraQuaternion": [
+          -0.11728161974882405,
+          0.06551464246775632,
+          0.007754187696219563,
+          0.9909050034511815
+        ],
+        "contextLost": false,
+        "pixels": {
+          "pixelCount": 691200,
+          "nonzeroRgbPixels": 691200,
+          "nonzeroAlphaPixels": 691200,
+          "opaquePixels": 691200,
+          "rgbDifferentFromFirst": 690901,
+          "min": [
+            1,
+            0,
+            0,
+            255
+          ],
+          "max": [
+            248,
+            235,
+            212,
+            255
+          ],
+          "mean": [
+            76.03034722222222,
+            63.40825954861111,
+            43.21647569444445,
+            255
+          ],
+          "variance": [
+            1304.3989285831403,
+            964.3173707266155,
+            754.6428489218624,
+            0
+          ],
+          "representativePixels": [
+            {
+              "x": 0,
+              "y": 0,
+              "rgba": [
+                67,
+                45,
+                22,
+                255
+              ]
+            },
+            {
+              "x": 959,
+              "y": 0,
+              "rgba": [
+                65,
+                40,
+                15,
+                255
+              ]
+            },
+            {
+              "x": 0,
+              "y": 719,
+              "rgba": [
+                53,
+                65,
+                71,
+                255
+              ]
+            },
+            {
+              "x": 959,
+              "y": 719,
+              "rgba": [
+                69,
+                73,
+                68,
+                255
+              ]
+            },
+            {
+              "x": 480,
+              "y": 360,
+              "rgba": [
+                13,
+                47,
+                76,
+                255
+              ]
+            },
+            {
+              "x": 240,
+              "y": 180,
+              "rgba": [
+                103,
+                72,
+                39,
+                255
+              ]
+            },
+            {
+              "x": 720,
+              "y": 540,
+              "rgba": [
+                83,
+                85,
+                78,
+                255
+              ]
+            },
+            {
+              "x": 480,
+              "y": 180,
+              "rgba": [
+                21,
+                16,
+                6,
+                255
+              ]
+            }
+          ],
+          "nontrivial": true
+        },
+        "pixelAnalysisCpuMs": 40.79999999998836
+      },
+      {
+        "variant": "full",
+        "frame": 3,
+        "worldTime": 0.05,
+        "result": "measured",
+        "gl": {
+          "beforeError": 0,
+          "beforeContextLost": false,
+          "afterError": 0,
+          "afterContextLost": false,
+          "defaultReadFramebuffer": true
+        },
+        "bufferResetCpuMs": 0,
+        "cpuRenderMs": 16.29999999998836,
+        "readbackWallMs": 856.1000000000349,
+        "totalWallMs": 872.4000000000233,
+        "render": {
+          "frame": 4,
+          "calls": 409,
+          "triangles": 362586,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 414,
+          "textures": 25
+        },
+        "programs": 19,
+        "camera": [
+          0.8500000000000004,
+          2.8,
+          23.8
+        ],
+        "cameraQuaternion": [
+          -0.11728161974882405,
+          0.06551464246775633,
+          0.007754187696219565,
+          0.9909050034511815
+        ],
+        "contextLost": false,
+        "pixels": {
+          "pixelCount": 691200,
+          "nonzeroRgbPixels": 691200,
+          "nonzeroAlphaPixels": 691200,
+          "opaquePixels": 691200,
+          "rgbDifferentFromFirst": 690901,
+          "min": [
+            1,
+            0,
+            0,
+            255
+          ],
+          "max": [
+            248,
+            235,
+            212,
+            255
+          ],
+          "mean": [
+            76.02987702546297,
+            63.40931568287037,
+            43.217484085648145,
+            255
+          ],
+          "variance": [
+            1304.7233420277007,
+            964.5924042481452,
+            754.7709486470271,
+            0
+          ],
+          "representativePixels": [
+            {
+              "x": 0,
+              "y": 0,
+              "rgba": [
+                67,
+                45,
+                22,
+                255
+              ]
+            },
+            {
+              "x": 959,
+              "y": 0,
+              "rgba": [
+                65,
+                40,
+                15,
+                255
+              ]
+            },
+            {
+              "x": 0,
+              "y": 719,
+              "rgba": [
+                53,
+                65,
+                71,
+                255
+              ]
+            },
+            {
+              "x": 959,
+              "y": 719,
+              "rgba": [
+                69,
+                73,
+                68,
+                255
+              ]
+            },
+            {
+              "x": 480,
+              "y": 360,
+              "rgba": [
+                13,
+                47,
+                76,
+                255
+              ]
+            },
+            {
+              "x": 240,
+              "y": 180,
+              "rgba": [
+                103,
+                72,
+                39,
+                255
+              ]
+            },
+            {
+              "x": 720,
+              "y": 540,
+              "rgba": [
+                83,
+                85,
+                78,
+                255
+              ]
+            },
+            {
+              "x": 480,
+              "y": 180,
+              "rgba": [
+                21,
+                16,
+                6,
+                255
+              ]
+            }
+          ],
+          "nontrivial": true
+        },
+        "pixelAnalysisCpuMs": 30.399999999965075
+      },
+      {
+        "variant": "full",
+        "frame": 4,
+        "worldTime": 0.06666666666666667,
+        "result": "measured",
+        "gl": {
+          "beforeError": 0,
+          "beforeContextLost": false,
+          "afterError": 0,
+          "afterContextLost": false,
+          "defaultReadFramebuffer": true
+        },
+        "bufferResetCpuMs": 0.1000000000349246,
+        "cpuRenderMs": 14.799999999988358,
+        "readbackWallMs": 859.7999999999884,
+        "totalWallMs": 874.5999999999767,
+        "render": {
+          "frame": 5,
+          "calls": 409,
+          "triangles": 362586,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 414,
+          "textures": 25
+        },
+        "programs": 19,
+        "camera": [
+          0.8500000000000006,
+          2.8,
+          23.8
+        ],
+        "cameraQuaternion": [
+          -0.11728161974882405,
+          0.06551464246775635,
+          0.0077541876962195656,
+          0.9909050034511815
+        ],
+        "contextLost": false,
+        "pixels": {
+          "pixelCount": 691200,
+          "nonzeroRgbPixels": 691200,
+          "nonzeroAlphaPixels": 691200,
+          "opaquePixels": 691200,
+          "rgbDifferentFromFirst": 690901,
+          "min": [
+            1,
+            0,
+            0,
+            255
+          ],
+          "max": [
+            248,
+            235,
+            212,
+            255
+          ],
+          "mean": [
+            76.0388599537037,
+            63.415831886574075,
+            43.22175636574074,
+            255
+          ],
+          "variance": [
+            1304.7152433762194,
+            964.7210233675705,
+            754.8535671698094,
+            0
+          ],
+          "representativePixels": [
+            {
+              "x": 0,
+              "y": 0,
+              "rgba": [
+                67,
+                45,
+                22,
+                255
+              ]
+            },
+            {
+              "x": 959,
+              "y": 0,
+              "rgba": [
+                65,
+                40,
+                15,
+                255
+              ]
+            },
+            {
+              "x": 0,
+              "y": 719,
+              "rgba": [
+                53,
+                65,
+                71,
+                255
+              ]
+            },
+            {
+              "x": 959,
+              "y": 719,
+              "rgba": [
+                69,
+                73,
+                68,
+                255
+              ]
+            },
+            {
+              "x": 480,
+              "y": 360,
+              "rgba": [
+                13,
+                47,
+                76,
+                255
+              ]
+            },
+            {
+              "x": 240,
+              "y": 180,
+              "rgba": [
+                103,
+                72,
+                39,
+                255
+              ]
+            },
+            {
+              "x": 720,
+              "y": 540,
+              "rgba": [
+                83,
+                85,
+                78,
+                255
+              ]
+            },
+            {
+              "x": 480,
+              "y": 180,
+              "rgba": [
+                21,
+                16,
+                6,
+                255
+              ]
+            }
+          ],
+          "nontrivial": true
+        },
+        "pixelAnalysisCpuMs": 30.100000000034925
+      },
+      {
+        "variant": "full",
+        "frame": 5,
+        "worldTime": 0.08333333333333333,
+        "result": "measured",
+        "gl": {
+          "beforeError": 0,
+          "beforeContextLost": false,
+          "afterError": 0,
+          "afterContextLost": false,
+          "defaultReadFramebuffer": true
+        },
+        "bufferResetCpuMs": 0.09999999997671694,
+        "cpuRenderMs": 16.20000000001164,
+        "readbackWallMs": 1044.899999999965,
+        "totalWallMs": 1061.0999999999767,
+        "render": {
+          "frame": 6,
+          "calls": 409,
+          "triangles": 362586,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 414,
+          "textures": 25
+        },
+        "programs": 19,
+        "camera": [
+          0.8500000000000008,
+          2.8,
+          23.8
+        ],
+        "cameraQuaternion": [
+          -0.11728161974882405,
+          0.06551464246775636,
+          0.007754187696219567,
+          0.9909050034511815
+        ],
+        "contextLost": false,
+        "pixels": {
+          "pixelCount": 691200,
+          "nonzeroRgbPixels": 691200,
+          "nonzeroAlphaPixels": 691200,
+          "opaquePixels": 691200,
+          "rgbDifferentFromFirst": 690901,
+          "min": [
+            1,
+            0,
+            0,
+            255
+          ],
+          "max": [
+            248,
+            235,
+            212,
+            255
+          ],
+          "mean": [
+            76.04384403935185,
+            63.41868489583333,
+            43.222934027777775,
+            255
+          ],
+          "variance": [
+            1304.3571590080837,
+            964.3834428306868,
+            754.6226673174071,
+            0
+          ],
+          "representativePixels": [
+            {
+              "x": 0,
+              "y": 0,
+              "rgba": [
+                67,
+                45,
+                22,
+                255
+              ]
+            },
+            {
+              "x": 959,
+              "y": 0,
+              "rgba": [
+                65,
+                40,
+                15,
+                255
+              ]
+            },
+            {
+              "x": 0,
+              "y": 719,
+              "rgba": [
+                53,
+                65,
+                71,
+                255
+              ]
+            },
+            {
+              "x": 959,
+              "y": 719,
+              "rgba": [
+                69,
+                73,
+                68,
+                255
+              ]
+            },
+            {
+              "x": 480,
+              "y": 360,
+              "rgba": [
+                13,
+                47,
+                76,
+                255
+              ]
+            },
+            {
+              "x": 240,
+              "y": 180,
+              "rgba": [
+                103,
+                72,
+                39,
+                255
+              ]
+            },
+            {
+              "x": 720,
+              "y": 540,
+              "rgba": [
+                83,
+                85,
+                78,
+                255
+              ]
+            },
+            {
+              "x": 480,
+              "y": 180,
+              "rgba": [
+                21,
+                16,
+                6,
+                255
+              ]
+            }
+          ],
+          "nontrivial": true
+        },
+        "pixelAnalysisCpuMs": 42.09999999997672
+      },
+      {
+        "variant": "full",
+        "frame": 6,
+        "worldTime": 0.1,
+        "result": "measured",
+        "gl": {
+          "beforeError": 0,
+          "beforeContextLost": false,
+          "afterError": 0,
+          "afterContextLost": false,
+          "defaultReadFramebuffer": true
+        },
+        "bufferResetCpuMs": 0.1000000000349246,
+        "cpuRenderMs": 20.099999999976717,
+        "readbackWallMs": 1040.4000000000233,
+        "totalWallMs": 1060.5,
+        "render": {
+          "frame": 7,
+          "calls": 409,
+          "triangles": 362586,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 414,
+          "textures": 25
+        },
+        "programs": 19,
+        "camera": [
+          0.8500000000000008,
+          2.8,
+          23.8
+        ],
+        "cameraQuaternion": [
+          -0.11728161974882405,
+          0.06551464246775636,
+          0.007754187696219567,
+          0.9909050034511815
+        ],
+        "contextLost": false,
+        "pixels": {
+          "pixelCount": 691200,
+          "nonzeroRgbPixels": 691200,
+          "nonzeroAlphaPixels": 691200,
+          "opaquePixels": 691200,
+          "rgbDifferentFromFirst": 690901,
+          "min": [
+            1,
+            0,
+            0,
+            255
+          ],
+          "max": [
+            248,
+            235,
+            212,
+            255
+          ],
+          "mean": [
+            76.03747685185185,
+            63.41416087962963,
+            43.220361689814816,
+            255
+          ],
+          "variance": [
+            1304.6122442124279,
+            964.5023162518964,
+            754.659583086773,
+            0
+          ],
+          "representativePixels": [
+            {
+              "x": 0,
+              "y": 0,
+              "rgba": [
+                67,
+                45,
+                22,
+                255
+              ]
+            },
+            {
+              "x": 959,
+              "y": 0,
+              "rgba": [
+                65,
+                40,
+                15,
+                255
+              ]
+            },
+            {
+              "x": 0,
+              "y": 719,
+              "rgba": [
+                53,
+                65,
+                71,
+                255
+              ]
+            },
+            {
+              "x": 959,
+              "y": 719,
+              "rgba": [
+                69,
+                73,
+                68,
+                255
+              ]
+            },
+            {
+              "x": 480,
+              "y": 360,
+              "rgba": [
+                13,
+                47,
+                76,
+                255
+              ]
+            },
+            {
+              "x": 240,
+              "y": 180,
+              "rgba": [
+                103,
+                72,
+                39,
+                255
+              ]
+            },
+            {
+              "x": 720,
+              "y": 540,
+              "rgba": [
+                83,
+                85,
+                78,
+                255
+              ]
+            },
+            {
+              "x": 480,
+              "y": 180,
+              "rgba": [
+                21,
+                16,
+                6,
+                255
+              ]
+            }
+          ],
+          "nontrivial": true
+        },
+        "pixelAnalysisCpuMs": 30.399999999965075
+      },
+      {
+        "variant": "full",
+        "frame": 7,
+        "worldTime": 0.11666666666666667,
+        "result": "measured",
+        "gl": {
+          "beforeError": 0,
+          "beforeContextLost": false,
+          "afterError": 0,
+          "afterContextLost": false,
+          "defaultReadFramebuffer": true
+        },
+        "bufferResetCpuMs": 0.1000000000349246,
+        "cpuRenderMs": 17.599999999976717,
+        "readbackWallMs": 1041.5999999999767,
+        "totalWallMs": 1059.1999999999534,
+        "render": {
+          "frame": 8,
+          "calls": 409,
+          "triangles": 362586,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 414,
+          "textures": 25
+        },
+        "programs": 19,
+        "camera": [
+          0.8500000000000008,
+          2.8,
+          23.8
+        ],
+        "cameraQuaternion": [
+          -0.11728161974882405,
+          0.06551464246775636,
+          0.007754187696219567,
+          0.9909050034511815
+        ],
+        "contextLost": false,
+        "pixels": {
+          "pixelCount": 691200,
+          "nonzeroRgbPixels": 691200,
+          "nonzeroAlphaPixels": 691200,
+          "opaquePixels": 691200,
+          "rgbDifferentFromFirst": 690901,
+          "min": [
+            1,
+            0,
+            0,
+            255
+          ],
+          "max": [
+            248,
+            235,
+            212,
+            255
+          ],
+          "mean": [
+            76.03308015046296,
+            63.41027777777778,
+            43.218521412037035,
+            255
+          ],
+          "variance": [
+            1304.0839476596639,
+            964.2629337191361,
+            754.6413022119261,
+            0
+          ],
+          "representativePixels": [
+            {
+              "x": 0,
+              "y": 0,
+              "rgba": [
+                67,
+                45,
+                22,
+                255
+              ]
+            },
+            {
+              "x": 959,
+              "y": 0,
+              "rgba": [
+                65,
+                40,
+                15,
+                255
+              ]
+            },
+            {
+              "x": 0,
+              "y": 719,
+              "rgba": [
+                53,
+                65,
+                71,
+                255
+              ]
+            },
+            {
+              "x": 959,
+              "y": 719,
+              "rgba": [
+                69,
+                73,
+                68,
+                255
+              ]
+            },
+            {
+              "x": 480,
+              "y": 360,
+              "rgba": [
+                13,
+                47,
+                76,
+                255
+              ]
+            },
+            {
+              "x": 240,
+              "y": 180,
+              "rgba": [
+                103,
+                72,
+                39,
+                255
+              ]
+            },
+            {
+              "x": 720,
+              "y": 540,
+              "rgba": [
+                83,
+                85,
+                78,
+                255
+              ]
+            },
+            {
+              "x": 480,
+              "y": 180,
+              "rgba": [
+                21,
+                16,
+                6,
+                255
+              ]
+            }
+          ],
+          "nontrivial": true
+        },
+        "pixelAnalysisCpuMs": 30.400000000023283
+      },
+      {
+        "variant": "full",
+        "frame": 8,
+        "worldTime": 0.13333333333333333,
+        "result": "measured",
+        "gl": {
+          "beforeError": 0,
+          "beforeContextLost": false,
+          "afterError": 0,
+          "afterContextLost": false,
+          "defaultReadFramebuffer": true
+        },
+        "bufferResetCpuMs": 0,
+        "cpuRenderMs": 16.400000000023283,
+        "readbackWallMs": 1041.5999999999767,
+        "totalWallMs": 1058,
+        "render": {
+          "frame": 9,
+          "calls": 409,
+          "triangles": 362586,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 414,
+          "textures": 25
+        },
+        "programs": 19,
+        "camera": [
+          0.8500000000000008,
+          2.8,
+          23.8
+        ],
+        "cameraQuaternion": [
+          -0.11728161974882405,
+          0.06551464246775636,
+          0.007754187696219567,
+          0.9909050034511815
+        ],
+        "contextLost": false,
+        "pixels": {
+          "pixelCount": 691200,
+          "nonzeroRgbPixels": 691200,
+          "nonzeroAlphaPixels": 691200,
+          "opaquePixels": 691200,
+          "rgbDifferentFromFirst": 690901,
+          "min": [
+            1,
+            0,
+            0,
+            255
+          ],
+          "max": [
+            248,
+            235,
+            212,
+            255
+          ],
+          "mean": [
+            76.033125,
+            63.410157696759256,
+            43.21933738425926,
+            255
+          ],
+          "variance": [
+            1304.4158558593754,
+            964.5155423651781,
+            754.799865648903,
+            0
+          ],
+          "representativePixels": [
+            {
+              "x": 0,
+              "y": 0,
+              "rgba": [
+                67,
+                45,
+                22,
+                255
+              ]
+            },
+            {
+              "x": 959,
+              "y": 0,
+              "rgba": [
+                65,
+                40,
+                15,
+                255
+              ]
+            },
+            {
+              "x": 0,
+              "y": 719,
+              "rgba": [
+                53,
+                65,
+                71,
+                255
+              ]
+            },
+            {
+              "x": 959,
+              "y": 719,
+              "rgba": [
+                69,
+                73,
+                68,
+                255
+              ]
+            },
+            {
+              "x": 480,
+              "y": 360,
+              "rgba": [
+                13,
+                47,
+                76,
+                255
+              ]
+            },
+            {
+              "x": 240,
+              "y": 180,
+              "rgba": [
+                103,
+                72,
+                39,
+                255
+              ]
+            },
+            {
+              "x": 720,
+              "y": 540,
+              "rgba": [
+                83,
+                85,
+                78,
+                255
+              ]
+            },
+            {
+              "x": 480,
+              "y": 180,
+              "rgba": [
+                21,
+                16,
+                6,
+                255
+              ]
+            }
+          ],
+          "nontrivial": true
+        },
+        "pixelAnalysisCpuMs": 44.09999999997672
+      },
+      {
+        "variant": "full",
+        "frame": 9,
+        "worldTime": 0.15,
+        "result": "measured",
+        "gl": {
+          "beforeError": 0,
+          "beforeContextLost": false,
+          "afterError": 0,
+          "afterContextLost": false,
+          "defaultReadFramebuffer": true
+        },
+        "bufferResetCpuMs": 0.09999999997671694,
+        "cpuRenderMs": 19.5,
+        "readbackWallMs": 1037.2000000000116,
+        "totalWallMs": 1056.7000000000116,
+        "render": {
+          "frame": 10,
+          "calls": 409,
+          "triangles": 362586,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 414,
+          "textures": 25
+        },
+        "programs": 19,
+        "camera": [
+          0.8500000000000008,
+          2.8,
+          23.8
+        ],
+        "cameraQuaternion": [
+          -0.11728161974882405,
+          0.06551464246775636,
+          0.007754187696219567,
+          0.9909050034511815
+        ],
+        "contextLost": false,
+        "pixels": {
+          "pixelCount": 691200,
+          "nonzeroRgbPixels": 691200,
+          "nonzeroAlphaPixels": 691200,
+          "opaquePixels": 691200,
+          "rgbDifferentFromFirst": 690901,
+          "min": [
+            1,
+            0,
+            0,
+            255
+          ],
+          "max": [
+            248,
+            235,
+            212,
+            255
+          ],
+          "mean": [
+            76.03915653935185,
+            63.414149305555554,
+            43.222175925925924,
+            255
+          ],
+          "variance": [
+            1304.5729126566303,
+            964.6024184314115,
+            754.8365811449762,
+            0
+          ],
+          "representativePixels": [
+            {
+              "x": 0,
+              "y": 0,
+              "rgba": [
+                67,
+                45,
+                22,
+                255
+              ]
+            },
+            {
+              "x": 959,
+              "y": 0,
+              "rgba": [
+                65,
+                40,
+                15,
+                255
+              ]
+            },
+            {
+              "x": 0,
+              "y": 719,
+              "rgba": [
+                53,
+                65,
+                71,
+                255
+              ]
+            },
+            {
+              "x": 959,
+              "y": 719,
+              "rgba": [
+                69,
+                73,
+                68,
+                255
+              ]
+            },
+            {
+              "x": 480,
+              "y": 360,
+              "rgba": [
+                13,
+                47,
+                76,
+                255
+              ]
+            },
+            {
+              "x": 240,
+              "y": 180,
+              "rgba": [
+                103,
+                72,
+                39,
+                255
+              ]
+            },
+            {
+              "x": 720,
+              "y": 540,
+              "rgba": [
+                83,
+                85,
+                78,
+                255
+              ]
+            },
+            {
+              "x": 480,
+              "y": 180,
+              "rgba": [
+                21,
+                16,
+                6,
+                255
+              ]
+            }
+          ],
+          "nontrivial": true
+        },
+        "pixelAnalysisCpuMs": 30.20000000001164
+      },
+      {
+        "variant": "full",
+        "frame": 10,
+        "worldTime": 0.16666666666666666,
+        "result": "measured",
+        "gl": {
+          "beforeError": 0,
+          "beforeContextLost": false,
+          "afterError": 0,
+          "afterContextLost": false,
+          "defaultReadFramebuffer": true
+        },
+        "bufferResetCpuMs": 0,
+        "cpuRenderMs": 20.100000000034925,
+        "readbackWallMs": 1016.6999999999534,
+        "totalWallMs": 1036.7999999999884,
+        "render": {
+          "frame": 11,
+          "calls": 409,
+          "triangles": 362586,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 414,
+          "textures": 25
+        },
+        "programs": 19,
+        "camera": [
+          0.8500000000000008,
+          2.8,
+          23.8
+        ],
+        "cameraQuaternion": [
+          -0.11728161974882405,
+          0.06551464246775636,
+          0.007754187696219567,
+          0.9909050034511815
+        ],
+        "contextLost": false,
+        "pixels": {
+          "pixelCount": 691200,
+          "nonzeroRgbPixels": 691200,
+          "nonzeroAlphaPixels": 691200,
+          "opaquePixels": 691200,
+          "rgbDifferentFromFirst": 690901,
+          "min": [
+            1,
+            0,
+            0,
+            255
+          ],
+          "max": [
+            248,
+            235,
+            212,
+            255
+          ],
+          "mean": [
+            76.04910011574074,
+            63.42072627314815,
+            43.22690248842593,
+            255
+          ],
+          "variance": [
+            1304.551886053634,
+            964.5755762086387,
+            754.855724462135,
+            0
+          ],
+          "representativePixels": [
+            {
+              "x": 0,
+              "y": 0,
+              "rgba": [
+                67,
+                45,
+                22,
+                255
+              ]
+            },
+            {
+              "x": 959,
+              "y": 0,
+              "rgba": [
+                65,
+                40,
+                15,
+                255
+              ]
+            },
+            {
+              "x": 0,
+              "y": 719,
+              "rgba": [
+                53,
+                65,
+                71,
+                255
+              ]
+            },
+            {
+              "x": 959,
+              "y": 719,
+              "rgba": [
+                69,
+                73,
+                68,
+                255
+              ]
+            },
+            {
+              "x": 480,
+              "y": 360,
+              "rgba": [
+                13,
+                47,
+                76,
+                255
+              ]
+            },
+            {
+              "x": 240,
+              "y": 180,
+              "rgba": [
+                103,
+                72,
+                39,
+                255
+              ]
+            },
+            {
+              "x": 720,
+              "y": 540,
+              "rgba": [
+                83,
+                85,
+                78,
+                255
+              ]
+            },
+            {
+              "x": 480,
+              "y": 180,
+              "rgba": [
+                21,
+                16,
+                6,
+                255
+              ]
+            }
+          ],
+          "nontrivial": true
+        },
+        "pixelAnalysisCpuMs": 30.29999999998836
+      },
+      {
+        "variant": "full",
+        "frame": 11,
+        "worldTime": 0.18333333333333332,
+        "result": "measured",
+        "gl": {
+          "beforeError": 0,
+          "beforeContextLost": false,
+          "afterError": 0,
+          "afterContextLost": false,
+          "defaultReadFramebuffer": true
+        },
+        "bufferResetCpuMs": 0.09999999997671694,
+        "cpuRenderMs": 18.20000000001164,
+        "readbackWallMs": 1101.0999999999767,
+        "totalWallMs": 1119.2999999999884,
+        "render": {
+          "frame": 12,
+          "calls": 409,
+          "triangles": 362586,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 414,
+          "textures": 25
+        },
+        "programs": 19,
+        "camera": [
+          0.8500000000000008,
+          2.8,
+          23.8
+        ],
+        "cameraQuaternion": [
+          -0.11728161974882405,
+          0.06551464246775636,
+          0.007754187696219567,
+          0.9909050034511815
+        ],
+        "contextLost": false,
+        "pixels": {
+          "pixelCount": 691200,
+          "nonzeroRgbPixels": 691200,
+          "nonzeroAlphaPixels": 691200,
+          "opaquePixels": 691200,
+          "rgbDifferentFromFirst": 690901,
+          "min": [
+            1,
+            0,
+            0,
+            255
+          ],
+          "max": [
+            248,
+            235,
+            212,
+            255
+          ],
+          "mean": [
+            76.04442418981482,
+            63.41760850694445,
+            43.22442997685185,
+            255
+          ],
+          "variance": [
+            1304.760150333951,
+            964.6763597900203,
+            754.8758493567864,
+            0
+          ],
+          "representativePixels": [
+            {
+              "x": 0,
+              "y": 0,
+              "rgba": [
+                67,
+                45,
+                22,
+                255
+              ]
+            },
+            {
+              "x": 959,
+              "y": 0,
+              "rgba": [
+                65,
+                40,
+                15,
+                255
+              ]
+            },
+            {
+              "x": 0,
+              "y": 719,
+              "rgba": [
+                53,
+                65,
+                71,
+                255
+              ]
+            },
+            {
+              "x": 959,
+              "y": 719,
+              "rgba": [
+                69,
+                73,
+                68,
+                255
+              ]
+            },
+            {
+              "x": 480,
+              "y": 360,
+              "rgba": [
+                13,
+                47,
+                76,
+                255
+              ]
+            },
+            {
+              "x": 240,
+              "y": 180,
+              "rgba": [
+                103,
+                72,
+                39,
+                255
+              ]
+            },
+            {
+              "x": 720,
+              "y": 540,
+              "rgba": [
+                83,
+                85,
+                78,
+                255
+              ]
+            },
+            {
+              "x": 480,
+              "y": 180,
+              "rgba": [
+                21,
+                16,
+                6,
+                255
+              ]
+            }
+          ],
+          "nontrivial": true
+        },
+        "pixelAnalysisCpuMs": 31.399999999965075
+      },
+      {
+        "variant": "full",
+        "frame": 12,
+        "worldTime": 0.2,
+        "result": "measured",
+        "gl": {
+          "beforeError": 0,
+          "beforeContextLost": false,
+          "afterError": 0,
+          "afterContextLost": false,
+          "defaultReadFramebuffer": true
+        },
+        "bufferResetCpuMs": 0.1000000000349246,
+        "cpuRenderMs": 13.399999999965075,
+        "readbackWallMs": 1043.9000000000233,
+        "totalWallMs": 1057.2999999999884,
+        "render": {
+          "frame": 13,
+          "calls": 409,
+          "triangles": 362586,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 414,
+          "textures": 25
+        },
+        "programs": 19,
+        "camera": [
+          0.8500000000000008,
+          2.8,
+          23.8
+        ],
+        "cameraQuaternion": [
+          -0.11728161974882405,
+          0.06551464246775636,
+          0.007754187696219567,
+          0.9909050034511815
+        ],
+        "contextLost": false,
+        "pixels": {
+          "pixelCount": 691200,
+          "nonzeroRgbPixels": 691200,
+          "nonzeroAlphaPixels": 691200,
+          "opaquePixels": 691200,
+          "rgbDifferentFromFirst": 690901,
+          "min": [
+            1,
+            0,
+            0,
+            255
+          ],
+          "max": [
+            248,
+            235,
+            212,
+            255
+          ],
+          "mean": [
+            76.03397858796296,
+            63.41000434027778,
+            43.21953125,
+            255
+          ],
+          "variance": [
+            1304.8642910574117,
+            964.7094731191937,
+            754.8878621645326,
+            0
+          ],
+          "representativePixels": [
+            {
+              "x": 0,
+              "y": 0,
+              "rgba": [
+                67,
+                45,
+                22,
+                255
+              ]
+            },
+            {
+              "x": 959,
+              "y": 0,
+              "rgba": [
+                65,
+                40,
+                15,
+                255
+              ]
+            },
+            {
+              "x": 0,
+              "y": 719,
+              "rgba": [
+                53,
+                65,
+                71,
+                255
+              ]
+            },
+            {
+              "x": 959,
+              "y": 719,
+              "rgba": [
+                69,
+                73,
+                68,
+                255
+              ]
+            },
+            {
+              "x": 480,
+              "y": 360,
+              "rgba": [
+                13,
+                48,
+                76,
+                255
+              ]
+            },
+            {
+              "x": 240,
+              "y": 180,
+              "rgba": [
+                103,
+                72,
+                39,
+                255
+              ]
+            },
+            {
+              "x": 720,
+              "y": 540,
+              "rgba": [
+                83,
+                85,
+                78,
+                255
+              ]
+            },
+            {
+              "x": 480,
+              "y": 180,
+              "rgba": [
+                21,
+                16,
+                6,
+                255
+              ]
+            }
+          ],
+          "nontrivial": true
+        },
+        "pixelAnalysisCpuMs": 35.399999999965075
+      }
+    ],
+    "errors": [],
+    "restored": false,
+    "createPresentationCpuMs": 742.8999999999651,
+    "assetWaitWallMs": 0,
+    "assets": {
+      "state": "no-external-character-assets-at-baseline",
+      "textureCount": 0
+    },
+    "actorRigCount": 4,
+    "worldFixture": {
+      "player": {
+        "id": "player",
+        "x": 0,
+        "z": 18,
+        "yaw": 0,
+        "hp": 100,
+        "posture": 0,
+        "state": "idle",
+        "age": 0,
+        "guardAge": 99,
+        "hit": [],
+        "cooldown": 0,
+        "stride": 0,
+        "dodgeX": 0,
+        "dodgeZ": 0
+      },
+      "enemies": [
+        {
+          "id": "sentinel",
+          "x": 0,
+          "z": 1,
+          "yaw": 0,
+          "hp": 100,
+          "posture": 0,
+          "state": "idle",
+          "age": 0,
+          "guardAge": 99,
+          "hit": [],
+          "cooldown": 0,
+          "stride": 0,
+          "dodgeX": 0,
+          "dodgeZ": 0
+        },
+        {
+          "id": "retainer",
+          "x": -3,
+          "z": -9,
+          "yaw": 0,
+          "hp": 100,
+          "posture": 0,
+          "state": "idle",
+          "age": 0,
+          "guardAge": 99,
+          "hit": [],
+          "cooldown": 0,
+          "stride": 0,
+          "dodgeX": 0,
+          "dodgeZ": 0
+        },
+        {
+          "id": "warden",
+          "x": 3,
+          "z": -16,
+          "yaw": 0,
+          "hp": 100,
+          "posture": 0,
+          "state": "idle",
+          "age": 0,
+          "guardAge": 99,
+          "hit": [],
+          "cooldown": 0,
+          "stride": 0,
+          "dodgeX": 0,
+          "dodgeZ": 0
+        }
+      ],
+      "mode": "playing",
+      "locked": null
+    },
+    "leafScan": {
+      "geometryCount": 115,
+      "verticesVisited": 180640,
+      "meshes": [
+        {
+          "name": "bamboo-leaves-2,-2",
+          "uuid": "ccbbf810-1fe8-41ff-b0eb-e657d216b0c1",
+          "leafVertices": 2016,
+          "totalVertices": 2814,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 2236,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--2,-1",
+          "uuid": "ce8c6630-a85f-433f-9748-5404e9638cce",
+          "leafVertices": 2436,
+          "totalVertices": 3458,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 2766,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--2,0",
+          "uuid": "2e47c6ab-2a24-4248-a3c0-c0d120d46289",
+          "leafVertices": 5124,
+          "totalVertices": 7180,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 5714,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-0,1",
+          "uuid": "0d6359f5-d4fe-452a-9181-84174d642b1b",
+          "leafVertices": 1596,
+          "totalVertices": 2278,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 1826,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-1,1",
+          "uuid": "f384960c-0e38-4853-ac1d-e8e9ffd945ba",
+          "leafVertices": 5124,
+          "totalVertices": 7180,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 5714,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-1,-1",
+          "uuid": "39977812-c1c3-40ef-8280-81bc7f64d113",
+          "leafVertices": 2352,
+          "totalVertices": 3304,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 2632,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-1,0",
+          "uuid": "7d8d3970-ca52-407a-8827-cace6718ca80",
+          "leafVertices": 3360,
+          "totalVertices": 4774,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 3820,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--3,-3",
+          "uuid": "52b66638-c131-4997-a965-8d3a22af3c3c",
+          "leafVertices": 2436,
+          "totalVertices": 3512,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 2826,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-2,-3",
+          "uuid": "3732287f-d5b8-4549-9138-4d7ed4bf4edd",
+          "leafVertices": 1932,
+          "totalVertices": 2804,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 2262,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-1,-2",
+          "uuid": "2972e8d2-132e-433d-befb-8f707738ac76",
+          "leafVertices": 2520,
+          "totalVertices": 3540,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 2820,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-1,-3",
+          "uuid": "48e130ba-f5d8-4ad7-b3d8-63572ff00398",
+          "leafVertices": 3864,
+          "totalVertices": 5464,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 4364,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--3,-1",
+          "uuid": "5bd91ec1-1fdd-4816-84f0-f7f5c1bdff02",
+          "leafVertices": 1848,
+          "totalVertices": 2614,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 2088,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--2,-2",
+          "uuid": "17b51e3f-78e0-4bdb-af72-feb30104c569",
+          "leafVertices": 4956,
+          "totalVertices": 7034,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 5626,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--1,1",
+          "uuid": "dd56b575-2d0b-47cd-b778-e7e45ab12584",
+          "leafVertices": 2352,
+          "totalVertices": 3286,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 2612,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--1,2",
+          "uuid": "25b2c522-082f-4c9a-9998-fe94a966f85a",
+          "leafVertices": 504,
+          "totalVertices": 708,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 564,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--3,-2",
+          "uuid": "a9ce3227-bda9-4c7d-b328-6b2043ce057f",
+          "leafVertices": 2436,
+          "totalVertices": 3260,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 2546,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-1,2",
+          "uuid": "b02408a3-3486-4c53-a9d9-ca04e5c67925",
+          "leafVertices": 1512,
+          "totalVertices": 2124,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 1692,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--2,1",
+          "uuid": "b37209ac-6c37-4666-a2b6-f7db1d8f4533",
+          "leafVertices": 3528,
+          "totalVertices": 4956,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 3948,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-2,1",
+          "uuid": "943f433b-00d2-4582-a49a-4c8bd7f2f962",
+          "leafVertices": 2184,
+          "totalVertices": 3140,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 2524,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-2,-1",
+          "uuid": "d61eae1f-2cf1-4104-a507-e3a9cea3304a",
+          "leafVertices": 504,
+          "totalVertices": 708,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 564,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--1,-1",
+          "uuid": "d0a44180-5a10-4378-8235-5f79db71d0ef",
+          "leafVertices": 1176,
+          "totalVertices": 1634,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 1296,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-0,0",
+          "uuid": "8ef2355e-116a-422f-8e99-b3f6cb0b443c",
+          "leafVertices": 2856,
+          "totalVertices": 3922,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 3096,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-1,-4",
+          "uuid": "f2d533c2-39b9-40e8-b3b3-52f04ca2093e",
+          "leafVertices": 2100,
+          "totalVertices": 2950,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 2350,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--2,-3",
+          "uuid": "fc44b16d-ee4d-491c-afd6-3706c38ad57b",
+          "leafVertices": 3864,
+          "totalVertices": 5446,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 4344,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--1,-2",
+          "uuid": "b0e8bb7e-9773-4d5b-bad6-06789a851aee",
+          "leafVertices": 1764,
+          "totalVertices": 2478,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 1974,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--2,-4",
+          "uuid": "476904bf-6a87-43b2-acad-37bb2973349d",
+          "leafVertices": 1848,
+          "totalVertices": 2524,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 1988,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--2,2",
+          "uuid": "48fc04c0-335d-488d-8c3d-46ab6efb1991",
+          "leafVertices": 420,
+          "totalVertices": 572,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 450,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-0,-4",
+          "uuid": "e9f188e0-20bf-4eee-9f6b-acfe2e1b4b87",
+          "leafVertices": 1008,
+          "totalVertices": 1416,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 1128,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-0,-1",
+          "uuid": "bc7abfc1-1618-4c2a-9303-7a620c206b4e",
+          "leafVertices": 2016,
+          "totalVertices": 2814,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 2236,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--1,0",
+          "uuid": "f17c962b-9f79-4f55-b4f2-8424b237daa8",
+          "leafVertices": 504,
+          "totalVertices": 708,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 564,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-0,-3",
+          "uuid": "7a4fff78-8a30-423e-97b4-ce0daf5ebe64",
+          "leafVertices": 840,
+          "totalVertices": 1144,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 900,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-0,-2",
+          "uuid": "568b08f7-b8f7-4493-a019-55d411c3efce",
+          "leafVertices": 840,
+          "totalVertices": 1108,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 860,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves-2,0",
+          "uuid": "58cf1f99-8403-45fc-a216-787471153230",
+          "leafVertices": 2184,
+          "totalVertices": 3032,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 2404,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--1,-4",
+          "uuid": "eb6f9b74-9a84-4023-a472-fe253a11709b",
+          "leafVertices": 840,
+          "totalVertices": 1288,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 1060,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--1,-3",
+          "uuid": "63ffd287-6b3e-4636-b1a7-a369dcb27431",
+          "leafVertices": 336,
+          "totalVertices": 436,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 336,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--3,-4",
+          "uuid": "7cb50d12-f67f-4282-a2a6-a2a100b2e923",
+          "leafVertices": 168,
+          "totalVertices": 200,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 148,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "bamboo-leaves--3,1",
+          "uuid": "a1918cc2-ee57-4dfd-a86f-b2cb10c4193e",
+          "leafVertices": 252,
+          "totalVertices": 390,
+          "mixed": true,
+          "instances": 1,
+          "triangles": 322,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "maple-leaves--2,0",
+          "uuid": "f9ff46a3-75aa-4e16-bcde-8a8bd22bb074",
+          "leafVertices": 1944,
+          "totalVertices": 1944,
+          "mixed": false,
+          "instances": 1,
+          "triangles": 1620,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "maple-leaves--1,-3",
+          "uuid": "7d1c7300-fe85-4d95-9514-c89f1f101305",
+          "leafVertices": 924,
+          "totalVertices": 924,
+          "mixed": false,
+          "instances": 1,
+          "triangles": 770,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "maple-leaves--1,-2",
+          "uuid": "63f19d2e-a6f4-4ae5-aa99-321ebf906ca4",
+          "leafVertices": 48,
+          "totalVertices": 48,
+          "mixed": false,
+          "instances": 1,
+          "triangles": 40,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "maple-leaves-0,-3",
+          "uuid": "4164da7c-d291-4f89-a3c9-c4072f0d7c19",
+          "leafVertices": 972,
+          "totalVertices": 972,
+          "mixed": false,
+          "instances": 1,
+          "triangles": 810,
+          "castShadow": true,
+          "visible": true
+        },
+        {
+          "name": "",
+          "uuid": "5715e22d-7722-43df-b72b-252e4cc78257",
+          "leafVertices": 12,
+          "totalVertices": 12,
+          "mixed": false,
+          "instances": 64,
+          "triangles": 640,
+          "castShadow": false,
+          "visible": true
+        }
+      ],
+      "scope": "Whole drawables containing at least one leafPivot.w > 0.5 vertex, including mixed woody side branches; not isolated leaf triangles",
+      "meshCount": 42,
+      "triangles": 88480
+    },
+    "gl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "vendor": "WebKit",
+      "renderer": "WebKit WebGL",
+      "unmaskedRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+    },
+    "viewport": {
+      "width": 960,
+      "height": 720,
+      "devicePixelRatio": 1,
+      "rendererPixelRatio": 1,
+      "drawingBuffer": [
+        960,
+        720
+      ]
+    },
+    "readback": {
+      "width": 960,
+      "height": 720,
+      "format": "RGBA",
+      "type": "UNSIGNED_BYTE",
+      "bytes": 2764800,
+      "bufferAllocations": 1,
+      "scope": "Synchronous full drawing-buffer pixels: pending GPU work plus synchronization/IPC and 2,764,800-byte transfer; not a pure GPU timer. Stats use bottom-left pixel coordinates. Buffer reset and CPU analysis are timed separately."
+    }
+  },
+  "restoration": {
+    "restored": true
+  },
+  "sourceUnchanged": true,
+  "glErrorDiagnostics": [],
+  "finishedAt": "2026-09-15T14:47:13.563Z"
+}

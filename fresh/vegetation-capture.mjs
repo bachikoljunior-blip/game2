@@ -22,13 +22,16 @@ window.foliageFrame=(name,t)=>{
  if(!specimens?.bamboo||!specimens?.maple)throw new Error('The production specimen roots are required.');
  const specimen=name==='bamboo'?specimens.bamboo:specimens.maple;
  world.player.x=specimen.x+6;world.player.z=specimen.z+8;world.time=t;
- view.render(world,1/12,0,{animate:true});
+ // Keep the production updates, but do not queue an unseen gameplay draw.
+ view.render(world,1/12,0,{animate:true,draw:false});
  const {x,y,z,height}=specimen,close=name==='maple-leaf';
  // Select once after settling, then keep the same viewpoint for every frame.
  if(t>=8&&!inspection)inspection=chooseVegetationInspection(view,specimen,{close,time:t});
  const position=inspection?new T.Vector3(...inspection.position):new T.Vector3(x+height*.82,y+height*.59,z+height*1.32);
  const target=inspection?new T.Vector3(...inspection.target):new T.Vector3(x,y+height*.5,z);
- view.renderInspection(position,target);view.camera.updateMatrixWorld();
+ // No pixels are requested during the 96 settle updates. Each recorded frame
+ // submits exactly one inspection view, then its awaited screenshot drains it.
+ if(t>=8)view.renderInspection(position,target);view.camera.updateMatrixWorld();
  const projections=[new T.Vector3(x,y,z),new T.Vector3(x,y+height,z)].map(p=>p.project(view.camera).toArray());
  return {name,time:t,specimen,inspection,camera:view.camera.position.toArray(),projections,landscape:view.landscapeDiagnostics(),render:view.renderer.info.render};
 };window.foliageReady=true;

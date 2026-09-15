@@ -14,6 +14,7 @@ const out=resolve(root,process.env.FRESH_ASSET_EVIDENCE||'AI_DEVELOPMENT/EVIDENC
 const origin='http://127.0.0.1:4178';
 const stems=['young-asian-male','brown-eye','short-hair','eyebrows'];
 const heldStem=stems[0],assetTimeoutMs=60000,holdMs=350,settleMs=500;
+const captureTimeoutMs=30000,renderWaitTimeoutMs=15000,slowCaptureMs=15000;
 const sha256=bytes=>createHash('sha256').update(bytes).digest('hex');
 const assetStem=url=>{
   const name=new URL(url).pathname.split('/').at(-1);
@@ -29,7 +30,7 @@ const report={schemaVersion:1,date:new Date().toISOString(),result:'running',
   environment:'Chromium / SwiftShader production preview; not physical-device performance or a visual quality comparison',
   textureObservationScope:'Decoded images supplied to the original WebGL API; void API calls do not prove successful GPU transfer or absence of unreported GPU errors. GL error state is not consumed.',
   url:`${origin}/?diagnostic=1`,requiredTextureStems:stems,heldOrAbortedTexture:heldStem,
-  limits:{assetTimeoutMs,holdMs,settleMs},cases:[],errors:[]};
+  limits:{assetTimeoutMs,holdMs,settleMs,captureTimeoutMs,renderWaitTimeoutMs,slowCaptureMs},cases:[],errors:[]};
 await mkdir(out,{recursive:true});
 const persist=()=>writeFile(resolve(out,'report.json'),JSON.stringify(report,null,2)+'\n');
 const errorText=error=>error?.stack||String(error);
@@ -80,6 +81,49 @@ async function snapshot(page){
       observation:window.__freshAssetObservation};
   });
 }
+async function captureState(page){
+  return page.evaluate(()=>{
+    const d=window.freshDiagnostics?.(true);
+    return {atMs:performance.now(),worldTime:d?.world?.time,running:d?.running,paused:d?.paused,
+      contextLost:d?.contextLost,assetState:d?.actors?.assets?.state,render:d?.render,
+      fontsStatus:document.fonts.status,timings:d?.timings};
+  });
+}
+async function captureFrame(page,item,file,{requireRenderProgress=false,kind='required'}={}){
+  const capture={file,kind,result:'running',stage:'before-capture',captureTimeoutMs,renderWaitTimeoutMs,
+    scope:'Image acquisition and CPU render observations only; not a GPU-transfer or gameplay-performance pass.'};
+  item.captures.push(capture);
+  try{
+    capture.before=await captureState(page);
+    if(requireRenderProgress){
+      capture.stage='wait-for-two-render-frames';
+      const start=performance.now();
+      try{
+        await page.waitForFunction(frame=>{
+          const d=window.freshDiagnostics();
+          return d.running&&d.actors.assets.state==='ready'&&d.render.calls>0&&d.render.frame>=frame+2;
+        },capture.before.render.frame,{timeout:renderWaitTimeoutMs});
+      }finally{capture.renderWaitElapsedMs=performance.now()-start;}
+      capture.afterRenderWait=await captureState(page);
+    }
+    capture.stage='screenshot';capture.startedAt=new Date().toISOString();
+    const start=performance.now();let bytes;
+    try{bytes=await page.screenshot({path:resolve(out,file),timeout:captureTimeoutMs});}
+    finally{
+      capture.elapsedMs=performance.now()-start;
+      capture.exceededPrior15SecondLimit=capture.elapsedMs>slowCaptureMs;
+    }
+    assert.equal(bytes.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
+    assert.equal(bytes.readUInt32BE(16),1280);assert.equal(bytes.readUInt32BE(20),720);
+    capture.png={bytes:bytes.length,sha256:sha256(bytes),width:1280,height:720};
+    item.screenshot=file;capture.result='saved';capture.stage='complete';
+  }catch(error){capture.result='failed';capture.error=errorText(error);throw error;}
+  finally{
+    capture.finishedAt=new Date().toISOString();
+    try{capture.after=await captureState(page);}
+    catch(error){item.errors.push(`Capture state: ${errorText(error)}`);}
+  }
+}
 function gated(state,expectedState){
   assert.equal(state.assets?.state,expectedState);
   assert.equal(state.assets.textureCount,4);
@@ -108,7 +152,7 @@ function validatePngResponses(item,expectedStems){
 
 async function runCase(mode){
   const item={mode,result:'running',startedAt:new Date().toISOString(),observations:[],
-    interceptedRequests:[],pngResponses:[],requestFailures:[],consoleErrors:[],consoleWarnings:[],pageErrors:[],errors:[]};
+    interceptedRequests:[],pngResponses:[],requestFailures:[],consoleErrors:[],consoleWarnings:[],pageErrors:[],captures:[],errors:[]};
   report.cases.push(item);
   let browser,page,release;
   const responses=[],routeJobs=[];
@@ -203,8 +247,6 @@ async function runCase(mode){
       gated(stillFailed,'failed');assert.equal(stillFailed.worldTime,failed.worldTime);
       assert.deepEqual(stillFailed.observation.textureApiSubmissions,[],'failed readiness must not submit partial textures');
     }
-    await page.screenshot({path:resolve(out,`${mode==='normal'?'normal':'failed'}.png`)});
-    item.screenshot=mode==='normal'?'normal.png':'failed.png';
     await Promise.all(responses);
     validatePngResponses(item,mode==='normal'?stems:stems.filter(stem=>stem!==heldStem));
     if(mode==='normal'){
@@ -214,10 +256,20 @@ async function runCase(mode){
         assert.equal(submission.naturalWidth,response.width);assert.equal(submission.naturalHeight,response.height);
       }
     }
+    // Complete and persist readiness/network assertions before image acquisition.
+    // A later capture failure must not erase which checks actually executed.
+    item.readinessAssertions={result:'passed',completedAt:new Date().toISOString(),
+      scope:'Asset/UI/rig/API-submission assertions; screenshot and final error checks remain separate.'};
+    await persist();
+    await captureFrame(page,item,mode==='normal'?'normal.png':'failed.png',{requireRenderProgress:mode==='normal'});
   }catch(error){item.errors.push(errorText(error));
     if(page&&!item.screenshot){
-      try{item.failureState=await snapshot(page);await page.screenshot({path:resolve(out,mode==='normal'?'normal.png':'failed.png')});
-        item.screenshot=mode==='normal'?'normal.png':'failed.png';
+      try{
+        item.failureState=await snapshot(page);
+        // A timed-out screenshot may still occupy Chromium's compositor. Do not
+        // immediately queue the same expensive capture again or turn its retry into a pass.
+        if(item.captures.length===0)await captureFrame(page,item,mode==='normal'?'normal.png':'failed.png',{kind:'failure-diagnostic'});
+        else item.failureCaptureSkipped='A capture was already attempted; retain its failure without an immediate duplicate.';
       }catch(captureError){item.errors.push(`Failure capture: ${errorText(captureError)}`);}
     }
   }finally{

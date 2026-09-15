@@ -1,0 +1,31 @@
+✔ 414 touch recorded duel positions expose both intervening banners without fading the third (578.419734ms)
+✔ 414 desktop recorded first locked frame fades the intersecting ridge rock independently (454.099785ms)
+✔ head, chest and blade rays use the current rig transforms and cover a sword-only obstruction (174.278927ms)
+✔ wind-deformed cloth intersections preserve visible and depth shaders and source vertices (1.121685ms)
+✔ fade is local, continuous, pauseable and fully restores opacity, depth and shadows (0.611598ms)
+✔ slender generated leaves no longer obscure the historical water-route position or trigger false fades (1486.786805ms)
+✔ actual animated leaf triangles have matching positive/negative CPU ray proxies after the wind moves them (698.080612ms)
+✔ recorded old-waystone wood fades locally, freezes when paused and restores on retry (1436.569983ms)
+ℹ Recorded position: maple wood detected in 13/13 wind phases; other 3 cells remain opaque. All 364 supports occupy 4 correct spatial cells.
+✔ one approach physically divides outside the ridge and reconverges (1.992017ms)
+✔ each side has a distinct landmark and the wind-cloth path is the longer consequence (0.401716ms)
+✔ route choice exists only beside the ridge and records its real position once (2.744644ms)
+✔ choice is recorded before route-specific observations even at a landmark (0.609595ms)
+✔ unknown route ids are rejected instead of silently becoming the left route (0.534774ms)
+✔ encounter availability follows approach, chosen branch and reconvergence (0.173077ms)
+✔ the ridge stops a central shortcut while both ordinary movement routes pass it (21.626247ms)
+✔ the fractured ridge has actual side contact through the ground, with no low air tunnel (145.613116ms)
+✔ new exposed rock triangles cover the collision spine and leave both walking corridors clear (138.266412ms)
+✔ new lower ridge clears historic anatomy rays and still fades on actual intersecting triangles (598.516071ms)
+✔ the rebuilt shrine keeps feet clear at the unchanged collision boundary (229.753842ms)
+✔ ground sampling agrees with actual rendered triangles, including diagonal interiors (218.9965ms)
+✔ the verified central path stays level while the valley shoulders rise (0.423148ms)
+✔ shrine decorative base cannot project beyond the solid collision footprint (0.150363ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5068.560937

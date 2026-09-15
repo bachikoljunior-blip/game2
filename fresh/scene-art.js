@@ -1,6 +1,7 @@
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {shrineBaseSize} from './terrain.js';
+import {createLitterTexture,installGroundLitter,groundSurfaceAt} from './scene-surface.js';
 
 // Original boot-built scenery. All coordinates below are decorative; the
 // simulation, terrain samples and authored route remain their sole owners.
@@ -50,47 +51,83 @@ function surface(vertices,indices,seed=0){
   g.setAttribute('uv',new T.Float32BufferAttribute(uv,2));g.computeVertexNormals();
   const flat=g.toNonIndexed();g.dispose();flat.computeVertexNormals();return colored(flat,seed,.09);
 }
-// A buried, continuous foot supports angular sloping strata. Adjacent sections
-// share their end profiles exactly, so independent visibility fades do not
-// require a rectangular plinth or leave a misleading walkable hole.
+// A closed weathered foot extends below the real ground while retaining exact
+// collider coverage. Color matching alone cannot establish ground contact. Above
+// it, irregular fracture cells make real ledges, bevels and recessed joints;
+// the front/back emerge from the soil instead of closing as a tall flat cap.
 export function ridgeSections(fork){
-  const rows=9,columns=9,profiles=[],result=[];
-  const cross=[-1,-.92,-.69,-.35,-.04,.28,.62,.9,1];
-  const heights=[.05,.78,1.55,2.13,2.38,2.10,1.61,.83,.05];
-  for(let r=0;r<=rows;r++){
-    const t=[0,.095,.21,.29,.415,.55,.68,.79,.92,1][r];
-    const z=fork.z+fork.d/2-t*fork.d,profile=[.64,.94,.87,1.02,.70,.99,1.07,.85,.91,.61][r];
-    profiles.push(cross.map((u,c)=>{
-      const edge=c===0||c===columns-1,offset=edge?0:(hash(r,c,31)-.5)*.16;
-      const y=heights[c]*profile+(edge?0:(hash(r,c,4)-.5)*.35);
-      return [fork.x+(u+offset*.35)*fork.w/2,y,z];
-    }));
+  const rows=9,columns=4,hx=fork.w/2,hz=fork.d/2,seeds=[],parts=Array.from({length:rows},()=>[]);
+  const masses=[[-.42,-3.15,1.63,2.0,1.25],[.36,-1.25,2.02,2.15,2.18],[-.30,1.04,1.95,2.05,2.46],[.40,3.25,1.70,1.75,1.44]];
+  const height=(x,z)=>{
+    const px=x-fork.x,pz=z-fork.z;let body=0;
+    for(const [cx,cz,rx,rz,h] of masses){
+      const radius=Math.pow(Math.abs((px-cx)/rx),1.65)+Math.pow(Math.abs((pz-cz)/rz),1.65);
+      body=Math.max(body,h*Math.pow(Math.max(0,1-radius),.63));
+    }
+    const buried=T.MathUtils.smoothstep(hx-Math.abs(px),0,.32)*T.MathUtils.smoothstep(hz-Math.abs(pz),0,.30);
+    return .055+body*buried;
+  };
+  for(let r=0;r<rows;r++)for(let c=0;c<columns;c++){
+    seeds.push({x:fork.x-hx+(c+.28+hash(r,c,37)*.44)*fork.w/columns,
+      z:fork.z-hz+(r+.26+hash(r,c,41)*.48)*fork.d/rows,row:r,id:r*columns+c});
   }
+  const clip=(polygon,nx,nz,d)=>{
+    const result=[];for(let i=0;i<polygon.length;i++){
+      const a=polygon[i],b=polygon[(i+1)%polygon.length],da=a[0]*nx+a[1]*nz-d,db=b[0]*nx+b[1]*nz-d;
+      if(da<=1e-9)result.push(a);
+      if((da<0)!==(db<0)){const t=da/(da-db);result.push([a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t]);}
+    }return result;
+  };
+  // Close every strip through y=0 into the ground. The former open top strips
+  // and cell bases all began at +.055, leaving an actual 5.5 cm air gap.
   for(let r=0;r<rows;r++){
-    const v=[...profiles[r].flat(),...profiles[r+1].flat()],f=[];
-    for(let c=0;c<columns-1;c++){
-      const a=c,b=c+1,d=columns+c,e=d+1;
+    const a=fork.z-hz+r/rows*fork.d,b=fork.z-hz+(r+1)/rows*fork.d;
+    const v=[],f=[0,2,1,0,3,2,4,5,6,4,6,7];
+    for(const y of [.055,-.08])v.push(fork.x-hx,y,a,fork.x+hx,y,a,fork.x+hx,y,b,fork.x-hx,y,b);
+    for(let i=0;i<4;i++){const next=(i+1)%4;f.push(i,next,i+4,next,next+4,i+4);}
+    parts[r].push(surface(v,f,r));
+  }
+  for(const seed of seeds){
+    let polygon=[[fork.x-hx,fork.z-hz],[fork.x+hx,fork.z-hz],[fork.x+hx,fork.z+hz],[fork.x-hx,fork.z+hz]];
+    for(const other of seeds){if(other===seed)continue;
+      const nx=other.x-seed.x,nz=other.z-seed.z,d=(other.x*other.x+other.z*other.z-seed.x*seed.x-seed.z*seed.z)/2;
+      polygon=clip(polygon,nx,nz,d);if(!polygon.length)break;
+    }
+    const cx=polygon.reduce((sum,p)=>sum+p[0],0)/polygon.length,cz=polygon.reduce((sum,p)=>sum+p[1],0)/polygon.length;
+    const h=height(cx,cz)+(hash(seed.id,3,13)-.5)*.34;
+    const slopeX=(height(cx+.12,cz)-height(cx-.12,cz))/.24+(hash(seed.id,7)-.5)*.38;
+    const slopeZ=(height(cx,cz+.12)-height(cx,cz-.12))/.24+(hash(seed.id,5)-.5)*.32;
+    const top=(x,z)=>T.MathUtils.clamp(Math.min(h+(x-cx)*slopeX+(z-cz)*slopeZ,height(x,z)+.12),.085,fork.h-.12);
+    const v=[],f=[],n=polygon.length;
+    for(let ring=0;ring<3;ring++)for(let i=0;i<n;i++){
+      const p=polygon[i],inset=ring===0?1:ring===1?.984+hash(seed.id,i,19)*.013:.82+hash(seed.id,i,52)*.12;
+      const x=cx+(p[0]-cx)*inset,z=cz+(p[1]-cz)*inset;
+      v.push(x,ring===0?-.08:Math.max(.06,top(x,z)-(ring===1?.04+hash(seed.id,i,8)*.10:0)),z);
+    }
+    for(let ring=0;ring<2;ring++)for(let i=0;i<n;i++){
+      const a=ring*n+i,b=ring*n+(i+1)%n,d=(ring+1)*n+i,e=(ring+1)*n+(i+1)%n;
       f.push(a,d,b,b,d,e);
     }
-    // End faces continue down into the unchanged terrain rather than a box.
-    for(const row of [0,1]){
-      const offset=row*columns,base=v.length/3;
-      for(let c=0;c<columns;c++){const p=profiles[r+row][c];v.push(p[0],-.16,p[2]);}
-      for(let c=0;c<columns-1;c++){
-        const a=offset+c,b=a+1,d=base+c,e=d+1;
-        if(row===0)f.push(a,b,d,b,e,d);else f.push(a,d,b,b,d,e);
-      }
+    v.push(cx,top(cx,cz),cz);for(let i=0;i<n;i++)f.push(3*n,2*n+(i+1)%n,2*n+i);
+    const g=surface(v,f,seed.id+6),p=g.attributes.position,colors=g.attributes.color;
+    // Soil staining grows from the actual buried foot; fracture tops retain
+    // pale mineral faces instead of every triangle receiving arbitrary color.
+    for(let i=0;i<p.count;i++){
+      const contact=1-T.MathUtils.smoothstep(p.getY(i),.06,.42),tone=1-contact*.21;
+      colors.setXYZ(i,colors.getX(i)*tone,colors.getY(i)*tone,colors.getZ(i)*tone*(1-contact*.055));
     }
-    // Narrow sides under the last face cover the original full footprint.
-    for(const c of [0,columns-1]){
-      const a=c,b=columns+c,ia=v.length/3;
-      v.push(v[a*3],-.16,v[a*3+2],v[b*3],-.16,v[b*3+2]);
-      if(c===0)f.push(a,ia,b,b,ia,ia+1);else f.push(a,b,ia,b,ia+1,ia);
-    }
-    for(let i=0;i<f.length;i+=3)[f[i+1],f[i+2]]=[f[i+2],f[i+1]];
-    result.push(surface(v,f,r+6));
+    parts[seed.row].push(g);
   }
-  return result;
+  const groundTint=new T.Color('#c3beb0'),rockTint=new T.Color('#777d70'),contactColor=new T.Color();
+  return parts.map(geometries=>{
+    const g=mergeGeometries(geometries);geometries.forEach(part=>part.dispose());
+    const p=g.attributes.position,c=g.attributes.color;
+    for(let i=0;i<p.count;i++){
+      const blend=1-T.MathUtils.smoothstep(p.getY(i),.06,.28);if(!blend)continue;
+      groundSurfaceAt(p.getX(i),p.getZ(i),contactColor);contactColor.multiply(groundTint);
+      c.setXYZ(i,T.MathUtils.lerp(c.getX(i),contactColor.r/rockTint.r,blend),T.MathUtils.lerp(c.getY(i),contactColor.g/rockTint.g,blend),T.MathUtils.lerp(c.getZ(i),contactColor.b/rockTint.b,blend));
+    }return g;
+  });
 }
 export function pavingStoneGeometry(width,depth,height=.055,seed=0){
   const hx=width/2,hz=depth/2,cut=.045+hash(seed,1)*.065;
@@ -130,8 +167,9 @@ export function createSceneArt(scene,foreground){
     foundation:material('#7c8077',textures.stone),wood:material('#665342',textures.wood),timber:material('#4d3930',textures.wood),
     lacquer:material('#703e2d',textures.wood,{bump:.006,roughness:.79}),roof:material('#485454',textures.roof,{bump:.008}),
     roofEdge:material('#59615c',textures.roof,{bump:.012})};
-  const ground=material('#bbb095',textures.soil,{vertexColors:true,bump:.008});ground.map.repeat.set(80,100);
-  const groups=new Map(),metrics={vertices:0,triangles:0,meshes:0,ridgeSections:0,pavingStones:0,pavingPieces:0,generatedTextureBytes:4*256*256*4};
+  const ground=material('#c3beb0',textures.soil,{vertexColors:true,bump:.008});ground.map.repeat.set(80,100);
+  const litter=createLitterTexture();installGroundLitter(ground,litter);
+  const groups=new Map(),metrics={vertices:0,triangles:0,meshes:0,ridgeSections:0,pavingStones:0,pavingPieces:0,generatedTextureBytes:5*256*256*4,litterTextureBytes:litter.image.data.byteLength};
   let cpuMs=performance.now()-started;
   const transform=(g,x,y,z,sx=1,sy=1,sz=1,ry=0)=>g.applyMatrix4(new T.Matrix4().compose(new T.Vector3(x,y,z),new T.Quaternion().setFromAxisAngle(T.Object3D.DEFAULT_UP,ry),new T.Vector3(sx,sy,sz)));
   const queue=(g,mat)=>{if(!groups.has(mat))groups.set(mat,[]);groups.get(mat).push(g);};

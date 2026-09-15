@@ -11,10 +11,10 @@
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
     "activeTask": "FRESH-ART-SOUND-PHYSICS-REVISION",
-    "lastSuccessfulAction": "CC0 anatomy1e7eed7,scene3622a58 andfoliage079511e integrated locally; combined build succeeds. Initial211 tests205pass/6fake-canvas failures; explicit geometry-only resource injection repairs all6 in13/13 targeted checks. Prioracf0 exactCI34971788118 remains fully passed. New native media and final211 CI still pending.",
-    "currentFailingAction": "Existing actual run/death films show knee through the front hakama and a thin pointed hem. A closed-section continuously deformed cloth repair is in progress; first new anatomy/foliage/landscape actual capture is pending.",
-    "currentHypothesis": "Actual images show the procedural-only character method and primitive landscape masses are insufficient. Pilot lawful CC0 anatomical head/neck/hands with skin/eyes/hair, correct actual grip offset, refine leaf scale/shape without weakening physics and reconstruct prominent rock/shrine geometry within existing collision.",
-    "nextAction": "Save this explicitly preliminary rendering checkpoint and run exact-source CI. Independently inspect real new anatomy/foliage/scene/asset-readiness media, complete the separately frozen dynamic hakama repair, rerun exact-source gates, integrate PR24 and publish matching preview with all assets verified by HTTP and PC/touch controls.",
+    "lastSuccessfulAction": "Frozen integrated runtime passed230 local tests, a clean7-file production build and independent finite neck/guard/rock/fade/mip source rechecks. Exact fresh index tree7e6eda4aea523982c3fb6f102d8b95bb684b1abb. Native gameplay/render-cost/material/animation acceptance is pending nextCI; preview remains the previously publisheda672.",
+    "currentFailingAction": "No unclosed confirmed source blocker in the frozen candidate. The last actually rendered e188 ordinary candidate still has failed/incomplete route and capture gates and below-target visual quality; the new candidate has not yet established native recovery.",
+    "currentHypothesis": "The first imported anatomy improved real facial shape but exposed rigid-neck tailoring defects; small isolated leaves lost canopy mass and expensive leaf shadows increased completed-render cost. Join the lower neck to chest with the actual anatomical deformation weights, preserve closed cloth, render support-bound fronds at distance with consistent mask/fade and retain separate woody and leaf dynamics.",
+    "nextAction": "Run native exact-source Fresh verification and completed-pixel rendering diagnosis for this frozen candidate, recover original images/videos/audio, independently inspect ordinary scenes, cloth and8neck pose views, then integrate PR24 and publish the identical7-file build with4PNG hash/readiness verification at the actual preview URL.",
     "rollbackPoint": "1ded4aae27f8331cec10975c8dbac9eb482460a9",
     "pendingVerification": [
       "C04 candidate capture that visibly shows both routes entering one reconvergence point and continues through shrine/signal arrival",
@@ -383,15 +383,16 @@
     ],
     "latestForegroundDeadlineReassessment": {
       "deadline": "2026-09-20T07:51:53Z",
-      "remainingHours": 114.0311483588889,
+      "remainingHours": 112.88733124416666,
       "satisfied": 0,
       "notSatisfied": 0,
       "notMeasured": 10,
-      "prediction": "Not grounded as can meet: zero formal whole-element comparisons are satisfied; current native art materially below PS4 target.",
-      "methodDefect": "Primitive-detail accumulation and technical PCM/CI checks were insufficient to establish the requested perceptual quality.",
-      "changedMethod": "Lawful CC0 anatomy and fitted textures, physically sized connected leaves and reconstructed landscape have been integrated. Run an early actual-media checkpoint in parallel with fixing the separately observed dynamic hakama major, so unviewed geometry is not accumulated indefinitely. Preserve exact-source final CI and matching preview publication.",
-      "observedAt": "2026-09-15T13:50:00.865775+00:00"
+      "prediction": "Not grounded as can meet: formal comparisons remain unmeasured and actual e188 ordinary scenes remain materially below the PS4 visual goal.",
+      "methodDefect": "Native anatomy alone left cloth/skin connection defects; simply shrinking individually modeled foliage reduced canopy mass while software-rendered completed pixels became slower. Earlier gl.finish probe did not wait for completed pixels.",
+      "changedMethod": "Keep actual CC0 anatomy, replace rigid lower neck with chest-weighted deformation and closed leg cloth; use connected distant frond cutouts and consistent mask/fade. Replace invalid finish timing with synchronous full-image readPixels and retain original failures. Integrated scene fractures and grounded litter are awaiting actual image inspection, not treated as visual success.",
+      "measuredEffect": "CI34983898913 full warm render plus readback median baseline1057ms/e1881397.95ms; e188 no-leaf-shadow1057.55ms and no-leaves914.45ms in one candidate browser. Readback includes transfer/synchronization and separate jobs do not prove identical hardware. New local fixes have not yet been profiled.",
+      "observedAt": "2026-09-15T14:58:38.607521+00:00"
     }
   },
-  "updatedAt": "2026-09-15T13:50:00.865775+00:00"
+  "updatedAt": "2026-09-15T15:23:21.267802+00:00"
 }

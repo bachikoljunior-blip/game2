@@ -1,0 +1,44 @@
+{
+  "at": "2026-09-15T15:22:38.867048+00:00",
+  "frozenRuntimeIndexFreshTree": "7e6eda4aea523982c3fb6f102d8b95bb684b1abb",
+  "build": "passed",
+  "files": [
+    {
+      "path": "assets/brown-eye-DsUMil5J.png",
+      "bytes": 610817,
+      "sha256": "4659691c7295ad6206c78b003e5fd0e5f91dcd53032fa914a229bb48cabe424b"
+    },
+    {
+      "path": "assets/eyebrows-CAObckBg.png",
+      "bytes": 89619,
+      "sha256": "9940f7d0b1b223709a19b05156ba6f6e9e4dbdbced02d7574f4d51d72c58967b"
+    },
+    {
+      "path": "assets/index-Ck_X98_2.css",
+      "bytes": 6472,
+      "sha256": "7c991e93c0471bdc554ebd9e79cd027afc380ee964520eb5fbc278319f16da3d"
+    },
+    {
+      "path": "assets/index-DG38851A.js",
+      "bytes": 4042294,
+      "sha256": "e6dbec3eeb7ae36a2b593a4601e819a2cd67716cf05219aa189f07000596ce95"
+    },
+    {
+      "path": "assets/short-hair-hshXq62u.png",
+      "bytes": 2308132,
+      "sha256": "0bef7fc0e403db5a40fabb2111ebfa6f7e8158e204c6e56b8da98e9ef527846e"
+    },
+    {
+      "path": "assets/young-asian-male-CWnOsWsU.png",
+      "bytes": 3593099,
+      "sha256": "f50016a5507fc687dc8df06599c8ea48de950cd185de33a71cafc1319ddab4d5"
+    },
+    {
+      "path": "index.html",
+      "bytes": 1772,
+      "sha256": "ae74be22db1a47163828272e41bfafbca1e2e53463a0e58212e733de79f300bb"
+    }
+  ],
+  "scope": "A previously absent dedicated output directory contains only the7 files produced by this frozen source. Exact CI build hash comparison and publication remain pending.",
+  "sameJsHashAsMixedBuild": true
+}

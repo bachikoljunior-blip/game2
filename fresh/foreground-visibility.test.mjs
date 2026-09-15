@@ -10,16 +10,17 @@ import {updateCharacterRig} from './character-motion.js';
 import {groundHeightAt} from './terrain.js';
 import {clothDisplacement,installWindMaterial} from './wind.js';
 import {headlessPresentation} from './vegetation-test-support.mjs';
+import {foliageHitIsOpaque} from './foliage-lod.js';
 
 const vector=p=>new T.Vector3(p.x,p.y,p.z);
 function referenceGeometry(mesh,physics,time){
   const geometry=mesh.geometry.clone(),p=geometry.attributes.position;
   for(let i=0;i<p.count;i++)p.setXYZ(i,...physics.deformVertex(mesh.geometry,i,time));
   geometry.computeBoundingBox();geometry.computeBoundingSphere();
-  const proxy=new T.Mesh(geometry,new T.MeshBasicMaterial({side:T.DoubleSide}));proxy.updateMatrixWorld();return proxy;
+  const proxy=new T.Mesh(geometry,new T.MeshBasicMaterial({side:T.DoubleSide}));proxy.userData.foliageAlpha=mesh.userData.foliageAlpha;proxy.updateMatrixWorld();return proxy;
 }
 function referenceHit(mesh,camera,points){
-  return points.some(point=>{const delta=point.clone().sub(camera),length=delta.length();return new T.Raycaster(camera,delta.normalize(),.02,length-.035).intersectObject(mesh,false).length>0;});
+  return points.some(point=>{const delta=point.clone().sub(camera),length=delta.length();return new T.Raycaster(camera,delta.normalize(),.02,length-.035).intersectObject(mesh,false).some(foliageHitIsOpaque);});
 }
 function stage(player,enemy,time){
   const world=createWorld();world.time=time;world.routeChoice='right';world.routePhase='rejoined';world.locked=enemy.id;

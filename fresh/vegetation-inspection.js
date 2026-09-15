@@ -19,7 +19,7 @@ export function chooseVegetationInspection(view,specimen,{close=false,time=8}={}
   view.scene.traverse(mesh=>{
     if(!mesh.name.startsWith('bamboo-culms-')&&!mesh.name.startsWith('maple-wood-')&&!mesh.name.startsWith('bamboo-leaves-'))return;
     const source=mesh.geometry,indices=[],self=[],other=[],p=source.attributes.position,support=source.attributes.windSupport;
-    for(let i=0;i<source.index.count;i+=3){
+    for(let i=0;i<Math.min(source.index.count,source.drawRange.count);i+=3){
       const a=source.index.getX(i);if(source.attributes.leafPivot.getW(a)!==0)continue;
       const triangle=[a,source.index.getX(i+1),source.index.getX(i+2)],id=support.getW(a);
       if(!excluded.has(id))indices.push(...triangle);

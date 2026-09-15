@@ -1,0 +1,537 @@
+{
+  "upload": {
+    "scope": "Actual Three upload code with WebGL calls stubbed; driver completeness/rendering is not measured",
+    "immutableLevels": 7,
+    "uploadedSizes": [
+      512,
+      256,
+      128,
+      64,
+      32,
+      16,
+      8
+    ]
+  },
+  "scope": "CPU atlas/mip arithmetic and independent bilinear samples; actual WebGL upload/render not measured",
+  "rows": [
+    {
+      "size": 512,
+      "fronds": [
+        {
+          "pixelCoverage": 0.1657867431640625,
+          "filteredCoverage": 0.16293632587265175,
+          "coveredLuminance": 50.9834983709148,
+          "alphaWeightedLuminance": 50.88001540483451
+        },
+        {
+          "pixelCoverage": 0.1650238037109375,
+          "filteredCoverage": 0.16361832723665448,
+          "coveredLuminance": 50.81130766527879,
+          "alphaWeightedLuminance": 50.68210936450814
+        },
+        {
+          "pixelCoverage": 0.1627655029296875,
+          "filteredCoverage": 0.1610763221526443,
+          "coveredLuminance": 50.74790786537798,
+          "alphaWeightedLuminance": 50.67244038513839
+        }
+      ]
+    },
+    {
+      "size": 256,
+      "fronds": [
+        {
+          "pixelCoverage": 0.1651611328125,
+          "filteredCoverage": 0.16256432512865027,
+          "coveredLuminance": 51.001970288248,
+          "alphaWeightedLuminance": 50.940451609001805
+        },
+        {
+          "pixelCoverage": 0.1639404296875,
+          "filteredCoverage": 0.16299832599665198,
+          "coveredLuminance": 50.80998890543526,
+          "alphaWeightedLuminance": 50.74682840446338
+        },
+        {
+          "pixelCoverage": 0.1619873046875,
+          "filteredCoverage": 0.15983631967263934,
+          "coveredLuminance": 50.78987942727917,
+          "alphaWeightedLuminance": 50.740369940754825
+        }
+      ]
+    },
+    {
+      "size": 128,
+      "fronds": [
+        {
+          "pixelCoverage": 0.166015625,
+          "filteredCoverage": 0.16355632711265422,
+          "coveredLuminance": 50.82483794117651,
+          "alphaWeightedLuminance": 50.88745909423275
+        },
+        {
+          "pixelCoverage": 0.16552734375,
+          "filteredCoverage": 0.16231632463264928,
+          "coveredLuminance": 50.62951828908566,
+          "alphaWeightedLuminance": 50.6902859742644
+        },
+        {
+          "pixelCoverage": 0.163818359375,
+          "filteredCoverage": 0.16157232314464628,
+          "coveredLuminance": 50.68712250372585,
+          "alphaWeightedLuminance": 50.6791011719027
+        }
+      ]
+    },
+    {
+      "size": 64,
+      "fronds": [
+        {
+          "pixelCoverage": 0.173828125,
+          "filteredCoverage": 0.16833033666067332,
+          "coveredLuminance": 50.57357191011232,
+          "alphaWeightedLuminance": 50.88269381290705
+        },
+        {
+          "pixelCoverage": 0.1767578125,
+          "filteredCoverage": 0.1693223386446773,
+          "coveredLuminance": 50.4131657458563,
+          "alphaWeightedLuminance": 50.669655859122074
+        },
+        {
+          "pixelCoverage": 0.1669921875,
+          "filteredCoverage": 0.16163432326864655,
+          "coveredLuminance": 50.463690058479486,
+          "alphaWeightedLuminance": 50.67629936533677
+        }
+      ]
+    },
+    {
+      "size": 32,
+      "fronds": [
+        {
+          "pixelCoverage": 0.1796875,
+          "filteredCoverage": 0.16702833405666812,
+          "coveredLuminance": 50.08155217391307,
+          "alphaWeightedLuminance": 50.860106870229004
+        },
+        {
+          "pixelCoverage": 0.1640625,
+          "filteredCoverage": 0.1662223324446649,
+          "coveredLuminance": 50.07796190476192,
+          "alphaWeightedLuminance": 50.65259761565108
+        },
+        {
+          "pixelCoverage": 0.1875,
+          "filteredCoverage": 0.16473432946865893,
+          "coveredLuminance": 50.268270833333354,
+          "alphaWeightedLuminance": 50.628358067226905
+        }
+      ]
+    },
+    {
+      "size": 16,
+      "fronds": [
+        {
+          "pixelCoverage": 0.171875,
+          "filteredCoverage": 0.16523033046066093,
+          "coveredLuminance": 50.42163636363637,
+          "alphaWeightedLuminance": 50.708987808526565
+        },
+        {
+          "pixelCoverage": 0.1875,
+          "filteredCoverage": 0.16516833033666067,
+          "coveredLuminance": 50.712983333333334,
+          "alphaWeightedLuminance": 50.65161272509003
+        },
+        {
+          "pixelCoverage": 0.1875,
+          "filteredCoverage": 0.16256432512865027,
+          "coveredLuminance": 50.42754999999999,
+          "alphaWeightedLuminance": 50.62459034941764
+        }
+      ]
+    },
+    {
+      "size": 8,
+      "fronds": [
+        {
+          "pixelCoverage": 0.25,
+          "filteredCoverage": 0.16603633207266413,
+          "coveredLuminance": 50.5648,
+          "alphaWeightedLuminance": 50.48665007974482
+        },
+        {
+          "pixelCoverage": 0.25,
+          "filteredCoverage": 0.1645483290966582,
+          "coveredLuminance": 50.72425,
+          "alphaWeightedLuminance": 50.71324462279293
+        },
+        {
+          "pixelCoverage": 0.25,
+          "filteredCoverage": 0.16244032488064977,
+          "coveredLuminance": 50.385999999999996,
+          "alphaWeightedLuminance": 50.4199053484603
+        }
+      ]
+    }
+  ],
+  "blends": [
+    {
+      "from": 512,
+      "to": 256,
+      "fraction": 0.25,
+      "fronds": [
+        {
+          "coverage": 0.16276041666666666,
+          "coveredLuminance": 50.96972287962964
+        },
+        {
+          "coverage": 0.16319444444444445,
+          "coveredLuminance": 50.75146054318112
+        },
+        {
+          "coverage": 0.15733506944444445,
+          "coveredLuminance": 50.654569374520996
+        }
+      ]
+    },
+    {
+      "from": 512,
+      "to": 256,
+      "fraction": 0.5,
+      "fronds": [
+        {
+          "coverage": 0.1618923611111111,
+          "coveredLuminance": 50.95712486781351
+        },
+        {
+          "coverage": 0.16200086805555555,
+          "coveredLuminance": 50.74927053843862
+        },
+        {
+          "coverage": 0.1572265625,
+          "coveredLuminance": 50.67638043094862
+        }
+      ]
+    },
+    {
+      "from": 512,
+      "to": 256,
+      "fraction": 0.75,
+      "fronds": [
+        {
+          "coverage": 0.1623263888888889,
+          "coveredLuminance": 50.972343245877866
+        },
+        {
+          "coverage": 0.16178385416666666,
+          "coveredLuminance": 50.75627772561302
+        },
+        {
+          "coverage": 0.15711805555555555,
+          "coveredLuminance": 50.68422954170508
+        }
+      ]
+    },
+    {
+      "from": 256,
+      "to": 128,
+      "fraction": 0.25,
+      "fronds": [
+        {
+          "coverage": 0.1636284722222222,
+          "coveredLuminance": 50.938034584991094
+        },
+        {
+          "coverage": 0.1605902777777778,
+          "coveredLuminance": 50.677110736674265
+        },
+        {
+          "coverage": 0.15657552083333334,
+          "coveredLuminance": 50.653948007622986
+        }
+      ]
+    },
+    {
+      "from": 256,
+      "to": 128,
+      "fraction": 0.5,
+      "fronds": [
+        {
+          "coverage": 0.162109375,
+          "coveredLuminance": 50.86498311207796
+        },
+        {
+          "coverage": 0.1615668402777778,
+          "coveredLuminance": 50.67032780576078
+        },
+        {
+          "coverage": 0.1570095486111111,
+          "coveredLuminance": 50.64932419565385
+        }
+      ]
+    },
+    {
+      "from": 256,
+      "to": 128,
+      "fraction": 0.75,
+      "fronds": [
+        {
+          "coverage": 0.16297743055555555,
+          "coveredLuminance": 50.80665191966269
+        },
+        {
+          "coverage": 0.162109375,
+          "coveredLuminance": 50.646471075040914
+        },
+        {
+          "coverage": 0.15852864583333334,
+          "coveredLuminance": 50.618686173853575
+        }
+      ]
+    },
+    {
+      "from": 128,
+      "to": 64,
+      "fraction": 0.25,
+      "fronds": [
+        {
+          "coverage": 0.1636284722222222,
+          "coveredLuminance": 50.70670914474648
+        },
+        {
+          "coverage": 0.1625434027777778,
+          "coveredLuminance": 50.534171498108556
+        },
+        {
+          "coverage": 0.1606987847222222,
+          "coveredLuminance": 50.59986761384954
+        }
+      ]
+    },
+    {
+      "from": 128,
+      "to": 64,
+      "fraction": 0.5,
+      "fronds": [
+        {
+          "coverage": 0.16536458333333334,
+          "coveredLuminance": 50.676253386555786
+        },
+        {
+          "coverage": 0.1642795138888889,
+          "coveredLuminance": 50.517861621165274
+        },
+        {
+          "coverage": 0.1591796875,
+          "coveredLuminance": 50.54708335605539
+        }
+      ]
+    },
+    {
+      "from": 128,
+      "to": 64,
+      "fraction": 0.75,
+      "fronds": [
+        {
+          "coverage": 0.1662326388888889,
+          "coveredLuminance": 50.644604200210374
+        },
+        {
+          "coverage": 0.16590711805555555,
+          "coveredLuminance": 50.4405945434562
+        },
+        {
+          "coverage": 0.15852864583333334,
+          "coveredLuminance": 50.514187403985126
+        }
+      ]
+    },
+    {
+      "from": 64,
+      "to": 32,
+      "fraction": 0.25,
+      "fronds": [
+        {
+          "coverage": 0.1650390625,
+          "coveredLuminance": 50.624588353102844
+        },
+        {
+          "coverage": 0.16612413194444445,
+          "coveredLuminance": 50.43692777006681
+        },
+        {
+          "coverage": 0.1593967013888889,
+          "coveredLuminance": 50.52123839393766
+        }
+      ]
+    },
+    {
+      "from": 64,
+      "to": 32,
+      "fraction": 0.5,
+      "fronds": [
+        {
+          "coverage": 0.1636284722222222,
+          "coveredLuminance": 50.63004131437893
+        },
+        {
+          "coverage": 0.16612413194444445,
+          "coveredLuminance": 50.50298016864435
+        },
+        {
+          "coverage": 0.16341145833333334,
+          "coveredLuminance": 50.545356909399416
+        }
+      ]
+    },
+    {
+      "from": 64,
+      "to": 32,
+      "fraction": 0.75,
+      "fronds": [
+        {
+          "coverage": 0.1628689236111111,
+          "coveredLuminance": 50.642640843604255
+        },
+        {
+          "coverage": 0.1655815972222222,
+          "coveredLuminance": 50.588145807621615
+        },
+        {
+          "coverage": 0.16341145833333334,
+          "coveredLuminance": 50.56224009586655
+        }
+      ]
+    },
+    {
+      "from": 32,
+      "to": 16,
+      "fraction": 0.25,
+      "fronds": [
+        {
+          "coverage": 0.1626519097222222,
+          "coveredLuminance": 50.63966373178188
+        },
+        {
+          "coverage": 0.16612413194444445,
+          "coveredLuminance": 50.68352022240598
+        },
+        {
+          "coverage": 0.16297743055555555,
+          "coveredLuminance": 50.62806544982844
+        }
+      ]
+    },
+    {
+      "from": 32,
+      "to": 16,
+      "fraction": 0.5,
+      "fronds": [
+        {
+          "coverage": 0.16395399305555555,
+          "coveredLuminance": 50.65554553689606
+        },
+        {
+          "coverage": 0.16514756944444445,
+          "coveredLuminance": 50.690431497869184
+        },
+        {
+          "coverage": 0.1642795138888889,
+          "coveredLuminance": 50.66104962296343
+        }
+      ]
+    },
+    {
+      "from": 32,
+      "to": 16,
+      "fraction": 0.75,
+      "fronds": [
+        {
+          "coverage": 0.1655815972222222,
+          "coveredLuminance": 50.63358386662432
+        },
+        {
+          "coverage": 0.1635199652777778,
+          "coveredLuminance": 50.66097453037431
+        },
+        {
+          "coverage": 0.1644965277777778,
+          "coveredLuminance": 50.64895506186333
+        }
+      ]
+    },
+    {
+      "from": 16,
+      "to": 8,
+      "fraction": 0.25,
+      "fronds": [
+        {
+          "coverage": 0.1669921875,
+          "coveredLuminance": 50.63785141730241
+        },
+        {
+          "coverage": 0.16438802083333334,
+          "coveredLuminance": 50.54725574353391
+        },
+        {
+          "coverage": 0.1584201388888889,
+          "coveredLuminance": 50.57159118022851
+        }
+      ]
+    },
+    {
+      "from": 16,
+      "to": 8,
+      "fraction": 0.5,
+      "fronds": [
+        {
+          "coverage": 0.1654730902777778,
+          "coveredLuminance": 50.64563999692619
+        },
+        {
+          "coverage": 0.1655815972222222,
+          "coveredLuminance": 50.59096403115684
+        },
+        {
+          "coverage": 0.1574435763888889,
+          "coveredLuminance": 50.54342540815368
+        }
+      ]
+    },
+    {
+      "from": 16,
+      "to": 8,
+      "fraction": 0.75,
+      "fronds": [
+        {
+          "coverage": 0.16514756944444445,
+          "coveredLuminance": 50.631458151495025
+        },
+        {
+          "coverage": 0.16493055555555555,
+          "coveredLuminance": 50.676753383060955
+        },
+        {
+          "coverage": 0.15983072916666666,
+          "coveredLuminance": 50.529429878687246
+        }
+      ]
+    }
+  ],
+  "maxColourError": 0.5,
+  "baseComparison": {
+    "scope": "Actual new scene atlas versus the locally retained, previously reviewed 1dd/26a base atlas bytes; GPU not measured",
+    "oldBaseSha256": "126038f7144af047a3a1b247ae0a5a0146c79d75e3f9d575375ad2643bc13b7e",
+    "newBaseSha256": "dbddcabf4b17da028c38dc21055b38180f2fbeff8c3d7031b870896345ca3323",
+    "changedAlpha": 0,
+    "changedPaintedRGB": 0,
+    "changedVoidRGB": 486948,
+    "minMip": 8,
+    "mipCount": 7
+  },
+  "owner": "/root/game2_ultra_art_sound_physics/vegetation_physics",
+  "baseRevision": "26a7b47cda779980a968ceb3a48a1ae44e8a8b49",
+  "specification": "https://registry.khronos.org/OpenGL/specs/es/3.0/es_spec_3.0.pdf"
+}

@@ -92,7 +92,7 @@ for(const id of expectedIds){
   // Five comparison frames must carry the whole claimed progression: the
   // available fork, the two route-specific facts in semantic order, the
   // *actual* shared rejoin, and the unlit destination arrival. The continuous
-  // clip still proceeds through signal lighting, but neither telemetry nor a
+  // clip retains the complete recording tail, but neither telemetry nor a
   // pre-rejoin preview may stand in for the two missing visual claims.
   const fixedFiveEvents=['fork-entry',...routeSpecificEvents,'route-rejoin','destination-arrival'];
   const fixedFive=fixedFiveEvents.map(name=>snapshots.find(snapshot=>snapshot.event===name));
@@ -101,14 +101,19 @@ for(const id of expectedIds){
   const fixedManifest=`${id}-fixed-five.json`,fixedFile=new URL(fixedManifest,derivedDir);
   await writeFile(fixedFile,JSON.stringify({sourceRaw:expectedFile,sourceSha256:rawSha,route:expectedRoute,order:fixedFiveEvents,frames:fixedFive},null,2)+'\n');
   const clipStart=Math.max(0,(item.events.find(event=>event.event==='fork-entry').offsetMs-500)/1000),
-    clipEnd=(signalLit.offsetMs+1400)/1000,clipName=`${id}-fork-to-signal.mp4`,clipFile=new URL(clipName,derivedDir);
+    // Approximate event time + 1.4 seconds cut off the visible ending in the
+    // slow e188 recording. Keep the raw tail, including the recorded retry,
+    // so a rendering delay cannot be silently trimmed out of the evidence.
+    clipEnd=durationSeconds,clipName=`${id}-fork-to-signal.mp4`,clipFile=new URL(clipName,derivedDir);
   const clipFilter=desktop?'scale=960:540':'crop=844:390:0:0,scale=960:444,pad=960:540:0:48:black';
   ff(['-ss',String(clipStart),'-i',file.pathname,'-t',String(clipEnd-clipStart),'-vf',clipFilter,'-an','-c:v','libx264','-preset','veryfast','-crf','22','-movflags','+faststart','-y',clipFile.pathname]);
   ff(['-xerror','-i',clipFile.pathname,'-map','0:v:0','-f','null','-']);
   const clipProbe=probe(clipFile),clipBytes=(await stat(clipFile)).size;
   Object.assign(entry,{approximateIntervalSeconds,intervalToleranceSeconds:2,snapshots,
     fixedFive:{file:`derived/${fixedManifest}`,order:fixedFiveEvents},derivedClip:{file:`derived/${clipName}`,sha256:await sha256(clipFile),bytes:clipBytes,
-      durationSeconds:Number(clipProbe.format.duration),fullDecode:'passed',touchViewportCrop:desktop?null:{source:'844x844',crop:'844x390+0+0',output:'960x540 with 48px top/bottom padding'}},
+      durationSeconds:Number(clipProbe.format.duration),fullDecode:'passed',rawStartSeconds:clipStart,rawEndSeconds:clipEnd,
+      tailPolicy:'Complete original recording tail through context close, including retry. Visible signal/ending coverage still requires native-media review; the filename is not a semantic acceptance.',
+      touchViewportCrop:desktop?null:{source:'844x844',crop:'844x390+0+0',output:'960x540 with 48px top/bottom padding'}},
     alignment:'Wall-clock event offsets are approximate; video/input synchronization has not been measured. Visual continuity still requires independent review.'});
  }catch(error){
   entry.failure=String(error);report.recordingFailures.push({id,failure:String(error)});

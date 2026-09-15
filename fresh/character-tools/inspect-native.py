@@ -40,7 +40,7 @@ def render(parts, name, target, angle=0, span=.38, pitch=0):
         for ids in triangles:
             p = screen[ids]
             face = np.cross(vertices[ids[1]]-vertices[ids[0]], vertices[ids[2]]-vertices[ids[0]])
-            if texture_name not in ['hair','brows'] and face @ view <= 0:
+            if texture_name not in ['hair','brows'] and not data.get('twoSided') and face @ view <= 0:
                 continue
             xmin, ymin = np.maximum(np.floor(p[:, :2].min(0)), 0).astype(int)
             xmax, ymax = np.minimum(np.ceil(p[:, :2].max(0)), [width-1, height-1]).astype(int)
@@ -61,7 +61,7 @@ def render(parts, name, target, angle=0, span=.38, pitch=0):
                 continue
             normal = bary @ normals[ids]
             normal /= np.maximum(np.linalg.norm(normal, axis=-1, keepdims=True), 1e-10)
-            if texture_name in ['hair','brows'] and face @ view < 0:
+            if (texture_name in ['hair','brows'] or data.get('twoSided')) and face @ view < 0:
                 normal *= -1
             shade = .46 + .64*np.maximum(0, normal @ light)
             if texture is not None:
@@ -93,12 +93,15 @@ def cylinder(center, radius=.032, height=.17):
 
 
 if '--rig' in sys.argv:
-    rig=json.loads((OUT/'production-rig.json').read_text())
-    render(rig['parts'], 'production-full', [0,.94,0], angle=.39, span=2.1)
-    render(rig['parts'], 'production-back', [0,.94,0], angle=np.pi+.15, span=2.1)
-    render(rig['parts'], 'production-head-shoulders', rig['head'], angle=.50, span=.68)
-    render(rig['parts'], 'production-hand', rig['hand'], angle=.50, span=.55)
-    print('Wrote four CPU production-pose diagnostics (not WebGL)')
+    suffix=sys.argv[sys.argv.index('--rig')+1] if sys.argv.index('--rig')+1<len(sys.argv) else ''
+    rig=json.loads((OUT/f'production-rig{suffix}.json').read_text())
+    render(rig['parts'], 'production-full'+suffix, rig['center'], angle=.60, span=2.1)
+    render(rig['parts'], 'production-back'+suffix, rig['center'], angle=np.pi+.15, span=2.1)
+    detailed=rig.get('detailed',rig.get('study','idle' if not suffix else 'motion')=='idle')
+    if detailed:
+        render(rig['parts'], 'production-head-shoulders'+suffix, rig['head'], angle=.50, span=.68)
+        render(rig['parts'], 'production-hand'+suffix, rig['hand'], angle=.50, span=.55)
+    print(f'Wrote {4 if detailed else 2} CPU production-pose diagnostics (not WebGL)')
     raise SystemExit()
 
 figure = DATA['figures']['player']

@@ -6,7 +6,7 @@ import {createCharacterResources} from './character-rig.js';
 export async function headlessPresentation(override){
   const moduleUrl=source=>'data:text/javascript;base64,'+Buffer.from(source).toString('base64');
   const three=moduleUrl(`export * from ${JSON.stringify(import.meta.resolve('three'))};
-    export class WebGLRenderer{constructor(){this.shadowMap={};}setPixelRatio(){}setSize(){}render(){}}`);
+    export class WebGLRenderer{constructor(){this.shadowMap={};this.renderCalls=0;}setPixelRatio(){}setSize(){}render(){this.renderCalls++;}}`);
   const file=new URL('./presentation.js',import.meta.url);
   const source=(override??readFileSync(file,'utf8')).replace(/from '([^']+)'/g,(_,path)=>
     `from ${JSON.stringify(path==='three'?three:path.startsWith('.')?new URL(path,file).href:import.meta.resolve(path))}`);

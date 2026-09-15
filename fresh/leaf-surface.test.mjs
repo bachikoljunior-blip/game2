@@ -30,7 +30,7 @@ test('vein and roughness surfaces are deterministic opaque boot data with shared
   for(const kind of ['maple','bamboo']){
     const a=configureLeafSurface(new T.MeshStandardMaterial(),kind),b=configureLeafSurface(new T.MeshStandardMaterial(),kind);
     assert.deepEqual(a.map.image.data,b.map.image.data);assert.deepEqual(a.roughnessMap.image.data,b.roughnessMap.image.data);
-    assert.equal(a.alphaMap,null);assert.equal(a.alphaTest,0);assert.equal(a.transparent,false);assert.equal(a.side,T.DoubleSide);
+    assert.equal(a.alphaMap,null);assert.equal(a.alphaTest,0);assert.equal(a.transparent,false);assert.equal(a.side,T.DoubleSide);assert.equal(a.forceSinglePass,true);
     const data=a.map.image.data;for(let i=3;i<data.length;i+=4)assert.equal(data[i],255);
     const rough=a.roughnessMap.image.data;assert.ok(new Set(rough.filter((_,i)=>i%4!==3)).size>20,'veins and lamina have distinct roughness');
     assert.equal(a.map.image.width,128);assert.equal(a.roughnessMap.image.height,128);
@@ -48,14 +48,14 @@ test('all generated leaves attach on existing twigs or connected short side shoo
       const beam=physics.beams[id],pivot=new T.Vector3(a.getX(i),a.getY(i),a.getZ(i)),segments=beam.attachmentSegments??[[[0,0,0],[0,beam.length,0]]];
       const distance=Math.min(...segments.map(([a,b])=>new T.Line3(new T.Vector3(...a),new T.Vector3(...b)).closestPointToPoint(pivot,true,new T.Vector3()).distanceTo(pivot)));
       assert.ok(distance<.000004,'every leaf pivot lies within its real twig or side-shoot centreline');
-    }else{
+    }else if(a.getW(i)===0){
       const id=s.getW(i);if(!woodByBeam.has(id))woodByBeam.set(id,[]);woodByBeam.get(id).push(new T.Vector3(s.getX(i),s.getY(i),s.getZ(i)));
     }
   });
   const maple=[...leaves.values()].filter(l=>l.kind===2),bamboo=[...leaves.values()].filter(l=>l.kind===1);
-  assert.equal(maple.length,3888);assert.equal(bamboo.length,16200);
+  assert.equal(maple.length,3888);assert.equal(bamboo.length,32400);
   assert.equal(new Set(maple.map(l=>l.beam)).size,324);assert.equal(new Set(bamboo.map(l=>l.beam)).size,900);
-  assert.ok([...leaves.values()].every(l=>l.length>.075&&l.length<.13),'no giant authored leaf remains');
+  assert.ok([...leaves.values()].every(l=>l.length>.075&&l.length<(l.kind===1?.19:.13)),'no giant authored leaf remains');
   assert.equal(physics.beams.length,2317);assert.equal(physics.beams.filter(b=>b.kind==='bamboo'&&b.parent===null).length,150);
   assert.equal(metrics.grassClumps,3000);assert.equal(metrics.grassBlades,9000);assert.equal(metrics.grassTriangles,36000);
   assert.ok(metrics.maxRootError<.000001);assert.equal(metrics.minGrassRouteClearance,1.5300000000000002);

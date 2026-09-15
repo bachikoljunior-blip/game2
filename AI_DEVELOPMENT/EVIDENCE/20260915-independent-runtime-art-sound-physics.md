@@ -490,3 +490,154 @@ JS
 ```
 
 Only this owned evidence file was edited in the repository. No author source, native asset, runtime test, remote, staging or automation file was changed. The integrator requested the bounded review end after recording these findings; no additional discretionary checks were started afterward.
+
+
+## Scene fracture and ground-surface candidate 613efa — independent technical review
+
+The bounded review target was **`613efa56fa3d2f43314212c21935c8f01ee4e914`**, based on **`3622a5827fa196e7aeea25c89bfda4fde2dc51bd`**, in the isolated `/workspace/scratch/27301e95ee53/game2-scene-art` checkout. HEAD matched the assigned candidate and its tracked files were unchanged. This review concerns that scene-only tree, not the canonical checkout's newer character, plant or capture-runner integration. No new native WebGL output of 613efa was viewed.
+
+| Frozen reviewed file | SHA-256 |
+| --- | --- |
+| `fresh/scene-art.js` | `301f4e173678b10bb59addae64890b5a9dd1d0f871e2faff3b2b19c9ffb6d1ce` |
+| `fresh/scene-surface.js` | `0a4cbbba6b312fa1f0956ae04cfdf5e1c455390c4b198074d23514cd1b2d8c80` |
+| `fresh/presentation.js` | `6fed03147015c50dcad593899e869abff0cca57ff52f74cf45ac05b227149cef` |
+
+### Confirmed root-contact defect: the entire ridge starts 5.5 cm above the ground
+
+The revised ridge uses a horizontal footprint strip at **Y = .055 m**, and every fracture cell's lowest ring also starts at **Y = .055 m**. No surface extends downward from that strip to the soil. The unchanged terrain is exactly **Y = 0** throughout this 4.4 × 10 m central collision rectangle. Independent inspection of **all nine ridge meshes / 2,934 vertices / 978 triangles** found minimum actual terrain clearance **+0.0549999997 m**. The old 3622 construction's minimum clearance was **-0.1599999964 m**, with end/side faces continuing into the ground.
+
+Finite horizontal rays independently established that this is a real open gap below the candidate geometry. The ray begins at **`(-3,y,-9.25)`**, points along **`(1,0,0)`**, and has near 0 / far 6 m. Both source versions were instantiated from their actual `ridgeSections()` implementation; the ray material was DoubleSide so culling could not manufacture a miss.
+
+| Ray height Y | Old 3622 hits | Candidate 613efa hits |
+| --- | ---: | ---: |
+| .025 m | 2 | 0 |
+| .054 m | 2 | 0 |
+| .056 m | 2 | 8 |
+| .100 m | 2 | 8 |
+| .500 m | 2 | 8 |
+
+The .056 m and higher candidate hits are positive controls: the rays intersect the real rock above its exposed bottom gap. The new root is therefore **not buried or in contact with the soil**. Soil-colored vertex blending does not change that geometry. The meshes retain `castShadow`/`receiveShadow`; their ordinary shadow/depth geometry is the same raised shape. This is a concrete root/contact defect to repair, not a measured assertion about how prominent the resulting light gap or shadow appears in native imagery.
+
+The finding was reported immediately to the integrator. The author report's descriptions of a buried or soil-supported foot are inconsistent with the measured geometry and need correction with the repair. Existing collision dimensions remain unchanged; this review does not recommend changing the collider or the terrain to make the visual test pass. The integrator acknowledged the defect and is arranging the same author's finite repair. No repair or author-record edit was performed by this reviewer.
+
+### Why existing passing checks do not cover the root gap
+
+This reviewer independently ran:
+
+`node --test fresh/scene-art.test.mjs fresh/foreground-visibility.test.mjs fresh/terrain.test.mjs fresh/route-layout.test.mjs`
+
+Result: **21/21 PASS**, zero failures/skips/cancellations, **5.10 s**. These retain actual ridge-triangle positive/negative visibility tests, opacity/depth/shadow reset, terrain-triangle agreement, collision footprint and playable route checks. Their vertical ridge-coverage check accepts any hit at **Y >= .049 m**. A floating .055 m footprint therefore satisfies it; the passing test cannot establish root contact. No threshold or source test was changed during this review. The author's separate final 28 tests/build remain author evidence; no complete suite, exhaustive character-terrain grid or build was repeated independently.
+
+The base and candidate ridge vertex/normal/UV/color arrays were finite. Neither version had a degenerate triangle or a stored normal opposing its triangle face in this scan. Candidate heights extend to approximately **2.531842947 m**, within the unchanged 2.8 m obstacle height, and the existing footprint/corridor tests passed. These bounded results do not cancel the independently confirmed gap below the whole ridge.
+
+### Ground shader and data connection
+
+The reviewer generated **one actual candidate Node presentation** with Canvas2D/WebGLRenderer stubs, then inspected its real ground mesh/material. This is a geometry/material construction check, not GPU rendering or compilation. The real ground has **5,265 position/color/UV vertices** and a matching **5,265-element `soilDeposit` Float32 attribute**, adding **21,060 bytes**; every deposit is finite in **[0,1]**. Its map is present and repeats **[80,100]** on the 160 × 200 m plane, giving the intended 2 m tile scale.
+
+The `onBeforeCompile` hook was applied to the installed **Three r180** `ShaderLib.standard` vertex/fragment sources. Every replacement anchor occurred exactly once, and the resulting shader contained the added attribute, vertex assignment, matching varying, sampler uniform and `texture2D(sceneLitter,vMapUv)` sample exactly once. The uniform referenced the actual generated **256 × 256 RGBA8 DataTexture**, **262,144 bytes**, with sRGB color space, repeat wrapping and mipmap generation enabled. Its independent RGBA SHA-256 was **`03d6c991fd60335f83772bd56209f79fa1afcd5a42bfa5655aecbda43839edd5`**, matching the author's recorded raster bytes.
+
+The installed Three source declares `vMapUv` under `USE_MAP`, which the actual ground material's map supplies. Its unsigned-byte RGBA/sRGB upload path selects `SRGB8_ALPHA8`, so the custom sampler uses the normal hardware sRGB texture transfer rather than requiring a second manual decode. These are observations of this installed renderer's source and constructed material, not evidence of an actual successful GL compile/upload. The ground-specific cache key is `original-ground-litter-v1`. The patch changes diffuse color only; it does not displace positions, alter normals, add an alpha discard, or modify the shadow shape. No additional loader, request or asynchronous readiness path is introduced. No concrete shader-connection blocker was found in this bounded static check; native compile errors, filtered leaf edges, appearance, repetition and cost still require the next actual capture.
+
+### Geometry and owner preservation
+
+The actual candidate ground position buffer was compared with the unchanged original plane construction and terrain-height function. Both hashes were **`488d7affd21f6dac371ea3bc0059025afdc7099efbb62fa4656198f35ea30d98`**, so the ground elevation data matched exactly. Git-object comparisons confirmed that **terrain, simulation/collision, route layout, vegetation physics, wind and foreground-visibility source files were byte-identical to 3622**. The presentation delta changes only ground color/deposit assembly and the helper import; it adds no call to the presentation random stream. New scene helpers use their own deterministic arithmetic hashes. This source check supports preserved random consumption/plant placement, while the author's separate full geometry comparison is retained as author evidence rather than described as independently rerun.
+
+**Bounded result:** the ground shader/data wiring had no established static blocker, but the **5.5 cm floating ridge root is a confirmed contact defect** and must not be reported as buried. The next repaired native scene needs low-angle/front/back ridge-root and shadow inspection, then ordinary encounter/mobile views for fracture silhouette, the low collision footprint's visual legibility, leaf-tile scale/repetition, foot visibility and existing foreground fades. Full integrated performance, actual WebGL shading, material quality and formal comparisons remain unmeasured. All 10 formal elements remain **not measured**; deadline **2026-09-20T07:51:53Z** is unchanged. Only this owned evidence file was edited; no scene/author/runtime/test, remote, staging or automation files were changed.
+
+### Minimal read-only root-gap reproduction
+
+Run from the exact 613efa checkout with its existing dependencies. Expected minimum clearance is approximately **+.055 m**, zero ray hits at .025/.054 m, and positive hits at .056 m. No file is written.
+
+```bash
+node --input-type=module <<'JS'
+import * as T from 'three';
+import {ridgeSections} from './fresh/scene-art.js';
+import {ROUTE_FORK} from './fresh/route-layout.js';
+import {groundHeightAt} from './fresh/terrain.js';
+const material=new T.MeshBasicMaterial({side:T.DoubleSide});
+const rocks=ridgeSections(ROUTE_FORK.obstacle).map(geometry=>{
+  const mesh=new T.Mesh(geometry,material);
+  mesh.updateMatrixWorld(true);
+  return mesh;
+});
+let minimum=Infinity;
+for(const rock of rocks){
+  const p=rock.geometry.attributes.position;
+  for(let i=0;i<p.count;i++)minimum=Math.min(minimum,
+    p.getY(i)-groundHeightAt(p.getX(i),p.getZ(i)));
+}
+console.log({minimumGroundClearance:minimum});
+for(const y of [.025,.054,.056]){
+  const ray=new T.Raycaster(new T.Vector3(-3,y,-9.25),
+    new T.Vector3(1,0,0),0,6);
+  console.log({y,hits:ray.intersectObjects(rocks).length});
+}
+JS
+```
+
+
+## Independent replay of neck/guard and ridge-root repairs — f428 / d7b584
+
+The integrator assigned a finite replay of the defects identified above. Character source was **`f428e4f8b9b8a622180b4475b24163c24ed19d3c`**, immediately after c824, in `/workspace/scratch/27301e95ee53/game2-mpfb-pilot`. Scene source was **`d7b584538d717194c9acb53063d893b5bb19224f`**, immediately after 613efa, in `/workspace/scratch/27301e95ee53/game2-scene-art`. Both isolated HEADs matched the assigned commits with unchanged tracked files. The reviewed character runtime/native data and ridge runtime/test files were byte-identical to their canonical integrations at inspection. The repaired candidates have **not** been viewed in native WebGL by this reviewer.
+
+| Reviewed repaired file | SHA-256 |
+| --- | --- |
+| `fresh/character-assets.js` | `1df26585147697230ebbaf5bd688de0aba742b24d125be5e91f9e1c2584142a3` |
+| `fresh/character-assets/native-data.js` | `1ba22c09d05f7bfee14766e70a22b90dac3694697f05ed8127252f6abf6c3adc` |
+| `fresh/character-rig.js` | `5e841e5f0d2f6f0f375a3ffe60b9b6f96b3de6384c5a3633c939691bf42e3b48` |
+| `fresh/character-motion.js` | `0bf39804214310d89392a978469553594c776c4d045d191c75f48a34d203a9b1` |
+| `fresh/character-neck.test.mjs` | `d9022e3515feff0712db8fa82a1ed65bb64ebd38478742d26e78948e17e542ad` |
+| `fresh/scene-art.js` | `133f04ae9f7ad3d081e7ca4d4380e82c35328a24852a6d298ad8a41d36c22e6c` |
+| `fresh/scene-art.test.mjs` | `a05ab0ed4e9d967e763a9feaf1c4a4d83ff15e9fb154d664bb1105b0503e5fc0` |
+
+### Moving neck: the exact independent failure fixture now has zero openings
+
+This reviewer reran the original **player / five poses / 16,320 ray configurations** using the same real 1/60-second update path, complete-rig candidate, original native-head FrontSide positive control at `neck.matrixWorld`, 64 radial directions, 51 heights, and near 0 / far .2 m. The positive-control head was evaluated on every ray in this replay, so its actual hit counts are also recorded. This adds diagnostic counts without changing the failure predicate.
+
+| State / age | Original-head positive hits | c824 opening count, previously measured | f428 opening count, independently replayed |
+| --- | ---: | ---: | ---: |
+| idle / .30 s | 2,158 | 0 | 0 |
+| broken / .30 s | 2,301 | 139 | 0 |
+| dead / .50 s | 2,252 | 84 | 0 |
+| victory / 1.45 s | 2,224 | 49 | 0 |
+| stagger / .05 s | 1,938 | 51 | 0 |
+
+Both actual collar meshes—outer `{from:.10}` and lining `{to:.12,offset:-.0005}`—were then transformed with the real chest and tested as finite edges against the **current deformed head skin**. There were **2,058 edges per pose / 10,290 edge checks across the five poses, zero surface crossings**. These independently obtained results address the prior opening and the reported lining/skin intersection residual. They do not reproduce all four actors or the author's entire 65,280-ray run; that broader result remains author evidence.
+
+### Deformation, current contacts, normals and preserved motion
+
+Source inspection confirmed that the lower skin now cancels the parent neck rotation and blends toward the existing rotation using the derived anatomical influence and neckline-height transition. The new `headSkin` is a real mesh. `deformAnchoredHead()` runs immediately after setting the existing neck quaternion and before the existing ground-contact work. It updates the position buffer, affected area-weighted normals, deduplicated contact coordinates, upload ranges and bounds together. It has a no-op path for rigs without that prepared mesh. The collar wrap uses identical seam coordinates; cached collar templates are cloned before per-rig batching.
+
+Across the same five player poses, the reviewer independently checked **131,550 head-vertex instances** (26,310 per pose). Every position equaled its group's current contact-cache coordinates, every vertex was inside the current box/sphere, and every normal was finite and within 1e-5 of unit length. The observed normal-length range was approximately **.9999992599–1.0000006697**. No affected triangle opposed its averaged stored normal. For zero-weight anchored groups, applying the parent neck quaternion recovered the original chest-relative point with maximum measured drift **3.97e-9 m**. The 476 moving groups updated position components `[0,8259)` and normal components `[0,9372)`; both ranges were present and marked for upload. These CPU/buffer observations do not measure upload time or GPU shading.
+
+The reviewer independently ran the selected existing regression:
+
+`node --test --test-name-pattern='animated neck positions' fresh/character-neck.test.mjs`
+
+It completed **1/1 PASS**, no failures/skips/cancellations, **1.26 s**, checking current normals/contacts/bounds, pause and fresh retry. The larger ray suite was not repeated merely to reproduce the author's broader count; the exact independent five-pose fixture above was used instead.
+
+Exact Git-object/data comparisons confirmed that all stored original head position/normal/UV/index/source arrays, eyes, hair, brows, hands, profiles and bounds are preserved; the additions are head influence metadata and the revised guard. All four PNGs, the complete sculpt module including closed-hakama deformation, main entrypoint and provenance are byte-identical to c824. The native material/readiness factory is byte-identical. Removing the new import and the single `deformAnchoredHead()` call makes the motion source exactly equal to c824: authored times/poses, leg IK, grasp-offset rules and sword construction/trajectory code were not rewritten. This is source preservation, not a claim that every downstream ground-contact world matrix must remain bit-identical after changing contact geometry.
+
+### Guard: the previously intersecting edges clear both original and sampled deformed skin
+
+The same **6,168 unique finite warden guard edges** were independently cast against the original native head: **zero crossing hits**, compared with the previously measured 28. Because the repair also deforms the skin, the reviewer tested those same guard edges against the actual deformed warden head in the existing **idle .30, broken .30, dead .50 and stagger .05** poses: **24,672 additional finite edge checks, zero crossings**. Both guard and skin share the neck frame, so testing their actual local geometry preserves their relative placement without a different coordinate approximation.
+
+These checks cover the exact reported ear/upper-side residual and its sampled deformed-skin interaction. They are not exhaustive triangle-pair contact proof or a native visual judgment of the guard contour, eyes/hair beside the moving anatomy, collar seam shading or face expression. The former radial -15.5 mm value remains withdrawn as a penetration-depth claim.
+
+### Ridge: the former low air gap is now closed through the ground
+
+The independent ridge replay instantiated the actual 613efa and d7b584 `ridgeSections()` sources. The repaired geometry contains **nine meshes / 3,204 vertices / 1,068 triangles**. Every mesh has minimum actual terrain difference **-.0799999982 m**. Arrays are finite, with no degenerate triangle or stored normal opposing its face in this scan. The multiset of **2,304 upper vertices at Y >= .059 m** is exactly equal to 613efa. Lower side-face normals may legitimately change when those faces extend into the ground; unchanged upper vertex positions are not an unchanged-rendering claim.
+
+Using the same origin **`(-3,y,-9.25)`**, direction **`(1,0,0)`**, near 0 / far 6 m:
+
+| Y | 613efa DoubleSide hits | d7b584 DoubleSide hits | d7b584 production FrontSide hits |
+| --- | ---: | ---: | ---: |
+| .025 m | 0 | 10 | 5 |
+| .054 m | 0 | 10 | 5 |
+| .056 m | 8 | 8 | 4 |
+
+Below the buried base at Y=-.09, above the ridge at Y=3, and outside the two Z footprint ends, the four independent negative rays each returned **zero**. The same root-contact regression and existing corridor/fade/shrine tests were independently run with `node --test fresh/scene-art.test.mjs`: **4/4 PASS**, no failures/skips/cancellations, **1.02 s**. The actual regression includes reverse long-side and both short-end positives. No full scene suite or build was repeated.
+
+The repaired strips now have side and bottom faces down to -.08 m; the fracture cells' lowest ring also enters the earth. `scene-surface.js`, presentation, terrain, route layout and simulation were byte-identical to 613efa, so the previously reviewed ground-material connection and collision ownership were not changed by this repair. The author explicitly corrected the earlier false burial/contact description in the old and new reports; this reviewer verified the repaired geometry independently rather than relying on that correction.
+
+**Bounded result:** the reported neck opening, sampled collar/skin and guard/head edge intersections, and floating ridge-root defect no longer reproduce in the independently replayed fixtures. No remaining blocker was established within these assigned checks. This closes those finite technical failures only. It does **not** close native visual review, the earlier cloth knee/hem major or seam-normal concerns, the separate foliage appearance regression, complete integrated performance or formal comparison requirements. The next exact integrated native media must still show neck motion, guard/ear and collar seams, and root lighting/shadows. All 10 formal elements remain **not measured**; deadline **2026-09-20T07:51:53Z** is unchanged. Only this owned evidence file was edited; no runtime, author data, tests, remote, staging or automation files were changed by the reviewer.

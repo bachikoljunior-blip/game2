@@ -1,0 +1,1175 @@
+{
+  "scope": "Actual Node geometry, ground samples and triangle raycasts; no native WebGL/shadows or PS4 acceptance",
+  "samples": [
+    {
+      "revision": "3622a5827fa196e7aeea25c89bfda4fde2dc51bd",
+      "sourceSha256": "66f301ef74e70783571cc309aa5d1d37e121d46f188424d5e77fae607a181b88",
+      "generationCpuMs": 80.601854,
+      "meshCount": 9,
+      "vertices": 1404,
+      "triangles": 468,
+      "meshes": [
+        {
+          "name": "route-rock-stratum-0",
+          "vertices": 156,
+          "minimumGroundGap": -0.1599999964237213,
+          "maximumGroundGap": 2.1253387928009033,
+          "verticesBelowGround": 54
+        },
+        {
+          "name": "route-rock-stratum-1",
+          "vertices": 156,
+          "minimumGroundGap": -0.1599999964237213,
+          "maximumGroundGap": 2.1253387928009033,
+          "verticesBelowGround": 54
+        },
+        {
+          "name": "route-rock-stratum-2",
+          "vertices": 156,
+          "minimumGroundGap": -0.1599999964237213,
+          "maximumGroundGap": 2.371209144592285,
+          "verticesBelowGround": 54
+        },
+        {
+          "name": "route-rock-stratum-3",
+          "vertices": 156,
+          "minimumGroundGap": -0.1599999964237213,
+          "maximumGroundGap": 2.371209144592285,
+          "verticesBelowGround": 54
+        },
+        {
+          "name": "route-rock-stratum-4",
+          "vertices": 156,
+          "minimumGroundGap": -0.1599999964237213,
+          "maximumGroundGap": 2.218554735183716,
+          "verticesBelowGround": 54
+        },
+        {
+          "name": "route-rock-stratum-5",
+          "vertices": 156,
+          "minimumGroundGap": -0.1599999964237213,
+          "maximumGroundGap": 2.4600677490234375,
+          "verticesBelowGround": 54
+        },
+        {
+          "name": "route-rock-stratum-6",
+          "vertices": 156,
+          "minimumGroundGap": -0.1599999964237213,
+          "maximumGroundGap": 2.4600677490234375,
+          "verticesBelowGround": 54
+        },
+        {
+          "name": "route-rock-stratum-7",
+          "vertices": 156,
+          "minimumGroundGap": -0.1599999964237213,
+          "maximumGroundGap": 2.019688606262207,
+          "verticesBelowGround": 54
+        },
+        {
+          "name": "route-rock-stratum-8",
+          "vertices": 156,
+          "minimumGroundGap": -0.1599999964237213,
+          "maximumGroundGap": 2.019688606262207,
+          "verticesBelowGround": 54
+        }
+      ],
+      "rays": [
+        {
+          "name": "left-0",
+          "origin": [
+            -3,
+            0,
+            -9.25
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 1,
+          "first": [
+            -2.200000047683716,
+            0,
+            -9.25
+          ]
+        },
+        {
+          "name": "right-0",
+          "origin": [
+            3,
+            0,
+            -9.25
+          ],
+          "direction": [
+            -1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 1,
+          "first": [
+            2.200000047683716,
+            0,
+            -9.25
+          ]
+        },
+        {
+          "name": "left-0.025",
+          "origin": [
+            -3,
+            0.025,
+            -9.25
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 1,
+          "first": [
+            -2.200000047683716,
+            0.025,
+            -9.25
+          ]
+        },
+        {
+          "name": "right-0.025",
+          "origin": [
+            3,
+            0.025,
+            -9.25
+          ],
+          "direction": [
+            -1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 1,
+          "first": [
+            2.200000047683716,
+            0.025,
+            -9.25
+          ]
+        },
+        {
+          "name": "left-0.054",
+          "origin": [
+            -3,
+            0.054,
+            -9.25
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 1,
+          "first": [
+            -2.1961526857007554,
+            0.054,
+            -9.25
+          ]
+        },
+        {
+          "name": "right-0.054",
+          "origin": [
+            3,
+            0.054,
+            -9.25
+          ],
+          "direction": [
+            -1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 1,
+          "first": [
+            2.196990739666705,
+            0.054,
+            -9.25
+          ]
+        },
+        {
+          "name": "left-0.056",
+          "origin": [
+            -3,
+            0.056,
+            -9.25
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 1,
+          "first": [
+            -2.195373107552056,
+            0.056,
+            -9.25
+          ]
+        },
+        {
+          "name": "right-0.056",
+          "origin": [
+            3,
+            0.056,
+            -9.25
+          ],
+          "direction": [
+            -1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 1,
+          "first": [
+            2.1963809736028006,
+            0.056,
+            -9.25
+          ]
+        },
+        {
+          "name": "below-base",
+          "origin": [
+            -3,
+            -0.09,
+            -9.25
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 1,
+          "first": [
+            -2.200000047683716,
+            -0.09,
+            -9.25
+          ]
+        },
+        {
+          "name": "above-rock",
+          "origin": [
+            -3,
+            3,
+            -9.25
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 0,
+          "first": null
+        },
+        {
+          "name": "outside-front",
+          "origin": [
+            -3,
+            0.025,
+            -4.15
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 0,
+          "first": null
+        },
+        {
+          "name": "outside-back",
+          "origin": [
+            -3,
+            0.025,
+            -14.35
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 0,
+          "first": null
+        },
+        {
+          "name": "toward-front",
+          "origin": [
+            0,
+            0.025,
+            -3.25
+          ],
+          "direction": [
+            0,
+            0,
+            -1
+          ],
+          "far": 6,
+          "hits": 5,
+          "first": [
+            0,
+            0.025,
+            -4.25
+          ]
+        },
+        {
+          "name": "toward-back",
+          "origin": [
+            0,
+            0.025,
+            -15.25
+          ],
+          "direction": [
+            0,
+            0,
+            1
+          ],
+          "far": 6,
+          "hits": 5,
+          "first": [
+            0,
+            0.025,
+            -14.25
+          ]
+        },
+        {
+          "name": "independent-DoubleSide-0.025",
+          "origin": [
+            -3,
+            0.025,
+            -9.25
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 2,
+          "first": [
+            -2.200000047683716,
+            0.025,
+            -9.25
+          ]
+        },
+        {
+          "name": "independent-DoubleSide-0.054",
+          "origin": [
+            -3,
+            0.054,
+            -9.25
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 2,
+          "first": [
+            -2.1961526857007554,
+            0.054,
+            -9.25
+          ]
+        },
+        {
+          "name": "independent-DoubleSide-0.056",
+          "origin": [
+            -3,
+            0.056,
+            -9.25
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 2,
+          "first": [
+            -2.195373107552056,
+            0.056,
+            -9.25
+          ]
+        }
+      ],
+      "upperVertexMultisetSha256": "4cc67d5af065aa7e25e252a50121bf63bc43a91a451bae1140fbb347b55b3bf9"
+    },
+    {
+      "revision": "613efa56fa3d2f43314212c21935c8f01ee4e914",
+      "sourceSha256": "301f4e173678b10bb59addae64890b5a9dd1d0f871e2faff3b2b19c9ffb6d1ce",
+      "generationCpuMs": 92.020092,
+      "meshCount": 9,
+      "vertices": 2934,
+      "triangles": 978,
+      "meshes": [
+        {
+          "name": "route-rock-stratum-0",
+          "vertices": 291,
+          "minimumGroundGap": 0.054999999701976776,
+          "maximumGroundGap": 1.19474196434021,
+          "verticesBelowGround": 0
+        },
+        {
+          "name": "route-rock-stratum-1",
+          "vertices": 336,
+          "minimumGroundGap": 0.054999999701976776,
+          "maximumGroundGap": 1.333911657333374,
+          "verticesBelowGround": 0
+        },
+        {
+          "name": "route-rock-stratum-2",
+          "vertices": 336,
+          "minimumGroundGap": 0.054999999701976776,
+          "maximumGroundGap": 2.219679117202759,
+          "verticesBelowGround": 0
+        },
+        {
+          "name": "route-rock-stratum-3",
+          "vertices": 336,
+          "minimumGroundGap": 0.054999999701976776,
+          "maximumGroundGap": 2.261460542678833,
+          "verticesBelowGround": 0
+        },
+        {
+          "name": "route-rock-stratum-4",
+          "vertices": 336,
+          "minimumGroundGap": 0.054999999701976776,
+          "maximumGroundGap": 2.495633125305176,
+          "verticesBelowGround": 0
+        },
+        {
+          "name": "route-rock-stratum-5",
+          "vertices": 336,
+          "minimumGroundGap": 0.054999999701976776,
+          "maximumGroundGap": 2.5318429470062256,
+          "verticesBelowGround": 0
+        },
+        {
+          "name": "route-rock-stratum-6",
+          "vertices": 336,
+          "minimumGroundGap": 0.054999999701976776,
+          "maximumGroundGap": 2.4041454792022705,
+          "verticesBelowGround": 0
+        },
+        {
+          "name": "route-rock-stratum-7",
+          "vertices": 336,
+          "minimumGroundGap": 0.054999999701976776,
+          "maximumGroundGap": 1.5089068412780762,
+          "verticesBelowGround": 0
+        },
+        {
+          "name": "route-rock-stratum-8",
+          "vertices": 291,
+          "minimumGroundGap": 0.054999999701976776,
+          "maximumGroundGap": 1.1584831476211548,
+          "verticesBelowGround": 0
+        }
+      ],
+      "rays": [
+        {
+          "name": "left-0",
+          "origin": [
+            -3,
+            0,
+            -9.25
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 0,
+          "first": null
+        },
+        {
+          "name": "right-0",
+          "origin": [
+            3,
+            0,
+            -9.25
+          ],
+          "direction": [
+            -1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 0,
+          "first": null
+        },
+        {
+          "name": "left-0.025",
+          "origin": [
+            -3,
+            0.025,
+            -9.25
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 0,
+          "first": null
+        },
+        {
+          "name": "right-0.025",
+          "origin": [
+            3,
+            0.025,
+            -9.25
+          ],
+          "direction": [
+            -1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 0,
+          "first": null
+        },
+        {
+          "name": "left-0.054",
+          "origin": [
+            -3,
+            0.054,
+            -9.25
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 0,
+          "first": null
+        },
+        {
+          "name": "right-0.054",
+          "origin": [
+            3,
+            0.054,
+            -9.25
+          ],
+          "direction": [
+            -1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 0,
+          "first": null
+        },
+        {
+          "name": "left-0.056",
+          "origin": [
+            -3,
+            0.056,
+            -9.25
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 4,
+          "first": [
+            -2.1998048935857204,
+            0.056,
+            -9.25
+          ]
+        },
+        {
+          "name": "right-0.056",
+          "origin": [
+            3,
+            0.056,
+            -9.25
+          ],
+          "direction": [
+            -1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 4,
+          "first": [
+            2.1998580286961564,
+            0.056,
+            -9.25
+          ]
+        },
+        {
+          "name": "below-base",
+          "origin": [
+            -3,
+            -0.09,
+            -9.25
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 0,
+          "first": null
+        },
+        {
+          "name": "above-rock",
+          "origin": [
+            -3,
+            3,
+            -9.25
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 0,
+          "first": null
+        },
+        {
+          "name": "outside-front",
+          "origin": [
+            -3,
+            0.025,
+            -4.15
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 0,
+          "first": null
+        },
+        {
+          "name": "outside-back",
+          "origin": [
+            -3,
+            0.025,
+            -14.35
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 0,
+          "first": null
+        },
+        {
+          "name": "toward-front",
+          "origin": [
+            0,
+            0.025,
+            -3.25
+          ],
+          "direction": [
+            0,
+            0,
+            -1
+          ],
+          "far": 6,
+          "hits": 0,
+          "first": null
+        },
+        {
+          "name": "toward-back",
+          "origin": [
+            0,
+            0.025,
+            -15.25
+          ],
+          "direction": [
+            0,
+            0,
+            1
+          ],
+          "far": 6,
+          "hits": 0,
+          "first": null
+        },
+        {
+          "name": "independent-DoubleSide-0.025",
+          "origin": [
+            -3,
+            0.025,
+            -9.25
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 0,
+          "first": null
+        },
+        {
+          "name": "independent-DoubleSide-0.054",
+          "origin": [
+            -3,
+            0.054,
+            -9.25
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 0,
+          "first": null
+        },
+        {
+          "name": "independent-DoubleSide-0.056",
+          "origin": [
+            -3,
+            0.056,
+            -9.25
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 8,
+          "first": [
+            -2.1998048935857204,
+            0.056,
+            -9.25
+          ]
+        }
+      ],
+      "upperVertexMultisetSha256": "382fec2f0feb2bc3ab1fb6219ece113d7bbe32d851c056d16fd60f1c133b30f7"
+    },
+    {
+      "revision": "working-tree",
+      "sourceSha256": "133f04ae9f7ad3d081e7ca4d4380e82c35328a24852a6d298ad8a41d36c22e6c",
+      "generationCpuMs": 95.96153299999997,
+      "meshCount": 9,
+      "vertices": 3204,
+      "triangles": 1068,
+      "meshes": [
+        {
+          "name": "route-rock-stratum-0",
+          "vertices": 321,
+          "minimumGroundGap": -0.07999999821186066,
+          "maximumGroundGap": 1.19474196434021,
+          "verticesBelowGround": 75
+        },
+        {
+          "name": "route-rock-stratum-1",
+          "vertices": 366,
+          "minimumGroundGap": -0.07999999821186066,
+          "maximumGroundGap": 1.333911657333374,
+          "verticesBelowGround": 84
+        },
+        {
+          "name": "route-rock-stratum-2",
+          "vertices": 366,
+          "minimumGroundGap": -0.07999999821186066,
+          "maximumGroundGap": 2.219679117202759,
+          "verticesBelowGround": 84
+        },
+        {
+          "name": "route-rock-stratum-3",
+          "vertices": 366,
+          "minimumGroundGap": -0.07999999821186066,
+          "maximumGroundGap": 2.261460542678833,
+          "verticesBelowGround": 84
+        },
+        {
+          "name": "route-rock-stratum-4",
+          "vertices": 366,
+          "minimumGroundGap": -0.07999999821186066,
+          "maximumGroundGap": 2.495633125305176,
+          "verticesBelowGround": 84
+        },
+        {
+          "name": "route-rock-stratum-5",
+          "vertices": 366,
+          "minimumGroundGap": -0.07999999821186066,
+          "maximumGroundGap": 2.5318429470062256,
+          "verticesBelowGround": 84
+        },
+        {
+          "name": "route-rock-stratum-6",
+          "vertices": 366,
+          "minimumGroundGap": -0.07999999821186066,
+          "maximumGroundGap": 2.4041454792022705,
+          "verticesBelowGround": 84
+        },
+        {
+          "name": "route-rock-stratum-7",
+          "vertices": 366,
+          "minimumGroundGap": -0.07999999821186066,
+          "maximumGroundGap": 1.5089068412780762,
+          "verticesBelowGround": 84
+        },
+        {
+          "name": "route-rock-stratum-8",
+          "vertices": 321,
+          "minimumGroundGap": -0.07999999821186066,
+          "maximumGroundGap": 1.1584831476211548,
+          "verticesBelowGround": 75
+        }
+      ],
+      "rays": [
+        {
+          "name": "left-0",
+          "origin": [
+            -3,
+            0,
+            -9.25
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 5,
+          "first": [
+            -2.200000047683716,
+            0,
+            -9.25
+          ]
+        },
+        {
+          "name": "right-0",
+          "origin": [
+            3,
+            0,
+            -9.25
+          ],
+          "direction": [
+            -1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 5,
+          "first": [
+            2.200000047683716,
+            0,
+            -9.25
+          ]
+        },
+        {
+          "name": "left-0.025",
+          "origin": [
+            -3,
+            0.025,
+            -9.25
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 5,
+          "first": [
+            -2.200000047683716,
+            0.025,
+            -9.25
+          ]
+        },
+        {
+          "name": "right-0.025",
+          "origin": [
+            3,
+            0.025,
+            -9.25
+          ],
+          "direction": [
+            -1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 5,
+          "first": [
+            2.200000047683716,
+            0.025,
+            -9.25
+          ]
+        },
+        {
+          "name": "left-0.054",
+          "origin": [
+            -3,
+            0.054,
+            -9.25
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 5,
+          "first": [
+            -2.200000047683716,
+            0.054,
+            -9.25
+          ]
+        },
+        {
+          "name": "right-0.054",
+          "origin": [
+            3,
+            0.054,
+            -9.25
+          ],
+          "direction": [
+            -1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 5,
+          "first": [
+            2.200000047683716,
+            0.054,
+            -9.25
+          ]
+        },
+        {
+          "name": "left-0.056",
+          "origin": [
+            -3,
+            0.056,
+            -9.25
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 4,
+          "first": [
+            -2.1959074127056937,
+            0.056,
+            -9.25
+          ]
+        },
+        {
+          "name": "right-0.056",
+          "origin": [
+            3,
+            0.056,
+            -9.25
+          ],
+          "direction": [
+            -1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 4,
+          "first": [
+            2.194055757846993,
+            0.056,
+            -9.25
+          ]
+        },
+        {
+          "name": "below-base",
+          "origin": [
+            -3,
+            -0.09,
+            -9.25
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 0,
+          "first": null
+        },
+        {
+          "name": "above-rock",
+          "origin": [
+            -3,
+            3,
+            -9.25
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 0,
+          "first": null
+        },
+        {
+          "name": "outside-front",
+          "origin": [
+            -3,
+            0.025,
+            -4.15
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 0,
+          "first": null
+        },
+        {
+          "name": "outside-back",
+          "origin": [
+            -3,
+            0.025,
+            -14.35
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 0,
+          "first": null
+        },
+        {
+          "name": "toward-front",
+          "origin": [
+            0,
+            0.025,
+            -3.25
+          ],
+          "direction": [
+            0,
+            0,
+            -1
+          ],
+          "far": 6,
+          "hits": 12,
+          "first": [
+            0,
+            0.025,
+            -4.25
+          ]
+        },
+        {
+          "name": "toward-back",
+          "origin": [
+            0,
+            0.025,
+            -15.25
+          ],
+          "direction": [
+            0,
+            0,
+            1
+          ],
+          "far": 6,
+          "hits": 10,
+          "first": [
+            0,
+            0.025,
+            -14.25
+          ]
+        },
+        {
+          "name": "independent-DoubleSide-0.025",
+          "origin": [
+            -3,
+            0.025,
+            -9.25
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 10,
+          "first": [
+            -2.200000047683716,
+            0.025,
+            -9.25
+          ]
+        },
+        {
+          "name": "independent-DoubleSide-0.054",
+          "origin": [
+            -3,
+            0.054,
+            -9.25
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 10,
+          "first": [
+            -2.200000047683716,
+            0.054,
+            -9.25
+          ]
+        },
+        {
+          "name": "independent-DoubleSide-0.056",
+          "origin": [
+            -3,
+            0.056,
+            -9.25
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "far": 6,
+          "hits": 8,
+          "first": [
+            -2.1959074127056937,
+            0.056,
+            -9.25
+          ]
+        }
+      ],
+      "upperVertexMultisetSha256": "382fec2f0feb2bc3ab1fb6219ece113d7bbe32d851c056d16fd60f1c133b30f7"
+    }
+  ],
+  "delta": {
+    "meshes": 0,
+    "vertices": 270,
+    "triangles": 90
+  },
+  "upperVerticesPreserved": true
+}

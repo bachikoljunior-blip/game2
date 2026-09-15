@@ -87,5 +87,8 @@ export function configureLeafSurface(material,kind){
   for(const texture of [map,rough]){texture.magFilter=T.LinearFilter;texture.minFilter=T.LinearMipmapLinearFilter;texture.generateMipmaps=true;texture.needsUpdate=true;}
   material.color.set('#ffffff');material.map=map;material.roughnessMap=rough;material.roughness=1;
   material.side=T.DoubleSide;material.vertexColors=true;
+  // These thin sheets need one double-sided draw during foreground fading.
+  // Opaque rendering and the custom depth pass remain unchanged.
+  material.forceSinglePass=true;
   return material;
 }

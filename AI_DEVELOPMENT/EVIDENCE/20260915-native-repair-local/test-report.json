@@ -1,0 +1,15 @@
+{
+  "at": "2026-09-15T15:23:21.267802+00:00",
+  "frozenRuntimeIndexFreshTree": "7e6eda4aea523982c3fb6f102d8b95bb684b1abb",
+  "command": "node --test fresh/*.test.mjs",
+  "tests": 230,
+  "passed": 230,
+  "failed": 0,
+  "cancelled": 0,
+  "skipped": 0,
+  "durationMs": 163098.116396,
+  "testLogSha256": "28f72c99926f271d9a6daeea8bcb40c6d4c88be941cdb6631ad94dceea20ae17",
+  "cleanBuild": "passed",
+  "cleanBuildFiles": 7,
+  "sourceScope": "Local frozen-index runtime; native exact-source CI and public update still pending."
+}
