@@ -1,0 +1,360 @@
+{
+  "checkedAt": "2026-09-15T11:19:43.005Z",
+  "checkerRevision": "db20986a33fc4164576999b2f4be665c396e4510",
+  "sourceRevision": "a6722c5cf7b1933f1956c6c33ec4edc6adf47640",
+  "base": "https://bachikoljunior-blip.github.io/game2/preview/",
+  "environment": "GitHub-hosted Chromium with SwiftShader; not physical-device performance",
+  "files": [
+    {
+      "url": "https://bachikoljunior-blip.github.io/game2/preview/assets/index-Ck_X98_2.css",
+      "status": 200,
+      "bytes": 6472,
+      "sha256": "7c991e93c0471bdc554ebd9e79cd027afc380ee964520eb5fbc278319f16da3d",
+      "matchesVerifiedBuild": true
+    },
+    {
+      "url": "https://bachikoljunior-blip.github.io/game2/preview/assets/index-uU7e7s1r.js",
+      "status": 200,
+      "bytes": 621405,
+      "sha256": "e10155850538226ba23645e4b8949eda8e480d76922b8531ee0dc242aaa5a5f4",
+      "matchesVerifiedBuild": true
+    },
+    {
+      "url": "https://bachikoljunior-blip.github.io/game2/preview/index.html",
+      "status": 200,
+      "bytes": 1772,
+      "sha256": "54a9e19d127241d06bc0bb2807b2e36703865cf2e79cc2a3b20bf5e2f47c1e23",
+      "matchesVerifiedBuild": true
+    }
+  ],
+  "checks": [
+    "public HTML, JavaScript and CSS match verified preview manifest",
+    "public PC starts and moves by keyboard; drag rotates without attacking; click attacks once",
+    "public touch starts; short/long/cancelled canvas gestures do not attack; long swipe rotates; dedicated button attacks once"
+  ],
+  "errors": [],
+  "states": {
+    "pcStart": {
+      "running": true,
+      "paused": false,
+      "worldTime": 0.26666666666666666,
+      "player": {
+        "id": "player",
+        "x": 0,
+        "z": 18,
+        "yaw": 0,
+        "hp": 100,
+        "posture": 0,
+        "state": "idle",
+        "age": 0.26666666666666666,
+        "guardAge": 99,
+        "hit": [],
+        "cooldown": 0,
+        "stride": 0,
+        "dodgeX": 0,
+        "dodgeZ": 0
+      },
+      "totals": {
+        "hits": 0,
+        "received": 0,
+        "parries": 0,
+        "kills": 0,
+        "dodges": 0,
+        "swings": 0
+      },
+      "orbit": 0,
+      "render": {
+        "frame": 14,
+        "calls": 468,
+        "triangles": 197150,
+        "points": 0,
+        "lines": 0
+      }
+    },
+    "pcMoved": {
+      "running": true,
+      "paused": false,
+      "worldTime": 3.1999999999999935,
+      "player": {
+        "id": "player",
+        "x": 0,
+        "z": 17.05000000000001,
+        "yaw": 0,
+        "hp": 100,
+        "posture": 0,
+        "state": "idle",
+        "age": 3.1999999999999935,
+        "guardAge": 99,
+        "hit": [],
+        "cooldown": 0,
+        "stride": 0.9499999999999886,
+        "dodgeX": 0,
+        "dodgeZ": 0
+      },
+      "totals": {
+        "hits": 0,
+        "received": 0,
+        "parries": 0,
+        "kills": 0,
+        "dodges": 0,
+        "swings": 0
+      },
+      "orbit": 0,
+      "render": {
+        "frame": 29,
+        "calls": 465,
+        "triangles": 194604,
+        "points": 0,
+        "lines": 0
+      }
+    },
+    "pcAttack": {
+      "running": true,
+      "paused": false,
+      "worldTime": 4.883333333333321,
+      "player": {
+        "id": "player",
+        "x": 0,
+        "z": 16.72,
+        "yaw": 0,
+        "hp": 100,
+        "posture": 0,
+        "state": "attack",
+        "age": 0.2333333333333333,
+        "guardAge": 99,
+        "hit": [],
+        "cooldown": 0,
+        "stride": 1.2800000000000011,
+        "dodgeX": 0,
+        "dodgeZ": 0
+      },
+      "totals": {
+        "hits": 0,
+        "received": 0,
+        "parries": 0,
+        "kills": 0,
+        "dodges": 0,
+        "swings": 1
+      },
+      "orbit": -0.45,
+      "render": {
+        "frame": 37,
+        "calls": 455,
+        "triangles": 179364,
+        "points": 0,
+        "lines": 0
+      }
+    },
+    "touchStart": {
+      "running": true,
+      "paused": false,
+      "worldTime": 0.26666666666666666,
+      "player": {
+        "id": "player",
+        "x": 0,
+        "z": 18,
+        "yaw": 0,
+        "hp": 100,
+        "posture": 0,
+        "state": "idle",
+        "age": 0.26666666666666666,
+        "guardAge": 99,
+        "hit": [],
+        "cooldown": 0,
+        "stride": 0,
+        "dodgeX": 0,
+        "dodgeZ": 0
+      },
+      "totals": {
+        "hits": 0,
+        "received": 0,
+        "parries": 0,
+        "kills": 0,
+        "dodges": 0,
+        "swings": 0
+      },
+      "orbit": 0,
+      "render": {
+        "frame": 13,
+        "calls": 476,
+        "triangles": 197598,
+        "points": 0,
+        "lines": 0
+      }
+    },
+    "touchshortSwipe": {
+      "running": true,
+      "paused": false,
+      "worldTime": 2.1499999999999972,
+      "player": {
+        "id": "player",
+        "x": 0,
+        "z": 18,
+        "yaw": 0,
+        "hp": 100,
+        "posture": 0,
+        "state": "idle",
+        "age": 2.1499999999999972,
+        "guardAge": 99,
+        "hit": [],
+        "cooldown": 0,
+        "stride": 0,
+        "dodgeX": 0,
+        "dodgeZ": 0
+      },
+      "totals": {
+        "hits": 0,
+        "received": 0,
+        "parries": 0,
+        "kills": 0,
+        "dodges": 0,
+        "swings": 0
+      },
+      "orbit": -0.03,
+      "render": {
+        "frame": 22,
+        "calls": 475,
+        "triangles": 197794,
+        "points": 0,
+        "lines": 0
+      }
+    },
+    "touchlongSwipe": {
+      "running": true,
+      "paused": false,
+      "worldTime": 3.733333333333325,
+      "player": {
+        "id": "player",
+        "x": 0,
+        "z": 18,
+        "yaw": 0,
+        "hp": 100,
+        "posture": 0,
+        "state": "idle",
+        "age": 3.733333333333325,
+        "guardAge": 99,
+        "hit": [],
+        "cooldown": 0,
+        "stride": 0,
+        "dodgeX": 0,
+        "dodgeZ": 0
+      },
+      "totals": {
+        "hits": 0,
+        "received": 0,
+        "parries": 0,
+        "kills": 0,
+        "dodges": 0,
+        "swings": 0
+      },
+      "orbit": 0.75,
+      "render": {
+        "frame": 30,
+        "calls": 470,
+        "triangles": 187980,
+        "points": 0,
+        "lines": 0
+      }
+    },
+    "touchAttack": {
+      "running": true,
+      "paused": false,
+      "worldTime": 9.383333333333379,
+      "player": {
+        "id": "player",
+        "x": 0,
+        "z": 17.669999999999987,
+        "yaw": 0,
+        "hp": 100,
+        "posture": 0,
+        "state": "attack",
+        "age": 0.2333333333333333,
+        "guardAge": 99,
+        "hit": [],
+        "cooldown": 0,
+        "stride": 0.3300000000000125,
+        "dodgeX": 0,
+        "dodgeZ": 0
+      },
+      "totals": {
+        "hits": 0,
+        "received": 0,
+        "parries": 0,
+        "kills": 0,
+        "dodges": 0,
+        "swings": 1
+      },
+      "orbit": 0.75,
+      "render": {
+        "frame": 54,
+        "calls": 444,
+        "triangles": 167666,
+        "points": 0,
+        "lines": 0
+      }
+    }
+  },
+  "result": "passed",
+  "workflow": {
+    "id": 34962622024,
+    "url": "https://github.com/bachikoljunior-blip/game2/actions/runs/34962622024",
+    "headSha": "db20986a33fc4164576999b2f4be665c396e4510",
+    "conclusion": "success",
+    "job": 104359551829
+  },
+  "artifact": {
+    "id": 10394202033,
+    "bytes": 2569686,
+    "sha256": "f98d6b7adf9ac5d07def1424fb18f7fbf9751a3df1dc5e4d7b8d15baae9573ca",
+    "digestVerified": true
+  },
+  "screenshots": [
+    {
+      "file": "pc-moved-attack.png",
+      "sha256": "2f537e77a4d323c336c846408fbeff74b159a30fe8b1f5e051a93bcf1cb92c2e",
+      "bytes": 905892
+    },
+    {
+      "file": "pc-start.png",
+      "sha256": "72c532afc8ad885379e0a795805d1e94d815e83e78248e22f975a8922c9c2019",
+      "bytes": 907190
+    },
+    {
+      "file": "touch-dedicated-attack.png",
+      "sha256": "5f6442de3d06304eabe9bf12318e3404e2d7a7e97d9fefbf0b68453d4bc2c006",
+      "bytes": 376052
+    },
+    {
+      "file": "touch-view-rotated.png",
+      "sha256": "69f93ef2cbe9e42cf645992b3b3f332db38f7ab42d9a235954b3451d48e8bd63",
+      "bytes": 377844
+    }
+  ],
+  "integratorVisualInspection": {
+    "files": [
+      "pc-start.png",
+      "touch-view-rotated.png"
+    ],
+    "finding": "Actual public game shows the generated player/torii/terrain; the touch image has the changed viewpoint and visible separate action buttons. Operational rendering evidence only, not a quality comparison."
+  },
+  "cloudBrowserLimitation": "AI_DEVELOPMENT/EVIDENCE/20260915-public-preview-cloud-browser.json",
+  "independentVerifierReview": "AI_DEVELOPMENT/EVIDENCE/20260915-independent-final-media-a672.md",
+  "supersededVerifier": {
+    "source": "17e6c75e3354bd88df4f042be0905628ba62c637",
+    "run": 34962422209,
+    "conclusion": "success",
+    "acceptance": "Not used for final acceptance. Independent read review identified asynchronous release/cancel observation hole; db209 waits for post-release simulation updates and checks explicit attacks against a fresh baseline."
+  },
+  "publication": {
+    "previewUrl": "https://bachikoljunior-blip.github.io/game2/preview/",
+    "verifiedPostNavigationUrl": "https://bachikoljunior-blip.github.io/game2/preview/",
+    "main": "a213ed5cc6013759320d6f15fda588821878d127",
+    "pr": 22,
+    "pagesRun": 34961958960,
+    "pagesConclusion": "success",
+    "preservedExistingRoot": "https://bachikoljunior-blip.github.io/game2/",
+    "preservedExistingRuntime": "https://bachikoljunior-blip.github.io/game2/docs/",
+    "rootAndDocsUnchanged": true
+  },
+  "scope": "Direct public URL byte identity, render/start, PC movement, camera/attack separation on PC and emulated touch. No physical-device performance, whole-route replay, audio listening or whole-element quality claim."
+}

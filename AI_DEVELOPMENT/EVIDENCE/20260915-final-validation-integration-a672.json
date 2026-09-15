@@ -1,0 +1,153 @@
+{
+  "id": "GAME2-FINAL-VALIDATION-INTEGRATION-A672-20260915",
+  "recordedAt": "2026-09-15T11:23:04.684386+00:00",
+  "owner": "/root/game2_ultra_finish_validation",
+  "status": "Verified runtime and public preview integrated; actual results and limitations recorded",
+  "sourceRevision": "a6722c5cf7b1933f1956c6c33ec4edc6adf47640",
+  "baselineMain": "bc37e9665a3eab6a369ce77b13b3219f8df2e602",
+  "pullRequest": 21,
+  "workflow": 34959408734,
+  "acceptedDelegation": {
+    "spawnArgumentsReportedByParent": {
+      "task_name": "game2_ultra_finish_validation",
+      "reasoning_effort": "ultra",
+      "fork_turns": "none",
+      "model": "omitted"
+    },
+    "responseReportedByParent": {
+      "task_name": "/root/game2_ultra_finish_validation"
+    },
+    "responsibility": "Recover preserved work, verify exact final candidate and remaining native branch/left-arrival evidence, decide integration, perform authorized main reflection, preserve evidence and report.",
+    "effectiveInternalStrengthIndependentlyConfirmed": false
+  },
+  "childDelegation": {
+    "spawnArgumentsActuallySent": {
+      "task_name": "independent_final_media",
+      "reasoning_effort": "ultra",
+      "fork_turns": "none",
+      "model": "omitted"
+    },
+    "actualResponse": {
+      "task_name": "/root/game2_ultra_finish_validation/independent_final_media"
+    },
+    "responsibility": "Independent finite native-media recheck of waystone branch and two left route arrivals; no runtime or remote write; no further delegation."
+  },
+  "ownershipRecovery": {
+    "parentReport": "Parent has no unfinished write and does not implement. Prior agent path was not live; this means lost connection, not proof that an arbitrary remote writer cannot exist.",
+    "remoteReadback": "Canonical source/main/PR heads match handoff repeatedly. Only expected read-only Fresh CI is running; iPhone wrapper finished. No other current producer commit was observed.",
+    "localPreservation": "Tracked main worktree clean. Existing untracked fresh-20260913 artifacts and untracked files in former worktrees preserved untouched. No Git lock files observed.",
+    "processLimitation": "ps cannot enumerate processes: /proc is not mounted. No process absence is claimed.",
+    "handoffDecision": "Accepted sole foreground integrator takes the finite saved checkpoint after canonical reread and parent no-pending-write report; each remote write will recheck source/main head. Former helpers have no assigned remote write; new helper is read-only.",
+    "automation": "No automation tools called or settings changed. Latest instructed state game2=false, survival=false, Q=true is preserved, not newly measured here."
+  },
+  "userOriginals": [
+    "サウンド全て自然にして。植物の揺れ自然にして。キャラデザ細部まで作り込んで。スワイプで画面移動と攻撃モーション合わさって混同してんのどうにかして。足折れてる敵直して。マップはもっと広大で飽きないようにして。走ってるアニメーション自然にして。",
+    "アニメーション全て自然で見応えあるものにして"
+  ],
+  "preservedPriorEvidence": [
+    "AI_DEVELOPMENT/EVIDENCE/20260915-seven-fixes-intake.json",
+    "AI_DEVELOPMENT/EVIDENCE/20260915-ci-34957022718-recovery.json",
+    "AI_DEVELOPMENT/EVIDENCE/20260915-independent-experience-media-758.md",
+    "AI_DEVELOPMENT/EVIDENCE/20260915-left-arrival-controller-repair.json"
+  ],
+  "formalQuality": {
+    "satisfied": 0,
+    "not satisfied": 0,
+    "not measured": 10
+  },
+  "deadline": "2026-09-20T07:51:53Z",
+  "limits": [
+    "Native diagnostic is not source-blind comparison.",
+    "Software-rendered browser evidence is not physical-device performance.",
+    "Prior technical audio tests and actual master-bus capture do not establish listening naturalness; audio-input omission was reported and listening remains not measured.",
+    "No broad redesign or old-game restoration is part of this finite recovery."
+  ],
+  "publicationDecision": "CLAUDE61-64 authorizes verified checkpoint/Pages publication while preserving existing public payload. Keep root/docs/public byte-identical and publish a separate preview/ package of the exact verified a672 HTML/JS. Preview is playable progress, not formal whole-product acceptance.",
+  "verificationEvidence": "AI_DEVELOPMENT/EVIDENCE/20260915-ci-34959408734-final.json",
+  "independentReview": "AI_DEVELOPMENT/EVIDENCE/20260915-independent-final-media-a672.md",
+  "mainIntegration": {
+    "pullRequest": 21,
+    "url": "https://github.com/bachikoljunior-blip/game2/pull/21",
+    "merged": true,
+    "resultMainSha": "1e19caa2d006c9b97ba38e9e4e87fe56d852df5e",
+    "readbackSha": "1e19caa2d006c9b97ba38e9e4e87fe56d852df5e",
+    "sourceToMainFilesDifference": 0,
+    "sourceBranchFastForwarded": true,
+    "pagesRun": 34961569896,
+    "pagesConclusion": "success",
+    "iphoneWrapperRun": 34961570907,
+    "iphoneWrapperConclusion": "success",
+    "iphoneLimit": "Harness absent; no actual WebKit/device round measured."
+  },
+  "mediaConclusion": {
+    "leftRoutes": "Independent reviewer observed ordinary front approach, destination instruction, warm lit lamp, full actor and ending text in both PC-left and touch-left original videos.",
+    "waystone": "36 native quarter-second samples of the new normal-input dwell retained readable head/chest; old whole-head/upper-chest occlusion did not recur in this sampled sequence.",
+    "remaining": "The branch still passes near/partly over head-top and shoulder. New stop differs by about9cm and0.2simulation seconds; old exact-state/all-view closure and visible branch fading are not established. Event-offset signal PNGs are unlit; actual lighting was confirmed later in the raw videos."
+  },
+  "preview": {
+    "url": "https://bachikoljunior-blip.github.io/game2/preview/",
+    "status": "published and public-byte/render/input verified",
+    "manifest": "preview/build-provenance.json",
+    "sourceRevision": "a6722c5cf7b1933f1956c6c33ec4edc6adf47640",
+    "packageCommit": "82f4a6b3efce0275a93b1127a89adec34e2b66bc",
+    "pullRequest": 22,
+    "resultMainSha": "a213ed5cc6013759320d6f15fda588821878d127",
+    "pagesRun": 34961958960,
+    "pagesConclusion": "success",
+    "publicVerification": "AI_DEVELOPMENT/EVIDENCE/20260915-public-preview-verified.json",
+    "publicCheckSource": "db20986a33fc4164576999b2f4be665c396e4510",
+    "publicCheckRun": 34962622024,
+    "publicCheckConclusion": "success",
+    "htmlAndJsMatchActualCiCapture": true
+  },
+  "publicBeforePreview": {
+    "checkedAt": "2026-09-15T11:01:35.602494+00:00",
+    "purpose": "Read public routing only; no replacement publication claim.",
+    "requests": [
+      {
+        "url": "https://bachikoljunior-blip.github.io/game2/",
+        "status": 200,
+        "finalUrl": "https://bachikoljunior-blip.github.io/game2/",
+        "bytes": 5338,
+        "sha256": "c8fc7023ba0beb9b534d2d8e2758568bd2e87d4b6231b1884f431cb369f86ab1",
+        "matchesPreservedSource": true
+      },
+      {
+        "url": "https://bachikoljunior-blip.github.io/game2/docs/",
+        "status": 200,
+        "finalUrl": "https://bachikoljunior-blip.github.io/game2/docs/",
+        "bytes": 5353,
+        "sha256": "ed5149a0d41b1d0ed470098096462df64d7780c5a2cd68e26f0bb09a426d8843",
+        "matchesPreservedSource": true
+      }
+    ]
+  },
+  "skillUse": {
+    "name": "control-browser",
+    "path": "/root/.codex/skills/browser/SKILL.md",
+    "purpose": "Independently requested public-preview start and interaction verification; not a plugin-failure/search-recovery path.",
+    "readAndBootstrap": "completed"
+  },
+  "finalStateVerification": "Project-state14selftests, current state validator, fresh catalog6negativechecks and git diff --check passed. Runtime/root/docs/preview tree identities retained.",
+  "deadlineReassessment": {
+    "at": "2026-09-15T11:23:04.684386+00:00",
+    "deadline": "2026-09-20T07:51:53Z",
+    "judgment": "Cannot ground complete quality acceptance by the deadline while all10formal comparisons and listening quality remain unmeasured.",
+    "methodChangeMeasured": "Recovered exact saved candidate instead of redoing production; used independent finite native review, corrected verification timing defect, and verified the same-byte public deployment on the already-working graphics environment when CloudBrowser had disabled WebGL.",
+    "nextMethod": "Use supported perceptual sound evaluation and valid candidate/reference material-readiness before paired comparison, alongside the concrete remaining motion-weight/vegetation gaps. Do not weaken criteria or reenable paused automation."
+  },
+  "remainingQuality": [
+    "Running retains light/regular character despite support-driven upper-body improvement.",
+    "Parry/block visual distinction remains subtle.",
+    "Grass bundle repetition and temporary foreground overlaps remain.",
+    "Waystone branch is still near/partly overlapping head-top/shoulder; exact old-state/all-view closure is not established.",
+    "Perceptual listening quality is not measured; PCM integrity is not naturalness.",
+    "Source-blind whole-element comparison:0satisfied,0not satisfied,10not measured."
+  ],
+  "nextAction": "Preserve this bounded foreground checkpoint; next authorized production should address remaining motion/contact and vegetation gaps, obtain supported perceptual sound evidence, and continue lawful anonymous readiness/comparison. No persistent producer or automation reactivation is claimed.",
+  "latestContinuationInstruction": {
+    "userOriginalReportedByParent": "やって",
+    "scope": "Continue the in-progress final evidence/main/source/readback work; no restart of broad implementation."
+  },
+  "recordCommitPolicy": "This record contains the actual implementation PR21 and preview PR22 integration SHAs. Its containing commit also checkpoints the verified public checker and final evidence, with no runtime or preview-byte change."
+}
