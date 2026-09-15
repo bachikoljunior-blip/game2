@@ -1,0 +1,149 @@
+{
+  "at": "2026-09-15T16:15:03.066475+00:00",
+  "owner": "/root/game2_ultra_art_sound_physics",
+  "sourceRevision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+  "freshTree": "92755d9c54d9c814d441801cb536d29d1461888e",
+  "nativeRun": 34992059112,
+  "nativeStatus": "still running at this checkpoint; art, vegetation and asset-readiness jobs completed success, ordinary missions and experience not yet terminal",
+  "profileRun": 34992058990,
+  "profileStatus": "completed/success, six same-host ordinals",
+  "profileEvidence": "AI_DEVELOPMENT/EVIDENCE/20260915-serial-render-profile/native-results.json",
+  "profileObservation": {
+    "fullWarmTotalMedianMs": [
+      817.8,
+      1052.6,
+      1004.6,
+      1010.45,
+      1039.9,
+      822.2
+    ],
+    "order": [
+      "acf",
+      "906",
+      "4fa",
+      "4fa",
+      "906",
+      "acf"
+    ],
+    "currentVs906AverageOfOrdinalMediansPercent": -3.7,
+    "coldImprovementConfirmed": false,
+    "notPhysicalDevice": true,
+    "notPureGpuTime": true
+  },
+  "originalMediaEnvelopes": [
+    {
+      "version": "asset-readiness",
+      "runnerRevision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+      "run": "34992059112",
+      "job": "asset-readiness",
+      "bytes": 1106069,
+      "sha256": "cd35bb6c4ea4132ce9d50bf168866310b803bdf6cbfb0dae915293f073ee4dc2",
+      "files": [
+        {
+          "path": "failed.png",
+          "bytes": 257589,
+          "sha256": "f634d86e24df93eb64d1bad987d46470b196035f74dbba30e4565dd372ce7dae"
+        },
+        {
+          "path": "normal.png",
+          "bytes": 894813,
+          "sha256": "b96119262c4898a3402dfa32abbdd031a5bdbd172cded4723699380b23d60d9b"
+        },
+        {
+          "path": "report.json",
+          "bytes": 115938,
+          "sha256": "a26d3417de0a9d92d50462e8d3d393221b4586fe813eea1abf6db7dd6e8216ec"
+        }
+      ]
+    },
+    {
+      "version": "vegetation",
+      "runnerRevision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+      "run": "34992059112",
+      "job": "vegetation",
+      "bytes": 8120669,
+      "sha256": "0d790762114984a605ac34165a9a4244a926dd22ebeac2621f9b2297661c308d",
+      "files": [
+        {
+          "path": "bamboo/0000.png",
+          "bytes": 702003,
+          "sha256": "44ebb8c72e633cda1bb9ae56e2b5150ff2f83b95a7cfa5b8e777fd8ec3883240"
+        },
+        {
+          "path": "bamboo/0132.png",
+          "bytes": 701742,
+          "sha256": "d4d38cef2848490ffd5740077ad02171bc8d8fd7c128321bffd5bc823e7c26e5"
+        },
+        {
+          "path": "bamboo.mp4",
+          "bytes": 1110064,
+          "sha256": "1956ebc4aedade9342cb54d7e7026cc987adbbf4420521fc89e2565ef30dbc2b"
+        },
+        {
+          "path": "maple/0000.png",
+          "bytes": 720467,
+          "sha256": "79b161319717c62a126a6b2f63a99feba53d95b8c1e8e93166f136092c750e65"
+        },
+        {
+          "path": "maple/0132.png",
+          "bytes": 720281,
+          "sha256": "fff50b10900b4a40542a828db345b183d1e36737a9903244123bd5a582c2c0a8"
+        },
+        {
+          "path": "maple-leaf/0000.png",
+          "bytes": 819639,
+          "sha256": "321835a95cb713f26eb38cb6851b13f19eec25eace35dd62993cd222be053e4d"
+        },
+        {
+          "path": "maple-leaf/0060.png",
+          "bytes": 819754,
+          "sha256": "8fbdb177f927f001ba03578b93743b8083c5e028bc74c178e42eb26a8773e649"
+        },
+        {
+          "path": "maple-leaf.mp4",
+          "bytes": 1150055,
+          "sha256": "a3adfc4fccd2d2b42aa1344260f50b68e212ac17f151e728b1a7e93805f38c3d"
+        },
+        {
+          "path": "maple.mp4",
+          "bytes": 1357320,
+          "sha256": "068dcb10775d89a62e4397be0a6981120de54fe27fd16613c3ef469401ec2fb5"
+        },
+        {
+          "path": "report.json",
+          "bytes": 861378,
+          "sha256": "e9e1fb35cfe9dcd18e26e0297dc815e5378968e8fcc0062ee83bb0bfe0bd4276"
+        }
+      ]
+    }
+  ],
+  "independentReview": {
+    "vegetation": "Three new MP4 independently decoded360frames/30seconds;21new native images plus3previous native images. Leaf planes read more broadly; no new obvious broken support or detached crown in the finite sample. Perceptual differential motion and naturalness are not certified.",
+    "ordinaryScene": "Original1280x720 frame shows small green leaves and divided crown shadows more clearly. Open empty canopy, simple ground/grass/lanterns/rock contacts remain. Different wind times prevent exact phase comparison.",
+    "figures": "90614motion clips474frames plus32native selectedframes confirm old knee exposure/flat death hem not reproduced and no obvious new neck/shoulder/weapon detachment. Figure runtime unchanged by4fa.",
+    "worldDimensions": "Bamboo template dimensions and count are preserved, but applying the existing nonuniform world scale after the new rotation changes individual leafAxis lengths by -16.5% to+16.9%; world dimensions are not exactly invariant.",
+    "mapleViews": "Front median actual leaf projection improves; opposing view also has more nearly edge-on leaves. Do not claim every view improves equally."
+  },
+  "decision": "Adopt the finite support-fixed inclination repair for continued validation; no new major was found in independent finite source/native review. Reject PS4 whole-scene quality or broad performance-completion claims. Publication still requires ordinary input/recording success and actual seven-file public identity.",
+  "nextFiniteTask": "Read-only census found redundant static character vertices. An isolated Ultra author is preparing exact indexing of only static batches, excluding dynamic neck/cloth; no runtime change has been integrated. Current4fa verification/publication decision proceeds separately.",
+  "additionalDelegationAttempt": {
+    "target": "sound_revision",
+    "requested": "finite public-checker source review",
+    "toolResult": "collab tool failed: agent thread limit reached",
+    "executed": false,
+    "fallback": "Owner reviewed the prepared script locally; no alternate model or privilege workaround."
+  },
+  "publicState": {
+    "main": "b06ade1ad5ab8b72de9bb9996f323a063f5db5ef",
+    "runtime": "a6722c5cf7b1933f1956c6c33ec4edc6adf47640",
+    "url": "https://bachikoljunior-blip.github.io/game2/preview/",
+    "changed": false
+  },
+  "formalTen": {
+    "satisfied": 0,
+    "notSatisfied": 0,
+    "notMeasured": 10
+  },
+  "ps4Achieved": false,
+  "automationChanged": false
+}

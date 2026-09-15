@@ -430,3 +430,125 @@ half-second levels and the complete silence/threshold measurements).
 
 No runtime, old evidence artifact, stage, commit, remote or automation was changed
 by this follow-up. The fixed deadline remains `2026-09-20T07:51:53Z`.
+
+## Follow-up: 906 actual browser audio, CI 34988388555
+
+I, `/root/game2_ultra_art_sound_physics/sound_revision`, accepted the integrator's
+additional finite actual-audio verification on 2026-09-15 using the existing
+accepted Ultra assignment, without redelegation. The integrator recovered the
+experience artifact and verified its acquisition/ZIP identities. My independent
+work reads the five local files at `.review/34988388555/experience/audio/`,
+checks file hashes, completely decodes the actual WebM, delivered WAV and muted
+negative, and measures the resulting PCM. Only this authored evidence file is
+changed by the audio follow-up; the earlier normal-route analysis has its own
+`20260915-906-normal-failures.json` record.
+
+The native capture report identifies source and CI revision
+`9068522520b0f269cc937057b444f06c7c187978`. The reported served bundle is
+`index-DG38851A.js`, 4,042,294 bytes, SHA-256
+`e6dbec3eeb7ae36a2b593a4601e819a2cd67716cf05219aa189f07000596ce95`.
+This is readback of the captured provenance, not a new browser execution.
+I read `fresh/audio.js` from the local Git objects for both that source and
+`4fa13484c88dfa3d572c189e3a8999e8f254e70e`. Both, and the working audio file at
+analysis time, have SHA-256
+`d38cc9a7e5055c6c8bfa4c849bfbab27046790327223e55dff098f293ecc5dcf`.
+The generated manifest is byte-identical to the acf capture's manifest: its 22
+categories and two authored 33-second scenes are unchanged.
+
+### Independent decode and levels
+
+The finite analysis passed **45 assertions**. `ffmpeg -xerror` completely
+decoded all three audio files into 24 kHz stereo float32 PCM. An independent
+Python measurement reproduced every numeric PCM field of the actual and
+negative capture reports **exactly**, including ordered scalar accumulation of
+sample energy. An initial use of Python's compensated built-in `sum` differed
+from the report's sequential JavaScript RMS by `2.38e-16`; changing the analysis
+to explicit ordered addition reproduced the report without changing any gate.
+
+| Measurement | Actual browser master bus |
+|---|---:|
+| Duration / channel samples | **13.08 s / 627,840** |
+| RMS | **0.005903307789 / −44.57809 dBFS** |
+| Sample peak | **0.155674248934 / −16.15566 dBFS** |
+| Maximum 50 ms RMS | **−24.00247 dBFS**, sample interval 6.60–6.65 s |
+| Median 50 ms RMS | **−56.95513 dBFS**, including startup/silent windows |
+| Fraction of 50 ms windows above digital −60 dBFS | **62.9771%** |
+| Nonfinite / clipped samples, clipping threshold 0.999 | **0 / 0** |
+| Leading exact-zero PCM | **0–2.314333 s** |
+| First frame exceeding absolute `1e-6` | **2.328208 s** |
+| Additional exact-zero intervals of at least 50 ms | **None** |
+| Deliberately muted negative | **1.20 s / 57,600 channel samples**, all exactly zero |
+
+The delivered 16-bit WAV has the same duration and sample count as the float32
+WebM decode. Maximum difference is exactly `1/65,536`; RMS difference is
+`0.000007977980454`, consistent with 16-bit rounding. The original recordings
+were not trimmed, normalized or modified. The diagnostic tail beginning at the
+first `1e-6` frame is 10.751792 seconds and has RMS −43.72682 dBFS; the complete
+13.08-second result remains the primary observation. Digital thresholds are
+not human audibility measurements.
+
+Whole-master spectral energy fractions are **10.5883% below 200 Hz**,
+**17.5289% at 200–1000 Hz**, **35.5839% at 1000–4000 Hz**, and **36.2988%
+above 4000 Hz**. These fractions include every recorded action and ambience;
+they do not isolate the wind bus or measure its masking of footsteps.
+
+### Stop, resume and actual event coverage
+
+| Recorded checkpoint | Wind | Leaves | Stone contacts | Cloth | Swish | Dodge | Live voices |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Started | 1 | 0 | 0 | 0 | 0 | 0 | 1 |
+| Actual movement | 1 | 1 | 2 | 2 | 0 | 0 | 3 |
+| Swing and dodge | 1 | 2 | 2 | 4 | 1 | 1 | 4 |
+| Paused, all voices stopped | 1 | 2 | 2 | 4 | 1 | 1 | **0** |
+| Resumed | **2** | **3** | **3** | **5** | **1** | **1** | **2** |
+
+At pause the actual snapshot has context `suspended`, `active=false` and
+`ready=false`; world time remains 2.083333333333331 at both the preceding and
+paused checkpoints. At resume, context is `running`, active/ready are true and
+world time is 2.583333333333329. Unknown events and pending events are zero at
+all five checkpoints. The second wind start follows stopped voices; this short
+capture does not exercise long-run wind renewal or prove its overlap pattern.
+
+The negative capture begins after the mute target at audio time 16.1910884354,
+gain arrival at 16.2017233560, and a drained recorder start at 16.9505668934.
+Capture reaches audio time 18.1609070295, satisfying its original 1.2 audio-second
+requirement. Independently decoded PCM is entirely zero, and the native gate
+correctly rejects it for `silent or inaudible PCM` while its codec decode passes.
+
+The actual report has wall-clock checkpoints and simulation times but lacks a
+sample-aligned event/recorder anchor. Therefore the stopped-voice/context claim
+comes from the runtime snapshot; I do not assign a waveform interval to that
+wall-clock pause or identify the 6.60-second loudest window as a particular
+sound. The capture contains three stone contacts and one swish/dodge. It does
+not guarantee earth footsteps, combat impacts, parry/block, or all categories.
+
+The prior 60-second model prescribes pressure, contact counts and combat times;
+the 33-second auditions prescribe different timelines. This 13.08-second actual
+playthrough includes startup and stop/resume, so its full RMS is not a causal
+mix A/B against either designed sequence or the earlier actual captures.
+Unchanged audio source also prevents calling this a newly implemented sound
+improvement. No supported model listening occurred. Naturalness, the user's
+perceived wind/footstep balance, and all 10 formal comparisons remain
+**not measured**. Successful decode, zero clipping and a nonzero waveform do
+not certify those qualities.
+
+### Identities and reproducible local analysis
+
+My analysis script, three decoded float32 buffers, and full measurement/event
+record are under
+`/workspace/scratch/27301e95ee53/actual-audio-34988388555/`.
+`analyze.py` reproduces the checks; `decode-verification.json` includes complete
+50 ms and half-second timelines, source hashes, ffprobe outputs and assertion
+names. The five recovered original files retain these identities:
+
+| Artifact | SHA-256 |
+|---|---|
+| Actual WebM | `3dca42dedccf1fb725f1cdea786ab1e160dd589ca04683b301378425c1230da8` |
+| Actual WAV | `23d5c721d780256844097b67e762e652f0d1bb04d713c2d731fe39e7ceea0ce3` |
+| Muted negative WebM | `cfbf94a90f9a821698324cd55b8ac0e57ca81dfad4fda60788392ee35e2f9812` |
+| Capture report | `82f6f667ed8d017d2eab04f35039d93958b96508fb6fd20baf3fd92be7cc3c0f` |
+| Generated manifest | `ed95182976da9f57d0b299ef232967f686b42b7cfdbb33e6253d676fe7bad85f` |
+| My decode verification | `c09c7b7ca399d45a19004e9c929b29bc7fe8908609be5933766e41cbe5b8f287` |
+
+No runtime, input, measurement gate, Git stage/commit, remote or automation was
+changed. The fixed deadline remains `2026-09-20T07:51:53Z`.

@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-09-15T15:59:47.936805+00:00",
+  "eventRevision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+  "run": "34992058990",
+  "attempt": "1",
+  "job": "profile",
+  "host": {
+    "os": "Linux",
+    "osRelease": "6.17.0-1022-azure",
+    "osVersion": "#22-Ubuntu SMP Mon Jul 27 17:24:03 UTC 2026",
+    "machine": "x86_64",
+    "logicalCpuCount": 4,
+    "cpu": {
+      "vendor_id": "GenuineIntel",
+      "cpu family": "6",
+      "model": "207",
+      "model name": "INTEL(R) XEON(R) PLATINUM 8573C",
+      "stepping": "2"
+    },
+    "runnerOS": "Linux",
+    "runnerArch": "X64",
+    "imageOS": "ubuntu24",
+    "imageVersion": "20260907.300.1"
+  },
+  "hostRecordSha256": "c36063c08ac01b0920de7404a032050ed5910bf925a21208b42a109ff4290299",
+  "nodeVersion": "v22.23.2",
+  "dependencies": {
+    "three": "0.180.0",
+    "vite": "6.4.3",
+    "playwright": "1.56.1"
+  },
+  "apparatusSha256": "1e915d1ed590327b0528efb39ed3cd815815ecfaada08900acc8428033da6651",
+  "viewport": {
+    "width": 960,
+    "height": 720,
+    "dpr": 1
+  },
+  "variants": [
+    "full"
+  ],
+  "comparisonReason": "Use 906 as the preceding rendered candidate to isolate the forthcoming fixed foliage-placement change. Historical e188 measurements remain separate and unchanged.",
+  "order": [
+    {
+      "ordinal": 1,
+      "label": "acf",
+      "revision": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+      "freshTree": "7b4ca3643630ee9420ce2423b69190ac80ed8db4"
+    },
+    {
+      "ordinal": 2,
+      "label": "906",
+      "revision": "9068522520b0f269cc937057b444f06c7c187978",
+      "freshTree": "7e6eda4aea523982c3fb6f102d8b95bb684b1abb"
+    },
+    {
+      "ordinal": 3,
+      "label": "current",
+      "revision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+      "freshTree": "92755d9c54d9c814d441801cb536d29d1461888e"
+    },
+    {
+      "ordinal": 4,
+      "label": "current",
+      "revision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+      "freshTree": "92755d9c54d9c814d441801cb536d29d1461888e"
+    },
+    {
+      "ordinal": 5,
+      "label": "906",
+      "revision": "9068522520b0f269cc937057b444f06c7c187978",
+      "freshTree": "7e6eda4aea523982c3fb6f102d8b95bb684b1abb"
+    },
+    {
+      "ordinal": 6,
+      "label": "acf",
+      "revision": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+      "freshTree": "7b4ca3643630ee9420ce2423b69190ac80ed8db4"
+    }
+  ],
+  "scope": "Six serial independent browser processes in one job/host. Same tool and dependencies; full 13 frames each. Cold frame and warm 12 remain separate. SwiftShader readback, not physical-device or pure GPU timing.",
+  "limits": "Job limit remains 18 minutes including setup. Original tool operation/build limits are unchanged. Hard cancellation can leave later ordinals unattempted; completed ordinals are emitted immediately."
+}

@@ -866,3 +866,246 @@ This does not establish stable subpixel raster visibility: the retained 4×4 til
 Frozen `fresh/bamboo-frond.js` SHA-256 **77e3f3932b2d23ac3fd2f0f47e0ff5fc0aa32d8e8304d304ab18d33b71746922**, independently checked at script start/end and in the separate upload/unchanged-source check. The only repository edit by this reviewer is this evidence append. No runtime/test/other author evidence edits, staging, commits, remote operations or redelegation.
 
 Finite mip-repair review appended at: 2026-09-15T15:24:08.569369+00:00
+
+
+## First native ordinary-view review — 9068522
+
+### Receipt and actual inspection
+
+Received runtime **9068522520b0f269cc937057b444f06c7c187978**, original recovered media from CI **34988388499** and **34988388555**. Integrator reports original ZIP SHA/CRC and per-file verification; this reviewer independently computed supplied local PNG/report hashes. Personally displayed at original detail:
+
+1. `.review/34988388499/render-profile-candidate/full.png`, **960×720**: production full rendering at a fixed initial ordinary camera.
+2. `.review/34988388555/asset-readiness/normal.png`, **1280×720**: actual start after asset readiness, with ordinary HUD visible.
+3. Same-run `.review/34988388499/render-profile-baseline/full.png`, **960×720**, frozen baseline **acf0f9ec86996245ad712d6adc72e5d6159f6711**.
+4. Reopened existing e188 `.review/34978382509/fresh/encounter.png` and `title.png`, both **1280×720**, for limited context comparison.
+
+This round therefore inspected **two new candidate ordinary images, one newly recovered old-runtime matched view, and two previously reviewed e188 images**. Supplied readiness `failed.png` was identified and hashed but **not visually inspected** or used as an ordinary-quality sample. No new figure close-ups or video were available in this finite round. No audio was heard. This is known-source diagnosis, not source-blind comparison.
+
+### Comparison conditions
+
+The candidate and same-run acf profile reports identify the same apparatus SHA **1e915d1ed590327b0528efb39ed3cd815815ecfaada08900acc8428033da6651**, viewport 960×720/DPR 1, initial player position (0,18), and the same three enemy positions. Independently compared all **13** full samples over authored time **0–0.2 s**: corresponding camera positions and quaternions have **maximum numerical difference 0**. Initial camera is (0.85,2.8,23.8). Both files are the `full`, non-ablation variant. These are matched fixed-camera native images from the production view, not a complete ordinary-input route or a blinded reference fixture.
+
+The readiness image comes from a different runner and 1280×720 viewport. Its report records `started-and-rendered`, world time **0.35**, running true. This metadata defines scope; its event name is not proof of visible quality. The two candidate images are not claimed to be a pixel-identical matched pair. The old e188 title has a dimming/menu overlay, and its encounter uses a different camera/location; those images support continuity of visible scene features, not equal-lighting or equal-camera measurements against 906852.
+
+Profile report source revision is the exact received 906852; candidate fresh-tree fingerprint **8acf757156b6f47ac788029d6d7cefe4d3a998a1587bb2c67e67c57387b7db5a**, baseline fingerprint **206f474d9c81779beb142d59680574f0cdc1d0fb6bd04b205424c7aeff88ad47**. The candidate fingerprint includes the reviewed mip repair `bamboo-frond.js` SHA `77e3f3932b2d23ac3fd2f0f47e0ff5fc0aa32d8e8304d304ab18d33b71746922`. Receipt/source identification does not convert its earlier numerical pass into an appearance pass. The apparatus is Chromium/SwiftShader; no performance conclusion is drawn from these still images or the report's `passed` label.
+
+### Direct appearance observations
+
+| Area | Improvement actually visible | Remaining defect / judgment |
+|---|---|---|
+| Bamboo canopy | Small branch/leaf marks do appear among the stems. This confirms some visible marks, not a convincing crown. | **Major unresolved ordinary-view defect:** both candidate images remain dominated by many bare thin culms and extremely fine black dots/short lines. In matched acf `full.png`, green feather-like leaf groups are clearly readable in the upper-left and upper-right; those same image regions in the new full view are mostly sparse stippled/linear marks. The canopy-volume goal is **not visibly repaired at this ordinary camera**, and leaf-group legibility is worse than the matched acf image. Exact camera equality rules out camera displacement as the explanation for this pair's visible difference; this review does not yet assign the underlying source cause. |
+| Near/far foliage color | No large bright frond patch was observed in these two new stills. | Most leaf surfaces are too visually slight to judge color cohesion or a near/far transition. The absence of an obvious bright patch is **not** native closure of mip color/silhouette behavior; there is no moving camera sequence here. |
+| Shrine and route | Latticed door panels, roof tile lines/eave structure, individual paving stones with irregular edges and material variation read clearly compared with acf's flatter facade and rectangular slabs. These improvements were already visible in e188 and remain in the new view. | The shrine still has very simple large planes and surrounding repeated props. Adding these details has not brought the complete environment to the requested visual target. |
+| Central rock and ground | The rock now reads as one coherent mass rather than acf's rounded lumps mounted together. Ground grain is more restrained than the old coarse repeating mottling. | The rock still has large obvious flat facets, a broad straight-looking lower edge and an abrupt meeting with the ground. Bare tan-brown ground occupies large uninterrupted areas; isolated yellow-green rod-like grass clumps repeat at similar scale and spacing. There is little readable transition from path to soil to planted ground, so props appear placed on a sparse surface. |
+| Props, light and integration | The torii, path and shrine remain easy to recognize as the intended route. | Repeated identical block-like lanterns, uniformly simple banners and many long dark linear shadows dominate the clearing. Sparse vegetation and weak surface/contact variation leave the setting looking assembled from repeated simple parts. Static shadow shapes alone do not establish shadow motion, correctness under movement or rendering performance. |
+| Player at actual game distance | The rear head/neck silhouette is more integrated than the old helmet-like acf head. The lower blue garment reads as broader closed cloth panels rather than a row of thin repeated pleat strips; the player remains readable against the ground. | The torso/sleeves still have rigid swollen forms and dark shoulder-joint separations. This rear ordinary view cannot close prior front collar, face, warden covering or hand defects. The dark shoulder parts are a visual integration concern here; no new background-through-mesh hole is asserted without the forthcoming close views. |
+
+The old e188 encounter confirms that the improved paving, coherent rock mass and detailed shrine predate this candidate. They are retained progress, not newly credited to this foliage/repair round. Its same sparse bamboo appearance also remains relevant; no matched-frame magnitude claim is made against e188 because the camera/menu conditions differ.
+
+### Finite priorities and overall judgment
+
+1. **Restore legible bamboo leaf groups in the actual ordinary view.** The same-camera native result must change from bare poles and stipples into readable connected foliage volume. Successful atlas arithmetic and increased leaf counts have not achieved that visible result in these images. Preserve the physical distinctions while diagnosing this appearance failure; these stills do not identify whether placement, orientation, projected size, filtering or another cause dominates.
+2. **Improve the ground/rock/planting connections as a whole.** The uninterrupted bare surface, isolated repeated grass, abrupt rock base and repeated prop pattern are larger contributors to the unfinished landscape than further small shrine detail.
+3. **Complete character silhouette and garment/joint integration using the incoming figure media.** The rear panel improvement is visible, but shoulder forms and the rest of the body cannot be accepted from this one rear view. Front/three-quarter/face and hand closure remains pending those originals.
+
+**The complete ordinary-screen appearance still does not support the requested PS4-level visual target.** This is an independent art judgment grounded in the concrete defects above, not a newly performed reference-game benchmark or numeric quality score. The 57a2 source/CPU mip closure remains valid within its original scope, while ordinary foliage volume is visibly unresolved. Motion/naturalness, trunk-versus-leaf temporal behavior, sound balance, frame timing, responsiveness, route completion and formal ten-element comparison remain **not measured in this round**. No complete-quality or publication acceptance follows from these two stills.
+
+### Supplied-file hashes
+
+| File relative to canonical root | SHA-256 |
+|---|---|
+| `.review/34988388499/render-profile-candidate/full.png` | `c7094722f42a42a25eaf61491734e97398b8820672c390c3341cf9d73deb7461` |
+| `.review/34988388499/render-profile-candidate/report.json` | `079def0c6bbb275a5dcf74caaf55fc5fe40b1064cc98d48979735377aa582e2a` |
+| `.review/34988388499/render-profile-baseline/full.png` | `f00eeb892729a2e46ae9b370fddb49394aae025128dd410183673ee79bdac824` |
+| `.review/34988388499/render-profile-baseline/report.json` | `80a47c20631953b2feef2532522e254505ecc02afab094dfce7e71f07d77a9b6` |
+| `.review/34988388555/asset-readiness/normal.png` | `d8b5f432413fa1eadf76d1a5364da49f0a6823e9819a1673612236ee00289e3e` |
+| `.review/34988388555/asset-readiness/report.json` | `aedc96cb66ac0c4c7f21f4723faa3771f1719f0b13ef70868adb4e245959f6e5` |
+| `.review/34988388555/asset-readiness/failed.png` (received/hash only, not viewed) | `f634d86e24df93eb64d1bad987d46470b196035f74dbba30e4565dd372ce7dae` |
+| `.review/34978382509/fresh/encounter.png` (e188 reopened) | `f088783855e43eec3c973e32a4696bbf2db4da6382d9acff2409d8e44876a402` |
+| `.review/34978382509/fresh/title.png` (e188 reopened) | `15443ae3bdf920901b120ae40963a8a999141ef87846cd6175eeafc5468768d1` |
+
+Only this owned evidence file was edited. No runtime/other author changes, staging, commit, remote operation or redelegation. Early specific findings were returned to the integrator and vegetation author without using author visual scores.
+
+906852 ordinary-view review appended at: 2026-09-15T15:34:00.782326+00:00
+
+
+## Independent native figure repair review — 9068522 / CI 34988388555
+
+### Receipt, personally viewed images and matching conditions
+
+Received art job **104446321736** from CI **34988388555**, runtime **9068522520b0f269cc937057b444f06c7c187978**. Integrator reports original 29+29 PNG/report recovery and full SHA/CRC agreement. Personally displayed all **21 requested new native 960×720 PNGs** in `.review/34988388555/after/after/`: player, sentinel, retainer and warden × full/back/face-front/face-threequarter/face-profile, plus `warden-face-profile-left.png`. The eight player neck-pose files were **not inspected in this art round**; the integrator assigned that separate scope to the runtime reviewer. No native figure video or motion was viewed here.
+
+For actual previous-candidate comparison, reopened six original e188 PNGs at full detail: player full/back/face-front/face-threequarter and warden face-threequarter/face-profile. Reopened two b06 before originals (player full/face-front) in the new recovery. Independently confirmed all **20** regular new-recovery b06 before files are byte-identical to the previously reviewed `.review/34978382509/figures/before/` files. That equality is provenance reuse, not a claim that all 20 before files were newly viewed in this round.
+
+New reports identify source 906852 and runner 906852; before identifies source **b06ade1ad5ab8b72de9bb9996f323a063f5db5ef** with runner 906852. The fixture is a neutral stage with production meshes/materials, fixed lights, synthetic idle and inspection cameras. **All 20 regular candidate camera/target pairs exactly match the corresponding e188 report values.** Against b06, eight full/back pairs match; the twelve face pairs follow the different head position (about 0.054996 m lower and 0.000685 m shifted in z for the new candidate), so those face images are not described as identical world-camera framing. The added left-profile warden image has no matching e188 left-profile file in the prior 20-image set.
+
+This is source-known technical/visual diagnosis. b06 is an earlier version of this same game, **not the fixed reference game**. No source-blind reference comparison or formal ten-element measurement is performed. Close-up improvements do not override the preceding ordinary-world review.
+
+### Visible closure against e188, limited to inspected static views
+
+| Prior specific symptom | New original-image evidence | Closure scope |
+|---|---|---|
+| Raised collar ends, conspicuous background triangles at the sides, separate dark band across upper chest | All four front/three-quarter face sets now show a low continuous neckline with narrow trim. Player full/back and matching e188 views show the collar sitting around the neck rather than standing away from it. | The earlier large static collar-opening symptom is **not reproduced** in these inspected views. Small dark neckline slivers and imperfect trim edges remain; no all-pose/inside-surface closure is claimed. |
+| Large black shoulder arcs floating away from the upper arm | New player three-quarter/full/back and the other three figures have smaller shell-like caps seated much closer to the sleeve. The old e188 three-quarter exposes a large isolated arc; the new counterpart does not. | The obvious large floating-arc symptom is **visibly improved/closed in these static views**. Shoulder/cap forms still look hard and assembled; fit during articulation is unmeasured here. |
+| Warden cheek/ear/jaw sawtooth boundary and protruding black nose | Warden front, three-quarter, right profile and added left profile show continuous black cheek-guard surfaces; the skin nose remains separate and visible above the guard. The old e188 right/profile originals explicitly show the former large teeth and black nose protrusion. | The reported static jagged-intersection/black-nose symptom is **not reproduced** in these four new face angles. This is not a claim of natural finished armor design. |
+| Pale triangular fragments inside the topknot | Old e188 three-quarter/profile show pale triangular gaps inside the knot. New player and warden profiles/three-quarter show a continuous dark knot with a small tie band; those conspicuous triangular fragments are absent. | Finite static visible symptom closed; detailed hair geometry or motion not inspected. |
+| Lower clothing reads as separate hanging boards / large open pleat strips | All four new full/back views show connected, closed-looking cloth volumes around the legs. The old e188 player full/back displays flat separated strips. | Clear silhouette/surface improvement in these views. Interior topology and dynamic collision are not inferred from the stills. |
+
+The original b06 block-and-sphere face, disconnected-looking neck, box shoulders and board clothing are substantially surpassed: continuous facial anatomy, ear contours, skin variation, a joined-looking head/neck, curved garments and material differences are now directly visible. The human head/skin improvement already existed in e188; it is retained progress, not a new face revision credited to 906852. The new visible progress is chiefly collar, shoulder placement, guard boundary and clothing integration.
+
+### Remaining art defects and priorities
+
+1. **Garment silhouette and shoulder integration remain the largest full-figure issues.** New trousers/hakama have two broad rounded, bag-like thigh volumes with weak readable cloth folding; sleeves remain swollen cylinders and the chest a rigid rounded panel. The shoulders are better attached but their black caps still read as separate hard parts. Preserve the closed cloth surface while improving its drape, fold placement and transitions; this does not favor restoring the older open strips. Full/back images of all four characters support this observation.
+2. **Face finish and character distinction remain below the requested target.** The eyelid/eye interiors read as dark flat gaps with little visible wet highlight or internal material detail relative to the skin. Hairline/sideburn edges have sharp, visibly serrated texture boundaries, while the topknot remains a simple solid lump. Player, sentinel and retainer present the same recognizable facial shape, hair and expression; clothing color is their strongest visible distinction. These are static appearance observations, not diagnoses of facial animation or inferred human identity.
+3. **The warden guard is cleanly bounded but still visually crude.** In both profiles it projects as a thick broad slab around the lower face, with a straight lower edge and sharply ending side plates beneath the ears. The attachment/retention relationship is not convincingly readable. The repaired surface avoids the old sawteeth, yet it does not look like finished fitted protective equipment. No physical detachment is asserted merely from the appearance.
+4. **Small trim and seam artifacts remain.** A short isolated pale/gold slash remains high on the chest; neckline trim has clipped/uneven ends and a small dark sliver near the front throat in three-quarter/profile images. A narrow dark vertical line remains on the right side of the back panel. These are lower-priority visible integration/polish concerns; this still review does not assign mesh/UV causes or label every dark line a hole.
+
+The four figures are recognizably more human and connected than b06, and several explicit e188 visual failures are closed in the supplied static angles. **They still do not support completion of the requested PS4-level art target.** The human head now exposes the simpler garment/armor shapes more clearly. The ordinary-world foliage/ground/prop defects documented immediately above remain part of the overall appearance judgment.
+
+The eight extreme neck poses, dynamic garment/armor contact, facial motion, locomotion, sound, performance and complete-route behavior are outside this finite review. Formal ten-element/source-blind reference quality remains **not measured**. No new source/test change or runtime acceptance is implied by this appearance review.
+
+### Personally inspected candidate PNG hashes
+
+All files below are relative to `.review/34988388555/after/after/`.
+
+| Original file | SHA-256 |
+|---|---|
+| `player-full.png` | `48d8b200eedfa82d9460249d196f7a68a6b067d258d998f0558fc0737aa93bd3` |
+| `player-back.png` | `1b1e4f0c4266dc5702b893b26bb847c743a1ae981c5a0b946d2ab18dec8001ba` |
+| `player-face-front.png` | `52ac6d7e191816cfa7376d12e0389a2c8684f858e93360904c4befd96d6328be` |
+| `player-face-threequarter.png` | `2de9d2a01cf35b28efea280b5ede94c0eca58798ff8b8fd01ed1f70464771265` |
+| `player-face-profile.png` | `9a0401db836f465af5c56c586e165788ebcab10c9363c3bd393a9ca3fe8a5001` |
+| `sentinel-full.png` | `8c70edc5d9448d174bb4efe589a72d28e89f1e2326b728313f69e41fee60686d` |
+| `sentinel-back.png` | `5f37c8fc6e1b6e72bb522fbcf35e9c11f0e0ec97113f454d034370770b73acca` |
+| `sentinel-face-front.png` | `4dd1ce076eda08f244437c9ab103de1cf29e913bd1cf5399590d8a35b9ee1197` |
+| `sentinel-face-threequarter.png` | `ecd9399f145d5366d3f691d9778f95c9a046caa2ae986b7c72c58497d83605ec` |
+| `sentinel-face-profile.png` | `dcdf668c54f687db567a1d471e041ddbf90d9dd648326207351035ef6f3c8caf` |
+| `retainer-full.png` | `0f9202a1c2dfba29fdf75a9130fdd8554122cf934b3be2005849f3c5dbe94e4e` |
+| `retainer-back.png` | `7fcb61313e66904ccdb3ba46b4ef5cbebfedc5c36d25574eca78fff937737f79` |
+| `retainer-face-front.png` | `5d8270c885d14efa034adffa2ca4b20d4f03c9f0547f06987f9689737989f50c` |
+| `retainer-face-threequarter.png` | `6ca2640399eba3c7896bd3bb06b5889e75be6ced631b6bf779d8379914bf5e07` |
+| `retainer-face-profile.png` | `9515e8948e5cd524a72c1ca325b6824916058f2af866ab8f1d8667603492ea55` |
+| `warden-full.png` | `47e351b4acf6636a28c7e5d305ba8ab4f1ed0f2515e8df5d21cdff04af1d6a4c` |
+| `warden-back.png` | `e29d0b79dc12a049b4fc7cc20b0e4590ddfe9f43578371f9a0143b4e987b05ae` |
+| `warden-face-front.png` | `b9ee4c4b4fbba354672685dd2f5cfd0d659e7f75c2b3e41e9135f1bc320a4045` |
+| `warden-face-threequarter.png` | `3de7148d6aa14dbccca30364a0a6f0d735d915c41c9ec5d59feec6c85466db2c` |
+| `warden-face-profile.png` | `0d8a455e329371801b5019c5a4fd19d1881609d21f36bde19cee2ec6a75d2245` |
+| `warden-face-profile-left.png` | `0ce73ce58ca8ed6cffd7522c8314bb93f41d2aaac85725c0048a1424d37bccd7` |
+
+Additional report / reopened-original hashes:
+
+| File relative to canonical root | SHA-256 |
+|---|---|
+| `.review/34988388555/after/after/report.json` | `5a24e7a238068252fc2d9563ade62eba0487fffffa260cc936e7816a1902c520` |
+| `.review/34988388555/before/before/report.json` | `5a91691f11cf309724168c938f48d529434585fe8b153fb71543945ac0c9c5da` |
+| `.review/34988388555/before/before/player-full.png` | `13b44c4dccbd5f9f19970f12abd5af279b6624b3f46c96b867e5890298f4fe96` |
+| `.review/34988388555/before/before/player-face-front.png` | `4d2fcb6d87c41a9ca8702f4ef0546ec61975d5e58dda954c8a6c65dd8e8dcdfa` |
+| `.review/34978382509/figures/after/player-face-front.png` | `c73003f27c1507394be4fb20f68cc2920e90764d5eec725b0fa921111b3b7fc6` |
+| `.review/34978382509/figures/after/player-face-threequarter.png` | `31ca9d0bc6ee28184d1a4d0e2f9f40c548dcf3393e88929b65db3cb660a85906` |
+| `.review/34978382509/figures/after/player-full.png` | `12b366cab3811bc89587f8733115f49e35280aa2df5d958b08fe76cd176b37fb` |
+| `.review/34978382509/figures/after/player-back.png` | `6209ce0532b6573c27700b3177abc7aa570e5c20383bffa61e19a41bb052e471` |
+| `.review/34978382509/figures/after/warden-face-threequarter.png` | `fa81cbebbfc458ded3bf49b052c42748820566d5a7397d4fb4b4a817896e4233` |
+| `.review/34978382509/figures/after/warden-face-profile.png` | `9e2ffcdd6f7cbc46a02a8a511d2b22df2a6d314040a0e1ae00656b1623232545` |
+| `.review/34978382509/figures/after/report.json` | `f655a5c6773322d303a29509da04f1a0fadc5644d3ea68cf878f75a4acc763d3` |
+
+Only this owned evidence record was edited. No runtime/test/other author changes, staging, commits, remote operations or redelegation. Early concrete closure/residual findings were returned to the integrator before completing this record.
+
+906852 figure review appended at: 2026-09-15T15:39:07.028228+00:00
+
+
+## Independent fixed bamboo / maple inclination source review — ef36bc1 and 2b5b1ba
+
+### Exact receipt and method
+
+Integrator assigned the frozen isolated bamboo candidate **ef36bc10a117a6e193b9bf59d0c271dd43289df4**, parent **57a2d750a003c593e00429279da9ea348e581732**, then maple **2b5b1baf946f8708b75993a7a0458812e4f46914** directly after ef36, in `game2-foliage-pilot`. Canonical runtime at assignment was **9068522520b0f269cc937057b444f06c7c187978**. The integrator subsequently combined these changes into **4fa13484c88dfa3d572c189e3a8999e8f254e70e**. I read each exact commit diff and imported its frozen `git show` presentation source through the headless helper; I did not accidentally evaluate the later working-tree presentation as the bamboo baseline. Renderer calls were stubbed. These are independent CPU/source calculations, not native rasterization, GPU validation, a source-blind reference comparison, or a visual quality score.
+
+Read the relevant transform/binding, LOD selection, selected geometry/foreground ray logic and the changed tests/author evidence. Author test/build results remain attributed to the author. The numerical checks below were separately calculated in my own inline Node harness. The first bamboo harness incorrectly expected every woody batch support to have crown attachment segments; I corrected its selection. The first maple rigid-fit harness was ill-conditioned on almost planar leaf points; the completed check instead fitted two well-separated vectors and their orthogonal frame. These were reviewer-harness failures, not product test failures or source changes.
+
+| Frozen presentation source | SHA-256 |
+|---|---|
+| 57a2 baseline | `d2b634942eb54de38a390d5ac958a419f1e5a5beeb12ee03caf409986e0750e2` |
+| ef36 bamboo candidate / maple baseline | `afeae3c5c6fdf51a7cb38f92ac826f8abb54f1ece41b2d17ade8106849d88e86` |
+| 2b5 maple candidate | `5be1150f9760eb6d570608e6978ac8d6ce64b036917f3a54599f131a78c93321` |
+
+### Bamboo source findings and independently calculated preservation
+
+At ef36 `fresh/presentation.js:356–363`, all near leaves, their short side shoots and the matching baked far card rotate once about the supporting twig's x axis by variant angles −1.10, +1.24 or −1.35 rad. The main supporting twig endpoints remain fixed. Leaf metadata and attachment-segment coordinates receive the corresponding transform; the shader does not acquire a camera-facing billboard or a common time-varying sine. Existing hierarchical branch/leaf dynamics remain in place. Template projected drag area is recalculated after inclination; no new spring coefficient or main support dimension is introduced. The only `bamboo-frond.js` change is explanatory text about the inclined projected area.
+
+Independent results across the full generated scene:
+
+- **900 crowns, 32,400 bamboo leaves**; **298,800 crown vertices** checked against the common affine transform; **16,200 other woody vertices** in bamboo material batches unchanged exactly.
+- Main twig segment endpoints unchanged exactly. Maximum leaf pivot distance to its actual short side shoot/main attachment segment **0.0000026003 m**; maximum pivot-transform residual **0.0000060445 m**; maximum transformed vertex residual **0.0000084094 m**.
+- UV arrays, full topology and near/far topology unchanged exactly. Maximum inverse-transpose unit-normal discrepancy **0.000099318** and transformed hinge-axis discrepancy **0.000017462**; transformed `leafAxis.w` error **0.0000028920 m**. These are finite float-coordinate residuals, not visual tolerances.
+- All **2,317** structural beam records retain id, parent, kind, rest origin/rotation, attachment, relative rotation, length, mass, stiffness, damping and max ratio. The selected-record SHA-256 is **b5e4f26b4bfe7eb41321afbd8e55571a0a01f3d9572696c1d481d083696e541a** before and after.
+- All seven atlas/mip byte hashes unchanged; grass data unchanged, SHA-256 **70733f5d139fb4d7f2a898540bcd3e16a2e6dd1bbc08efc4951cbed3507c81c1**.
+- At four camera orientations, independently reconstructed selected near/far indices and draw ranges matched **2,569,650** checked index entries. Unchanged cutout/fade separation and common visible/depth transforms are retained in source; this does not replace GPU shadow or transparency inspection.
+- Independently integrated 20 seconds at 60 Hz, sampling short-member chord strain each 0.5 s: maximum **0.0015674286 = 0.15674286%**, below the retained 0.2% condition; root drift **0**. This finite simulation is not a proof over all wind states.
+
+**Important dimension limitation:** the crown rotation is rigid in template space, before the already-existing nonuniform instance scale (`presentation.js:397–402`). Consequently world-space leaf dimensions are **not exactly preserved**. Across the generated leaves, new/old `leafAxis.w` ranges from **0.8350563 to 1.1691743** (approximately **−16.5% to +16.9%**). The transformed metadata correctly follows these changed world lengths; this is not a detached pivot. Template dimensions and supporting twig endpoints remain fixed. Unchanged mass/stiffness and the existing area-scaling approximation must not be described as exact world-shape/aerodynamic preservation. I sent this limitation to both integrator and author. The integrator explicitly accepted correcting the claim and judging the bounded size range together with native appearance, without adding another geometry repair solely because of this range.
+
+Independent production-camera projection at world time 0, 960×720, using actual deformed far-card corners (no alpha rasterization):
+
+| Orbit | Fully inside frame, old → new | Median card height, px | Median projected quad area, px² | Far groups, old → new | Active bamboo triangles, old → new |
+|---|---:|---:|---:|---:|---:|
+| 0 | 329 → 328 | 1.1449 → 8.4658 | 6.2996 → 38.9715 | 167 → 301 | 134,850 → 99,600 |
+| π | 1 → 1 | 3.9440 → 29.0615 | 69.9414 → 130.7077 | 0 → 0 | 111,350 → 95,100 |
+| π − 0.65 | 16 → 12 | 3.1985 → 23.1024 | 51.2263 → 337.4274 | 7 → 8 | 109,850 → 94,100 |
+| π + 0.65 | 20 → 16 | 2.7744 → 14.5407 | 25.6462 → 118.4326 | 18 → 14 | 114,100 → 97,600 |
+
+Production camera positions were `[0.85,2.8,23.8]`, `[-0.85,2.8,12.2]`, `[2.8334099245,2.8,12.8683055235]`, `[-4.1867523820,2.8,13.8971224133]`. The main-view count of fully visible crowns below 1 px² went **0 → 5**, so this is not a universal per-crown improvement. The exact opposite view has only one fully visible crown and cannot support a broad opposite-view canopy claim. Projected card area is not green-pixel coverage, rendered naturalness or measured performance.
+
+The changed former positive water ray is explicitly recorded as now **zero** after the geometric rotation. Source review found that the replacement full-deformation comparison covers relevant nearby cells on both faded and clear sides instead of only existing faded cells; separate positive moving ray controls remain. I did **not** rerun the author's 162 positive ray cases in this round or count them as mine. The author changed the geometric horizontal-area expectation to match inclined leaves while keeping the dynamic 0.2% strain condition; the latter was independently checked above.
+
+### Maple fixed petiole, normal cache and opposite-view results
+
+At frozen 2b5 `fresh/presentation.js:435`, only the fixed per-leaf x-roll distribution changes, before the existing side rotation and twig attachment transform. The local root translation is unchanged. It does not animate the leaf with a new shared sine. The source retains existing maple physics records/effective canopy drag areas; this is **not** an exact recomputation of orientation-dependent maple aerodynamics.
+
+Independent full-scene checks:
+
+- All **3,888 maple leaves / 93,312 vertices** checked against a proper rigid rotation about the unchanged stored pivot; maximum vertex-fit error **0.0000093542 m**, pivot-radius difference **0.0000037625 m**, unit-normal discrepancy **0.0001121841**, and `leafAxis.w` change **0**.
+- Every maple pivot, UV, full index and map byte unchanged. Every group cached normal matches its actual new far triangle exactly (**maximum difference 0**).
+- **330,184 non-maple vegetation vertices** unchanged exactly. All **2,317 entire beam records** unchanged before integration, including fields beyond the selected bamboo structural hash.
+- After independent 480-step / 8 s integration, projected the actual deformed maple triangles using original 906 whole/close inspection cameras and a mirrored whole-tree camera. All near triangles are measured geometrically, without occlusion or fragment alpha. The exact original close camera differs very slightly from the author's derived close camera; my numbers are independently calculated, not copied from the author table.
+
+| Camera | Fully visible leaves, both | Median leaf area old → new, px² | Median facing old → new | Facing < 0.1, old → new | Submitted maple triangles, both |
+|---|---:|---:|---:|---:|---:|
+| Native whole | 972 | 4.0217 → 9.4669 | 0.13656 → 0.35525 | 310 → 124 | 67,104 |
+| Native close | 150 | 614.0115 → 557.3760 | 0.83731 → 0.73902 | 0 → 8 | 69,984 |
+| Opposite whole | 972 | 10.0992 → 10.3410 | 0.36568 → 0.37517 | 45 → 96 | 69,984 |
+
+Native whole position/target: `[-14.212534234788277,6.03363304163433,11]` / `[-22,4.292204452121128,11]`; close: `[-22.653767959023295,6.160196911555961,9.707845414072473]` / `[-22.07739162130612,5.230039856604955,9.469102517959085]`; opposite whole mirrors the first camera about target x to `[-29.78746576521172,6.03363304163433,11]`. Facing is the area-weighted absolute triangle-normal/view-direction cosine per leaf. The prior report's single helper-normal cosine is not used as an all-leaf measurement.
+
+The whole-view distribution improves, but **the count of nearly edge-on leaves worsens in the opposite and close views** despite the opposite median remaining slightly better. This is a retained view-dependent tradeoff; neither all-view improvement nor canopy completion is claimed. No new major source/geometric consistency blocker was found in this finite bamboo/maple scope. GPU cutout/depth continuity, switching, visual naturalness and performance still require native evidence. The immediately following review records only the supplied ordinary still, not those missing dynamic conditions.
+
+## Independent ordinary native still review — 4fa13484 / CI 34992059112
+
+### Receipt and comparison conditions
+
+Personally reopened original `.review/34988388555/asset-readiness/normal.png` for runtime **9068522520b0f269cc937057b444f06c7c187978**, then displayed original `.review/34992059112/asset-readiness/normal.png` for runtime **4fa13484c88dfa3d572c189e3a8999e8f254e70e**, both at native **1280×720** detail. These are two ordinary production arrival views after start, not the neutral figure stage. Read both corresponding reports and independently checked PNG hashes against their capture entries. The integrator reports original artifact/hash agreement.
+
+Both reports use apparatus SHA-256 **34d122a1f06ac5dfd98a7bf537ba9674f2cd08710e28b002347475436e0ef4aa** and Chromium **141.0.7390.37**, with the same visible framing and start location. They are nevertheless **not exact same-time/phase captures**: the recorded before/after screenshot world-time brackets are **0.35 → 3.85 s** for 906 and **0.45 → 3.95 s** for 4fa. The exact drawn screenshot instant is not inferred from either boundary. The report contains no camera-pose equality measurement used here, so visually aligned framing is not promoted to a numerical identical-camera assertion. Both capture brackets say running, assets ready, no context loss. These state fields delimit capture conditions; they are not evidence that a visible effect happened at a telemetry event.
+
+The integrator had already supplied an opinion about sparse foliage before this review. I know both version identities and that opinion. This is explicitly a **source-known technical/visual diagnosis**, with that awareness limitation, not a blind or independent anonymous score. My concrete observations below come from personally displaying both originals.
+
+### Actual visible change and remaining ordinary-view defects
+
+- **Small foliage legibility improves.** Across the upper-left and upper-middle bamboo, many former almost-black horizontal dashes are now visible green leaf fragments. At the upper-right edge, some sprays read as narrow radiating leaf groups rather than isolated dots. On the left ground, several separated branching leaf-shaped shadow patches are more readable than the former small diffuse spots. This is visible progress, not merely a projection-number claim.
+- **The ordinary forest still reads as sparsely decorated poles.** Long bare bamboo lengths and large uninterrupted sky/haze gaps dominate. Most crowns remain tiny scattered marks instead of layered foliage masses. The new still does not close the previously recorded lack of canopy volume, and it does not establish that a large percentage increase in geometric card footprint becomes a comparable overall visual improvement. Individual cropped sprays remain visibly thin and spoke-like.
+- **No conspicuous new bright rectangular atlas patch or wholly erased vegetation block is visible in this image.** The tiny distant fragments do not provide enough information to approve all mip color, near/far transition, alpha cutout or shadow behavior. No maple crown is sufficiently isolated and legible here to close the separate maple whole-tree complaint.
+- **The person remains visually integrated at this distance, with continuous blue lower clothing, readable head and sword, and contact near the paving.** This image does not expose facial finish or prove garment/shoulder articulation. No new face or body improvement is credited to this vegetation revision; the already-reviewed 906 figure residuals remain.
+- **Scene materials and placement retain their earlier gains and limitations.** The shaped paving stones, roof tiles and lattice doors remain readable, but broad brown ground areas are uniform; thin upright grass blades repeat at similar scale and orientation; lantern blocks repeat conspicuously along both sides. Large faceted rocks meet the soil abruptly, with little convincing ground transition. Long hard bamboo/prop shadows and bare space expose these repeated shapes. These are still-level appearance observations, not a lighting-engine diagnosis.
+
+For the next finite art work, the leading remaining issue is **readable layered foliage mass in ordinary cameras**, followed by **ground/rock/grass transitions and repetition**, alongside the previously documented **garment/armor silhouette and face finish**. This does not prescribe more leaves or larger world dimensions solely from one still; alternate native views and motion are needed to choose a remedy.
+
+**The requested overall PS4-level visual target remains unsupported.** There is a visible local foliage improvement over 906, but the integrated ordinary scene retains major art deficits. The source checks above do not close these art issues. No motion, sound, performance, complete route, physical-device quality, native opposite view or dynamic LOD transition was measured in this two-still review. Formal ten-element/source-blind reference assessment remains **not measured**. Any CI route/performance failures are unaffected by this appearance finding.
+
+| Personally read/viewed file | SHA-256 |
+|---|---|
+| `.review/34992059112/asset-readiness/normal.png` | `b96119262c4898a3402dfa32abbdd031a5bdbd172cded4723699380b23d60d9b` |
+| `.review/34992059112/asset-readiness/report.json` | `a26d3417de0a9d92d50462e8d3d393221b4586fe813eea1abf6db7dd6e8216ec` |
+| `.review/34988388555/asset-readiness/normal.png` | `d8b5f432413fa1eadf76d1a5364da49f0a6823e9819a1673612236ee00289e3e` |
+| `.review/34988388555/asset-readiness/report.json` | `aedc96cb66ac0c4c7f21f4723faa3771f1719f0b13ef70868adb4e245959f6e5` |
+
+Only this owned evidence file was edited. No author implementation/test file, runtime, staging, commit, remote operation or redelegation. Early source limitations and native findings were returned directly to the integrator.
+
+Fixed inclination source and 4fa ordinary still review appended at: 2026-09-15T16:11:15.971697+00:00

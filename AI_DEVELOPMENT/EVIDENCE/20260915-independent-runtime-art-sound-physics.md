@@ -641,3 +641,185 @@ Below the buried base at Y=-.09, above the ridge at Y=3, and outside the two Z f
 The repaired strips now have side and bottom faces down to -.08 m; the fracture cells' lowest ring also enters the earth. `scene-surface.js`, presentation, terrain, route layout and simulation were byte-identical to 613efa, so the previously reviewed ground-material connection and collision ownership were not changed by this repair. The author explicitly corrected the earlier false burial/contact description in the old and new reports; this reviewer verified the repaired geometry independently rather than relying on that correction.
 
 **Bounded result:** the reported neck opening, sampled collar/skin and guard/head edge intersections, and floating ridge-root defect no longer reproduce in the independently replayed fixtures. No remaining blocker was established within these assigned checks. This closes those finite technical failures only. It does **not** close native visual review, the earlier cloth knee/hem major or seam-normal concerns, the separate foliage appearance regression, complete integrated performance or formal comparison requirements. The next exact integrated native media must still show neck motion, guard/ear and collar seams, and root lighting/shadows. All 10 formal elements remain **not measured**; deadline **2026-09-20T07:51:53Z** is unchanged. Only this owned evidence file was edited; no runtime, author data, tests, remote, staging or automation files were changed by the reviewer.
+
+
+## Independent actual WebGL still inspection — 906852 / CI 34988388555
+
+This reviewer independently opened and inspected **12 distinct original 960 × 720 PNGs**, individually at native resolution, from `/workspace/scratch/27301e95ee53/game2-ultra/.review/34988388555/after/after/`. Inspection completed on **2026-09-15 at approximately 15:40 UTC**. This is the first actual WebGL inspection by this reviewer of the integrated closed-hakama and f428 neck/guard repairs. It supplements the preceding CPU/source replay; the preceding section's statement that the repairs had not yet been viewed remains true for that earlier inspection time.
+
+Both `sourceRevision` and `runnerRevision` in the recovered report are **`9068522520b0f269cc937057b444f06c7c187978`**. The report SHA-256 is **`5a24e7a238068252fc2d9563ade62eba0487fffffa260cc936e7816a1902c520`**. The exact source's character assets, native-data, rig and motion Git-object hashes independently match the four f428 hashes in the preceding section. The integrator supplied these files from art CI **34988388555**, job **104446321736**, and reported successful job status plus all-file SHA/ZIP-CRC recovery checks. This reviewer independently rehashed the 12 files and report locally; this visual task did not independently repeat the connector/job-log retrieval or ZIP validation.
+
+### Viewed originals and pose scope
+
+| Original individually viewed | Independently computed SHA-256 |
+| --- | --- |
+| `player-broken-neck-front.png` | `32f76462990d904f17450d1dbb8d379081faaa8cb30809ff02e4f60fe7791e66` |
+| `player-broken-neck-back.png` | `cbfdb9d48ceab5f41c64ccafc1a9d442611aa6d4784436d1b2c65bd1c37014c1` |
+| `player-dead-neck-front.png` | `86960a5d493487a84ab7b61f99d14b56cebaaa1398bb7cc33d0cdf21da4ca6c3` |
+| `player-dead-neck-back.png` | `5e8b6c7d0f80ab8f4bf9864c8d3019d37f0f4a0e4b0ccb67e2bf8f416018c65b` |
+| `player-victory-neck-front.png` | `73e0f5e2772495abed03898b2d71588d71ececfc0ffe300d0d15fdc1acbe8765` |
+| `player-victory-neck-back.png` | `c48b02fc8935859f703bc909b1e749b802bca78255c59fdb77c00e93fa61a0cb` |
+| `player-stagger-neck-front.png` | `cd91af55044f6e5271d87be3d849df35e3b95b92367a0bc760758f337515a6c3` |
+| `player-stagger-neck-back.png` | `2689b6e9914d24c2e6008158eb8f3a8a8b12727091f3bf85de4d9eafa8efe5ac` |
+| `warden-face-profile.png` | `0d8a455e329371801b5019c5a4fd19d1881609d21f36bde19cee2ec6a75d2245` |
+| `warden-face-profile-left.png` | `0ce73ce58ca8ed6cffd7522c8314bb93f41d2aaac85725c0048a1424d37bccd7` |
+| `player-full.png` | `48d8b200eedfa82d9460249d196f7a68a6b067d258d998f0558fc0737aa93bd3` |
+| `player-back.png` | `1b1e4f0c4266dc5702b893b26bb847c743a1ae981c5a0b946d2ab18dec8001ba` |
+
+The eight neck close-ups comprise front/back views of **broken .30 s** (report frames 21/22), **dead .50 s** (23/24), **victory 1.45 s** (25/26), and **stagger .05 s** (27/28). The other four views are idle warden right/left face profiles (20/29) and idle player full/back (1/2). These report frame IDs identify separate still captures; they are not a continuous timeline or video-frame sample.
+
+The exact `fresh/art-direction-capture.mjs` source and report were read. Each capture resets the actor/world and advances **24 idle updates at 1/60 s**; a requested pose then sets synthetic actor state and world mode, and advances the existing update function from age 0 through the requested age in 1/60-second steps. Victory uses idle actor state with victory world mode; dead uses zero HP and defeat mode. The cameras and lights are fixed inspection apparatus on a neutral stage. These images therefore show actual production geometry/materials rendered by WebGL in selected constructed poses, **not ordinary keyboard/pointer input, continuous motion or gameplay**. No image was generated, retouched, resized or cropped for this inspection. The remaining 17 candidate stills and all 29 supplied b06 baseline stills were not opened in this finite task. No new source test or capture was run merely to repeat the completed source review.
+
+### Findings from the actual pixels
+
+- **Neck and collar:** In all eight viewed player neck close-ups, the visible skin continues into the collar; no background-colored aperture or detached head was identified at the former neckline failure region. Broken front/back and dead front/back expose the particular lower-neck/upper-back area previously implicated by the c824 source fixture. This is a positive observation in these camera/pose samples, not a conversion of the zero-ray result into an all-pose/all-view absence-of-defects guarantee.
+- **Remaining collar detail:** The narrow pale edging still has small pointed/stepped ends and intermittent thin dark lines, clearest across the rear collars and the two warden profiles. In `player-victory-neck-front.png`, a narrow black wedge remains beside the image-right lower neck, approximately **x=570–578, y=350–378** in this 960 × 720 original. It is visibly dark rather than the gray stage background. This still does not establish whether it is lining, a shadowed recess or an opening; no new geometric gap or penetration depth is inferred from it. The broad collar/skin separation seen in the old source failure was not reproduced visually here.
+- **Guard and ear boundary:** Both warden profile images show the guard's upper/rear rim ending below and in front of the visible ear rather than cutting across its surface. No ear-crossing rim, exposed saw-shaped face boundary, detached guard or large open neckline was identified in these two idle views. The mask still reads as a broad dark plate; fit in unviewed head rotations and transitions remains outside these two samples.
+- **Shoulders and cloth shading:** Sleeve material covers the shoulder junction in the viewed front/back poses, and no obvious floating shoulder cap or skin wedge is visible there. The shoulder crowns remain conspicuously pointed/faceted, especially in broken-back and stagger-back. Chest/back fabric also shows broad horizontal bands and abrupt shaded polygon transitions in the close-ups. These are visible remaining shape/material-quality issues; this still-only inspection does not establish their exact geometric, texture, filtering or shadow cause, nor whether they flicker in motion. It does not establish the requested PS4-level appearance.
+- **Closed hakama:** The idle full/back pair reads as two enclosing cloth legs. No exposed knee cutting through a panel or disconnected flat hem was identified in these two stationary poses. The former major was seen during run frames 13/14 and death frames 9–12 in older source media; this pair does **not** close that moving-cloth issue or the previously measured large seam-normal differences in fallen poses. Exact new motion media remains necessary.
+- **Visible attachment limits:** The full/back pair shows head, sleeves, hands and sword together without a large visible detachment; finger contact and occluded inner surfaces are too small or hidden in these views to serve as a detailed grasp/intersection verdict. No continuous-frame motion, audio or perceptual frame-time judgment was made.
+
+**Bounded result:** no new blocker or major structural visual failure was established in these **12 viewed stills**. The previously reported neck opening and guard-ear crossing are not visible in the assigned samples, while collar edge detail and pointed/banded shoulder-cloth appearance remain visible residuals. This is a finite, source-known technical/art diagnosis; it is not a blind b06 comparison, a PS4-quality acceptance, a general zero-defects claim or an assessment of every recovered PNG.
+
+The capture report says `passed` with no recorded errors. The integrator reports 230 source tests/build passed and art-job success; the full ordinary-input gate was **not terminal at assignment**, and the separate experience/motion job was still running. This reviewer does not promote those partial results to complete CI success or resolved runtime performance. The next exact 14-clip motion review must revisit run-knee coverage, death-hem folding/seams, moving neckline and guard/hair adjacency. Scene/foliage/root/shadow native quality was not assessed by these neutral-stage character images. All 10 formal elements remain **not measured**; deadline **2026-09-20T07:51:53Z** is unchanged. Only this owned evidence file was appended; no runtime/source/test, author file, remote, staging or automation changes were made.
+
+
+## Independent vegetation native-media sampling — 906852 / CI 34988388555
+
+Following the character still review, the integrator assigned a finite inspection of the three exact **9068522520b0f269cc937057b444f06c7c187978** plant studies. Originals are in `/workspace/scratch/27301e95ee53/game2-ultra/.review/34988388555/vegetation/`. The local report SHA-256 is **`28c1843640fffd01163a48ed514b9fe5ea6ecbda2701a0e5382f264d4bbe600d`**. The integrator supplied matching owner recovery SHA/CRC results; this reviewer independently hashed the local media, counted decoded frames, fully decoded all three original MP4s, and personally inspected the bounded samples below. Connector/ZIP retrieval was not independently repeated.
+
+### Independent decoding and exact viewed scope
+
+`ffprobe -count_frames` reported H.264, **960 × 720**, **12/1 fps** for each file. A separate `ffmpeg -nostdin -v error -xerror -threads 2 -i <original> -map 0:v:0 -f null -` completed with **exit 0 and empty stderr** for all three. Total fully decoded: **360 frames / 30 seconds**. This verifies complete decoding, not the meaning or visual quality of all 360 frames.
+
+| Original MP4 | Independently decoded frames | Duration | SHA-256 |
+| --- | ---: | ---: | --- |
+| `maple.mp4` | 144 | 12 s | `78b30f6737f31d2da4f6cc19f533a3bfcdd9cd2cc87c3e9100acaa285f5abbf6` |
+| `maple-leaf.mp4` | 72 | 6 s | `8736fea6ffd57b1070af2277d2821ab5f861ed01e515af73eea787cf7ee6a49b` |
+| `bamboo.mp4` | 144 | 12 s | `80e8687db9eba7c0522e2a57f33bd83e1dc33856aa13ccd95caccd08e8cb6239` |
+
+For each clip, this reviewer individually opened **five consecutive decoded frames n=30,31,32,33,34**, with original dimensions and no resize/crop: video times **2.500, 2.583333, 2.666667, 2.750, 2.833333 s**. The production clock begins at authored time 8, so these represent **10.500–10.833333 s** in the constructed scene. The reviewer additionally opened the following **six original lossless capture PNGs**: frame 0 for each clip, frame 132 for maple/bamboo (video 11 s, authored 19 s), and frame 60 for maple-leaf (video 5 s, authored 13 s).
+
+| Original PNG individually viewed | SHA-256 |
+| --- | --- |
+| `maple/0000.png` | `d86d9549671d984bf419e48a7906ceb95ef963aca7a0cf3cceb187e8183ca0ca` |
+| `maple/0132.png` | `d2084ad8c4915b8ce8412a7f1f3fad827b8e466bb0fada3f80e3a1c9b3b174aa` |
+| `maple-leaf/0000.png` | `f0e60f6692c68a9c9e3d8a049498e153b36d906cafde12c44d8a51c4f8b5ad40` |
+| `maple-leaf/0060.png` | `6ace5226004587a7d99e486c4bcfa47c665c8a92caf1ac64d05f7ebc3a451f25` |
+| `bamboo/0000.png` | `3180a1805b89f2a6fec1b5e54da2152b4aa882d21f641f6934a0028ac7a0651f` |
+| `bamboo/0132.png` | `f37462799c2e5ccb8070fcf66a4338bec7b6b1eb2173fbea134004e1a51c7650` |
+
+Thus **21 distinct native-size images** were actually seen: 15 decoded-video frame extracts plus six supplied PNGs. MP4 frame extracts preserve the decoded H.264 picture; they are not claimed byte-identical to the original lossless PNG captures. No continuous video playback or sound was perceived, and no other clip frames were visually inspected. Extracts and their per-file SHA-256 values are retained in `/workspace/scratch/27301e95ee53/independent-vegetation-view-34988388555/`; the completed `independent-view-index.json` SHA-256 is **`033c9f7ad4494cf93356f6f54824a8527cba304eaf9f117028ef91811e77447a`**. These are scratch inspection derivatives; only this evidence file was edited inside the repository.
+
+The report specifies actual production vegetation rendered at fixed inspection cameras and **12 authored samples per second**, with gameplay obstruction fading restored to base opacity for the studies. Reported root/stem-tip projections are framing guides. The selection count excludes stated target supports and samples only some woody geometry; a reported zero is not complete visual clearance. For example, foreground bamboo stems remain visible across part of the maple crown in the actual wide view. The clips are not ordinary-input obstruction tests or measured physical-device frame pacing.
+
+### Visual observations and limits
+
+- **Connections and roots:** In the two wide studies' viewed frames, the visible lower trunks remain at their ground positions, with no observed root jump or whole-plant slide. Visible major branches continue into the maple trunk. In the maple-leaf close-up, thin stems/petioles remain visually connected to the adjoining leaves in the consecutive five-frame run and endpoint pair. No burst of detached leaves, opening support joint or obvious branch teleport was identified. The camera and overlap hide some junctions, so this is not exhaustive connection proof.
+- **Amount and separation of motion:** Leaf-edge and small plant-position changes are slight in these samples; the maple trunk appears essentially steady, while small leaf details differ in the close-up endpoint pair. The consecutive five-frame runs show no obvious large discontinuity. However, the differences are too small in this finite frame inspection to establish a clearly perceived trunk-versus-branch-versus-leaf phase/amplitude hierarchy. The report's different solver displacements are not substituted for observed motion quality. These images neither establish that the animation is frozen nor establish that its mechanical separation is sufficiently visible/natural.
+- **Shadow/contact:** Long trunk shadows remain present and grounded in the wide samples, with no clearly separated or abruptly jumping shadow identified. Fine leaf shadows cannot be isolated reliably among the overlapping long shadows, ground pattern and small movement. The study therefore does not prove that each leaf's shadow follows its deformation, nor does it validate all scene-root/shadow fixes.
+- **Grass:** The visible grass remains sparse, narrow and mostly upright, with only slight shape/position changes apparent in the sampled area. No sweeping rigid translation, collective ground detachment or violent bend was identified. A convincingly varied, landscape-wide grass response was not established by these small temporal windows or by the offscreen grass counts in the report.
+- **Unresolved foliage appearance:** The known bamboo problem is directly visible: most leaf groups read as narrow horizontal lines or small fragments, leaving a near-bare-culm impression at these wide inspection views. The pending fixed-orientation repair is not part of 906852 and is unassessed here. **The maple wide study also has a sparse, line-like crown** in original frames 0/132 and consecutive frames 30–34; its broad leaf shapes are much more evident only in the `maple-leaf` close-up. That exact wide-view deficit remains relevant even if bamboo alone is repaired. The maple report's approximately .0187 leaf-face/camera cosine is apparatus data consistent with a nearly edge-on target sample; it does not independently establish the cause of the entire crown's appearance. No new source or camera changes were made to conceal this result.
+- **Close-up material limit:** Individual maple leaves read as repeated flat, sharply pointed orange/brown silhouettes, and the woody branches have simple smooth shading. Their attachment is more legible than their surface detail. This view does not support finished realistic foliage or PS4-quality acceptance.
+
+**Bounded result:** no additional definite structural blocker/major—such as observed root sliding, support separation or a large shadow detachment—was established in these 21 images. The already unresolved vegetation-volume problem remains visibly present, including maple at its assigned wide view; this finding was sent to the integrator. The study provides only limited support for smooth local attachment and does **not** close the requirement for perceptually distinct/natural trunk, branch, leaf and grass motion. Full original-video decoding is successful, while subjective continuous-motion quality, ordinary camera visibility, integrated performance, subsequent repairs and formal comparisons remain unmeasured. The separate experience/motion job had not been supplied as terminal at assignment. All 10 formal elements remain **not measured**; deadline **2026-09-20T07:51:53Z** is unchanged. No source/runtime/test, author file, remote, staging or automation files were changed.
+
+
+## Independent repaired-cloth motion-media review — 906852 / CI 34988388555
+
+The integrator supplied the exact integrated **`9068522520b0f269cc937057b444f06c7c187978`** experience media and reported that job **104446321481** succeeded. Local originals are at `/workspace/scratch/27301e95ee53/game2-ultra/.review/34988388555/experience/motion-study/`. The recovered `report.json` has that exact source revision and SHA-256 **`ccbcd6c5f2389b7c21ee9074303e9fbdc3b15339ef7d0cce2f4d27aefcee60ad`**. The integrator verified recovery SHA/ZIP equality; this reviewer independently rehashed the local files and decoded/viewed the bounded material below, without repeating connector/ZIP retrieval. This exact media includes the f869 closed-hakama and f428 neck repair. The preceding e188 media findings were not reused as observations of this repair.
+
+### Independent complete decode; finite visual sample
+
+For all 14 MP4s, `ffprobe -count_frames` identified H.264 **960 × 540**, **12/1 fps**, with the counts below. A separate full `ffmpeg -nostdin -v error -xerror -threads 2 -i <original> -map 0:v:0 -f null -` completed with **exit 0 and empty stderr** for every original: **474 decoded frames / 39.5 seconds in total**. This establishes successful decoding, not visual acceptance of every frame.
+
+The reviewer personally opened **32 distinct decoded frames**, individually at original 960 × 540 size, with no crop/resize/retouch. Two consecutive five-frame windows were selected specifically around the former defects: **run 11–15**, corresponding to **.916667–1.25 s**, and **death 8–12**, corresponding to **.666667–1 s**. Run 24 and death 18/35 extend the check to a later stride and the settled fallen pose. The remaining 19 samples cover the other named studies and visible attachments. All zero-based frame numbers and source MP4 hashes are recorded below; each frame's video time is **n/12 seconds**.
+
+| Original MP4 | Fully decoded frames | Frames actually viewed | Independently computed SHA-256 |
+| --- | ---: | --- | --- |
+| `start-run-stop.mp4` | 48 | 11, 12, 13, 14, 15, 24 | `79328a9744ececb327b01439ff9e687ad6ef11bd5540a38fdb9e0a971919338e` |
+| `death.mp4` | 36 | 8, 9, 10, 11, 12, 18, 35 | `d2433eab8e4bdd091850992a7d3602b566738b9a91c2587a615e190cd3c3e1b0` |
+| `attack.mp4` | 36 | 6, 12, 18 | `00719055f1b5d9e0bfeab357d00dd49a48267812a7fffda1947758a994526409` |
+| `guard.mp4` | 24 | 6, 12 | `1f4224a32733f9d27bbf8eafe4dc6e6a8275bf6c3f2f859f714f4b14cfeb02b1` |
+| `parry.mp4` | 24 | 6, 12 | `fdd3a87e2bf0da7caa58d71f523539eca7ca2194e333cadbc644b530f62aa7dd` |
+| `victory.mp4` | 48 | 6, 18, 30, 47 | `b0f6787349a7e5f825d000177eb5c5d91f9f9f9bfcab73581c3af46420d1f9cf` |
+| `dodge.mp4` | 24 | 6 | `7cc71e86f83c28bfd40b423013262b8cdfe3b84c8a256830f3e160645c1877c2` |
+| `windup-attack.mp4` | 36 | 6 | `70735a48afb7d5a02653a56edf11831b1eba282fb3c4199ec665fee4c4adc2ec` |
+| `hit.mp4` | 24 | 6 | `3fc9546dabcfaeebd419880ea22df2f41255945c1483501538b32dd27e97b855` |
+| `block.mp4` | 24 | 6 | `8a6ff9170714b7337c172937f5e1ab0991de59339a791c7f6037d88dec0ad772` |
+| `broken.mp4` | 30 | 12 | `1f5836b84277151e9ed1ab666980885ab72ea7ed5cf670bbcadccd9dec247c8d` |
+| `idle.mp4` | 36 | 18 | `34bb5d2cd2b175c7833a95b4965b4d2e81c8ecb24b445cd34d679379fe862987` |
+| `turn.mp4` | 36 | 18 | `3e48aac6ef46f50db0f64cfc8c744636b8ed992d8a70bfe82a693936f7d0d97d` |
+| `wind.mp4` | 48 | 12 | `558a5bf779b6484a2b059761e7f30af0f2cbd23b44232cb1ae122b5cbcfac099` |
+
+Every viewed extract and its individual SHA-256 are retained under `/workspace/scratch/27301e95ee53/independent-motion-view-34988388555/`. The completed `independent-view-index.json` SHA-256 is **`07d764f15f4cfd4fbf37c878e80211d54c8f5dcd202b19170edccec0c9e64025`**. These extracts reproduce decoded H.264 pixels at native dimensions; they are not claimed to be lossless source capture PNGs. No other frames were visually inspected in this task, and no continuous video playback or audio listening was performed. The native-frame inspection was completed before this record was saved at **2026-09-15T15:58:53Z**. No additional source tests or performance benchmarks were run.
+
+The report explicitly describes constructed scene states on the approach, an inspection camera and authored 12 fps. The overlay visible in the frames also labels the study synthetic/12 fps. These are actual rendered production meshes/materials in selected motion states; they are **not ordinary keyboard/pointer input, a real-time recording, measured device performance, a shrine-ending route verification or a blind reference comparison**. The report/event/geometry fields were not used as substitutes for what the reviewer saw.
+
+### Prior major: knee penetration and board-like death hems do not reproduce in the selected repaired frames
+
+**Running:** Across consecutive frames **11–15**, the blue cloth changes shape with the alternating bent legs. In the previously implicated **13/14** region, no black knee projects through the middle of a blue panel. The visible dark lower legs emerge below the cloth hems, and frame **24 / 2.0 s** also retains cloth coverage over the bent upper leg. This is an actual visual observation of the repaired frames, rather than an inference from closed geometry or capsule tests. Hidden rear/inner leg surfaces are outside this camera's view.
+
+**Death:** Across consecutive frames **8–12**, the cloth forms enclosing volumes around the bending thighs/knees. The former thin, stiff blue panels projecting out as boards/fins are not visible. Frames **18 / 1.5 s** and **35 / 2.916667 s** retain bent, covered knees after the torso falls back. No large newly exposed gap or detached cloth panel was identified in this sample. The fabric is conspicuously rounded/bulging around the bent knees, and the hem interiors have dark folds and occlusion; this does not establish fully natural drape or resolve every previously measured seam-normal difference. The late fallen head is hidden behind the body/raised legs in this view, so it is not classified as a disappearing/detached head.
+
+**Scope of closure:** The two concrete prior visual symptoms—knee emerging through the panel at run 13/14 and board-like death hems around 9/12—**are not reproduced in the exact newly viewed frames and their consecutive neighbourhoods**. This supports closing those sampled appearances. It does not establish globally intersection-free cloth, correct hidden normal orientation, all-terrain/all-camera behaviour, detailed self-collision or continuous-motion quality between every authored sample.
+
+### Neck, shoulders and held weapon in the remaining samples
+
+The visible head/neck/torso connection remains intact in the inspected run, attack, broken, turn, guard and victory poses. No obvious floating shoulder cap, exposed detached arm segment or large new neckline opening was identified. The standing actor occupies roughly a few hundred vertical pixels; the neck and fingers occupy much smaller regions. These wider motion frames add motion-context samples to the earlier eight neck close-ups; they do not replace the close-ups or establish subpixel contact precision.
+
+The held hilt remains adjacent to the hands and the blade continues from it in the viewed attack, guard and windup poses. At windup frame **6 / .5 s**, hands/hilt overlap the face in projection; this does not on its own prove an anatomical penetration. Attack frame 6 places the blade almost toward the camera; its small projected extent is not treated as a missing blade. Victory frames **6,18,30,47** show the blade raised/near the torso, then the waist/sheathing posture, then hands lowered with the sword at the waist. No large visible hand/sword detachment was identified across these samples. During death the blade/hilt lies by the feet as the torso falls; that visible release is not classified as a held-weapon failure.
+
+Guard/parry frames **6/12**, block frame 6 and hit frame 6 are limited snapshots. The parry/block samples already read as the held guard posture and do **not** establish the complete contact/deflection/recoil event. Likewise one dodge frame is not a full evasion timing review. No event or successful report counter was substituted for the missing temporal coverage. Shoulder/fabric faceting and simple materials remain appearance limitations already visible in the close-up inspection.
+
+The scene background still shows sparse, line-like bamboo foliage and simple grass/material treatment in these exact wide motion frames. The separately pending vegetation repair has not been assessed here. This confirms that the character repair observation must not be promoted to complete visual-quality acceptance.
+
+**Bounded pre-publication result:** no additional definite character structural **blocker/major** was established in these **32 native frames**. The two previously identified knee/board-hem symptoms do not reproduce in their selected repaired neighbourhoods, and no large new neck/shoulder/weapon detachment was seen. Precise physical contact, hidden cloth seams, whole-clip subjective motion, ordinary inputs, hardware frame time and complete release readiness remain outside this finite review. The footage retains the stated appearance limitations and does not establish the requested PS4-level target. Formal comparison has not been performed; all 10 formal elements remain **not measured**, and deadline **2026-09-20T07:51:53Z** is unchanged. The report says `passed` with no errors and the integrator reports experience-job success; this reviewer does not infer the final status of unrelated jobs from that statement. Only this owned evidence file was appended inside the repository; no runtime/source/test, author file, remote, staging or automation changes were made.
+
+
+## Independent leaf-orientation native comparison — 4fa13484 versus 906852
+
+The integrator assigned the finite review of **`4fa13484c88dfa3d572c189e3a8999e8f254e70e`**, CI **34992059112**, vegetation job **104458930799** (success reported by the integrator), against the previously inspected **`9068522520b0f269cc937057b444f06c7c187978`**, CI 34988388555. New originals are at `/workspace/scratch/27301e95ee53/game2-ultra/.review/34992059112/vegetation/`; the earlier originals remain at the corresponding `.review/34988388555/vegetation/` directory. This is an explicitly **source-known technical visual comparison**, not a blind test or a formal quality-score comparison.
+
+The new report records the exact 4fa13484 revision and its local SHA-256 is **`e9e1fb35cfe9dcd18e26e0297dc815e5378968e8fcc0062ee83bb0bfe0bd4276`**. The integrator supplied complete recovery SHA equality. This reviewer independently hashed the local originals and did not repeat remote retrieval. All three old MP4 hashes still match those in the earlier 906852 plant-review section. Every reported `(frame,time,camera)` tuple independently compares equal between the two revisions for all three cases, not only at frame 0. The scope and authored 12 fps are the same. This supports a comparison under the stated camera/time apparatus; it does not establish unchanged world-space leaf dimensions or a general rendering/performance invariant.
+
+### Decode and actual visual scope
+
+The three new originals were independently decoded in full using `ffmpeg -nostdin -v error -xerror -threads 2 -i <original> -map 0:v:0 -f null -`. All returned **exit 0 with empty stderr**. Independent `ffprobe -count_frames` reports H.264 **960 × 720**, **12/1 fps** for each: **360 total frames / 30 seconds**. The old 906852 complete decode remains the earlier independently recorded result; it was not needlessly repeated for this comparison.
+
+| New original MP4 | Independently decoded frames | Duration | SHA-256 |
+| --- | ---: | ---: | --- |
+| `maple.mp4` | 144 | 12 s | `068dcb10775d89a62e4397be0a6981120de54fe27fd16613c3ef469401ec2fb5` |
+| `maple-leaf.mp4` | 72 | 6 s | `a3adfc4fccd2d2b42aa1344260f50b68e212ac17f151e728b1a7e93805f38c3d` |
+| `bamboo.mp4` | 144 | 12 s | `1956ebc4aedade9342cb54d7e7026cc987adbbf4420521fc89e2565ef30dbc2b` |
+
+This reviewer individually viewed **21 distinct new native-size images**: each clip's five consecutive decoded frames **30–34** (video **2.5–2.833333 s**, authored scene time **10.5–10.833333 s**), plus original PNGs **0/132** for both whole-tree cases and **0/60** for maple-leaf. The longer endpoint pairs represent authored times **8/19 s** for maple/bamboo and **8/13 s** for maple-leaf. These are the same frame-number windows used for the earlier 906852 review. For direct side-by-side-in-sequence visual comparison, the reviewer additionally reopened **three old 906852 frame-0 PNGs**, one per case. Thus this task actually opened **24 images: 21 new plus 3 old**. Previously viewed old endpoint/consecutive frames were not falsely counted as newly reopened.
+
+| New original PNG actually viewed | SHA-256 |
+| --- | --- |
+| `maple/0000.png` | `79b161319717c62a126a6b2f63a99feba53d95b8c1e8e93166f136092c750e65` |
+| `maple/0132.png` | `fff50b10900b4a40542a828db345b183d1e36737a9903244123bd5a582c2c0a8` |
+| `maple-leaf/0000.png` | `321835a95cb713f26eb38cb6851b13f19eec25eace35dd62993cd222be053e4d` |
+| `maple-leaf/0060.png` | `8fbdb177f927f001ba03578b93743b8083c5e028bc74c178e42eb26a8773e649` |
+| `bamboo/0000.png` | `44ebb8c72e633cda1bb9ae56e2b5150ff2f83b95a7cfa5b8e777fd8ec3883240` |
+| `bamboo/0132.png` | `d4d38cef2848490ffd5740077ad02171bc8d8fd7c128321bffd5bc823e7c26e5` |
+
+New decoded-frame extracts and their individual SHA-256 values are at `/workspace/scratch/27301e95ee53/independent-vegetation-view-34992059112/`. The completed `independent-view-index.json` SHA-256 is **`f627c2b88d0efe564fc8c0bda8d7b3d93f400b1b1e987de926ea2ae37c78f57d`**. All inspection images were opened individually at original 960 × 720 size without crop, resize or retouch. The 15 MP4-derived PNGs preserve decoded H.264 pixels rather than claiming lossless source-capture equality. No continuous video playback or audio was perceived. Inspection finished before this record was saved at **2026-09-15T16:10:43.034987+00:00**. No new source, geometry, runtime test, capture or benchmark was run for this visual task.
+
+### Change in the actual leaf silhouettes
+
+**Bamboo:** In the directly reopened 906852 frame-0 wide view, most leaf groups collapse into narrow horizontal lines and small fragments. At the same camera in 4fa13484 frame 0, multiple groups instead have clear diagonal/vertical extent and individually legible long leaf shapes. Examples include the clusters on both sides of the central culm and the nearer right-side culms. They remain visible in new frame 132 and the consecutive 30–34 sequence; the improvement is not confined to a single selected instant. Some fronds remain edge-on or small, which is expected for a finite viewing direction, but the near-uniform line-like presentation has been materially reduced in this exact view.
+
+**Maple:** The new wide maple image exposes orange/brown leaf surfaces along the crown's major branches where the older image mostly showed thin dark rows. The near leaf study also shows varied projected widths and orientations, instead of almost all leaves presenting similarly broad, face-on stars together. The whole crown remains sparse and many leaves are small or dark at this camera; the repair improves the prior directional flattening without establishing a dense, realistic finished canopy. The near leaves still have repeated sharply pointed silhouettes and simple surface shading.
+
+These are visual differences in the actual provided media. **No claim of completely unchanged physical dimensions is made.** The integrator explicitly reports an existing non-uniform bamboo scale resulting in up to about **17%** dimensional difference after the reorientation. That dimensional fact was supplied for scope and was not independently measured in this media review; therefore the visible difference is not attributed solely to a size-invariant rotation.
+
+### Connections, roots and relative motion
+
+Across the new consecutive five-frame sequences, visible maple leaf stems/petioles continue to their adjoining twigs; the larger bamboo leaf groups also remain at their visible supporting branch ends. The whole-tree endpoints retain the same visible rooted trunks. No definite support break, sudden leaf-group detachment, root jump or large shadow separation was identified in the inspected samples. Fine, occluded or subpixel joints cannot be certified by these frames. Airborne small particles elsewhere in the scene are not treated as detached attached foliage merely because they move.
+
+The enlarged projected leaf surfaces make their shapes easier to follow, but temporal changes remain slight. In the maple close-up, small leaf-edge changes can be distinguished across the endpoint pair while the main branch looks nearly fixed. In the wide views, local twig/leaf changes are small compared with their sparse silhouettes and overlapping stems. The short consecutive runs do not show an obvious discontinuous snap; they also do **not** establish a clearly perceived three-level trunk/branch/leaf phase or amplitude hierarchy. The change in static leaf orientation must not be described as proof of changed or more natural wind motion. Solver metrics, vertex counts and source assertions were not substituted for this limited visual observation.
+
+As before, obstruction fading is restored to base opacity for the inspection, and sampled camera-selection counts are not complete visual-clearance tests. Some foreground trunks cross the maple view. Long ground shadows remain visible, but this task cannot resolve every deforming leaf's shadow or establish ordinary camera occlusion behaviour. Sparse grass and simple background shading remain; no full landscape motion or general material-quality acceptance is made.
+
+**Bounded adoption finding:** the specific leaf-surface collapse is visibly reduced in the assigned new wide cameras, and no additional definite structural blocker/major was established in the **21 new inspected images**. Within this finite repair comparison, no new observed defect requires rejecting the orientation change. This is not complete release approval: convincing relative wind motion, full-camera canopy appearance, naturalness, exact dimensions, contact physics, runtime performance and PS4-level quality remain unestablished by this task. The new report says `passed` with no recorded errors, and the integrator reports vegetation-job success; neither is promoted to unrelated full-CI or perceptual acceptance. All 10 formal elements remain **not measured**; deadline **2026-09-20T07:51:53Z** is unchanged. Only this owned evidence file was appended in the repository; no runtime/source/test, author file, remote, staging or automation changes were made.

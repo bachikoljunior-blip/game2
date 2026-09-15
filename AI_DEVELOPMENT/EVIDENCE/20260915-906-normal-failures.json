@@ -1,0 +1,1362 @@
+{
+  "schemaVersion": 1,
+  "author": "/root/game2_ultra_art_sound_physics/sound_revision",
+  "createdAt": "2026-09-15T15:59:09.575772+00:00",
+  "assignment": "Existing accepted Ultra author, bounded independent read-only failure analysis; no subdelegation, remote calls, runtime/test/gate edits. Only this new evidence JSON is written.",
+  "sourceRevision": "9068522520b0f269cc937057b444f06c7c187978",
+  "ciRun": 34988388555,
+  "ownerReportedJobs": {
+    "asset": "success",
+    "plant": "success",
+    "art": "success",
+    "experience": "success",
+    "fresh": "failure (terminal; not cancelled)"
+  },
+  "scope": "Exact route behavior and media integrity/coverage are separated. CI raw-decode results are read from original reports; raw WebMs are not in the recovered23-file subset. Locally available derived MP4s are independently decoded below.",
+  "formalJudgments": "all 10 not measured",
+  "deadline": "2026-09-20T07:51:53Z",
+  "originalReports": {
+    "browser-report.json": {
+      "path": ".review/34988388555/fresh/browser-report.json",
+      "sha256": "3f46168a15a14a083d5a0f15ab3b47befe0b9ba73ea8820bb3c7bea59d9595db",
+      "bytes": 401043,
+      "result": "passed"
+    },
+    "route-matrix-report.json": {
+      "path": ".review/34988388555/fresh/route-matrix-report.json",
+      "sha256": "ba8334272e726bd4a76f9b2bd3594abdf308f194d6af6acc0b7305e29e71e7b9",
+      "bytes": 203385,
+      "result": "failed"
+    },
+    "recording-report.json": {
+      "path": ".review/34988388555/fresh/recording-report.json",
+      "sha256": "95d479282a09bd511e7c8fdcaa5314326d9fbe09f81fc681cfa1cc3bf5adfb85",
+      "bytes": 42526,
+      "result": "failed"
+    }
+  },
+  "routes": [
+    {
+      "route": "PC-left",
+      "result": "passed",
+      "recordingId": "desktop",
+      "evidence": {
+        "file": "browser-report.json",
+        "jsonPointer": "/mission",
+        "recordingReportPointer": "/recordings/0"
+      },
+      "victoryObservedElapsedMs": 149204,
+      "missionDeadlineMs": 180000,
+      "deadlineMarginMs": 30796,
+      "routeChoice": "left",
+      "routePhase": "rejoined",
+      "worldTime": 34.183333333332676,
+      "kills": 3,
+      "hp": 100,
+      "signalLit": true,
+      "guardObserved": null,
+      "blockOrParryObserved": null,
+      "failure": null,
+      "afterWorld": {
+        "mode": "victory",
+        "signalLit": true,
+        "totals": {
+          "hits": 9,
+          "received": 0,
+          "parries": 0,
+          "kills": 3,
+          "dodges": 0,
+          "swings": 9
+        },
+        "player": {
+          "x": -0.806607205130339,
+          "z": -18.65834542878028,
+          "hp": 100
+        }
+      },
+      "arrivalViewObserved": true,
+      "arrivalObserved": true,
+      "signalInputObserved": true,
+      "signalLitObserved": true,
+      "missingEndingEvents": [],
+      "recordingMissionStartOffsetMs": 94048,
+      "recordingContextCloseOffsetMs": 261479,
+      "approxMissionStartToCloseMs": 167431,
+      "timingScope": "Capture event offsets are approximate wall time. Mission deadline is initialized after setup; context-close minus mission-start is not exact loop duration.",
+      "recordedEvents": [
+        {
+          "event": "title-ready",
+          "offsetMs": 6104,
+          "missionRelativeMs": -87944,
+          "detail": null
+        },
+        {
+          "event": "full-mission-start",
+          "offsetMs": 94048,
+          "missionRelativeMs": 0,
+          "detail": null
+        },
+        {
+          "event": "kills",
+          "offsetMs": 94052,
+          "missionRelativeMs": 4,
+          "detail": 0
+        },
+        {
+          "event": "kills",
+          "offsetMs": 117418,
+          "missionRelativeMs": 23370,
+          "detail": 1
+        },
+        {
+          "event": "fork-entry",
+          "offsetMs": 124290,
+          "missionRelativeMs": 30242,
+          "detail": null
+        },
+        {
+          "event": "route-choice",
+          "offsetMs": 132990,
+          "missionRelativeMs": 38942,
+          "detail": {
+            "route": "left",
+            "time": 8.299999999999992,
+            "position": {
+              "x": -3.4931074990615465,
+              "z": -4.016610383315993
+            }
+          }
+        },
+        {
+          "event": "route-landmark",
+          "offsetMs": 134170,
+          "missionRelativeMs": 40122,
+          "detail": null
+        },
+        {
+          "event": "route-consequence",
+          "offsetMs": 134170,
+          "missionRelativeMs": 40122,
+          "detail": null
+        },
+        {
+          "event": "kills",
+          "offsetMs": 143857,
+          "missionRelativeMs": 49809,
+          "detail": 2
+        },
+        {
+          "event": "rejoin-approach",
+          "offsetMs": 181071,
+          "missionRelativeMs": 87023,
+          "detail": null
+        },
+        {
+          "event": "route-rejoin",
+          "offsetMs": 188477,
+          "missionRelativeMs": 94429,
+          "detail": null
+        },
+        {
+          "event": "rejoin-camera-settled",
+          "offsetMs": 203486,
+          "missionRelativeMs": 109438,
+          "detail": null
+        },
+        {
+          "event": "rejoin-lock-acknowledged",
+          "offsetMs": 203780,
+          "missionRelativeMs": 109732,
+          "detail": null
+        },
+        {
+          "event": "kills",
+          "offsetMs": 213707,
+          "missionRelativeMs": 119659,
+          "detail": 3
+        },
+        {
+          "event": "post-rejoin-shrine-view",
+          "offsetMs": 240973,
+          "missionRelativeMs": 146925,
+          "detail": null
+        },
+        {
+          "event": "destination-arrival",
+          "offsetMs": 241887,
+          "missionRelativeMs": 147839,
+          "detail": null
+        },
+        {
+          "event": "signal-input",
+          "offsetMs": 242798,
+          "missionRelativeMs": 148750,
+          "detail": null
+        },
+        {
+          "event": "signal-lit",
+          "offsetMs": 243252,
+          "missionRelativeMs": 149204,
+          "detail": {
+            "time": 34.183333333332676,
+            "position": {
+              "x": -0.806607205130339,
+              "z": -18.65834542878028
+            },
+            "event": {
+              "type": "signal",
+              "time": 34.183333333332676,
+              "source": "player",
+              "target": "player",
+              "x": -0.806607205130339,
+              "z": -18.65834542878028
+            }
+          }
+        },
+        {
+          "event": "victory",
+          "offsetMs": 243803,
+          "missionRelativeMs": 149755,
+          "detail": null
+        },
+        {
+          "event": "clean-retry",
+          "offsetMs": 261457,
+          "missionRelativeMs": 167409,
+          "detail": null
+        },
+        {
+          "event": "context-close",
+          "offsetMs": 261479,
+          "missionRelativeMs": 167431,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "route": "PC-right",
+      "result": "passed",
+      "recordingId": "desktop-right",
+      "evidence": {
+        "file": "route-matrix-report.json",
+        "jsonPointer": "/missions/desktopRight",
+        "recordingReportPointer": "/recordings/2"
+      },
+      "victoryObservedElapsedMs": 133211,
+      "missionDeadlineMs": 180000,
+      "deadlineMarginMs": 46789,
+      "routeChoice": "right",
+      "routePhase": "rejoined",
+      "worldTime": 30.53333333333288,
+      "kills": 3,
+      "hp": 100,
+      "signalLit": true,
+      "guardObserved": null,
+      "blockOrParryObserved": null,
+      "failure": null,
+      "afterWorld": {
+        "mode": "victory",
+        "signalLit": true,
+        "totals": {
+          "hits": 9,
+          "received": 0,
+          "parries": 0,
+          "kills": 3,
+          "dodges": 0,
+          "swings": 9
+        },
+        "player": {
+          "x": 0.48427411916648677,
+          "z": -18.348532034411072,
+          "hp": 100
+        }
+      },
+      "arrivalViewObserved": true,
+      "arrivalObserved": true,
+      "signalInputObserved": true,
+      "signalLitObserved": true,
+      "missingEndingEvents": [],
+      "recordingMissionStartOffsetMs": 8052,
+      "recordingContextCloseOffsetMs": 155386,
+      "approxMissionStartToCloseMs": 147334,
+      "timingScope": "Capture event offsets are approximate wall time. Mission deadline is initialized after setup; context-close minus mission-start is not exact loop duration.",
+      "recordedEvents": [
+        {
+          "event": "full-mission-start",
+          "offsetMs": 8052,
+          "missionRelativeMs": 0,
+          "detail": null
+        },
+        {
+          "event": "kills",
+          "offsetMs": 8059,
+          "missionRelativeMs": 7,
+          "detail": 0
+        },
+        {
+          "event": "kills",
+          "offsetMs": 32381,
+          "missionRelativeMs": 24329,
+          "detail": 1
+        },
+        {
+          "event": "fork-entry",
+          "offsetMs": 39277,
+          "missionRelativeMs": 31225,
+          "detail": null
+        },
+        {
+          "event": "route-choice",
+          "offsetMs": 50379,
+          "missionRelativeMs": 42327,
+          "detail": {
+            "route": "right",
+            "time": 8.866666666666687,
+            "position": {
+              "x": 4.567909806465096,
+              "z": -4.005819612930203
+            }
+          }
+        },
+        {
+          "event": "route-landmark",
+          "offsetMs": 50916,
+          "missionRelativeMs": 42864,
+          "detail": null
+        },
+        {
+          "event": "route-consequence",
+          "offsetMs": 59609,
+          "missionRelativeMs": 51557,
+          "detail": null
+        },
+        {
+          "event": "kills",
+          "offsetMs": 71424,
+          "missionRelativeMs": 63372,
+          "detail": 2
+        },
+        {
+          "event": "rejoin-approach",
+          "offsetMs": 98294,
+          "missionRelativeMs": 90242,
+          "detail": null
+        },
+        {
+          "event": "route-rejoin",
+          "offsetMs": 103723,
+          "missionRelativeMs": 95671,
+          "detail": null
+        },
+        {
+          "event": "rejoin-camera-settled",
+          "offsetMs": 118675,
+          "missionRelativeMs": 110623,
+          "detail": null
+        },
+        {
+          "event": "rejoin-lock-acknowledged",
+          "offsetMs": 118900,
+          "missionRelativeMs": 110848,
+          "detail": null
+        },
+        {
+          "event": "kills",
+          "offsetMs": 129685,
+          "missionRelativeMs": 121633,
+          "detail": 3
+        },
+        {
+          "event": "post-rejoin-shrine-view",
+          "offsetMs": 139016,
+          "missionRelativeMs": 130964,
+          "detail": null
+        },
+        {
+          "event": "destination-arrival",
+          "offsetMs": 139926,
+          "missionRelativeMs": 131874,
+          "detail": null
+        },
+        {
+          "event": "signal-input",
+          "offsetMs": 140834,
+          "missionRelativeMs": 132782,
+          "detail": null
+        },
+        {
+          "event": "signal-lit",
+          "offsetMs": 141263,
+          "missionRelativeMs": 133211,
+          "detail": {
+            "time": 30.53333333333288,
+            "position": {
+              "x": 0.48427411916648677,
+              "z": -18.348532034411072
+            },
+            "event": {
+              "type": "signal",
+              "time": 30.53333333333288,
+              "source": "player",
+              "target": "player",
+              "x": 0.48427411916648677,
+              "z": -18.348532034411072
+            }
+          }
+        },
+        {
+          "event": "victory",
+          "offsetMs": 141273,
+          "missionRelativeMs": 133221,
+          "detail": null
+        },
+        {
+          "event": "clean-retry",
+          "offsetMs": 155386,
+          "missionRelativeMs": 147334,
+          "detail": null
+        },
+        {
+          "event": "context-close",
+          "offsetMs": 155386,
+          "missionRelativeMs": 147334,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "route": "touch-right",
+      "result": "passed",
+      "recordingId": "touch",
+      "evidence": {
+        "file": "browser-report.json",
+        "jsonPointer": "/touchMission",
+        "recordingReportPointer": "/recordings/1"
+      },
+      "victoryObservedElapsedMs": 178998,
+      "missionDeadlineMs": 180000,
+      "deadlineMarginMs": 1002,
+      "routeChoice": "right",
+      "routePhase": "rejoined",
+      "worldTime": 63.24999999999769,
+      "kills": 3,
+      "hp": 100,
+      "signalLit": true,
+      "guardObserved": true,
+      "blockOrParryObserved": true,
+      "failure": null,
+      "afterWorld": {
+        "mode": "victory",
+        "signalLit": true,
+        "totals": {
+          "hits": 9,
+          "received": 0,
+          "parries": 0,
+          "kills": 3,
+          "dodges": 1,
+          "swings": 10
+        },
+        "player": {
+          "x": 0.585262958444208,
+          "z": -18.47057791732775,
+          "hp": 100
+        }
+      },
+      "arrivalViewObserved": true,
+      "arrivalObserved": true,
+      "signalInputObserved": true,
+      "signalLitObserved": true,
+      "missingEndingEvents": [],
+      "recordingMissionStartOffsetMs": 7954,
+      "recordingContextCloseOffsetMs": 209820,
+      "approxMissionStartToCloseMs": 201866,
+      "timingScope": "Capture event offsets are approximate wall time. Mission deadline is initialized after setup; context-close minus mission-start is not exact loop duration.",
+      "recordedEvents": [
+        {
+          "event": "landscape",
+          "offsetMs": 3239,
+          "missionRelativeMs": -4715,
+          "detail": null
+        },
+        {
+          "event": "full-mission-start",
+          "offsetMs": 7954,
+          "missionRelativeMs": 0,
+          "detail": null
+        },
+        {
+          "event": "kills",
+          "offsetMs": 7958,
+          "missionRelativeMs": 4,
+          "detail": 0
+        },
+        {
+          "event": "kills",
+          "offsetMs": 61927,
+          "missionRelativeMs": 53973,
+          "detail": 1
+        },
+        {
+          "event": "fork-entry",
+          "offsetMs": 77304,
+          "missionRelativeMs": 69350,
+          "detail": null
+        },
+        {
+          "event": "route-choice",
+          "offsetMs": 90869,
+          "missionRelativeMs": 82915,
+          "detail": {
+            "route": "right",
+            "time": 26.94999999999975,
+            "position": {
+              "x": 5.239661248592311,
+              "z": -4.0109447910324185
+            }
+          }
+        },
+        {
+          "event": "route-landmark",
+          "offsetMs": 97178,
+          "missionRelativeMs": 89224,
+          "detail": null
+        },
+        {
+          "event": "route-consequence",
+          "offsetMs": 101597,
+          "missionRelativeMs": 93643,
+          "detail": null
+        },
+        {
+          "event": "kills",
+          "offsetMs": 114757,
+          "missionRelativeMs": 106803,
+          "detail": 2
+        },
+        {
+          "event": "rejoin-approach",
+          "offsetMs": 136536,
+          "missionRelativeMs": 128582,
+          "detail": null
+        },
+        {
+          "event": "route-rejoin",
+          "offsetMs": 147240,
+          "missionRelativeMs": 139286,
+          "detail": null
+        },
+        {
+          "event": "rejoin-camera-settled",
+          "offsetMs": 155876,
+          "missionRelativeMs": 147922,
+          "detail": null
+        },
+        {
+          "event": "rejoin-lock-acknowledged",
+          "offsetMs": 157878,
+          "missionRelativeMs": 149924,
+          "detail": null
+        },
+        {
+          "event": "kills",
+          "offsetMs": 172061,
+          "missionRelativeMs": 164107,
+          "detail": 3
+        },
+        {
+          "event": "post-rejoin-shrine-view",
+          "offsetMs": 182291,
+          "missionRelativeMs": 174337,
+          "detail": null
+        },
+        {
+          "event": "destination-arrival",
+          "offsetMs": 183210,
+          "missionRelativeMs": 175256,
+          "detail": null
+        },
+        {
+          "event": "signal-input",
+          "offsetMs": 184114,
+          "missionRelativeMs": 176160,
+          "detail": null
+        },
+        {
+          "event": "signal-lit",
+          "offsetMs": 186952,
+          "missionRelativeMs": 178998,
+          "detail": {
+            "time": 63.24999999999769,
+            "position": {
+              "x": 0.585262958444208,
+              "z": -18.47057791732775
+            },
+            "event": {
+              "type": "signal",
+              "time": 63.24999999999769,
+              "source": "player",
+              "target": "player",
+              "x": 0.585262958444208,
+              "z": -18.47057791732775
+            }
+          }
+        },
+        {
+          "event": "victory",
+          "offsetMs": 187462,
+          "missionRelativeMs": 179508,
+          "detail": null
+        },
+        {
+          "event": "portrait",
+          "offsetMs": 197134,
+          "missionRelativeMs": 189180,
+          "detail": null
+        },
+        {
+          "event": "clean-retry",
+          "offsetMs": 209795,
+          "missionRelativeMs": 201841,
+          "detail": null
+        },
+        {
+          "event": "context-close",
+          "offsetMs": 209820,
+          "missionRelativeMs": 201866,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "route": "touch-left",
+      "result": "failed",
+      "recordingId": "touch-left",
+      "evidence": {
+        "file": "route-matrix-report.json",
+        "jsonPointer": "/missions/touchLeft",
+        "recordingReportPointer": "/recordings/3"
+      },
+      "victoryObservedElapsedMs": null,
+      "missionDeadlineMs": 180000,
+      "deadlineMarginMs": null,
+      "routeChoice": "left",
+      "routePhase": "rejoined",
+      "worldTime": 62.999999999997705,
+      "kills": 3,
+      "hp": 28,
+      "signalLit": false,
+      "guardObserved": true,
+      "blockOrParryObserved": true,
+      "failure": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ 'playing'\n- 'victory'\n",
+      "afterWorld": {
+        "time": 62.999999999997705,
+        "remainder": 0.0001000000000012588,
+        "ticks": 3780,
+        "mode": "playing",
+        "player": {
+          "id": "player",
+          "x": -1.2224648204072106,
+          "z": -18.618583546359623,
+          "yaw": 1.5707963267948966,
+          "hp": 28,
+          "posture": 1.8499999999998553,
+          "state": "idle",
+          "age": 5.23333333333332,
+          "guardAge": 99,
+          "hit": [],
+          "cooldown": 0,
+          "stride": 83.59593698362546,
+          "dodgeX": 0.7244868523812826,
+          "dodgeZ": 0.6892886193218786
+        },
+        "enemies": [
+          {
+            "id": "sentinel",
+            "x": -8.457373127332316e-17,
+            "z": 8.290000000000015,
+            "yaw": 1.1423881217083686e-17,
+            "hp": 0,
+            "posture": 53.46666666666664,
+            "state": "dead",
+            "age": 48.93333333333184,
+            "guardAge": 99,
+            "hit": [],
+            "cooldown": 0,
+            "stride": 9.149999999999975,
+            "dodgeX": 0,
+            "dodgeZ": 0
+          },
+          {
+            "id": "retainer",
+            "x": -2.6331547657004766,
+            "z": -4.874992658823626,
+            "yaw": 2.654809460278959,
+            "hp": 0,
+            "posture": 60,
+            "state": "dead",
+            "age": 34.28333333333267,
+            "guardAge": 99,
+            "hit": [],
+            "cooldown": 0,
+            "stride": 4.388492008782011,
+            "dodgeX": 0,
+            "dodgeZ": 0
+          },
+          {
+            "id": "warden",
+            "x": -7.941613336448559,
+            "z": -18.552187560720395,
+            "yaw": -1.5103996277568534,
+            "hp": 0,
+            "posture": 57.66666666666666,
+            "state": "dead",
+            "age": 6.083333333333317,
+            "guardAge": 99,
+            "hit": [],
+            "cooldown": 0,
+            "stride": 11.910000000000023,
+            "dodgeX": 0,
+            "dodgeZ": 0
+          }
+        ],
+        "locked": null,
+        "routeChoice": "left",
+        "routePhase": "rejoined",
+        "routeChoiceTime": 22.74999999999999,
+        "routeChoicePosition": {
+          "x": -3.6274577874869904,
+          "z": -3.988728345012269
+        },
+        "routeLandmark": "石灯",
+        "routeLandmarkTime": 30.53333333333288,
+        "routeConsequence": "early-retainer",
+        "routeConsequenceTime": 23.049999999999972,
+        "routeRejoinTime": 46.63333333333197,
+        "routeRejoinPosition": {
+          "x": 0.31613948640947165,
+          "z": -17.46584066860111
+        },
+        "pathCleared": true,
+        "signalLit": false,
+        "exploration": {
+          "discovered": [],
+          "completed": [],
+          "encounters": {},
+          "dwell": {
+            "spring-basin": 0,
+            "stream-stones": 0,
+            "valley-frame": 0,
+            "sun-ring": 0,
+            "old-waystone": 0,
+            "white-tree": 0
+          },
+          "progress": {
+            "water": {
+              "direction": -1,
+              "next": 6,
+              "entrance": null
+            },
+            "ridge": {
+              "direction": 0,
+              "next": 0,
+              "entrance": null
+            },
+            "memory": {
+              "direction": 1,
+              "next": 1,
+              "entrance": null
+            }
+          },
+          "region": null,
+          "lastDiscovery": null,
+          "lastDiscoveryTime": null
+        },
+        "events": [],
+        "totals": {
+          "hits": 9,
+          "received": 3,
+          "parries": 0,
+          "kills": 3,
+          "dodges": 2,
+          "swings": 10
+        }
+      },
+      "arrivalViewObserved": false,
+      "arrivalObserved": false,
+      "signalInputObserved": false,
+      "signalLitObserved": false,
+      "missingEndingEvents": [
+        "post-rejoin-shrine-view",
+        "destination-arrival",
+        "signal-input",
+        "signal-lit",
+        "victory",
+        "clean-retry"
+      ],
+      "recordingMissionStartOffsetMs": 7747,
+      "recordingContextCloseOffsetMs": 188483,
+      "approxMissionStartToCloseMs": 180736,
+      "timingScope": "Capture event offsets are approximate wall time. Mission deadline is initialized after setup; context-close minus mission-start is not exact loop duration.",
+      "recordedEvents": [
+        {
+          "event": "full-mission-start",
+          "offsetMs": 7747,
+          "missionRelativeMs": 0,
+          "detail": null
+        },
+        {
+          "event": "kills",
+          "offsetMs": 7799,
+          "missionRelativeMs": 52,
+          "detail": 0
+        },
+        {
+          "event": "kills",
+          "offsetMs": 53183,
+          "missionRelativeMs": 45436,
+          "detail": 1
+        },
+        {
+          "event": "fork-entry",
+          "offsetMs": 65270,
+          "missionRelativeMs": 57523,
+          "detail": null
+        },
+        {
+          "event": "route-choice",
+          "offsetMs": 78593,
+          "missionRelativeMs": 70846,
+          "detail": {
+            "route": "left",
+            "time": 22.74999999999999,
+            "position": {
+              "x": -3.6274577874869904,
+              "z": -3.988728345012269
+            }
+          }
+        },
+        {
+          "event": "route-consequence",
+          "offsetMs": 82695,
+          "missionRelativeMs": 74948,
+          "detail": null
+        },
+        {
+          "event": "kills",
+          "offsetMs": 96836,
+          "missionRelativeMs": 89089,
+          "detail": 2
+        },
+        {
+          "event": "route-landmark",
+          "offsetMs": 101604,
+          "missionRelativeMs": 93857,
+          "detail": null
+        },
+        {
+          "event": "rejoin-approach",
+          "offsetMs": 138425,
+          "missionRelativeMs": 130678,
+          "detail": null
+        },
+        {
+          "event": "route-rejoin",
+          "offsetMs": 147530,
+          "missionRelativeMs": 139783,
+          "detail": null
+        },
+        {
+          "event": "rejoin-camera-settled",
+          "offsetMs": 156867,
+          "missionRelativeMs": 149120,
+          "detail": null
+        },
+        {
+          "event": "rejoin-lock-acknowledged",
+          "offsetMs": 158700,
+          "missionRelativeMs": 150953,
+          "detail": null
+        },
+        {
+          "event": "kills",
+          "offsetMs": 173208,
+          "missionRelativeMs": 165461,
+          "detail": 3
+        },
+        {
+          "event": "context-close",
+          "offsetMs": 188483,
+          "missionRelativeMs": 180736,
+          "detail": null
+        }
+      ]
+    }
+  ],
+  "residualFailure": {
+    "observed": "route-matrix-report.json#/missions/touchLeft/failure: assertRoute expected victory, retained after.mode is playing.",
+    "sourceAnchors": [
+      "fresh/route-matrix-smoke.mjs:50 (assertRoute requires victory)",
+      "fresh/route-matrix-smoke.mjs:215 (180000ms deadline and loop)",
+      "fresh/route-matrix-smoke.mjs:276 (after-world read and assertRoute)",
+      "fresh/verify-recordings.mjs:45 (raw ffmpeg decode before metadata checks)",
+      "fresh/verify-recordings.mjs:59 (required event ordering)"
+    ],
+    "classification": "Mission completion/observation failure under unchanged180-second wall budget, followed by a dependent media-coverage failure; no codec corruption shown.",
+    "measured": {
+      "failureStateRunning": true,
+      "paused": false,
+      "contextLost": false,
+      "render": {
+        "frame": 275,
+        "calls": 212,
+        "triangles": 251537,
+        "points": 0,
+        "lines": 0
+      },
+      "finalPosition": {
+        "x": -1.2224648204072106,
+        "z": -18.618583546359623
+      },
+      "signal": {
+        "x": 0,
+        "z": -19.6,
+        "radius": 1.65
+      },
+      "signalDistance": 1.5676729546079724,
+      "canLightSignalOnRetainedWorld": true,
+      "signalPredicateScope": "Read-only evaluation of actual fresh/mission.js canLightSignal on retained world; no extra simulation or input. It does not establish a before-deadline successful signal.",
+      "signalPredicateSha256": "4cf30e351b7ef95d433f46c5093ff85a3441a9c40fcaa5ebf0ee18be443637f2",
+      "lastKillCheckpoint": {
+        "worldTime": 57.24999999999803,
+        "position": {
+          "x": -9.039607677550094,
+          "z": -18.618583546359623
+        },
+        "hp": 28
+      },
+      "lastKillRecordingOffsetMs": 173208,
+      "lastKillRelativeToMissionStartMs": 165461,
+      "approxRemainingFromMissionStartBudgetMs": 14539,
+      "rejoinDefenseStatus": "passed",
+      "rejoinDefenseElapsedMs": 11170,
+      "rejoinDefenseLockPulses": 1,
+      "lockAcknowledgedPosition": {
+        "x": -9.984634204379567,
+        "z": -18.630209834954996
+      },
+      "rejoinCameraSettled": {
+        "mode": "playing",
+        "locked": null,
+        "playerState": "guard",
+        "frame": {
+          "x": -6.52888049923594,
+          "y": 3.473760099397808,
+          "z": -12.829912587189945,
+          "lookX": -7.378919888085097,
+          "lookY": 1.2909712055874052,
+          "lookZ": -19.230209811454042
+        },
+        "horizontal": 6.4564983947583965,
+        "downAngleDegrees": 18.67917505895426
+      },
+      "arrivalCameraWaitAttemptRecorded": false,
+      "lastKillToFinalLateralDisplacement": 7.817142857142883,
+      "cameraWaits": [
+        {
+          "kind": "rejoinVistaFrames",
+          "status": "passed",
+          "elapsedMs": 22221
+        },
+        {
+          "kind": "arrivalOverviewFrames",
+          "status": "passed",
+          "elapsedMs": 1477
+        },
+        {
+          "kind": "rejoinVistaFrames",
+          "status": "passed",
+          "elapsedMs": 11068
+        }
+      ]
+    },
+    "inferences": [
+      "The while loop can normally end by wall deadline or a non-playing world. Retained after state is still playing, and context-close is approximately180.736s after the start event, so budget exhaustion is the supported explanation; exact final command/deadline timestamps are not logged.",
+      "Final canLightSignal=true with no arrival/point-light input indicates the route reached eligibility by the terminal snapshot, but the next arrival/overview/input sequence was not measured. It is not evidence that the signal mechanic rejected an input.",
+      "Slow rendering and command round trips are plausible contributors, consistent with other906 measurements; this matrix report lacks per-decision and raw rAF timing, so attribution to GPU, renderer, or one last command remains unmeasured.",
+      "The recorded defense moved left to roughlyx=-9.98 and the final kill wasx=-9.04; returning toward the signal consumed the remaining approach. This is a concrete controller-path investigation target, not proof of an optimal repair."
+    ],
+    "notObserved": [
+      "No recovery-dodge/lock3000ms assertion failed in this run.",
+      "No defeat or player death at failure; HP remains28.",
+      "No browser console/page/setup/close error in matrix report.",
+      "No completed arrival overview, visible objective-arrival checkpoint, signal input, victory, or retry for touch-left."
+    ]
+  },
+  "repairClassification": [
+    {
+      "area": "touch-left mission/control and rendering path",
+      "needed": true,
+      "action": "Diagnose/fix rendering stalls or test-player command/defensive-return inefficiency within the original180-second budget; capture final decision/command and frame timings if needed. Re-run full route with the same camera/arrival/ending conditions.",
+      "doNot": "Do not extend180s, drop ending checkpoints, move/expand the signal, weaken gameplay, or accept terminal eligibility as victory."
+    },
+    {
+      "area": "recording decoder",
+      "needed": false,
+      "action": "No codec repair is indicated. Preserve raw fullDecode successes while retaining missing-event failure. A successful touch-left mission must precede its fixed-five and derived-ending evidence.",
+      "doNot": "Do not bypass post-rejoin-shrine-view or fabricate missing ending frames."
+    },
+    {
+      "area": "other three route runs",
+      "needed": false,
+      "action": "Preserve observed successes. touch-right has only1002ms deadline margin; it is a risk observation, not grounds to relabel its actual pass or relax the deadline."
+    }
+  ],
+  "media": {
+    "recordingReportResult": "failed",
+    "apparatusFailures": [
+      "route-matrix apparatus result was failed"
+    ],
+    "recordingFailures": [
+      {
+        "id": "touch-left",
+        "failure": "AssertionError [ERR_ASSERTION]: missing or misordered post-rejoin-shrine-view checkpoint"
+      }
+    ],
+    "rawCodecDecodeFailuresReported": 0,
+    "rawFullDecodePassesReported": 4,
+    "rawDecodedFrameTotal": 20366,
+    "localDerivedFullDecodes": 3,
+    "touchLeftDerivedStatus": "not generated because required post-rejoin-shrine-view and later mission events are absent; not a codec decode failure",
+    "entries": [
+      {
+        "id": "desktop",
+        "raw": {
+          "file": "desktop-continuous.webm",
+          "sha256": "6862c54e6e8f64eb25174a8721fd4ade2a746b8a708f9b170993fbcc0e25eccb",
+          "bytes": 28524001,
+          "durationSeconds": 261.36,
+          "decodedFrames": 6534,
+          "audioTracks": 0,
+          "fullDecode": "passed"
+        },
+        "rawDecodeVerificationScope": "CI original report and decoder source establish full ffmpeg decode before semantic validation. Raw WebM is absent from recovered23-file subset; this author did not locally re-decode it.",
+        "rawLocallyAvailable": false,
+        "semanticFailure": null,
+        "derived": {
+          "file": "derived/desktop-fork-to-signal.mp4",
+          "sha256": "861ea7a28944cc97cc584ffda38e3c858d6796be5975154f24d42b24874f17b1",
+          "bytes": 6010308,
+          "ciFullDecode": "passed",
+          "localFullDecode": "passed",
+          "localDecodedFrames": 3439,
+          "durationSeconds": 137.56,
+          "streamDimensions": [
+            [
+              960,
+              540
+            ]
+          ],
+          "fixedFive": {
+            "file": "derived/desktop-fixed-five.json",
+            "sha256": "8b431e9d66539349e7d66590f177c8d2e4cfaabc444d26a34db8e7fed10900a4",
+            "order": [
+              "fork-entry",
+              "route-consequence",
+              "route-landmark",
+              "route-rejoin",
+              "destination-arrival"
+            ],
+            "allFiveMetadataValid": true,
+            "sourceSha256": "6862c54e6e8f64eb25174a8721fd4ade2a746b8a708f9b170993fbcc0e25eccb"
+          },
+          "mediaScope": "Integrity and ordered metadata verified; native semantic visual-quality/source-blind acceptance is outside this read-only failure analysis."
+        }
+      },
+      {
+        "id": "touch",
+        "raw": {
+          "file": "touch-continuous.webm",
+          "sha256": "76783a56b4321aee6b0b90c00b5d946204f6fa78f18b0ca9b6fcd1da290571df",
+          "bytes": 19368921,
+          "durationSeconds": 209.84,
+          "decodedFrames": 5246,
+          "audioTracks": 0,
+          "fullDecode": "passed"
+        },
+        "rawDecodeVerificationScope": "CI original report and decoder source establish full ffmpeg decode before semantic validation. Raw WebM is absent from recovered23-file subset; this author did not locally re-decode it.",
+        "rawLocallyAvailable": false,
+        "semanticFailure": null,
+        "derived": {
+          "file": "derived/touch-fork-to-signal.mp4",
+          "sha256": "cce4fd65fa863e7b595894eb6b7bcdb8d76b6ebe0f0428e0219ffeab543da79d",
+          "bytes": 5338405,
+          "ciFullDecode": "passed",
+          "localFullDecode": "passed",
+          "localDecodedFrames": 3325,
+          "durationSeconds": 133.0,
+          "streamDimensions": [
+            [
+              960,
+              540
+            ]
+          ],
+          "fixedFive": {
+            "file": "derived/touch-fixed-five.json",
+            "sha256": "c8275e0272e8be0637cff4dbd907e60341546e4d62d107eb52eea118c57ccf8d",
+            "order": [
+              "fork-entry",
+              "route-landmark",
+              "route-consequence",
+              "route-rejoin",
+              "destination-arrival"
+            ],
+            "allFiveMetadataValid": true,
+            "sourceSha256": "76783a56b4321aee6b0b90c00b5d946204f6fa78f18b0ca9b6fcd1da290571df"
+          },
+          "mediaScope": "Integrity and ordered metadata verified; native semantic visual-quality/source-blind acceptance is outside this read-only failure analysis."
+        }
+      },
+      {
+        "id": "desktop-right",
+        "raw": {
+          "file": "desktop-right-continuous.webm",
+          "sha256": "34714639fe48d7eff66858168f323569b4a7108c3de95f048b763e8e7e55faac",
+          "bytes": 17466412,
+          "durationSeconds": 155.16,
+          "decodedFrames": 3879,
+          "audioTracks": 0,
+          "fullDecode": "passed"
+        },
+        "rawDecodeVerificationScope": "CI original report and decoder source establish full ffmpeg decode before semantic validation. Raw WebM is absent from recovered23-file subset; this author did not locally re-decode it.",
+        "rawLocallyAvailable": false,
+        "semanticFailure": null,
+        "derived": {
+          "file": "derived/desktop-right-fork-to-signal.mp4",
+          "sha256": "77038a72e14c0baa5c40d32376dcac0ed50035a406b174f24f2ae11299c3f2b3",
+          "bytes": 4807103,
+          "ciFullDecode": "passed",
+          "localFullDecode": "passed",
+          "localDecodedFrames": 2909,
+          "durationSeconds": 116.36,
+          "streamDimensions": [
+            [
+              960,
+              540
+            ]
+          ],
+          "fixedFive": {
+            "file": "derived/desktop-right-fixed-five.json",
+            "sha256": "bf99a1f6abd48ee06d15d7e530e8f0d43867e2b4fb0c5a45c47575e415d395aa",
+            "order": [
+              "fork-entry",
+              "route-landmark",
+              "route-consequence",
+              "route-rejoin",
+              "destination-arrival"
+            ],
+            "allFiveMetadataValid": true,
+            "sourceSha256": "34714639fe48d7eff66858168f323569b4a7108c3de95f048b763e8e7e55faac"
+          },
+          "mediaScope": "Integrity and ordered metadata verified; native semantic visual-quality/source-blind acceptance is outside this read-only failure analysis."
+        }
+      },
+      {
+        "id": "touch-left",
+        "raw": {
+          "file": "touch-left-continuous.webm",
+          "sha256": "1b59dbe069cae040ee501d7bb4387341b5bbbf2e94194c9770c784c3185d75bc",
+          "bytes": 19142360,
+          "durationSeconds": 188.28,
+          "decodedFrames": 4707,
+          "audioTracks": 0,
+          "fullDecode": "passed"
+        },
+        "rawDecodeVerificationScope": "CI original report and decoder source establish full ffmpeg decode before semantic validation. Raw WebM is absent from recovered23-file subset; this author did not locally re-decode it.",
+        "rawLocallyAvailable": false,
+        "semanticFailure": "AssertionError [ERR_ASSERTION]: missing or misordered post-rejoin-shrine-view checkpoint",
+        "derived": null
+      }
+    ]
+  },
+  "recoveredFiles": [
+    {
+      "path": ".review/34988388555/fresh/browser-report.json",
+      "bytes": 401043,
+      "sha256": "3f46168a15a14a083d5a0f15ab3b47befe0b9ba73ea8820bb3c7bea59d9595db"
+    },
+    {
+      "path": ".review/34988388555/fresh/build-fingerprint.json",
+      "bytes": 1388,
+      "sha256": "5089b026c4149b39379089a2616ba08c0d88456b7d258cbfd2131e55a937d156"
+    },
+    {
+      "path": ".review/34988388555/fresh/decoded/decoded-desktop-destination-arrival.png",
+      "bytes": 892752,
+      "sha256": "130b281d977bc71af5b2b34de387cd4324fcbff1a12778be782b134e48f2e737"
+    },
+    {
+      "path": ".review/34988388555/fresh/decoded/decoded-desktop-right-destination-arrival.png",
+      "bytes": 857534,
+      "sha256": "07e54b05d6ad0b99039ba75236bd39e048b2ebbf8f7b3ff8c89a970ae88bbf57"
+    },
+    {
+      "path": ".review/34988388555/fresh/decoded/decoded-desktop-right-signal-lit.png",
+      "bytes": 962326,
+      "sha256": "41cb4e95bb16bd9a83a99abd9c4d54cb576e448058c07d958b9b3b75ae99c5fb"
+    },
+    {
+      "path": ".review/34988388555/fresh/decoded/decoded-desktop-signal-lit.png",
+      "bytes": 901568,
+      "sha256": "d4baae0a8319c3a114e66ff57f102f641a7d9eb83abe828bffba7b9c061c6dd1"
+    },
+    {
+      "path": ".review/34988388555/fresh/decoded/decoded-touch-destination-arrival.png",
+      "bytes": 463169,
+      "sha256": "e4788eeca73366171705ce210d33ae573c1999b6e8921f453572528121077c34"
+    },
+    {
+      "path": ".review/34988388555/fresh/decoded/decoded-touch-signal-lit.png",
+      "bytes": 432166,
+      "sha256": "f11f2df87fbd0a6eed62a5b4da08302f4d54437f63006b0c9f9e3d5e67ea7089"
+    },
+    {
+      "path": ".review/34988388555/fresh/derived/desktop-fixed-five.json",
+      "bytes": 1975,
+      "sha256": "8b431e9d66539349e7d66590f177c8d2e4cfaabc444d26a34db8e7fed10900a4"
+    },
+    {
+      "path": ".review/34988388555/fresh/derived/desktop-fork-to-signal.mp4",
+      "bytes": 6010308,
+      "sha256": "861ea7a28944cc97cc584ffda38e3c858d6796be5975154f24d42b24874f17b1"
+    },
+    {
+      "path": ".review/34988388555/fresh/derived/desktop-right-fixed-five.json",
+      "bytes": 2027,
+      "sha256": "bf99a1f6abd48ee06d15d7e530e8f0d43867e2b4fb0c5a45c47575e415d395aa"
+    },
+    {
+      "path": ".review/34988388555/fresh/derived/desktop-right-fork-to-signal.mp4",
+      "bytes": 4807103,
+      "sha256": "77038a72e14c0baa5c40d32376dcac0ed50035a406b174f24f2ae11299c3f2b3"
+    },
+    {
+      "path": ".review/34988388555/fresh/derived/touch-fixed-five.json",
+      "bytes": 1971,
+      "sha256": "c8275e0272e8be0637cff4dbd907e60341546e4d62d107eb52eea118c57ccf8d"
+    },
+    {
+      "path": ".review/34988388555/fresh/derived/touch-fork-to-signal.mp4",
+      "bytes": 5338405,
+      "sha256": "cce4fd65fa863e7b595894eb6b7bcdb8d76b6ebe0f0428e0219ffeab543da79d"
+    },
+    {
+      "path": ".review/34988388555/fresh/desktop-right-victory.png",
+      "bytes": 657564,
+      "sha256": "9bcfe0f8ed8f274fcd5deeb073020e1e0e91d32404a4119a18ba7effd59ec3c5"
+    },
+    {
+      "path": ".review/34988388555/fresh/encounter.png",
+      "bytes": 1009417,
+      "sha256": "76f4245f5f767d97ae266c1fde070a4e00de17e4570c159851e3e0d71b85c7e2"
+    },
+    {
+      "path": ".review/34988388555/fresh/mission-victory.png",
+      "bytes": 645119,
+      "sha256": "29abeb3eb0360b2b683c9df16362ebf00638676de7419c200667a1f60d429069"
+    },
+    {
+      "path": ".review/34988388555/fresh/mobile-mission-victory-portrait.png",
+      "bytes": 188264,
+      "sha256": "94e6c1d9dcf019158d2ef0a2cf0fb5e8ec74e729183355a284b6291adf45a95c"
+    },
+    {
+      "path": ".review/34988388555/fresh/mobile-mission-victory.png",
+      "bytes": 272802,
+      "sha256": "ed172942d374d033dee3748970a0c55083e1828539491d12285be8627b8e6f90"
+    },
+    {
+      "path": ".review/34988388555/fresh/mobile.png",
+      "bytes": 362984,
+      "sha256": "9f5adf80d0719df0cb624b7969d4dbf73658aed30e457eace9d6797585e2b364"
+    },
+    {
+      "path": ".review/34988388555/fresh/recording-report.json",
+      "bytes": 42526,
+      "sha256": "95d479282a09bd511e7c8fdcaa5314326d9fbe09f81fc681cfa1cc3bf5adfb85"
+    },
+    {
+      "path": ".review/34988388555/fresh/route-matrix-report.json",
+      "bytes": 203385,
+      "sha256": "ba8334272e726bd4a76f9b2bd3594abdf308f194d6af6acc0b7305e29e71e7b9"
+    },
+    {
+      "path": ".review/34988388555/fresh/title.png",
+      "bytes": 924584,
+      "sha256": "85873debe70f477b2b527ff6d24ea69a20e486519e19d9c8ef1c65608f728f38"
+    }
+  ],
+  "validation": {
+    "result": "passed",
+    "assertions": 55,
+    "checks": [
+      "all three native reports identify906 source",
+      "exact report outcomes retained",
+      "no reported browser-console or setup/close errors",
+      "PC-left: exact victory/route/3kill/signal",
+      "PC-left: victory observed inside original180s",
+      "PC-left: complete ordered ending/retry events",
+      "PC-left: recording finalized",
+      "PC-right: exact victory/route/3kill/signal",
+      "PC-right: victory observed inside original180s",
+      "PC-right: complete ordered ending/retry events",
+      "PC-right: recording finalized",
+      "touch-right: exact victory/route/3kill/signal",
+      "touch-right: victory observed inside original180s",
+      "touch-right: complete ordered ending/retry events",
+      "touch-right: recording finalized",
+      "touch-left: alive3kills but no victory",
+      "touch-left: missing actual arrival/signal observations",
+      "touch-left: recording finalized",
+      "terminal touch-left state is eligible for signal by recorded data",
+      "read-only signal predicate used exact906 source",
+      "decode stage has exactly one parent-apparatus failure",
+      "decode stage specific dependent missing-event failure",
+      "desktop: CI raw decode passed",
+      "desktop: fixed-five source binding",
+      "desktop: distinct criterion-bearing five frames",
+      "desktop: fixed-five capture and semantic order",
+      "desktop: fixed-five equals original snapshot metadata",
+      "desktop: recovered derived bytes match CI SHA/size",
+      "desktop: local full derived ffmpeg decode succeeds",
+      "desktop: derived duration matches CI",
+      "touch: CI raw decode passed",
+      "touch: fixed-five source binding",
+      "touch: distinct criterion-bearing five frames",
+      "touch: fixed-five capture and semantic order",
+      "touch: fixed-five equals original snapshot metadata",
+      "touch: recovered derived bytes match CI SHA/size",
+      "touch: local full derived ffmpeg decode succeeds",
+      "touch: derived duration matches CI",
+      "desktop-right: CI raw decode passed",
+      "desktop-right: fixed-five source binding",
+      "desktop-right: distinct criterion-bearing five frames",
+      "desktop-right: fixed-five capture and semantic order",
+      "desktop-right: fixed-five equals original snapshot metadata",
+      "desktop-right: recovered derived bytes match CI SHA/size",
+      "desktop-right: local full derived ffmpeg decode succeeds",
+      "desktop-right: derived duration matches CI",
+      "touch-left: CI raw decode passed",
+      "touch-left: derivation stopped at missing-checkpoint gate",
+      "recovered native evidence subset has23 files",
+      "decoded/decoded-desktop-destination-arrival.png: recovered selected snapshot matches original metadata",
+      "decoded/decoded-desktop-signal-lit.png: recovered selected snapshot matches original metadata",
+      "decoded/decoded-touch-destination-arrival.png: recovered selected snapshot matches original metadata",
+      "decoded/decoded-touch-signal-lit.png: recovered selected snapshot matches original metadata",
+      "decoded/decoded-desktop-right-destination-arrival.png: recovered selected snapshot matches original metadata",
+      "decoded/decoded-desktop-right-signal-lit.png: recovered selected snapshot matches original metadata"
+    ],
+    "originalReportsAndMediaUnmodified": true,
+    "runtimeAndTimeoutGatesUnmodified": true,
+    "outputFilesWritten": 1
+  }
+}

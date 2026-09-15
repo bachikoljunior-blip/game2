@@ -1,0 +1,3424 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-15T15:26:28.469Z",
+  "result": "passed",
+  "sourceRevision": "9068522520b0f269cc937057b444f06c7c187978",
+  "ciClaimedRevision": "9068522520b0f269cc937057b444f06c7c187978",
+  "apparatusSha256": "34d122a1f06ac5dfd98a7bf537ba9674f2cd08710e28b002347475436e0ef4aa",
+  "environment": "Chromium / SwiftShader production preview; not physical-device performance or a visual quality comparison",
+  "textureObservationScope": "Decoded images supplied to the original WebGL API; void API calls do not prove successful GPU transfer or absence of unreported GPU errors. GL error state is not consumed.",
+  "url": "http://127.0.0.1:4178/?diagnostic=1",
+  "requiredTextureStems": [
+    "young-asian-male",
+    "brown-eye",
+    "short-hair",
+    "eyebrows"
+  ],
+  "heldOrAbortedTexture": "young-asian-male",
+  "limits": {
+    "assetTimeoutMs": 60000,
+    "holdMs": 350,
+    "settleMs": 500,
+    "captureTimeoutMs": 30000,
+    "renderWaitTimeoutMs": 15000,
+    "slowCaptureMs": 15000
+  },
+  "cases": [
+    {
+      "mode": "normal",
+      "result": "passed",
+      "startedAt": "2026-09-15T15:26:28.525Z",
+      "observations": [
+        {
+          "phase": "held-pending",
+          "atMs": 3918.699999999997,
+          "running": false,
+          "paused": false,
+          "contextLost": false,
+          "worldTime": 0,
+          "assets": {
+            "source": "MakeHuman MPFB hm08",
+            "license": "CC0-1.0",
+            "textureCount": 4,
+            "geometry": "static head-neck and posed hands; native eye/hair/eyebrow fitting",
+            "skin": "young_asian_male / diffuse only",
+            "eyes": "Low-Poly / brown",
+            "hair": "short04 with original tied knot",
+            "state": "loading",
+            "pendingCount": 1,
+            "readyCount": 3,
+            "failedCount": 0,
+            "error": null
+          },
+          "render": {
+            "frame": 0,
+            "calls": 0,
+            "triangles": 0,
+            "points": 0,
+            "lines": 0
+          },
+          "actors": {
+            "partsByRig": {},
+            "rigs": {},
+            "motionByRig": {},
+            "assets": {
+              "source": "MakeHuman MPFB hm08",
+              "license": "CC0-1.0",
+              "textureCount": 4,
+              "geometry": "static head-neck and posed hands; native eye/hair/eyebrow fitting",
+              "skin": "young_asian_male / diffuse only",
+              "eyes": "Low-Poly / brown",
+              "hair": "short04 with original tied knot",
+              "state": "loading",
+              "pendingCount": 1,
+              "readyCount": 3,
+              "failedCount": 0,
+              "error": null
+            }
+          },
+          "start": {
+            "disabled": true,
+            "text": "準備中…"
+          },
+          "message": "谷に残る人々へ、山道が開いたことを知らせる。道を塞ぐ剣士を退け、社の正面の灯をともそう。",
+          "observation": {
+            "unhandledRejections": [],
+            "textureApiSubmissions": [],
+            "wrappedMethods": [
+              "WebGLRenderingContext.texImage2D",
+              "WebGLRenderingContext.texSubImage2D",
+              "WebGL2RenderingContext.texImage2D",
+              "WebGL2RenderingContext.texSubImage2D"
+            ]
+          }
+        },
+        {
+          "phase": "held-after-click",
+          "atMs": 4320.400000000009,
+          "running": false,
+          "paused": false,
+          "contextLost": false,
+          "worldTime": 0,
+          "assets": {
+            "source": "MakeHuman MPFB hm08",
+            "license": "CC0-1.0",
+            "textureCount": 4,
+            "geometry": "static head-neck and posed hands; native eye/hair/eyebrow fitting",
+            "skin": "young_asian_male / diffuse only",
+            "eyes": "Low-Poly / brown",
+            "hair": "short04 with original tied knot",
+            "state": "loading",
+            "pendingCount": 1,
+            "readyCount": 3,
+            "failedCount": 0,
+            "error": null
+          },
+          "render": {
+            "frame": 0,
+            "calls": 0,
+            "triangles": 0,
+            "points": 0,
+            "lines": 0
+          },
+          "actors": {
+            "partsByRig": {},
+            "rigs": {},
+            "motionByRig": {},
+            "assets": {
+              "source": "MakeHuman MPFB hm08",
+              "license": "CC0-1.0",
+              "textureCount": 4,
+              "geometry": "static head-neck and posed hands; native eye/hair/eyebrow fitting",
+              "skin": "young_asian_male / diffuse only",
+              "eyes": "Low-Poly / brown",
+              "hair": "short04 with original tied knot",
+              "state": "loading",
+              "pendingCount": 1,
+              "readyCount": 3,
+              "failedCount": 0,
+              "error": null
+            }
+          },
+          "start": {
+            "disabled": true,
+            "text": "準備中…"
+          },
+          "message": "谷に残る人々へ、山道が開いたことを知らせる。道を塞ぐ剣士を退け、社の正面の灯をともそう。",
+          "observation": {
+            "unhandledRejections": [],
+            "textureApiSubmissions": [],
+            "wrappedMethods": [
+              "WebGLRenderingContext.texImage2D",
+              "WebGLRenderingContext.texSubImage2D",
+              "WebGL2RenderingContext.texImage2D",
+              "WebGL2RenderingContext.texSubImage2D"
+            ]
+          }
+        },
+        {
+          "phase": "ready-before-start",
+          "atMs": 7922.900000000009,
+          "running": false,
+          "paused": false,
+          "contextLost": false,
+          "worldTime": 0,
+          "assets": {
+            "source": "MakeHuman MPFB hm08",
+            "license": "CC0-1.0",
+            "textureCount": 4,
+            "geometry": "static head-neck and posed hands; native eye/hair/eyebrow fitting",
+            "skin": "young_asian_male / diffuse only",
+            "eyes": "Low-Poly / brown",
+            "hair": "short04 with original tied knot",
+            "state": "ready",
+            "pendingCount": 0,
+            "readyCount": 4,
+            "failedCount": 0,
+            "error": null
+          },
+          "render": {
+            "frame": 2,
+            "calls": 389,
+            "triangles": 489646,
+            "points": 0,
+            "lines": 0
+          },
+          "actors": {
+            "partsByRig": {
+              "player": 113,
+              "sentinel": 115,
+              "retainer": 115,
+              "warden": 120
+            },
+            "rigs": {
+              "player": {
+                "generatedParts": 113,
+                "drawMeshes": 57,
+                "triangles": 53748,
+                "groundContactPoints": 28896,
+                "articulatedJoints": 24,
+                "surfaceConstruction": "CC0-native-head-neck-hands-and-original-draped-clothing",
+                "externalRuntimeAssets": 5,
+                "importedTextureAssets": 4,
+                "importedGeometryAssets": 1,
+                "assetSource": "MakeHuman MPFB hm08 CC0",
+                "textureState": "ready"
+              },
+              "sentinel": {
+                "generatedParts": 115,
+                "drawMeshes": 57,
+                "triangles": 54940,
+                "groundContactPoints": 29496,
+                "articulatedJoints": 24,
+                "surfaceConstruction": "CC0-native-head-neck-hands-and-original-draped-clothing",
+                "externalRuntimeAssets": 5,
+                "importedTextureAssets": 4,
+                "importedGeometryAssets": 1,
+                "assetSource": "MakeHuman MPFB hm08 CC0",
+                "textureState": "ready"
+              },
+              "retainer": {
+                "generatedParts": 115,
+                "drawMeshes": 57,
+                "triangles": 54940,
+                "groundContactPoints": 29496,
+                "articulatedJoints": 24,
+                "surfaceConstruction": "CC0-native-head-neck-hands-and-original-draped-clothing",
+                "externalRuntimeAssets": 5,
+                "importedTextureAssets": 4,
+                "importedGeometryAssets": 1,
+                "assetSource": "MakeHuman MPFB hm08 CC0",
+                "textureState": "ready"
+              },
+              "warden": {
+                "generatedParts": 120,
+                "drawMeshes": 59,
+                "triangles": 61396,
+                "groundContactPoints": 32804,
+                "articulatedJoints": 24,
+                "surfaceConstruction": "CC0-native-head-neck-hands-and-original-draped-clothing",
+                "externalRuntimeAssets": 5,
+                "importedTextureAssets": 4,
+                "importedGeometryAssets": 1,
+                "assetSource": "MakeHuman MPFB hm08 CC0",
+                "textureState": "ready"
+              }
+            },
+            "motionByRig": {
+              "player": {
+                "state": "idle",
+                "phase": "idle",
+                "simulationAge": 0,
+                "visualAge": 0,
+                "victoryAge": 0,
+                "visualTime": 0,
+                "root": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 18,
+                  "yaw": 0
+                },
+                "pelvis": [
+                  0,
+                  0.916,
+                  0
+                ],
+                "speed": 0,
+                "gaitPhase": 0,
+                "feet": [
+                  {
+                    "side": -1,
+                    "kneeFlexion": 0.5389717565750396,
+                    "kneeRotationX": -0.5389717565750398,
+                    "kneeLocal": [
+                      -0.15,
+                      0.5126671649785339,
+                      -0.14907254674669917
+                    ],
+                    "footLocal": [
+                      -0.15,
+                      0.09000000000000019,
+                      -0.07
+                    ],
+                    "footWorld": {
+                      "x": -0.15,
+                      "y": 0.09000000000000019,
+                      "z": 17.93
+                    },
+                    "contact": false,
+                    "reachError": 0
+                  },
+                  {
+                    "side": 1,
+                    "kneeFlexion": 0.5265936857202709,
+                    "kneeRotationX": -0.5265936857202712,
+                    "kneeLocal": [
+                      0.15,
+                      0.49154392077187853,
+                      -0.06882613461680494
+                    ],
+                    "footLocal": [
+                      0.15,
+                      0.09000000000000008,
+                      0.085
+                    ],
+                    "footWorld": {
+                      "x": 0.15,
+                      "y": 0.09000000000000008,
+                      "z": 18.085
+                    },
+                    "contact": false,
+                    "reachError": 0
+                  }
+                ],
+                "hands": [
+                  {
+                    "side": -1,
+                    "reachError": 0,
+                    "gripWeight": 0
+                  },
+                  {
+                    "side": 1,
+                    "reachError": 0,
+                    "gripWeight": 1
+                  }
+                ],
+                "attackActive": false,
+                "sheathed": false,
+                "sheathProgress": 0,
+                "cloth": 0,
+                "bodyGroundLift": 0,
+                "weaponGroundLift": 0,
+                "weaponGroundTilt": 0,
+                "bladeTipWorld": [
+                  0.4427634365482029,
+                  0.6799489160690587,
+                  16.71246032905248
+                ],
+                "bladeVisible": true
+              },
+              "sentinel": {
+                "state": "idle",
+                "phase": "idle",
+                "simulationAge": 0,
+                "visualAge": 0,
+                "victoryAge": 0,
+                "visualTime": 0,
+                "root": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 1,
+                  "yaw": 0
+                },
+                "pelvis": [
+                  0,
+                  0.916,
+                  0
+                ],
+                "speed": 0,
+                "gaitPhase": 0,
+                "feet": [
+                  {
+                    "side": -1,
+                    "kneeFlexion": 0.5389717565750396,
+                    "kneeRotationX": -0.5389717565750398,
+                    "kneeLocal": [
+                      -0.15,
+                      0.5126671649785339,
+                      -0.14907254674669917
+                    ],
+                    "footLocal": [
+                      -0.15,
+                      0.09000000000000019,
+                      -0.07
+                    ],
+                    "footWorld": {
+                      "x": -0.15,
+                      "y": 0.09000000000000019,
+                      "z": 0.9299999999999999
+                    },
+                    "contact": false,
+                    "reachError": 0
+                  },
+                  {
+                    "side": 1,
+                    "kneeFlexion": 0.5265936857202709,
+                    "kneeRotationX": -0.5265936857202712,
+                    "kneeLocal": [
+                      0.15,
+                      0.49154392077187853,
+                      -0.06882613461680494
+                    ],
+                    "footLocal": [
+                      0.15,
+                      0.09000000000000008,
+                      0.085
+                    ],
+                    "footWorld": {
+                      "x": 0.15,
+                      "y": 0.09000000000000008,
+                      "z": 1.085
+                    },
+                    "contact": false,
+                    "reachError": 0
+                  }
+                ],
+                "hands": [
+                  {
+                    "side": -1,
+                    "reachError": 0,
+                    "gripWeight": 0
+                  },
+                  {
+                    "side": 1,
+                    "reachError": 0,
+                    "gripWeight": 1
+                  }
+                ],
+                "attackActive": false,
+                "sheathed": false,
+                "sheathProgress": 0,
+                "cloth": 0,
+                "bodyGroundLift": 0,
+                "weaponGroundLift": 0,
+                "weaponGroundTilt": 0,
+                "bladeTipWorld": [
+                  0.4427634365482029,
+                  0.6799489160690587,
+                  -0.2875396709475204
+                ],
+                "bladeVisible": true
+              },
+              "retainer": {
+                "state": "idle",
+                "phase": "idle",
+                "simulationAge": 0,
+                "visualAge": 0,
+                "victoryAge": 0,
+                "visualTime": 0,
+                "root": {
+                  "x": -3,
+                  "y": 0,
+                  "z": -9,
+                  "yaw": 0
+                },
+                "pelvis": [
+                  0,
+                  0.916,
+                  0
+                ],
+                "speed": 0,
+                "gaitPhase": 0,
+                "feet": [
+                  {
+                    "side": -1,
+                    "kneeFlexion": 0.5389717565750396,
+                    "kneeRotationX": -0.5389717565750398,
+                    "kneeLocal": [
+                      -0.15,
+                      0.5126671649785339,
+                      -0.14907254674669917
+                    ],
+                    "footLocal": [
+                      -0.15,
+                      0.09000000000000019,
+                      -0.07
+                    ],
+                    "footWorld": {
+                      "x": -3.15,
+                      "y": 0.09000000000000019,
+                      "z": -9.07
+                    },
+                    "contact": false,
+                    "reachError": 0
+                  },
+                  {
+                    "side": 1,
+                    "kneeFlexion": 0.5265936857202709,
+                    "kneeRotationX": -0.5265936857202712,
+                    "kneeLocal": [
+                      0.15,
+                      0.49154392077187853,
+                      -0.06882613461680494
+                    ],
+                    "footLocal": [
+                      0.15,
+                      0.09000000000000008,
+                      0.085
+                    ],
+                    "footWorld": {
+                      "x": -2.85,
+                      "y": 0.09000000000000008,
+                      "z": -8.915
+                    },
+                    "contact": false,
+                    "reachError": 0
+                  }
+                ],
+                "hands": [
+                  {
+                    "side": -1,
+                    "reachError": 0,
+                    "gripWeight": 0
+                  },
+                  {
+                    "side": 1,
+                    "reachError": 0,
+                    "gripWeight": 1
+                  }
+                ],
+                "attackActive": false,
+                "sheathed": false,
+                "sheathProgress": 0,
+                "cloth": 0,
+                "bodyGroundLift": 0,
+                "weaponGroundLift": 0,
+                "weaponGroundTilt": 0,
+                "bladeTipWorld": [
+                  -2.557236563451797,
+                  0.6799489160690587,
+                  -10.28753967094752
+                ],
+                "bladeVisible": true
+              },
+              "warden": {
+                "state": "idle",
+                "phase": "idle",
+                "simulationAge": 0,
+                "visualAge": 0,
+                "victoryAge": 0,
+                "visualTime": 0,
+                "root": {
+                  "x": 3,
+                  "y": 0,
+                  "z": -16,
+                  "yaw": 0
+                },
+                "pelvis": [
+                  0,
+                  0.916,
+                  0
+                ],
+                "speed": 0,
+                "gaitPhase": 0,
+                "feet": [
+                  {
+                    "side": -1,
+                    "kneeFlexion": 0.5389717565750396,
+                    "kneeRotationX": -0.5389717565750398,
+                    "kneeLocal": [
+                      -0.15,
+                      0.5126671649785339,
+                      -0.14907254674669917
+                    ],
+                    "footLocal": [
+                      -0.15,
+                      0.09000000000000019,
+                      -0.07
+                    ],
+                    "footWorld": {
+                      "x": 2.85,
+                      "y": 0.09000000000000019,
+                      "z": -16.07
+                    },
+                    "contact": false,
+                    "reachError": 0
+                  },
+                  {
+                    "side": 1,
+                    "kneeFlexion": 0.5265936857202709,
+                    "kneeRotationX": -0.5265936857202712,
+                    "kneeLocal": [
+                      0.15,
+                      0.49154392077187853,
+                      -0.06882613461680494
+                    ],
+                    "footLocal": [
+                      0.15,
+                      0.09000000000000008,
+                      0.085
+                    ],
+                    "footWorld": {
+                      "x": 3.15,
+                      "y": 0.09000000000000008,
+                      "z": -15.915
+                    },
+                    "contact": false,
+                    "reachError": 0
+                  }
+                ],
+                "hands": [
+                  {
+                    "side": -1,
+                    "reachError": 0,
+                    "gripWeight": 0
+                  },
+                  {
+                    "side": 1,
+                    "reachError": 0,
+                    "gripWeight": 1
+                  }
+                ],
+                "attackActive": false,
+                "sheathed": false,
+                "sheathProgress": 0,
+                "cloth": 0,
+                "bodyGroundLift": 0,
+                "weaponGroundLift": 0,
+                "weaponGroundTilt": 0,
+                "bladeTipWorld": [
+                  3.442763436548203,
+                  0.6799489160690587,
+                  -17.28753967094752
+                ],
+                "bladeVisible": true
+              }
+            },
+            "assets": {
+              "source": "MakeHuman MPFB hm08",
+              "license": "CC0-1.0",
+              "textureCount": 4,
+              "geometry": "static head-neck and posed hands; native eye/hair/eyebrow fitting",
+              "skin": "young_asian_male / diffuse only",
+              "eyes": "Low-Poly / brown",
+              "hair": "short04 with original tied knot",
+              "state": "ready",
+              "pendingCount": 0,
+              "readyCount": 4,
+              "failedCount": 0,
+              "error": null
+            }
+          },
+          "start": {
+            "disabled": false,
+            "text": "山道へ"
+          },
+          "message": "谷に残る人々へ、山道が開いたことを知らせる。道を塞ぐ剣士を退け、社の正面の灯をともそう。",
+          "observation": {
+            "unhandledRejections": [],
+            "textureApiSubmissions": [
+              {
+                "stem": "short-hair",
+                "url": "http://127.0.0.1:4178/assets/short-hair-hshXq62u.png",
+                "method": "texSubImage2D",
+                "type": "WebGL2RenderingContext",
+                "atMs": 6944.100000000006,
+                "complete": true,
+                "naturalWidth": 2048,
+                "naturalHeight": 2048
+              },
+              {
+                "stem": "young-asian-male",
+                "url": "http://127.0.0.1:4178/assets/young-asian-male-CWnOsWsU.png",
+                "method": "texSubImage2D",
+                "type": "WebGL2RenderingContext",
+                "atMs": 7663.500000000015,
+                "complete": true,
+                "naturalWidth": 2048,
+                "naturalHeight": 2048
+              },
+              {
+                "stem": "brown-eye",
+                "url": "http://127.0.0.1:4178/assets/brown-eye-DsUMil5J.png",
+                "method": "texSubImage2D",
+                "type": "WebGL2RenderingContext",
+                "atMs": 7694.800000000003,
+                "complete": true,
+                "naturalWidth": 1024,
+                "naturalHeight": 1024
+              },
+              {
+                "stem": "eyebrows",
+                "url": "http://127.0.0.1:4178/assets/eyebrows-CAObckBg.png",
+                "method": "texSubImage2D",
+                "type": "WebGL2RenderingContext",
+                "atMs": 7720.300000000003,
+                "complete": true,
+                "naturalWidth": 512,
+                "naturalHeight": 512
+              }
+            ],
+            "wrappedMethods": [
+              "WebGLRenderingContext.texImage2D",
+              "WebGLRenderingContext.texSubImage2D",
+              "WebGL2RenderingContext.texImage2D",
+              "WebGL2RenderingContext.texSubImage2D"
+            ]
+          }
+        },
+        {
+          "phase": "started-and-rendered",
+          "atMs": 11348.500000000015,
+          "running": true,
+          "paused": false,
+          "contextLost": false,
+          "worldTime": 0.35,
+          "assets": {
+            "source": "MakeHuman MPFB hm08",
+            "license": "CC0-1.0",
+            "textureCount": 4,
+            "geometry": "static head-neck and posed hands; native eye/hair/eyebrow fitting",
+            "skin": "young_asian_male / diffuse only",
+            "eyes": "Low-Poly / brown",
+            "hair": "short04 with original tied knot",
+            "state": "ready",
+            "pendingCount": 0,
+            "readyCount": 4,
+            "failedCount": 0,
+            "error": null
+          },
+          "render": {
+            "frame": 14,
+            "calls": 389,
+            "triangles": 489646,
+            "points": 0,
+            "lines": 0
+          },
+          "actors": {
+            "partsByRig": {
+              "player": 113,
+              "sentinel": 115,
+              "retainer": 115,
+              "warden": 120
+            },
+            "rigs": {
+              "player": {
+                "generatedParts": 113,
+                "drawMeshes": 57,
+                "triangles": 53748,
+                "groundContactPoints": 28896,
+                "articulatedJoints": 24,
+                "surfaceConstruction": "CC0-native-head-neck-hands-and-original-draped-clothing",
+                "externalRuntimeAssets": 5,
+                "importedTextureAssets": 4,
+                "importedGeometryAssets": 1,
+                "assetSource": "MakeHuman MPFB hm08 CC0",
+                "textureState": "ready"
+              },
+              "sentinel": {
+                "generatedParts": 115,
+                "drawMeshes": 57,
+                "triangles": 54940,
+                "groundContactPoints": 29496,
+                "articulatedJoints": 24,
+                "surfaceConstruction": "CC0-native-head-neck-hands-and-original-draped-clothing",
+                "externalRuntimeAssets": 5,
+                "importedTextureAssets": 4,
+                "importedGeometryAssets": 1,
+                "assetSource": "MakeHuman MPFB hm08 CC0",
+                "textureState": "ready"
+              },
+              "retainer": {
+                "generatedParts": 115,
+                "drawMeshes": 57,
+                "triangles": 54940,
+                "groundContactPoints": 29496,
+                "articulatedJoints": 24,
+                "surfaceConstruction": "CC0-native-head-neck-hands-and-original-draped-clothing",
+                "externalRuntimeAssets": 5,
+                "importedTextureAssets": 4,
+                "importedGeometryAssets": 1,
+                "assetSource": "MakeHuman MPFB hm08 CC0",
+                "textureState": "ready"
+              },
+              "warden": {
+                "generatedParts": 120,
+                "drawMeshes": 59,
+                "triangles": 61396,
+                "groundContactPoints": 32804,
+                "articulatedJoints": 24,
+                "surfaceConstruction": "CC0-native-head-neck-hands-and-original-draped-clothing",
+                "externalRuntimeAssets": 5,
+                "importedTextureAssets": 4,
+                "importedGeometryAssets": 1,
+                "assetSource": "MakeHuman MPFB hm08 CC0",
+                "textureState": "ready"
+              }
+            },
+            "motionByRig": {
+              "player": {
+                "state": "idle",
+                "phase": "idle",
+                "simulationAge": 0.35,
+                "visualAge": 0.35,
+                "victoryAge": 0,
+                "visualTime": 0.21659999999999857,
+                "root": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 18,
+                  "yaw": 0
+                },
+                "pelvis": [
+                  0,
+                  0.916,
+                  0
+                ],
+                "speed": 0,
+                "gaitPhase": 0,
+                "feet": [
+                  {
+                    "side": -1,
+                    "kneeFlexion": 0.5389717565750396,
+                    "kneeRotationX": -0.5389717565750398,
+                    "kneeLocal": [
+                      -0.15,
+                      0.5126671649785339,
+                      -0.14907254674669917
+                    ],
+                    "footLocal": [
+                      -0.15,
+                      0.09000000000000019,
+                      -0.07
+                    ],
+                    "footWorld": {
+                      "x": -0.15,
+                      "y": 0.09000000000000019,
+                      "z": 17.93
+                    },
+                    "contact": false,
+                    "reachError": 0
+                  },
+                  {
+                    "side": 1,
+                    "kneeFlexion": 0.5265936857202709,
+                    "kneeRotationX": -0.5265936857202712,
+                    "kneeLocal": [
+                      0.15,
+                      0.49154392077187853,
+                      -0.06882613461680494
+                    ],
+                    "footLocal": [
+                      0.15,
+                      0.09000000000000008,
+                      0.085
+                    ],
+                    "footWorld": {
+                      "x": 0.15,
+                      "y": 0.09000000000000008,
+                      "z": 18.085
+                    },
+                    "contact": false,
+                    "reachError": 0
+                  }
+                ],
+                "hands": [
+                  {
+                    "side": -1,
+                    "reachError": 0,
+                    "gripWeight": 0
+                  },
+                  {
+                    "side": 1,
+                    "reachError": 0,
+                    "gripWeight": 1
+                  }
+                ],
+                "attackActive": false,
+                "sheathed": false,
+                "sheathProgress": 0,
+                "cloth": 0.006513436901153575,
+                "bodyGroundLift": 0,
+                "weaponGroundLift": 0,
+                "weaponGroundTilt": 0,
+                "bladeTipWorld": [
+                  0.4427634365482029,
+                  0.6799489160690587,
+                  16.71246032905248
+                ],
+                "bladeVisible": true
+              },
+              "sentinel": {
+                "state": "idle",
+                "phase": "idle",
+                "simulationAge": 0.35,
+                "visualAge": 0.35,
+                "victoryAge": 0,
+                "visualTime": 0.21659999999999857,
+                "root": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 1,
+                  "yaw": 0
+                },
+                "pelvis": [
+                  0,
+                  0.916,
+                  0
+                ],
+                "speed": 0,
+                "gaitPhase": 0,
+                "feet": [
+                  {
+                    "side": -1,
+                    "kneeFlexion": 0.5389717565750396,
+                    "kneeRotationX": -0.5389717565750398,
+                    "kneeLocal": [
+                      -0.15,
+                      0.5126671649785339,
+                      -0.14907254674669917
+                    ],
+                    "footLocal": [
+                      -0.15,
+                      0.09000000000000019,
+                      -0.07
+                    ],
+                    "footWorld": {
+                      "x": -0.15,
+                      "y": 0.09000000000000019,
+                      "z": 0.9299999999999999
+                    },
+                    "contact": false,
+                    "reachError": 0
+                  },
+                  {
+                    "side": 1,
+                    "kneeFlexion": 0.5265936857202709,
+                    "kneeRotationX": -0.5265936857202712,
+                    "kneeLocal": [
+                      0.15,
+                      0.49154392077187853,
+                      -0.06882613461680494
+                    ],
+                    "footLocal": [
+                      0.15,
+                      0.09000000000000008,
+                      0.085
+                    ],
+                    "footWorld": {
+                      "x": 0.15,
+                      "y": 0.09000000000000008,
+                      "z": 1.085
+                    },
+                    "contact": false,
+                    "reachError": 0
+                  }
+                ],
+                "hands": [
+                  {
+                    "side": -1,
+                    "reachError": 0,
+                    "gripWeight": 0
+                  },
+                  {
+                    "side": 1,
+                    "reachError": 0,
+                    "gripWeight": 1
+                  }
+                ],
+                "attackActive": false,
+                "sheathed": false,
+                "sheathProgress": 0,
+                "cloth": 0.006513436901153575,
+                "bodyGroundLift": 0,
+                "weaponGroundLift": 0,
+                "weaponGroundTilt": 0,
+                "bladeTipWorld": [
+                  0.4427634365482029,
+                  0.6799489160690587,
+                  -0.2875396709475204
+                ],
+                "bladeVisible": true
+              },
+              "retainer": {
+                "state": "idle",
+                "phase": "idle",
+                "simulationAge": 0.35,
+                "visualAge": 0.35,
+                "victoryAge": 0,
+                "visualTime": 0.21659999999999857,
+                "root": {
+                  "x": -3,
+                  "y": 0,
+                  "z": -9,
+                  "yaw": 0
+                },
+                "pelvis": [
+                  0,
+                  0.916,
+                  0
+                ],
+                "speed": 0,
+                "gaitPhase": 0,
+                "feet": [
+                  {
+                    "side": -1,
+                    "kneeFlexion": 0.5389717565750396,
+                    "kneeRotationX": -0.5389717565750398,
+                    "kneeLocal": [
+                      -0.15,
+                      0.5126671649785339,
+                      -0.14907254674669917
+                    ],
+                    "footLocal": [
+                      -0.15,
+                      0.09000000000000019,
+                      -0.07
+                    ],
+                    "footWorld": {
+                      "x": -3.15,
+                      "y": 0.09000000000000019,
+                      "z": -9.07
+                    },
+                    "contact": false,
+                    "reachError": 0
+                  },
+                  {
+                    "side": 1,
+                    "kneeFlexion": 0.5265936857202709,
+                    "kneeRotationX": -0.5265936857202712,
+                    "kneeLocal": [
+                      0.15,
+                      0.49154392077187853,
+                      -0.06882613461680494
+                    ],
+                    "footLocal": [
+                      0.15,
+                      0.09000000000000008,
+                      0.085
+                    ],
+                    "footWorld": {
+                      "x": -2.85,
+                      "y": 0.09000000000000008,
+                      "z": -8.915
+                    },
+                    "contact": false,
+                    "reachError": 0
+                  }
+                ],
+                "hands": [
+                  {
+                    "side": -1,
+                    "reachError": 0,
+                    "gripWeight": 0
+                  },
+                  {
+                    "side": 1,
+                    "reachError": 0,
+                    "gripWeight": 1
+                  }
+                ],
+                "attackActive": false,
+                "sheathed": false,
+                "sheathProgress": 0,
+                "cloth": 0.006513436901153575,
+                "bodyGroundLift": 0,
+                "weaponGroundLift": 0,
+                "weaponGroundTilt": 0,
+                "bladeTipWorld": [
+                  -2.557236563451797,
+                  0.6799489160690587,
+                  -10.28753967094752
+                ],
+                "bladeVisible": true
+              },
+              "warden": {
+                "state": "idle",
+                "phase": "idle",
+                "simulationAge": 0.35,
+                "visualAge": 0.35,
+                "victoryAge": 0,
+                "visualTime": 0.21659999999999857,
+                "root": {
+                  "x": 3,
+                  "y": 0,
+                  "z": -16,
+                  "yaw": 0
+                },
+                "pelvis": [
+                  0,
+                  0.916,
+                  0
+                ],
+                "speed": 0,
+                "gaitPhase": 0,
+                "feet": [
+                  {
+                    "side": -1,
+                    "kneeFlexion": 0.5389717565750396,
+                    "kneeRotationX": -0.5389717565750398,
+                    "kneeLocal": [
+                      -0.15,
+                      0.5126671649785339,
+                      -0.14907254674669917
+                    ],
+                    "footLocal": [
+                      -0.15,
+                      0.09000000000000019,
+                      -0.07
+                    ],
+                    "footWorld": {
+                      "x": 2.85,
+                      "y": 0.09000000000000019,
+                      "z": -16.07
+                    },
+                    "contact": false,
+                    "reachError": 0
+                  },
+                  {
+                    "side": 1,
+                    "kneeFlexion": 0.5265936857202709,
+                    "kneeRotationX": -0.5265936857202712,
+                    "kneeLocal": [
+                      0.15,
+                      0.49154392077187853,
+                      -0.06882613461680494
+                    ],
+                    "footLocal": [
+                      0.15,
+                      0.09000000000000008,
+                      0.085
+                    ],
+                    "footWorld": {
+                      "x": 3.15,
+                      "y": 0.09000000000000008,
+                      "z": -15.915
+                    },
+                    "contact": false,
+                    "reachError": 0
+                  }
+                ],
+                "hands": [
+                  {
+                    "side": -1,
+                    "reachError": 0,
+                    "gripWeight": 0
+                  },
+                  {
+                    "side": 1,
+                    "reachError": 0,
+                    "gripWeight": 1
+                  }
+                ],
+                "attackActive": false,
+                "sheathed": false,
+                "sheathProgress": 0,
+                "cloth": 0.006513436901153575,
+                "bodyGroundLift": 0,
+                "weaponGroundLift": 0,
+                "weaponGroundTilt": 0,
+                "bladeTipWorld": [
+                  3.442763436548203,
+                  0.6799489160690587,
+                  -17.28753967094752
+                ],
+                "bladeVisible": true
+              }
+            },
+            "assets": {
+              "source": "MakeHuman MPFB hm08",
+              "license": "CC0-1.0",
+              "textureCount": 4,
+              "geometry": "static head-neck and posed hands; native eye/hair/eyebrow fitting",
+              "skin": "young_asian_male / diffuse only",
+              "eyes": "Low-Poly / brown",
+              "hair": "short04 with original tied knot",
+              "state": "ready",
+              "pendingCount": 0,
+              "readyCount": 4,
+              "failedCount": 0,
+              "error": null
+            }
+          },
+          "start": {
+            "disabled": false,
+            "text": "山道へ"
+          },
+          "message": "谷に残る人々へ、山道が開いたことを知らせる。道を塞ぐ剣士を退け、社の正面の灯をともそう。",
+          "observation": {
+            "unhandledRejections": [],
+            "textureApiSubmissions": [
+              {
+                "stem": "short-hair",
+                "url": "http://127.0.0.1:4178/assets/short-hair-hshXq62u.png",
+                "method": "texSubImage2D",
+                "type": "WebGL2RenderingContext",
+                "atMs": 6944.100000000006,
+                "complete": true,
+                "naturalWidth": 2048,
+                "naturalHeight": 2048
+              },
+              {
+                "stem": "young-asian-male",
+                "url": "http://127.0.0.1:4178/assets/young-asian-male-CWnOsWsU.png",
+                "method": "texSubImage2D",
+                "type": "WebGL2RenderingContext",
+                "atMs": 7663.500000000015,
+                "complete": true,
+                "naturalWidth": 2048,
+                "naturalHeight": 2048
+              },
+              {
+                "stem": "brown-eye",
+                "url": "http://127.0.0.1:4178/assets/brown-eye-DsUMil5J.png",
+                "method": "texSubImage2D",
+                "type": "WebGL2RenderingContext",
+                "atMs": 7694.800000000003,
+                "complete": true,
+                "naturalWidth": 1024,
+                "naturalHeight": 1024
+              },
+              {
+                "stem": "eyebrows",
+                "url": "http://127.0.0.1:4178/assets/eyebrows-CAObckBg.png",
+                "method": "texSubImage2D",
+                "type": "WebGL2RenderingContext",
+                "atMs": 7720.300000000003,
+                "complete": true,
+                "naturalWidth": 512,
+                "naturalHeight": 512
+              }
+            ],
+            "wrappedMethods": [
+              "WebGLRenderingContext.texImage2D",
+              "WebGLRenderingContext.texSubImage2D",
+              "WebGL2RenderingContext.texImage2D",
+              "WebGL2RenderingContext.texSubImage2D"
+            ]
+          }
+        }
+      ],
+      "interceptedRequests": [
+        {
+          "url": "http://127.0.0.1:4178/assets/young-asian-male-CWnOsWsU.png",
+          "action": "hold-then-continue",
+          "interceptedAt": "2026-09-15T15:26:32.598Z",
+          "releasedAt": "2026-09-15T15:26:33.097Z"
+        }
+      ],
+      "pngResponses": [
+        {
+          "stem": "eyebrows",
+          "url": "http://127.0.0.1:4178/assets/eyebrows-CAObckBg.png",
+          "status": 200,
+          "contentType": "image/png",
+          "bytes": 89619,
+          "sha256": "9940f7d0b1b223709a19b05156ba6f6e9e4dbdbced02d7574f4d51d72c58967b",
+          "signature": "89504e470d0a1a0a",
+          "width": 512,
+          "height": 512
+        },
+        {
+          "stem": "brown-eye",
+          "url": "http://127.0.0.1:4178/assets/brown-eye-DsUMil5J.png",
+          "status": 200,
+          "contentType": "image/png",
+          "bytes": 610817,
+          "sha256": "4659691c7295ad6206c78b003e5fd0e5f91dcd53032fa914a229bb48cabe424b",
+          "signature": "89504e470d0a1a0a",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "stem": "short-hair",
+          "url": "http://127.0.0.1:4178/assets/short-hair-hshXq62u.png",
+          "status": 200,
+          "contentType": "image/png",
+          "bytes": 2308132,
+          "sha256": "0bef7fc0e403db5a40fabb2111ebfa6f7e8158e204c6e56b8da98e9ef527846e",
+          "signature": "89504e470d0a1a0a",
+          "width": 2048,
+          "height": 2048
+        },
+        {
+          "stem": "young-asian-male",
+          "url": "http://127.0.0.1:4178/assets/young-asian-male-CWnOsWsU.png",
+          "status": 200,
+          "contentType": "image/png",
+          "bytes": 3593099,
+          "sha256": "f50016a5507fc687dc8df06599c8ea48de950cd185de33a71cafc1319ddab4d5",
+          "signature": "89504e470d0a1a0a",
+          "width": 2048,
+          "height": 2048
+        }
+      ],
+      "requestFailures": [],
+      "consoleErrors": [],
+      "consoleWarnings": [],
+      "pageErrors": [],
+      "captures": [
+        {
+          "file": "normal.png",
+          "kind": "required",
+          "result": "saved",
+          "stage": "complete",
+          "captureTimeoutMs": 30000,
+          "renderWaitTimeoutMs": 15000,
+          "scope": "Image acquisition and CPU render observations only; not a GPU-transfer or gameplay-performance pass.",
+          "before": {
+            "atMs": 11360.199999999997,
+            "worldTime": 0.35,
+            "running": true,
+            "paused": false,
+            "contextLost": false,
+            "assetState": "ready",
+            "render": {
+              "frame": 14,
+              "calls": 389,
+              "triangles": 489646,
+              "points": 0,
+              "lines": 0
+            },
+            "fontsStatus": "loaded",
+            "timings": {
+              "scope": "Actual rAF intervals and JavaScript advance/render call durations in this browser; not isolated GPU time or physical-device performance. Includes each recorded mode; bounded to first3000 callbacks.",
+              "samples": [
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": null,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.684000000000196,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000273,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000273,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.800000000000182,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.800000000000182,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000273,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000728,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.599999999999454,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000728,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.599999999999454,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000728,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.599999999999454,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.600000000000364,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000728,
+                  "simulationMs": 0,
+                  "renderCallMs": 3522.5
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 3516.5,
+                  "simulationMs": 0,
+                  "renderCallMs": 18.89999999999418
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 50,
+                  "simulationMs": 0,
+                  "renderCallMs": 22.60000000000582
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 33.29999999999927,
+                  "simulationMs": 0,
+                  "renderCallMs": 23.800000000017462
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000728,
+                  "simulationMs": 0,
+                  "renderCallMs": 19.300000000017462
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 33.29999999999927,
+                  "simulationMs": 0,
+                  "renderCallMs": 9.60000000000582
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 33.400000000000546,
+                  "simulationMs": 0,
+                  "renderCallMs": 6.2999999999883585
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.599999999999454,
+                  "simulationMs": 0,
+                  "renderCallMs": 7.600000000005821
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.600000000000364,
+                  "simulationMs": 0,
+                  "renderCallMs": 8.5
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0.29999999998835847,
+                  "renderCallMs": 48
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 2650.000000000001,
+                  "simulationMs": 2.1000000000058208,
+                  "renderCallMs": 57.39999999999418
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 66.59999999999854,
+                  "simulationMs": 0.20000000001164153,
+                  "renderCallMs": 24.29999999998836
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 16.700000000000728,
+                  "simulationMs": 0.10000000000582077,
+                  "renderCallMs": 20.099999999976717
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 33.29999999999927,
+                  "simulationMs": 0.09999999997671694,
+                  "renderCallMs": 21.39999999999418
+                }
+              ],
+              "omitted": 0
+            }
+          },
+          "renderWaitElapsedMs": 2289.1657799999994,
+          "afterRenderWait": {
+            "atMs": 13658.199999999997,
+            "worldTime": 0.850000000000001,
+            "running": true,
+            "paused": false,
+            "contextLost": false,
+            "assetState": "ready",
+            "render": {
+              "frame": 16,
+              "calls": 389,
+              "triangles": 489646,
+              "points": 0,
+              "lines": 0
+            },
+            "fontsStatus": "loaded",
+            "timings": {
+              "scope": "Actual rAF intervals and JavaScript advance/render call durations in this browser; not isolated GPU time or physical-device performance. Includes each recorded mode; bounded to first3000 callbacks.",
+              "samples": [
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": null,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.684000000000196,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000273,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000273,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.800000000000182,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.800000000000182,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000273,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000728,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.599999999999454,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000728,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.599999999999454,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000728,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.599999999999454,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.600000000000364,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000728,
+                  "simulationMs": 0,
+                  "renderCallMs": 3522.5
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 3516.5,
+                  "simulationMs": 0,
+                  "renderCallMs": 18.89999999999418
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 50,
+                  "simulationMs": 0,
+                  "renderCallMs": 22.60000000000582
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 33.29999999999927,
+                  "simulationMs": 0,
+                  "renderCallMs": 23.800000000017462
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000728,
+                  "simulationMs": 0,
+                  "renderCallMs": 19.300000000017462
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 33.29999999999927,
+                  "simulationMs": 0,
+                  "renderCallMs": 9.60000000000582
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 33.400000000000546,
+                  "simulationMs": 0,
+                  "renderCallMs": 6.2999999999883585
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.599999999999454,
+                  "simulationMs": 0,
+                  "renderCallMs": 7.600000000005821
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.600000000000364,
+                  "simulationMs": 0,
+                  "renderCallMs": 8.5
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0.29999999998835847,
+                  "renderCallMs": 48
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 2650.000000000001,
+                  "simulationMs": 2.1000000000058208,
+                  "renderCallMs": 57.39999999999418
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 66.59999999999854,
+                  "simulationMs": 0.20000000001164153,
+                  "renderCallMs": 24.29999999998836
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 16.700000000000728,
+                  "simulationMs": 0.10000000000582077,
+                  "renderCallMs": 20.099999999976717
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 33.29999999999927,
+                  "simulationMs": 0.09999999997671694,
+                  "renderCallMs": 21.39999999999418
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 1166.6000000000004,
+                  "simulationMs": 0.39999999999417923,
+                  "renderCallMs": 49.60000000000582
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 1600,
+                  "simulationMs": 0.5,
+                  "renderCallMs": 39.30000000001746
+                }
+              ],
+              "omitted": 0
+            }
+          },
+          "startedAt": "2026-09-15T15:26:42.439Z",
+          "elapsedMs": 20191.530616999997,
+          "exceededPrior15SecondLimit": true,
+          "png": {
+            "bytes": 885644,
+            "sha256": "d8b5f432413fa1eadf76d1a5364da49f0a6823e9819a1673612236ee00289e3e",
+            "width": 1280,
+            "height": 720
+          },
+          "finishedAt": "2026-09-15T15:27:02.631Z",
+          "after": {
+            "atMs": 33860.40000000001,
+            "worldTime": 3.849999999999991,
+            "running": true,
+            "paused": false,
+            "contextLost": false,
+            "assetState": "ready",
+            "render": {
+              "frame": 28,
+              "calls": 389,
+              "triangles": 489646,
+              "points": 0,
+              "lines": 0
+            },
+            "fontsStatus": "loaded",
+            "timings": {
+              "scope": "Actual rAF intervals and JavaScript advance/render call durations in this browser; not isolated GPU time or physical-device performance. Includes each recorded mode; bounded to first3000 callbacks.",
+              "samples": [
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": null,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.684000000000196,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000273,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000273,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.800000000000182,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.800000000000182,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000273,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000728,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.599999999999454,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000728,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.599999999999454,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000728,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.599999999999454,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.600000000000364,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000728,
+                  "simulationMs": 0,
+                  "renderCallMs": 3522.5
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 3516.5,
+                  "simulationMs": 0,
+                  "renderCallMs": 18.89999999999418
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 50,
+                  "simulationMs": 0,
+                  "renderCallMs": 22.60000000000582
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 33.29999999999927,
+                  "simulationMs": 0,
+                  "renderCallMs": 23.800000000017462
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000728,
+                  "simulationMs": 0,
+                  "renderCallMs": 19.300000000017462
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 33.29999999999927,
+                  "simulationMs": 0,
+                  "renderCallMs": 9.60000000000582
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 33.400000000000546,
+                  "simulationMs": 0,
+                  "renderCallMs": 6.2999999999883585
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.599999999999454,
+                  "simulationMs": 0,
+                  "renderCallMs": 7.600000000005821
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.600000000000364,
+                  "simulationMs": 0,
+                  "renderCallMs": 8.5
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0.29999999998835847,
+                  "renderCallMs": 48
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 2650.000000000001,
+                  "simulationMs": 2.1000000000058208,
+                  "renderCallMs": 57.39999999999418
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 66.59999999999854,
+                  "simulationMs": 0.20000000001164153,
+                  "renderCallMs": 24.29999999998836
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 16.700000000000728,
+                  "simulationMs": 0.10000000000582077,
+                  "renderCallMs": 20.099999999976717
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 33.29999999999927,
+                  "simulationMs": 0.09999999997671694,
+                  "renderCallMs": 21.39999999999418
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 1166.6000000000004,
+                  "simulationMs": 0.39999999999417923,
+                  "renderCallMs": 49.60000000000582
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 1600,
+                  "simulationMs": 0.5,
+                  "renderCallMs": 39.30000000001746
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 1549.8999999999996,
+                  "simulationMs": 0.29999999998835847,
+                  "renderCallMs": 42.69999999998254
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 3016.600000000002,
+                  "simulationMs": 0.3000000000174623,
+                  "renderCallMs": 44.69999999998254
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 1283.199999999997,
+                  "simulationMs": 0.39999999999417923,
+                  "renderCallMs": 41.89999999999418
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 1266.6000000000022,
+                  "simulationMs": 0.6000000000058208,
+                  "renderCallMs": 45.19999999998254
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 1366.5999999999985,
+                  "simulationMs": 0.5,
+                  "renderCallMs": 38.89999999999418
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 2400,
+                  "simulationMs": 0.3000000000174623,
+                  "renderCallMs": 27.89999999999418
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 1283.2999999999993,
+                  "simulationMs": 0.29999999998835847,
+                  "renderCallMs": 39.19999999998254
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 1283.2000000000007,
+                  "simulationMs": 0.39999999999417923,
+                  "renderCallMs": 39.89999999999418
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 1249.9000000000015,
+                  "simulationMs": 0.1999999999825377,
+                  "renderCallMs": 45.29999999998836
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 1366.7000000000007,
+                  "simulationMs": 0.39999999999417923,
+                  "renderCallMs": 44.40000000002328
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 2416.5999999999985,
+                  "simulationMs": 0.29999999998835847,
+                  "renderCallMs": 35
+                },
+                {
+                  "mode": "playing",
+                  "running": true,
+                  "intervalMs": 1283.300000000003,
+                  "simulationMs": 0.5,
+                  "renderCallMs": 76.70000000001164
+                }
+              ],
+              "omitted": 0
+            }
+          }
+        }
+      ],
+      "errors": [],
+      "browserVersion": "141.0.7390.37",
+      "readinessAssertions": {
+        "result": "passed",
+        "completedAt": "2026-09-15T15:26:40.132Z",
+        "scope": "Asset/UI/rig/API-submission assertions; screenshot and final error checks remain separate."
+      },
+      "screenshot": "normal.png",
+      "finalObservation": {
+        "unhandledRejections": [],
+        "textureApiSubmissions": [
+          {
+            "stem": "short-hair",
+            "url": "http://127.0.0.1:4178/assets/short-hair-hshXq62u.png",
+            "method": "texSubImage2D",
+            "type": "WebGL2RenderingContext",
+            "atMs": 6944.100000000006,
+            "complete": true,
+            "naturalWidth": 2048,
+            "naturalHeight": 2048
+          },
+          {
+            "stem": "young-asian-male",
+            "url": "http://127.0.0.1:4178/assets/young-asian-male-CWnOsWsU.png",
+            "method": "texSubImage2D",
+            "type": "WebGL2RenderingContext",
+            "atMs": 7663.500000000015,
+            "complete": true,
+            "naturalWidth": 2048,
+            "naturalHeight": 2048
+          },
+          {
+            "stem": "brown-eye",
+            "url": "http://127.0.0.1:4178/assets/brown-eye-DsUMil5J.png",
+            "method": "texSubImage2D",
+            "type": "WebGL2RenderingContext",
+            "atMs": 7694.800000000003,
+            "complete": true,
+            "naturalWidth": 1024,
+            "naturalHeight": 1024
+          },
+          {
+            "stem": "eyebrows",
+            "url": "http://127.0.0.1:4178/assets/eyebrows-CAObckBg.png",
+            "method": "texSubImage2D",
+            "type": "WebGL2RenderingContext",
+            "atMs": 7720.300000000003,
+            "complete": true,
+            "naturalWidth": 512,
+            "naturalHeight": 512
+          }
+        ],
+        "wrappedMethods": [
+          "WebGLRenderingContext.texImage2D",
+          "WebGLRenderingContext.texSubImage2D",
+          "WebGL2RenderingContext.texImage2D",
+          "WebGL2RenderingContext.texSubImage2D"
+        ]
+      },
+      "expectedRequestFailures": [],
+      "expectedConsoleErrors": [],
+      "glErrorDiagnostics": [],
+      "finishedAt": "2026-09-15T15:27:13.734Z"
+    },
+    {
+      "mode": "failed",
+      "result": "passed",
+      "startedAt": "2026-09-15T15:27:13.735Z",
+      "observations": [
+        {
+          "phase": "failed-visible",
+          "atMs": 3891.100000000006,
+          "running": false,
+          "paused": false,
+          "contextLost": false,
+          "worldTime": 0,
+          "assets": {
+            "source": "MakeHuman MPFB hm08",
+            "license": "CC0-1.0",
+            "textureCount": 4,
+            "geometry": "static head-neck and posed hands; native eye/hair/eyebrow fitting",
+            "skin": "young_asian_male / diffuse only",
+            "eyes": "Low-Poly / brown",
+            "hair": "short04 with original tied knot",
+            "state": "failed",
+            "pendingCount": 0,
+            "readyCount": 3,
+            "failedCount": 1,
+            "error": "[object Event]"
+          },
+          "render": {
+            "frame": 0,
+            "calls": 0,
+            "triangles": 0,
+            "points": 0,
+            "lines": 0
+          },
+          "actors": {
+            "partsByRig": {},
+            "rigs": {},
+            "motionByRig": {},
+            "assets": {
+              "source": "MakeHuman MPFB hm08",
+              "license": "CC0-1.0",
+              "textureCount": 4,
+              "geometry": "static head-neck and posed hands; native eye/hair/eyebrow fitting",
+              "skin": "young_asian_male / diffuse only",
+              "eyes": "Low-Poly / brown",
+              "hair": "short04 with original tied knot",
+              "state": "failed",
+              "pendingCount": 0,
+              "readyCount": 3,
+              "failedCount": 1,
+              "error": "[object Event]"
+            }
+          },
+          "start": {
+            "disabled": true,
+            "text": "読み込み失敗"
+          },
+          "message": "人物の読み込みに失敗しました。通信を確認し、再読み込みしてください。",
+          "observation": {
+            "unhandledRejections": [],
+            "textureApiSubmissions": [],
+            "wrappedMethods": [
+              "WebGLRenderingContext.texImage2D",
+              "WebGLRenderingContext.texSubImage2D",
+              "WebGL2RenderingContext.texImage2D",
+              "WebGL2RenderingContext.texSubImage2D"
+            ]
+          }
+        },
+        {
+          "phase": "failed-after-click",
+          "atMs": 4425.200000000012,
+          "running": false,
+          "paused": false,
+          "contextLost": false,
+          "worldTime": 0,
+          "assets": {
+            "source": "MakeHuman MPFB hm08",
+            "license": "CC0-1.0",
+            "textureCount": 4,
+            "geometry": "static head-neck and posed hands; native eye/hair/eyebrow fitting",
+            "skin": "young_asian_male / diffuse only",
+            "eyes": "Low-Poly / brown",
+            "hair": "short04 with original tied knot",
+            "state": "failed",
+            "pendingCount": 0,
+            "readyCount": 3,
+            "failedCount": 1,
+            "error": "[object Event]"
+          },
+          "render": {
+            "frame": 0,
+            "calls": 0,
+            "triangles": 0,
+            "points": 0,
+            "lines": 0
+          },
+          "actors": {
+            "partsByRig": {},
+            "rigs": {},
+            "motionByRig": {},
+            "assets": {
+              "source": "MakeHuman MPFB hm08",
+              "license": "CC0-1.0",
+              "textureCount": 4,
+              "geometry": "static head-neck and posed hands; native eye/hair/eyebrow fitting",
+              "skin": "young_asian_male / diffuse only",
+              "eyes": "Low-Poly / brown",
+              "hair": "short04 with original tied knot",
+              "state": "failed",
+              "pendingCount": 0,
+              "readyCount": 3,
+              "failedCount": 1,
+              "error": "[object Event]"
+            }
+          },
+          "start": {
+            "disabled": true,
+            "text": "読み込み失敗"
+          },
+          "message": "人物の読み込みに失敗しました。通信を確認し、再読み込みしてください。",
+          "observation": {
+            "unhandledRejections": [],
+            "textureApiSubmissions": [],
+            "wrappedMethods": [
+              "WebGLRenderingContext.texImage2D",
+              "WebGLRenderingContext.texSubImage2D",
+              "WebGL2RenderingContext.texImage2D",
+              "WebGL2RenderingContext.texSubImage2D"
+            ]
+          }
+        }
+      ],
+      "interceptedRequests": [
+        {
+          "url": "http://127.0.0.1:4178/assets/young-asian-male-CWnOsWsU.png",
+          "action": "abort",
+          "interceptedAt": "2026-09-15T15:27:17.654Z",
+          "abortedAt": "2026-09-15T15:27:17.654Z"
+        }
+      ],
+      "pngResponses": [
+        {
+          "stem": "eyebrows",
+          "url": "http://127.0.0.1:4178/assets/eyebrows-CAObckBg.png",
+          "status": 200,
+          "contentType": "image/png",
+          "bytes": 89619,
+          "sha256": "9940f7d0b1b223709a19b05156ba6f6e9e4dbdbced02d7574f4d51d72c58967b",
+          "signature": "89504e470d0a1a0a",
+          "width": 512,
+          "height": 512
+        },
+        {
+          "stem": "brown-eye",
+          "url": "http://127.0.0.1:4178/assets/brown-eye-DsUMil5J.png",
+          "status": 200,
+          "contentType": "image/png",
+          "bytes": 610817,
+          "sha256": "4659691c7295ad6206c78b003e5fd0e5f91dcd53032fa914a229bb48cabe424b",
+          "signature": "89504e470d0a1a0a",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "stem": "short-hair",
+          "url": "http://127.0.0.1:4178/assets/short-hair-hshXq62u.png",
+          "status": 200,
+          "contentType": "image/png",
+          "bytes": 2308132,
+          "sha256": "0bef7fc0e403db5a40fabb2111ebfa6f7e8158e204c6e56b8da98e9ef527846e",
+          "signature": "89504e470d0a1a0a",
+          "width": 2048,
+          "height": 2048
+        }
+      ],
+      "requestFailures": [
+        {
+          "url": "http://127.0.0.1:4178/assets/young-asian-male-CWnOsWsU.png",
+          "error": "net::ERR_FAILED"
+        }
+      ],
+      "consoleErrors": [
+        {
+          "text": "Failed to load resource: net::ERR_FAILED",
+          "location": {
+            "url": "http://127.0.0.1:4178/assets/young-asian-male-CWnOsWsU.png",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        }
+      ],
+      "consoleWarnings": [],
+      "pageErrors": [],
+      "captures": [
+        {
+          "file": "failed.png",
+          "kind": "required",
+          "result": "saved",
+          "stage": "complete",
+          "captureTimeoutMs": 30000,
+          "renderWaitTimeoutMs": 15000,
+          "scope": "Image acquisition and CPU render observations only; not a GPU-transfer or gameplay-performance pass.",
+          "before": {
+            "atMs": 4428.600000000006,
+            "worldTime": 0,
+            "running": false,
+            "paused": false,
+            "contextLost": false,
+            "assetState": "failed",
+            "render": {
+              "frame": 0,
+              "calls": 0,
+              "triangles": 0,
+              "points": 0,
+              "lines": 0
+            },
+            "fontsStatus": "loaded",
+            "timings": {
+              "scope": "Actual rAF intervals and JavaScript advance/render call durations in this browser; not isolated GPU time or physical-device performance. Includes each recorded mode; bounded to first3000 callbacks.",
+              "samples": [
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": null,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 0.04999999999972715,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.600000000000364,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 33.30000000000018,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000273,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.800000000000182,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.600000000000364,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000273,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000273,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.600000000000364,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.600000000000364,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.799999999999272,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.600000000000364,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.600000000000364,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.600000000000364,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.600000000000364,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.600000000000364,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                }
+              ],
+              "omitted": 0
+            }
+          },
+          "startedAt": "2026-09-15T15:27:18.294Z",
+          "elapsedMs": 163.56226400000014,
+          "exceededPrior15SecondLimit": false,
+          "png": {
+            "bytes": 257589,
+            "sha256": "f634d86e24df93eb64d1bad987d46470b196035f74dbba30e4565dd372ce7dae",
+            "width": 1280,
+            "height": 720
+          },
+          "finishedAt": "2026-09-15T15:27:18.458Z",
+          "after": {
+            "atMs": 4596.700000000012,
+            "worldTime": 0,
+            "running": false,
+            "paused": false,
+            "contextLost": false,
+            "assetState": "failed",
+            "render": {
+              "frame": 0,
+              "calls": 0,
+              "triangles": 0,
+              "points": 0,
+              "lines": 0
+            },
+            "fontsStatus": "loaded",
+            "timings": {
+              "scope": "Actual rAF intervals and JavaScript advance/render call durations in this browser; not isolated GPU time or physical-device performance. Includes each recorded mode; bounded to first3000 callbacks.",
+              "samples": [
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": null,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 0.04999999999972715,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.600000000000364,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 33.30000000000018,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000273,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.800000000000182,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.600000000000364,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000273,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.59999999999991,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.700000000000273,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.600000000000364,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.600000000000364,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.799999999999272,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.600000000000364,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.600000000000364,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.600000000000364,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.600000000000364,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.600000000000364,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.600000000000364,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.600000000000364,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.600000000000364,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.799999999999272,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.600000000000364,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                },
+                {
+                  "mode": "playing",
+                  "running": false,
+                  "intervalMs": 16.699999999999818,
+                  "simulationMs": 0,
+                  "renderCallMs": null
+                }
+              ],
+              "omitted": 0
+            }
+          }
+        }
+      ],
+      "errors": [],
+      "browserVersion": "141.0.7390.37",
+      "readinessAssertions": {
+        "result": "passed",
+        "completedAt": "2026-09-15T15:27:18.289Z",
+        "scope": "Asset/UI/rig/API-submission assertions; screenshot and final error checks remain separate."
+      },
+      "screenshot": "failed.png",
+      "finalObservation": {
+        "unhandledRejections": [],
+        "textureApiSubmissions": [],
+        "wrappedMethods": [
+          "WebGLRenderingContext.texImage2D",
+          "WebGLRenderingContext.texSubImage2D",
+          "WebGL2RenderingContext.texImage2D",
+          "WebGL2RenderingContext.texSubImage2D"
+        ]
+      },
+      "expectedRequestFailures": [
+        {
+          "url": "http://127.0.0.1:4178/assets/young-asian-male-CWnOsWsU.png",
+          "error": "net::ERR_FAILED"
+        }
+      ],
+      "expectedConsoleErrors": [
+        {
+          "text": "Failed to load resource: net::ERR_FAILED",
+          "location": {
+            "url": "http://127.0.0.1:4178/assets/young-asian-male-CWnOsWsU.png",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        }
+      ],
+      "glErrorDiagnostics": [],
+      "finishedAt": "2026-09-15T15:27:18.515Z"
+    }
+  ],
+  "errors": [],
+  "builtIndexSha256": "ae74be22db1a47163828272e41bfafbca1e2e53463a0e58212e733de79f300bb",
+  "finishedAt": "2026-09-15T15:27:18.517Z"
+}
