@@ -278,14 +278,12 @@ try{
   await mobile.waitForTimeout(110);
  };
  const tapDodgeUntilObserved=async before=>{
-  const retryDeadline=Date.now()+3000;
-  do{
-   const observed=await mobile.evaluate(()=>({mode:freshDiagnostics().world.mode,dodges:freshDiagnostics().world.totals.dodges}));
-   if(observed.dodges>before)return;
-   if(observed.mode!=='playing')throw new Error('Mission ended before the recovery dodge was acknowledged');
-   await tapPoint(dodgePoint);
-  }while(Date.now()<retryDeadline);
-  throw new Error('Recovery dodge was not observed before its 3000ms input deadline');
+  const startedAt=Date.now(),record={};(report.touchMission.recoveryDodgeAcknowledgements??=[]).push(record);
+  const {retryDodgeUntilObserved}=await import('./input-observation.mjs');
+  return retryDodgeUntilObserved({before,startedAt,timeoutMs:3000,record,tap:()=>tapPoint(dodgePoint),read:()=>mobile.evaluate(()=>{
+   const w=freshDiagnostics().world,last=w.events.findLast(event=>event.type==='dodge'&&event.source==='player');
+   return {mode:w.mode,dodges:w.totals.dodges,worldTime:w.time,lastDodgeEventTime:last?.time??null,browserObservedAtMs:Date.now()};
+  })});
  };
  const tapLockUntilObserved=async targetId=>{
   await tapPoint(lockPoint);const acknowledgementDeadline=Date.now()+3000;

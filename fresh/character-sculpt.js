@@ -44,18 +44,39 @@ function section(profile,y){
 
 // Sections: height, half-width, depth radius, depth centre. A y-dependent fold
 // field displaces the actual silhouette; normals and shadows share that shape.
-export function loft(profile,{segments=28,rows=20,fold=0,folds=9,phase=0,deform=null}={}){
+export function loft(profile,{segments=28,rows=20,fold=0,folds=9,phase=0,deform=null,closed=true}={}){
   const low=profile[0][0],high=profile.at(-1)[0];
-  return surface(segments,rows,(u,v)=>{
+  const geometry=surface(segments,rows,(u,v)=>{
     const y=low+(high-low)*v,[w,d,z=0]=section(profile,y),angle=u*TAU;
     const pleat=fold*Math.sin(angle*folds+phase+Math.sin(v*5+angle*2)*.42)*Math.sin(Math.PI*v)**.65;
     const p=[Math.sin(angle)*(w+pleat),y,Math.cos(angle)*(d+pleat)+z];
     return deform?deform(p,u,v):p;
   },{wrap:true});
+  if(closed){
+    // Close each actual section, including its deformation. A sleeve or wrist
+    // that rotates away from its neighbour must not expose a hollow tube.
+    // Duplicate cap rims keep the rim crease out of the smooth side normals.
+    const p=Array.from(geometry.attributes.position.array),n=Array.from(geometry.attributes.normal.array),
+      uv=Array.from(geometry.attributes.uv.array),indices=Array.from(geometry.index.array);
+    for(const row of [0,rows]){
+      const normal=row===0?-1:1,center=[0,0,0];
+      for(let i=0;i<segments;i++)for(let k=0;k<3;k++)center[k]+=p[(row*(segments+1)+i)*3+k]/segments;
+      const start=p.length/3;p.push(...center);n.push(0,normal,0);uv.push(.5,.5);
+      for(let i=0;i<=segments;i++){
+        const source=(row*(segments+1)+i)*3;p.push(p[source],p[source+1],p[source+2]);n.push(0,normal,0);
+        uv.push(.5+Math.sin(i/segments*TAU)*.5,.5+Math.cos(i/segments*TAU)*.5);
+      }
+      for(let i=0;i<segments;i++)indices.push(...(normal>0?[start,start+i+1,start+i+2]:[start,start+i+2,start+i+1]));
+    }
+    geometry.setAttribute('position',new T.Float32BufferAttribute(p,3));
+    geometry.setAttribute('normal',new T.Float32BufferAttribute(n,3));
+    geometry.setAttribute('uv',new T.Float32BufferAttribute(uv,2));geometry.setIndex(indices);
+  }
+  return geometry;
 }
 
 const headSections=[
-  [.012,.009,.024,-.029],[.025,.039,.043,-.020],[.047,.061,.066,-.007],
+  [.012,.022,.024,-.024],[.025,.043,.043,-.017],[.047,.063,.066,-.005],
   [.078,.074,.078,.002],[.118,.086,.084,.008],[.153,.084,.087,.011],
   [.182,.084,.090,.010],[.218,.079,.085,.011],[.247,.058,.065,.012],
   [.265,.028,.032,.010],[.272,.001,.002,.009],
@@ -66,8 +87,8 @@ function faceDepth(x,y,z){
   // to one watertight skull surface. No separate cheek or nose spheres.
   let delta=0;
   for(const side of [-1,1]){
-    delta+=.010*bell(x,side*.038,.023)*bell(y,.157,.014);
-    delta-=.006*bell(x,side*.042,.035)*bell(y,.179,.010);
+    delta+=.0038*bell(x,side*.038,.023)*bell(y,.157,.017);
+    delta-=.003*bell(x,side*.042,.035)*bell(y,.179,.013);
     delta-=.0065*bell(x,side*.063,.020)*bell(y,.123,.024);
     delta-=.008*bell(x,side*.012,.009)*bell(y,.112,.009);
   }
@@ -93,12 +114,20 @@ export function headSculpt(){
 
 export function eyeSurface(side,{lid=false,upper=true}={}){
   return surface(18,lid?3:6,(u,v)=>{
-    const across=(u-.5)*2,x=side*.038+across*.019;
+    const across=(u-.5)*2,x=side*.038+across*.016;
     const arch=Math.sqrt(Math.max(0,1-across*across));
     const center=.158+side*across*.0018;
-    const y=lid?center+(upper?1:-1)*arch*(.0027+v*.0035):center+(v-.5)*2*arch*.0031;
-    return facePoint(x,y,lid?.0018:.001);
+    const y=lid?center+(upper?1:-1)*arch*(.0039+v*.0028):center+(v-.5)*2*arch*.0041;
+    const dome=.0012*(1-across*across)*(1-(2*v-1)**2);
+    return facePoint(x,y,lid?.0022:.0014+dome);
   },{flip:!lid||upper});
+}
+
+export function eyeDisc(side,radius,offset){
+  return surface(24,5,(u,v)=>{
+    const theta=u*TAU,r=radius*v,x=side*.038+Math.sin(theta)*r,y=.158+Math.cos(theta)*r;
+    return facePoint(x,y,offset+.0007*(1-v*v));
+  },{wrap:true,flip:true});
 }
 
 export function faceRibbon(points,width){
@@ -113,9 +142,9 @@ export function faceRibbon(points,width){
 // narrow valleys. The waist stays fixed; silhouette narrows between the legs.
 export function hakamaPanel(side,front){
   return surface(26,22,(u,v)=>{
-    const fall=1-v,width=.195+fall*.031;
+    const fall=1-v,width=.226+fall*.028;
     const x=(u-.5)*width+side*fall*.012;
-    const crease=Math.sin(u*Math.PI*7+.25)*.015*(.35+.65*fall);
+    const crease=Math.sin(u*Math.PI*7+.25)*.010*(.35+.65*fall);
     const broad=.032*Math.cos((u-.5)*Math.PI);
     const z=front*(broad+crease+fall*.012+Math.sin(fall*4+u*2)*.006);
     const y=-fall*(.465+.017*Math.cos(u*Math.PI*2))-.012*Math.sin(u*Math.PI);
@@ -223,7 +252,9 @@ export function createSurfaceTextures(){
     const size=kind==='skin'?256:128,color=new Uint8Array(size*size*4),height=new Uint8Array(size*size*4),rough=new Uint8Array(size*size*4);
     for(let y=0;y<size;y++)for(let x=0;x<size;x++){
       const i=(y*size+x)*4,u=x/size,v=y/size;
-      const noise=((Math.imul(x+11,374761393)^Math.imul(y+37,668265263))>>>0)%1024/1023;
+      let seed=(Math.imul(x+11,374761393)+Math.imul(y+37,668265263))|0;
+      seed=Math.imul(seed^(seed>>>13),1274126177);
+      const noise=((seed^(seed>>>16))>>>0)/4294967295;
       const cloud=Math.sin(u*TAU*3+Math.sin(v*TAU*2))*.5+Math.cos(v*TAU*5-u*TAU)*.22;
       let c=.90,h=.5,r=.90,red=1,green=1,blue=1;
       if(kind==='cloth'){
@@ -236,7 +267,7 @@ export function createSurfaceTextures(){
         c=.84+cloud*.055+noise*.06+scratch;h=.45+noise*.11;r=.52+noise*.17-scratch;
       }else if(kind==='hair'){
         const strand=Math.sin(u*TAU*44+Math.sin(v*8)*.6);
-        c=.69+strand*.12+noise*.10;h=.5+strand*.21;r=.62+noise*.16;
+        c=.82+strand*.035+noise*.025;h=.5+strand*.08;r=.87+noise*.06;
       }else if(kind==='cord'){
         const twist=Math.sin((u*14+v*31)*TAU);c=.86+twist*.06+noise*.07;h=.5+twist*.22;r=.85;
       }else{
@@ -246,7 +277,7 @@ export function createSurfaceTextures(){
         const cheek=(bell(xx,.06,.023)+bell(xx,-.06,.023))*bell(yy,.12,.025)*front;
         const socket=(bell(xx,.038,.025)+bell(xx,-.038,.025))*bell(yy,.157,.012)*front;
         const stubble=bell(yy,.060,.035)*front*(.4+noise*.6);
-        c=.94+noise*.045-socket*.105-stubble*.05;red=1+cheek*.055;green=1-cheek*.035;blue=1-cheek*.04;
+        c=.94+noise*.022-socket*.035-stubble*.04;red=1+cheek*.055;green=1-cheek*.035;blue=1-cheek*.04;
         h=.48+noise*.075;r=.80+noise*.10-cheek*.05;
       }
       color.set([clamp(c*red)*255,clamp(c*green)*255,clamp(c*blue)*255,255],i);

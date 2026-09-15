@@ -206,5 +206,69 @@
       "Current browser audio recording and numerical checks; perception unavailable",
       "Matching preview publication and actual HTTP/asset/input verification"
     ]
+  },
+  "nativeCandidateReview": {
+    "at": "2026-09-15T12:39:35.568056+00:00",
+    "runtime": "037fd9d10d35453695bb92da8ed47649e1405eae",
+    "ci": 34969080023,
+    "artifact": 10396910778,
+    "views": 40,
+    "pairedCameraTargetIdentity": "20/20 matched",
+    "recovery": {
+      "directArtifactConnector": "success; official signed download URL returned",
+      "ordinaryFileGET": "403 Cloudflare1010 in child and parent; no bypass attempted",
+      "approvedReadOnlyJob": 34969622342,
+      "beforeZipSha256": "5b9a2fc3e8627fc052c71865fd1dfe4e14d3bb3940d0f2d468ff3a32aac4a9c7",
+      "afterZipSha256": "ce3c8f49e046c1c0c9c262d62e6473a5b2143b0acc2df6fd5228e1bf33862765",
+      "archiveCRC": "all passed",
+      "renderedAgain": false
+    },
+    "observedImprovements": [
+      "coherent cheek and nose surface replaces balls",
+      "curved torso, sleeve and skirt surfaces replace box and boards",
+      "less square footwear; cloth/metal response differentiated"
+    ],
+    "blockingVisualDefects": [
+      "long thin exposed neck and undersized head",
+      "open black shoulder rings and incomplete torso-arm connection",
+      "forearm/hand skin fragments and black skirt intersections",
+      "overdeep eye sockets and tiny pupils",
+      "floating warden helmet gold band"
+    ],
+    "decision": "Do not publish this visual candidate; bounded body connection and face repair followed by fresh native capture. PS4 target not reached; formal comparisons remain unmeasured."
+  },
+  "candidateRepair": {
+    "at": "2026-09-15T12:55:22.328936+00:00",
+    "rigSha256": "4d3ee3249123879c35dfc4a617f28e74e3489669098ee93a4ff6ee6f57315f65",
+    "sculptSha256": "0d40059bcb748e47c08f2ec66163aafb266d5eff7729b671070722b727479639",
+    "producerTests": {
+      "passed": 29,
+      "scope": "motion20, terrain4, meaningful visibility5"
+    },
+    "independentTests": {
+      "passed": 25,
+      "additional": "16 front-eye rays over all actual head meshes and four-rig finite attributes"
+    },
+    "nativeVisualClosure": "pending new exact-source capture",
+    "sourceFixes": [
+      "neck/torso/shoulder attachment and proportions",
+      "closed sleeve endpoints and undercloth skin containment",
+      "skirt separation",
+      "shallower eye sockets with circular pupils",
+      "less periodic skin/hair surface and fitted helmet metal"
+    ],
+    "oldCI": {
+      "id": 34969080023,
+      "art": "success",
+      "experience": "success",
+      "fresh": "failure: touch-left final dodge observation; other3 routes completed",
+      "decode": "raw4 decodable; touch-left incomplete so required sequence gate failed"
+    },
+    "apparatusFix": {
+      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260915-final-dodge-observation.md",
+      "testsPassed": 14,
+      "scope": "Preserve3000ms limit on starting inputs; always read result of final sent pulse once. Late observation is explicitly recorded, not proof of actual acceptance latency."
+    },
+    "higherQualityMethod": "Official CC0 MPFB anatomy acquired for concrete material evaluation; not yet incorporated into runtime."
   }
 }

@@ -113,3 +113,98 @@ Static review appended at: 2026-09-15T12:06:13.056752+00:00
 The integrator reported that the vegetation owner is adding a `view.renderInspection(position,target)` API that resets foreground fades/shadow state to base before the inspection draw. A subsequent read confirmed that `vegetation-capture.mjs` now calls that API and its scope explicitly limits undeformed root/tip projections to framing guides, leaving actual branch/leaf visibility and motion for native-media review. At that read boundary, `presentation.js` did not yet contain the API (the owner was still implementing it); the integrator was notified to ensure it exists and is exposed in the presentation return value before CI. This is an in-progress dependency receipt, not a final candidate failure. Runtime correction and rendered opacity remain unverified. No other definite startup blocker was found in this bounded review.
 
 Receipt appended at: 2026-09-15T12:06:50.202674+00:00
+
+## Native matched figure review — candidate 037fd9d
+
+### Received identity and actual review scope
+
+- Reviewer: `/root/game2_ultra_art_sound_physics/independent_art_review`; integrator: `/root/game2_ultra_art_sound_physics`.
+- Received exact candidate runtime: `037fd9d10d35453695bb92da8ed47649e1405eae`.
+- Received CI run: `34969080023`; received figure artifact ID: `10396910778`.
+- Supplied local media: `.review/34969080023/figures/before/` and `.review/34969080023/figures/after/`.
+- Acquisition provenance received from integrator: recovered through authorized read-only CI logs; two reconstructed ZIPs had matching SHA/CRC checks. This reviewer did not conduct the remote acquisition or independently verify those ZIP CRC claims. Instead this reviewer opened the actual recovered PNGs and computed the individual local hashes below.
+- Before `report.json` identifies source `b06ade1ad5ab8b72de9bb9996f323a063f5db5ef` and runner `037fd9d10d35453695bb92da8ed47649e1405eae`. After report identifies source and runner `037fd9d10d35453695bb92da8ed47649e1405eae`. Both have empty reported errors and technical `result: passed`. Those report fields are not art acceptance.
+- Personally opened all **40 native 960×720 PNGs**: player/sentinel/retainer/warden × full/back/face-front/face-threequarter/face-profile × before/after. No montage or CPU substitute was used for this candidate diagnosis.
+- Personally compared all 20 metadata pairs: `camera`, `target`, `id`, and `view` are identical in the before and after reports. These are fixed-light neutral-stage **synthetic idle** renders of the production meshes/materials. They do not measure normal gameplay, running/attack motion, plant dynamics, audio, or real-time performance.
+- This is an independent implementation review with **known source identities**. The reviewer knows the assignment, former image diagnosis, and before/after. C06's fixed SEKIRO reference was not acquired or viewed in this stage. No strict blind comparison, source concealment, official C06 result, or platform-equivalent quality is claimed. All ten formal elements remain `not measured`.
+- The first six player views were diagnosed and sent to the integrator before receiving its message about the implementer's coinciding repair findings. Remaining images were independently opened afterward. The ordering is recorded because this was a source-known collaborative defect review, not an isolated preference experiment.
+
+### Directly visible improvements
+
+1. **顔の連続面。** 全三角度で、beforeの別々の球状の頬/鼻と角形の口が消え、鼻梁・頬・顎が一つの顔の輪郭として読める。これは部品の追加だけではない実画像上の改善。ただし自然な人物としての完成とは別。
+2. **胴・袖・袴の曲面化。** 全身/背面で、beforeの箱状背中と一直線の板状袴が、丸みを持つ胴、布の襞、波打つ裾へ変わった。袴と鎧の表面反射が以前より分かれ、背面でも布として認識しやすい。
+3. **装備と足元。** 肩/胴鎧の表面に曲率と反射の変化が出た。靴はbeforeの大きな四角い台座感が減り、足袋/履物の丸い形に近づいた。wardenの顎当てはbeforeの単純な正面矩形より曲がりを持つ。ただし以下の接続欠陥が残る。
+4. 青/赤茶/鈍い緑茶/暗赤の四体の配色は保持され、素材を変えても基本的な色による識別は残る。
+
+### New or newly exposed defects requiring repair
+
+| Priority | Direct visual finding | Actual images / extent | Closure needed in later native media |
+|---|---|---|---|
+| P0 | 露出した首が極端に長い円柱に見え、肩の上に頭を載せた棒の印象。首から鎖骨/肩へ広がる形がなく、背面でも細い支柱に見える。 | All four `after/*-full.png`, `*-back.png`, and face views. | 同じ全身/背面/顔3角度で頭と胸郭が連続した人体比率に見えること。カメラを変えて隠すのは閉鎖としない。 |
+| P0 | 肩鎧と袖の上端が黒い中空の輪として開いて見え、腕が胴の外に挿した筒に見える。特に画面右の肩口の空洞が明瞭。 | All four after full/back; very clear lower-right of `player/sentinel/retainer/warden-face-threequarter.png`. | 肩から上腕へ体積がつながり、袖/鎧の内側が不自然な大穴にならないこと。後続の腕を上げる動作も必要。 |
+| P0 | 手と前腕に細い肌色/金色の断片が突き出し、握った指のまとまりや袖口→手首の形を読みにくい。 | All four `after/*-full.png`; some wrist separation is also visible in back views. | 左右の手首/握りをnative近景と普通の全身で確認し、破片状シルエットが消えること。実際のメッシュ原因は本画像reviewでは未特定。 |
+| P0/P1 | 袴の前面/側面に黒い鋭い縦の割れ、角形/三角形の開口があり、自然な襞の陰影より裂けた布に見える。 | All four after full; player blue布で特に明瞭。 | 同条件で裾/腿前の布面が連続し、動作でも黒い開口や差込板が出ないこと。静止画だけで動作閉鎖とはしない。 |
+| P1 | 兜の金色の帯が横顔で兜の輪郭外に離れた細線として見える。 | `after/warden-face-profile.png` (clear separation above/front of helmet). | 金帯が兜の表面に沿って接続することを正面/斜め/横顔で再確認。 |
+
+These are visible art defects. This review does not infer a specific vertex-index, normal, skinning, or shader bug from the pixels alone. The integrator separately reported it authorized bounded runtime repairs and would not publish candidate 037fd9d in its present state; no publication action was taken by this reviewer.
+
+### Residual distance to the requested PS4-level goal
+
+- **目と表情。** 同じ照明下で眼窩が強く暗く凹み、細い白目と小さな黒点の瞳、単純な黒線の口が無表情なマネキンの印象を残す。頬の球を消した改善は明確だが、まぶた・目球と視線、鼻下/口の厚み、頬から顎への形の移行はまだ自然に見えない。
+- **顎・耳・髪。** 顎先が鋭い三角形に見え、耳は薄い縁の別部品として目立つ。髪は硬い殻/帽子のような大きな区切りと光沢を持ち、細い束や生え際の読みが弱い。頭頂/髷付近の明るい小さな隙間も見えるが、これを意図しない実メッシュ交差/浮きと確定するには追加の接続確認が必要。
+- **材質。** 布に織りに似た細かな変化は出た一方、顔・首・髪/兜に均一な横縞が目立ち、皮膚は木/ゴムのように一様。皮膚・髪・漆・布の違いは改善途中。縞の原因がテクスチャ、法線、ライティング、再標本化のどれかは本画像だけでは未特定。
+- **四体の造形差。** player/sentinel/retainerの顔形・目鼻・表情は実画像上ほぼ同じで、主な識別は服色と鎧の枚数。wardenは兜と黒い顎当てで違うが、下の顔と全身体形は同じに見える。これを役柄のある人物群の完成とは扱えない。
+- **実プレイでの成立は未測定。** 今回は中立舞台のidleのみ。通常の暗い社前や竹林、背面移動、走り/攻撃でのシルエット・布/手足の連続性・武器接触・fpsはこの資料にはない。以前の世界全体の裸地/岩/社/反復植生の診断も今回の人物画像によって解消されない。
+
+結論: 造形を連続面へ変える方向は実画像上で改善を生んだ。しかし037fd9dは首・肩・手・袴の接続欠陥が強く、人物造形の修復を継続すべき候補。PS4級の品質到達、自然な人物の完成、C06達成のいずれもこのreviewは支持しない。正式10要素は未測定のまま。次の確定candidateを同じnative条件で再撮影し、P0項目の閉鎖と新欠陥を確認する。
+
+### Actually viewed native media and local hashes
+
+Each PNG below was personally opened. Reports were read as JSON. Paths are relative to `.review/34969080023/figures/`.
+
+| File | SHA-256 |
+|---|---|
+| `before/player-back.png` | `7c537eefaea45f6939b6e969f36a69360277ce61b3fb81cef9f0b561f3d38bb5` |
+| `before/player-face-front.png` | `4d2fcb6d87c41a9ca8702f4ef0546ec61975d5e58dda954c8a6c65dd8e8dcdfa` |
+| `before/player-face-profile.png` | `9d8af2dfaa2482cbdb50a961c776e440751b80fb17a0c9315e72692e0d5d9b57` |
+| `before/player-face-threequarter.png` | `7ad205aff7afea6596d3c5e6af22e2e6f5b732edf91272caa35dc9b63cf4068a` |
+| `before/player-full.png` | `13b44c4dccbd5f9f19970f12abd5af279b6624b3f46c96b867e5890298f4fe96` |
+| `before/report.json` | `221ddbd37e1c68420363c5b8d2e6161567683861715c30190db14debb4b3ee3c` |
+| `before/retainer-back.png` | `9ff6acb2809b682136964ad5ca5daaa5871daa37d3c35cbf034f155af537ca23` |
+| `before/retainer-face-front.png` | `ad0233888867c8f65ba230f4030ff4f352efcde1e13bbeea566d337177e9df45` |
+| `before/retainer-face-profile.png` | `3f6a9747e09c4b6eddc043a96e39b4ee89009d8befa34f04aaaa0918ddd7718a` |
+| `before/retainer-face-threequarter.png` | `ed4c95806590536b232af228c692dabe132bb767b7a8c9f38c25ea8b5a4d8697` |
+| `before/retainer-full.png` | `70a6e98f6992aec20bbf5e857e5b90359a790ca06842c2b2467af32026160f40` |
+| `before/sentinel-back.png` | `887fe1f2f21bc62ecca5c520992a4afc2558fb012496138f5540d157e9756da8` |
+| `before/sentinel-face-front.png` | `80271e34afa4c9b78a8b39fb9c6f4c73c80d38689731605d75e3706b70a73a0b` |
+| `before/sentinel-face-profile.png` | `70705106cdf157295a61c2ba6e3e1cfe85e40be01516e29f1d1001941d140ee9` |
+| `before/sentinel-face-threequarter.png` | `def38fcfb4f7c642d2bc29a0205551d2163959a449f984697f7734306c531a58` |
+| `before/sentinel-full.png` | `b23f9050faf55b947efc6fc5af63d169f85645077462048f9758f02aca35a0ee` |
+| `before/warden-back.png` | `f81d5ba9ffa5ac29efc1c18b7b4561bfac97b59ab1d77557536f04e2a645a937` |
+| `before/warden-face-front.png` | `a5b9ed8f1165d83eaff38f3dc26a09a583625b47bcc51973d9612b20452f89e0` |
+| `before/warden-face-profile.png` | `ddfdd7ce33b0e9f150e95df08431f1bfd2b10d2f750540c414796840c2735b30` |
+| `before/warden-face-threequarter.png` | `adee63c9fa3b266e3686913eb15f37015be76b923e1532e3daa7090e2ac08f6c` |
+| `before/warden-full.png` | `9bebfcb901ac4759ba1db95b5ef4dd7426cc9f1fa0df3e677daca02f0284e539` |
+| `after/player-back.png` | `0387a798f11019a0592a752fc11fa009bee22ec054e7c4dfc4605fa7dbe39906` |
+| `after/player-face-front.png` | `396509ed6aace3c3b1d69e9f08f99b075f8a05915b00e888cd673e38e5d27e21` |
+| `after/player-face-profile.png` | `0d5d2da1f8577198ba493e0d09eaf81d129191b0b82359c5baacab1c57238a6c` |
+| `after/player-face-threequarter.png` | `2ec157848061ce1f5aabe0bf0cd8c494009177a54a29fe4c2a219311fad0e1d8` |
+| `after/player-full.png` | `0c083c6673eae9080a31240b806de49bf8b3ed61b69c07730dc5203507e361d3` |
+| `after/report.json` | `b6b90655cdd9fea734f1906dd55fbbc5c3777d0620842a1b31d9e51dd0e61dd0` |
+| `after/retainer-back.png` | `4bbefdc52553628ff30acb658a5e13162196b0131f869807fc3ddc6b7dca9dec` |
+| `after/retainer-face-front.png` | `2b2fce11bd30c300510e6e05f274d142738fcc9891ddd9a61d9983942fc4d6ba` |
+| `after/retainer-face-profile.png` | `759f5166eca6833f35d5307eaeda247c89046ad648a66d40f9cd0150d8fb1e15` |
+| `after/retainer-face-threequarter.png` | `846bf2a39bc6dc0f8a821d17d5638a20e31fb76b801a787df34fcc1c20801fe7` |
+| `after/retainer-full.png` | `5a0191132a18a1d6f4ba0e470f4a555a80450a980252c71e111e79e909763025` |
+| `after/sentinel-back.png` | `bea2a189cf3834d31e92e915ff0aa37974c26dea200fb8b9b63653f257e89033` |
+| `after/sentinel-face-front.png` | `8ccd73b557b8fdb7eb7a92fa4a3557bee5b534680b2708b5e228135ca6b5e62d` |
+| `after/sentinel-face-profile.png` | `0237d063c9c0e3045d2a53b1284ca5a3323644810ece603407fb0b22273e0fd1` |
+| `after/sentinel-face-threequarter.png` | `76c900e24e3a0d78280c03deaa1584c0d333550d0c9e136032bc7723fdc8d7c1` |
+| `after/sentinel-full.png` | `a4fd915d8df0108714a1d7785415eb4cbea26c75930be1accd6f9367af9a1108` |
+| `after/warden-back.png` | `8a73d7ebd8111758bb1ef9f14fbcebaa8c9fc84c5f9ccc359df0004aae16e75d` |
+| `after/warden-face-front.png` | `1536bd809111b20519a0d7bb9b805f0c2f83b0175759074c83f7a55b30e3bc52` |
+| `after/warden-face-profile.png` | `72cfd3d283f4d6647513bcbe72751cebe1d56358e045d57d941a9a88a87fefd2` |
+| `after/warden-face-threequarter.png` | `f6848ef130cc9bb08a77cdcdd52e012e980d49847c14d66911de94b99aac4db2` |
+| `after/warden-full.png` | `a3f98b11f02700d37dd8de16ff8be165acfb44bfc30ae036eb97b12eefecae99` |
+
+Candidate review appended at: 2026-09-15T12:39:36.433813+00:00

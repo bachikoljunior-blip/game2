@@ -91,3 +91,49 @@ This reviewer independently executed `node --test fresh/terrain-contact-bound.te
 The independent run observed Node average milliseconds/frame of falling 7.51 → 1.28, broken 1.00 → 0.14, dodge 0.97 → 0.12. These timings measure the same current generated figure and include the new bound lookup in the accelerated call, but remain local Node diagnostic timing; the exact call-count/pose equality is the stronger reproducible evidence. They do not establish integrated browser/GPU or smartphone performance.
 
 **Final source-known finding:** the identified face, sash, and avoidable contact-scan defects are closed at the stated final hashes. No remaining static blocker/major was found in the reviewed scope. Actual integrated frame timing, native visual inspection, and listening remain necessary. No perceptual or formal-comparison result is changed: all 10 elements remain **not measured**, deadline unchanged.
+
+## Reopened technical review after native-image rejection — 2026-09-15T12:48Z
+
+The integrator reported that actual before/after images from CI `34969080023` exposed neck/shoulder joins, exposed forearm skin, hakama intersections, eye-socket treatment, and a floating helmet band. The integrator rejected publication of `037fd9d`. **This reviewer did not view those images**; the preceding static review is not evidence against those reported visual defects. The same accepted independent reviewer was assigned two finite follow-ups: read-only CI media-flow review, followed by the frozen character repair. No delegation or runtime/workflow edit was made by this reviewer.
+
+### CI media flow
+
+Final reviewed identities:
+
+| File | SHA-256 |
+| --- | --- |
+| `.github/workflows/fresh-game.yml` | `109767383aeab27356ad3c6b4132ddf77b686e5034eb317f329c06e883d46741` |
+| `.github/scripts/emit-fresh-media.py` | `f7d458df0807cc120b8eb6738f510fcb1f53a6965c30ba908edd697b76f8f3c0` |
+
+The figure job now finishes independently of the plant job. Each job checks out `github.sha`, the workflow retains read-only repository permissions, and the scoped diff does not weaken runtime tests, capture thresholds, original media, or publishing gates. The emitter reads local generated output and writes original bytes to the existing job log as a ZIP/base64 envelope; it performs no network/authentication requests or environment dump. Its only environment metadata is the declared GitHub source SHA/run/job. The integrator reported that the normal artifact connector's signed download was rejected with Cloudflare 403/1010 and that a same-owned-artifact read-only CI log transfer succeeded. That recovery was not personally executed or re-verified by this reviewer.
+
+The first reviewed emitter selected recursive file suffixes, and the inline figure variant had no suffix restriction. This reviewer returned the scope weakness and file-symlink issue. The owner replaced both with one helper using **explicit capture filename allowlists**, rejected file symlinks, and required resolved paths to remain within each fixed output root. The output roots had **zero tracked files** in the reviewed checkout; therefore a fresh Actions checkout does not carry this local workspace's old untracked outputs into the job. The source paths for other-work comparison assets are outside the selected roots. No actual secret, other-work media, or local old evidence was read or emitted by this review.
+
+A second concrete failure-flow issue was identified: putting `before` and `after` emits sequentially inside one default `-e` shell block allowed an absent/failed baseline emit to prevent an existing candidate from being recovered. The owner split them into **separate `if: always()` steps**. The final workflow preserves the candidate emit attempt independently of the baseline emit's result.
+
+This reviewer executed the final helper against a **purely virtual Path provider with synthetic bytes**, without traversing or emitting existing evidence. All six groups (`before`, `after`, `vegetation`, `experience`, `fresh`, `public`) preserved the two selected synthetic files exactly after ZIP/base64 round-trip; archive SHA-256, each file's SHA-256/byte count, and ZIP CRC all matched. Negative controls rejected an allowlisted symlink, an allowlisted resolved-path escape, a nonallowlisted JSON, and an out-of-root reference path. The helper's actual byte-packaging logic was used; only the filesystem provider was substituted. This is a helper test, not proof of future remote log completeness. Recovered real archives must still be checked against their envelope.
+
+The selected logs deliberately omit the four full normal-input route WEBMs, their derived visual media, and the exploration WEBMs. The integrator acknowledged this coverage limit, retains the original artifacts/full-decode reports, and will request finite specific originals when needed. This review does not claim those omitted videos were independently observed. No further concrete media-flow defect remained at the final identities above.
+
+### Frozen character repair
+
+| File | SHA-256 |
+| --- | --- |
+| `fresh/character-rig.js` | `4d3ee3249123879c35dfc4a617f28e74e3489669098ee93a4ff6ee6f57315f65` |
+| `fresh/character-sculpt.js` | `0d40059bcb748e47c08f2ec66163aafb266d5eff7729b671070722b727479639` |
+| `fresh/character-sculpt.test.mjs` | `2140f00718f85027d07d1cac8abdb7488ab01231a818ab5537e28ca41d7df907` |
+
+These supplied hashes were independently verified before and after this review. The scoped diff adjusts the neck attachment height and chest/sleeve/forearm/hakama surfaces, caps loft sections, adds rounded iris/pupil surfaces, reduces procedural skin/hair contrast, and replaces the helmet-band ribbon with a shell-following surface. Arm/leg bone lengths and pivots, sword geometry/attachment, motion rules, and input files are unchanged by this repair.
+
+Technical inspection covered cap triangle winding, exact deformed endpoint rims, separate cap/side normals, iris/pupil facing and offsets, neck/collar attachment coordinates, covered forearm geometry, helmet band/mask winding, material cache behavior, and contact geometry generation. The new cap test shoots at both ends of a rotated actual loft from outside with a range shorter than the opposite-cap distance, so its success does not merely hit the other end of an uncapped tube. The eye ray tests verify local facing but alone do not establish assembly visibility.
+
+This reviewer independently ran `node --test fresh/character-sculpt.test.mjs fresh/character-motion.test.mjs`: **25/25 PASS** (5 local ray tests and 20 existing motion tests; no skipped/cancelled tests). To check the local eye test's assembly limitation, additional reviewer-authored stdin code built all four actual rigs, advanced the normal idle pose for 24 frames, and cast **16 rays in total against the complete neck assemblies**: left/right pupil and iris on all four characters. Every nearest hit was the intended actual pupil or iris material, rather than the skull, hair, or helmet. All geometry attributes on all four generated rigs were finite.
+
+| Current generated rig | Triangles | Contact positions | Draw meshes | Attribute bytes |
+| --- | ---: | ---: | ---: | ---: |
+| Player | 52,348 | 28,321 | 64 | 4,996,928 |
+| Sentinel | 52,668 | 28,531 | 64 | 5,027,648 |
+| Retainer | 52,668 | 28,531 | 64 | 5,027,648 |
+| Warden | 54,620 | 29,666 | 66 | 5,215,040 |
+
+No additional source-known blocker/major was found in this frozen character delta. The character owner separately reported the full four terrain tests passing; this reviewer did not duplicate that terrain run. **The reported neck/shoulder, forearm, hakama, eye-socket, and helmet appearance defects are not declared visually closed by these technical checks.** New native images remain required, as do the existing independent media and formal comparison work. All 10 formal elements remain **not measured**, deadline **2026-09-20T07:51:53Z** unchanged.

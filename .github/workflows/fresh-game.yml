@@ -2,7 +2,7 @@ name: Fresh game verification
 on:
   push:
     branches: [codex/game2-rebuild-20260913]
-    paths: ['fresh/**', '.github/workflows/fresh-game.yml', 'docs/**', 'index.html', 'public/**', 'src/**', 'vite.config.js', 'vite.single.config.js', 'package.json', 'package-lock.json', 'tools/check-fresh-catalog.mjs', 'tools/validate-project-state.mjs', '.kit/**', 'ARCHITECTURE.md']
+    paths: ['fresh/**', '.github/workflows/fresh-game.yml', '.github/scripts/emit-fresh-media.py', 'docs/**', 'index.html', 'public/**', 'src/**', 'vite.config.js', 'vite.single.config.js', 'package.json', 'package-lock.json', 'tools/check-fresh-catalog.mjs', 'tools/validate-project-state.mjs', '.kit/**', 'ARCHITECTURE.md']
   workflow_dispatch:
 permissions:
   contents: read
@@ -74,6 +74,9 @@ jobs:
           path: AI_DEVELOPMENT/EVIDENCE/fresh-20260913/
           if-no-files-found: error
           retention-days: 90
+      - name: Read back original verified build, reports and gameplay frames
+        if: always()
+        run: python .github/scripts/emit-fresh-media.py fresh
   art:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -109,16 +112,38 @@ jobs:
             AI_DEVELOPMENT/EVIDENCE/fresh-20260915-art/after/
           if-no-files-found: error
           retention-days: 90
-      - name: Inspect trunk, branch and leaf motion in the production landscape
+      - name: Read back the original baseline figure bytes
         if: always()
+        run: python .github/scripts/emit-fresh-media.py before
+      - name: Read back the original candidate figure bytes
+        if: always()
+        run: python .github/scripts/emit-fresh-media.py after
+  vegetation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Inspect trunk, branch and leaf motion in the production landscape
         run: node fresh/vegetation-capture.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: fresh-art-${{ github.sha }}
-          path: AI_DEVELOPMENT/EVIDENCE/fresh-20260915-art/
+          path: AI_DEVELOPMENT/EVIDENCE/fresh-20260915-art/vegetation/
           if-no-files-found: error
           retention-days: 90
+      - name: Read back original vegetation video and frames
+        if: always()
+        run: python .github/scripts/emit-fresh-media.py vegetation
   experience:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -174,3 +199,6 @@ jobs:
           path: AI_DEVELOPMENT/EVIDENCE/fresh-20260913/
           if-no-files-found: error
           retention-days: 90
+      - name: Read back original actor motion, live audio and exploration reports
+        if: always()
+        run: python .github/scripts/emit-fresh-media.py experience

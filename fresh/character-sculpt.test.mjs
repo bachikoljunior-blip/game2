@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as T from 'three';
-import {eyeSurface,faceRibbon} from './character-sculpt.js';
+import {eyeSurface,eyeDisc,faceRibbon,loft} from './character-sculpt.js';
 import {createCharacterRig} from './character-rig.js';
 
 function visibleFromFront(geometry,x,y){
@@ -23,6 +23,23 @@ test('both nostril contours face the camera even when their authored paths run i
   for(const side of [-1,1]){
     const geometry=faceRibbon([[side*.006,.107,.0018],[side*.012,.106,.002],[side*.019,.109,.0015]],.0022);
     assert.ok(visibleFromFront(geometry,side*.012,.106),`${side<0?'left':'right'} nostril is culled`);
+  }
+});
+
+test('the rounded iris and pupil are visible through a front-facing eye',()=>{
+  for(const side of [-1,1])for(const [radius,offset] of [[.0039,.0031],[.0017,.0040]])
+    assert.ok(visibleFromFront(eyeDisc(side,radius,offset),side*.038+radius*.2,.158),`eye disc ${side} is culled`);
+});
+
+test('a rotated sleeve section closes both ends instead of exposing its hollow interior',()=>{
+  const geometry=loft([[-.3,.09,.07,0],[.04,.06,.06,0]],{segments:24,rows:12});
+  const mesh=new T.Mesh(geometry,new T.MeshStandardMaterial({side:T.FrontSide}));
+  mesh.rotation.set(.63,.41,-.32);mesh.updateMatrixWorld(true);
+  for(const [y,sign] of [[-.3,-1],[.04,1]]){
+    const center=new T.Vector3(0,y,0).applyMatrix4(mesh.matrixWorld);
+    const outward=new T.Vector3(0,sign,0).transformDirection(mesh.matrixWorld);
+    const ray=new T.Raycaster(center.clone().addScaledVector(outward,.05),outward.clone().negate(),0,.10);
+    assert.ok(ray.intersectObject(mesh,false).length>0,`section end ${sign} remains open`);
   }
 });
 

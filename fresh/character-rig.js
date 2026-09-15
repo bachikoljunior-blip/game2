@@ -1,6 +1,6 @@
 import * as T from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { surface,loft,headSculpt,facePoint,eyeSurface,faceRibbon,hakamaPanel,clothRibbon,
+import { surface,loft,headSculpt,facePoint,eyeSurface,eyeDisc,faceRibbon,hakamaPanel,clothRibbon,
   breastplate,shoulderPlate,hairCap,scalpLock,earSculpt,handSculpt,fingerSculpt,footSculpt,createSurfaceTextures } from './character-sculpt.js';
 
 // Fresh, boot-generated figures. Anatomical joints are separate from clothing,
@@ -19,7 +19,7 @@ export function createCharacterResources() {
     if(type===true)type='cloth';
     const key=[color,roughness,metalness,type,doubleSided].join(':');
     if(!materials.has(key)){
-      const maps=textures[type]||{},bumpScale=type==='cloth'?.00025:type==='skin'?.00012:type==='hair'?.0006:.00035;
+      const maps=textures[type]||{},bumpScale=type==='cloth'?.00025:type==='skin'?.00006:type==='hair'?.00015:.00035;
       const m=new T.MeshStandardMaterial({color,roughness,metalness,...maps,bumpScale});
       m.name=`character-${type||'plain'}-${color}`;
       // Open garment cuts and thin armour must cast the same two-sided shadow
@@ -36,13 +36,13 @@ export function createCharacterRig(id, resources=createCharacterResources()) {
   const colors=palettes[id]||palettes.sentinel,mat=resources.material;
   const cloth=mat(colors.cloth,.99,0,'cloth'),shadow=mat(colors.shadow,1,0,'cloth'),armor=mat(colors.armor,.78,.38,'metal'),
     trim=mat(colors.trim,.92,0,'cloth'),cord=mat(colors.cord,.98,0,'cord'),skin=mat(colors.skin,.97,0,'skin'),dark=mat('#242523',.95,0,'leather'),
-    hair=mat('#252420',.89,0,'hair'),lip=mat('#866055',.89),eyes=mat('#241e18',.47),white=mat('#928c76',1,0,'cloth'),
+    hair=mat('#252420',.98,0,'hair'),lip=mat('#866055',.89),eyes=mat('#141512',.39),white=mat('#928c76',1,0,'cloth'),
     steel=mat(id==='player'?'#e7f4f4':'#ffe0a6',.2,.85),edge=mat('#eff4e5',.13,.92),brass=mat('#b7955b',.34,.7);
   steel.emissive.set(id==='player'?'#7397a1':'#a64b24');steel.emissiveIntensity=id==='player'?.13:.24;
   const root=new T.Group();root.name=`actor-${id}`;
   const body=new T.Group();body.name='pelvis';body.position.y=.92;root.add(body);
   const chest=new T.Group();chest.name='ribcage';chest.position.y=.26;body.add(chest);
-  const neck=new T.Group();neck.name='neck';neck.position.y=.37;chest.add(neck);
+  const neck=new T.Group();neck.name='neck';neck.position.y=.315;chest.add(neck);
   const batches=new Map();let generatedParts=0;
   // Merge static details per articulated bone/material, not across joints.
   function part(parent,geometry,material,x=0,y=0,z=0,sx=1,sy=1,sz=1,rx=0,ry=0,rz=0){
@@ -58,7 +58,7 @@ export function createCharacterRig(id, resources=createCharacterResources()) {
   // Continuous tailored volumes preserve the skeletal pivots and reach. The
   // cloth is broad over ribs/scapulae and compressed into the waist sash.
   part(chest,loft([[-.25,.183,.119,0],[-.18,.204,.140,.005],[-.075,.215,.151,.008],
-    [.045,.229,.159,.008],[.157,.236,.146,.006],[.216,.198,.116,.002],[.252,.111,.083,0]],
+    [.045,.229,.159,.008],[.157,.247,.146,.006],[.207,.250,.132,.002],[.246,.190,.107,0],[.280,.095,.075,0]],
     {fold:.006,folds:11,segments:24,rows:16,deform:(p,u,v)=>{
       p[2]+=.009*Math.max(0,Math.cos(u*Math.PI*2))*Math.sin(v*Math.PI);return p;
     }}),cloth);
@@ -76,7 +76,7 @@ export function createCharacterRig(id, resources=createCharacterResources()) {
   part(chest,clothRibbon([[.083,.258,-.076],[.062,.207,-.139],[-.008,.110,-.190],[-.10,-.012,-.191]],.047),cloth);
   part(chest,clothRibbon([[.081,.258,-.082],[.060,.207,-.145],[-.013,.106,-.195],[-.099,-.012,-.197]],.006),trim);
   // Folded cloth at the back collar and seams moulds to the body, not a box.
-  part(chest,loft([[.229,.114,.080,0],[.259,.087,.075,0],[.276,.072,.065,0]],{segments:24,rows:6}),shadow);
+  part(chest,loft([[.242,.126,.092,0],[.272,.092,.078,0],[.288,.077,.066,0]],{segments:24,rows:6}),shadow);
   for(const side of [-1,1])part(chest,clothRibbon([[side*.179,.180,.083],[side*.201,.057,.142],
     [side*.173,-.096,.126],[side*.157,-.210,.104]],.007),shadow);
   part(body,loft([[-.032,.224,.161,0],[.015,.230,.169,0],[.095,.224,.161,0],[.113,.213,.151,0]],
@@ -86,20 +86,17 @@ export function createCharacterRig(id, resources=createCharacterResources()) {
   part(body,clothRibbon([[-.14,.064,-.163],[-.06,.043,-.182],[.037,.069,-.183],[.104,.043,-.167]],.025),cord);
   part(body,clothRibbon([[-.017,.063,-.182],[.012,.088,-.198],[.031,.053,-.196],[.006,.038,-.187]],.027),cord);
 
-  part(neck,loft([[-.131,.067,.062,.014],[-.070,.055,.054,.006],[.012,.051,.050,0],[.056,.050,.046,0]],
+  part(neck,loft([[-.077,.073,.063,.011],[-.037,.059,.054,.005],[.012,.052,.050,0],[.056,.050,.046,0]],
     {segments:24,rows:16}),skin);
   part(neck,headSculpt(),skin);
   for(const side of [-1,1]){
     part(neck,earSculpt(side),skin);
-    part(neck,eyeSurface(side),mat('#b8a696',.63));
-    const pupil=surface(12,6,(u,v)=>{
-      const x=side*.038+(u-.5)*.0088,y=.158+(v-.5)*.0056*Math.sin(u*Math.PI);
-      return facePoint(x,y,.0017);
-    },{flip:true});
-    part(neck,pupil,eyes);
+    part(neck,eyeSurface(side),mat('#a59b8b',.64));
+    part(neck,eyeDisc(side,.0039,.0031),mat('#62503a',.56));
+    part(neck,eyeDisc(side,.0017,.0040),eyes);
     part(neck,eyeSurface(side,{lid:true,upper:true}),skin);
     part(neck,eyeSurface(side,{lid:true,upper:false}),skin);
-    part(neck,faceRibbon([[side*.018,.178,.002],[side*.037,.182,.002],[side*.061,.178,.002]],.0048),hair);
+    part(neck,faceRibbon([[side*.018,.177,.002],[side*.037,.179,.002],[side*.058,.177,.002]],.0030),hair);
     part(neck,faceRibbon([[side*.006,.107,.0018],[side*.012,.106,.002],[side*.019,.109,.0015]],.0022),lip);
   }
   part(neck,faceRibbon([[-.025,.079,.0014],[-.010,.080,.0016],[0,.0785,.0018],[.011,.080,.0016],[.025,.079,.0014]],.0028),lip);
@@ -120,17 +117,22 @@ export function createCharacterRig(id, resources=createCharacterResources()) {
       const theta=u*Math.PI*2,phi=.1+v*1.24;
       return [Math.sin(theta)*Math.sin(phi)*.102,.177+Math.cos(phi)*.119,.017+Math.cos(theta)*Math.sin(phi)*.112];
     },{wrap:true,flip:true}),armor);
-    part(neck,clothRibbon([[0,.289,-.025],[0,.282,-.060],[0,.233,-.100]],.018),brass);
+    part(neck,surface(4,18,(u,v)=>{
+      const theta=Math.PI+(u-.5)*.14,phi=.16+v*1.03;
+      return [Math.sin(theta)*Math.sin(phi)*.1035,.177+Math.cos(phi)*.1205,
+        .017+Math.cos(theta)*Math.sin(phi)*.1135];
+    },{flip:true}),brass);
     part(neck,surface(24,10,(u,v)=>{
-      const x=(u-.5)*.143,y=.031+v*.059;return facePoint(x,y,.007);
+      const x=(u-.5)*(.083+v*.056),y=.036+v*.063+.010*(u*2-1)**4;
+      return facePoint(x,y,.0045);
     },{flip:true}),armor);
   }
 
   const limbs=[],panels=[],ties=[];
   for(const side of [-1,1]){
     const hip=new T.Group();hip.name=side<0?'left-hip':'right-hip';hip.position.set(side*ANATOMY.hipWidth,0,0);body.add(hip);
-    part(hip,loft([[-.435,.077,.080,0],[-.360,.107,.106,.003],[-.255,.125,.116,.003],
-      [-.112,.123,.112,0],[.023,.113,.110,0]],{fold:.008,folds:9,rows:22,phase:side*.3}),shadow);
+    part(hip,loft([[-.435,.069,.073,0],[-.360,.091,.087,.003],[-.255,.103,.093,.003],
+      [-.112,.105,.092,0],[.023,.100,.091,0]],{fold:.005,folds:9,rows:22,phase:side*.3}),shadow);
     const knee=new T.Group();knee.name='knee';knee.position.y=-ANATOMY.thigh;hip.add(knee);
     part(knee,loft([[-.397,.052,.059,.006],[-.303,.061,.071,.012],[-.202,.073,.082,.014],[-.090,.078,.080,.004],[.035,.079,.080,0]],
       {segments:24,rows:20,fold:.003,folds:7}),shadow);
@@ -149,13 +151,16 @@ export function createCharacterRig(id, resources=createCharacterResources()) {
     part(ankle,clothRibbon([[side*.020,-.043,-.184],[side*.018,-.027,-.164],[side*.017,-.015,-.139]],.0025),dark);
     const arm=new T.Group();arm.name=side<0?'left-shoulder':'right-shoulder';arm.position.set(side*.265,.2,0);chest.add(arm);
     part(arm,loft([[-.335,.082,.075,.002],[-.282,.104,.098,.008],[-.204,.098,.091,.004],
-      [-.119,.094,.091,0],[-.025,.098,.095,0],[.046,.058,.068,0]],{segments:24,rows:22,fold:.008,folds:8,phase:side}),cloth);
+      [-.119,.094,.091,0],[-.025,.098,.095,0],[.035,.087,.085,0],[.073,.020,.026,0]],{segments:24,rows:22,fold:.006,folds:8,phase:side}),cloth);
     const shoulderRows=id==='player'?2:id==='warden'?4:3;
     for(let plate=0;plate<shoulderRows;plate++)part(arm,shoulderPlate(side,plate),armor);
     part(arm,loft([[-.329,.085,.079,.002],[-.305,.094,.089,.005]],{segments:26,rows:2}),shadow);
     const elbow=new T.Group();elbow.name='elbow';elbow.position.y=-ANATOMY.upperArm;arm.add(elbow);
-    part(elbow,loft([[-.296,.031,.031,0],[-.259,.042,.038,0],[-.180,.058,.052,.002],[-.074,.066,.059,.003],[.024,.067,.062,0]],
-      {segments:22,rows:18,fold:.0015,folds:6}),skin);
+    // Covered skin stays inside the cloth, including during wrist rotation.
+    part(elbow,loft([[-.302,.027,.026,0],[-.272,.037,.033,0],[-.244,.041,.037,0],[-.224,.039,.035,0]],
+      {segments:22,rows:14}),skin);
+    part(elbow,loft([[-.112,.061,.056,.002],[-.024,.072,.066,.003],[.029,.067,.064,0],[.058,.034,.038,0]],
+      {segments:24,rows:14,fold:.002,folds:7}),shadow);
     part(elbow,loft([[-.244,.044,.040,0],[-.175,.061,.055,.002],[-.058,.070,.064,.003]],
       {segments:24,rows:16,fold:.0025,folds:8}),shadow);
     part(elbow,surface(16,10,(u,v)=>{
@@ -174,7 +179,7 @@ export function createCharacterRig(id, resources=createCharacterResources()) {
       new T.Vector3(side*.034,-.009,-.035),new T.Vector3(side*.021,-.007,-.037)]),16,.012,8,false),skin);
     limbs.push({side,hip,knee,ankle,arm,elbow,wrist,hand:wrist});
     for(const front of [-1,1]){
-      const panel=new T.Group();panel.name=front<0?'hakama-front':'hakama-back';panel.position.set(side*.123,-.041,front*.113);body.add(panel);
+      const panel=new T.Group();panel.name=front<0?'hakama-front':'hakama-back';panel.position.set(side*.128,-.041,front*.139);body.add(panel);
       part(panel,hakamaPanel(side,front),cloth);panels.push({node:panel,side,front});
     }
     const tie=new T.Group();tie.name='headband-tail';tie.position.set(side*.022,.188,.122);neck.add(tie);
