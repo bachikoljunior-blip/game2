@@ -1,7 +1,7 @@
 {
   "id": "GAME2-SEVEN-FIXES-ALL-ANIMATION-20260915",
   "recordedAt": "2026-09-15T08:35:00Z",
-  "status": "implementation and152localtests complete; final exact-source rendered verification pending",
+  "status": "Concrete rendered-review repairs integrated;168full tests/build/root-preservation passed at local55d2e6ad. Final matching CI and independent visual recheck pending before PR21 merge.",
   "userOriginals": [
     "サウンド全て自然にして。植物の揺れ自然にして。キャラデザ細部まで作り込んで。スワイプで画面移動と攻撃モーション合わさって混同してんのどうにかして。足折れてる敵直して。マップはもっと広大で飽きないようにして。走ってるアニメーション自然にして。",
     "アニメーション全て自然で見応えあるものにして"
@@ -80,7 +80,15 @@
     ],
     "descendantsAllowed": false,
     "effectiveInternalStrengthIndependentlyConfirmed": false,
-    "pendingWorkIsNotExecutedEvidence": true
+    "pendingWorkIsNotExecutedEvidence": true,
+    "followupOwnership": {
+      "character_animation": "Foreground helper/presentation repair in isolatedgame2-foreground-fix; no character-motion edits in this phase.",
+      "audio_input": "Support-driven character-motion and related tests only in isolatedgame2-motion-weight-fix; audio/simulation unchanged in this phase.",
+      "world_wind_exploration": "Memory sign repair, then newgrass-shape helper/tests only; no concurrent presentation edits.",
+      "integrator": "Remote writer; grasshelper presentation hookup after foreground handoff.",
+      "independent_runtime_review": "No production edits; independent finite actual-media and exact-source CPU reviews.",
+      "spawnPolicy": "These are followups to the five formally accepted Ultra/none/model-omitted agents; no new/implicit/lower-strength descendants."
+    }
   },
   "deadlineReassessment": {
     "deadline": "2026-09-20T07:51:53Z",
@@ -120,7 +128,21 @@
     "runClockAndCadence": "1731391c3fb75dd1ff50ad277535842443f207a3",
     "runFacingRegressionRepair": "ebaa09b4a4e399f44b40be57d08265e6f2d3d231",
     "sharedFootstepCycle": "1bce6f63074676d926d28d71256bd141f87d5227",
-    "testedLocalRuntime": "47d5f161b7dc233420bd100fc51bb7c8d56a7029"
+    "testedLocalRuntime": "55d2e6ad16d9b83b6b7cb04c1df079415303f02f",
+    "secondRemoteCandidate": "414163336db8a5a73a090ad12ebf88999475491c",
+    "secondRemoteTree": "18a21a9e3b67b08713a32f854f95c3b3757b9268",
+    "startupSeedLocal": "f578df097d984d1063e0cd0af3c9b3df2fee36c8",
+    "startupSeedRemote": "927743f0fe3d31d207d43362907ce30eaf8d5e99",
+    "startupSeedTree": "8abb20d91afd44715a4dd776577bf5959c2f364f",
+    "defenderReactionCapture": "d044fa96d6c056d8c017c9c99daa9d480d666b7c",
+    "memorySignRepair": "ed4b42cd0968e37ebbe3308221d942065331752b",
+    "memorySignIntegration": "b34c4895",
+    "failedEvidenceEarlyUpload": "468e1f9",
+    "foregroundVisibilityRepair": "1c87e8066ea9b524aa44276f8c4d45dd578acceb",
+    "foregroundIntegration": "9c254e8",
+    "grassShapeRepair": "5279331edb1fa4aead8f786d40431aad544df6ad",
+    "grassPresentationIntegration": "6d3dbff",
+    "supportDrivenBodyAndReactions": "f72d452e7493cb1de9e7aad34a7683d1d0442ee9"
   },
   "limitations": {
     "audioInput": "The actual audio item returned: audio content omitted because you do not support audio input. Generated audition audio and real game master-bus recording are available for replay; this executor cannot truthfully claim listening or perceptual naturalness. PCM tests and independent source/audio-lifecycle review are only technical evidence.",
@@ -130,12 +152,29 @@
   "independentDiagnostic": "AI_DEVELOPMENT/EVIDENCE/20260915-independent-runtime-initial.md",
   "firstRenderedCiEvidence": "AI_DEVELOPMENT/EVIDENCE/20260915-seven-fixes-first-rendered-ci.json",
   "latestLocalVerification": {
-    "unitTests": 152,
-    "passed": 152,
-    "freshBuild": "passed;612.27kB/169.67kB gzip",
+    "unitTests": 168,
+    "passed": 168,
+    "freshBuild": "passed;621.38kB/173.05kB gzip",
     "rootSourceDifferenceFromPreservedBaseline": 0,
-    "actorGrounding": "1680action poses,24run-stop routes; maximum residual terrain penetration0.444mm; original1.465cm regression fixed without threshold changes",
+    "actorGrounding": "Existing1680action poses and24run-stop paths pass; new support-driven run and parry/block terrain tests pass;1.86mm block reach regression repaired in the pose without relaxing limits.",
     "cadence": "3.8m/s run3.3929steps/s,20.4percent sampled flight; world.time phases agree at4/50/60/120Hz and shared audio steps agree at60Hz/250ms",
-    "independentRechecks": "Initial6staticfindings resolved; actual-media ordinary camera failure independently reproduced and source repair closes the same numerical repro. Final fixed-source visual review is still pending."
+    "independentRechecks": "Original6CPU findings and startup mismatch closed.414actualmedia shows correct staged cuts/falls but identified mid-combat cloth/ridge and near-leaf obstruction, stiff running torso, weak hit response and repetitive grass. All have concrete local repairs; independent final media recheck remains pending.",
+    "additionalFocusedChecks": {
+      "startup": "63focused tests/build pass; independent start/retry phase delta <=2.22e-16 and same-side contacts",
+      "memoryApproach": "8exploration tests pass; exact90ms controller fails before at240s, passes after at34.11modelseconds with2discoveries and HP100",
+      "scope": "These are not new full-suite totals or physical/browser performance measurements."
+    }
+  },
+  "secondRenderedCiEvidence": "AI_DEVELOPMENT/EVIDENCE/20260915-ci-34952868959-recovery.json",
+  "independentActualRouteReview": "AI_DEVELOPMENT/EVIDENCE/20260915-independent-route-media-414.md",
+  "startupIndependentClosure": "AI_DEVELOPMENT/EVIDENCE/20260915-startup-phase-independent-closure.md",
+  "currentPending": {
+    "remoteSource": "927743f0fe3d31d207d43362907ce30eaf8d5e99",
+    "ci": 34953686508,
+    "meaning": "927is a preserved precursor whose fresh job passes153tests/four routes, but memory timeout matches414. Local55d2e6ad includes sign,14-case guard fixture, foreground, run/reaction and grass repairs. Publish its tested runtime tree and obtain new exact-source media.",
+    "pr": 21,
+    "main": "bc37e9665a3eab6a369ce77b13b3219f8df2e602",
+    "localRuntime": "55d2e6ad16d9b83b6b7cb04c1df079415303f02f",
+    "preparedAt": "2026-09-15T10:10:13.397281Z"
   }
 }

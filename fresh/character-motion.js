@@ -74,10 +74,35 @@ export function sampleCharacterPose(state,age=0,{time=0,speed=0,phase=0,turn=0,a
     const flight=half>gaitProfile.stanceFraction?(half-gaitProfile.stanceFraction)/(.5-gaitProfile.stanceFraction):0;
     const runningHeight=.90-.065*Math.sin(Math.PI*support)+.006*4*flight*(1-flight);
     pose.pelvis[1]=mix(pose.pelvis[1],runningHeight,run*moving);
-    pose.body[2]=Math.sin(gait)*.03*moving-clamp(turn*.008,-.065,.065)*moving;
-    pose.chest[1]+=-Math.sin(gait)*.055*moving;
-    pose.leftHand=[-.285,.99+Math.cos(gait)*.07*moving,.035-Math.sin(gait)*.19*moving];
-    pose.weapon[1]+=Math.cos(gait+.3)*.025*moving;pose.weapon[2]+=Math.sin(gait)*.055*moving;
+    // A loaded support leg carries the pelvis while the opposite shoulder
+    // and free arm counter the advancing thigh. The phase is the same contact
+    // phase used by feet/audio: no separate upper-body oscillator can drift.
+    const reach=p=>p<gaitProfile.stanceFraction?1-2*p/gaitProfile.stanceFraction:
+      mix(-1,1,ease((p-gaitProfile.stanceFraction)/(1-gaitProfile.stanceFraction)));
+    const load=p=>p<gaitProfile.stanceFraction?Math.sin(Math.PI*p/gaitProfile.stanceFraction):0;
+    const leftPhase=phase%1,rightPhase=(phase+.5)%1,leftReach=reach(leftPhase),rightReach=reach(rightPhase);
+    const supportBalance=load(rightPhase)-load(leftPhase),hipAdvance=(leftReach-rightReach)*.5;
+    const upperWeight=moving*(.4+run*.6),pelvicYaw=-hipAdvance*.075*upperWeight;
+    pose.pelvis[0]+=supportBalance*.026*upperWeight;
+    pose.pelvis[2]-=run*moving*.022;
+    pose.body[0]-=run*moving*.065;
+    pose.body[1]=pelvicYaw;
+    pose.body[2]=-supportBalance*.024*upperWeight-clamp(turn*.008,-.065,.065)*moving;
+    pose.chest[1]-=pelvicYaw*2.4;
+    pose.chest[2]=supportBalance*.017*upperWeight;
+    pose.leftHand=[-.29-supportBalance*.018*upperWeight,
+      .985+ease((1-leftReach)*.5)*.13*upperWeight,.035+leftReach*.235*upperWeight];
+    // The right wrist carries a controlled blade instead of matching the free
+    // arm's full swing. Both arm IK targets still follow this single grip.
+    pose.weapon[0]+=hipAdvance*.018*upperWeight;
+    pose.weapon[1]+=(pose.pelvis[1]-.89)*.45*moving;
+    pose.weapon[2]+=rightReach*.060*upperWeight;
+    pose.weaponRotation[1]-=pelvicYaw*.45;
+    pose.weaponRotation[2]-=supportBalance*.026*upperWeight;
+    // Stabilise the gaze against pelvis/shoulder roll and forward acceleration.
+    pose.head[0]-=(pose.body[0]+pose.chest[0])*.85*moving;
+    pose.head[1]-=(pose.body[1]+pose.chest[1])*.82*moving;
+    pose.head[2]-=(pose.body[2]+pose.chest[2])*.9*moving;
     pose.phase=speed>.15?'locomotion':'idle';
   }
   if(state==='guard'){
@@ -93,8 +118,13 @@ export function sampleCharacterPose(state,age=0,{time=0,speed=0,phase=0,turn=0,a
       [.56,{...guard,weapon:[.10,1.12,-.345],weaponRotation:[-1.12,0,-.1]}],[.65,guard]],age);
     pose.phase=age<.18?'anticipation':age<=.34?'active':'recovery';pose.active=age>=.18&&age<=.34;
   }else if(state==='stagger'){
-    pose=track(pose,[[0,guard],[.075,{...guard,pelvis:[.01,.855,.065],body:[-.19,0,-.09],head:[-.12,.06,.05],weapon:[.27,1.38,-.20],weaponRotation:[-.43,0,-.57]}],
-      [.20,{...guard,pelvis:[.01,.86,.038],body:[-.08,0,-.035],head:[-.04,0,0]}],[.38,guard]],age);pose.phase='hit-recoil';
+    // Frontal impact first displaces the trunk backwards, then the knees and
+    // abdomen catch its weight. The stance recovers within the real .38s state.
+    pose=track(pose,[[0,guard],
+      [.055,{...guard,pelvis:[.035,.795,.100],body:[.16,-.035,-.115],chest:[-.13,.18,.08],head:[-.16,-.05,.045],weapon:[.27,1.29,-.20],weaponRotation:[-.60,.10,-.44]}],
+      [.13,{...guard,pelvis:[.02,.775,.065],body:[-.15,-.02,-.065],chest:[-.12,.10,.05],head:[.065,-.025,.018],weapon:[.22,1.10,-.29],weaponRotation:[-.97,.06,-.28]}],
+      [.235,{...guard,pelvis:[.01,.822,.035],body:[-.055,0,-.025],chest:[-.035,.10,.018],head:[.035,0,0],weapon:[.16,1.18,-.35],weaponRotation:[-.80,-.04,-.26]}],
+      [.38,guard]],age);pose.phase='hit-recoil';
   }else if(state==='broken'){
     const collapsed={...guard,pelvis:[.025,.645,.03],body:[-.3,0,.10],chest:[-.15,.13,-.04],head:[.28,-.1,-.03],weapon:[.255,.74,-.26],weaponRotation:[-1.9,.1,-.3],twoHands:0,leftHand:[-.22,.56,-.30],feet:[[-.20,.09,-.24],[.18,.09,.27]]};
     pose=track(pose,[[0,guard],[.26,collapsed],[1.22,collapsed],[1.60,{...guard,pelvis:[.01,.8,.03],body:[-.18,0,.03]}],[1.8,guard]],age);pose.phase='posture-broken';
@@ -121,6 +151,27 @@ export function sampleCharacterPose(state,age=0,{time=0,speed=0,phase=0,turn=0,a
   return copyPose(pose);
 }
 
+// A successful parry redirects at the wrists; a held block yields through the
+// braced trunk. Neither reaction changes foot targets or resembles a lost stance.
+export function sampleDefenseRecoil(kind,age){
+  const zero={pelvis:[0,0,0],body:[0,0,0],chest:[0,0,0],head:[0,0,0],weapon:[0,0,0],weaponRotation:[0,0,0]};
+  const parryImpact={pelvis:[0,-.012,0],body:[0,0,0],chest:[-.022,-.065,.014],head:[.015,.045,-.01],weapon:[.014,.012,.018],weaponRotation:[-.035,-.08,-.29]};
+  const blockImpact={pelvis:[0,-.035,.026],body:[.045,0,.015],chest:[-.068,.025,.012],head:[.025,-.016,0],weapon:[-.012,-.032,.060],weaponRotation:[.115,0,.12]};
+  const recoil=kind==='parry'?[
+    [0,parryImpact],[.022,parryImpact],
+    [.065,{chest:[0,.035,0],weapon:[-.012,.008,-.012],weaponRotation:[0,.035,.085]}],[.16,zero]
+  ]:[
+    [0,blockImpact],[.040,blockImpact],
+    [.105,{pelvis:[0,-.019,.010],body:[.01,0,.006],chest:[-.035,.01,0],head:[.015,0,0],weapon:[0,-.015,.022],weaponRotation:[.035,0,.03]}],[.24,zero]
+  ];
+  if(age<0||age>=recoil.at(-1)[0])return zero;
+  for(let n=1;n<recoil.length;n++)if(age<=recoil[n][0]){
+    const a=recoil[n-1],b=recoil[n],t=ease((age-a[0])/(b[0]-a[0]));
+    return Object.fromEntries(Object.keys(zero).map(key=>[key,zero[key].map((_,i)=>mix((a[1][key]??zero[key])[i],(b[1][key]??zero[key])[i],t))]));
+  }
+  return zero;
+}
+
 /** Two-bone IK with an explicit bend pole. Knee and elbow joints are solved
  * from segment lengths; neither can acquire the old reversed knee rotation. */
 export function solveTwoBone(origin,target,pole,upper,lower){
@@ -142,7 +193,7 @@ export function solveTwoBone(origin,target,pole,upper,lower){
 function memory(actor,world){return {
   actor,worldTime:world.time,position:{x:actor.x,z:actor.z},yaw:actor.yaw||0,time:0,state:actor.state,age:actor.age||0,
   speed:0,lastSpeed:0,measuredSpeed:0,directionWorld:{x:Math.sin(actor.yaw||0),z:-Math.cos(actor.yaw||0)},phase:0,cycles:0,pivotPhase:0,gaitWeight:0,feet:[null,null],pose:restPose(),from:restPose(),transition:1,
-  victoryAge:0,lastMode:world.mode,lastEventTime:-1,impact:0,impactKind:null,
+  victoryAge:0,lastMode:world.mode,lastEventTime:-1,impact:0,impactKind:null,impactAge:Infinity,
   cloth:0,clothVelocity:0,turn:0,metrics:{},
 };}
 // Start and retry seed the presentation at the same simulation boundary as
@@ -235,7 +286,8 @@ export function updateCharacterRig(rig,actor,world,seconds,{animate=true,groundH
   let pose=sampleCharacterPose(state,m.age,{time:m.time,speed:m.speed,phase:m.phase,turn:m.turn,acceleration,direction,victoryAge:m.victoryAge});
   // A short state entry blend preserves the previous silhouette; by the .18s
   // hit window the authored pose is exact, not low-pass filtered behind hits.
-  if(m.transition<.09&&!(state==='attack'&&m.age>=ATTACK_PHASES.activeStart))pose=blendPose(m.from,pose,ease(m.transition/.09));
+  const entryDuration=state==='stagger'?.028:.09;
+  if(m.transition<entryDuration&&!(state==='attack'&&m.age>=ATTACK_PHASES.activeStart))pose=blendPose(m.from,pose,ease(m.transition/entryDuration));
   const contacts=[false,false];
   if(locomotion&&m.gaitWeight>.015){
     for(let i=0;i<2;i++){
@@ -275,13 +327,19 @@ export function updateCharacterRig(rig,actor,world,seconds,{animate=true,groundH
   }
   // Reactions belong to the recipient: a successful parry drives a small wrist
   // deflection and recovery; the interrupted attacker uses stagger/broken.
+  let receivedImpact=false;
   for(const event of world.events||[])if(event.target===actor.id&&event.time>m.lastEventTime&&(event.type==='parry'||event.type==='block')){
-    m.impact=1;m.impactKind=event.type;m.lastEventTime=event.time;
+    m.impact=1;m.impactKind=event.type;m.impactAge=Math.max(0,world.time-event.time);m.lastEventTime=event.time;receivedImpact=true;
   }
   if(m.impact>.001&&actor.hp>0&&state!=='victory'){
-    const pulse=m.impact*m.impact;pose.chest[0]-=pulse*.045;pose.weaponRotation[2]+=pulse*(m.impactKind==='parry'?-.24:.14);pose.weapon[2]+=pulse*.045;
+    m.impactAge=Math.max(0,world.time-m.lastEventTime);
+    // Contact has already happened when this event arrives. Show its impulse
+    // once even after a missed render frame, then resume the original event
+    // age instead of replaying a delayed reaction or restarting its duration.
+    const reaction=sampleDefenseRecoil(m.impactKind,receivedImpact?0:m.impactAge);
+    for(const key of ['pelvis','body','chest','head','weapon','weaponRotation'])for(let i=0;i<3;i++)pose[key][i]+=reaction[key][i];
   }
-  m.impact*=Math.exp(-dt*14);
+  m.impact*=Math.exp(-elapsed*14);
   const ungroundedPose=copyPose(pose);
   const groundedFeet=pose.feet.map((foot,i)=>groundFoot(foot,pose.footPitch[i],actor,m.yaw,ground,groundHeightAt));
   const supportLift=groundedFeet.reduce((sum,foot,i)=>sum+foot.y-pose.feet[i][1],0)/2;

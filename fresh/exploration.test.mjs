@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {EXPLORATION,EXPLORATION_SOLIDS,advanceExploration,constrainExplorationPosition,createExplorationState,explorationSolidAt,explorationText,isExplorationWalkable} from './exploration.js';
 import {groundHeightAt} from './terrain.js';
-import {createWorld,OBSTACLES} from './simulation.js';
+import {advance,createWorld,OBSTACLES} from './simulation.js';
 import {routePathCenters} from './route-layout.js';
 
 function* walkSamples(walk,reverse=false){
@@ -115,6 +115,30 @@ test('abandoning an entrance or partial walk still permits a complete circuit fr
     assert.deepEqual(world.exploration.completed,[walk.id]);
     assert.equal(world.events.filter(e=>e.type==='exploration-loop'&&e.loop===walk.id).length,1);
   }
+});
+test('ordinary keyboard approach and memory circuit clear the entrance sign with the experience controller',()=>{
+  const world=createWorld(),walk=EXPLORATION.loops.find(loop=>loop.id==='memory');
+  const goals=[{x:-10,z:18},{x:-10,z:-18},...walk.nodes];let elapsed=0;
+  // The actual-input harness observes at 90ms, stops within 1.3m and has an
+  // axis dead zone of .45m. This CPU regression assumes zero delivery latency.
+  for(const goal of goals){
+    while(elapsed<240){
+      assert.equal(world.mode,'playing');
+      const dx=goal.x-world.player.x,dz=goal.z-world.player.z;
+      if(Math.hypot(dx,dz)<1.3)break;
+      advance(world,.09,{x:Math.abs(dx)>.45?Math.sign(dx):0,z:Math.abs(dz)>.45?Math.sign(dz):0});elapsed+=.09;
+    }
+    assert.ok(elapsed<240,`ordinary approach to (${goal.x},${goal.z}) cannot stall at a sign`);
+    assert.ok(Math.hypot(goal.x-world.player.x,goal.z-world.player.z)<1.3);
+    const places=EXPLORATION.points.filter(place=>Math.hypot(place.x-goal.x,place.z-goal.z)<3),until=elapsed+15;
+    while(places.some(place=>!world.exploration.discovered.includes(place.id))&&elapsed<until){
+      advance(world,.09,{});elapsed+=.09;
+    }
+    assert.ok(places.every(place=>world.exploration.discovered.includes(place.id)));
+  }
+  assert.deepEqual(world.exploration.completed,['memory']);
+  assert.deepEqual(world.exploration.discovered,walk.discoveries);
+  assert.equal(world.player.hp,100);assert.equal(world.signalLit,false);
 });
 test('discoveries need a living visitor and dwell; pause and retry cannot carry or manufacture progress',()=>{
   const world=createWorld(),place=EXPLORATION.points[0];world.exploration=createExplorationState();

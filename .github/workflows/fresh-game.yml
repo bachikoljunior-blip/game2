@@ -92,11 +92,23 @@ jobs:
           node node_modules/vite/bin/vite.js build --config fresh/vite.config.mjs
           git diff --exit-code HEAD -- .
       - name: Unambiguous touch input and optional exploration circuits
+        id: experience_routes
         run: |
           node node_modules/vite/bin/vite.js preview --config fresh/vite.config.mjs --host 127.0.0.1 --port 4178 &
           SERVER_PID=$!
           trap 'kill "$SERVER_PID"' EXIT
           node fresh/experience-smoke.mjs
+      - name: Preserve a failed exploration before the longer motion study
+        if: failure() && steps.experience_routes.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: fresh-exploration-failure-${{ github.sha }}
+          path: |
+            AI_DEVELOPMENT/EVIDENCE/fresh-20260913/experience-report.json
+            AI_DEVELOPMENT/EVIDENCE/fresh-20260913/explore-*.png
+            AI_DEVELOPMENT/EVIDENCE/fresh-20260913/exploration-*.webm
+          if-no-files-found: error
+          retention-days: 90
       - name: Generate listening assets and capture actual game sound
         if: always()
         run: |

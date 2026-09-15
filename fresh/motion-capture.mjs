@@ -14,7 +14,7 @@ const temp=await mkdtemp(resolve(root,'.motion-study-'));
 const revision=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim();
 const cases=[
   ['idle',3],['start-run-stop',4],['turn',3],['guard',2],['windup-attack',3],
-  ['attack',3],['dodge',2],['hit',2],['parry',2],['broken',2.5],['death',3],['victory',4],['wind',4]
+  ['attack',3],['dodge',2],['hit',2],['parry',2],['block',2],['broken',2.5],['death',3],['victory',4],['wind',4]
 ];
 const html=`<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#101820}canvas{display:block;width:100vw;height:100vh}#label{position:fixed;left:16px;top:12px;color:#fff;font:16px/20px system-ui;max-width:300px;background:#15232de8;padding:8px 12px}</style></head><body><canvas id="scene"></canvas><div id="label"></div><script type="module">
 import {createPresentation} from '/@fs/${root}/fresh/presentation.js';
@@ -102,7 +102,10 @@ window.studyFrame=(name,t,dt)=>{
  if(name==='windup-attack'){const age=t%1.6;p.state=age<.65?'windup':age<1.3?'attack':'idle';p.age=age<.65?age:age<1.3?age-.65:age-1.3;}
  if(name==='attack'){const age=t%1.1;p.state=age<.65?'attack':'idle';p.age=age<.65?age:age-.65;}
  if(name==='dodge'){const age=t%1.2;p.state=age<.46?'dodge':'idle';p.age=age<.46?age:age-.46;p.dodgeX=1;p.dodgeZ=0;p.x=-3.22+Math.min(age,.46)*7+Math.floor(t/1.2)*3.22;}
- if(name==='hit'||name==='parry'){const age=t%1.2;p.state=age<.38?'stagger':'idle';p.age=age<.38?age:age-.38;if(age<dt)world.events=[event(name==='hit'?'hit':'parry')];}
+ if(name==='hit'){const age=t%1.2;p.state=age<.38?'stagger':'idle';p.age=age<.38?age:age-.38;if(age<dt)world.events=[event('hit')];}
+ // Both successful defense reactions belong to the guarding recipient. The
+ // interrupted attacker uses stagger/broken, rather than this defender pose.
+ if(name==='parry'||name==='block'){const age=t%1.2;p.state='guard';p.age=t;if(age<dt)world.events=[event(name)];}
  if(name==='broken'){p.state=t<1.8?'broken':'idle';p.age=t<1.8?t:t-1.8;}
  if(name==='death'){p.state='dead';p.hp=0;p.age=t;world.mode='defeat';if(t<dt*1.1)world.events=[event('death')];}
  if(name==='victory'){world.mode='victory';world.signalLit=true;p.state='idle';}

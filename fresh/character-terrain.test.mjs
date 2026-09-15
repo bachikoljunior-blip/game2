@@ -86,3 +86,21 @@ test('state blending on the steep sun-ring cannot accumulate terrain offsets or 
     assert.ok(rig.body.position.y<1.15,'ground offsets may not accumulate across transitions');
   }
 });
+
+
+test('parry and block keep grounded soles and reachable grips across discovery slopes',()=>{
+  const rig=createCharacterRig('player');
+  for(const place of EXPLORATION.points)for(const yaw of [0,Math.PI/2,Math.PI,Math.PI*1.5])for(const kind of ['parry','block']){
+    const actor={id:'player',x:place.x,z:place.z,yaw,hp:100,state:'guard',age:.2},world={time:0,mode:'playing',events:[]};
+    updateCharacterRig(rig,actor,world,1/60,{groundHeightAt});
+    const planted=rig.motion.metrics.feet.map(foot=>({...foot.footWorld}));
+    world.events=[{type:kind,target:'player',source:'sentinel',time:0}];
+    for(const age of [0,.025,.05,.10,.18,.26]){
+      const dt=age-world.time;world.time=age;actor.age=.2+age;
+      const motion=updateCharacterRig(rig,actor,world,dt,{groundHeightAt}),clearance=figureClearance(rig);
+      assert.ok(clearance.minimum>=-.004,`${place.id}/${kind}: ${clearance.part} penetrates ${-clearance.minimum}m`);
+      motion.feet.forEach((foot,i)=>{assert.ok(foot.kneeRotationX<=.001);assert.ok(Math.hypot(foot.footWorld.x-planted[i].x,foot.footWorld.y-planted[i].y,foot.footWorld.z-planted[i].z)<1e-7);});
+      assert.ok(motion.hands.every(hand=>hand.reachError<.025),`${place.id}/${kind}: grip exceeds reach`);
+    }
+  }
+});

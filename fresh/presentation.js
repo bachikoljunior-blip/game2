@@ -12,6 +12,8 @@ import { advanceEnvironmentClock, createEnvironmentClock, installWindMaterial, s
 import { createCharacterResources, createCharacterRig } from './character-rig.js';
 import { seedCharacterRig, updateCharacterRig } from './character-motion.js';
 import { followSunShadow, SUN_SHADOW } from './sun-shadow.js';
+import { addForegroundRidge, characterSightPoints, createForegroundVisibility } from './foreground-visibility.js';
+import { createGrassClumpGeometry } from './grass-shape.js';
 
 const clamp = T.MathUtils.clamp;
 export function createPresentation(canvas) {
@@ -21,6 +23,7 @@ export function createPresentation(canvas) {
   renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.02;
   const scene = new T.Scene(); scene.fog = new T.FogExp2('#bcab94',.009);
   const camera = new T.PerspectiveCamera(52,1,.1,230);
+  const foreground=createForegroundVisibility();
   scene.add(new T.HemisphereLight('#a4bfd3','#42372a',1.55));
   const sun = new T.DirectionalLight('#ffd29a',3.4); sun.position.set(-24,18,-42); sun.castShadow=true;
   sun.shadow.mapSize.set(SUN_SHADOW.mapSize,SUN_SHADOW.mapSize); Object.assign(sun.shadow.camera,{left:-SUN_SHADOW.width/2,right:SUN_SHADOW.width/2,top:SUN_SHADOW.height/2,bottom:-SUN_SHADOW.height/2,near:1,far:110});
@@ -165,13 +168,7 @@ export function createPresentation(canvas) {
   // A continuous base prevents a visual gap from implying a false shortcut;
   // separately seeded rocks break up its silhouette without perturbing the valley.
   const fork=ROUTE_FORK.obstacle;
-  box(ridgeStone,fork.x,.62,fork.z,fork.w,1.24,fork.d);
-  let routeSeed=9042026;
-  const routeRandom=()=>{routeSeed=(1664525*routeSeed+1013904223)>>>0;return routeSeed/4294967296;};
-  for(let z=fork.z+fork.d/2-.65;z>fork.z-fork.d/2+.45;z-=1.45)for(const x of [-1.35,0,1.35]){
-    const rock=new T.DodecahedronGeometry(1,1),sx=.72+routeRandom()*.22,sy=.72+routeRandom()*.5,sz=.72+routeRandom()*.25;
-    staticPart(rock,ridgeStone,x+(routeRandom()-.5)*.18,.75+sy*.52,z+(routeRandom()-.5)*.16,sx,sy,sz,routeRandom()*6.28);
-  }
+  addForegroundRidge(foreground,scene,ridgeStone,fork);
   // Left: compact generated stone lamps signal the shorter, earlier duel.
   for(const marker of ROUTE_FORK.left.markers){
     const y=groundHeightAt(marker.x,marker.z);
@@ -188,7 +185,8 @@ export function createPresentation(canvas) {
     column(dark,marker.x,y+1.35,marker.z,.045,2.7);
     const bannerGeometry=new T.PlaneGeometry(.9,1.6,5,8);bannerGeometry.translate(-.45,-.8,0);
     const banner=new T.Mesh(bannerGeometry,routeCloth);banner.customDepthMaterial=clothDepth;
-    banner.position.set(marker.x-.04,y+2.5,marker.z);banner.castShadow=true;banner.receiveShadow=true;scene.add(banner);routeBanners.push(banner);
+    banner.position.set(marker.x-.04,y+2.5,marker.z);banner.castShadow=true;banner.receiveShadow=true;
+    foreground.add(banner,{cloth:true,id:`route-cloth-${routeBanners.length}`});scene.add(banner);routeBanners.push(banner);
   }
   // Three optional walks have different silhouettes, ground treatment and
   // discoveries. Paths follow the same triangles as the actor's feet.
@@ -238,7 +236,7 @@ export function createPresentation(canvas) {
     box(routeBinding,x-.46,y+height-.05,z,.94,.045,.045);
     const g=new T.PlaneGeometry(.9,1.6,7,12);g.translate(-.45,-.8,0);
     const m=new T.Mesh(g,routeCloth);m.position.set(x,y+height-.05,z);m.castShadow=m.receiveShadow=true;
-    m.customDepthMaterial=clothDepth;scene.add(m);return m;
+    m.customDepthMaterial=clothDepth;foreground.add(m,{cloth:true,id:prop.id});scene.add(m);return m;
   }
   function waterDisk(x,z,radius,y){
     const disk=new T.Mesh(new T.CircleGeometry(radius,32),waterMat);disk.rotation.x=-Math.PI/2;disk.position.set(x,y,z);scene.add(disk);
@@ -358,24 +356,18 @@ export function createPresentation(canvas) {
       }
     }
   }
-  for(const [mat,cells] of batches)for(const geoms of cells.values()){
+  for(const [mat,cells] of batches)for(const [cell,geoms] of cells){
     const merged=mergeGeometries(geoms);merged.computeBoundingSphere();
     if(vegetationMaterials.has(mat))merged.boundingSphere.radius+=1.4;
     const mesh=new T.Mesh(merged,mat);mesh.castShadow=mesh.receiveShadow=true;
     if(vegetationMaterials.has(mat))mesh.customDepthMaterial=leafDepth;
+    if(mat===leaf||mat===autumnLeaf)foreground.add(mesh,{vegetation:true,id:`${mat===leaf?'bamboo-leaves':'maple-leaves'}-${cell}`});
     scene.add(mesh);geoms.forEach(g=>g.dispose());
   }
   const grassMat=material('#b8b77d');grassMat.side=T.DoubleSide;
   installWindMaterial(grassMat,wind,'grass');
   const grassDepth=installWindMaterial(new T.MeshDepthMaterial({depthPacking:T.RGBADepthPacking,side:T.DoubleSide}),wind,'grass');
-  const blades=[];
-  for(let i=0;i<3;i++){
-    const blade=new T.PlaneGeometry(.16,.82,1,2);blade.translate(0,.41,0);
-    const p=blade.getAttribute('position');
-    for(let n=0;n<p.count;n++){const h=p.getY(n)/.82;p.setX(n,p.getX(n)*(1-h*.97)+h*h*.17);p.setZ(n,h*h*.09);}
-    blade.rotateY(i*Math.PI*2/3);blade.computeVertexNormals();blades.push(blade);
-  }
-  const grassGeo=mergeGeometries(blades);blades.forEach(g=>g.dispose());
+  const grassGeo=createGrassClumpGeometry();
   const grass=new T.InstancedMesh(grassGeo,grassMat,3000),grassColor=new T.Color();
   let rootError=0,minGrassRouteClearance=Infinity;
   for(let i=0;i<3000;i++){
@@ -477,7 +469,7 @@ export function createPresentation(canvas) {
   const cameraFrame={x:0,y:0,z:0,lookX:0,lookY:0,lookZ:0},smoothedFrame={...cameraFrame};let initialized=false,cameraWorld=null,previousPlayer=null;
   function beginWorld(world){
     for(const actor of [world.player,...world.enemies])seedCharacterRig(rigs.get(actor.id)||rig(actor.id),actor,world);
-    initialized=false;cameraWorld=world;previousPlayer=null;
+    foreground.reset();initialized=false;cameraWorld=world;previousPlayer=null;
   }
   const cameraMetrics={lockedFrames:0,minHorizontalStandoff:null,maxDownAngleDegrees:0,foregroundPostOpacity:1,
     rejoinVistaFrames:0,rejoinComposition:null,rejoinFrameError:null,rejoinSightlineClearance:null,
@@ -503,7 +495,7 @@ export function createPresentation(canvas) {
       const r=rigs.get(a.id)||rig(a.id);
       actorMetrics.motionByRig[a.id]=updateCharacterRig(r,a,world,dt,{animate,groundHeightAt});
     }
-    if(cameraWorld!==world){initialized=false;previousPlayer=null;cameraWorld=world;}
+    if(cameraWorld!==world){foreground.reset();initialized=false;previousPlayer=null;cameraWorld=world;}
     computeCameraFrame(world,orbit,camera.aspect,cameraFrame);
     interpolateCameraFrame(smoothedFrame,cameraFrame,dt,initialized,cameraTrackingTranslation(world,previousPlayer));
     previousPlayer={x:world.player.x,z:world.player.z};
@@ -551,6 +543,10 @@ export function createPresentation(canvas) {
       foregroundPostOpacity=Math.min(foregroundPostOpacity,post.opacity);
     }
     cameraMetrics.foregroundPostOpacity=foregroundPostOpacity;
+    const sightPoints=characterSightPoints(rigs.get(world.player.id));
+    if(world.locked)characterSightPoints(rigs.get(world.locked),sightPoints);
+    foreground.update(camera.position,sightPoints,dt,wind.value,{animate});
+    cameraMetrics.foregroundObjects=foreground.diagnostics();
     if(world.mode==='playing'&&world.locked){
       const horizontal=Math.hypot(smoothedFrame.x-smoothedFrame.lookX,smoothedFrame.z-smoothedFrame.lookZ);
       const downAngle=Math.atan2(smoothedFrame.y-smoothedFrame.lookY,horizontal)*180/Math.PI;

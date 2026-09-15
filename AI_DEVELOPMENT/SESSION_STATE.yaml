@@ -11,10 +11,10 @@
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
     "activeTask": "FRESH-SEVEN-FIXES-ALL-ANIMATION",
-    "lastSuccessfulAction": "Integrated all seven requested changes and all-animation scope with independent-review repairs. Exact local runtime47d5f161 passes152tests, freshbuild, fixed catalog and preserved-root checks. First rendered CI34949745102 failures and actual media are preserved with diagnosis.",
-    "currentFailingAction": "Final repaired source requires same-source browser verification and independent rendered review. First CI failures were shader source line boundaries, ffmpeg installation order and mute-probe stream pre-roll; actual clips also exposed ordinary camera lag and inspection-camera occlusion, now repaired.",
-    "currentHypothesis": "The two-route mechanics and four input paths are now verified. The immediate C04 blockers are evidence readability in the candidate capture and an unsuitable reference excerpt, not absent route physics: both materials need separate readiness gates before another paired blind comparison.",
-    "nextAction": "Publish the exact repaired tree, obtain fresh four-route and experience/audio/whole-motion CI results, independently inspect the rendered artifacts, then reflect the verified checkpoint into main and record readback. Do not change paused automations.",
+    "lastSuccessfulAction": "Integrated concrete independent-media repairs: sign approach, local cloth/ridge/leaves visibility, support-driven torso/arms and readable hit/parry/block, varied narrow grass. Local55d2e6ad passes168tests/build/root-preservation.",
+    "currentFailingAction": "No new local failing gate. Matching final-source normal-input and14motion media plus independent recheck remain pending; do not call naturalness complete from tests.",
+    "currentHypothesis": "Passing mission scripts and fixed checkpoints did not ensure continuously readable combat. Use actual mid-combat native frames and per-actor sightlines to repair and verify only the evidenced foreground obstruction.",
+    "nextAction": "Publish the tested repaired runtime, obtain matching14motion/three-exploration/four-mission CI media, independently recheck only the evidenced obstruction/body-reaction/grass differences, then merge PR21 with expected head and verify canonical main/tree. Do not change paused automations.",
     "rollbackPoint": "1ded4aae27f8331cec10975c8dbac9eb482460a9",
     "pendingVerification": [
       "C04 candidate capture that visibly shows both routes entering one reconvergence point and continues through shrine/signal arrival",
@@ -50,7 +50,7 @@
     ],
     "remotePushPendingAuthorization": false,
     "remoteReleaseAuthorized": true,
-    "remotePublicationStatus": "Canonical main readback bc37e966 at intake; current source bd4e64f9 is a pending verification candidate. Existing public root preserved.",
+    "remotePublicationStatus": "At preparation main remainsbc37 and source927 is a preserved precursor. Local55d2e6ad is the tested runtime prepared for canonical tree-equivalent publication and final CI. PR21 integration and main readback remain required.",
     "publishedMainSha": "bc37e9665a3eab6a369ce77b13b3219f8df2e602",
     "publishedUrl": "https://bachikoljunior-blip.github.io/game2/",
     "startPositionHotfix": {
@@ -180,7 +180,12 @@
       "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-scene-c04-attempt.json",
       "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-c04-two-routes.json",
       "AI_DEVELOPMENT/EVIDENCE/20260915-seven-fixes-intake.json",
-      "AI_DEVELOPMENT/EVIDENCE/20260915-ci-34902967581-recovery.json"
+      "AI_DEVELOPMENT/EVIDENCE/20260915-ci-34902967581-recovery.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260915-ci-34952868959-recovery.json",
+      "AI_DEVELOPMENT/EVIDENCE/20260915-independent-route-media-414.md",
+      "AI_DEVELOPMENT/EVIDENCE/20260915-startup-phase-independent-closure.md",
+      "AI_DEVELOPMENT/EVIDENCE/20260915-independent-motion-exploration-media-414.md",
+      "AI_DEVELOPMENT/EVIDENCE/20260915-ci-34953686508-precursor.json"
     ],
     "publicRuntimeRevision": "86512c3bfdc69e03b5b490d9b0d79ec9da141343",
     "producerExecution": {

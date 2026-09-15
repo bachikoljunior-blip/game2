@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-15T09:29:00Z",
+  "updatedAt": "2026-09-15T10:10:13.397281Z",
   "phase": "fresh-seven-fixes-all-animation",
   "userInstruction": "一旦ゲーム自体はゼロから作り直してくれる？",
   "activeBranch": "codex/game2-rebuild-20260913",
@@ -15,7 +15,7 @@
     "oldPr": 10,
     "optionalRebuildRouting": "ec2480166809f57fa623929bec0fbcb4d5a623a2"
   },
-  "continuation": "Publish the exact repaired tree, obtain fresh four-route and experience/audio/whole-motion CI results, independently inspect the rendered artifacts, then reflect the verified checkpoint into main and record readback. Do not change paused automations.",
+  "continuation": "Publish the tested repaired runtime, obtain matching14motion/three-exploration/four-mission CI media, independently recheck only the evidenced obstruction/body-reaction/grass differences, then merge PR21 with expected head and verify canonical main/tree. Do not change paused automations.",
   "status": "not measured",
   "publication": "Keep old Pages until a verified replacement is ready. Fresh runtime is a work-branch candidate, not public product acceptance.",
   "procedureAuthority": "Fixed instructions and explicit user directives govern. Tests, task plans and architecture documents are tools chosen by the AI, not additional fixed rules.",
@@ -27,7 +27,6 @@
   "comparisonCatalog": "AI_DEVELOPMENT/COMPARISON_ELEMENTS.yaml",
   "referenceSelectionComplete": false,
   "verificationEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-c04-two-routes.json",
-  "pendingCandidate": "bd4e64f9a46e7c6873a8057e420095b278c9e5e7",
   "methodChangeEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-c04-two-routes.json",
   "recoveryRole": {
     "userInstruction": "定期オートメーションは万が一実行が停止していたら、停止してしまう原因を全て潰してから再開する再発火役にしてください。",
@@ -142,7 +141,9 @@
     "baselineSource": "923ac865f732a985ca679b036afdb8a1c06586d3",
     "evidence": "AI_DEVELOPMENT/EVIDENCE/20260915-seven-fixes-intake.json",
     "automation": "Latest direct instruction preserved in CLAUDE d9370e3 is game2 stopped, survival stopped, Q enabled. This foreground work does not alter or reenable any automation; older enabled=true records below are historical.",
-    "localRuntime": "47d5f161b7dc233420bd100fc51bb7c8d56a7029",
-    "localVerification": "152tests/build/root-preservation pass; final rendered verification pending"
-  }
+    "localRuntime": "55d2e6ad16d9b83b6b7cb04c1df079415303f02f",
+    "localVerification": "168full tests/build/root-preservation pass. Concrete sign, foreground, run/reaction and grass repairs integrated; final exact-source rendered verification pending.",
+    "lastRemoteSourceAtPreparation": "927743f0fe3d31d207d43362907ce30eaf8d5e99"
+  },
+  "pendingCandidate": null
 }

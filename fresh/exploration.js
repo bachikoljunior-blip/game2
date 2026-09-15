@@ -41,7 +41,9 @@ export const EXPLORATION_SOLIDS=Object.freeze([
   ...EXPLORATION.loops.flatMap(walk=>[0,walk.nodes.length-1].map((index,i)=>{
     const p=walk.nodes[index],next=walk.nodes[index===0?1:index-1],dx=next.x-p.x,dz=next.z-p.z,length=Math.hypot(dx,dz);
     const side=-dz*Math.sign(p.x)<0?-1:1,nx=-dz/length*side,nz=dx/length*side;
-    return solid(`${walk.id}-sign-${i}`,'box',p.x+nx*2.1,p.z+nz*2.1,
+    // Leave the northbound central approach open beside the memory entrance.
+    const offset=walk.id==='memory'&&i===0?4.4:2.1;
+    return solid(`${walk.id}-sign-${i}`,'box',p.x+nx*offset,p.z+nz*offset,
       {width:1.95,depth:.1,rotation:Math.atan2(-nz,nx),loopId:walk.id});
   }))
 ]);

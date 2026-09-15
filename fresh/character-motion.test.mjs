@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as T from 'three';
 import {ANATOMY,createCharacterRig,createCharacterResources} from './character-rig.js';
-import {ATTACK_PHASES,LOCOMOTION,locomotionProfile,advanceLocomotionPhase,sampleCharacterPose,solveTwoBone,seedCharacterRig,updateCharacterRig} from './character-motion.js';
+import {ATTACK_PHASES,LOCOMOTION,locomotionProfile,advanceLocomotionPhase,sampleCharacterPose,sampleDefenseRecoil,solveTwoBone,seedCharacterRig,updateCharacterRig} from './character-motion.js';
 import {createWorld,advance} from './simulation.js';
 import {createFootstepTracker} from './audio.js';
 
@@ -233,4 +233,87 @@ test('generated costumes share boot resources and keep detail attached to articu
   assert.ok(b.metrics.generatedParts>a.metrics.generatedParts,'the warden has its own helmet and face guard');
   assert.equal(a.limbs[0].ankle.parent,a.limbs[0].knee);assert.equal(a.limbs[0].wrist.parent,a.limbs[0].elbow);
   assert.equal(a.panels.length,4);assert.equal(a.ties.length,3);assert.equal(a.scabbard.parent,a.body);
+});
+
+
+test('running support drives pelvis and opposing shoulders while gaze and sword grip remain controlled',t=>{
+  const left=sampleCharacterPose('idle',1,{speed:3.8,phase:.1}),right=sampleCharacterPose('idle',1,{speed:3.8,phase:.6});
+  assert.ok(left.pelvis[0]<-.015&&right.pelvis[0]>.015,'weight moves towards the loaded left/right leg');
+  for(const pose of [left,right]){
+    assert.ok(pose.body[1]*(pose.body[1]+pose.chest[1])<0,'shoulders counter the hip rotation');
+    assert.ok(pose.body[0]<-.1,'the running trunk carries momentum forward');
+    assert.ok(Math.abs(pose.body[0]+pose.chest[0]+pose.head[0])<.04,'the head counter-rotates to stabilise the gaze');
+    assert.ok(Math.abs(pose.body[1]+pose.chest[1]+pose.head[1])<.025);
+  }
+  assert.ok(left.leftHand[2]>right.leftHand[2]+.20,'the free arm counters the advancing thigh');
+  assert.ok(Math.abs(left.weapon[2]-right.weapon[2])<.08,'the weapon arm has a smaller carrying arc');
+  const later=sampleCharacterPose('idle',1,{speed:3.8,phase:.1,time:30});
+  assert.deepEqual(later.pelvis,left.pelvis);assert.equal(later.chest[1],left.chest[1],'upper-body support must not drift on an independent clock');
+  const f=fixture();frame(f);let shoulderSpan=0,maxGripError=0,minimumHeadYaw=Infinity,maximumHeadYaw=-Infinity;
+  const leftShoulder=new T.Vector3(),rightShoulder=new T.Vector3(),headRotation=new T.Quaternion();
+  for(let n=0;n<180;n++){
+    f.actor.z-=3.8/60;const motion=frame(f);
+    if(n<60)continue;
+    f.rig.limbs[0].arm.getWorldPosition(leftShoulder);f.rig.limbs[1].arm.getWorldPosition(rightShoulder);
+    shoulderSpan=Math.max(shoulderSpan,Math.abs(leftShoulder.z-rightShoulder.z));
+    const headYaw=new T.Euler().setFromQuaternion(f.rig.neck.getWorldQuaternion(headRotation),'YXZ').y;
+    minimumHeadYaw=Math.min(minimumHeadYaw,headYaw);maximumHeadYaw=Math.max(maximumHeadYaw,headYaw);
+    for(const hand of motion.hands)maxGripError=Math.max(maxGripError,hand.reachError);
+  }
+  assert.ok(shoulderSpan>.045,'the generated shoulder line must visibly change with support');
+  assert.ok(maxGripError<.02);assert.ok(maximumHeadYaw-minimumHeadYaw<.08);
+  t.diagnostic(JSON.stringify({shoulderForeAftSpan:shoulderSpan,maxGripError,headYawRange:maximumHeadYaw-minimumHeadYaw}));
+});
+
+test('hit catches weight and recovers inside the unchanged .38s state at native 12fps samples',t=>{
+  const start=sampleCharacterPose('stagger',0),impact=sampleCharacterPose('stagger',.055),catchPose=sampleCharacterPose('stagger',.13),recover=sampleCharacterPose('stagger',.235),end=sampleCharacterPose('stagger',.38);
+  assert.ok(impact.pelvis[2]>start.pelvis[2]+.06,'frontal impact first displaces the trunk backwards');
+  assert.ok(impact.body[0]>.12&&catchPose.body[0]<-.12,'the upper body reverses as bent knees and abdomen catch it');
+  assert.ok(catchPose.pelvis[1]<start.pelvis[1]-.08);assert.ok(recover.pelvis[1]>catchPose.pelvis[1]+.04);
+  for(const key of ['pelvis','chest','weapon'])assert.deepEqual(end[key],start[key],'recovery finishes before the simulation exits stagger');
+  const f=fixture();f.actor.state='stagger';frame(f);const heights=[];
+  for(const age of [1/12,2/12,3/12,4/12]){
+    f.actor.age=age;f.world.time=age;const motion=updateCharacterRig(f.rig,f.actor,f.world,1/12);heights.push(motion.pelvis[1]);
+    assert.ok(motion.feet.every(foot=>foot.contact&&foot.reachError<.015));assert.ok(motion.hands.every(hand=>hand.reachError<.02));
+  }
+  assert.ok(heights[0]<start.pelvis[1]-.06&&heights[1]<start.pelvis[1]-.045,'the impact spans more than one native capture frame');
+  assert.ok(heights[3]>heights[1]+.045,'the return to load-bearing guard is readable before .38s');
+  t.diagnostic(JSON.stringify({native12fpsPelvisHeights:heights,stateDuration:.38}));
+});
+
+test('parry redirects at the wrists while block absorbs through a stable braced trunk',()=>{
+  const parry=sampleDefenseRecoil('parry',.022),block=sampleDefenseRecoil('block',.04);
+  assert.ok(Math.abs(parry.weaponRotation[2])>Math.abs(block.weaponRotation[2])*2);
+  assert.ok(Math.abs(block.pelvis[1])>Math.abs(parry.pelvis[1])*2&&Math.abs(block.pelvis[1])<.04);
+  assert.ok(block.weapon[2]>parry.weapon[2]*2,'held block yields into the guard rather than flicking the blade away');
+  for(const [kind,end] of [['parry',.16],['block',.24]]){
+    const f=fixture();f.actor.state='guard';for(let n=0;n<12;n++)frame(f);
+    const planted=f.rig.motion.metrics.feet.map(foot=>({...foot.footWorld}));
+    f.world.events=[{type:kind,target:'player',source:'sentinel',time:f.world.time}];
+    for(let n=0;n<24;n++){
+      const motion=frame(f);motion.feet.forEach((foot,i)=>assert.ok(Math.hypot(foot.footWorld.x-planted[i].x,foot.footWorld.y-planted[i].y,foot.footWorld.z-planted[i].z)<1e-8,'successful defense keeps both soles at their planted world positions'));
+      assert.ok(motion.hands.every(hand=>hand.reachError<.02));
+      assert.equal(motion.state,'guard','successful defense must not look like losing the stance');
+    }
+    for(const value of Object.values(sampleDefenseRecoil(kind,end)).flat())assert.equal(value,0);
+  }
+});
+
+
+test('12fps and 4Hz defense events show contact once without restarting retained event age',()=>{
+  for(const interval of [1/12,.25])for(const kind of ['parry','block']){
+    const f=fixture();f.actor.state='guard';for(let n=0;n<12;n++)frame(f);
+    const baseline=f.rig.sword.quaternion.clone(),planted=f.rig.motion.metrics.feet.map(foot=>({...foot.footWorld}));
+    f.world.events=[{type:kind,target:'player',source:'sentinel',time:f.world.time+.001}];
+    frame(f,interval);
+    assert.ok(baseline.angleTo(f.rig.sword.quaternion)>.1,`${kind} contact must be present on its first 4/12Hz render`);
+    assert.ok(Math.abs(f.rig.motion.impactAge-(interval-.001))<1e-8,'presentation cannot reset the real event age');
+    f.rig.motion.metrics.feet.forEach((foot,i)=>assert.ok(Math.hypot(foot.footWorld.x-planted[i].x,foot.footWorld.y-planted[i].y,foot.footWorld.z-planted[i].z)<1e-8));
+    const before=JSON.stringify(f.rig.motion.metrics);updateCharacterRig(f.rig,f.actor,f.world,interval,{animate:false});assert.equal(JSON.stringify(f.rig.motion.metrics),before);
+    for(let n=0;n<4;n++)frame(f,interval);
+    assert.ok(baseline.angleTo(f.rig.sword.quaternion)<1e-7,'retained event must not replay its contact pose');
+    const other=fixture('sentinel');other.actor.state='guard';for(let n=0;n<12;n++)frame(other);
+    const untouched=other.rig.sword.quaternion.clone();other.world.events=f.world.events;frame(other,interval);
+    assert.ok(untouched.angleTo(other.rig.sword.quaternion)<1e-7,'source attacker cannot inherit the defender reaction');
+  }
 });
