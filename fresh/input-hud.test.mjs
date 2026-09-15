@@ -44,7 +44,7 @@ function fixture(t) {
   let pauses = 0;
   const input = createInput(canvas, () => { pauses++; });
   input.setActive(true);
-  return { input, buttons, window, get pauses() { return pauses; } };
+  return { input, canvas, pad, buttons, window, get pauses() { return pauses; } };
 }
 
 const releases = ['pointerup', 'pointercancel', 'lostpointercapture'];
@@ -118,4 +118,52 @@ test('actual HUD reports locked sentinel health despite nearer retainer', () => 
 
 test('actual HUD displays no opponent health when unlocked', () => {
   assert.equal(updateActualHud(hudWorld(null)), '');
+});
+
+for(const pointerType of ['touch','pen']){
+  for(const path of [[],[3],[36],[42,0]]){
+    test(`${pointerType} canvas gesture ${JSON.stringify(path)} changes only camera`,t=>{
+      const {input,canvas}=fixture(t);
+      canvas.emit('pointerdown',1,{pointerType,button:0,timeStamp:0});
+      for(const clientX of path)canvas.emit('pointermove',1,{clientX});
+      canvas.emit('pointerup',1,{clientX:path.at(-1)??0,timeStamp:100});
+      assert.equal(input.sample().attack,false);
+      if(path.length&&path.at(-1)!==0)assert.notEqual(input.orbit,0);
+    });
+  }
+}
+test('primary mouse short click attacks exactly once',t=>{
+  const {input,canvas}=fixture(t);
+  canvas.emit('pointerdown',1,{pointerType:'mouse',button:0,timeStamp:20});
+  canvas.emit('pointerup',1,{timeStamp:120});
+  assert.equal(input.sample().attack,true);input.consume();assert.equal(input.sample().attack,false);
+});
+for(const scenario of ['returning drag','release-only displacement','long press','secondary button','nonprimary','cancel','lost capture','deactivate']){
+  test(`desktop ${scenario} cannot become an attack`,t=>{
+    const {input,canvas}=fixture(t);
+    canvas.emit('pointerdown',1,{pointerType:'mouse',button:scenario==='secondary button'?2:0,isPrimary:scenario!=='nonprimary',timeStamp:0});
+    if(scenario==='returning drag'){canvas.emit('pointermove',1,{clientX:5});canvas.emit('pointermove',1,{clientX:0});}
+    if(scenario==='cancel')canvas.emit('pointercancel',1);
+    if(scenario==='lost capture')canvas.emit('lostpointercapture',1);
+    if(scenario==='deactivate')input.setActive(false);
+    canvas.emit('pointerup',1,{clientX:scenario==='release-only displacement'?12:0,timeStamp:scenario==='long press'?700:150});
+    assert.equal(input.sample().attack,false);
+  });
+}
+test('second canvas pointer neither hijacks orbit nor restores a click after release',t=>{
+  const {input,canvas}=fixture(t);
+  canvas.emit('pointerdown',1,{pointerType:'mouse',button:0,timeStamp:0});
+  canvas.emit('pointerdown',2,{pointerType:'touch'});
+  canvas.emit('pointermove',2,{clientX:100});assert.equal(input.orbit,0);
+  canvas.emit('pointercancel',2);
+  canvas.emit('pointermove',1,{clientX:3});assert.notEqual(input.orbit,0);
+  canvas.emit('pointerup',1,{clientX:3,timeStamp:100});assert.equal(input.sample().attack,false);
+});
+test('two fingers can guard and turn while only the dedicated attack button attacks',t=>{
+  const {input,canvas,buttons}=fixture(t);
+  buttons.guard.emit('pointerdown',1);
+  canvas.emit('pointerdown',2,{pointerType:'touch'});canvas.emit('pointermove',2,{clientX:45});canvas.emit('pointerup',2,{clientX:45});
+  assert.equal(input.sample().attack,false);assert.equal(input.sample().guard,true);
+  buttons.attack.emit('pointerdown',3);assert.equal(input.sample().attack,true);
+  buttons.attack.emit('lostpointercapture',3);assert.equal(input.sample().guard,true);
 });

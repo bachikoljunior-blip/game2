@@ -1,0 +1,486 @@
+{
+  "runId": 34952868959,
+  "sourceRevision": "414163336db8a5a73a090ad12ebf88999475491c",
+  "reviewer": "/root/game2_ultra_seven_fixes/ci_recovery_review",
+  "status": "terminal: fresh success, experience failure at memory circuit; both artifacts recovered and ZIP digests match canonical GitHub metadata",
+  "jobs": [
+    {
+      "id": 104327759561,
+      "name": "fresh",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 104327759269,
+      "name": "experience",
+      "status": "completed",
+      "conclusion": "failure"
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 10390263032,
+      "bytes": 98747844,
+      "sha256": "c5591888908481fbea64a0eeaf80daa52cf72beed4f48f7ddc9a8bae278d2909",
+      "digestVerified": true,
+      "path": "fresh-10390263032.zip",
+      "members": 55
+    },
+    {
+      "id": 10390257732,
+      "bytes": 89166132,
+      "sha256": "69a0dbb2f22dddc413897ccbf05052f2ff8cb8540b5c25cc676e0c3096cdad62",
+      "digestVerified": true,
+      "path": "experience-10390257732.zip",
+      "members": 125
+    }
+  ],
+  "limitations": [
+    "Source 4141633 excludes later local f578df0 and is not the final candidate.",
+    "No merge eligibility or source-blind element comparison verdict.",
+    "Actual audio measurements do not establish listening quality.",
+    "Independent runtime reviewer found real mid-combat cloth/ridge occlusion in touch68-76s and desktop-right73-74s despite checkpoint/decode passes; parent is handling product repair.",
+    "Actor reviewer flagged old parry fixture semantics; next source will use guard recipient and add block (14 cases).",
+    "Later927 and upcoming repair-source evidence must be evaluated separately."
+  ],
+  "fresh": {
+    "jobId": 104327759561,
+    "conclusion": "success",
+    "tests": 152,
+    "passed": 152,
+    "failed": 0,
+    "artifact": {
+      "id": 10390263032,
+      "bytes": 98747844,
+      "sha256": "c5591888908481fbea64a0eeaf80daa52cf72beed4f48f7ddc9a8bae278d2909",
+      "digestVerified": true,
+      "path": "fresh-10390263032.zip",
+      "members": 55
+    },
+    "rawContinuous": {
+      "expected": 4,
+      "present": 4,
+      "fullDecode": "passed in canonical CI"
+    },
+    "derivedClips": {
+      "expected": 4,
+      "present": 4,
+      "fullDecode": "passed in canonical CI"
+    },
+    "nativeCheckpointPngs": 32,
+    "fileDigests": "all4raw/4derived/32PNG verified against report digests",
+    "browserChecks": [
+      "generated ridge, two route surfaces, stone-lamp and wind-cloth landmarks share the route contract",
+      "real start and keyboard movement through torii",
+      "real click causes enemy HP loss",
+      "near torii post fades while its collision remains authored",
+      "pause freezes simulation and resumes",
+      "WebGL loss/restore and resume",
+      "death and real retry restore player",
+      "real-input full combat, postcombat arrival, signal, ending and clean retry",
+      "mobile simultaneous guard/lock release preserves guard; cancel releases",
+      "mobile joystick movement and cancel stop",
+      "portrait victory result panel keeps readable copy and retry in viewport",
+      "touch-only full combat, arrival, signal, ending and clean retry"
+    ],
+    "browserErrors": [],
+    "matrixErrors": [],
+    "recordingFailures": [],
+    "apparatusFailures": [],
+    "recordings": [
+      {
+        "id": "desktop",
+        "file": "desktop-continuous.webm",
+        "durationSeconds": 153.24,
+        "decodedFrames": 3831,
+        "sha256": "78a86c6d00a423acc616d81beafcb87efcc58f45b78e36504d250c7b341404c0",
+        "derivedClip": {
+          "file": "derived/desktop-fork-to-signal.mp4",
+          "sha256": "a0abdc84b8defd985c67c68de11d3bfc8fa39e53eee47c0ea5f2f261ddc3a087",
+          "bytes": 4922012,
+          "durationSeconds": 71.64,
+          "fullDecode": "passed",
+          "touchViewportCrop": null
+        }
+      },
+      {
+        "id": "touch",
+        "file": "touch-continuous.webm",
+        "durationSeconds": 128.12,
+        "decodedFrames": 3203,
+        "sha256": "93a154e42a0458484d6844dcafe27c0dab13a44d97396819679e9f238f6e287e",
+        "derivedClip": {
+          "file": "derived/touch-fork-to-signal.mp4",
+          "sha256": "fafdc9c44402acbaa24861178484ff88d9c2bc14c6c86fd51cfb68ffbd2867ea",
+          "bytes": 4184490,
+          "durationSeconds": 68.64,
+          "fullDecode": "passed",
+          "touchViewportCrop": {
+            "source": "844x844",
+            "crop": "844x390+0+0",
+            "output": "960x540 with 48px top/bottom padding"
+          }
+        }
+      },
+      {
+        "id": "desktop-right",
+        "file": "desktop-right-continuous.webm",
+        "durationSeconds": 87.04,
+        "decodedFrames": 2176,
+        "sha256": "04a706f38fb1154ec5f2a3b505a5eec17d3e0bc7d77ecc6e2a3351a913a3e1a3",
+        "derivedClip": {
+          "file": "derived/desktop-right-fork-to-signal.mp4",
+          "sha256": "a328bee801e234fe7d2b99ece92ee9cfa9da7e16cbb02d6faad5a5436b909c6c",
+          "bytes": 3818035,
+          "durationSeconds": 58.12,
+          "fullDecode": "passed",
+          "touchViewportCrop": null
+        }
+      },
+      {
+        "id": "touch-left",
+        "file": "touch-left-continuous.webm",
+        "durationSeconds": 132.16,
+        "decodedFrames": 3304,
+        "sha256": "09ed9341c3ef4bac80ded4ef5662ac5b0eb9dcf2a81c173f995d494deb1f25c3",
+        "derivedClip": {
+          "file": "derived/touch-left-fork-to-signal.mp4",
+          "sha256": "7dc73df3e9175795874b812ccd5285db3633c37fbd036a2cd4f439b7bdaa1120",
+          "bytes": 7230810,
+          "durationSeconds": 85.6,
+          "fullDecode": "passed",
+          "touchViewportCrop": {
+            "source": "844x844",
+            "crop": "844x390+0+0",
+            "output": "960x540 with 48px top/bottom padding"
+          }
+        }
+      }
+    ],
+    "softwareBrowserTimings": {
+      "desktop": {
+        "samples": 202,
+        "rAFMedianMs": 616.6999999999971,
+        "rAFP95Ms": 1033.300000000003,
+        "JSrenderMedianMs": 7.55000000000291
+      },
+      "touch": {
+        "samples": 294,
+        "rAFMedianMs": 366.6999999999989,
+        "rAFP95Ms": 750,
+        "JSrenderMedianMs": 6.800000000017462
+      }
+    }
+  },
+  "experience": {
+    "jobId": 104327759269,
+    "result": "failed",
+    "failure": "AssertionError [ERR_ASSERTION]: memory: ordinary-input circuit time budget",
+    "errors": [],
+    "checks": [
+      "touch short gesture: no attack",
+      "touch vertical gesture: no attack",
+      "touch long gesture: no attack",
+      "touch return gesture: no attack",
+      "native touch cancel causes no attack",
+      "two canvas fingers cannot synthesize an attack",
+      "lost canvas pointer capture cannot attack",
+      "guard survives camera swipe and dedicated attack; own cancellation releases it",
+      "desktop drag rotates without attack; click attacks once",
+      "ordinary keyboard circuit water: both discoveries and loop completion",
+      "ordinary keyboard circuit ridge: both discoveries and loop completion"
+    ],
+    "inputGroupsPassed": 9,
+    "aggregateChecksPassed": 11,
+    "aggregateChecksExpected": 12,
+    "loops": [
+      {
+        "id": "water",
+        "result": "passed",
+        "pointsReached": 9,
+        "expectedPoints": 9,
+        "discoveries": [
+          "spring-basin",
+          "stream-stones"
+        ]
+      },
+      {
+        "id": "ridge",
+        "result": "passed",
+        "pointsReached": 9,
+        "expectedPoints": 9,
+        "discoveries": [
+          "valley-frame",
+          "sun-ring"
+        ]
+      },
+      {
+        "id": "memory",
+        "result": "running",
+        "pointsReached": 1,
+        "expectedPoints": 9,
+        "discoveries": []
+      }
+    ],
+    "videos": [
+      {
+        "id": "water",
+        "file": "exploration-water.webm",
+        "bytes": 7855731,
+        "sha256": "b00a99b936556dc0fdef807530c6234acc579244dfda4a060c471c24bcaa0b2f",
+        "seconds": 74.88,
+        "width": 960,
+        "height": 540,
+        "localFullDecode": "passed",
+        "errors": ""
+      },
+      {
+        "id": "ridge",
+        "file": "exploration-ridge.webm",
+        "bytes": 10157716,
+        "sha256": "58a96084244b80eb9bf66650e5a3ff854c912e8c4c1c7bd1863f6287d37eea4d",
+        "seconds": 91.72,
+        "width": 960,
+        "height": 540,
+        "localFullDecode": "passed",
+        "errors": ""
+      },
+      {
+        "id": "memory",
+        "file": "exploration-memory.webm",
+        "bytes": 28559513,
+        "sha256": "d7df67aa6176f4382c339941ec7794b86d1a6aadf1a55a4b17f3ac1eb3bf3879",
+        "seconds": 241.64,
+        "width": 960,
+        "height": 540,
+        "localFullDecode": "passed",
+        "errors": ""
+      }
+    ],
+    "failureDiagnosis": {
+      "canonicalLog": "2026-09-15T09:39:22.9269754Z AssertionError [ERR_ASSERTION]: memory: ordinary-input circuit time budget",
+      "source": "fresh/experience-smoke.mjs:65-76",
+      "inference": "New memory-sign-0 blocks the controller approach toward (-10,-18); matched deterministic probes at three dt values and independent world-agent reproduction. Parent chose product sign relocation, retaining harness goals and budgets.",
+      "diagnostic": "memory-approach-probe.json"
+    }
+  },
+  "audio": {
+    "result": "passed",
+    "provenance": {
+      "sourceSha": "414163336db8a5a73a090ad12ebf88999475491c",
+      "ciSha": "414163336db8a5a73a090ad12ebf88999475491c",
+      "requestedUrl": "http://127.0.0.1:4178/?diagnostic=1",
+      "bundles": [
+        {
+          "url": "http://127.0.0.1:4178/assets/index-BWzy9cuA.js",
+          "name": "index-BWzy9cuA.js",
+          "status": 200,
+          "bytes": 612273,
+          "sha256": "74db45e7fb1dee700259e5eab4992c90b0434fd7e21f3f9346d4ee72c8a70a98"
+        }
+      ],
+      "actualUrl": "http://127.0.0.1:4178/?diagnostic=1",
+      "documentSha256": "1b201c196863b443c052c01b881fe99c2a26f17e6e43e2024bcb802abef9eb6b"
+    },
+    "actualRecording": {
+      "webm": "actual-gameplay-audio.webm",
+      "wav": "actual-gameplay-audio.wav",
+      "bytes": 129083,
+      "sha256": "0f8d6041527dddcf64ef47442986a6e41437bcd38466c35333f18da5c9ea5c95",
+      "decode": "passed",
+      "scope": "Actual generated master bus from normal Start, movement, swing, dodge, pause and resume. No guaranteed coverage of combat contact or every sound category."
+    },
+    "pcm": {
+      "valid": true,
+      "failures": [],
+      "samples": 492480,
+      "sampleRate": 24000,
+      "channels": 2,
+      "seconds": 10.26,
+      "peak": 0.17776118218898773,
+      "rms": 0.012482753232901015,
+      "nonfinite": 0,
+      "clipped": 0,
+      "clipFraction": 0,
+      "activeFraction": 0.7608227745289149,
+      "limits": {
+        "minSeconds": 0.5,
+        "minRms": 0.0001,
+        "minPeak": 0.003,
+        "minActiveFraction": 0.001,
+        "maxClipFraction": 0.001,
+        "maxPeak": 1.01
+      }
+    },
+    "negativeProbe": {
+      "timing": {
+        "muteScheduledAt": 12.731315192743763,
+        "gainArrival": {
+          "audioStart": 12.701315192743763,
+          "target": 12.731315192743763,
+          "audioReached": 12.741950113378685,
+          "wallElapsedMs": 40.39999999990687
+        },
+        "drain": {
+          "audioStart": 12.741950113378685,
+          "target": 13.481315192743763,
+          "audioReached": 13.482086167800453,
+          "wallElapsedMs": 737.7000000000698
+        },
+        "drainSeconds": 0.75,
+        "recorderAudioStart": 13.482086167800453,
+        "capture": {
+          "audioStart": 13.482086167800453,
+          "target": 14.682086167800453,
+          "audioReached": 14.712743764172336,
+          "wallElapsedMs": 1231.6999999999534
+        }
+      },
+      "file": "muted-negative-probe.webm",
+      "sha256": "0d0186c74855128fb53b7c0c966872ff330a8d6c816f05ffa309f411dfe8e8f2",
+      "decode": "passed",
+      "pcm": {
+        "valid": false,
+        "failures": [
+          "silent or inaudible PCM"
+        ],
+        "samples": 57600,
+        "sampleRate": 24000,
+        "channels": 2,
+        "seconds": 1.2,
+        "peak": 0,
+        "rms": 0,
+        "nonfinite": 0,
+        "clipped": 0,
+        "clipFraction": 0,
+        "activeFraction": 0,
+        "limits": {
+          "minSeconds": 0.5,
+          "minRms": 0.0001,
+          "minPeak": 0.003,
+          "minActiveFraction": 0.001,
+          "maxClipFraction": 0.001,
+          "maxPeak": 1.01
+        }
+      },
+      "expected": "reject silent capture",
+      "rejected": true
+    },
+    "localVerification": "Both WebM file hashes match; independent ffmpeg float32 decode reproduces PCM measurements. Muted probe all57600 sample values zero.",
+    "events": [
+      "started",
+      "actual-movement",
+      "swing-and-dodge",
+      "paused-all-voices-stopped",
+      "resumed"
+    ],
+    "generatedCategories": 22,
+    "generatedWavs": 23,
+    "listeningQuality": "not measured"
+  },
+  "motion": {
+    "result": "passed",
+    "scope": "Actual generated rig/environment rendered at authored 12 fps in an isolated study, with synthetic scene states on the ordinary approach and an inspection camera. Victory inspects the salute/sheathing motion here; the four normal-input route films verify the actual shrine ending. Not normal-input gameplay, real-time performance, or source-blind reference comparison.",
+    "errors": [],
+    "cases": [
+      {
+        "name": "idle",
+        "frames": 36,
+        "compositionChecks": 36,
+        "fullDecode": "passed",
+        "video": "idle.mp4"
+      },
+      {
+        "name": "start-run-stop",
+        "frames": 48,
+        "compositionChecks": 48,
+        "fullDecode": "passed",
+        "video": "start-run-stop.mp4"
+      },
+      {
+        "name": "turn",
+        "frames": 36,
+        "compositionChecks": 36,
+        "fullDecode": "passed",
+        "video": "turn.mp4"
+      },
+      {
+        "name": "guard",
+        "frames": 24,
+        "compositionChecks": 24,
+        "fullDecode": "passed",
+        "video": "guard.mp4"
+      },
+      {
+        "name": "windup-attack",
+        "frames": 36,
+        "compositionChecks": 36,
+        "fullDecode": "passed",
+        "video": "windup-attack.mp4"
+      },
+      {
+        "name": "attack",
+        "frames": 36,
+        "compositionChecks": 36,
+        "fullDecode": "passed",
+        "video": "attack.mp4"
+      },
+      {
+        "name": "dodge",
+        "frames": 24,
+        "compositionChecks": 24,
+        "fullDecode": "passed",
+        "video": "dodge.mp4"
+      },
+      {
+        "name": "hit",
+        "frames": 24,
+        "compositionChecks": 24,
+        "fullDecode": "passed",
+        "video": "hit.mp4"
+      },
+      {
+        "name": "parry",
+        "frames": 24,
+        "compositionChecks": 24,
+        "fullDecode": "passed",
+        "video": "parry.mp4"
+      },
+      {
+        "name": "broken",
+        "frames": 30,
+        "compositionChecks": 30,
+        "fullDecode": "passed",
+        "video": "broken.mp4"
+      },
+      {
+        "name": "death",
+        "frames": 36,
+        "compositionChecks": 36,
+        "fullDecode": "passed",
+        "video": "death.mp4"
+      },
+      {
+        "name": "victory",
+        "frames": 48,
+        "compositionChecks": 48,
+        "fullDecode": "passed",
+        "video": "victory.mp4"
+      },
+      {
+        "name": "wind",
+        "frames": 48,
+        "compositionChecks": 48,
+        "fullDecode": "passed",
+        "video": "wind.mp4"
+      }
+    ],
+    "totalFrames": 450,
+    "preservedSamples": 150,
+    "cameraRepairVisualCheck": [
+      "start-run-stop/0018.png: player and both feet visible, ridge absent from foreground",
+      "victory/0042.png: full actor visible on the approach, sword sheathed, no shrine lattice obstruction"
+    ],
+    "cameraRepairScope": "Two native frames viewed plus every-frame composition assertions in canonical report; not full-motion naturalness acceptance."
+  }
+}

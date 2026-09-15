@@ -1,0 +1,326 @@
+{
+  "scope": "Non-rendered actual scene geometry, real actor rig and exact studyFrame; label rect uses a conservative 324x56 mock from the label CSS width and two text lines, actual DOM rect is measured by CI. No GPU, pixel visibility, shader compile or video verdict",
+  "cases": [
+    {
+      "name": "idle",
+      "frames": 36,
+      "minClearance": 1.45,
+      "maxProjection": 0.4639639421606729,
+      "sheathed": false
+    },
+    {
+      "name": "start-run-stop",
+      "frames": 48,
+      "minClearance": 1.45,
+      "maxProjection": 0.5232622392196199,
+      "sheathed": false
+    },
+    {
+      "name": "turn",
+      "frames": 36,
+      "minClearance": 1.45,
+      "maxProjection": 0.49447189437479133,
+      "sheathed": false
+    },
+    {
+      "name": "guard",
+      "frames": 24,
+      "minClearance": 1.45,
+      "maxProjection": 0.6547855877464068,
+      "sheathed": false
+    },
+    {
+      "name": "windup-attack",
+      "frames": 36,
+      "minClearance": 1.45,
+      "maxProjection": 0.8058425792463786,
+      "sheathed": false
+    },
+    {
+      "name": "attack",
+      "frames": 36,
+      "minClearance": 1.45,
+      "maxProjection": 0.8343369811906475,
+      "sheathed": false
+    },
+    {
+      "name": "dodge",
+      "frames": 24,
+      "minClearance": 1.45,
+      "maxProjection": 0.6547855877464072,
+      "sheathed": false
+    },
+    {
+      "name": "hit",
+      "frames": 24,
+      "minClearance": 1.45,
+      "maxProjection": 0.6992145904654528,
+      "sheathed": false
+    },
+    {
+      "name": "parry",
+      "frames": 24,
+      "minClearance": 1.45,
+      "maxProjection": 0.6911029605190011,
+      "sheathed": false
+    },
+    {
+      "name": "broken",
+      "frames": 30,
+      "minClearance": 1.45,
+      "maxProjection": 0.6547855877464066,
+      "sheathed": false
+    },
+    {
+      "name": "death",
+      "frames": 36,
+      "minClearance": 1.45,
+      "maxProjection": 0.6103327271944147,
+      "sheathed": false
+    },
+    {
+      "name": "victory",
+      "frames": 48,
+      "minClearance": 1.45,
+      "maxProjection": 0.7771398401441194,
+      "sheathed": true
+    },
+    {
+      "name": "wind",
+      "frames": 48,
+      "minClearance": 2.1,
+      "maxProjection": 0.4819646865965382,
+      "sheathed": false
+    }
+  ],
+  "failures": [],
+  "regressions": [
+    {
+      "name": "old-run-ridge",
+      "detected": true,
+      "passed": false,
+      "failures": [
+        "body sightline intersects Mesh",
+        "head sightline intersects Mesh",
+        "foot-2 sightline intersects Mesh",
+        "foot-3 sightline intersects Mesh"
+      ],
+      "camera": [
+        2.5,
+        1.45,
+        -7.59
+      ],
+      "groundClearance": 1.45,
+      "cameraSolid": null,
+      "actorBounds": {
+        "min": [
+          -0.5676656514641629,
+          0.0004999974370002436,
+          -5.280961221964399
+        ],
+        "max": [
+          0.5113655100788379,
+          1.8553563542243625,
+          -2.9041273747511607
+        ]
+      },
+      "projectedBounds": {
+        "min": [
+          -0.12095804697481617,
+          -0.4639639421606722,
+          0.9370757672291564
+        ],
+        "max": [
+          0.1370396758921712,
+          0.425689853177639,
+          0.963829340178489
+        ]
+      },
+      "vertices": 5423,
+      "outsideFrame": 0,
+      "behindLabel": 0,
+      "label": {
+        "left": 16,
+        "top": 12,
+        "right": 340,
+        "bottom": 68
+      },
+      "sightlines": [
+        {
+          "name": "body",
+          "world": [
+            0,
+            1.1759187542316827,
+            -3.983500677062175
+          ],
+          "projection": [
+            -0.0009736820593231809,
+            0.10509059993251377,
+            0.9553029018631819
+          ],
+          "obstruction": "Mesh"
+        },
+        {
+          "name": "head",
+          "world": [
+            0,
+            1.5458981702181454,
+            -3.9795978900687605
+          ],
+          "projection": [
+            -0.0015722443779725005,
+            0.2793661963766124,
+            0.9548972029712274
+          ],
+          "obstruction": "Mesh"
+        },
+        {
+          "name": "foot-2",
+          "world": [
+            -0.15,
+            0.11500000000000019,
+            -4.06
+          ],
+          "projection": [
+            0.041496711042565346,
+            -0.3737310749041002,
+            0.9567383686218984
+          ],
+          "obstruction": "Mesh"
+        },
+        {
+          "name": "foot-3",
+          "world": [
+            0.15,
+            0.11499999999999996,
+            -3.9050000000000007
+          ],
+          "projection": [
+            -0.044096427088543916,
+            -0.37962069701620704,
+            0.9563106097119506
+          ],
+          "obstruction": "Mesh"
+        }
+      ]
+    },
+    {
+      "name": "old-victory-shrine",
+      "detected": true,
+      "passed": false,
+      "failures": [
+        "study camera intersects shrine",
+        "body sightline intersects Mesh",
+        "head sightline intersects Mesh",
+        "foot-2 sightline intersects Mesh",
+        "foot-3 sightline intersects Mesh"
+      ],
+      "camera": [
+        2.1,
+        1.45,
+        -22.400000000000002
+      ],
+      "groundClearance": 1.45,
+      "cameraSolid": "shrine",
+      "actorBounds": {
+        "min": [
+          -0.9671288297539247,
+          0.0004999974370002436,
+          -20.0909612219644
+        ],
+        "max": [
+          0.11140291283474885,
+          1.855374765408576,
+          -17.71412737475116
+        ]
+      },
+      "projectedBounds": {
+        "min": [
+          -0.12094772555436342,
+          -0.4639639421606722,
+          0.9370757672291565
+        ],
+        "max": [
+          0.13703967589217073,
+          0.42570928568399985,
+          0.963829340178489
+        ]
+      },
+      "vertices": 5423,
+      "outsideFrame": 0,
+      "behindLabel": 0,
+      "label": {
+        "left": 16,
+        "top": 12,
+        "right": 340,
+        "bottom": 68
+      },
+      "sightlines": [
+        {
+          "name": "body",
+          "world": [
+            -0.4,
+            1.1759187542316827,
+            -18.793500677062177
+          ],
+          "projection": [
+            -0.0009736820593227143,
+            0.10509059993251373,
+            0.9553029018631819
+          ],
+          "obstruction": "Mesh"
+        },
+        {
+          "name": "head",
+          "world": [
+            -0.4,
+            1.5459002543858489,
+            -18.789800738728534
+          ],
+          "projection": [
+            -0.0015416431968213074,
+            0.2793689165658047,
+            0.9548954518307124
+          ],
+          "obstruction": "Mesh"
+        },
+        {
+          "name": "foot-2",
+          "world": [
+            -0.55,
+            0.11500000000000019,
+            -18.87
+          ],
+          "projection": [
+            0.041496711042565686,
+            -0.3737310749041002,
+            0.9567383686218984
+          ],
+          "obstruction": "Mesh"
+        },
+        {
+          "name": "foot-3",
+          "world": [
+            -0.25,
+            0.11499999999999996,
+            -18.715000000000003
+          ],
+          "projection": [
+            -0.04409642708854336,
+            -0.37962069701620726,
+            0.9563106097119506
+          ],
+          "obstruction": "Mesh"
+        }
+      ]
+    }
+  ],
+  "result": "passed",
+  "baseRevision": "9edbcdc1b6d70b09b4e0e1459ed645a52dfa8ef2",
+  "sourceRevision": "c9a9322e66c769cfdb392dafe1a9743457d56d17",
+  "sourceFile": "fresh/motion-capture.mjs",
+  "sourceFileSha256": "b1d4be93871e7589fd76a341e20f47f4f853bd0d915a94016337f891c03f1a60",
+  "reviewer": "/root/game2_ultra_seven_fixes/ci_recovery_review",
+  "spawnEvidence": "Parent reported accepted spawn with reasoning_effort=ultra, fork_turns=none, model omitted; backend effective reasoning not independently verified.",
+  "labels": "Production study reads actual getBoundingClientRect after setting each frame label; non-rendered preflight uses only the conservative CSS extent, not measured font pixels."
+}

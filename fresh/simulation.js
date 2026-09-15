@@ -1,6 +1,7 @@
 // Fresh implementation. This module has no rendering, browser or legacy imports.
 import { canLightSignal } from './mission.js';
 import { ROUTE_FORK, routeChoiceAt, routeEncounterActive } from './route-layout.js';
+import { createExplorationState, advanceExploration, constrainExplorationPosition } from './exploration.js';
 export const STEP = 1 / 60;
 export const OBSTACLES = [
   { x: -3.5, z: 7, w: .55, d: .55, h: 4.5, kind: 'torii' },
@@ -20,12 +21,14 @@ export function createWorld() {
     locked: null, routeChoice: null, routePhase: 'approach', routeChoiceTime: null, routeChoicePosition: null,
     routeLandmark: null, routeLandmarkTime: null, routeConsequence: null, routeConsequenceTime: null,
     routeRejoinTime: null, routeRejoinPosition: null, pathCleared: false, signalLit: false,
-    events: [], totals: { hits: 0, received: 0, parries: 0, kills: 0, dodges: 0 } };
+    exploration: createExplorationState(),
+    events: [], totals: { hits: 0, received: 0, parries: 0, kills: 0, dodges: 0, swings: 0 } };
 }
 function enter(a, state) { a.state = state; a.age = 0; a.hit = []; }
 function move(a, dx, dz) {
-  a.x = Math.max(-13, Math.min(13, a.x + dx));
-  a.z = Math.max(-28, Math.min(23, a.z + dz));
+  const previousX=a.x,previousZ=a.z;
+  a.x += dx; a.z += dz;
+  constrainExplorationPosition(a);
   const r = .35;
   for (const o of OBSTACLES) {
     const x = Math.max(o.x - o.w / 2, Math.min(o.x + o.w / 2, a.x));
@@ -39,7 +42,8 @@ function move(a, dx, dz) {
       [a.x, a.z] = sides[0];
     }
   }
-  a.stride += Math.hypot(dx, dz);
+  // Foot cadence measures resolved travel: pushing against stone is not running.
+  a.stride += Math.hypot(a.x-previousX, a.z-previousZ);
 }
 function event(w, type, a, b, detail = {}) { w.events.push({ type, time: w.time, source: a.id, target: b.id, x: b.x, z: b.z, ...detail }); }
 function strike(w, a, b) {
@@ -94,8 +98,9 @@ export function stepWorld(w, input = {}) {
       p.dodgeZ=length>.1?dz/length:Math.cos(p.yaw);
       w.totals.dodges++;
       enter(p, 'dodge');
+      event(w, 'dodge', p, p);
     }
-    else if (input.attack) enter(p, 'attack');
+    else if (input.attack) { enter(p, 'attack'); w.totals.swings=(w.totals.swings??0)+1; event(w, 'swing', p, p); }
     else if (input.guard && p.state !== 'guard') { enter(p, 'guard'); p.guardAge = 0; }
     const x = input.x || 0, z = input.z || 0, n = Math.max(1, Math.hypot(x,z));
     if (p.state === 'idle' || p.state === 'guard') {
@@ -117,7 +122,7 @@ export function stepWorld(w, input = {}) {
       if (distance(e,p) > 1.65) move(e, Math.sin(e.yaw)*STEP*1.8, -Math.cos(e.yaw)*STEP*1.8);
       else if (!occupied && e.cooldown === 0) { enter(e,'windup'); occupied = true; }
     }
-    if (e.state === 'windup' && e.age >= .65) { enter(e,'attack'); e.cooldown = 1.1; }
+    if (e.state === 'windup' && e.age >= .65) { enter(e,'attack'); e.cooldown = 1.1; event(w, 'swing', e, e); }
   }
   for (const a of actors) {
     if (a.state !== 'attack') continue;
@@ -161,6 +166,7 @@ export function stepWorld(w, input = {}) {
       event(w, 'route-rejoin', p, p, { route: w.routeChoice });
     }
   }
+  if (p.hp > 0) advanceExploration(w,STEP);
   if (p.hp <= 0) w.mode = 'defeat';
   else if (w.enemies.every(e => e.hp <= 0)) {
     // A final strike (even at the lamp) never doubles as the postcombat signal action.

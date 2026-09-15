@@ -1,6 +1,16 @@
 // Test driver only: reads a diagnostic snapshot; never writes game state.
-import { SIGNAL } from './mission.js';
+import { SIGNAL, canLightSignal } from './mission.js';
 import { ROUTE_FORK, routeEncounterActive, routeTravelGoal } from './route-layout.js';
+import { OBSTACLES } from './simulation.js';
+const shrine=OBSTACLES.find(obstacle=>obstacle.kind==='shrine');
+function signalApproachGoal(position){
+  // A guarded retreat can finish beside the solid shrine. Clear its front
+  // before crossing toward the lamp; aiming straight at the lamp pushes into
+  // the side wall. The front waypoint is inside the unchanged signal radius.
+  const frontZ=shrine.z+shrine.d/2+1.1;
+  const beside=Math.abs(position.x-shrine.x)>shrine.w/2;
+  return {x:beside&&position.z<frontZ-.25?position.x:SIGNAL.x,z:frontZ};
+}
 export function playthroughAction(world, preferredRoute='left') {
   const p=world.player;
   const live=world.enemies.filter(e=>e.hp>0&&routeEncounterActive(world.routePhase,world.routeChoice,e.id));
@@ -17,9 +27,10 @@ export function playthroughAction(world, preferredRoute='left') {
     (route==='right'?nearest.x>=threatBoundary:nearest.x<=-threatBoundary)&&withinOuterBoundary(nearest);
   const routeGoal=authoredGoal&&!locked&&!sameSideThreat?authoredGoal:null;
   const target=routeGoal?null:locked||nearest;
-  const goal=routeGoal||target||SIGNAL,dx=goal.x-p.x,dz=goal.z-p.z,d=Math.hypot(dx,dz);
+  const arrivalGoal=world.pathCleared&&!canLightSignal(world)?signalApproachGoal(p):null;
+  const goal=routeGoal||target||arrivalGoal||SIGNAL,dx=goal.x-p.x,dz=goal.z-p.z,d=Math.hypot(dx,dz);
   const move=d>(target?1.75:.18),axisThreshold=routeGoal?.1:.25;
   return {x:move&&Math.abs(dx)>axisThreshold?Math.sign(dx):0,z:move&&Math.abs(dz)>axisThreshold?Math.sign(dz):0,
-    lock:target?!world.locked&&d<10:!routeGoal&&world.pathCleared&&d<=SIGNAL.radius,
+    lock:target?!world.locked&&d<10:!routeGoal&&canLightSignal(world),
     attack:!!target&&d<=1.95&&p.state==='idle',routeNavigating:!!routeGoal,targetId:target?.id??null};
 }

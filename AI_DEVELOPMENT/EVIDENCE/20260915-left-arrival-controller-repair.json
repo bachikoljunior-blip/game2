@@ -1,0 +1,175 @@
+{
+  "sourceRevision": "7583f3b49f681091d2aaed5882b181e87d7ba012",
+  "run": 34957022718,
+  "scope": "Nonrendered replay of exact CI failure world snapshots through the unchanged game simulation; seconds are simulation/input-model time, not browser or physical-device timing.",
+  "results": [
+    {
+      "id": "desktop",
+      "cadence": 0.016666666666666666,
+      "before": {
+        "mode": "playing",
+        "signalLit": false,
+        "elapsedInputSeconds": 180.00000000003539,
+        "simulationSeconds": 180.00000000007842,
+        "player": {
+          "x": -5.35,
+          "z": -19.815765033701993,
+          "hp": 100
+        },
+        "kills": 3
+      },
+      "after": {
+        "mode": "victory",
+        "signalLit": true,
+        "elapsedInputSeconds": 1.4,
+        "simulationSeconds": 1.3999999999999204,
+        "player": {
+          "x": -1.2518832371915127,
+          "z": -18.657215129843824,
+          "hp": 100
+        },
+        "kills": 3
+      }
+    },
+    {
+      "id": "desktop",
+      "cadence": 0.1,
+      "before": {
+        "mode": "playing",
+        "signalLit": false,
+        "elapsedInputSeconds": 180.09999999999405,
+        "simulationSeconds": 180.1000000000785,
+        "player": {
+          "x": -5.35,
+          "z": -19.815765033701993,
+          "hp": 100
+        },
+        "kills": 3
+      },
+      "after": {
+        "mode": "victory",
+        "signalLit": true,
+        "elapsedInputSeconds": 1.7000000000000004,
+        "simulationSeconds": 1.6166666666665748,
+        "player": {
+          "x": -0.7452165705248462,
+          "z": -18.34054846317716,
+          "hp": 100
+        },
+        "kills": 3
+      }
+    },
+    {
+      "id": "desktop",
+      "cadence": 0.25,
+      "before": {
+        "mode": "playing",
+        "signalLit": false,
+        "elapsedInputSeconds": 180,
+        "simulationSeconds": 180.00000000007842,
+        "player": {
+          "x": -5.35,
+          "z": -19.815765033701993,
+          "hp": 100
+        },
+        "kills": 3
+      },
+      "after": {
+        "mode": "victory",
+        "signalLit": true,
+        "elapsedInputSeconds": 2,
+        "simulationSeconds": 1.7666666666665662,
+        "player": {
+          "x": -0.8020587245046782,
+          "z": -18.640151506277636,
+          "hp": 100
+        },
+        "kills": 3
+      }
+    },
+    {
+      "id": "touch-left",
+      "cadence": 0.016666666666666666,
+      "before": {
+        "mode": "playing",
+        "signalLit": false,
+        "elapsedInputSeconds": 180.00000000003539,
+        "simulationSeconds": 180.00000000009197,
+        "player": {
+          "x": -5.35,
+          "z": -19.519886611967728,
+          "hp": 52
+        },
+        "kills": 3
+      },
+      "after": {
+        "mode": "victory",
+        "signalLit": true,
+        "elapsedInputSeconds": 1.3166666666666669,
+        "simulationSeconds": 1.3166666666665918,
+        "player": {
+          "x": -1.2518832371915127,
+          "z": -18.67800337477622,
+          "hp": 52
+        },
+        "kills": 3
+      }
+    },
+    {
+      "id": "touch-left",
+      "cadence": 0.1,
+      "before": {
+        "mode": "playing",
+        "signalLit": false,
+        "elapsedInputSeconds": 180.09999999999405,
+        "simulationSeconds": 180.10000000009188,
+        "player": {
+          "x": -5.35,
+          "z": -19.519886611967728,
+          "hp": 52
+        },
+        "kills": 3
+      },
+      "after": {
+        "mode": "victory",
+        "signalLit": true,
+        "elapsedInputSeconds": 1.6000000000000003,
+        "simulationSeconds": 1.5166666666665805,
+        "player": {
+          "x": -0.7452165705248462,
+          "z": -18.42467004144289,
+          "hp": 52
+        },
+        "kills": 3
+      }
+    },
+    {
+      "id": "touch-left",
+      "cadence": 0.25,
+      "before": {
+        "mode": "playing",
+        "signalLit": false,
+        "elapsedInputSeconds": 180,
+        "simulationSeconds": 180.00000000009197,
+        "player": {
+          "x": -5.35,
+          "z": -19.519886611967728,
+          "hp": 52
+        },
+        "kills": 3
+      },
+      "after": {
+        "mode": "victory",
+        "signalLit": true,
+        "elapsedInputSeconds": 1.75,
+        "simulationSeconds": 1.5166666666665805,
+        "player": {
+          "x": -0.5552165705248462,
+          "z": -18.61467004144289,
+          "hp": 52
+        },
+        "kills": 3
+      }
+    }
+  ]
+}

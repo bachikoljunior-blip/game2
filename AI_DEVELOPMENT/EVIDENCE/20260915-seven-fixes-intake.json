@@ -1,0 +1,195 @@
+{
+  "id": "GAME2-SEVEN-FIXES-ALL-ANIMATION-20260915",
+  "recordedAt": "2026-09-15T08:35:00Z",
+  "status": "758 experience passed and was independently reviewed in all474motion frames, six POIs and normal exploration. Fresh left arrival failed at shrine west side. Exact failure is repaired only in the test-player navigation; one maple-wood visibility registration also repairs the remaining POI obstruction. Matching final candidate CI pending.",
+  "userOriginals": [
+    "サウンド全て自然にして。植物の揺れ自然にして。キャラデザ細部まで作り込んで。スワイプで画面移動と攻撃モーション合わさって混同してんのどうにかして。足折れてる敵直して。マップはもっと広大で飽きないようにして。走ってるアニメーション自然にして。",
+    "アニメーション全て自然で見応えあるものにして"
+  ],
+  "baseline": {
+    "repository": "bachikoljunior-blip/game2",
+    "main": "bc37e9665a3eab6a369ce77b13b3219f8df2e602",
+    "sourceBranch": "codex/game2-rebuild-20260913",
+    "source": "923ac865f732a985ca679b036afdb8a1c06586d3",
+    "canonicalRead": "GitHub git/ref/heads/main and git/ref/heads/codex/game2-rebuild-20260913",
+    "activeWorkflowRuns": 0,
+    "openProductionPullRequest": null,
+    "localPreservation": "The handed-off game2-ultra path did not exist in this workspace. A normal clone recovered the exact source. Fresh clone status was clean; no local failure artifacts were staged, overwritten or deleted.",
+    "writerHandoff": "Parent explicitly reported no unfinished write and previous producer terminated due to usage limit. Canonical producer record says foreground-only and is not liveness proof. Remote source remained unchanged through recheck, no running CI and no active current-production PR. This accepted integrator is the sole remote writer; isolated child worktrees cannot push.",
+    "oldPr10Restored": false,
+    "automationChanged": false
+  },
+  "recoveredFailure": {
+    "run": 34902967581,
+    "job": 104172990958,
+    "conclusion": "failure",
+    "unitTests": 72,
+    "unitAndBuild": "passed, also reproduced locally",
+    "artifact": 10372470117,
+    "artifactDigest": "sha256:232b12a277143ce301d67c45b59bf1509e6ec403be296632816910a694a65824",
+    "diagnosis": "All four raw videos decode. Desktop-left/right timed out on camera composition after insufficient rendered transition steps; touch-left died during the unlocked, stationary post-rejoin camera wait and subsequent lock acknowledgement. The derived recording gate failed on missing semantic checkpoints, not broken video encoding."
+  },
+  "delegation": {
+    "instruction": "ULTRA-CHILDREN-20260914-v3",
+    "integrator": "/root/game2_ultra_seven_fixes",
+    "integratorReceiptFromParent": {
+      "task_name": "/root/game2_ultra_seven_fixes"
+    },
+    "integratorSpawnArgumentsFromParent": {
+      "task_name": "game2_ultra_seven_fixes",
+      "reasoning_effort": "ultra",
+      "fork_turns": "none",
+      "model": "omitted"
+    },
+    "childrenAcceptedByThisIntegrator": [
+      {
+        "task_name": "/root/game2_ultra_seven_fixes/ci_recovery_review",
+        "reasoning_effort": "ultra",
+        "fork_turns": "none",
+        "model": "omitted",
+        "scope": "Recover exact failed CI evidence, then repair browser-only capture procedure in an isolated worktree"
+      },
+      {
+        "task_name": "/root/game2_ultra_seven_fixes/character_animation",
+        "reasoning_effort": "ultra",
+        "fork_turns": "none",
+        "model": "omitted",
+        "scope": "Detailed generated character rig and all actor motions in game2-actors"
+      },
+      {
+        "task_name": "/root/game2_ultra_seven_fixes/world_wind_exploration",
+        "reasoning_effort": "ultra",
+        "fork_turns": "none",
+        "model": "omitted",
+        "scope": "Rooted coherent wind, environmental motion, three optional exploration loops in game2-world"
+      },
+      {
+        "task_name": "/root/game2_ultra_seven_fixes/audio_input",
+        "reasoning_effort": "ultra",
+        "fork_turns": "none",
+        "model": "omitted",
+        "scope": "Generated audio, lifecycle and unambiguous touch gestures in game2-audio-input"
+      },
+      {
+        "task_name": "/root/game2_ultra_seven_fixes/independent_runtime_review",
+        "reasoning_effort": "ultra",
+        "fork_turns": "none",
+        "model": "omitted",
+        "scope": "Independent read-only actor, motion, wind and exploration diagnostics; exact-revision media review"
+      }
+    ],
+    "descendantsAllowed": false,
+    "effectiveInternalStrengthIndependentlyConfirmed": false,
+    "pendingWorkIsNotExecutedEvidence": true,
+    "followupOwnership": {
+      "character_animation": "Foreground helper/presentation repair in isolatedgame2-foreground-fix; no character-motion edits in this phase.",
+      "audio_input": "Support-driven character-motion and related tests only in isolatedgame2-motion-weight-fix; audio/simulation unchanged in this phase.",
+      "world_wind_exploration": "Memory sign repair, then newgrass-shape helper/tests only; no concurrent presentation edits.",
+      "integrator": "Remote writer; grasshelper presentation hookup after foreground handoff.",
+      "independent_runtime_review": "No production edits; independent finite actual-media and exact-source CPU reviews.",
+      "spawnPolicy": "These are followups to the five formally accepted Ultra/none/model-omitted agents; no new/implicit/lower-strength descendants."
+    }
+  },
+  "deadlineReassessment": {
+    "deadline": "2026-09-20T07:51:53Z",
+    "remainingHoursApproximate": 119,
+    "prediction": "Cannot yet ground that all ten quality elements will meet the deadline.",
+    "methodChange": "Treat narrow sequential cosmetic fixes and repeated failed camera-wait recordings as defective. Implement the latest seven requests as coordinated finite actor, world and audio/input packages; repair the evidenced recording procedure in parallel; evaluate actual whole-motion and audible output before integration.",
+    "criteriaChanged": false,
+    "validationPending": "Same-source meaningful tests, actual DOM gestures and four full routes, generated audible samples, continuous rendered motion, independent review, CI and main readback."
+  },
+  "formalQuality": {
+    "satisfied": 0,
+    "not satisfied": 0,
+    "not measured": 10
+  },
+  "publication": "Preserve the existing public root until a verified replacement is ready. New implementation remains fresh/; main integration is authorized and required, but not whole-product acceptance.",
+  "implementationOrigins": {
+    "ciCapture": "954d5be73b438f826dff9c5647dd885d3366296b",
+    "audioInput": "a9b41f331a224b05df1acb9014e88248c2f78e89",
+    "audioReviewRepairs": "75cc340080a37c0cc6ebcd025c4b29f31ea22c60",
+    "characterAnimation": "ff58b7adfa479552aed826b0f3147dee05b13036",
+    "worldWindExploration": "8686dd0d5f7bc54226db989ba3927c148f0b8dba",
+    "explorationReentryRepair": "7f5eae335efe9d4b9e469b9aeb99729714eb9f0b",
+    "integrationCameraRepair": "214d9aa",
+    "localImplementationCheckpoint": "d61493d",
+    "remoteTreeEquivalentCandidate": "bd4e64f9a46e7c6873a8057e420095b278c9e5e7",
+    "tree": "dd529fb6f3417862cb741c86306dce3393e37537",
+    "note": "Child origins are local worktree commits preserved in local/seven-fixes-d61493d. Authenticated GitHub tree/commit/ref tools created a single canonical commit with an identical tree and parent923ac865; force=false. Plain git push failed for missing credentials and made no remote change.",
+    "characterContactRepair": "1931e1e9b436027048f9d412f1d4929bb558a7c5",
+    "worldShadowSolidRepair": "7d49c28ef69ce1e5944139c3806bc7a19c1da6d3",
+    "audioNegativeRecordingRepair": "fbdae08c6273e2b52c8a17476ef51691bb0c465e",
+    "windShaderRepair": "9edbcdc1b6d70b09b4e0e1459ed645a52dfa8ef2",
+    "ordinaryCameraFollowRepair": "a30568e",
+    "motionCompositionRepair": [
+      "a2ec510d74792dc137c04fac0bdf1c686b1536c8",
+      "c9a9322e66c769cfdb392dafe1a9743457d56d17"
+    ],
+    "runClockAndCadence": "1731391c3fb75dd1ff50ad277535842443f207a3",
+    "runFacingRegressionRepair": "ebaa09b4a4e399f44b40be57d08265e6f2d3d231",
+    "sharedFootstepCycle": "1bce6f63074676d926d28d71256bd141f87d5227",
+    "testedLocalRuntime": "55d2e6ad16d9b83b6b7cb04c1df079415303f02f",
+    "secondRemoteCandidate": "414163336db8a5a73a090ad12ebf88999475491c",
+    "secondRemoteTree": "18a21a9e3b67b08713a32f854f95c3b3757b9268",
+    "startupSeedLocal": "f578df097d984d1063e0cd0af3c9b3df2fee36c8",
+    "startupSeedRemote": "927743f0fe3d31d207d43362907ce30eaf8d5e99",
+    "startupSeedTree": "8abb20d91afd44715a4dd776577bf5959c2f364f",
+    "defenderReactionCapture": "d044fa96d6c056d8c017c9c99daa9d480d666b7c",
+    "memorySignRepair": "ed4b42cd0968e37ebbe3308221d942065331752b",
+    "memorySignIntegration": "b34c4895",
+    "failedEvidenceEarlyUpload": "468e1f9",
+    "foregroundVisibilityRepair": "1c87e8066ea9b524aa44276f8c4d45dd578acceb",
+    "foregroundIntegration": "9c254e8",
+    "grassShapeRepair": "5279331edb1fa4aead8f786d40431aad544df6ad",
+    "grassPresentationIntegration": "6d3dbff",
+    "supportDrivenBodyAndReactions": "f72d452e7493cb1de9e7aad34a7683d1d0442ee9",
+    "mapleWoodRegistration": "822f908258aaa9471b728273f6050dc101574a0b",
+    "mapleWoodIntegration": "ca0a11a87a62e29f4644750f0a9c7e31cd961a69",
+    "arrivalControllerRepair": "8adfad48fe0d875e5ec45492697685ecb32b19d9",
+    "arrivalControllerIntegration": "66cdd6f",
+    "arrivalFixtureIdentityRepair": "e3c1630b6b52c84da9b89d242543364cfd10b2dc"
+  },
+  "limitations": {
+    "audioInput": "The actual audio item returned: audio content omitted because you do not support audio input. Generated audition audio and real game master-bus recording are available for replay; this executor cannot truthfully claim listening or perceptual naturalness. PCM tests and independent source/audio-lifecycle review are only technical evidence.",
+    "browser": "Local official Chromium launch terminated with SIGTRAP; exact-source actual DOM/WebGL/audio recording uses GitHub Actions. SwiftShader is not a physical iPhone.",
+    "motionStudy": "Isolated study uses actual generated rendering with synthetic scene states at authored12fps. It is pose/continuity evidence, not ordinary player input or real-time performance; four-route and exploration recordings provide normal-input evidence."
+  },
+  "independentDiagnostic": "AI_DEVELOPMENT/EVIDENCE/20260915-independent-runtime-initial.md",
+  "firstRenderedCiEvidence": "AI_DEVELOPMENT/EVIDENCE/20260915-seven-fixes-first-rendered-ci.json",
+  "latestLocalVerification": {
+    "unitTests": 169,
+    "passed": 169,
+    "freshBuild": "passed;621.41kB/173.06kB gzip",
+    "rootSourceDifferenceFromPreservedBaseline": 0,
+    "actorGrounding": "Existing1680action poses and24run-stop paths pass; new support-driven run and parry/block terrain tests pass;1.86mm block reach regression repaired in the pose without relaxing limits.",
+    "cadence": "3.8m/s run3.3929steps/s,20.4percent sampled flight; world.time phases agree at4/50/60/120Hz and shared audio steps agree at60Hz/250ms",
+    "independentRechecks": "Original6CPU findings and startup mismatch closed.414actualmedia shows correct staged cuts/falls but identified mid-combat cloth/ridge and near-leaf obstruction, stiff running torso, weak hit response and repetitive grass. All have concrete local repairs; independent final media recheck remains pending.",
+    "additionalFocusedChecks": {
+      "startup": "63focused tests/build pass; independent start/retry phase delta <=2.22e-16 and same-side contacts",
+      "memoryApproach": "8exploration tests pass; exact90ms controller fails before at240s, passes after at34.11modelseconds with2discoveries and HP100",
+      "scope": "These are not new full-suite totals or physical/browser performance measurements.",
+      "arrivalController": "29focused tests pass, including24position/side/cadence/device-policy conditions. Six exact failure-state replays: old policy stalled for180model seconds; new policy reached ordinary signal/victory in1.32–2.00model seconds, unchanged HP/kills/collision."
+    },
+    "testedRuntime": "ca0a11a87a62e29f4644750f0a9c7e31cd961a69"
+  },
+  "secondRenderedCiEvidence": "AI_DEVELOPMENT/EVIDENCE/20260915-ci-34952868959-recovery.json",
+  "independentActualRouteReview": "AI_DEVELOPMENT/EVIDENCE/20260915-independent-route-media-414.md",
+  "startupIndependentClosure": "AI_DEVELOPMENT/EVIDENCE/20260915-startup-phase-independent-closure.md",
+  "currentPending": {
+    "remoteSource": "7583f3b49f681091d2aaed5882b181e87d7ba012",
+    "ci": 34957022718,
+    "conclusion": "failure",
+    "fresh": "failure: desktop-left/touch-left stop at shrine west face x=-5.35 after three kills; raw4decodepass, derivedright2only",
+    "experience": "success:9inputgroups+3loops/6discoveries,14motion474frames,actualaudio+mutednegative",
+    "pr": 21,
+    "main": "bc37e9665a3eab6a369ce77b13b3219f8df2e602",
+    "localRuntime": "ca0a11a87a62e29f4644750f0a9c7e31cd961a69",
+    "next": "Publish tested wood visibility and controller-only arrival fixes; obtain matching actual4route/3loop/14motion media; independently close concrete branch/arrival defects; merge PR21 and read canonical main.",
+    "recordedAt": "2026-09-15T10:41:16.074488Z",
+    "localCheckpoint": "c9c480c"
+  },
+  "independentActualExperienceReview": "AI_DEVELOPMENT/EVIDENCE/20260915-independent-experience-media-758.md",
+  "qualityJudgment": "474native frames show less rigid running, clear stopping and stronger load-transfer hit reaction, staged fall and sheathing, narrower varied grass. Remaining light/regular gait, subtle parry/block distinction and repetitive grass are honest stylistic limits, not a formal quality completion claim. The specific waystone branch P2 is repaired locally and awaits native closure.",
+  "reportingCorrection": "This integrator briefly inferred success from fresh entering its always-run decode step. The actual terminal fresh failure was read and corrected to the parent before integration. Stage transition is not a success conclusion.",
+  "latestRenderedCiEvidence": "AI_DEVELOPMENT/EVIDENCE/20260915-ci-34957022718-recovery.json"
+}

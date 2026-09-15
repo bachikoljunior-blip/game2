@@ -1,0 +1,428 @@
+{
+  "id": "CI34957022718-RECOVERY",
+  "recordedAt": "2026-09-15T10:40:13.519842Z",
+  "run": 34957022718,
+  "url": "https://github.com/bachikoljunior-blip/game2/actions/runs/34957022718",
+  "sourceRevision": "7583f3b49f681091d2aaed5882b181e87d7ba012",
+  "conclusion": "failure",
+  "jobs": {
+    "fresh": {
+      "id": 104341412462,
+      "conclusion": "failure"
+    },
+    "experience": {
+      "id": 104341412290,
+      "conclusion": "success"
+    }
+  },
+  "artifacts": [
+    {
+      "kind": "experience",
+      "id": 10392221327,
+      "bytes": 58723777,
+      "sha256": "c79402b33371f14ddc5624e5436032b8503bfc04742467ce0fdaef221e9a9b00",
+      "digestVerified": true
+    },
+    {
+      "kind": "fresh",
+      "id": 10392361837,
+      "bytes": 95186458,
+      "sha256": "01b31c493807cf2922f54c6a48e04032f839653d681ac4ed62923547b1e81b5b",
+      "digestVerified": true
+    }
+  ],
+  "unitTests": {
+    "passed": 168,
+    "failed": 0
+  },
+  "build": "passed",
+  "rootPreservation": "passed",
+  "fresh": {
+    "browserResult": "failed",
+    "routeMatrixResult": "failed",
+    "browserErrors": [],
+    "matrixErrors": [],
+    "rawFullDecodePassed": 4,
+    "derivedFullDecodePassed": 2,
+    "successfulRoutes": [
+      "desktop-right",
+      "touch-right"
+    ],
+    "failedRoutes": [
+      "desktop-left",
+      "touch-left"
+    ],
+    "failure": "Both left approaches finish3kills/pathCleared but stop at shrine west face x=-5.35, never reach post-rejoin-shrine-view/signal before unchanged180s deadline. Raw recording is intact; semantic derived evidence is incomplete.",
+    "desktopFinal": {
+      "x": -5.35,
+      "z": -19.815765,
+      "hp": 100
+    },
+    "touchLeftFinal": {
+      "x": -5.35,
+      "z": -19.5198866,
+      "hp": 52
+    },
+    "collisionMatch": "shrine x=0,z=-23,w=10,d=7 plus actor radius.35: west side x=-5.35. Test player directly aims at SIGNAL(0,-19.6), leaving z within its.25 axis deadzone and pushing against the west face.",
+    "repairScope": "Controller-only ordinary-input approach through shrine front. No simulation geometry, enemy,180s deadline or signal radius changes.",
+    "recordingFailures": [
+      {
+        "id": "desktop",
+        "failure": "AssertionError [ERR_ASSERTION]: missing or misordered post-rejoin-shrine-view checkpoint"
+      },
+      {
+        "id": "touch-left",
+        "failure": "AssertionError [ERR_ASSERTION]: missing or misordered post-rejoin-shrine-view checkpoint"
+      }
+    ]
+  },
+  "experience": {
+    "jobId": 104341412290,
+    "result": "passed",
+    "errors": [],
+    "checks": [
+      "touch short gesture: no attack",
+      "touch vertical gesture: no attack",
+      "touch long gesture: no attack",
+      "touch return gesture: no attack",
+      "native touch cancel causes no attack",
+      "two canvas fingers cannot synthesize an attack",
+      "lost canvas pointer capture cannot attack",
+      "guard survives camera swipe and dedicated attack; own cancellation releases it",
+      "desktop drag rotates without attack; click attacks once",
+      "ordinary keyboard circuit water: both discoveries and loop completion",
+      "ordinary keyboard circuit ridge: both discoveries and loop completion",
+      "ordinary keyboard circuit memory: both discoveries and loop completion"
+    ],
+    "inputGroupsPassed": 9,
+    "aggregateChecksPassed": 12,
+    "loops": [
+      {
+        "id": "water",
+        "result": "passed",
+        "pointsReached": 9,
+        "discovered": [
+          "spring-basin",
+          "stream-stones"
+        ],
+        "completed": [
+          "water"
+        ],
+        "hp": 100
+      },
+      {
+        "id": "ridge",
+        "result": "passed",
+        "pointsReached": 9,
+        "discovered": [
+          "valley-frame",
+          "sun-ring"
+        ],
+        "completed": [
+          "ridge"
+        ],
+        "hp": 100
+      },
+      {
+        "id": "memory",
+        "result": "passed",
+        "pointsReached": 9,
+        "discovered": [
+          "old-waystone",
+          "white-tree"
+        ],
+        "completed": [
+          "memory"
+        ],
+        "hp": 100
+      }
+    ],
+    "videos": [
+      {
+        "id": "water",
+        "file": "exploration-water.webm",
+        "bytes": 4119609,
+        "sha256": "8a12ffb2b47a9517a898594de465199c57db2e66a8420751f76d23e15b5b5b47",
+        "seconds": 34.56,
+        "width": 960,
+        "height": 540,
+        "localFullDecode": "passed",
+        "errors": ""
+      },
+      {
+        "id": "ridge",
+        "file": "exploration-ridge.webm",
+        "bytes": 5198340,
+        "sha256": "971db5f55210e1a239690b1a2c0a8d56c642ca60c4767747bf70810167b7df46",
+        "seconds": 42.96,
+        "width": 960,
+        "height": 540,
+        "localFullDecode": "passed",
+        "errors": ""
+      },
+      {
+        "id": "memory",
+        "file": "exploration-memory.webm",
+        "bytes": 4938973,
+        "sha256": "1cc9266fff40ed68b22a0b9c52a981db488c588a6b86bfcbd8d9b58b80a5e6d0",
+        "seconds": 45.88,
+        "width": 960,
+        "height": 540,
+        "localFullDecode": "passed",
+        "errors": ""
+      }
+    ]
+  },
+  "audio": {
+    "result": "passed",
+    "provenance": {
+      "sourceSha": "7583f3b49f681091d2aaed5882b181e87d7ba012",
+      "ciSha": "7583f3b49f681091d2aaed5882b181e87d7ba012",
+      "requestedUrl": "http://127.0.0.1:4178/?diagnostic=1",
+      "bundles": [
+        {
+          "url": "http://127.0.0.1:4178/assets/index-DiLrAgPh.js",
+          "name": "index-DiLrAgPh.js",
+          "status": 200,
+          "bytes": 621377,
+          "sha256": "582f2552ada6f52eeaab14de0006d2dea060019ac8d8ef239b76b1fe8892e7ab"
+        }
+      ],
+      "actualUrl": "http://127.0.0.1:4178/?diagnostic=1",
+      "documentSha256": "bdd419471e9ff0d33817bfcbbf3b6f6b66a108df27c7d616358826d012c8580e"
+    },
+    "actualRecording": {
+      "webm": "actual-gameplay-audio.webm",
+      "wav": "actual-gameplay-audio.wav",
+      "bytes": 80997,
+      "sha256": "a477a5e0f3d0d3dee2b630f0d8f382415a4370ceb7f96c0e605d9b9e7c1391c1",
+      "decode": "passed",
+      "scope": "Actual generated master bus from normal Start, movement, swing, dodge, pause and resume. No guaranteed coverage of combat contact or every sound category."
+    },
+    "pcm": {
+      "valid": true,
+      "failures": [],
+      "samples": 305280,
+      "sampleRate": 24000,
+      "channels": 2,
+      "seconds": 6.36,
+      "peak": 0.14065976440906525,
+      "rms": 0.012815279775893317,
+      "nonfinite": 0,
+      "clipped": 0,
+      "clipFraction": 0,
+      "activeFraction": 0.7633713312368973,
+      "limits": {
+        "minSeconds": 0.5,
+        "minRms": 0.0001,
+        "minPeak": 0.003,
+        "minActiveFraction": 0.001,
+        "maxClipFraction": 0.001,
+        "maxPeak": 1.01
+      }
+    },
+    "negativeProbe": {
+      "timing": {
+        "muteScheduledAt": 7.350090702947846,
+        "gainArrival": {
+          "audioStart": 7.320090702947846,
+          "target": 7.350090702947846,
+          "audioReached": 7.3520181405895695,
+          "wallElapsedMs": 23.800000000046566
+        },
+        "drain": {
+          "audioStart": 7.3520181405895695,
+          "target": 8.100090702947846,
+          "audioReached": 8.100861678004534,
+          "wallElapsedMs": 756.0999999999767
+        },
+        "drainSeconds": 0.75,
+        "recorderAudioStart": 8.100861678004534,
+        "capture": {
+          "audioStart": 8.100861678004534,
+          "target": 9.300861678004534,
+          "audioReached": 9.311201814058958,
+          "wallElapsedMs": 1207.1000000000931
+        }
+      },
+      "file": "muted-negative-probe.webm",
+      "sha256": "b6adaff405e4a6a467a4ed629c42755df73c99a700030fb86928ac7c95540c7a",
+      "decode": "passed",
+      "pcm": {
+        "valid": false,
+        "failures": [
+          "silent or inaudible PCM"
+        ],
+        "samples": 57600,
+        "sampleRate": 24000,
+        "channels": 2,
+        "seconds": 1.2,
+        "peak": 0,
+        "rms": 0,
+        "nonfinite": 0,
+        "clipped": 0,
+        "clipFraction": 0,
+        "activeFraction": 0,
+        "limits": {
+          "minSeconds": 0.5,
+          "minRms": 0.0001,
+          "minPeak": 0.003,
+          "minActiveFraction": 0.001,
+          "maxClipFraction": 0.001,
+          "maxPeak": 1.01
+        }
+      },
+      "expected": "reject silent capture",
+      "rejected": true
+    },
+    "events": [
+      "started",
+      "actual-movement",
+      "swing-and-dodge",
+      "paused-all-voices-stopped",
+      "resumed"
+    ],
+    "localReDecode": [
+      {
+        "file": "actual-gameplay-audio.webm",
+        "samples": 305280,
+        "peak": 0.14065976440906525,
+        "rms": 0.012815279775892563,
+        "active": 233042,
+        "fileHashMatches": true,
+        "fullDecode": "passed"
+      },
+      {
+        "file": "muted-negative-probe.webm",
+        "samples": 57600,
+        "peak": 0.0,
+        "rms": 0.0,
+        "active": 0,
+        "fileHashMatches": true,
+        "fullDecode": "passed"
+      }
+    ],
+    "generatedCategories": 22,
+    "generatedWavs": 23,
+    "listeningQuality": "not measured"
+  },
+  "motion": {
+    "result": "passed",
+    "scope": "Actual generated rig/environment rendered at authored 12 fps in an isolated study, with synthetic scene states on the ordinary approach and an inspection camera. Victory inspects the salute/sheathing motion here; the four normal-input route films verify the actual shrine ending. Not normal-input gameplay, real-time performance, or source-blind reference comparison.",
+    "errors": [],
+    "cases": [
+      {
+        "name": "idle",
+        "frames": 36,
+        "compositionChecks": 36,
+        "fullDecode": "passed",
+        "video": "idle.mp4"
+      },
+      {
+        "name": "start-run-stop",
+        "frames": 48,
+        "compositionChecks": 48,
+        "fullDecode": "passed",
+        "video": "start-run-stop.mp4"
+      },
+      {
+        "name": "turn",
+        "frames": 36,
+        "compositionChecks": 36,
+        "fullDecode": "passed",
+        "video": "turn.mp4"
+      },
+      {
+        "name": "guard",
+        "frames": 24,
+        "compositionChecks": 24,
+        "fullDecode": "passed",
+        "video": "guard.mp4"
+      },
+      {
+        "name": "windup-attack",
+        "frames": 36,
+        "compositionChecks": 36,
+        "fullDecode": "passed",
+        "video": "windup-attack.mp4"
+      },
+      {
+        "name": "attack",
+        "frames": 36,
+        "compositionChecks": 36,
+        "fullDecode": "passed",
+        "video": "attack.mp4"
+      },
+      {
+        "name": "dodge",
+        "frames": 24,
+        "compositionChecks": 24,
+        "fullDecode": "passed",
+        "video": "dodge.mp4"
+      },
+      {
+        "name": "hit",
+        "frames": 24,
+        "compositionChecks": 24,
+        "fullDecode": "passed",
+        "video": "hit.mp4"
+      },
+      {
+        "name": "parry",
+        "frames": 24,
+        "compositionChecks": 24,
+        "fullDecode": "passed",
+        "video": "parry.mp4"
+      },
+      {
+        "name": "block",
+        "frames": 24,
+        "compositionChecks": 24,
+        "fullDecode": "passed",
+        "video": "block.mp4"
+      },
+      {
+        "name": "broken",
+        "frames": 30,
+        "compositionChecks": 30,
+        "fullDecode": "passed",
+        "video": "broken.mp4"
+      },
+      {
+        "name": "death",
+        "frames": 36,
+        "compositionChecks": 36,
+        "fullDecode": "passed",
+        "video": "death.mp4"
+      },
+      {
+        "name": "victory",
+        "frames": 48,
+        "compositionChecks": 48,
+        "fullDecode": "passed",
+        "video": "victory.mp4"
+      },
+      {
+        "name": "wind",
+        "frames": 48,
+        "compositionChecks": 48,
+        "fullDecode": "passed",
+        "video": "wind.mp4"
+      }
+    ],
+    "totalFrames": 474,
+    "preservedSamples": 158
+  },
+  "independentMedia": "AI_DEVELOPMENT/EVIDENCE/20260915-independent-experience-media-758.md",
+  "remainingSpecificProductRepair": "old-waystone maple wood was excluded from foreground visibility. Origin822f908, localca0a11a adds that single material,33focused and169full tests/build pass; native closure pending.",
+  "limits": [
+    "Technical CI results are separate from source-blind quality comparisons.",
+    "Rendered 12 fps motion study is synthetic, not physical-device performance or normal-input gameplay.",
+    "Actual PCM validation is not a listening-quality verdict."
+  ],
+  "formalQuality": {
+    "satisfied": 0,
+    "not satisfied": 0,
+    "not measured": 10
+  }
+}

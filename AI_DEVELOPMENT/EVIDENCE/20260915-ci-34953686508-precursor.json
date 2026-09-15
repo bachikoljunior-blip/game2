@@ -1,0 +1,280 @@
+{
+  "sourceRevision": "927743f0fe3d31d207d43362907ce30eaf8d5e99",
+  "sourceTree": "8abb20d91afd44715a4dd776577bf5959c2f364f",
+  "runId": 34953686508,
+  "status": "terminal precursor: fresh success; experience failure matches previous memory circuit timeout",
+  "jobs": [
+    {
+      "id": 104333368133,
+      "name": "fresh",
+      "status": "completed",
+      "conclusion": "success",
+      "steps": [
+        {
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Run actions/checkout@v4",
+          "number": 2,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Run actions/setup-node@v4",
+          "number": 3,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Run npm ci",
+          "number": 4,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Exact revision and unchanged public root",
+          "number": 5,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Repository, catalog and ownership gates",
+          "number": 6,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Install video and PCM integrity tools",
+          "number": 7,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Fresh unit contracts",
+          "number": 8,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Fresh production build",
+          "number": 9,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Run npx playwright install --with-deps chromium",
+          "number": 10,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Tested worktree is still the exact revision",
+          "number": 11,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Real browser inputs and WebGL recovery",
+          "number": 12,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Decode continuous play evidence",
+          "number": 13,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Run actions/upload-artifact@v4",
+          "number": 14,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Post Run actions/setup-node@v4",
+          "number": 27,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Post Run actions/checkout@v4",
+          "number": 28,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 29,
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": 104333368938,
+      "name": "experience",
+      "status": "completed",
+      "conclusion": "failure",
+      "steps": [
+        {
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Run actions/checkout@v4",
+          "number": 2,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Run actions/setup-node@v4",
+          "number": 3,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Run npm ci",
+          "number": 4,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Run npx playwright install --with-deps chromium",
+          "number": 5,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Run sudo apt-get update && sudo apt-get install -y ffmpeg",
+          "number": 6,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Same-source build",
+          "number": 7,
+          "status": "completed"
+        },
+        {
+          "conclusion": "failure",
+          "name": "Unambiguous touch input and optional exploration circuits",
+          "number": 8,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Generate listening assets and capture actual game sound",
+          "number": 9,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Render every actor motion and environmental movement",
+          "number": 10,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Run actions/upload-artifact@v4",
+          "number": 11,
+          "status": "completed"
+        },
+        {
+          "conclusion": "skipped",
+          "name": "Post Run actions/setup-node@v4",
+          "number": 21,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Post Run actions/checkout@v4",
+          "number": 22,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 23,
+          "status": "completed"
+        }
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "archive_download_url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10391506049/zip",
+      "created_at": "2026-09-15T10:06:11Z",
+      "digest": "sha256:3bc5c0d5152b789c42853edecf79c43215e0ada1aeb6604ed7b451379a347973",
+      "expired": false,
+      "expires_at": "2026-12-14T09:39:14Z",
+      "id": 10391506049,
+      "name": "fresh-experience-927743f0fe3d31d207d43362907ce30eaf8d5e99",
+      "size_in_bytes": 87778611,
+      "updated_at": "2026-09-15T10:06:11Z",
+      "url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10391506049",
+      "workflow_run": {
+        "head_branch": "codex/game2-rebuild-20260913",
+        "head_repository_id": 1316876624,
+        "head_sha": "927743f0fe3d31d207d43362907ce30eaf8d5e99",
+        "id": 34953686508,
+        "repository_id": 1316876624
+      },
+      "downloaded": false,
+      "digestVerifiedLocally": false
+    },
+    {
+      "archive_download_url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10390749875/zip",
+      "created_at": "2026-09-15T10:02:48Z",
+      "digest": "sha256:de362fd29fb7420ddc50cc7c45f09d1c5c3a2baa2010579c882ba5d2b7318ca5",
+      "expired": false,
+      "expires_at": "2026-12-14T09:39:14Z",
+      "id": 10390749875,
+      "name": "fresh-game-927743f0fe3d31d207d43362907ce30eaf8d5e99",
+      "size_in_bytes": 113168053,
+      "updated_at": "2026-09-15T10:02:48Z",
+      "url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10390749875",
+      "workflow_run": {
+        "head_branch": "codex/game2-rebuild-20260913",
+        "head_repository_id": 1316876624,
+        "head_sha": "927743f0fe3d31d207d43362907ce30eaf8d5e99",
+        "id": 34953686508,
+        "repository_id": 1316876624
+      },
+      "downloaded": false,
+      "digestVerifiedLocally": false
+    }
+  ],
+  "limitations": [
+    "Known memory-sign approach blockage is being repaired in a later source.",
+    "Known real mid-combat cloth/ridge occlusion is being repaired in a later source.",
+    "Old13case parry fixture is being corrected; next source adds block case14.",
+    "This source is not the final integration candidate; no merge eligibility or blind quality verdict."
+  ],
+  "fresh": {
+    "tests": 153,
+    "passed": 153,
+    "failed": 0,
+    "browser": "passed",
+    "routeMatrix": "passed",
+    "rawFullDecode": 4,
+    "derivedFullDecode": 4,
+    "apparatusFailures": [],
+    "recordingFailures": []
+  },
+  "experience": {
+    "failure": "2026-09-15T09:57:15.5249899Z AssertionError [ERR_ASSERTION]: memory: ordinary-input circuit time budget",
+    "failureMatchesPrecursor414": true,
+    "audioStep": "success",
+    "motionCases": 13,
+    "motionFrames": 450,
+    "motionFullDecode": "all13 passed in canonical log"
+  },
+  "recoveryScope": "Per parent follow-up, canonical terminal logs and artifact metadata only; ZIPs not downloaded, no repeat video decode or independent review."
+}
