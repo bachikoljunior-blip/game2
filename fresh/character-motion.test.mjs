@@ -2,8 +2,29 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as T from 'three';
 import {ANATOMY,createCharacterRig,createCharacterResources} from './character-rig.js';
-import {ATTACK_PHASES,LOCOMOTION,locomotionProfile,advanceLocomotionPhase,sampleCharacterPose,solveTwoBone,updateCharacterRig} from './character-motion.js';
+import {ATTACK_PHASES,LOCOMOTION,locomotionProfile,advanceLocomotionPhase,sampleCharacterPose,solveTwoBone,seedCharacterRig,updateCharacterRig} from './character-motion.js';
 import {createWorld,advance} from './simulation.js';
+import {createFootstepTracker} from './audio.js';
+
+test('start and retry retain movement before the first render in the same audio and actor contact phase',()=>{
+  const rig=createCharacterRig('player'),feet=createFootstepTracker(),intro=createWorld();
+  updateCharacterRig(rig,intro.player,intro,1/60);
+  for(let attempt=0;attempt<2;attempt++){
+    const world=createWorld();feet.reset();feet.update(world);seedCharacterRig(rig,world.player,world);
+    let contacts=0;
+    for(const seconds of [.25,.25,.25,.10,.033,.25,.25]){
+      // This is main's actual advance -> audio -> render order, with no
+      // zero-time rendering of the new world before its first movement.
+      advance(world,seconds,{x:1});const steps=feet.update(world).filter(step=>step.actor.id==='player');
+      contacts+=steps.length;const motion=updateCharacterRig(rig,world.player,world,seconds);
+      const travelled=world.player.x;
+      assert.ok(Math.abs(rig.motion.cycles-travelled/(2*locomotionProfile(3.8).stepDistance))<1e-9);
+      assert.equal(Math.floor(rig.motion.cycles*2),contacts);
+      if(steps.length)assert.equal(steps.at(-1).right,contacts%2===1);
+      assert.ok(motion.speed>3.6&&motion.speed<=3.8+1e-9,'the first rendered movement is included');
+    }
+  }
+});
 
 function fixture(id='player'){
   const actor={id,x:0,z:0,yaw:0,hp:100,state:'idle',age:0};

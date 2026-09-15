@@ -145,6 +145,9 @@ function memory(actor,world){return {
   victoryAge:0,lastMode:world.mode,lastEventTime:-1,impact:0,impactKind:null,
   cloth:0,clothVelocity:0,turn:0,metrics:{},
 };}
+// Start and retry seed the presentation at the same simulation boundary as
+// audio, before an input can move the actor ahead of its first rendered frame.
+export function seedCharacterRig(rig,actor,world){rig.motion=memory(actor,world);}
 function localToWorld(point,actor,yaw,ground){const c=Math.cos(yaw),s=Math.sin(yaw);return {x:actor.x+c*point[0]-s*point[2],y:ground+point[1],z:actor.z+s*point[0]+c*point[2]};}
 function worldToLocal(point,actor,yaw,ground){const c=Math.cos(yaw),s=Math.sin(yaw),dx=point.x-actor.x,dz=point.z-actor.z;return [c*dx+s*dz,point.y-ground,-s*dx+c*dz];}
 const toVector=a=>new T.Vector3(...a);

@@ -10,7 +10,7 @@ import { ROUTE_FORK, distanceFromRoute, routeCenterAt, routePathCenters, routePa
 import { EXPLORATION, explorationClearingDistance, explorationSolid } from './exploration.js';
 import { advanceEnvironmentClock, createEnvironmentClock, installWindMaterial, sampleWind, signalFlame } from './wind.js';
 import { createCharacterResources, createCharacterRig } from './character-rig.js';
-import { updateCharacterRig } from './character-motion.js';
+import { seedCharacterRig, updateCharacterRig } from './character-motion.js';
 import { followSunShadow, SUN_SHADOW } from './sun-shadow.js';
 
 const clamp = T.MathUtils.clamp;
@@ -475,6 +475,10 @@ export function createPresentation(canvas) {
   }
   const look=new T.Vector3(),overviewProbe=new T.Vector3();
   const cameraFrame={x:0,y:0,z:0,lookX:0,lookY:0,lookZ:0},smoothedFrame={...cameraFrame};let initialized=false,cameraWorld=null,previousPlayer=null;
+  function beginWorld(world){
+    for(const actor of [world.player,...world.enemies])seedCharacterRig(rigs.get(actor.id)||rig(actor.id),actor,world);
+    initialized=false;cameraWorld=world;previousPlayer=null;
+  }
   const cameraMetrics={lockedFrames:0,minHorizontalStandoff:null,maxDownAngleDegrees:0,foregroundPostOpacity:1,
     rejoinVistaFrames:0,rejoinComposition:null,rejoinFrameError:null,rejoinSightlineClearance:null,
     arrivalOverviewFrames:0,arrivalComposition:null,arrivalFrameError:null};
@@ -556,5 +560,5 @@ export function createPresentation(canvas) {
     }
     renderer.render(scene,camera);
   }
-  return {render,resize,renderer,scene,camera,cameraDiagnostics:()=>({...cameraMetrics,frame:{...smoothedFrame}}),landscapeDiagnostics:()=>({...landscapeMetrics}),actorDiagnostics:()=>JSON.parse(JSON.stringify(actorMetrics))};
+  return {beginWorld,render,resize,renderer,scene,camera,cameraDiagnostics:()=>({...cameraMetrics,frame:{...smoothedFrame}}),landscapeDiagnostics:()=>({...landscapeMetrics}),actorDiagnostics:()=>JSON.parse(JSON.stringify(actorMetrics))};
 }

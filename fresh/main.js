@@ -24,7 +24,7 @@ const input=createInput(canvas,pause);
 try{view=createPresentation(canvas);}catch(e){message.textContent='描画を開始できませんでした。WebGLが利用可能なブラウザで再読み込みしてください。';start.disabled=true;throw e;}
 start.addEventListener('click',()=>{
   if(contextLost)return;
-  if(!paused)world=createWorld();paused=false;running=true;menu.hidden=true;menu.dataset.mode='playing';hud.hidden=false;notice.textContent='';input.setActive(true);
+  if(!paused){world=createWorld();view.beginWorld(world);}paused=false;running=true;menu.hidden=true;menu.dataset.mode='playing';hud.hidden=false;notice.textContent='';input.setActive(true);
   audio.resume(world);last=performance.now();
 });
 document.querySelector('#pause').addEventListener('click',pause);
