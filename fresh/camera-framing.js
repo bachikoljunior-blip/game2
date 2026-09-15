@@ -87,10 +87,24 @@ export function computeCameraFrame(world,orbit,aspect,out){
   return out;
 }
 
+// Normal tracking moves with the actor's resolved displacement. Limiting that
+// translation by rendered-frame time made a slow renderer leave the actor behind.
+// Authored junction/signal views retain their world-space, bounded transition.
+export function cameraTrackingTranslation(world,previousPlayer){
+  if(!previousPlayer||world.mode==='victory'||usesArrivalFrame(world)||usesRejoinVista(world))return null;
+  const p=world.player;
+  return {x:p.x-previousPlayer.x,y:groundHeightAt(p.x,p.z)-groundHeightAt(previousPlayer.x,previousPlayer.z),z:p.z-previousPlayer.z};
+}
+
 // Position interpolation cuts through the duel when the lock bearing reverses.
 // Interpolate the horizontal orbit and radius around a moving focus instead.
-export function interpolateCameraFrame(current,wanted,dt,initialized){
+export function interpolateCameraFrame(current,wanted,dt,initialized,translation=null){
   if(!initialized)return Object.assign(current,wanted);
+  if(translation){
+    for(const [position,focus,axis] of [['x','lookX','x'],['y','lookY','y'],['z','lookZ','z']]){
+      current[position]+=translation[axis];current[focus]+=translation[axis];
+    }
+  }
   const priorX=current.x,priorZ=current.z;
   const step=Math.max(0,Math.min(dt,.1));
   const alpha=1-Math.exp(-step*8);

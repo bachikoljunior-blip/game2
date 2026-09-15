@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {EXPLORATION,advanceExploration,constrainExplorationPosition,createExplorationState,explorationText,isExplorationWalkable} from './exploration.js';
+import {EXPLORATION,EXPLORATION_SOLIDS,advanceExploration,constrainExplorationPosition,createExplorationState,explorationSolidAt,explorationText,isExplorationWalkable} from './exploration.js';
 import {groundHeightAt} from './terrain.js';
 import {createWorld,OBSTACLES} from './simulation.js';
+import {routePathCenters} from './route-layout.js';
 
 function* walkSamples(walk,reverse=false){
   const nodes=reverse?[...walk.nodes].reverse():walk.nodes;
@@ -12,12 +13,36 @@ function* walkSamples(walk,reverse=false){
     for(let n=1;n<=steps;n++)yield {x:a.x+(b.x-a.x)*n/steps,z:a.z+(b.z-a.z)*n/steps};
   }
 }
-test('every old battle-space coordinate remains traversable without moving the mission or its three enemies',()=>{
+test('old battle space remains traversable except for the visible optional props, without moving the three enemies',()=>{
   for(let x=-13;x<=13;x+=.5)for(let z=-28;z<=23;z+=.5){
+    if(explorationSolidAt(x,z))continue;
     const p={x,z};assert.equal(constrainExplorationPosition(p),p);assert.deepEqual(p,{x,z});
   }
   const world=createWorld();
   assert.deepEqual(world.enemies.map(e=>[e.id,e.x,e.z]),[['sentinel',0,1],['retainer',-3,-9],['warden',3,-16]]);
+  for(let z=-19;z<=23;z+=.1)for(const center of routePathCenters(z))for(const offset of [-.75,0,.75]){
+    assert.equal(explorationSolidAt(center+offset,z),null,'new side props keep the main route corridor clear');
+  }
+});
+test('raised discovery props and signboards stop entry, including rotated boxes and embedded actor centers',()=>{
+  for(const solid of EXPLORATION_SOLIDS){
+    const center={x:solid.x,z:solid.z};
+    assert.ok(explorationSolidAt(center.x,center.z),`${solid.id} is a shared solid footprint`);
+    constrainExplorationPosition(center);
+    assert.equal(explorationSolidAt(center.x,center.z),null,`${solid.id} releases an embedded actor`);
+    assert.equal(isExplorationWalkable(center.x,center.z),true,`${solid.id} separates into a valid part of the walk`);
+    // Repeated ordinary-size steps directed through each solid must remain
+    // outside its footprint instead of tunnelling through a thin post/board.
+    for(let direction=0;direction<12;direction++){
+      const angle=direction*Math.PI/6,dx=Math.cos(angle),dz=Math.sin(angle);
+      const p={x:solid.x+dx*3.2,z:solid.z+dz*3.2};constrainExplorationPosition(p);
+      for(let frame=0;frame<90;frame++){
+        p.x-=dx*3.8/60;p.z-=dz*3.8/60;constrainExplorationPosition(p);
+        assert.equal(explorationSolidAt(p.x,p.z),null,`${solid.id} cannot be entered while walking`);
+        assert.equal(isExplorationWalkable(p.x,p.z),true);
+      }
+    }
+  }
 });
 test('three side circuits can be walked in both directions with continuous feet, clear sightline props and no mission obstacle crossing',()=>{
   for(const walk of EXPLORATION.loops)for(const reverse of [false,true]){

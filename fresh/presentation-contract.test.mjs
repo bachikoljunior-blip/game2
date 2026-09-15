@@ -2,11 +2,33 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {PerspectiveCamera,Vector3} from 'three';
-import {computeCameraFrame,foregroundObstacleOpacity,interpolateCameraFrame,usesArrivalFrame,usesRejoinVista} from './camera-framing.js';
+import {cameraTrackingTranslation,computeCameraFrame,foregroundObstacleOpacity,interpolateCameraFrame,usesArrivalFrame,usesRejoinVista} from './camera-framing.js';
 import {SIGNAL} from './mission.js';
 import {ROUTE_FORK,routeCenterAt} from './route-layout.js';
 import {createCharacterRig} from './character-rig.js';
 import {EXPLORATION} from './exploration.js';
+import {groundHeightAt} from './terrain.js';
+
+test('ordinary tracking keeps the actual actor in frame throughout all circuits even with250ms simulation frames',()=>{
+  const camera=new PerspectiveCamera(52,16/9,.1,230),point=new Vector3();
+  for(const loop of EXPLORATION.loops)for(const dt of [1/60,.25]){
+    const world={mode:'playing',routePhase:'approach',routeChoice:null,locked:null,enemies:[],player:{x:loop.nodes[0].x,z:loop.nodes[0].z,hp:100}};
+    const current=computeCameraFrame(world,0,16/9,{});
+    for(const goal of loop.nodes.slice(1)){
+      while(Math.hypot(goal.x-world.player.x,goal.z-world.player.z)>.0001){
+        const previous={...world.player},distance=Math.hypot(goal.x-previous.x,goal.z-previous.z),step=Math.min(distance,3.8*dt);
+        world.player.x+=(goal.x-previous.x)/distance*step;world.player.z+=(goal.z-previous.z)/distance*step;
+        interpolateCameraFrame(current,computeCameraFrame(world,0,16/9,{}),dt,true,cameraTrackingTranslation(world,previous));
+        camera.position.set(current.x,current.y,current.z);camera.lookAt(current.lookX,current.lookY,current.lookZ);camera.updateMatrixWorld();
+        for(const height of [.08,1.9]){
+          point.set(world.player.x,groundHeightAt(world.player.x,world.player.z)+height,world.player.z).project(camera);
+          assert.ok(Math.abs(point.x)<.75&&Math.abs(point.y)<.85&&point.z>-1&&point.z<1,`${loop.id} ${dt}: grounded actor remains visible`);
+        }
+        assert.ok(Math.abs(current.lookX-world.player.x)<.02,'no accumulating lateral lag');
+      }
+    }
+  }
+});
 
 test('junction and arrival cameras release to player follow on every optional walk',()=>{
   for(const place of EXPLORATION.points){

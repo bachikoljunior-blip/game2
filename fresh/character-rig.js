@@ -177,7 +177,16 @@ export function createCharacterRig(id, resources=createCharacterResources()) {
   const ring=new T.Mesh(new T.TorusGeometry(.5,.013,5,32),brass);ring.rotation.x=Math.PI/2;ring.position.y=.028;ring.visible=false;root.add(ring);
   const signal=new T.Mesh(new T.OctahedronGeometry(.065),brass);signal.position.y=2.04;signal.visible=false;root.add(signal);
   for(const [parent,byMaterial] of batches)for(const [material,parts] of byMaterial){
-    const geometry=mergeGeometries(parts,false);parts.forEach(p=>p.dispose());const mesh=new T.Mesh(geometry,material);mesh.castShadow=mesh.receiveShadow=true;parent.add(mesh);
+    const geometry=mergeGeometries(parts,false);parts.forEach(p=>p.dispose());
+    // Rendering retains face normals/UV splits. Ground contact only needs each
+    // exact position once; prepare that smaller point set during generation.
+    const positions=geometry.getAttribute('position'),seen=new Set(),contactPositions=[];
+    for(let i=0;i<positions.count;i++){
+      const x=positions.getX(i),y=positions.getY(i),z=positions.getZ(i),key=`${x},${y},${z}`;
+      if(seen.has(key))continue;seen.add(key);contactPositions.push(x,y,z);
+    }
+    geometry.userData.contactPositions=new Float32Array(contactPositions);
+    const mesh=new T.Mesh(geometry,material);mesh.castShadow=mesh.receiveShadow=true;parent.add(mesh);
   }
   let meshes=0;root.traverse(node=>{if(node.isMesh)meshes++;});
   return {id,root,body,chest,neck,limbs,panels,ties,sword,blade,scabbard,ring,signal,contact,

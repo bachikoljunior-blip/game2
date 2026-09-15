@@ -2,15 +2,16 @@ import * as T from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { OBSTACLES } from './simulation.js';
 import { SIGNAL } from './mission.js';
-import { computeCameraFrame, foregroundObstacleOpacity, interpolateCameraFrame, usesArrivalFrame, usesRejoinVista } from './camera-framing.js';
+import { cameraTrackingTranslation, computeCameraFrame, foregroundObstacleOpacity, interpolateCameraFrame, usesArrivalFrame, usesRejoinVista } from './camera-framing.js';
 import { groundHeightAt, terrainVertexHeight, shrineBaseSize } from './terrain.js';
 import { indexForBatch } from './batch-geometry.js';
 import { spatialCell, partitionInstances } from './spatial-batches.js';
 import { ROUTE_FORK, distanceFromRoute, routeCenterAt, routePathCenters, routePathLength } from './route-layout.js';
-import { EXPLORATION, explorationClearingDistance } from './exploration.js';
+import { EXPLORATION, explorationClearingDistance, explorationSolid } from './exploration.js';
 import { advanceEnvironmentClock, createEnvironmentClock, installWindMaterial, sampleWind, signalFlame } from './wind.js';
 import { createCharacterResources, createCharacterRig } from './character-rig.js';
 import { updateCharacterRig } from './character-motion.js';
+import { followSunShadow, SUN_SHADOW } from './sun-shadow.js';
 
 const clamp = T.MathUtils.clamp;
 export function createPresentation(canvas) {
@@ -22,8 +23,9 @@ export function createPresentation(canvas) {
   const camera = new T.PerspectiveCamera(52,1,.1,230);
   scene.add(new T.HemisphereLight('#a4bfd3','#42372a',1.55));
   const sun = new T.DirectionalLight('#ffd29a',3.4); sun.position.set(-24,18,-42); sun.castShadow=true;
-  sun.shadow.mapSize.set(2048,2048); Object.assign(sun.shadow.camera,{left:-28,right:28,top:32,bottom:-32,near:1,far:110});
-  sun.shadow.bias=-.0004; sun.shadow.normalBias=.025; scene.add(sun);
+  sun.shadow.mapSize.set(SUN_SHADOW.mapSize,SUN_SHADOW.mapSize); Object.assign(sun.shadow.camera,{left:-SUN_SHADOW.width/2,right:SUN_SHADOW.width/2,top:SUN_SHADOW.height/2,bottom:-SUN_SHADOW.height/2,near:1,far:110});
+  sun.shadow.camera.updateProjectionMatrix();
+  sun.shadow.bias=-.0004; sun.shadow.normalBias=.025; scene.add(sun,sun.target);
   const rim=new T.DirectionalLight('#b6c6d0',1.35);rim.position.set(18,12,22);scene.add(rim);
   let seed = 310519;
   const random = () => { seed = (1664525*seed+1013904223)>>>0; return seed/4294967296; };
@@ -222,14 +224,16 @@ export function createPresentation(canvas) {
     signContext.fillStyle='#e7d9b4';signContext.font='500 43px sans-serif';signContext.textAlign='center';signContext.textBaseline='middle';signContext.fillText(walk.name,192,49);
     const signTexture=new T.CanvasTexture(signCanvas);signTexture.colorSpace=T.SRGBColorSpace;
     const signMaterial=new T.MeshStandardMaterial({map:signTexture,roughness:.95,side:T.DoubleSide});
-    for(const node of [walk.nodes[0],walk.nodes.at(-1)]){
-      const sx=node.x+(node.x<0?-1.55:1.55),sz=node.z,sy=groundHeightAt(sx,sz);
-      column(bark,sx,sy+.7,sz,.075,1.4);box(bark,sx,sy+1.19,sz,1.95,.52,.1);
-      const sign=new T.Mesh(new T.PlaneGeometry(1.9,.48),signMaterial);sign.position.set(sx,sy+1.19,sz+.056);scene.add(sign);
+    for(let i=0;i<2;i++){
+      const prop=explorationSolid(`${walk.id}-sign-${i}`),sx=prop.x,sz=prop.z,sy=groundHeightAt(sx,sz);
+      column(bark,sx,sy+.7,sz,.05,1.4);box(bark,sx,sy+1.19,sz,prop.width,.52,prop.depth,prop.rotation);
+      const sign=new T.Mesh(new T.PlaneGeometry(prop.width-.05,.48),signMaterial);
+      sign.rotation.y=prop.rotation;sign.position.set(sx+Math.sin(prop.rotation)*.056,sy+1.19,sz+Math.cos(prop.rotation)*.056);scene.add(sign);
     }
   }
   const warmStone=material('#b5a487'),paleBark=material('#b7b8a0'),waterDepth=material('#405d59',.75);
-  function postCloth(x,z,height=2.9){
+  function postCloth(prop,height=2.9){
+    const {x,z}=prop;
     const y=groundHeightAt(x,z);column(bark,x,y+height*.5,z,.065,height);
     box(routeBinding,x-.46,y+height-.05,z,.94,.045,.045);
     const g=new T.PlaneGeometry(.9,1.6,7,12);g.translate(-.45,-.8,0);
@@ -250,44 +254,48 @@ export function createPresentation(canvas) {
     const m=new T.Mesh(new T.CylinderGeometry(.12,.16,.14,8),brass.clone());m.position.set(x+1.15,groundHeightAt(x+1.15,z)+.08,z);
     scene.add(m);discoveryMarkers.set(place.id,m);
     if(place.id==='spring-basin'){
-      const bx=x-1.9,bz=z,by=groundHeightAt(bx,bz);
-      column(warmStone,bx,by+.3,bz,1.05,.6);
+      const prop=explorationSolid('spring-basin'),bx=prop.x,bz=prop.z,by=groundHeightAt(bx,bz);
+      column(warmStone,bx,by+.3,bz,prop.radius-.35,.6);
       staticPart(new T.TorusGeometry(.88,.15,7,24).rotateX(Math.PI/2),stone,bx,by+.61,bz);
       waterDisk(bx,bz,.79,by+.61);
       box(paleBark,bx-.85,by+1.03,bz,.12,.12,1.35,.2);
       for(let i=0;i<4;i++)staticPart(new T.DodecahedronGeometry(1,0),warmStone,bx-1.1+i*.1,by+.75+i*.15,bz-.55,.3,.18,.29,i);
     }else if(place.id==='stream-stones'){
       // A shallow pool rests alongside the open stepping-stone path.
-      const px=x-2.6,pz=z+1.3,py=groundHeightAt(px,pz)+.06;
-      column(waterDepth,px,py-.1,pz,1.65,.18);waterDisk(px,pz,1.5,py);
+      const prop=explorationSolid('stream-pool'),px=prop.x,pz=prop.z,py=groundHeightAt(px,pz)+.06;
+      column(waterDepth,px,py-.1,pz,prop.radius-.45,.18);waterDisk(px,pz,prop.radius-.6,py);
       for(let i=0;i<7;i++){
-        const a=i/7*Math.PI*2,rx=px+Math.sin(a)*1.6,rz=pz+Math.cos(a)*1.6;
+        const a=i/7*Math.PI*2,rx=px+Math.sin(a)*(prop.radius-.5),rz=pz+Math.cos(a)*(prop.radius-.5);
         staticPart(new T.DodecahedronGeometry(1,0),stone,rx,groundHeightAt(rx,rz)+.12,rz,.48,.2,.35,a);
       }
       for(let i=-2;i<=2;i++)box(warmStone,x,groundHeightAt(x,z+i*.8)+.04,z+i*.8,.88,.07,.53,i*.08);
     }else if(place.id==='valley-frame'){
       // Open frame: no deck floats above the terrain and no railing blocks entry.
-      for(const dx of [-2.1,2.1]){column(bark,x+dx,groundHeightAt(x+dx,z-1)+1.7,z-1,.12,3.4);postCloth(x+dx,z-1,3.4);}
+      for(const id of ['valley-frame-left','valley-frame-right']){
+        const prop=explorationSolid(id);column(bark,prop.x,groundHeightAt(prop.x,prop.z)+1.7,prop.z,prop.radius,3.4);postCloth(prop,3.4);
+      }
       box(paleBark,x,y+3.45,z-1,4.5,.16,.17);
       for(let i=-2;i<=2;i++)box(warmStone,x+i*.55,groundHeightAt(x+i*.55,z-1.6)+.04,z-1.6,.4,.075,.6);
     }else if(place.id==='sun-ring'){
-      const ring=new T.TorusGeometry(1.45,.21,7,22);ring.rotateY(-.45);
-      staticPart(ring,warmStone,x+2.1,y+1.6,z-1.2);
-      box(stone,x+2.1,y+.18,z-1.2,2.8,.35,.85,-.45);postCloth(x-1.9,z-.6,2.8);
+      const prop=explorationSolid('sun-ring'),py=groundHeightAt(prop.x,prop.z),ring=new T.TorusGeometry(prop.width/2-.25,.21,7,22);ring.rotateY(prop.rotation);
+      staticPart(ring,warmStone,prop.x,py+1.6,prop.z);
+      box(stone,prop.x,py+.18,prop.z,prop.width-.6,.35,prop.depth-.15,prop.rotation);postCloth(explorationSolid('sun-cloth'),2.8);
     }else if(place.id==='old-waystone'){
-      box(warmStone,x-1.9,y+.82,z,1.08,1.64,.48,.23);
+      const prop=explorationSolid('old-waystone');
+      box(warmStone,prop.x,y+.82,prop.z,prop.width,1.64,prop.depth,prop.rotation);
       // Two branching, shallow dark inlays were drawn specifically for this waystone.
       for(const dx of [-.15,.15])box(dark,x-1.9+dx,y+1.02,z+.25,.045,.62,.022,dx>0?-.3:.3);
       box(dark,x-1.9,y+.55,z+.255,.045,.35,.025);
-      for(let i=0;i<5;i++)staticPart(new T.DodecahedronGeometry(1,0),stone,x+1.8,y+.12+i*.13,z,.39-i*.045,.12,.35-i*.04,i);
+      const cairn=explorationSolid('old-cairn');
+      for(let i=0;i<5;i++)staticPart(new T.DodecahedronGeometry(1,0),stone,cairn.x,y+.12+i*.13,cairn.z,cairn.radius-i*.045,.12,.35-i*.04,i);
     }else if(place.id==='white-tree'){
-      const tx=x+2.15,tz=z-.8,ty=groundHeightAt(tx,tz),root={x:tx,y:ty,z:tz,height:5.2};
+      const prop=explorationSolid('white-tree'),tx=prop.x,tz=prop.z,ty=groundHeightAt(tx,tz),root={x:tx,y:ty,z:tz,height:5.2};
       // The pale tree's woody core shares the same anchored deformation.
       const treeMat=paleBark.clone();vegetationMaterials.add(treeMat);installWindMaterial(treeMat,wind);
-      windPart(new T.CylinderGeometry(.12,.29,4.7,7,8),treeMat,root,{x:tx,y:ty,z:tz,flex:0},tx,ty+2.35,tz);
+      windPart(new T.CylinderGeometry(.12,prop.radius,4.7,7,8),treeMat,root,{x:tx,y:ty,z:tz,flex:0},tx,ty+2.35,tz);
       for(const side of [-1,1]){
         leafBranch(tx,ty+2.8,tz,tx+side*1.8,ty+4.7,tz-.4,root,treeMat,.12);
-        postCloth(tx+side*1.8,tz-.4,2.5);
+        postCloth(explorationSolid(side<0?'white-cloth-left':'white-cloth-right'),2.5);
       }
     }
   }
@@ -336,9 +344,10 @@ export function createPresentation(canvas) {
   for(let i=0;i<mapleGeometry.getAttribute('position').count;i++)mapleWeights.push((mapleGeometry.getAttribute('position').getY(i)/.64)**2);
   mapleGeometry.setAttribute('windWeight',new T.Float32BufferAttribute(mapleWeights,1));
   const mapleBark=material('#675647');vegetationMaterials.add(mapleBark);installWindMaterial(mapleBark,wind);
-  for(const [x,z] of [[-22,11],[-24,4],[-10,-34],[14,-43]]){
+  for(let treeIndex=0;treeIndex<4;treeIndex++){
+    const prop=explorationSolid(`maple-${treeIndex}`),{x,z}=prop;
     const y=groundHeightAt(x,z),h=4.8+exploreRandom(),root={x,y,z,height:h},fixed={x,y,z,flex:0};
-    windPart(new T.CylinderGeometry(.11,.28,h*.8,7,7),mapleBark,root,fixed,x,y+h*.4,z);
+    windPart(new T.CylinderGeometry(.11,prop.radius,h*.8,7,7),mapleBark,root,fixed,x,y+h*.4,z);
     for(let i=0;i<9;i++){
       const a=i*2.399,reach=1.2+(i%3)*.45,bx=x+Math.sin(a)*reach,bz=z+Math.cos(a)*reach,by=y+h*(.58+(i%3)*.14);
       leafBranch(x,y+h*.49,z,bx,by,bz,root,mapleBark,.09);
@@ -387,6 +396,7 @@ export function createPresentation(canvas) {
       right:{landmark:ROUTE_FORK.right.landmark,markers:routeBanners.length,pathLength:routePathLength('right')}}};
   landscapeMetrics.exploration={loops:EXPLORATION.loops.length,places:EXPLORATION.points.length,sideTrailMeters,sideTrailTriangles,bounds:EXPLORATION.bounds};
   landscapeMetrics.wind={sharedField:true,rootAnchored:true,pinnedClothEdge:true,shadowDeformation:true};
+  landscapeMetrics.sunShadow={followsPlayer:true,width:SUN_SHADOW.width,height:SUN_SHADOW.height,mapSize:SUN_SHADOW.mapSize,texelSnapped:true};
   const grassGroups=partitionInstances(grass);grass.dispose();grassGroups.forEach(g=>{g.customDepthMaterial=grassDepth;scene.add(g);});
   landscapeMetrics.grassBatches=grassGroups.length;landscapeMetrics.leafBatches=batches.get(leaf).size;
   // Sparse falling leaves describe the shared air current. Their visible lives
@@ -464,7 +474,7 @@ export function createPresentation(canvas) {
     actorMetrics.rigs[id]=character.metrics;rigs.set(id,character);return character;
   }
   const look=new T.Vector3(),overviewProbe=new T.Vector3();
-  const cameraFrame={x:0,y:0,z:0,lookX:0,lookY:0,lookZ:0},smoothedFrame={...cameraFrame};let initialized=false;
+  const cameraFrame={x:0,y:0,z:0,lookX:0,lookY:0,lookZ:0},smoothedFrame={...cameraFrame};let initialized=false,cameraWorld=null,previousPlayer=null;
   const cameraMetrics={lockedFrames:0,minHorizontalStandoff:null,maxDownAngleDegrees:0,foregroundPostOpacity:1,
     rejoinVistaFrames:0,rejoinComposition:null,rejoinFrameError:null,rejoinSightlineClearance:null,
     arrivalOverviewFrames:0,arrivalComposition:null,arrivalFrameError:null};
@@ -472,6 +482,7 @@ export function createPresentation(canvas) {
   resize();
   function render(world,dt,orbit=0,options={}){
     const animate=options.animate!==false;
+    landscapeMetrics.sunShadow.center=followSunShadow(sun,{x:world.player.x,y:groundHeightAt(world.player.x,world.player.z)+.8,z:world.player.z});
     if(advanceEnvironmentClock(environmentClock,world,dt,options.animate!==false)){encounterClocks.clear();signalIgnition=null;}
     wind.value=environmentClock.value;
     updateEnvironment(world);
@@ -488,8 +499,10 @@ export function createPresentation(canvas) {
       const r=rigs.get(a.id)||rig(a.id);
       actorMetrics.motionByRig[a.id]=updateCharacterRig(r,a,world,dt,{animate,groundHeightAt});
     }
+    if(cameraWorld!==world){initialized=false;previousPlayer=null;cameraWorld=world;}
     computeCameraFrame(world,orbit,camera.aspect,cameraFrame);
-    interpolateCameraFrame(smoothedFrame,cameraFrame,dt,initialized);
+    interpolateCameraFrame(smoothedFrame,cameraFrame,dt,initialized,cameraTrackingTranslation(world,previousPlayer));
+    previousPlayer={x:world.player.x,z:world.player.z};
     camera.position.set(smoothedFrame.x,smoothedFrame.y,smoothedFrame.z);
     look.set(smoothedFrame.lookX,smoothedFrame.lookY,smoothedFrame.lookZ);
     camera.lookAt(look);initialized=true;

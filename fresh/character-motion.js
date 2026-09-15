@@ -2,13 +2,28 @@ import * as T from 'three';
 import { ANATOMY } from './character-rig.js';
 
 // Audio and gait use actual displacement, never input intent or actor.stride.
-export const LOCOMOTION=Object.freeze({stepDistance:.72,stanceFraction:.60});
+export const LOCOMOTION=Object.freeze({stepDistance:.72,stanceFraction:.60,runStepDistance:1.12,runStanceFraction:.40,walkSpeed:1.8,runSpeed:3.8});
 export const ATTACK_PHASES=Object.freeze({activeStart:.18,activeEnd:.34,end:.65});
 const clamp=(n,a=0,b=1)=>Math.max(a,Math.min(b,n)),mix=(a,b,t)=>a+(b-a)*t;
 const ease=t=>{t=clamp(t);return t*t*(3-2*t);};
 const wrap=a=>Math.atan2(Math.sin(a),Math.cos(a));
+const flatGround=()=>0;
 const down=new T.Vector3(0,-1,0),up=new T.Vector3(0,1,0);
-const q=new T.Quaternion(),euler=new T.Euler();
+
+export function locomotionProfile(speed=0){
+  const run=ease((Math.max(0,speed)-LOCOMOTION.walkSpeed)/(LOCOMOTION.runSpeed-LOCOMOTION.walkSpeed));
+  return {stepDistance:mix(LOCOMOTION.stepDistance,LOCOMOTION.runStepDistance,run),
+    stanceFraction:mix(LOCOMOTION.stanceFraction,LOCOMOTION.runStanceFraction,run),run};
+}
+
+// Integrate each travelled interval. Re-dividing total distance by the current
+// stride would rewind the feet whenever the player accelerates into a run.
+// Audio counts each crossed half-cycle; omitted elapsed time retains .72m steps.
+export function advanceLocomotionPhase(cycles,distance,seconds=0){
+  const travel=Number.isFinite(distance)?Math.max(0,distance):0;
+  const speed=Number.isFinite(seconds)&&seconds>0?travel/seconds:0;
+  return cycles+travel/(2*locomotionProfile(speed).stepDistance);
+}
 
 function restPose(){return {
   pelvis:[0,.916,0],body:[.025,0,0],chest:[-.015,0,0],head:[0,0,0],
@@ -17,6 +32,11 @@ function restPose(){return {
   twoHands:0,fall:0,sheath:0,phase:'idle',active:false,
 };}
 const poseWith=(base,patch)=>({...base,...patch});
+function copyPose(pose){
+  const copy={...pose};
+  for(const key of ['pelvis','body','chest','head','weapon','weaponRotation','leftHand','footPitch'])copy[key]=pose[key].slice();
+  copy.feet=pose.feet.map(foot=>foot.slice());return copy;
+}
 function blendPose(a,b,t){
   const result={...b};
   for(const key of ['pelvis','body','chest','head','weapon','weaponRotation','leftHand','footPitch'])result[key]=a[key].map((n,i)=>mix(n,b[key][i],t));
@@ -40,7 +60,7 @@ const cut={pelvis:[-.015,.835,-.045],body:[-.14,0,.035],chest:[-.035,.32,.02],we
  * read directly from simulation age; blending never delays the active swing. */
 export function sampleCharacterPose(state,age=0,{time=0,speed=0,phase=0,turn=0,acceleration=0,direction=[0,-1],victoryAge=0}={}){
   let pose=restPose();
-  const moving=clamp(speed/2.2),run=clamp((speed-1.5)/2.3);
+  const moving=clamp(speed/2.2),gaitProfile=locomotionProfile(speed),run=gaitProfile.run;
   const breath=Math.sin(time*1.65)*.004;
   pose.chest[0]+=breath;pose.head[0]-=breath*.45;
   pose.pelvis[0]=clamp(turn*.004,-.025,.025)*moving;
@@ -50,6 +70,10 @@ export function sampleCharacterPose(state,age=0,{time=0,speed=0,phase=0,turn=0,a
   if(state==='idle'||state==='guard'){
     const gait=phase*Math.PI*2;
     pose.pelvis[1]-=moving*(.024+Math.cos(gait*2)*.01);
+    const half=phase%.5,support=clamp(half/gaitProfile.stanceFraction);
+    const flight=half>gaitProfile.stanceFraction?(half-gaitProfile.stanceFraction)/(.5-gaitProfile.stanceFraction):0;
+    const runningHeight=.90-.065*Math.sin(Math.PI*support)+.006*4*flight*(1-flight);
+    pose.pelvis[1]=mix(pose.pelvis[1],runningHeight,run*moving);
     pose.body[2]=Math.sin(gait)*.03*moving-clamp(turn*.008,-.065,.065)*moving;
     pose.chest[1]+=-Math.sin(gait)*.055*moving;
     pose.leftHand=[-.285,.99+Math.cos(gait)*.07*moving,.035-Math.sin(gait)*.19*moving];
@@ -62,8 +86,9 @@ export function sampleCharacterPose(state,age=0,{time=0,speed=0,phase=0,turn=0,a
   }else if(state==='windup'){
     pose=track(pose,[[0,guard],[.18,{...guard,pelvis:[.025,.85,.065],chest:[-.025,-.18,-.025]}],[.53,ready],[.65,ready]],age);pose.phase='anticipation';
   }else if(state==='attack'){
-    pose=track(pose,[[0,{...guard,weapon:[.21,1.33,-.21]}],[.15,ready],[.18,ready],
-      [.245,{...cut,weapon:[.04,1.42,-.49],weaponRotation:[-.98,0,.18]}],[.34,cut],
+    pose=track(pose,[[0,{...guard,weapon:[.21,1.33,-.21]}],[.115,ready],
+      [.18,{...cut,weapon:[.06,1.35,-.47],weaponRotation:[-1.15,0,.18]}],
+      [.245,{...cut,weapon:[-.04,1.27,-.47],weaponRotation:[-1.48,.025,.30]}],[.34,cut],
       [.43,{...cut,weapon:[-.16,1.09,-.405],weaponRotation:[-2.02,.08,.51]}],
       [.56,{...guard,weapon:[.10,1.12,-.345],weaponRotation:[-1.12,0,-.1]}],[.65,guard]],age);
     pose.phase=age<.18?'anticipation':age<=.34?'active':'recovery';pose.active=age>=.18&&age<=.34;
@@ -93,7 +118,7 @@ export function sampleCharacterPose(state,age=0,{time=0,speed=0,phase=0,turn=0,a
       [3.6,{...align,chest:[0,0,0],head:[-.04,-.10,0],leftHand:[-.28,1.00,.01],sheath:1}]],victoryAge);
     pose.phase=victoryAge<1.44?'salute':victoryAge<2.45?'sheathing':'sheathed';
   }
-  return pose;
+  return copyPose(pose);
 }
 
 /** Two-bone IK with an explicit bend pole. Knee and elbow joints are solved
@@ -116,7 +141,7 @@ export function solveTwoBone(origin,target,pole,upper,lower){
 
 function memory(actor,world){return {
   actor,worldTime:world.time,position:{x:actor.x,z:actor.z},yaw:actor.yaw||0,time:0,state:actor.state,age:actor.age||0,
-  speed:0,lastSpeed:0,phase:0,pivotPhase:0,gaitWeight:0,feet:[null,null],pose:restPose(),from:restPose(),transition:1,
+  speed:0,lastSpeed:0,measuredSpeed:0,directionWorld:{x:Math.sin(actor.yaw||0),z:-Math.cos(actor.yaw||0)},phase:0,cycles:0,pivotPhase:0,gaitWeight:0,feet:[null,null],pose:restPose(),from:restPose(),transition:1,
   victoryAge:0,lastMode:world.mode,lastEventTime:-1,impact:0,impactKind:null,
   cloth:0,clothVelocity:0,turn:0,metrics:{},
 };}
@@ -124,43 +149,99 @@ function localToWorld(point,actor,yaw,ground){const c=Math.cos(yaw),s=Math.sin(y
 function worldToLocal(point,actor,yaw,ground){const c=Math.cos(yaw),s=Math.sin(yaw),dx=point.x-actor.x,dz=point.z-actor.z;return [c*dx+s*dz,point.y-ground,-s*dx+c*dz];}
 const toVector=a=>new T.Vector3(...a);
 
-export function updateCharacterRig(rig,actor,world,seconds,{animate=true,groundHeightAt=()=>0}={}){
+function groundFrame(x,z,yaw,heightAt){
+  const span=.08,gx=(heightAt(x+span,z)-heightAt(x-span,z))/(span*2),gz=(heightAt(x,z+span)-heightAt(x,z-span))/(span*2);
+  const c=Math.cos(yaw),s=Math.sin(yaw);
+  return new T.Quaternion().setFromUnitVectors(up,new T.Vector3(-c*gx-s*gz,1,s*gx-c*gz).normalize());
+}
+
+// The sole is a surface, not a point. Fit its orientation to the local slope
+// and support its whole footprint, including triangle seams and heel roll.
+function groundFoot(foot,pitch,actor,yaw,ground,heightAt){
+  const center=localToWorld(foot,actor,yaw,ground),rotation=groundFrame(center.x,center.z,yaw,heightAt);
+  rotation.multiply(new T.Quaternion().setFromEuler(new T.Euler(pitch,0,0)));
+  const yawRotation=new T.Quaternion().setFromAxisAngle(up,-yaw),worldRotation=yawRotation.multiply(rotation);
+  const probe=new T.Vector3();let support=-Infinity;
+  for(let x=0;x<3;x++)for(let z=0;z<7;z++){
+    probe.set(-.085+x*.085,-ANATOMY.sole,-.207+z*.052).applyQuaternion(worldRotation);
+    support=Math.max(support,heightAt(center.x+probe.x,center.z+probe.z)-probe.y);
+  }
+  return {rotation,y:support-ground+Math.max(0,foot[1]-ANATOMY.sole)};
+}
+
+// Ground contact for a fallen body uses its generated geometry. A locally
+// planar terrain patch allows a cheap plane evaluation per vertex; a triangle
+// seam falls back to the exact shared height field instead of assuming a plane.
+function groundPenetration(group,heightAt){
+  let penetration=0;const box=new T.Box3(),point=new T.Vector3();
+  group.traverseVisible(mesh=>{
+    if(!mesh.isMesh)return;
+    const geometry=mesh.geometry,positions=geometry.getAttribute('position'),contacts=geometry.userData.contactPositions;
+    if(!geometry.boundingBox)geometry.computeBoundingBox();
+    box.copy(geometry.boundingBox).applyMatrix4(mesh.matrixWorld);
+    const x=(box.min.x+box.max.x)/2,z=(box.min.z+box.max.z)/2,h=heightAt(x,z),span=.04;
+    const gx=(heightAt(x+span,z)-heightAt(x-span,z))/(2*span),gz=(heightAt(x,z+span)-heightAt(x,z-span))/(2*span);
+    let planar=true;
+    for(const px of [box.min.x,x,box.max.x])for(const pz of [box.min.z,z,box.max.z]){
+      if(Math.abs(heightAt(px,pz)-(h+gx*(px-x)+gz*(pz-z)))>1e-6)planar=false;
+    }
+    for(let i=0;i<(contacts?contacts.length/3:positions.count);i++){
+      if(contacts)point.fromArray(contacts,i*3);else point.fromBufferAttribute(positions,i);
+      point.applyMatrix4(mesh.matrixWorld);
+      const surface=planar?h+gx*(point.x-x)+gz*(point.z-z):heightAt(point.x,point.z);
+      penetration=Math.max(penetration,surface-point.y);
+    }
+  });
+  return penetration;
+}
+
+export function updateCharacterRig(rig,actor,world,seconds,{animate=true,groundHeightAt=flatGround}={}){
   // New world instances reset ending, planted feet and cloth on retry.
   if(!rig.motion||rig.motion.actor!==actor||world.time<rig.motion.worldTime)rig.motion=memory(actor,world);
-  const m=rig.motion,dt=animate?clamp(seconds,0,.1):0,ground=groundHeightAt(actor.x,actor.z);
+  const m=rig.motion,elapsed=animate&&Number.isFinite(seconds)?Math.max(0,seconds):0,dt=clamp(elapsed,0,.1),ground=groundHeightAt(actor.x,actor.z);
   if(!animate&&m.initialized)return m.metrics;
   m.time+=dt;
+  // A settled corpse retains its verified contact pose. Simulation age may
+  // continue, but breathing/cloth and repeated collision scans stop with life.
+  if(m.settled&&actor.hp<=0&&actor.x===m.position.x&&actor.z===m.position.z&&actor.yaw===m.settledYaw&&ground===m.settledGround&&groundHeightAt===m.settledHeightAt){
+    m.age=Math.max(actor.age||0,m.age+dt);m.worldTime=world.time;
+    m.metrics={...m.metrics,simulationAge:actor.age,visualAge:m.age,visualTime:m.time};return m.metrics;
+  }
   const dx=actor.x-m.position.x,dz=actor.z-m.position.z,displacement=Math.hypot(dx,dz),locomotion=(actor.state==='idle'||actor.state==='guard')&&actor.hp>0&&world.mode==='playing';
-  const rawSpeed=dt>0&&locomotion?Math.min(8,displacement/dt):0;
-  m.lastSpeed=m.speed;m.speed=mix(m.speed,rawSpeed,1-Math.exp(-dt*14));
-  const acceleration=dt>0?(m.speed-m.lastSpeed)/dt:0;
-  if(locomotion)m.phase=(m.phase+displacement/(LOCOMOTION.stepDistance*2))%1;
-  m.gaitWeight=mix(m.gaitWeight,rawSpeed>.08?1:0,1-Math.exp(-dt*(rawSpeed>.08?13:11)));
+  const simulationSeconds=Math.max(0,world.time-m.worldTime),speedSeconds=locomotion?simulationSeconds:elapsed;
+  if(simulationSeconds>0||!locomotion)m.measuredSpeed=locomotion?Math.min(8,displacement/simulationSeconds):0;
+  const rawSpeed=m.measuredSpeed;
+  m.lastSpeed=m.speed;m.speed=mix(m.speed,rawSpeed,1-Math.exp(-speedSeconds*14));
+  const acceleration=speedSeconds>0?(m.speed-m.lastSpeed)/speedSeconds:0;
+  if(locomotion&&simulationSeconds>0){m.cycles=advanceLocomotionPhase(m.cycles,displacement,simulationSeconds);m.phase=m.cycles%1;}
+  const gaitProfile=locomotionProfile(rawSpeed>.08?rawSpeed:m.speed);
+  m.gaitWeight=mix(m.gaitWeight,rawSpeed>.08?1:0,1-Math.exp(-speedSeconds*(rawSpeed>.08?13:11)));
   const previousYaw=m.yaw,delta=wrap((actor.yaw||0)-m.yaw);
   const combat=actor.state==='attack'||actor.state==='windup';
   m.yaw+=clamp(delta*(1-Math.exp(-dt*(combat?36:16))),-dt*(combat?30:9),dt*(combat?30:9));
   m.turn=dt>0?wrap(m.yaw-previousYaw)/dt:0;
   const state=world.mode==='victory'&&actor.id==='player'?'victory':actor.hp<=0?'dead':actor.state;
-  if(state!==m.state){m.from=m.pose;m.transition=0;m.state=state;m.age=actor.age||0;m.feet=[null,null];}
-  else m.transition+=dt;
+  if(state!==m.state){m.from=m.pose;m.transition=state==='victory'?0:actor.age||0;m.state=state;m.age=actor.age||0;m.feet=[null,null];}
+  else m.transition=Math.max(m.transition+dt,state==='victory'?0:actor.age||0);
   m.age=state==='dead'?Math.max(actor.age||0,m.age+dt):actor.age||0;
   if(state==='victory')m.victoryAge+=dt;
   else m.victoryAge=0;
   const c=Math.cos(m.yaw),s=Math.sin(m.yaw),length=Math.max(displacement,1e-8);
-  const direction=displacement>.0001?[c*dx/length+s*dz/length,-s*dx/length+c*dz/length]:[0,-1];
+  if(displacement>.0001)m.directionWorld={x:dx/length,z:dz/length};
+  const direction=[c*m.directionWorld.x+s*m.directionWorld.z,-s*m.directionWorld.x+c*m.directionWorld.z];
   let pose=sampleCharacterPose(state,m.age,{time:m.time,speed:m.speed,phase:m.phase,turn:m.turn,acceleration,direction,victoryAge:m.victoryAge});
   // A short state entry blend preserves the previous silhouette; by the .18s
   // hit window the authored pose is exact, not low-pass filtered behind hits.
-  if(m.transition<.09)pose=blendPose(m.from,pose,ease(m.transition/.09));
+  if(m.transition<.09&&!(state==='attack'&&m.age>=ATTACK_PHASES.activeStart))pose=blendPose(m.from,pose,ease(m.transition/.09));
   const contacts=[false,false];
   if(locomotion&&m.gaitWeight>.015){
     for(let i=0;i<2;i++){
-      const phase=(m.phase+i*.5)%1,stance=phase<LOCOMOTION.stanceFraction;
-      const stride=LOCOMOTION.stepDistance*2,lead=stride*LOCOMOTION.stanceFraction/2;
+      const phase=(m.phase+i*.5)%1,stance=phase<gaitProfile.stanceFraction;
+      const stride=gaitProfile.stepDistance*2,lead=stride*gaitProfile.stanceFraction/2;
       let distance,height=0,pitch=0;
-      if(stance){distance=lead-stride*phase;pitch=phase>.48?-(phase-.48)/.12*.32:phase<.07?(1-phase/.07)*.13:0;}
+      if(stance){const support=phase/gaitProfile.stanceFraction;distance=lead-stride*phase;pitch=support>.8?-(support-.8)/.2*.32:support<.12?(1-support/.12)*.13:0;}
       else{
-        const swing=(phase-LOCOMOTION.stanceFraction)/(1-LOCOMOTION.stanceFraction);
+        const swing=(phase-gaitProfile.stanceFraction)/(1-gaitProfile.stanceFraction);
         distance=mix(-lead,lead,ease(swing));height=(.10+clamp((m.speed-1.5)/2.3)*.12)*Math.sin(Math.PI*swing)**1.35;
         pitch=-.30*(1-ease(swing))+.13*ease(swing);
       }
@@ -170,10 +251,9 @@ export function updateCharacterRig(rig,actor,world,seconds,{animate=true,groundH
         if(!m.feet[i]?.planted){const position=localToWorld(desired,actor,m.yaw,ground);position.y=groundHeightAt(position.x,position.z)+ANATOMY.sole;m.feet[i]={...position,planted:true};}
         const planted=worldToLocal(m.feet[i],actor,m.yaw,ground);
         // Very abrupt reversal releases the loaded heel for a corrective step.
-        if(Math.hypot(planted[0]-rig.limbs[i].side*.15,planted[2])<.54){desired.splice(0,3,...planted);contacts[i]=true;}
+        if(Math.hypot(planted[0]-rig.limbs[i].side*.15,planted[2])<.54){desired.splice(0,3,planted[0],ANATOMY.sole,planted[2]);contacts[i]=true;}
         else m.feet[i]=null;
       }else m.feet[i]=null;
-      desired[1]+=Math.abs(pitch)*.11;
       pose.feet[i]=desired;pose.footPitch[i]=pitch*m.gaitWeight;
     }
   }else m.feet=[null,null];
@@ -183,7 +263,7 @@ export function updateCharacterRig(rig,actor,world,seconds,{animate=true,groundH
       const phase=(m.pivotPhase+i*.5)%1,planted=phase<.5;
       if(planted){
         if(!m.feet[i]?.planted)m.feet[i]={...localToWorld(pose.feet[i],actor,m.yaw,ground),planted:true};
-        pose.feet[i]=worldToLocal(m.feet[i],actor,m.yaw,ground);contacts[i]=true;
+        pose.feet[i]=worldToLocal(m.feet[i],actor,m.yaw,ground);pose.feet[i][1]=ANATOMY.sole;contacts[i]=true;
       }else{
         m.feet[i]=null;pose.feet[i][1]+=.065*Math.sin((phase-.5)*Math.PI*2);contacts[i]=false;
       }
@@ -199,8 +279,17 @@ export function updateCharacterRig(rig,actor,world,seconds,{animate=true,groundH
     const pulse=m.impact*m.impact;pose.chest[0]-=pulse*.045;pose.weaponRotation[2]+=pulse*(m.impactKind==='parry'?-.24:.14);pose.weapon[2]+=pulse*.045;
   }
   m.impact*=Math.exp(-dt*14);
+  const ungroundedPose=copyPose(pose);
+  const groundedFeet=pose.feet.map((foot,i)=>groundFoot(foot,pose.footPitch[i],actor,m.yaw,ground,groundHeightAt));
+  const supportLift=groundedFeet.reduce((sum,foot,i)=>sum+foot.y-pose.feet[i][1],0)/2;
+  pose.feet.forEach((foot,i)=>{foot[1]=groundedFeet[i].y;});
   rig.root.position.set(actor.x,ground,actor.z);rig.root.rotation.set(0,-m.yaw,0);
   rig.body.position.fromArray(pose.pelvis);rig.body.rotation.fromArray([...pose.body,'XYZ']);
+  rig.body.position.y+=supportLift;
+  const terrainRotation=groundFrame(actor.x,actor.z,m.yaw,groundHeightAt);
+  rig.contact.quaternion.copy(terrainRotation).multiply(new T.Quaternion().setFromAxisAngle(new T.Vector3(1,0,0),-Math.PI/2));
+  rig.ring.quaternion.copy(terrainRotation).multiply(new T.Quaternion().setFromAxisAngle(new T.Vector3(1,0,0),Math.PI/2));
+  if(state==='dead')rig.body.quaternion.premultiply(new T.Quaternion().slerp(terrainRotation,pose.fall));
   rig.chest.rotation.fromArray([...pose.chest,'XYZ']);rig.neck.rotation.fromArray([...pose.head,'XYZ']);
   rig.scabbard.rotation.x=mix(1.76,Math.PI/2-pose.body[0],clamp(pose.fall*2));
   // Keep planted legs inside their anatomical reach by lowering the pelvis,
@@ -219,12 +308,18 @@ export function updateCharacterRig(rig,actor,world,seconds,{animate=true,groundH
     limb.hip.quaternion.copy(solved.upperQuaternion);limb.knee.quaternion.copy(solved.lowerQuaternion);
     // Feet keep their own orientation, cancelling the hip/knee/body rotation.
     const chain=rig.body.quaternion.clone().multiply(limb.hip.quaternion).multiply(limb.knee.quaternion);
-    limb.ankle.quaternion.copy(chain.invert()).multiply(q.setFromEuler(euler.set(pose.footPitch[i],0,0)));
+    limb.ankle.quaternion.copy(chain.invert()).multiply(groundedFeet[i].rotation);
     const knee=solved.joint.clone().applyMatrix4(bodyToRoot),foot=solved.end.clone().applyMatrix4(bodyToRoot);
     legMetrics.push({side:limb.side,kneeFlexion:solved.bendAngle,kneeRotationX:new T.Euler().setFromQuaternion(limb.knee.quaternion).x,
       kneeLocal:knee.toArray(),footLocal:foot.toArray(),footWorld:localToWorld(foot.toArray(),actor,m.yaw,ground),contact:contacts[i]||(!locomotion&&state!=='dead'&&state!=='dodge'),reachError:solved.reachError});
   }
+  const upperBodyOffset=rig.body.position.y-pose.pelvis[1];
   rig.sword.position.fromArray(pose.weapon);rig.sword.rotation.fromArray([...pose.weaponRotation,'XYZ']);
+  if(state==='dead'){
+    const weaponGround=localToWorld(pose.weapon,actor,m.yaw,ground);
+    rig.sword.position.y+=groundHeightAt(weaponGround.x,weaponGround.z)-ground;
+    rig.sword.quaternion.premultiply(new T.Quaternion().slerp(groundFrame(weaponGround.x,weaponGround.z,m.yaw,groundHeightAt),pose.fall));
+  }else rig.sword.position.y+=upperBodyOffset;
   let sheathed=false;
   if(state==='victory'&&m.victoryAge>1.32){
     rig.scabbard.updateWorldMatrix(true,false);
@@ -237,12 +332,27 @@ export function updateCharacterRig(rig,actor,world,seconds,{animate=true,groundH
   }
   rig.sword.visible=true;rig.blade.visible=!sheathed;
   rig.root.updateMatrixWorld(true);
+  let weaponGroundTilt=0;
+  if(state!=='dead'&&state!=='victory'){
+    const tip=rig.sword.localToWorld(new T.Vector3(.045,1.088,0));
+    if(tip.y-groundHeightAt(tip.x,tip.z)<.035&&groundPenetration(rig.blade,groundHeightAt)>.001){
+      // A lowered blade yields at its grip when it meets a rising bank. Hands
+      // remain on the hilt; the actor and its planted feet do not float upward.
+      const start=rig.sword.rotation.x;let low=0,high=.8;
+      for(let n=0;n<9;n++){
+        const tilt=(low+high)/2;rig.sword.rotation.x=start+tilt;rig.sword.updateWorldMatrix(false,true);
+        if(groundPenetration(rig.blade,groundHeightAt)>.0005)low=tilt;else high=tilt;
+      }
+      weaponGroundTilt=high;rig.sword.rotation.x=start+high;rig.sword.updateWorldMatrix(false,true);
+    }
+  }
   // The sword is the grip target for both hands. Arms are solved afterwards,
   // avoiding a blade that drifts away from a separately animated hand.
   const rightGrip=rig.sword.localToWorld(new T.Vector3(0,0,0)),leftGrip=rig.sword.localToWorld(new T.Vector3(0,-.135,0));
   const armMetrics=[];
   for(let i=0;i<2;i++){
-    const limb=rig.limbs[i],target=i===1?rightGrip.clone():rig.root.localToWorld(toVector(pose.leftHand)).lerp(leftGrip,pose.twoHands);
+    const freeLeft=toVector(pose.leftHand);freeLeft.y+=upperBodyOffset;
+    const limb=rig.limbs[i],target=i===1?rightGrip.clone():rig.root.localToWorld(freeLeft).lerp(leftGrip,pose.twoHands);
     if(state==='dead'&&m.age>.45&&i===1){
       const release=rig.chest.localToWorld(new T.Vector3(.31,-.37,.07));target.lerp(release,ease((m.age-.45)/.30));
     }
@@ -273,10 +383,28 @@ export function updateCharacterRig(rig,actor,world,seconds,{animate=true,groundH
   rig.contact.scale.set(1+pose.fall*.5,1+pose.fall*.1,1);rig.contact.material.opacity=.24-pose.fall*.05;
   rig.ring.visible=world.locked===actor.id&&actor.hp>0;rig.signal.visible=actor.state==='windup'&&actor.hp>0;
   rig.root.updateMatrixWorld(true);
-  m.pose=pose;m.position={x:actor.x,z:actor.z};m.worldTime=world.time;m.lastMode=world.mode;m.initialized=true;
+  let bodyGroundLift=0,weaponGroundLift=0;
+  if(state==='broken'||state==='dodge')for(const panel of rig.panels){
+    // A low stance folds the free hem away from a rising bank. It does not
+    // raise the planted actor to accommodate a rigid cloth rectangle.
+    for(let n=0;n<5&&groundPenetration(panel.node,groundHeightAt)>.001;n++){
+      panel.node.rotation.x+=panel.front<0?.15:-.15;panel.node.updateWorldMatrix(false,true);
+    }
+  }
+  if(state==='dead'){
+    bodyGroundLift=groundPenetration(rig.body,groundHeightAt);weaponGroundLift=groundPenetration(rig.sword,groundHeightAt);
+    rig.body.position.y+=bodyGroundLift;rig.sword.position.y+=weaponGroundLift;rig.root.updateMatrixWorld(true);
+    legMetrics.forEach((foot,i)=>{
+      const position=rig.limbs[i].ankle.getWorldPosition(new T.Vector3());foot.footWorld={x:position.x,y:position.y,z:position.z};
+      foot.footLocal=rig.root.worldToLocal(position).toArray();
+    });
+  }
+  m.pose=ungroundedPose;m.position={x:actor.x,z:actor.z};m.worldTime=world.time;m.lastMode=world.mode;m.initialized=true;
+  m.settled=state==='dead'&&m.age>=1.6&&Math.abs(wrap(m.yaw-(actor.yaw||0)))<.0001;
+  m.settledYaw=actor.yaw;m.settledGround=ground;m.settledHeightAt=groundHeightAt;
   m.metrics={state,phase:pose.phase,simulationAge:actor.age,visualAge:m.age,victoryAge:m.victoryAge,visualTime:m.time,
     root:{x:actor.x,y:ground,z:actor.z,yaw:m.yaw},pelvis:rig.body.position.toArray(),speed:m.speed,gaitPhase:m.phase,
-    feet:legMetrics,hands:armMetrics,attackActive:pose.active,sheathed,sheathProgress:pose.sheath,cloth:m.cloth,
+    feet:legMetrics,hands:armMetrics,attackActive:pose.active,sheathed,sheathProgress:pose.sheath,cloth:m.cloth,bodyGroundLift,weaponGroundLift,weaponGroundTilt,
     bladeTipWorld:rig.sword.localToWorld(new T.Vector3(.045,1.088,0)).toArray(),bladeVisible:rig.blade.visible};
   return m.metrics;
 }

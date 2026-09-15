@@ -13,7 +13,7 @@ test('a deliberately muted encoded recording decodes successfully but fails the 
   const directory=await mkdtemp(new URL('../audio-probe-',import.meta.url));
   try{
     const encoded=spawnSync('ffmpeg',['-hide_banner','-loglevel','error','-f','lavfi','-i','sine=frequency=800:duration=1','-af','volume=0','-c:a','libopus','-f','webm','pipe:1']);
-    assert.equal(encoded.status,0,encoded.stderr?.toString());const path=`${directory}/muted.webm`;await writeFile(path,encoded.stdout);
+    assert.equal(encoded.status,0,[encoded.error?.message,encoded.stderr?.toString()].filter(Boolean).join('\n'));const path=`${directory}/muted.webm`;await writeFile(path,encoded.stdout);
     const {measurement}=decodePcm(path);assert.ok(measurement.seconds>=.9);assert.equal(measurement.nonfinite,0);assert.equal(measurement.valid,false);assert.ok(measurement.failures.includes('silent or inaudible PCM'));
   }finally{await rm(directory,{recursive:true,force:true});}
 });

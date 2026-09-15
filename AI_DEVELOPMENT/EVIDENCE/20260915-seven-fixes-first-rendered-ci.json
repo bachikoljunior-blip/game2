@@ -1,0 +1,236 @@
+{
+  "id": "GAME2-SEVEN-FIXES-FIRST-RENDERED-CI",
+  "sourceSha": "bd4e64f9a46e7c6873a8057e420095b278c9e5e7",
+  "run": 34949745102,
+  "url": "https://github.com/bachikoljunior-blip/game2/actions/runs/34949745102",
+  "conclusion": "failure",
+  "artifacts": [
+    {
+      "id": 10388842726,
+      "name": "fresh-game",
+      "sha256": "5d07bc2db71ca7cfb32412dd5afa1c13eb5d3f11ec8e848a6491dc4aff77ea3f",
+      "bytes": 746
+    },
+    {
+      "id": 10389520235,
+      "name": "fresh-experience",
+      "sha256": "0769bfc91661f5d661cc13161d110621c73588910b781cb45ae3938bac6b300f",
+      "bytes": 45468120
+    }
+  ],
+  "artifactDigestsIndependentlyVerified": true,
+  "fresh": {
+    "unitTests": 135,
+    "passed": 134,
+    "failed": 1,
+    "failure": "ffmpeg-dependent negative PCM test ran before ffmpeg installation. Spawn returned status=null. Fixed by installing before unit contracts, preserving gate.",
+    "normalFourRoutes": "not run because unit step failed",
+    "rawAndDerivedDecode": "failed on missing recordings, not corrupted video"
+  },
+  "experience": {
+    "checksPassedBeforeConsoleGate": [
+      "touch short gesture: no attack",
+      "touch vertical gesture: no attack",
+      "touch long gesture: no attack",
+      "touch return gesture: no attack",
+      "native touch cancel causes no attack",
+      "two canvas fingers cannot synthesize an attack",
+      "lost canvas pointer capture cannot attack",
+      "guard survives camera swipe and dedicated attack; own cancellation releases it",
+      "desktop drag rotates without attack; click attacks once",
+      "ordinary keyboard circuit water: both discoveries and loop completion",
+      "ordinary keyboard circuit ridge: both discoveries and loop completion",
+      "ordinary keyboard circuit memory: both discoveries and loop completion"
+    ],
+    "circuits": [
+      {
+        "id": "water",
+        "result": "passed",
+        "discovered": [
+          "spring-basin",
+          "stream-stones"
+        ],
+        "completed": [
+          "water"
+        ]
+      },
+      {
+        "id": "ridge",
+        "result": "passed",
+        "discovered": [
+          "valley-frame",
+          "sun-ring"
+        ],
+        "completed": [
+          "ridge"
+        ]
+      },
+      {
+        "id": "memory",
+        "result": "passed",
+        "discovered": [
+          "old-waystone",
+          "white-tree"
+        ],
+        "completed": [
+          "memory"
+        ]
+      }
+    ],
+    "consoleErrors": 30,
+    "failure": "Wind shader string injection omitted newlines before Three preprocessor directives in visible and depth shaders. Source reproduced actual ShaderLib standard/depth failure, then fixed for all3wind kinds. These flawed images do not establish plant visibility or motion quality."
+  },
+  "audio": {
+    "actualPcm": {
+      "valid": true,
+      "failures": [],
+      "samples": 345600,
+      "sampleRate": 24000,
+      "channels": 2,
+      "seconds": 7.2,
+      "peak": 0.16563454270362854,
+      "rms": 0.01213433396314313,
+      "nonfinite": 0,
+      "clipped": 0,
+      "clipFraction": 0,
+      "activeFraction": 0.737662037037037,
+      "limits": {
+        "minSeconds": 0.5,
+        "minRms": 0.0001,
+        "minPeak": 0.003,
+        "minActiveFraction": 0.001,
+        "maxClipFraction": 0.001,
+        "maxPeak": 1.01
+      }
+    },
+    "provenance": {
+      "sourceSha": "bd4e64f9a46e7c6873a8057e420095b278c9e5e7",
+      "ciSha": "bd4e64f9a46e7c6873a8057e420095b278c9e5e7",
+      "requestedUrl": "http://127.0.0.1:4178/?diagnostic=1",
+      "bundles": [
+        {
+          "url": "http://127.0.0.1:4178/assets/index-CGR3DMCu.js",
+          "name": "index-CGR3DMCu.js",
+          "status": 200,
+          "bytes": 603123,
+          "sha256": "818a1c0adab7137fa562a326d8cab1e5dbb3139b02a5c229e8e68be0e4c8b15e"
+        }
+      ],
+      "actualUrl": "http://127.0.0.1:4178/?diagnostic=1",
+      "documentSha256": "9d5678810a2e69e7b3c7d656f05ffb6bb7c433a163517dae72c8fc93908becf5"
+    },
+    "negativeProbe": {
+      "file": "muted-negative-probe.webm",
+      "sha256": "23f9e39526ad39728081e001ef4b4db3ca6fad38d069284317b05af97a94f11b",
+      "decode": "passed",
+      "pcm": {
+        "valid": true,
+        "failures": [],
+        "samples": 57600,
+        "sampleRate": 24000,
+        "channels": 2,
+        "seconds": 1.2,
+        "peak": 0.018551599234342575,
+        "rms": 0.00037506033214622906,
+        "nonfinite": 0,
+        "clipped": 0,
+        "clipFraction": 0,
+        "activeFraction": 0.004583333333333333,
+        "limits": {
+          "minSeconds": 0.5,
+          "minRms": 0.0001,
+          "minPeak": 0.003,
+          "minActiveFraction": 0.001,
+          "maxClipFraction": 0.001,
+          "maxPeak": 1.01
+        }
+      },
+      "expected": "reject silent capture",
+      "rejected": false
+    },
+    "failure": "Mute negative control contained only an initial burst: >1e-4 samples during4.75–14.04ms, codec tail until393ms. This is consistent with an existing stream buffer or codec pre-roll; the precise internal origin was not directly proven. The main7.2s recording passes the unchanged PCM gate. The fix waits for actual audio-clock mute and750ms drain before new recording; thresholds are unchanged.",
+    "listened": false,
+    "listeningLimitation": "Audio content was omitted because this executor does not support audio input. No perceptual-naturalness claim."
+  },
+  "motion": {
+    "cases": [
+      {
+        "name": "idle",
+        "frames": 36,
+        "fullDecode": "passed"
+      },
+      {
+        "name": "start-run-stop",
+        "frames": 48,
+        "fullDecode": "passed"
+      },
+      {
+        "name": "turn",
+        "frames": 36,
+        "fullDecode": "passed"
+      },
+      {
+        "name": "guard",
+        "frames": 24,
+        "fullDecode": "passed"
+      },
+      {
+        "name": "windup-attack",
+        "frames": 36,
+        "fullDecode": "passed"
+      },
+      {
+        "name": "attack",
+        "frames": 36,
+        "fullDecode": "passed"
+      },
+      {
+        "name": "dodge",
+        "frames": 24,
+        "fullDecode": "passed"
+      },
+      {
+        "name": "hit",
+        "frames": 24,
+        "fullDecode": "passed"
+      },
+      {
+        "name": "parry",
+        "frames": 24,
+        "fullDecode": "passed"
+      },
+      {
+        "name": "broken",
+        "frames": 30,
+        "fullDecode": "passed"
+      },
+      {
+        "name": "death",
+        "frames": 36,
+        "fullDecode": "passed"
+      },
+      {
+        "name": "victory",
+        "frames": 48,
+        "fullDecode": "passed"
+      },
+      {
+        "name": "wind",
+        "frames": 48,
+        "fullDecode": "passed"
+      }
+    ],
+    "failure": "All13videos decode, but6shadererrors invalidate wind study. Actual inspection also shows the synthetic run camera inside the ridge and victory camera behind shrine structure; safe study composition is being corrected."
+  },
+  "additionalRenderedFinding": {
+    "camera": "Ordinary follow rate caps scaled only to at most100ms rendered time, while simulation resolves250ms steps. This let lateral player motion outrun the camera and leave the frame. Independent native images and video samples confirmed the defect. Fixed by carrying ordinary camera/focus with actual resolved actor translation, then preserving bounded composition/orbit interpolation.",
+    "fix": "a30568e",
+    "tests": "250ms and60Hz traversal of all3circuits with grounded foot/head projection, existing cinematic continuity tests unchanged"
+  },
+  "formalQuality": {
+    "satisfied": 0,
+    "not satisfied": 0,
+    "not measured": 10
+  },
+  "next": "Run the fully repaired exact source once, inspect actual whole-motion and normal-input media independently, then integrate verified implementation into main."
+}

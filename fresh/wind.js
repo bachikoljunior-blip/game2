@@ -73,7 +73,9 @@ export const GRASS_TRANSFORM=`
 export function installWindMaterial(material,clock,kind='vegetation'){
   material.onBeforeCompile=shader=>{
     shader.uniforms.windTime=clock;
-    shader.vertexShader=WIND_GLSL+(kind==='vegetation'?VEGETATION_ATTRIBUTES:'')+shader.vertexShader;
+    // Three's source begins with a preprocessor directive. Every injected
+    // section must end its own line in both the visible and shadow programs.
+    shader.vertexShader=WIND_GLSL+'\n'+(kind==='vegetation'?VEGETATION_ATTRIBUTES:'')+'\n'+shader.vertexShader;
     shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',
       '#include <begin_vertex>\n'+(kind==='cloth'?CLOTH_TRANSFORM:kind==='grass'?GRASS_TRANSFORM:VEGETATION_TRANSFORM));
   };

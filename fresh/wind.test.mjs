@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {ShaderLib} from 'three';
 import {advanceEnvironmentClock,bendStem,clothDisplacement,createEnvironmentClock,installWindMaterial,sampleWind,signalFlame} from './wind.js';
 
 test('the whole shared wind field stays bounded and advances continuously through gusts',()=>{
@@ -41,6 +42,12 @@ test('visible and shadow materials receive identical deformation and the same ad
     assert.equal(a.vertexShader,b.vertexShader);assert.equal(a.uniforms.windTime,clock);assert.equal(b.uniforms.windTime,clock);
     clock.value+=.1;assert.equal(a.uniforms.windTime.value,clock.value);
     assert.ok(a.vertexShader.includes('valleyWind'));
+  }
+});
+test('wind injection preserves preprocessor line boundaries in the actual Three visible and depth shaders',()=>{
+  for(const kind of ['vegetation','cloth','grass'])for(const source of [ShaderLib.standard.vertexShader,ShaderLib.depth.vertexShader]){
+    const material={},shader={uniforms:{},vertexShader:source};installWindMaterial(material,{value:0},kind);material.onBeforeCompile(shader);
+    for(const line of shader.vertexShader.split('\n'))if(line.includes('#'))assert.ok(line.trimStart().startsWith('#'),`invalid preprocessor boundary: ${line}`);
   }
 });
 test('the environment settles through victory but freezes in pause and resets on retry',()=>{

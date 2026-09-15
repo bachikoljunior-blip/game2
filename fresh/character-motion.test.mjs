@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as T from 'three';
 import {ANATOMY,createCharacterRig,createCharacterResources} from './character-rig.js';
-import {ATTACK_PHASES,LOCOMOTION,sampleCharacterPose,solveTwoBone,updateCharacterRig} from './character-motion.js';
+import {ATTACK_PHASES,LOCOMOTION,locomotionProfile,advanceLocomotionPhase,sampleCharacterPose,solveTwoBone,updateCharacterRig} from './character-motion.js';
+import {createWorld,advance} from './simulation.js';
 
 function fixture(id='player'){
   const actor={id,x:0,z:0,yaw:0,hp:100,state:'idle',age:0};
@@ -31,10 +32,26 @@ test('authored cut shares the unchanged preparation, active and recovery interva
   for(const t of [0,.10,.179999])assert.equal(sampleCharacterPose('attack',t).active,false);
   for(const t of [.18,.245,.34])assert.equal(sampleCharacterPose('attack',t).active,true);
   for(const t of [.340001,.50,.65])assert.equal(sampleCharacterPose('attack',t).active,false);
-  const before=sampleCharacterPose('attack',.18),after=sampleCharacterPose('attack',.34);
-  assert.ok(after.weapon[1]<before.weapon[1]-.35,'the cut descends through the actual hit window');
-  assert.ok(after.weapon[2]<before.weapon[2]-.40,'the blade moves into the facing opponent');
+  const before=sampleCharacterPose('attack',.115),after=sampleCharacterPose('attack',.34);
+  assert.ok(after.weapon[1]<before.weapon[1]-.35,'the cut descends from preparation through the actual hit window');
+  for(const age of [.18,.245,.34]){
+    const pose=sampleCharacterPose('attack',age),tip=new T.Vector3(.045,1.088,0).applyEuler(new T.Euler(...pose.weaponRotation)).add(new T.Vector3(...pose.weapon));
+    assert.ok(tip.z<-1.3&&tip.y<1.85,'the blade enters the facing opponent before damage can be applied');
+  }
   assert.ok(sampleCharacterPose('attack',.43).weapon[1]<after.weapon[1],'follow-through continues after the hit window');
+});
+
+test('150–250ms frames sample the simulation attack age even when its state entry was never rendered',()=>{
+  for(const seconds of [.15,.183334,.20,.233334,.25]){
+    const world=createWorld();world.player.z=2.7;world.enemies[0].z=1;
+    const rig=createCharacterRig('player');updateCharacterRig(rig,world.player,world,1/60);
+    advance(world,seconds,{attack:true});const motion=updateCharacterRig(rig,world.player,world,seconds);
+    const expected=sampleCharacterPose('attack',world.player.age);
+    assert.equal(motion.attackActive,world.player.age>=.18&&world.player.age<=.34);
+    assert.ok(rig.sword.position.distanceTo(new T.Vector3(...expected.weapon))<1e-9,'a missed entry frame must not replay the idle sword pose');
+    assert.ok(rig.sword.quaternion.angleTo(new T.Quaternion().setFromEuler(new T.Euler(...expected.weaponRotation)))<1e-7);
+    if(world.enemies[0].hp<100){assert.equal(motion.phase,'active');assert.ok(motion.bladeTipWorld[2]<world.player.z-1.3);}
+  }
 });
 
 test('running follows actual displacement, preserves planted feet and keeps every knee anatomically flexed',()=>{
@@ -52,8 +69,50 @@ test('running follows actual displacement, preserves planted feet and keeps ever
   }
   assert.ok(plantPairs>100);assert.ok(maxPlantDrift<1e-8,`stance drift ${maxPlantDrift}`);
   assert.ok(lifts>40,'swing has an actual toe clearance arc');assert.ok(maxReach<.025,`leg target reach error ${maxReach}`);
-  const expected=((240*3.8/60)/(2*LOCOMOTION.stepDistance))%1;
+  const expected=((240*3.8/60)/(2*locomotionProfile(3.8).stepDistance))%1;
   assert.ok(Math.abs(last.gaitPhase-expected)<1e-9);
+});
+
+test('walk-to-run cadence gains a flight phase while every stance remains within the rig reach',()=>{
+  assert.equal(LOCOMOTION.stepDistance,.72);assert.equal(LOCOMOTION.stanceFraction,.60);
+  assert.deepEqual(locomotionProfile(3.8),{stepDistance:1.12,stanceFraction:.4,run:1});
+  for(let speed=0;speed<=4;speed+=.025){
+    const profile=locomotionProfile(speed);
+    assert.ok(profile.stepDistance*profile.stanceFraction<.48,'the contact arc must fit the anatomical reach');
+  }
+  const f=fixture();frame(f);let flights=0,stance=0,flightHeight=0,stanceHeight=0;
+  for(let n=0;n<360;n++){
+    f.actor.z-=3.8/60;const motion=frame(f);
+    if(n<60)continue;
+    if(motion.feet.some(foot=>foot.contact)){stance++;stanceHeight+=motion.pelvis[1];}
+    else{flights++;flightHeight+=motion.pelvis[1];}
+  }
+  assert.ok(flights>40&&flights<90,'running must contain brief repeated intervals with neither foot planted');
+  assert.ok(flightHeight/flights>stanceHeight/stance,'the pelvis unloads from the compressed support leg');
+  assert.ok(3.8/locomotionProfile(3.8).stepDistance<3.5,'3.8m/s must not be a 5.28-step/s shuffle');
+});
+
+test('foot phases integrate changing strides monotonically and match audio across fixed-tick frame quantization',()=>{
+  let cycles=0;
+  for(const speed of [1.8,2.5,3.8,2.2,0,3.8,1.8]){
+    const next=advanceLocomotionPhase(cycles,speed*.02,.02);assert.ok(next>=cycles);cycles=next;
+  }
+  assert.equal(advanceLocomotionPhase(0,.72),.5,'time-free compatibility remains one .72m contact');
+  const final=[];
+  for(const interval of [1/120,1/60,.02,.25]){
+    const world=createWorld(),rig=createCharacterRig('player');updateCharacterRig(rig,world.player,world,interval);
+    let audioCycles=0,previous={time:world.time,x:world.player.x,z:world.player.z};
+    for(let n=0;n<Math.round(2/interval);n++){
+      advance(world,interval,{x:1});
+      const distance=Math.hypot(world.player.x-previous.x,world.player.z-previous.z),seconds=world.time-previous.time;
+      audioCycles=advanceLocomotionPhase(audioCycles,distance,seconds);updateCharacterRig(rig,world.player,world,interval);
+      assert.ok(Math.abs(audioCycles-rig.motion.cycles)<1e-10,'render and audio must use the same measured simulation interval');
+      assert.ok(rig.motion.speed<=3.8+1e-8,'a .25s frame must not inflate .95m of movement to 8m/s');
+      previous={time:world.time,x:world.player.x,z:world.player.z};
+    }
+    assert.ok(rig.motion.speed>3.79);final.push(rig.motion.cycles);
+  }
+  assert.ok(Math.max(...final)-Math.min(...final)<1e-9,'equal simulated travel has the same cadence at 4, 50, 60 and 120Hz render sampling');
 });
 
 test('blocked movement intent cannot advance the gait and stopping settles without frozen running limbs',()=>{
@@ -109,6 +168,18 @@ test('a falling character keeps the scabbard, elbows and visible figure above th
     });
   }
   assert.ok(minimum>-.006,`generated geometry penetrates the floor by ${-minimum}m`);
+});
+
+test('a settled death retains its verified contact pose and invalidates it if the actor moves',()=>{
+  const f=fixture();f.actor.hp=0;f.actor.state='dead';f.actor.age=2;
+  updateCharacterRig(f.rig,f.actor,f.world,1/60);
+  const before=[];f.rig.root.traverse(node=>before.push(node.matrixWorld.toArray()));
+  const age=f.rig.motion.metrics.visualAge;
+  for(let n=0;n<90;n++)updateCharacterRig(f.rig,f.actor,f.world,1/60);
+  const after=[];f.rig.root.traverse(node=>after.push(node.matrixWorld.toArray()));
+  assert.deepEqual(after,before);assert.ok(f.rig.motion.metrics.visualAge>age+1.4);
+  f.actor.x=2;updateCharacterRig(f.rig,f.actor,f.world,1/60);
+  assert.equal(f.rig.root.position.x,2,'a changed transform invalidates the settled pose cache');
 });
 
 test('victory raises, aligns and inserts the sword before hiding the enclosed blade; retry resets everything',()=>{

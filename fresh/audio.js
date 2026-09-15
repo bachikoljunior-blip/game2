@@ -1,6 +1,6 @@
 // Original, boot-generated material sounds. These are synthesized PCM, not
 // recordings. The same generator is used by the game and the listening export.
-import { LOCOMOTION } from './character-motion.js';
+import { advanceLocomotionPhase } from './character-motion.js';
 import { distanceFromRoute } from './route-layout.js';
 import { EXPLORATION } from './exploration.js';
 const TAU=Math.PI*2;
@@ -98,12 +98,18 @@ export function createFootstepTracker(){
     const steps=[];
     for(const actor of [world.player,...world.enemies]){
       let track=actors.get(actor.id);
-      if(!track){track={x:actor.x,z:actor.z,distance:0,right:true};actors.set(actor.id,track);continue;}
-      const distance=Math.hypot(actor.x-track.x,actor.z-track.z);track.x=actor.x;track.z=actor.z;
-      if(actor.hp<=0||!['idle','guard','run','walk'].includes(actor.state)||distance>3)continue;
-      track.distance+=distance;
-      while(track.distance+1e-8>=LOCOMOTION.stepDistance){track.distance-=LOCOMOTION.stepDistance;
-        steps.push({actor,right:track.right,surface:footSurfaceAt(actor.x,actor.z)});track.right=!track.right;}
+      if(!track){track={x:actor.x,z:actor.z,time:world.time,cycles:0};actors.set(actor.id,track);continue;}
+      const distance=Math.hypot(actor.x-track.x,actor.z-track.z),seconds=world.time-track.time;
+      track.x=actor.x;track.z=actor.z;track.time=world.time;
+      if(actor.hp<=0||!['idle','guard','run','walk'].includes(actor.state)||distance>3||seconds<=0)continue;
+      // Share the actor's unwrapped gait phase. Real simulation elapsed time
+      // preserves speed/cadence after dropped frames; changing speed cannot
+      // reinterpret old travel or replay a contact from the previous stride.
+      const previousContact=Math.floor(track.cycles*2);
+      track.cycles=advanceLocomotionPhase(track.cycles,distance,seconds);
+      const contact=Math.floor(track.cycles*2);
+      for(let index=previousContact+1;index<=contact;index++)
+        steps.push({actor,right:index%2===1,surface:footSurfaceAt(actor.x,actor.z)});
     }
     return steps;
   }};

@@ -28,15 +28,47 @@ test('same-tick hit and death and duplicate-type events all deliver once across 
   const next={type:'hit',time:2};assert.deepEqual(reader.read([b,c,next]),[next]);
   reader.reset();assert.deepEqual(reader.read([a]),[a]);
 });
-test('foot contacts follow actual position, alternate every .72m, and ignore wall push and dodge',()=>{
+test('walk contacts follow real position and elapsed time, ignoring wall push, repeat frames and dodge',()=>{
   const world=createWorld(),tracker=createFootstepTracker();tracker.update(world);
-  world.player.stride=40;assert.deepEqual(tracker.update(world),[],'intended stride cannot produce wall footsteps');
-  world.player.x=.71;assert.deepEqual(tracker.update(world),[]);
-  world.player.x=.72;let steps=tracker.update(world);assert.equal(steps.length,1);assert.equal(steps[0].right,true);
-  world.player.x=1.44;steps=tracker.update(world);assert.equal(steps.length,1);assert.equal(steps[0].right,false);
-  world.player.state='dodge';world.player.x=2.2;assert.deepEqual(tracker.update(world),[]);
-  world.player.state='idle';assert.deepEqual(tracker.update(world),[]);
+  const travel=(distance,seconds)=>{world.time+=seconds;world.player.x+=distance;return tracker.update(world);};
+  world.player.stride=40;assert.deepEqual(travel(0,.3),[],'intended stride cannot produce wall footsteps');
+  assert.deepEqual(travel(.71,.71/1.8),[]);
+  let steps=travel(.01,.01/1.8);assert.equal(steps.length,1);assert.equal(steps[0].right,true);
+  steps=travel(.72,.4);assert.equal(steps.length,1);assert.equal(steps[0].right,false);
+  assert.deepEqual(tracker.update(world),[],'the same simulation snapshot cannot replay contact');
+  world.player.state='dodge';assert.deepEqual(travel(.8,.2),[]);
+  world.player.state='idle';assert.deepEqual(travel(0,.2),[]);
   tracker.reset();assert.deepEqual(tracker.update(world),[]);
+});
+test('a 250ms movement frame uses 3.8m/s running stride and does not sound the old .72m contact',()=>{
+  const world=createWorld(),tracker=createFootstepTracker();tracker.update(world);
+  world.time=.25;world.player.x=.95;assert.deepEqual(tracker.update(world),[]);
+  world.time+=.18/3.8;world.player.x+=.18;
+  const steps=tracker.update(world);assert.equal(steps.length,1);assert.equal(steps[0].right,true);
+});
+test('walk-to-run-to-walk preserves contact phase and alternating feet without replay at speed changes',()=>{
+  const world=createWorld(),tracker=createFootstepTracker();tracker.update(world);const heard=[];
+  const travel=(distance,speed)=>{world.time+=distance/speed;world.player.x+=distance;const steps=tracker.update(world);heard.push(...steps.map(step=>step.right));return steps.length;};
+  assert.equal(travel(.36,1.8),0); // Half of one walking step.
+  assert.equal(travel(.56,3.8),1); // Half of one running step completes it.
+  assert.equal(travel(1.12,3.8),1);
+  world.time+=3;assert.deepEqual(tracker.update(world),[],'stopping must retain phase without advancing');
+  world.player.stride+=100;world.time+=.25;assert.deepEqual(tracker.update(world),[],'blocked running is silent');
+  assert.equal(travel(.73,1.8),1);
+  assert.deepEqual(heard,[true,false,true]);
+});
+test('steady walk and run contact counts are independent of 60Hz versus 250ms delivery',()=>{
+  const capture=(speed,dt)=>{
+    const world=createWorld(),tracker=createFootstepTracker();tracker.update(world);const feet=[];
+    const frames=Math.round(3.75/dt);
+    for(let i=1;i<=frames;i++){world.time=i*dt;world.player.x=speed*world.time;feet.push(...tracker.update(world).map(step=>step.right));}
+    return feet;
+  };
+  for(const [speed,count] of [[1.8,9],[3.8,12]]){
+    const regular=capture(speed,1/60),dropped=capture(speed,.25);
+    assert.equal(regular.length,count);assert.deepEqual(dropped,regular);
+    assert.ok(regular.every((right,index)=>right===(index%2===0)));
+  }
 });
 class Parameter{constructor(){this.value=0;}cancelScheduledValues(){}setValueAtTime(value){this.value=value;}linearRampToValueAtTime(value){this.value=value;}setTargetAtTime(value){this.value=value;}}
 class Node{constructor(){this.gain=new Parameter();this.pan=new Parameter();this.playbackRate=new Parameter();this.connected=true;this.stopped=false;}connect(node){return node;}disconnect(){this.connected=false;}start(){this.started=true;}stop(){this.stopped=true;}}

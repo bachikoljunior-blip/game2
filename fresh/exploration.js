@@ -22,6 +22,30 @@ export const EXPLORATION = Object.freeze({
     discovery('white-tree','memory','社裏の白い木',11,-39,'gust','白い枝に結ばれた布がほどけずに揺れる。ここからも、社の灯は谷へ届く。')
   ])
 });
+// Only raised, solid details participate here. Floor stones, water ripples and
+// hanging cloth stay walkable. The renderer consumes these same footprints.
+const solid=(id,shape,x,z,size)=>Object.freeze({id,shape,x,z,...size});
+export const EXPLORATION_SOLIDS=Object.freeze([
+  solid('spring-basin','circle',-29.9,14,{radius:1.4}),
+  solid('stream-pool','circle',-32,-.7,{radius:2.1}),
+  solid('valley-frame-left','circle',27.9,9,{radius:.12}),
+  solid('valley-frame-right','circle',32.1,9,{radius:.12}),
+  solid('sun-ring','box',28.1,-21.2,{width:3.4,depth:1,rotation:-.45}),
+  solid('sun-cloth','circle',24.1,-20.6,{radius:.065}),
+  solid('old-waystone','box',-13.9,-39,{width:1.08,depth:.48,rotation:.23}),
+  solid('old-cairn','circle',-10.2,-39,{radius:.39}),
+  solid('white-tree','circle',13.15,-39.8,{radius:.29}),
+  solid('white-cloth-left','circle',11.35,-40.2,{radius:.065}),
+  solid('white-cloth-right','circle',14.95,-40.2,{radius:.065}),
+  ...[[-22,11],[-24,4],[-10,-34],[14,-43]].map(([x,z],i)=>solid(`maple-${i}`,'circle',x,z,{radius:.28})),
+  ...EXPLORATION.loops.flatMap(walk=>[0,walk.nodes.length-1].map((index,i)=>{
+    const p=walk.nodes[index],next=walk.nodes[index===0?1:index-1],dx=next.x-p.x,dz=next.z-p.z,length=Math.hypot(dx,dz);
+    const side=-dz*Math.sign(p.x)<0?-1:1,nx=-dz/length*side,nz=dx/length*side;
+    return solid(`${walk.id}-sign-${i}`,'box',p.x+nx*2.1,p.z+nz*2.1,
+      {width:1.95,depth:.1,rotation:Math.atan2(-nz,nx),loopId:walk.id});
+  }))
+]);
+export const explorationSolid=id=>EXPLORATION_SOLIDS.find(s=>s.id===id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function segmentProjection(x,z,a,b){
   const dx=b.x-a.x,dz=b.z-a.z,t=clamp(((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz),0,1);
@@ -37,11 +61,12 @@ export function explorationPathDistance(x,z){
 export function explorationClearingDistance(x,z){
   let distance=explorationPathDistance(x,z)-1.8;
   for(const p of EXPLORATION.points)distance=Math.min(distance,Math.hypot(x-p.x,z-p.z)-p.clearing);
+  for(const p of EXPLORATION_SOLIDS)distance=Math.min(distance,Math.hypot(x-p.x,z-p.z)-(p.radius??Math.hypot(p.width,p.depth)/2));
   return distance;
 }
 // The union is a real walkable network, not an enlarged rectangular arena.
 // Projection preserves tangential movement when the actor meets a bank.
-export function constrainExplorationPosition(actor,radius=.35){
+function constrainWalkRegion(actor,radius=.35){
   const x=actor.x,z=actor.z,c=EXPLORATION.central;
   let px=clamp(x,c.minX,c.maxX),pz=clamp(z,c.minZ,c.maxZ),best=Math.hypot(x-px,z-pz);
   if(best===0)return actor;
@@ -57,6 +82,44 @@ export function constrainExplorationPosition(actor,radius=.35){
   }
   for(const p of EXPLORATION.points)candidate(p.x,p.z,p.clearing-radius);
   actor.x=px;actor.z=pz;return actor;
+}
+function localPoint(x,z,solid){
+  const c=Math.cos(solid.rotation??0),s=Math.sin(solid.rotation??0),dx=x-solid.x,dz=z-solid.z;
+  return {x:c*dx-s*dz,z:s*dx+c*dz};
+}
+export function explorationSolidAt(x,z,radius=.35){
+  return EXPLORATION_SOLIDS.find(solid=>{
+    if(solid.shape==='circle')return Math.hypot(x-solid.x,z-solid.z)<solid.radius+radius-1e-8;
+    const p=localPoint(x,z,solid),dx=Math.max(0,Math.abs(p.x)-solid.width/2),dz=Math.max(0,Math.abs(p.z)-solid.depth/2);
+    return Math.hypot(dx,dz)<radius-1e-8;
+  })??null;
+}
+export function constrainExplorationPosition(actor,radius=.35){
+  constrainWalkRegion(actor,radius);
+  for(let iteration=0;iteration<4;iteration++){
+    const solid=explorationSolidAt(actor.x,actor.z,radius);if(!solid)break;
+    const candidates=[];
+    if(solid.shape==='circle'){
+      const angle=Math.atan2(actor.z-solid.z,actor.x-solid.x),r=solid.radius+radius;
+      for(let i=0;i<33;i++){
+        const a=i===0?angle:(i-1)*Math.PI/16;candidates.push({x:solid.x+Math.cos(a)*r,z:solid.z+Math.sin(a)*r});
+      }
+    }else{
+      const p=localPoint(actor.x,actor.z,solid),hw=solid.width/2,hd=solid.depth/2,c=Math.cos(solid.rotation),s=Math.sin(solid.rotation);
+      const edgeX=clamp(p.x,-hw,hw),edgeZ=clamp(p.z,-hd,hd),dx=p.x-edgeX,dz=p.z-edgeZ,d=Math.hypot(dx,dz);
+      const local=[{x:-hw-radius,z:edgeZ},{x:hw+radius,z:edgeZ},{x:edgeX,z:-hd-radius},{x:edgeX,z:hd+radius}];
+      if(d>0)local.unshift({x:edgeX+dx/d*radius,z:edgeZ+dz/d*radius});
+      for(const q of local)candidates.push({x:solid.x+c*q.x+s*q.z,z:solid.z-s*q.x+c*q.z});
+    }
+    candidates.sort((a,b)=>Math.hypot(a.x-actor.x,a.z-actor.z)-Math.hypot(b.x-actor.x,b.z-actor.z));
+    const safe=candidates.find(q=>{
+      const inside={...q};constrainWalkRegion(inside,radius);
+      return Math.hypot(inside.x-q.x,inside.z-q.z)<1e-7&&!explorationSolidAt(q.x,q.z,radius);
+    });
+    if(!safe)break;
+    actor.x=safe.x;actor.z=safe.z;
+  }
+  return actor;
 }
 export function isExplorationWalkable(x,z,radius=.35){
   const p={x,z};constrainExplorationPosition(p,radius);return Math.hypot(x-p.x,z-p.z)<1e-7;

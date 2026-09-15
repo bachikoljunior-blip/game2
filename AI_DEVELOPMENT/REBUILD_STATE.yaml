@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-14T20:15:44Z",
-  "phase": "fresh-c04-material-readiness",
+  "updatedAt": "2026-09-15T09:29:00Z",
+  "phase": "fresh-seven-fixes-all-animation",
   "userInstruction": "一旦ゲーム自体はゼロから作り直してくれる？",
   "activeBranch": "codex/game2-rebuild-20260913",
   "fixedInstructions": "AI_DEVELOPMENT/FIXED_INSTRUCTIONS.md",
@@ -15,7 +15,7 @@
     "oldPr": 10,
     "optionalRebuildRouting": "ec2480166809f57fa623929bec0fbcb4d5a623a2"
   },
-  "continuation": "Make the verified candidate reconvergence and post-rejoin shrine/signal arrival visually readable, and acquire lawful reference footage with actual simultaneous routes, choice and reconvergence. Pass each side through a separate anonymous material-readiness gate before rebuilding a pair.",
+  "continuation": "Publish the exact repaired tree, obtain fresh four-route and experience/audio/whole-motion CI results, independently inspect the rendered artifacts, then reflect the verified checkpoint into main and record readback. Do not change paused automations.",
   "status": "not measured",
   "publication": "Keep old Pages until a verified replacement is ready. Fresh runtime is a work-branch candidate, not public product acceptance.",
   "procedureAuthority": "Fixed instructions and explicit user directives govern. Tests, task plans and architecture documents are tools chosen by the AI, not additional fixed rules.",
@@ -27,7 +27,7 @@
   "comparisonCatalog": "AI_DEVELOPMENT/COMPARISON_ELEMENTS.yaml",
   "referenceSelectionComplete": false,
   "verificationEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-c04-two-routes.json",
-  "pendingCandidate": null,
+  "pendingCandidate": "bd4e64f9a46e7c6873a8057e420095b278c9e5e7",
   "methodChangeEvidence": "AI_DEVELOPMENT/EVIDENCE/20260914-ultra-c04-two-routes.json",
   "recoveryRole": {
     "userInstruction": "定期オートメーションは万が一実行が停止していたら、停止してしまう原因を全て潰してから再開する再発火役にしてください。",
@@ -130,5 +130,19 @@
     "reason": "Reference A failed material items2-8; candidate B passed route items1-5 but failed visible reconvergence, post-rejoin destination arrival and five-frame coverage in items6-8. Recognition and preference were not reached.",
     "formalState": "not measured",
     "next": "Pass candidate visible reconvergence/arrival and a replacement lawful actual-branching reference through separate anonymous readiness gates before a new paired packet."
+  },
+  "latestUserInstructions": [
+    "サウンド全て自然にして。植物の揺れ自然にして。キャラデザ細部まで作り込んで。スワイプで画面移動と攻撃モーション合わさって混同してんのどうにかして。足折れてる敵直して。マップはもっと広大で飽きないようにして。走ってるアニメーション自然にして。",
+    "アニメーション全て自然で見応えあるものにして"
+  ],
+  "currentExecution": {
+    "owner": "/root/game2_ultra_seven_fixes",
+    "mode": "authorized foreground only",
+    "baselineMain": "bc37e9665a3eab6a369ce77b13b3219f8df2e602",
+    "baselineSource": "923ac865f732a985ca679b036afdb8a1c06586d3",
+    "evidence": "AI_DEVELOPMENT/EVIDENCE/20260915-seven-fixes-intake.json",
+    "automation": "Latest direct instruction preserved in CLAUDE d9370e3 is game2 stopped, survival stopped, Q enabled. This foreground work does not alter or reenable any automation; older enabled=true records below are historical.",
+    "localRuntime": "47d5f161b7dc233420bd100fc51bb7c8d56a7029",
+    "localVerification": "152tests/build/root-preservation pass; final rendered verification pending"
   }
 }

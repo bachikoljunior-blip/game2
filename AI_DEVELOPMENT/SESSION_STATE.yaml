@@ -11,10 +11,10 @@
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
     "activeTask": "FRESH-SEVEN-FIXES-ALL-ANIMATION",
-    "lastSuccessfulAction": "Recovered exact source923ac865 and terminal CI34902967581; reproduced72 unit tests/build; independently diagnosed all four video decodes and actual camera/guard apparatus failures, then integrated guarded capture repair b28b9ae.",
-    "currentFailingAction": "Latest seven requests and all-animation extension are being implemented in isolated Ultra worktrees. Whole-element comparisons remain0 satisfied/0 not satisfied/10 not measured. Local Chromium launch ends with SIGTRAP, so rendered verification uses canonical CI.",
+    "lastSuccessfulAction": "Integrated all seven requested changes and all-animation scope with independent-review repairs. Exact local runtime47d5f161 passes152tests, freshbuild, fixed catalog and preserved-root checks. First rendered CI34949745102 failures and actual media are preserved with diagnosis.",
+    "currentFailingAction": "Final repaired source requires same-source browser verification and independent rendered review. First CI failures were shader source line boundaries, ffmpeg installation order and mute-probe stream pre-roll; actual clips also exposed ordinary camera lag and inspection-camera occlusion, now repaired.",
     "currentHypothesis": "The two-route mechanics and four input paths are now verified. The immediate C04 blockers are evidence readability in the candidate capture and an unsuitable reference excerpt, not absent route physics: both materials need separate readiness gates before another paired blind comparison.",
-    "nextAction": "Integrate detailed actor motion, coherent wind/exploration and generated audio/input; run same-source four-way missions, real gesture/side-circuit inputs, synthetic-state rendered motion and actual sound capture, independent review, then main integration.",
+    "nextAction": "Publish the exact repaired tree, obtain fresh four-route and experience/audio/whole-motion CI results, independently inspect the rendered artifacts, then reflect the verified checkpoint into main and record readback. Do not change paused automations.",
     "rollbackPoint": "1ded4aae27f8331cec10975c8dbac9eb482460a9",
     "pendingVerification": [
       "C04 candidate capture that visibly shows both routes entering one reconvergence point and continues through shrine/signal arrival",
@@ -50,8 +50,8 @@
     ],
     "remotePushPendingAuthorization": false,
     "remoteReleaseAuthorized": true,
-    "remotePublicationStatus": "Main6eed8c5 contains verified runtime1ded4aae under fresh/ through PR19. The root GitHub Pages route remains the existing public runtime; fresh public acceptance is not claimed.",
-    "publishedMainSha": "6eed8c552f8955d4a45be0eda6e7b78eece09312",
+    "remotePublicationStatus": "Canonical main readback bc37e966 at intake; current source bd4e64f9 is a pending verification candidate. Existing public root preserved.",
+    "publishedMainSha": "bc37e9665a3eab6a369ce77b13b3219f8df2e602",
     "publishedUrl": "https://bachikoljunior-blip.github.io/game2/",
     "startPositionHotfix": {
       "status": "awaiting_verification",
@@ -83,7 +83,7 @@
       }
     },
     "continuationAutomation": {
-      "enabled": true,
+      "enabled": false,
       "cadence": "hourly",
       "role": "Reignite production only after diagnosing, correcting and verifying every evidenced stop cause; do not duplicate active production.",
       "latestUserInstruction": "定期オートメーションは万が一実行が停止していたら、停止してしまう原因を全て潰してから再開する再発火役にしてください。",
@@ -139,7 +139,10 @@
         },
         "completionClaim": false,
         "nextRun": "Re-read remote source/main heads. Make the candidate reconvergence and post-rejoin shrine arrival visible, acquire a lawful actual-branching reference, and pass each side through a separate anonymous material-readiness gate before pairing."
-      }
+      },
+      "currentInstruction": "そしてgame2を停止してからQを有効にして",
+      "currentInstructionSource": "CLAUDE.md update d9370e3 and parent-provided verified automation readback; no automation mutation in this run.",
+      "historicalRecordsNotice": "Older enabled values and checkpoints below are preserved history, not current automation state."
     },
     "evidence": [
       "AI_DEVELOPMENT/EVIDENCE/20260913-fresh-checkpoint.md",
@@ -246,7 +249,7 @@
     "completion": "All concept elements satisfied by evidenced blind comparison.",
     "current_unit": "2026-09-13-fresh-design",
     "unit_status": "active",
-    "first_action": "Integrate detailed actor motion, coherent wind/exploration and generated audio/input; run same-source four-way missions, real gesture/side-circuit inputs, synthetic-state rendered motion and actual sound capture, independent review, then main integration.",
+    "first_action": "Publish the exact repaired tree, obtain fresh four-route and experience/audio/whole-motion CI results, independently inspect the rendered artifacts, then reflect the verified checkpoint into main and record readback. Do not change paused automations.",
     "implementation_strategy": "Fresh design and implementation; needs-before-reuse, per latest direct user instruction.",
     "unitEndReason": null,
     "deadlineReassessment": {

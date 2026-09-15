@@ -1,7 +1,7 @@
 {
   "id": "GAME2-SEVEN-FIXES-ALL-ANIMATION-20260915",
   "recordedAt": "2026-09-15T08:35:00Z",
-  "status": "implementation in progress; not a quality verdict",
+  "status": "implementation and152localtests complete; final exact-source rendered verification pending",
   "userOriginals": [
     "サウンド全て自然にして。植物の揺れ自然にして。キャラデザ細部まで作り込んで。スワイプで画面移動と攻撃モーション合わさって混同してんのどうにかして。足折れてる敵直して。マップはもっと広大で飽きないようにして。走ってるアニメーション自然にして。",
     "アニメーション全て自然で見応えあるものにして"
@@ -32,13 +32,51 @@
   "delegation": {
     "instruction": "ULTRA-CHILDREN-20260914-v3",
     "integrator": "/root/game2_ultra_seven_fixes",
-    "integratorReceiptFromParent": {"task_name": "/root/game2_ultra_seven_fixes"},
-    "integratorSpawnArgumentsFromParent": {"task_name": "game2_ultra_seven_fixes", "reasoning_effort": "ultra", "fork_turns": "none", "model": "omitted"},
+    "integratorReceiptFromParent": {
+      "task_name": "/root/game2_ultra_seven_fixes"
+    },
+    "integratorSpawnArgumentsFromParent": {
+      "task_name": "game2_ultra_seven_fixes",
+      "reasoning_effort": "ultra",
+      "fork_turns": "none",
+      "model": "omitted"
+    },
     "childrenAcceptedByThisIntegrator": [
-      {"task_name": "/root/game2_ultra_seven_fixes/ci_recovery_review", "reasoning_effort": "ultra", "fork_turns": "none", "model": "omitted", "scope": "Recover exact failed CI evidence, then repair browser-only capture procedure in an isolated worktree"},
-      {"task_name": "/root/game2_ultra_seven_fixes/character_animation", "reasoning_effort": "ultra", "fork_turns": "none", "model": "omitted", "scope": "Detailed generated character rig and all actor motions in game2-actors"},
-      {"task_name": "/root/game2_ultra_seven_fixes/world_wind_exploration", "reasoning_effort": "ultra", "fork_turns": "none", "model": "omitted", "scope": "Rooted coherent wind, environmental motion, three optional exploration loops in game2-world"},
-      {"task_name": "/root/game2_ultra_seven_fixes/audio_input", "reasoning_effort": "ultra", "fork_turns": "none", "model": "omitted", "scope": "Generated audio, lifecycle and unambiguous touch gestures in game2-audio-input"}
+      {
+        "task_name": "/root/game2_ultra_seven_fixes/ci_recovery_review",
+        "reasoning_effort": "ultra",
+        "fork_turns": "none",
+        "model": "omitted",
+        "scope": "Recover exact failed CI evidence, then repair browser-only capture procedure in an isolated worktree"
+      },
+      {
+        "task_name": "/root/game2_ultra_seven_fixes/character_animation",
+        "reasoning_effort": "ultra",
+        "fork_turns": "none",
+        "model": "omitted",
+        "scope": "Detailed generated character rig and all actor motions in game2-actors"
+      },
+      {
+        "task_name": "/root/game2_ultra_seven_fixes/world_wind_exploration",
+        "reasoning_effort": "ultra",
+        "fork_turns": "none",
+        "model": "omitted",
+        "scope": "Rooted coherent wind, environmental motion, three optional exploration loops in game2-world"
+      },
+      {
+        "task_name": "/root/game2_ultra_seven_fixes/audio_input",
+        "reasoning_effort": "ultra",
+        "fork_turns": "none",
+        "model": "omitted",
+        "scope": "Generated audio, lifecycle and unambiguous touch gestures in game2-audio-input"
+      },
+      {
+        "task_name": "/root/game2_ultra_seven_fixes/independent_runtime_review",
+        "reasoning_effort": "ultra",
+        "fork_turns": "none",
+        "model": "omitted",
+        "scope": "Independent read-only actor, motion, wind and exploration diagnostics; exact-revision media review"
+      }
     ],
     "descendantsAllowed": false,
     "effectiveInternalStrengthIndependentlyConfirmed": false,
@@ -52,6 +90,52 @@
     "criteriaChanged": false,
     "validationPending": "Same-source meaningful tests, actual DOM gestures and four full routes, generated audible samples, continuous rendered motion, independent review, CI and main readback."
   },
-  "formalQuality": {"satisfied": 0, "not satisfied": 0, "not measured": 10},
-  "publication": "Preserve the existing public root until a verified replacement is ready. New implementation remains fresh/; main integration is authorized and required, but not whole-product acceptance."
+  "formalQuality": {
+    "satisfied": 0,
+    "not satisfied": 0,
+    "not measured": 10
+  },
+  "publication": "Preserve the existing public root until a verified replacement is ready. New implementation remains fresh/; main integration is authorized and required, but not whole-product acceptance.",
+  "implementationOrigins": {
+    "ciCapture": "954d5be73b438f826dff9c5647dd885d3366296b",
+    "audioInput": "a9b41f331a224b05df1acb9014e88248c2f78e89",
+    "audioReviewRepairs": "75cc340080a37c0cc6ebcd025c4b29f31ea22c60",
+    "characterAnimation": "ff58b7adfa479552aed826b0f3147dee05b13036",
+    "worldWindExploration": "8686dd0d5f7bc54226db989ba3927c148f0b8dba",
+    "explorationReentryRepair": "7f5eae335efe9d4b9e469b9aeb99729714eb9f0b",
+    "integrationCameraRepair": "214d9aa",
+    "localImplementationCheckpoint": "d61493d",
+    "remoteTreeEquivalentCandidate": "bd4e64f9a46e7c6873a8057e420095b278c9e5e7",
+    "tree": "dd529fb6f3417862cb741c86306dce3393e37537",
+    "note": "Child origins are local worktree commits preserved in local/seven-fixes-d61493d. Authenticated GitHub tree/commit/ref tools created a single canonical commit with an identical tree and parent923ac865; force=false. Plain git push failed for missing credentials and made no remote change.",
+    "characterContactRepair": "1931e1e9b436027048f9d412f1d4929bb558a7c5",
+    "worldShadowSolidRepair": "7d49c28ef69ce1e5944139c3806bc7a19c1da6d3",
+    "audioNegativeRecordingRepair": "fbdae08c6273e2b52c8a17476ef51691bb0c465e",
+    "windShaderRepair": "9edbcdc1b6d70b09b4e0e1459ed645a52dfa8ef2",
+    "ordinaryCameraFollowRepair": "a30568e",
+    "motionCompositionRepair": [
+      "a2ec510d74792dc137c04fac0bdf1c686b1536c8",
+      "c9a9322e66c769cfdb392dafe1a9743457d56d17"
+    ],
+    "runClockAndCadence": "1731391c3fb75dd1ff50ad277535842443f207a3",
+    "runFacingRegressionRepair": "ebaa09b4a4e399f44b40be57d08265e6f2d3d231",
+    "sharedFootstepCycle": "1bce6f63074676d926d28d71256bd141f87d5227",
+    "testedLocalRuntime": "47d5f161b7dc233420bd100fc51bb7c8d56a7029"
+  },
+  "limitations": {
+    "audioInput": "The actual audio item returned: audio content omitted because you do not support audio input. Generated audition audio and real game master-bus recording are available for replay; this executor cannot truthfully claim listening or perceptual naturalness. PCM tests and independent source/audio-lifecycle review are only technical evidence.",
+    "browser": "Local official Chromium launch terminated with SIGTRAP; exact-source actual DOM/WebGL/audio recording uses GitHub Actions. SwiftShader is not a physical iPhone.",
+    "motionStudy": "Isolated study uses actual generated rendering with synthetic scene states at authored12fps. It is pose/continuity evidence, not ordinary player input or real-time performance; four-route and exploration recordings provide normal-input evidence."
+  },
+  "independentDiagnostic": "AI_DEVELOPMENT/EVIDENCE/20260915-independent-runtime-initial.md",
+  "firstRenderedCiEvidence": "AI_DEVELOPMENT/EVIDENCE/20260915-seven-fixes-first-rendered-ci.json",
+  "latestLocalVerification": {
+    "unitTests": 152,
+    "passed": 152,
+    "freshBuild": "passed;612.27kB/169.67kB gzip",
+    "rootSourceDifferenceFromPreservedBaseline": 0,
+    "actorGrounding": "1680action poses,24run-stop routes; maximum residual terrain penetration0.444mm; original1.465cm regression fixed without threshold changes",
+    "cadence": "3.8m/s run3.3929steps/s,20.4percent sampled flight; world.time phases agree at4/50/60/120Hz and shared audio steps agree at60Hz/250ms",
+    "independentRechecks": "Initial6staticfindings resolved; actual-media ordinary camera failure independently reproduced and source repair closes the same numerical repro. Final fixed-source visual review is still pending."
+  }
 }
