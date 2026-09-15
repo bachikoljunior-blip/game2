@@ -1,0 +1,27 @@
+{
+  "sourceRevision": "a6722c5cf7b1933f1956c6c33ec4edc6adf47640",
+  "verifiedWorkflow": 34959408734,
+  "workflowUrl": "https://github.com/bachikoljunior-blip/game2/actions/runs/34959408734",
+  "builtAt": "2026-09-15T11:05:25.892652+00:00",
+  "purpose": "Playable fresh-game checkpoint preview. Existing public root/docs remains preserved; formal quality comparison is not complete.",
+  "base": "./",
+  "files": [
+    {
+      "path": "assets/index-Ck_X98_2.css",
+      "bytes": 6472,
+      "sha256": "7c991e93c0471bdc554ebd9e79cd027afc380ee964520eb5fbc278319f16da3d"
+    },
+    {
+      "path": "assets/index-uU7e7s1r.js",
+      "bytes": 621405,
+      "sha256": "e10155850538226ba23645e4b8949eda8e480d76922b8531ee0dc242aaa5a5f4"
+    },
+    {
+      "path": "index.html",
+      "bytes": 1772,
+      "sha256": "54a9e19d127241d06bc0bb2807b2e36703865cf2e79cc2a3b20bf5e2f47c1e23"
+    }
+  ],
+  "ciDocumentAndJavaScriptByteMatch": true,
+  "qualityCompletionClaim": false
+}
