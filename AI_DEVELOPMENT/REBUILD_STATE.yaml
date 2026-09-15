@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-15T15:57:28.664560+00:00",
+  "updatedAt": "2026-09-15T16:23:01.561626+00:00",
   "phase": "fresh-art-sound-physics-revision",
   "userInstruction": "一旦ゲーム自体はゼロから作り直してくれる？",
   "activeBranch": "codex/game2-rebuild-20260913",
@@ -15,7 +15,7 @@
     "oldPr": 10,
     "optionalRebuildRouting": "ec2480166809f57fa623929bec0fbcb4d5a623a2"
   },
-  "continuation": "Run exact-source native Fresh CI and six same-host profiles. Reject ordinary route failures or unresolved major visual regressions before actual main/preview integration. Retain PS4 and perceptual-audio limits explicitly.",
+  "continuation": "Run exact-source Fresh validation of the indexed static-character candidate and same-host completed-pixel comparison against4fa with original fullPNG equality. Keep 180second missions and all appearance/input gates. Publish only a candidate that clears required operations, then verify the same7files at the actual preview URL; continue remaining PS4 visual work without calling publication completion.",
   "status": "not measured",
   "publication": "Same-byte verified a672 preview published at https://bachikoljunior-blip.github.io/game2/preview/ through PR22/maina213ed5. Pages34961958960 and actual publicCI34962622024 pass. Existing root/docs/public preserved. Whole-product quality remains not measured.",
   "procedureAuthority": "Fixed instructions and explicit user directives govern. Tests, task plans and architecture documents are tools chosen by the AI, not additional fixed rules.",
@@ -167,47 +167,21 @@
     "remainingHours": 114.51263382916667
   },
   "latestArtSoundPhysicsBoundary": {
-    "sourceCheckpoint": "9068522520b0f269cc937057b444f06c7c187978",
+    "sourceCheckpoint": "31a56e1d6fc0b6693532a634c016fceda5b3af76",
+    "runtimeAtCheckpoint": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
     "mainStill": "b06ade1ad5ab8b72de9bb9996f323a063f5db5ef",
     "previewStill": "a6722c5cf7b1933f1956c6c33ec4edc6adf47640",
-    "evidence": "AI_DEVELOPMENT/EVIDENCE/20260915-906-native-results-and-canopy-repair.json",
+    "evidence": "AI_DEVELOPMENT/EVIDENCE/20260915-4fa-normal-failure-and-static-index.json",
     "normalCI": {
-      "run": 34988388555,
-      "result": "failure",
-      "jobs": {
-        "fresh": "failure",
-        "art": "success",
-        "vegetation": "success",
-        "asset-readiness": "success",
-        "experience": "success"
-      },
-      "unitTests": 230,
-      "successfulRoutes": [
-        "PC-left",
-        "PC-right",
-        "touch-right"
-      ],
-      "failedRoute": "touch-left: playing after the unchanged 180-second mission loop; all three enemies defeated but no shrine arrival or lit signal",
-      "recording": "All four raw recordings fully decoded; three derived successful-route clips; touch-left missing arrival checkpoints is semantic failure, not codec corruption"
+      "run": 34992059112,
+      "freshConclusion": "failure",
+      "touchFailures": 2,
+      "pcPassed": 2
     },
     "pendingLocalComponents": [
-      {
-        "author": "vegetation_physics",
-        "commit": "ef36bc10a117a6e193b9bf59d0c271dd43289df4",
-        "scope": "Incline complete bamboo support-bound sprays; preserve leaves, wood stiffness/damping, roots, cutout mips and drawables."
-      },
-      {
-        "author": "vegetation_physics",
-        "commit": "2b5b1baf946f8708b75993a7a0458812e4f46914",
-        "scope": "Distribute maple leaf inclination around the same fixed petioles without changing physical leaf dimensions or counts."
-      },
-      {
-        "author": "c06_reference_material",
-        "commit": "271b830397f64918e676abd046057a32d6fa31b2",
-        "scope": "Six serial full profiles acf/906/event/event/906/acf on one host, identical immutable readPixels tool, immediate original media recovery, original18minute cap."
-      }
+      "fd559cc exact static character index"
     ],
     "formalCompletion": false,
-    "nextAction": "Run exact-source native Fresh CI and six same-host profiles. Reject ordinary route failures or unresolved major visual regressions before actual main/preview integration. Retain PS4 and perceptual-audio limits explicitly."
+    "nextAction": "Run exact-source Fresh validation of the indexed static-character candidate and same-host completed-pixel comparison against4fa with original fullPNG equality. Keep 180second missions and all appearance/input gates. Publish only a candidate that clears required operations, then verify the same7files at the actual preview URL; continue remaining PS4 visual work without calling publication completion."
   }
 }

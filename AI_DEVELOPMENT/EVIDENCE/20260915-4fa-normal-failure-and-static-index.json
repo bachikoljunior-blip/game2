@@ -1,0 +1,282 @@
+{
+  "at": "2026-09-15T16:23:01.561626+00:00",
+  "owner": "/root/game2_ultra_art_sound_physics",
+  "sourceRevision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+  "run": 34992059112,
+  "freshJob": 104458930554,
+  "freshConclusion": "failure",
+  "notCancelled": true,
+  "tests": {
+    "total": 232,
+    "passed": 232,
+    "failed": 0
+  },
+  "build": "passed",
+  "routes": {
+    "PC-left": {
+      "result": "passed",
+      "victoryObservedElapsedMs": 143781
+    },
+    "PC-right": {
+      "result": "passed",
+      "victoryObservedElapsedMs": 127402
+    },
+    "touch-right": {
+      "result": "failed",
+      "failure": "AssertionError [ERR_ASSERTION]: touch mission ended without victory\n+ actual - expected\n\n+ 'playing'\n- 'victory'\n",
+      "after": {
+        "worldTime": 68.84999999999738,
+        "mode": "playing",
+        "kills": 3,
+        "hp": 76,
+        "position": {
+          "x": -0.9495962042676573,
+          "z": -18.62546352007521
+        },
+        "routePhase": "rejoined",
+        "pathCleared": true,
+        "signalLit": false
+      }
+    },
+    "touch-left": {
+      "result": "failed",
+      "failure": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ 'playing'\n- 'victory'\n",
+      "after": {
+        "worldTime": 67.18333333333081,
+        "mode": "playing",
+        "kills": 3,
+        "hp": 76,
+        "position": {
+          "x": -9.44627086830448,
+          "z": -16.12979943833743
+        },
+        "routePhase": "rejoined",
+        "pathCleared": true,
+        "signalLit": false
+      }
+    }
+  },
+  "recording": {
+    "result": "failed",
+    "apparatusFailures": [
+      "browser apparatus result was failed",
+      "route-matrix apparatus result was failed"
+    ],
+    "recordingFailures": [
+      {
+        "id": "touch",
+        "failure": "AssertionError [ERR_ASSERTION]: missing or misordered post-rejoin-shrine-view checkpoint"
+      },
+      {
+        "id": "touch-left",
+        "failure": "AssertionError [ERR_ASSERTION]: missing or misordered post-rejoin-shrine-view checkpoint"
+      }
+    ],
+    "raw": [
+      {
+        "id": "desktop",
+        "sha256": "57ddd537a333545037f6a1b84d5aac7feb061feb7247eab200fc4e241fd01d02",
+        "bytes": 28125875,
+        "frames": 6348,
+        "seconds": 253.92,
+        "fullDecode": "passed"
+      },
+      {
+        "id": "touch",
+        "sha256": "3c7b9f174a39b5e260422e159f386d202b4a0304ea8de3261ead445aa37b2f4f",
+        "bytes": 18958008,
+        "frames": 4716,
+        "seconds": 188.64,
+        "fullDecode": "passed"
+      },
+      {
+        "id": "desktop-right",
+        "sha256": "978fa1c3d26dc5b1f3a8eab63eea7f41906dcdc88bda729a4cc9e9dbefd983c1",
+        "bytes": 17143505,
+        "frames": 3724,
+        "seconds": 148.96,
+        "fullDecode": "passed"
+      },
+      {
+        "id": "touch-left",
+        "sha256": "6cc6316b71dabd5ad801db4da9487b7d41725f6c637f48219afc71e7392ae342",
+        "bytes": 19774128,
+        "frames": 4722,
+        "seconds": 188.88,
+        "fullDecode": "passed"
+      }
+    ]
+  },
+  "originalArchive": {
+    "version": "fresh",
+    "runnerRevision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+    "run": "34992059112",
+    "job": "fresh",
+    "bytes": 18161838,
+    "sha256": "990318aab8754d1350e9620686601bec32050984d88d4b375f812f1b6f6f29f6",
+    "files": [
+      {
+        "path": "browser-report.json",
+        "bytes": 420098,
+        "sha256": "968e04e5d9787da39afba1a7441ae35bba7102b02586d5cf10fa530db22728a7"
+      },
+      {
+        "path": "build-fingerprint.json",
+        "bytes": 1388,
+        "sha256": "fc7632bb982cf8ef19e30a967f40ad525179e56ade89e6cdafc71ac1badb74c4"
+      },
+      {
+        "path": "decoded/decoded-desktop-destination-arrival.png",
+        "bytes": 906197,
+        "sha256": "a33ccb72f46fd398916a79e4a158b0feaed41bbe8d6d309ab9d393efe5ba3462"
+      },
+      {
+        "path": "decoded/decoded-desktop-right-destination-arrival.png",
+        "bytes": 833710,
+        "sha256": "27756bbe72361f78276396a4cfdb9c4c5fea4a57e4cc432461e8ad2940cbfcb7"
+      },
+      {
+        "path": "decoded/decoded-desktop-right-signal-lit.png",
+        "bytes": 950019,
+        "sha256": "02bfd9f3be4f2cebbfbadfd17553af392e9cf69e60541a4a76ed698014312e08"
+      },
+      {
+        "path": "decoded/decoded-desktop-signal-lit.png",
+        "bytes": 886697,
+        "sha256": "1b6814fa685604b123d6c7f21ab5cf12b2cfcc8e1bb2eb47f5b2379ad0e71e9b"
+      },
+      {
+        "path": "derived/desktop-fixed-five.json",
+        "bytes": 1995,
+        "sha256": "f42014ab9c3ba2474bfa068ff1dae5496ecc2671146f65f041ff014b0eab4939"
+      },
+      {
+        "path": "derived/desktop-fork-to-signal.mp4",
+        "bytes": 6137994,
+        "sha256": "eeeefaf77c2c1ad6d9c29a472877c04e6bf5b1c67bc0e47f32e4d0ae1fa42a2a"
+      },
+      {
+        "path": "derived/desktop-right-fixed-five.json",
+        "bytes": 2027,
+        "sha256": "9920a055189e4bda45e5ff95e9ffdbedd0dc1ff2a3976c04c497a94d5cbd7230"
+      },
+      {
+        "path": "derived/desktop-right-fork-to-signal.mp4",
+        "bytes": 4828392,
+        "sha256": "f5810f61bf9d503352737f9c6b293366d9070ee93e3ce2a79f85ca674ff243c8"
+      },
+      {
+        "path": "desktop-right-victory.png",
+        "bytes": 660550,
+        "sha256": "aca7953ebd71c71e100a2c170c5f5c95ef72f5b53379e8a2df73dea08ec93cb9"
+      },
+      {
+        "path": "encounter.png",
+        "bytes": 1012488,
+        "sha256": "e64bc55906817784c65c47852b0455cd190c976b32444b3dd4166eaf11917112"
+      },
+      {
+        "path": "mission-victory.png",
+        "bytes": 650595,
+        "sha256": "101caef9be260e74e80f1571e59a39f88886006d8d31d9e6d8048e8126bf7410"
+      },
+      {
+        "path": "mobile.png",
+        "bytes": 365206,
+        "sha256": "cba766c0d1a838073710a8480e25067dcafe0978b5af55175cd5c73b53350fe7"
+      },
+      {
+        "path": "recording-report.json",
+        "bytes": 35543,
+        "sha256": "f2ba81c16115164071360a98c062e627fb8f07bf471e8874674f3024d65cb661"
+      },
+      {
+        "path": "route-matrix-report.json",
+        "bytes": 207056,
+        "sha256": "a41369c7d34759b195e5b66b4a9f5771a8b2c9b17764fae9d63557ddb82c038b"
+      },
+      {
+        "path": "title.png",
+        "bytes": 930612,
+        "sha256": "afcbe6ae77e800f1750b6b4864caeeff370919fc1b3fb9de79093d50fc68bf80"
+      }
+    ]
+  },
+  "originalBuildFingerprint": {
+    "sourceRevision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+    "freshTree": "92755d9c54d9c814d441801cb536d29d1461888e",
+    "files": [
+      {
+        "path": "assets/brown-eye-DsUMil5J.png",
+        "bytes": 610817,
+        "sha256": "4659691c7295ad6206c78b003e5fd0e5f91dcd53032fa914a229bb48cabe424b"
+      },
+      {
+        "path": "assets/eyebrows-CAObckBg.png",
+        "bytes": 89619,
+        "sha256": "9940f7d0b1b223709a19b05156ba6f6e9e4dbdbced02d7574f4d51d72c58967b"
+      },
+      {
+        "path": "assets/index-Ck_X98_2.css",
+        "bytes": 6472,
+        "sha256": "7c991e93c0471bdc554ebd9e79cd027afc380ee964520eb5fbc278319f16da3d"
+      },
+      {
+        "path": "assets/index-DiXGdRhL.js",
+        "bytes": 4042491,
+        "sha256": "0fec71f311291d164778d6d7373eb90a6543e0ffe703860a78b4e38a4c676433"
+      },
+      {
+        "path": "assets/short-hair-hshXq62u.png",
+        "bytes": 2308132,
+        "sha256": "0bef7fc0e403db5a40fabb2111ebfa6f7e8158e204c6e56b8da98e9ef527846e"
+      },
+      {
+        "path": "assets/young-asian-male-CWnOsWsU.png",
+        "bytes": 3593099,
+        "sha256": "f50016a5507fc687dc8df06599c8ea48de950cd185de33a71cafc1319ddab4d5"
+      },
+      {
+        "path": "index.html",
+        "bytes": 1772,
+        "sha256": "ec16f7d360a291dd21609e7472b6d186927d096ab2519f33a270f6ad0536f344"
+      }
+    ],
+    "scope": "Hashes of the exact fresh-dist production build used by this revision browser verification."
+  },
+  "preparedSevenFileBuildMatches": true,
+  "published": false,
+  "interpretation": "Both touch apparatuses reached three kills but did not complete the required observed shrine arrival, signal input and victory within the unchanged180second mission gate. This is not evidence that input handlers dropped an action, nor a codec error. CPU/GPU/recording and decision-path effects are not isolated by these route runs. A minor4fa fixed-frame render improvement does not establish operation recovery.",
+  "nextCandidate": {
+    "author": "character_art",
+    "commit": "fd559cc33405599268330f449180ecc5e63a04aa",
+    "scope": "Exact indexing of immutable same-bone/material batches only; dynamic neck/cloth paths unchanged",
+    "vertices": {
+      "staticBefore": 509224,
+      "staticAfter": 105852,
+      "allBefore": 624832,
+      "allAfter": 221460
+    },
+    "bytesIncludingIndex": {
+      "before": 20130848,
+      "after": 8221200
+    },
+    "authorValidation": "38tests/build, full original corner-attribute byte equality and20motion checkpoints. Owner3generic tests/build and finite independent source review passed.",
+    "renderMeasurement": "Next unchanged tool uses acf/4fa/current/current/4fa/acf on one host; requires previous/current original fullPNG equality.18minute cap and input gates unchanged.",
+    "independentSourceReview": {
+      "result": "passed",
+      "baselineJsFilesVerified": 28,
+      "actorMeshes": 230,
+      "attributes": 686,
+      "expandedAttributeBytesCompared": 21615552,
+      "rayQueries": 594,
+      "rayHits": 640,
+      "motionUpdates": 129,
+      "scope": "Independent raw geometry/contacts/rays/matrices and three posed checkpoints; native image/GPU/startup effects still pending",
+      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260915-independent-runtime-art-sound-physics.md"
+    }
+  },
+  "ps4Goal": "not achieved",
+  "formalTen": "0satisfied/0notSatisfied/10notMeasured",
+  "automationChanged": false
+}

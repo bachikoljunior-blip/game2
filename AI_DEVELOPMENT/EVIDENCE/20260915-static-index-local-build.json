@@ -1,0 +1,51 @@
+{
+  "at": "2026-09-15T16:23:01.561626+00:00",
+  "integratedAuthorCommit": "fd559cc33405599268330f449180ecc5e63a04aa",
+  "result": "passed",
+  "modules": 35,
+  "durationSeconds": 4.08,
+  "freshFiles": [
+    {
+      "path": "assets/brown-eye-DsUMil5J.png",
+      "bytes": 610817,
+      "sha256": "4659691c7295ad6206c78b003e5fd0e5f91dcd53032fa914a229bb48cabe424b"
+    },
+    {
+      "path": "assets/eyebrows-CAObckBg.png",
+      "bytes": 89619,
+      "sha256": "9940f7d0b1b223709a19b05156ba6f6e9e4dbdbced02d7574f4d51d72c58967b"
+    },
+    {
+      "path": "assets/index-Ci61v9pE.js",
+      "bytes": 4043877,
+      "sha256": "149618e165abab4c5b2d44732915fed626600803b3563653b4700a4deae9db4b"
+    },
+    {
+      "path": "assets/index-Ck_X98_2.css",
+      "bytes": 6472,
+      "sha256": "7c991e93c0471bdc554ebd9e79cd027afc380ee964520eb5fbc278319f16da3d"
+    },
+    {
+      "path": "assets/short-hair-hshXq62u.png",
+      "bytes": 2308132,
+      "sha256": "0bef7fc0e403db5a40fabb2111ebfa6f7e8158e204c6e56b8da98e9ef527846e"
+    },
+    {
+      "path": "assets/young-asian-male-CWnOsWsU.png",
+      "bytes": 3593099,
+      "sha256": "f50016a5507fc687dc8df06599c8ea48de950cd185de33a71cafc1319ddab4d5"
+    },
+    {
+      "path": "index.html",
+      "bytes": 1772,
+      "sha256": "034bc61d381c275d7bf17f39784021f42d141945fb29807725a2e32556bf314e"
+    }
+  ],
+  "nativeMatch": "not yet measured; next candidate CI required",
+  "tests": {
+    "command": "node --test fresh/character-static-index.test.mjs",
+    "passed": 3,
+    "failed": 0,
+    "durationMs": 116.453729
+  }
+}

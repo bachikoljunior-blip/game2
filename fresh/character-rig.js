@@ -1,6 +1,7 @@
 import * as T from 'three';
 import {createNativeCharacterResources,nativeFigure,nativeHand,nativeGeometry,nativeCollar,tailoredHead,prepareAnchoredHead} from './character-assets.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import {indexStaticCharacterGeometry} from './character-static-index.js';
 import { surface,loft,headSculpt,facePoint,eyeSurface,eyeDisc,faceRibbon,hakamaPanel,clothRibbon,
   breastplate,shoulderPlate,tunicSurface,tunicLapel,upperSleeve,tiedHair,hairTie,hairCap,scalpLock,earSculpt,handSculpt,fingerSculpt,footSculpt,createSurfaceTextures } from './character-sculpt.js';
 
@@ -203,6 +204,7 @@ export function createCharacterRig(id, resources=createCharacterResources()) {
   const signal=new T.Mesh(new T.OctahedronGeometry(.065),brass);signal.position.y=2.04;signal.visible=false;root.add(signal);
   for(const [parent,byMaterial] of batches)for(const [material,parts] of byMaterial){
     const geometry=mergeGeometries(parts,false);parts.forEach(p=>p.dispose());
+    indexStaticCharacterGeometry(geometry);
     // Rendering retains face normals/UV splits. Ground contact only needs each
     // exact position once; prepare that smaller point set during generation.
     const positions=geometry.getAttribute('position'),seen=new Set(),contactPositions=[];

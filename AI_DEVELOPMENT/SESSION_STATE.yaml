@@ -11,10 +11,10 @@
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
     "activeTask": "FRESH-ART-SOUND-PHYSICS-REVISION",
-    "lastSuccessfulAction": "906 native art, plants, assets and experience jobs passed; 230tests and three ordinary PC/touch routes passed, all four raw recordings decoded. Integrated finite bamboo/maple inclination repairs and a same-host six-pass comparison; clean seven-file build passed.",
-    "currentFailingAction": "906 touch-left did not reach shrine/signal within180seconds. Native ordinary canopy mass and whole-scene PS4 visual quality remain insufficient; next inclination candidate is not yet rendered.",
-    "currentHypothesis": "The leaf-count and cutout approach did not address nearly horizontal leaf planes seen edge-on from ordinary cameras. Rotate the entire supported spray and spread maple inclinations without extra leaf count; validate render cost and actual perception on the same host.",
-    "nextAction": "Run exact-source native Fresh CI and six same-host profiles. Reject ordinary route failures or unresolved major visual regressions before actual main/preview integration. Retain PS4 and perceptual-audio limits explicitly.",
+    "lastSuccessfulAction": "4fa passed232tests/build and native art/plants/assets jobs; independent reviews confirmed a limited canopy visibility improvement and no new sampled major. Its two PC routes passed, but both touch missions failed. Integrated fd559cc exact static indexing;3owner tests and clean7file build passed.",
+    "currentFailingAction": "4fa touch-left and touch-right remained playing after180seconds without observed shrine arrival, signal or victory. The previous public preview remains a672. PS4 whole-scene quality remains below target.",
+    "currentHypothesis": "Sharing only byte-identical immutable character vertices can remove redundant vertex work while preserving every corner attribute, triangle and pose; full originalPNG identity and actual route recovery must still be measured.",
+    "nextAction": "Run exact-source Fresh validation of the indexed static-character candidate and same-host completed-pixel comparison against4fa with original fullPNG equality. Keep 180second missions and all appearance/input gates. Publish only a candidate that clears required operations, then verify the same7files at the actual preview URL; continue remaining PS4 visual work without calling publication completion.",
     "rollbackPoint": "1ded4aae27f8331cec10975c8dbac9eb482460a9",
     "pendingVerification": [
       "C04 candidate capture that visibly shows both routes entering one reconvergence point and continues through shrine/signal arrival",
@@ -393,7 +393,7 @@
       "changedMethod": "Replace the shared nearly horizontal canopy plane with distributed support-fixed inclinations; measure same-source gameplay and actual ordinary frames, and replace different-host comparison with one-host counterbalanced serial samples.",
       "observedAt": "2026-09-15T15:57:28.664560+00:00"
     },
-    "latestArtSoundPhysicsBoundary": "AI_DEVELOPMENT/EVIDENCE/20260915-906-native-results-and-canopy-repair.json"
+    "latestArtSoundPhysicsBoundary": "AI_DEVELOPMENT/EVIDENCE/20260915-4fa-normal-failure-and-static-index.json"
   },
-  "updatedAt": "2026-09-15T15:57:28.664560+00:00"
+  "updatedAt": "2026-09-15T16:23:01.561626+00:00"
 }
