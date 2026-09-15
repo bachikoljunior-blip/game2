@@ -29,6 +29,7 @@ const rim=new T.DirectionalLight('#bdccd8',1.35);rim.position.set(3,3,3);scene.a
 const floor=new T.Mesh(new T.PlaneGeometry(30,30),new T.MeshStandardMaterial({color:'#515a59',roughness:.93}));
 floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
 const camera=new T.PerspectiveCamera(38,innerWidth/innerHeight,.01,40),resources=createCharacterResources();
+await resources.ready;
 let rig,actor,world;const rigs=new Map();
 function reset(id){if(rig)rig.root.visible=false;if(!rigs.has(id)){const created=createCharacterRig(id,resources);rigs.set(id,created);scene.add(created.root);}rig=rigs.get(id);rig.root.visible=true;
  actor={id,x:0,z:0,yaw:0,hp:100,state:'idle',age:0,stride:0};world={time:0,mode:'playing',events:[]};

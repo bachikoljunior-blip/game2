@@ -12,12 +12,14 @@ import { advanceEnvironmentClock, createEnvironmentClock, installWindMaterial, s
 import { createCharacterResources, createCharacterRig } from './character-rig.js';
 import { seedCharacterRig, updateCharacterRig } from './character-motion.js';
 import { followSunShadow, SUN_SHADOW } from './sun-shadow.js';
-import { addForegroundRidge, characterSightPoints, createForegroundVisibility } from './foreground-visibility.js';
+import { characterSightPoints, createForegroundVisibility } from './foreground-visibility.js';
 import { createGrassClumpGeometry } from './grass-shape.js';
+import { createSceneArt } from './scene-art.js';
 import { createVegetationPhysics, setLeafAttachment, transformLeafGeometry } from './vegetation-physics.js';
+import { createMapleLeafGeometry, createBambooLeafGeometry, configureLeafSurface } from './leaf-surface.js';
 
 const clamp = T.MathUtils.clamp;
-export function createPresentation(canvas) {
+export function createPresentation(canvas,{characterResources}={}) {
   const renderer = new T.WebGLRenderer({ canvas, antialias:true, powerPreference:'high-performance' });
   renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
@@ -34,7 +36,7 @@ export function createPresentation(canvas) {
   let seed = 310519;
   const random = () => { seed = (1664525*seed+1013904223)>>>0; return seed/4294967296; };
   const material = (color, roughness=.85, metalness=0) => new T.MeshStandardMaterial({color,roughness,metalness});
-  const bark=material('#485647'),bambooNode=material('#91906b'),red=material('#92432d'),stone=material('#7f8275'),ridgeStone=material('#555b55'),roof=material('#303e3d'),
+  const bark=material('#485647'),bambooNode=material('#91906b'),red=material('#92432d'),stone=material('#7f8275'),roof=material('#303e3d'),
     leaf=material('#72834c'),brass=material('#c5a36b',.35,.65),skin=material('#b49478'),dark=material('#181f25'),
     routeCloth=material('#b94f2f',.72,.02),routeBinding=material('#b7a477',.62,.08),
     playerBlade=material('#e7f4f4',.16,.92),enemyBlade=material('#ffe0a6',.22,.82);
@@ -46,6 +48,7 @@ export function createPresentation(canvas) {
   const vegetationSpecimens={};scene.userData.vegetationSpecimens=vegetationSpecimens;
   const environmentClock=createEnvironmentClock(),encounterClocks=new Map();let signalIgnition=null;
   const bambooBark=bark.clone(),autumnLeaf=material('#ae6734');autumnLeaf.side=T.DoubleSide;
+  configureLeafSurface(leaf,'bamboo');configureLeafSurface(autumnLeaf,'maple');
   const vegetationMaterials=new Set([leaf,bambooBark,bambooNode,autumnLeaf]);
   vegetationMaterials.forEach(mat=>installWindMaterial(mat,wind));
   const leafDepth=installWindMaterial(new T.MeshDepthMaterial({depthPacking:T.RGBADepthPacking,side:T.DoubleSide}),wind);
@@ -72,7 +75,7 @@ export function createPresentation(canvas) {
   for(let i=0;i<6500;i++){ctx.fillStyle=`rgba(${random()<.55?'40,43,30':'235,221,170'},${.05+random()*.18})`;ctx.fillRect(random()*256,random()*256,1+random()*6,1+random()*3);}
   for(let i=0;i<95;i++){ctx.strokeStyle='rgba(54,54,39,.1)';ctx.beginPath();const x=random()*256,y=random()*256;ctx.moveTo(x,y);ctx.lineTo(x+random()*18-9,y+random()*20);ctx.stroke();}
   const texture=new T.CanvasTexture(texCanvas);texture.wrapS=texture.wrapT=T.RepeatWrapping;texture.repeat.set(32,40);texture.colorSpace=T.SRGBColorSpace;
-  const groundMat=material('#d8cbb4');groundMat.map=texture;groundMat.vertexColors=true;
+  const sceneArt=createSceneArt(scene,foreground),groundMat=sceneArt.ground;
   const stoneTexture=texture.clone();stoneTexture.repeat.set(1.3,1.3);stone.map=stoneTexture;stone.bumpMap=stoneTexture;stone.bumpScale=.06;
   const batches=new Map();const matrix=new T.Matrix4(),q=new T.Quaternion(),s=new T.Vector3(),pos=new T.Vector3();
   function queuePart(geometry,mat,x,z){
@@ -99,6 +102,7 @@ export function createPresentation(canvas) {
     const start=new T.Vector3(x,y,z),end=new T.Vector3(endX,endY,endZ),delta=end.clone().sub(start),length=delta.length();
     const beam=vegetation.addBeam({kind,start:start.toArray(),end:end.toArray(),parent});
     const g=new T.CylinderGeometry(thickness*.35,thickness,length,5,2,true);
+    if(mat.vertexColors)g.setAttribute('color',new T.Float32BufferAttribute(Array(g.attributes.position.count*3).fill(.58),3));
     const rotation=new T.Quaternion().setFromUnitVectors(T.Object3D.DEFAULT_UP,delta.normalize());
     g.applyMatrix4(new T.Matrix4().compose(start.add(end).multiplyScalar(.5),rotation,new T.Vector3(1,1,1)));
     vegetation.bindGeometry(g,beam);queuePart(g,mat,(x+endX)/2,(z+endZ)/2);return beam;
@@ -123,7 +127,7 @@ export function createPresentation(canvas) {
   for(let z=-19;z<24;z+=1.1)for(let x=-.65;x<=.6501;x+=.325){
     const centers=routePathCenters(z),jitter=(random()-.5)*.06,w=.27+random()*.05,d=.89+random()*.13;
     const y=.005+random()*.016,rotation=(random()-.5)*.06;
-    for(const center of centers){box(stone,center+x+jitter,y,z+jitter,w,.055,d,rotation);routeStoneTiles++;}
+    for(const center of centers){sceneArt.addPaver(center+x+jitter,y,z+jitter,w,d,rotation);routeStoneTiles++;}
   }
   // Two low generated binding-stone traces make the unchanged physical exits
   // legible from the postcombat overview. They meet at one shared stone after
@@ -144,12 +148,7 @@ export function createPresentation(canvas) {
     post.position.set(o.x,o.h/2,o.z);post.castShadow=post.receiveShadow=true;scene.add(post);
     toriiPosts.push({mesh:post,obstacle:o,opacity:1});
   }else if(o.kind==='shrine'){
-    const base=shrineBaseSize(o);box(stone,o.x,base.height/2,o.z,base.width,base.height,base.depth);
-    box(bark,o.x,2.3,o.z,o.w,4,o.d);
-    for(let x=-4;x<=4;x+=1)box(red,x,2.6,-19.45,.16,4.4,.2);
-    for(let x=-3.8;x<=4;x+=.25)box(brass,x,2.2,-19.39,.025,2.7,.03);
-    for(let tier=0;tier<9;tier++)box(roof,0,5+tier*.19,-23,12-tier*.52,.23,9-tier*.5);
-    box(brass,0,6.82,-23,8.5,.14,.25);
+    sceneArt.addShrine(o);
   }}
   box(red,0,4.1,7,8.4,.25,.38);box(dark,0,4.65,7,9,.28,.6);box(red,0,4.35,7,.42,.5,.35);
   for(const x of [-3.5,3.5]){box(stone,x,.12,7,.8,.24,.8);box(dark,x,.6,7,.61,.16,.61);}
@@ -159,10 +158,10 @@ export function createPresentation(canvas) {
     box(stone,x,y+1.45,z,.7,.14,.7);box(brass,x,y+1.68,z,.34,.35,.34);box(roof,x,y+1.99,z,.85,.16,.85);
   }
   // The low rock spine occupies the same footprint as ROUTE_FORK.obstacle.
-  // A continuous base prevents a visual gap from implying a false shortcut;
-  // separately seeded rocks break up its silhouette without perturbing the valley.
+  // A continuous buried foot and fractured profiles cover the physical spine;
+  // the art module has its own seed and preserves the valley random sequence.
   const fork=ROUTE_FORK.obstacle;
-  addForegroundRidge(foreground,scene,ridgeStone,fork);
+  sceneArt.addRidge(fork);
   // Left: compact generated stone lamps signal the shorter, earlier duel.
   for(const marker of ROUTE_FORK.left.markers){
     const y=groundHeightAt(marker.x,marker.z);
@@ -302,68 +301,123 @@ export function createPresentation(canvas) {
   for(let i=0;i<28;i++){
     const x=(i%2?-1:1)*(8.5+random()*13),z=-33+random()*60;
     if(explorationClearingDistance(x,z)<2.2)continue;
-    const rock=new T.DodecahedronGeometry(1,1);const y=groundHeightAt(x,z);
-    staticPart(rock,stone,x,y-.18,z,.7+random()*1.5,.5+random()*1.2,.8+random()*1.7,random()*6.28);
+    const y=groundHeightAt(x,z);
+    sceneArt.addOutcrop(x,y-.18,z,.7+random()*1.5,.5+random()*1.2,.8+random()*1.7,random()*6.28);
   }
-  const leafParts=[];
-  for(let k=0;k<7;k++){
-    // Fourteen alternate lanceolate blades keep the leaf count. Each petiole
-    // actually meets the supporting twig; no duplicated crossed star cards.
-    for(const side of [-1,1]){
-      const length=.39-k*.019,width=.048-k*.003,shape=new T.Shape();
-      shape.moveTo(0,0);shape.quadraticCurveTo(length*.46,width,length,.008);shape.quadraticCurveTo(length*.48,-width*.65,0,0);
-      const g=new T.ShapeGeometry(shape,3);setLeafAttachment(g,{length,kind:1,seed:k*1.73+side*.81});
-      const leafTransform=new T.Matrix4().makeRotationX(-.42+side*.12);
-      leafTransform.multiply(new T.Matrix4().makeTranslation(k*.096+(side>0?.037:0),0,0));
-      leafTransform.multiply(new T.Matrix4().makeRotationZ(side*(.73+k*.072)));
-      transformLeafGeometry(g,leafTransform);leafParts.push(g);
+  const sceneArtMetrics=sceneArt.finish();
+  const foliageMetrics={mapleLeaves:0,bambooLeaves:0,rigidSideShoots:0,maplePetioleRange:[Infinity,0],mapleWidthRange:[Infinity,0],bambooLengthRange:[Infinity,0],geometry:{vertices:0,triangles:0,batches:0}};
+  // Three boot-generated variants avoid repeating one comb. A leaf attaches
+  // along the twig, with alternating insertion and a differently tilted blade.
+  const bambooClusters=Array.from({length:3},(_,variant)=>{
+    const parts=[],length=.38+variant*.025;
+    const shoots=[{start:new T.Vector3(),end:new T.Vector3(length,0,0)},
+      {start:new T.Vector3(length*.3,0,0),end:new T.Vector3(length*.78,.025,-.17)},
+      {start:new T.Vector3(length*.55,0,0),end:new T.Vector3(length*.98,.035,.15)}];
+    for(let shootIndex=0;shootIndex<shoots.length;shootIndex++){
+      const {start,end}=shoots[shootIndex],delta=end.clone().sub(start),rotation=new T.Quaternion().setFromUnitVectors(new T.Vector3(1,0,0),delta.clone().normalize());
+      for(let k=0;k<6;k++){
+        const side=k%2?1:-1,bladeLength=.094+.008*Math.sin(k*1.7+variant),g=createBambooLeafGeometry({bladeLength,width:.010+variant*.001,seed:k*1.73+variant*2.1+shootIndex*8.37});
+        const transform=new T.Matrix4().compose(start,rotation,new T.Vector3(1,1,1));
+        transform.multiply(new T.Matrix4().makeTranslation(delta.length()*(.16+k*.155),0,0));
+        transform.multiply(new T.Matrix4().makeRotationX(-Math.PI/2+.14*Math.sin(k*2.1+variant+shootIndex)));
+        transform.multiply(new T.Matrix4().makeRotationZ(side*(.62+.21*Math.sin(k*1.7+variant))));
+        transformLeafGeometry(g,transform);parts.push(g);
+      }
+      if(shootIndex){
+        // These 0.22–0.26 m lateral shoots use the existing twig's transported
+        // frame as a rigid short-member approximation, not another oscillator.
+        const g=new T.CylinderGeometry(.0006,.0015,delta.length(),3,2,true),turn=new T.Quaternion().setFromUnitVectors(T.Object3D.DEFAULT_UP,delta.normalize());
+        g.applyMatrix4(new T.Matrix4().compose(start.clone().add(end).multiplyScalar(.5),turn,new T.Vector3(1,1,1)));
+        g.setAttribute('color',new T.Float32BufferAttribute(Array(g.attributes.position.count*3).fill(.53),3));setLeafAttachment(g);parts.push(g);
+      }
     }
+    const twig=new T.CylinderGeometry(.0009,.003,length,3,3,true);twig.rotateZ(-Math.PI/2);twig.translate(length/2,0,0);
+    twig.setAttribute('color',new T.Float32BufferAttribute(Array(twig.attributes.position.count*3).fill(.53),3));
+    setLeafAttachment(twig);parts.push(twig);
+    const geometry=mergeGeometries(parts);parts.forEach(g=>g.dispose());return {geometry,length,shoots};
+  });
+  const stemProfiles={bamboo:[[0,1],[.3,.91],[.55,.73],[.76,.48],[.9,.24],[.97,.09],[1,.014]],
+    wood:[[0,1],[.16,.76],[.34,.48],[.52,.25],[.7,.12],[.85,.047],[1,.008]]};
+  function taperedStem(height,radius,kind){
+    return new T.LatheGeometry(stemProfiles[kind].map(([u,r])=>new T.Vector2(radius*r,height*u)),7);
   }
-  const twig=new T.CylinderGeometry(.009,.015,.75,3,3,true);twig.rotateZ(-Math.PI/2);twig.translate(.375,0,0);
-  setLeafAttachment(twig);leafParts.push(twig);
-  const leafCluster=mergeGeometries(leafParts);leafParts.forEach(g=>g.dispose());
+  function stemRadius(u,kind){
+    const profile=stemProfiles[kind];
+    for(let i=1;i<profile.length;i++)if(u<=profile[i][0]){
+      const [a,ra]=profile[i-1],[b,rb]=profile[i];return T.MathUtils.lerp(ra,rb,(u-a)/(b-a));
+    }
+    return profile.at(-1)[1];
+  }
   for(let i=0;i<150;i++){
     const side=random()<.5?-1:1;let x,z;
     do{x=side*(8+random()*30);z=-53+random()*88;}while(explorationClearingDistance(x,z)<1.2);
     const h=5.5+random()*6.5,y=groundHeightAt(x,z),root=vegetationRoot(x,y,z,h,'bamboo');
-    if(!vegetationSpecimens.bamboo||Math.hypot(x+22,z-11)<Math.hypot(vegetationSpecimens.bamboo.x+22,vegetationSpecimens.bamboo.z-11))vegetationSpecimens.bamboo={x,y,z,height:h};
-    windPart(new T.CylinderGeometry(.079,.09,h,7,6),bambooBark,root.beam,x,y+h/2,z);
-    for(let dy=.8;dy<h;dy+=1.15)windPart(new T.CylinderGeometry(.098,.105,.04,7),bambooNode,root.beam,x,y+dy,z);
+    const specimen={x,y,z,height:h,beam:root.beam,inspection:[]};
+    if(!vegetationSpecimens.bamboo||Math.hypot(x+22,z-11)<Math.hypot(vegetationSpecimens.bamboo.x+22,vegetationSpecimens.bamboo.z-11))vegetationSpecimens.bamboo=specimen;
+    windPart(taperedStem(h,.09,'bamboo'),bambooBark,root.beam,x,y,z);
+    for(let dy=.8;dy<h*.96;dy+=1.15){
+      const top=.09*stemRadius((dy+.016)/h,'bamboo')*1.012,bottom=.09*stemRadius((dy-.016)/h,'bamboo')*1.025;
+      windPart(new T.CylinderGeometry(top,bottom,.032,7,1,true),bambooNode,root.beam,x,y+dy,z);
+    }
     for(let j=0;j<6;j++){
-      const a=random()*Math.PI*2,reach=.55+random()*1.2;
-      const endX=x+Math.sin(a)*reach,endY=y+h*.32+j*h*.095,endZ=z+Math.cos(a)*reach;
-      const branch=leafBranch(x,endY-.24,z,endX,endY,endZ,root);
-      const sx=1+random()*.7,sy=1+random()*.4,sz=1+random()*.7;
-      const leafSupport=vegetation.addBeam({kind:'twig',start:[endX,endY,endZ],end:[endX+.75*sx*Math.cos(a),endY,endZ-.75*sx*Math.sin(a)],parent:branch});
-      windPart(leafCluster.clone(),leaf,leafSupport,endX,endY,endZ,sx,sy,sz,a);
+      // Keep the same random draws and roots: grass placement and route
+      // fixtures cannot shift just because a new blade has more vertices.
+      const a=random()*Math.PI*2,reach=(.5+random()*.75)*(1-j*.09),u=.52+j*.09;
+      const endX=x+Math.sin(a)*reach,endY=y+h*u+.08,endZ=z+Math.cos(a)*reach;
+      const branch=leafBranch(x,y+h*u-.12,z,endX,endY,endZ,root,leaf,.011*(1-j*.105));
+      const sx=.91+random()*.2,sy=.91+random()*.18,sz=.91+random()*.2,cluster=bambooClusters[(i+j)%3],twigYaw=a-Math.PI/2+.25*Math.sin(i+j*1.7);
+      const leafSupport=vegetation.addBeam({kind:'twig',start:[endX,endY,endZ],end:[endX+cluster.length*sx*Math.cos(twigYaw),endY,endZ-cluster.length*sx*Math.sin(twigYaw)],parent:branch});
+      const clusterTransform=new T.Matrix4().compose(new T.Vector3(endX,endY,endZ),new T.Quaternion().setFromAxisAngle(T.Object3D.DEFAULT_UP,twigYaw),new T.Vector3(sx,sy,sz));
+      vegetation.beams[leafSupport].attachmentSegments=cluster.shoots.map(({start,end})=>[start,end].map(p=>vegetation.localPoint(leafSupport,p.clone().applyMatrix4(clusterTransform).toArray())));
+      windPart(cluster.geometry.clone(),leaf,leafSupport,endX,endY,endZ,sx,sy,sz,twigYaw);
+      foliageMetrics.bambooLeaves+=18;foliageMetrics.rigidSideShoots+=2;
+      foliageMetrics.bambooLengthRange[0]=Math.min(foliageMetrics.bambooLengthRange[0],(.094-.008)*Math.min(sx,sy,sz));
+      foliageMetrics.bambooLengthRange[1]=Math.max(foliageMetrics.bambooLengthRange[1],(.094+.008)*Math.max(sx,sy,sz));
+      if(j>=4)specimen.inspection.push({beam:leafSupport,point:[endX+cluster.length*sx*.5*Math.cos(twigYaw),endY,endZ-cluster.length*sx*.5*Math.sin(twigYaw)]});
     }
   }
-  leafCluster.dispose();
-  const mapleShape=new T.Shape();
-  [[0,0],[-.1,.12],[-.3,.17],[-.18,.25],[-.34,.44],[-.09,.38],[0,.64],[.1,.39],[.34,.45],[.19,.23],[.3,.15],[.09,.11]].forEach(([x,y],i)=>i?mapleShape.lineTo(x,y):mapleShape.moveTo(x,y));mapleShape.closePath();
-  const mapleGeometry=new T.ShapeGeometry(mapleShape);
-  setLeafAttachment(mapleGeometry,{axis:[1,0,0],direction:[0,1,0],length:.64,kind:2});
+  bambooClusters.forEach(c=>c.geometry.dispose());
+  const mapleGeometry=createMapleLeafGeometry();
   const mapleBark=material('#675647');vegetationMaterials.add(mapleBark);installWindMaterial(mapleBark,wind);
   for(let treeIndex=0;treeIndex<4;treeIndex++){
     const prop=explorationSolid(`maple-${treeIndex}`),{x,z}=prop;
     const y=groundHeightAt(x,z),h=4.8+exploreRandom(),root=vegetationRoot(x,y,z,h,'wood');
-    if(treeIndex===0)vegetationSpecimens.maple={x,y,z,height:h};
-    windPart(new T.CylinderGeometry(.11,prop.radius,h*.8,7,7),mapleBark,root.beam,x,y+h*.4,z);
+    const specimen={x,y,z,height:h,beam:root.beam,inspection:[]};
+    if(treeIndex===0)vegetationSpecimens.maple=specimen;
+    windPart(taperedStem(h,prop.radius,'wood'),mapleBark,root.beam,x,y,z);
     for(let i=0;i<9;i++){
-      const a=i*2.399,reach=1.2+(i%3)*.45,bx=x+Math.sin(a)*reach,bz=z+Math.cos(a)*reach,by=y+h*(.58+(i%3)*.14);
-      const branch=leafBranch(x,y+h*.49,z,bx,by,bz,root,mapleBark,.09);
+      const a=i*2.399,reach=1.2+(i%3)*.45,bx=x+Math.sin(a)*reach,bz=z+Math.cos(a)*reach,by=y+h*(.58+(i%3)*.165);
+      const branchStart=new T.Vector3(x,y+h*(.33+(i%3)*.14),z),branchEnd=new T.Vector3(bx,by,bz);
+      const branch=leafBranch(...branchStart.toArray(),bx,by,bz,root,mapleBark,.065-(i%3)*.01);
       for(let n=0;n<9;n++){
-        const g=mapleGeometry.clone();transformLeafGeometry(g,new T.Matrix4().makeRotationZ(exploreRandom()*6.28));transformLeafGeometry(g,new T.Matrix4().makeRotationX(-.6+exploreRandom()*1.1));
-        const lx=bx+(exploreRandom()-.5)*1.25,ly=by+(exploreRandom()-.5)*.55,lz=bz+(exploreRandom()-.5)*1.25;
-        const twig=leafBranch(bx,by,bz,lx,ly,lz,root,mapleBark,.006,branch,'twig');
-        windPart(g,autumnLeaf,twig,lx,ly,lz,.7,.7,.7,a);
+        const phase=exploreRandom()*6.28,tilt=exploreRandom(),rx=exploreRandom(),ry=exploreRandom(),rz=exploreRandom();
+        const start=branchStart.clone().lerp(branchEnd,.3+n*.081),side=n%2?1:-1,
+          angle=a+side*(.58+rx*.34),length=.46+rz*.28,
+          end=start.clone().add(new T.Vector3(Math.sin(angle)*length,.07+ry*.16,Math.cos(angle)*length));
+        const twig=leafBranch(...start.toArray(),...end.toArray(),root,mapleBark,.0042,branch,'twig'),delta=end.clone().sub(start),
+          rotation=new T.Quaternion().setFromUnitVectors(new T.Vector3(1,0,0),delta.clone().normalize()),parts=[];
+        for(let pair=0;pair<6;pair++)for(const leafSide of [-1,1]){
+          const leafSeed=treeIndex*29+i*3.71+n*1.137+pair*.87+leafSide*.39,
+            width=.073+.024*(.5+.5*Math.sin(leafSeed*2.3)),bladeLength=.066+.018*(.5+.5*Math.cos(leafSeed*1.7)),
+            petiole=.024+.008*(.5+.5*Math.sin(leafSeed)),g=createMapleLeafGeometry({width,bladeLength,petiole,seed:leafSeed}),u=.19+pair*.146;
+          const local=new T.Matrix4().makeTranslation(delta.length()*u,0,0);
+          local.multiply(new T.Matrix4().makeRotationX(-Math.PI/2+.24*Math.sin(phase+pair*1.23)+leafSide*.12+(tilt-.5)*.12));
+          local.multiply(new T.Matrix4().makeRotationZ(leafSide*(.89+.2*Math.sin(phase+pair*1.9))));
+          transformLeafGeometry(g,new T.Matrix4().compose(start,rotation,new T.Vector3(1,1,1)).multiply(local));parts.push(g);
+          foliageMetrics.mapleLeaves++;foliageMetrics.mapleWidthRange[0]=Math.min(foliageMetrics.mapleWidthRange[0],width);foliageMetrics.mapleWidthRange[1]=Math.max(foliageMetrics.mapleWidthRange[1],width);
+          foliageMetrics.maplePetioleRange[0]=Math.min(foliageMetrics.maplePetioleRange[0],petiole);foliageMetrics.maplePetioleRange[1]=Math.max(foliageMetrics.maplePetioleRange[1],petiole);
+        }
+        const g=mergeGeometries(parts);parts.forEach(p=>p.dispose());vegetation.bindGeometry(g,twig);queuePart(g,autumnLeaf,start.x,start.z);
+        if(i===4&&n===6)specimen.inspection.push({beam:twig,point:start.clone().lerp(end,.53).toArray(),root:start.toArray(),tip:end.toArray(),normal:new T.Vector3(0,1,0).applyQuaternion(rotation).toArray()});
       }
     }
   }
   for(const [mat,cells] of batches)for(const [cell,geoms] of cells){
     const merged=mergeGeometries(geoms);merged.computeBoundingSphere();
+    if(merged.hasAttribute('windSupport')){foliageMetrics.geometry.vertices+=merged.attributes.position.count;foliageMetrics.geometry.triangles+=merged.index.count/3;foliageMetrics.geometry.batches++;}
     if(vegetationMaterials.has(mat))merged.boundingSphere.radius+=1.4;
     const mesh=new T.Mesh(merged,mat);mesh.castShadow=mesh.receiveShadow=true;
+    if(mat===bambooBark)mesh.name=`bamboo-culms-${cell}`;
     if(vegetationMaterials.has(mat))mesh.customDepthMaterial=leafDepth;
     if(mat===leaf||mat===autumnLeaf||mat===mapleBark)foreground.add(mesh,{vegetation,id:`${mat===leaf?'bamboo-leaves':mat===mapleBark?'maple-wood':'maple-leaves'}-${cell}`});
     scene.add(mesh);geoms.forEach(g=>g.dispose());
@@ -391,15 +445,16 @@ export function createPresentation(canvas) {
     route:{obstacle:{...ROUTE_FORK.obstacle},stoneTiles:routeStoneTiles,bindingStones:routeBindingStones,pathCenters:{approach:routePathCenters(0),ridge:routePathCenters(ROUTE_FORK.obstacle.z),rejoined:routePathCenters(-18)},
       left:{landmark:ROUTE_FORK.left.landmark,markers:ROUTE_FORK.left.markers.length,pathLength:routePathLength('left')},
       right:{landmark:ROUTE_FORK.right.landmark,markers:routeBanners.length,pathLength:routePathLength('right')}}};
+  landscapeMetrics.sceneArt=sceneArtMetrics;
   landscapeMetrics.exploration={loops:EXPLORATION.loops.length,places:EXPLORATION.points.length,sideTrailMeters,sideTrailTriangles,bounds:EXPLORATION.bounds};
   vegetation.update(0);
-  landscapeMetrics.wind={sharedField:true,rootAnchored:true,pinnedClothEdge:true,shadowDeformation:true,normalDeformation:true,physics:vegetation.metrics,specimens:vegetationSpecimens};
+  landscapeMetrics.wind={sharedField:true,rootAnchored:true,pinnedClothEdge:true,shadowDeformation:true,normalDeformation:true,physics:vegetation.metrics,specimens:vegetationSpecimens,foliage:foliageMetrics};
   landscapeMetrics.sunShadow={followsPlayer:true,width:SUN_SHADOW.width,height:SUN_SHADOW.height,mapSize:SUN_SHADOW.mapSize,texelSnapped:true};
   const grassGroups=partitionInstances(grass);grass.dispose();grassGroups.forEach(g=>{g.customDepthMaterial=grassDepth;scene.add(g);});
   landscapeMetrics.grassBatches=grassGroups.length;landscapeMetrics.leafBatches=batches.get(leaf).size;
   // Sparse falling leaves describe the shared air current. Their visible lives
   // fade at the canopy/ground, so recycling never teleports a visible leaf.
-  const fallingMaterial=material('#b8843f');fallingMaterial.side=T.DoubleSide;
+  const fallingMaterial=autumnLeaf.clone();
   const fallingLeaves=new T.InstancedMesh(mapleGeometry,fallingMaterial,64),fallingSeeds=[];
   fallingLeaves.frustumCulled=false;fallingLeaves.instanceMatrix.setUsage(T.DynamicDrawUsage);scene.add(fallingLeaves);
   for(let i=0;i<64;i++){
@@ -431,7 +486,7 @@ export function createPresentation(canvas) {
       const seed=fallingSeeds[i],age=(t*seed.speed+seed.phase)%1,w=sampleWind(seed.x,seed.z,t-age*.3);
       const x=seed.x+w.x*age*3+Math.sin(age*8+seed.spin)*.3,z=seed.z+w.z*age*3+Math.cos(age*7+seed.spin)*.24;
       const y=groundHeightAt(x,z)+.08+(1-age)*seed.height;
-      const visible=clamp(age*14,0,1)*clamp((1-age)*12,0,1),scale=.19*visible;
+      const visible=clamp(age*14,0,1)*clamp((1-age)*12,0,1),scale=visible;
       leafRotation.set(Math.sin(t*1.5+seed.spin)*.65,t*.48+seed.spin,Math.sin(t*1.2+seed.spin)*.5);
       q.setFromEuler(leafRotation);matrix.compose(pos.set(x,y,z),q,s.setScalar(scale));fallingLeaves.setMatrixAt(i,matrix);
     }
@@ -450,7 +505,7 @@ export function createPresentation(canvas) {
       bird.group.scale.setScalar(clamp((9-age)/1.5,0,1)*.7);
     }
   }
-  const rigs=new Map(),actorResources=createCharacterResources(),actorMetrics={partsByRig:{},rigs:{},motionByRig:{}};
+  const rigs=new Map(),actorResources=characterResources??createCharacterResources(),actorMetrics={partsByRig:{},rigs:{},motionByRig:{}};
   // The hanging signal stays on the shared horizontal mission position, but is
   // lifted clear of the actor silhouette and held by generated wall hardware.
   const SIGNAL_HEIGHT=3.15;
@@ -571,5 +626,6 @@ export function createPresentation(canvas) {
     for(const post of toriiPosts){post.opacity=1;post.mesh.material.opacity=1;post.mesh.material.depthWrite=true;post.mesh.castShadow=true;}
     camera.position.copy(position);camera.lookAt(target.x,target.y,target.z);camera.updateMatrixWorld();renderer.render(scene,camera);
   }
-  return {beginWorld,render,renderInspection,resize,renderer,scene,camera,vegetation,cameraDiagnostics:()=>({...cameraMetrics,frame:{...smoothedFrame}}),landscapeDiagnostics:()=>({...landscapeMetrics}),actorDiagnostics:()=>JSON.parse(JSON.stringify(actorMetrics))};
+  return {beginWorld,render,renderInspection,resize,renderer,scene,camera,vegetation,assetsReady:actorResources.ready,
+    cameraDiagnostics:()=>({...cameraMetrics,frame:{...smoothedFrame}}),landscapeDiagnostics:()=>({...landscapeMetrics}),actorDiagnostics:()=>JSON.parse(JSON.stringify({...actorMetrics,assets:{...actorResources.native.info,state:actorResources.native.state,pendingCount:actorResources.native.pendingCount,readyCount:actorResources.native.readyCount,failedCount:actorResources.native.failedCount,error:actorResources.native.error}}))};
 }

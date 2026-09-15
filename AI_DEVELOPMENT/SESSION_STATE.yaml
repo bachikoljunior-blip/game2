@@ -11,10 +11,10 @@
     "baseSha": "f3681d8deb7724d879b8f0ffaf4892330c1669cb",
     "activePlanNode": "FRESH",
     "activeTask": "FRESH-ART-SOUND-PHYSICS-REVISION",
-    "lastSuccessfulAction": "acf0f9ec CI34971788118 completed/success across all4jobs:198tests/build,PC/touch left/right missions,4raw+4derived full decodes,12experience checks,14motion474frames,3vegetation360frames,40native character images. This technical/native-media checkpoint is not PS4/whole-quality acceptance and is not yet published.",
-    "currentFailingAction": "Current native character and normal-scene art remain below requested PS4 visual target: mechanical shoulders, fragmented collar, mannequin skin/eyes/hair, block ridge rocks and simplified shrine/materials. Earlier037 fresh CI failed final dodge-observation apparatus; repaired acf fresh job passed.",
+    "lastSuccessfulAction": "CC0 anatomy1e7eed7,scene3622a58 andfoliage079511e integrated locally; combined build succeeds. Initial211 tests205pass/6fake-canvas failures; explicit geometry-only resource injection repairs all6 in13/13 targeted checks. Prioracf0 exactCI34971788118 remains fully passed. New native media and final211 CI still pending.",
+    "currentFailingAction": "Existing actual run/death films show knee through the front hakama and a thin pointed hem. A closed-section continuously deformed cloth repair is in progress; first new anatomy/foliage/landscape actual capture is pending.",
     "currentHypothesis": "Actual images show the procedural-only character method and primitive landscape masses are insufficient. Pilot lawful CC0 anatomical head/neck/hands with skin/eyes/hair, correct actual grip offset, refine leaf scale/shape without weakening physics and reconstruct prominent rock/shrine geometry within existing collision.",
-    "nextAction": "Complete isolated CC0 character, foliage and limited scene-art pilots; independently inspect source, native close/whole/normal views and motion, run exact-source CI, integrate PR24 and publish byte-matched preview, then verify all public assets and PC/touch input.",
+    "nextAction": "Save this explicitly preliminary rendering checkpoint and run exact-source CI. Independently inspect real new anatomy/foliage/scene/asset-readiness media, complete the separately frozen dynamic hakama repair, rerun exact-source gates, integrate PR24 and publish matching preview with all assets verified by HTTP and PC/touch controls.",
     "rollbackPoint": "1ded4aae27f8331cec10975c8dbac9eb482460a9",
     "pendingVerification": [
       "C04 candidate capture that visibly shows both routes entering one reconvergence point and continues through shrine/signal arrival",
@@ -256,7 +256,7 @@
       "kind": "authorized foreground production",
       "owner": "/root/game2_ultra_art_sound_physics",
       "remoteWriter": "single integrator; accepted Ultra children edit explicit evidence files or isolated acf0-based worktrees only",
-      "checkpointAt": "2026-09-15T13:24:27.492124+00:00",
+      "checkpointAt": "2026-09-15T13:50:00.865775+00:00",
       "backgroundProducerConfirmed": false,
       "evidence": "AI_DEVELOPMENT/EVIDENCE/20260915-art-sound-physics-intake.json",
       "logicalActiveIsNotLivenessProof": true
@@ -383,15 +383,15 @@
     ],
     "latestForegroundDeadlineReassessment": {
       "deadline": "2026-09-20T07:51:53Z",
-      "remainingHours": 114.51263382916667,
+      "remainingHours": 114.0311483588889,
       "satisfied": 0,
       "notSatisfied": 0,
       "notMeasured": 10,
       "prediction": "Not grounded as can meet: zero formal whole-element comparisons are satisfied; current native art materially below PS4 target.",
       "methodDefect": "Primitive-detail accumulation and technical PCM/CI checks were insufficient to establish the requested perceptual quality.",
-      "changedMethod": "After actual native visual rejection, licensed CC0 anatomy/UV/skin/eyes/hair replace selected head-neck-hand surfaces. Physically dimensioned leaves and unobstructed real inspection cameras are developed separately; primitive rock/shrine masses receive a bounded isolated scene-art revision. Existing198-check candidate passed fresh/art/vegetation; experience and next-pilot native results remain unmeasured.",
-      "observedAt": "2026-09-15T13:21:07.518215+00:00"
+      "changedMethod": "Lawful CC0 anatomy and fitted textures, physically sized connected leaves and reconstructed landscape have been integrated. Run an early actual-media checkpoint in parallel with fixing the separately observed dynamic hakama major, so unviewed geometry is not accumulated indefinitely. Preserve exact-source final CI and matching preview publication.",
+      "observedAt": "2026-09-15T13:50:00.865775+00:00"
     }
   },
-  "updatedAt": "2026-09-15T13:24:27.492124+00:00"
+  "updatedAt": "2026-09-15T13:50:00.865775+00:00"
 }

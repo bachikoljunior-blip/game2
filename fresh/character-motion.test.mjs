@@ -226,13 +226,14 @@ test('large facing changes have bounded turns and a visible corrective foot lift
   assert.ok(lifted);assert.ok(Math.abs(f.rig.motion.yaw-Math.PI)<.001);
 });
 
-test('generated costumes share boot resources and keep detail attached to articulated joints',()=>{
+test('native anatomy and generated costumes share resources and stay on articulated joints',()=>{
   const resources=createCharacterResources(),a=createCharacterRig('player',resources),b=createCharacterRig('warden',resources);
-  assert.equal(resources.weave.isDataTexture,true);assert.equal(a.metrics.externalRuntimeAssets,0);
-  assert.ok(a.metrics.generatedParts>140);assert.ok(a.metrics.drawMeshes<90,'static details are merged per joint');
+  assert.equal(resources.weave.isDataTexture,true);assert.equal(a.metrics.assetSource,'MakeHuman MPFB hm08 CC0');
+  assert.equal(resources.native.state,'geometry-only','Node tests do not certify a browser texture decode');
+  assert.ok(a.metrics.drawMeshes<90,'static details are merged per joint');
   assert.ok(b.metrics.generatedParts>a.metrics.generatedParts,'the warden has its own helmet and face guard');
   assert.equal(a.limbs[0].ankle.parent,a.limbs[0].knee);assert.equal(a.limbs[0].wrist.parent,a.limbs[0].elbow);
-  assert.equal(a.panels.length,4);assert.equal(a.ties.length,3);assert.equal(a.scabbard.parent,a.body);
+  assert.equal(a.panels.length,4);assert.ok(a.ties.some(tie=>tie.name==='sash-tail'&&tie.parent===a.body));assert.equal(a.scabbard.parent,a.body);
 });
 
 

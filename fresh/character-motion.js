@@ -423,20 +423,29 @@ export function updateCharacterRig(rig,actor,world,seconds,{animate=true,groundH
   for(let i=0;i<2;i++){
     const freeLeft=toVector(pose.leftHand);freeLeft.y+=upperBodyOffset;
     const limb=rig.limbs[i],target=i===1?rightGrip.clone():rig.root.localToWorld(freeLeft).lerp(leftGrip,pose.twoHands);
+    let gripWeight=i===1?1:pose.twoHands;
     if(state==='dead'&&m.age>.45&&i===1){
-      const release=rig.chest.localToWorld(new T.Vector3(.31,-.37,.07));target.lerp(release,ease((m.age-.45)/.30));
+      const release=rig.chest.localToWorld(new T.Vector3(.31,-.37,.07)),amount=ease((m.age-.45)/.30);
+      target.lerp(release,amount);gripWeight=1-amount;
     }
-    if(state==='victory'&&m.victoryAge>=1.44&&m.victoryAge<2.6&&i===0)rig.scabbard.getWorldPosition(target);
+    if(state==='victory'&&m.victoryAge>=1.44&&m.victoryAge<2.6&&i===0){rig.scabbard.getWorldPosition(target);gripWeight=0;}
     if(state==='victory'&&m.victoryAge>2.65&&i===1){
-      const rest=rig.root.localToWorld(new T.Vector3(.28,1.00,-.025));target.lerp(rest,ease((m.victoryAge-2.65)/.4));
+      const rest=rig.root.localToWorld(new T.Vector3(.28,1.00,-.025)),amount=ease((m.victoryAge-2.65)/.4);
+      target.lerp(rest,amount);gripWeight=1-amount;
     }
+    // The anatomical wrist is proximal to the centre of a closed hand. Keep
+    // the existing exact handle target and solve the wrist that places the
+    // baked hand's grip centre on it. Free/released wrists have zero weight;
+    // old rigs without this asset retain an explicit zero-offset fallback.
+    const gripOffset=(limb.gripOffset||new T.Vector3()).clone().applyQuaternion(rig.sword.getWorldQuaternion(new T.Quaternion()));
+    target.addScaledVector(gripOffset,-gripWeight);
     const chestInverse=rig.chest.matrixWorld.clone().invert();target.applyMatrix4(chestInverse);
     const elbowPole=state==='dead'?new T.Vector3(limb.side*.8,.8,0).applyQuaternion(rig.chest.getWorldQuaternion(new T.Quaternion()).invert()):new T.Vector3(limb.side*.8,-.15,.40);
     const solved=solveTwoBone(limb.arm.position,target,elbowPole,ANATOMY.upperArm,ANATOMY.forearm);
     limb.arm.quaternion.copy(solved.upperQuaternion);limb.elbow.quaternion.copy(solved.lowerQuaternion);
     const chain=rig.body.quaternion.clone().multiply(rig.chest.quaternion).multiply(limb.arm.quaternion).multiply(limb.elbow.quaternion);
     limb.wrist.quaternion.copy(chain.invert()).multiply(rig.sword.quaternion);
-    armMetrics.push({side:limb.side,reachError:solved.reachError});
+    armMetrics.push({side:limb.side,reachError:solved.reachError,gripWeight});
   }
   // Damped cloth follows acceleration, turns and body motion. The low-amplitude
   // air ripple is secondary to the inertia, and every driver stops on pause.

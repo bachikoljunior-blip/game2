@@ -29,7 +29,10 @@ elif group == 'experience':
     allowed = {'experience-report.json', 'audio/actual-capture-report.json', 'audio/generated/manifest.json', 'motion-study/report.json', 'audio/actual-gameplay-audio.webm', 'audio/actual-gameplay-audio.wav', 'audio/muted-negative-probe.webm'} | {f'motion-study/{name}.mp4' for name in actions} | {f'explore-{name}.png' for name in ['old-waystone', 'valley-frame', 'spring-basin', 'stream-stones', 'sun-ring', 'white-tree']}
 elif group == 'fresh':
     root /= 'fresh-20260913'
-    allowed = {'browser-report.json', 'route-matrix-report.json', 'recording-report.json', 'build-fingerprint.json'} | {name + '.png' for name in ['encounter', 'mobile-mission-victory-portrait', 'mission-victory', 'title', 'mobile', 'desktop-right-victory', 'touch-left-victory', 'mobile-mission-victory']} | {f'derived/{name}-fixed-five.json' for name in ['desktop', 'touch', 'desktop-right', 'touch-left']}
+    allowed = {'browser-report.json', 'route-matrix-report.json', 'recording-report.json', 'build-fingerprint.json'} | {name + '.png' for name in ['encounter', 'mobile-mission-victory-portrait', 'mission-victory', 'title', 'mobile', 'desktop-right-victory', 'touch-left-victory', 'mobile-mission-victory']} | {f'derived/{name}{suffix}' for name in ['desktop', 'touch', 'desktop-right', 'touch-left'] for suffix in ['-fixed-five.json', '-fork-to-signal.mp4']}
+elif group == 'asset-readiness':
+    root /= 'fresh-asset-readiness'
+    allowed = {'report.json', 'normal.png', 'failed.png'}
 elif group == 'public':
     root /= 'fresh-public-preview'
     allowed = {'report.json'} | {name + '.png' for name in ['pc-start', 'pc-moved-attack', 'touch-view-rotated', 'touch-dedicated-attack']}

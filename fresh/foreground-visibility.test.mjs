@@ -9,9 +9,18 @@ import {createCharacterRig} from './character-rig.js';
 import {updateCharacterRig} from './character-motion.js';
 import {groundHeightAt} from './terrain.js';
 import {clothDisplacement,installWindMaterial} from './wind.js';
-import {readFileSync} from 'node:fs';
+import {headlessPresentation} from './vegetation-test-support.mjs';
 
 const vector=p=>new T.Vector3(p.x,p.y,p.z);
+function referenceGeometry(mesh,physics,time){
+  const geometry=mesh.geometry.clone(),p=geometry.attributes.position;
+  for(let i=0;i<p.count;i++)p.setXYZ(i,...physics.deformVertex(mesh.geometry,i,time));
+  geometry.computeBoundingBox();geometry.computeBoundingSphere();
+  const proxy=new T.Mesh(geometry,new T.MeshBasicMaterial({side:T.DoubleSide}));proxy.updateMatrixWorld();return proxy;
+}
+function referenceHit(mesh,camera,points){
+  return points.some(point=>{const delta=point.clone().sub(camera),length=delta.length();return new T.Raycaster(camera,delta.normalize(),.02,length-.035).intersectObject(mesh,false).length>0;});
+}
 function stage(player,enemy,time){
   const world=createWorld();world.time=time;world.routeChoice='right';world.routePhase='rejoined';world.locked=enemy.id;
   Object.assign(world.player,player);const target=world.enemies.find(a=>a.id===enemy.id);Object.assign(target,enemy);
@@ -115,24 +124,7 @@ test('fade is local, continuous, pauseable and fully restores opacity, depth and
   visibility.update(camera,[target],.25,0);visibility.reset();assert.equal(mesh.material.opacity,1);
 });
 
-// Instantiate the actual scene builders and rig/camera integration in Node.
-// Only WebGL submission and Canvas2D painting are stubs: this verifies geometry
-// and material behaviour, and is explicitly not a rendered image or perf test.
-async function headlessPresentation(){
-  const moduleUrl=source=>'data:text/javascript;base64,'+Buffer.from(source).toString('base64');
-  const three=moduleUrl(`export * from ${JSON.stringify(import.meta.resolve('three'))};
-    export class WebGLRenderer{constructor(){this.shadowMap={};}setPixelRatio(){}setSize(){}render(){}}`);
-  const file=new URL('./presentation.js',import.meta.url);
-  const source=readFileSync(file,'utf8').replace(/from '([^']+)'/g,(_,path)=>
-    `from ${JSON.stringify(path==='three'?three:path.startsWith('.')?new URL(path,file).href:import.meta.resolve(path))}`);
-  const {createPresentation}=await import(moduleUrl(source));
-  const keys=['document','innerWidth','innerHeight','devicePixelRatio'],before=keys.map(k=>Object.getOwnPropertyDescriptor(globalThis,k));
-  const context=new Proxy({createRadialGradient:()=>({addColorStop(){}})},{get:(object,key)=>object[key]??(()=>{})});
-  Object.assign(globalThis,{document:{createElement:()=>({getContext:()=>context})},innerWidth:960,innerHeight:540,devicePixelRatio:1});
-  try{return createPresentation({});}finally{keys.forEach((k,i)=>before[i]?Object.defineProperty(globalThis,k,before[i]):delete globalThis[k]);}
-}
-
-test('slender generated leaves no longer obscure the historical water-route position or trigger false fades',async()=>{
+test('small branched leaves fade only actual intersections at the historical water-route position',async t=>{
   const view=await headlessPresentation(),leaves=[];
   view.scene.traverse(mesh=>{if(mesh.name.startsWith('bamboo-leaves-')||mesh.name.startsWith('maple-leaves-'))leaves.push(mesh);});
   assert.ok(leaves.length>15);assert.equal(new Set(leaves.map(m=>m.material)).size,leaves.length);
@@ -148,8 +140,43 @@ test('slender generated leaves no longer obscure the historical water-route posi
     const distant=leaves.filter(m=>m.geometry.boundingBox.distanceToPoint(view.camera.position)>20);
     assert.ok(distant.length>5);assert.ok(distant.every(m=>m.material.opacity===1));
     assert.ok(leaves.every(m=>m.customDepthMaterial&&m.material.customProgramCacheKey().includes('vegetation')));
+    const root=view.scene.getObjectByName('actor-player'),points=characterSightPoints({root,body:root.getObjectByName('pelvis'),chest:root.getObjectByName('ribcage'),neck:root.getObjectByName('neck'),sword:root.getObjectByName('katana'),blade:root.getObjectByName('curved-blade')});
+    for(const entry of faded){
+      // render's environment clock adds the existing clamped 0.1 s after a
+      // fresh world's time; use that same leaf phase as the visible shader.
+      const mesh=leaves.find(m=>m.name===entry.id),reference=referenceGeometry(mesh,view.vegetation,time+.1);
+      assert.equal(referenceHit(reference,view.camera.position,points),true,'every faded cell contains an actual fully deformed leaf/branch intersection');
+      reference.geometry.dispose();reference.material.dispose();
+    }
   }
-  assert.equal(obstructed,0,'shorter alternate blades no longer occupy the old oversized crossed-card obstruction');
+  assert.ok(obstructed>0,'the new short lateral shoots provide a real route intersection control');
+  t.diagnostic(`Branched small leaves: ${obstructed}/13 wind phases intersect; every faded cell verified against full deformation.`);
+});
+
+test('per-leaf broad phase matches full deformed geometry across leaf hits and misses while avoiding unrelated vertex work',async t=>{
+  const view=await headlessPresentation(),meshes=[];view.scene.traverse(m=>{if((m.name.startsWith('bamboo-leaves-')&&!meshes.some(x=>x.name.startsWith('bamboo')))||(m.name.startsWith('maple-leaves-')&&!meshes.some(x=>x.name.startsWith('maple'))))meshes.push(m);});
+  let tested=0,vertices=0,fullVertices=0;
+  for(const mesh of meshes){
+    const visibility=createForegroundVisibility(),physics={...view.vegetation,deformVertex:(g,i,time)=>{vertices++;return view.vegetation.deformVertex(g,i,time);}};
+    visibility.add(mesh,{vegetation:physics});const g=mesh.geometry,originalIndex=g.index.array.slice();
+    const faces=[];for(let i=0;i<g.index.count&&faces.length<9;i+=3)if(g.attributes.leafPivot.getW(g.index.getX(i))>0){faces.push(i);i+=g.index.count/11|0;i-=i%3;}
+    for(const time of [0,2.3,7.1]){
+      view.vegetation.update(time);const reference=referenceGeometry(mesh,view.vegetation,time);
+      for(const face of faces){
+        const points=[0,1,2].map(k=>new T.Vector3().fromBufferAttribute(reference.geometry.attributes.position,g.index.getX(face+k))),
+          center=points[0].clone().add(points[1]).add(points[2]).divideScalar(3),normal=points[1].clone().sub(points[0]).cross(points[2].clone().sub(points[0])).normalize();
+        for(const offset of [new T.Vector3(),new T.Vector3(.13,.17,-.11),new T.Vector3(0,100,0)]){
+          const camera=center.clone().add(offset).addScaledVector(normal,.5),target=center.clone().add(offset).addScaledVector(normal,-.5);
+          const expected=referenceHit(reference,camera,[target]);visibility.reset();visibility.update(camera,[target],.25,time);
+          assert.equal(visibility.diagnostics().some(e=>e.blocked),expected);tested++;fullVertices+=g.attributes.position.count;
+        }
+      }
+      reference.geometry.dispose();reference.material.dispose();
+    }
+    assert.deepEqual(g.index.array,originalIndex,'proxy compaction never rewrites the rendered index buffer');
+  }
+  assert.ok(tested>=100);assert.ok(vertices<fullVertices*.25,'distant small leaves skip detailed deformation');
+  t.diagnostic(JSON.stringify({rays:tested,deformedVertices:vertices,fullDeformationVertices:fullVertices}));
 });
 
 test('actual animated leaf triangles have matching positive/negative CPU ray proxies after the wind moves them',async()=>{
@@ -157,10 +184,14 @@ test('actual animated leaf triangles have matching positive/negative CPU ray pro
   view.scene.traverse(m=>{if(!mesh&&m.name.startsWith('bamboo-leaves-'))mesh=m;});
   assert.ok(mesh);visibility.add(mesh,{vegetation:view.vegetation,id:'actual-leaf-positive-control'});
   const source=mesh.geometry.attributes.position.array.slice(),g=mesh.geometry,indices=g.index.array;
+  // The new first triangle is the tiny petiole. Probe an actual upper blade
+  // instead, where the leaf response and inherited culm movement are visible.
+  let triangle=0,highest=-Infinity;
+  for(let i=0;i<indices.length;i+=3){const k=indices[i];if(g.attributes.leafPivot.getW(k)>0&&g.attributes.position.getY(k)>highest){highest=g.attributes.position.getY(k);triangle=i;}}
   let firstCenter,lastCenter;
   for(const time of [0,1.7,4.2,7.1]){
     view.vegetation.update(time);
-    const points=[...indices.slice(0,3)].map(i=>new T.Vector3(...view.vegetation.deformVertex(g,i,time))),
+    const points=[...indices.slice(triangle,triangle+3)].map(i=>new T.Vector3(...view.vegetation.deformVertex(g,i,time))),
       center=points[0].clone().add(points[1]).add(points[2]).multiplyScalar(1/3),
       normal=points[1].clone().sub(points[0]).cross(points[2].clone().sub(points[0])).normalize(),
       camera=center.clone().addScaledVector(normal,.65),target=center.clone().addScaledVector(normal,-.65);
@@ -174,7 +205,7 @@ test('actual animated leaf triangles have matching positive/negative CPU ray pro
   assert.deepEqual(mesh.geometry.attributes.position.array,source,'intersection never overwrites render geometry');
 });
 
-test('recorded old-waystone wood fades locally, freezes when paused and restores on retry',async t=>{
+test('reshaped wood preserves exact spatial binding and only fades where an actual woody triangle crosses the ray',async t=>{
   const view=await headlessPresentation(),wood=[];
   view.scene.traverse(mesh=>{if(mesh.name.startsWith('maple-wood-'))wood.push(mesh);});
   const expectedCells=new Set(),seenSupports=new Set();
@@ -213,7 +244,24 @@ test('recorded old-waystone wood fades locally, freezes when paused and restores
     assert.ok(wood.every(m=>m.material.opacity===1&&m.material.depthWrite&&m.castShadow));
     view.render(retry,.25);assert.ok(wood.every(m=>m.material.opacity===1),'retry at the start has no residual wood fade');
   }
-  assert.ok(blocked>=7,'the repeatedly obstructing branch is registered in the real scene');
+  assert.equal(blocked,0,'the thinner, redistributed branches no longer cross this historical ray');
+  // Retain a real positive control after the old branch moved: ray through a
+  // submitted wood side face, with the current deformed support each time.
+  const visibility=createForegroundVisibility();visibility.add(near,{vegetation:view.vegetation});
+  const g=near.geometry,a=g.index.array;
+  for(const time of [0,1.7,4.2,7.1]){
+    view.vegetation.update(time);
+    const points=[...a.slice(0,3)].map(i=>new T.Vector3(...view.vegetation.deformVertex(g,i,time))),
+      center=points[0].clone().add(points[1]).add(points[2]).multiplyScalar(1/3),
+      normal=points[1].clone().sub(points[0]).cross(points[2].clone().sub(points[0])).normalize(),
+      camera=center.clone().addScaledVector(normal,.65),target=center.clone().addScaledVector(normal,-.65);
+    visibility.reset();visibility.update(camera,[target],.25,time);
+    assert.ok(near.material.opacity<.2&&visibility.diagnostics()[0]?.blocked);
+    assert.equal(near.material.depthWrite,false);assert.equal(near.castShadow,false);
+    const opacity=near.material.opacity;visibility.update(camera,[],.25,time,{animate:false});assert.equal(near.material.opacity,opacity);
+    visibility.reset();assert.ok(near.material.opacity===1&&near.material.depthWrite&&near.castShadow);
+    visibility.update(camera.clone().add(new T.Vector3(0,100,0)),[target.clone().add(new T.Vector3(0,100,0))],.25,time);assert.equal(near.material.opacity,1);
+  }
   wood.forEach((m,i)=>{
     assert.deepEqual(m.geometry.attributes.position.array,source[i].positions);
     assert.equal(m.customDepthMaterial,source[i].depth);

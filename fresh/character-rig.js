@@ -1,9 +1,11 @@
 import * as T from 'three';
+import {createNativeCharacterResources,nativeFigure,nativeHand,nativeGeometry,nativeCollar} from './character-assets.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { surface,loft,headSculpt,facePoint,eyeSurface,eyeDisc,faceRibbon,hakamaPanel,clothRibbon,
   breastplate,shoulderPlate,hairCap,scalpLock,earSculpt,handSculpt,fingerSculpt,footSculpt,createSurfaceTextures } from './character-sculpt.js';
 
-// Fresh, boot-generated figures. Anatomical joints are separate from clothing,
+// CC0 native head/neck and hands join original generated clothing and weapons.
+// Anatomical joints are separate from clothing,
 // so clothing never substitutes for an anatomical knee or elbow.
 export const ANATOMY = Object.freeze({ thigh: .43, shin: .43, sole: .09, upperArm: .32, forearm: .30, hipWidth: .15 });
 const palettes = {
@@ -13,8 +15,8 @@ const palettes = {
   warden: { cloth:'#724640', shadow:'#412c2d', armor:'#303439', trim:'#bba071', cord:'#bba07b', skin:'#b49176' },
 };
 
-export function createCharacterResources() {
-  const textures=createSurfaceTextures(),materials=new Map();
+export function createCharacterResources(options={}) {
+  const textures=createSurfaceTextures(),materials=new Map(),native=createNativeCharacterResources(options);
   function material(color,roughness=.8,metalness=0,type=null,doubleSided=false){
     if(type===true)type='cloth';
     const key=[color,roughness,metalness,type,doubleSided].join(':');
@@ -29,7 +31,7 @@ export function createCharacterResources() {
     }
     return materials.get(key);
   }
-  return { material,textures,weave:textures.cloth.bumpMap };
+  return { material,textures,weave:textures.cloth.bumpMap,native,ready:native.ready };
 }
 
 export function createCharacterRig(id, resources=createCharacterResources()) {
@@ -86,46 +88,30 @@ export function createCharacterRig(id, resources=createCharacterResources()) {
   part(body,clothRibbon([[-.14,.064,-.163],[-.06,.043,-.182],[.037,.069,-.183],[.104,.043,-.167]],.025),cord);
   part(body,clothRibbon([[-.017,.063,-.182],[.012,.088,-.198],[.031,.053,-.196],[.006,.038,-.187]],.027),cord);
 
-  part(neck,loft([[-.077,.073,.063,.011],[-.037,.059,.054,.005],[.012,.052,.050,0],[.056,.050,.046,0]],
-    {segments:24,rows:16}),skin);
-  part(neck,headSculpt(),skin);
-  for(const side of [-1,1]){
-    part(neck,earSculpt(side),skin);
-    part(neck,eyeSurface(side),mat('#a59b8b',.64));
-    part(neck,eyeDisc(side,.0039,.0031),mat('#62503a',.56));
-    part(neck,eyeDisc(side,.0017,.0040),eyes);
-    part(neck,eyeSurface(side,{lid:true,upper:true}),skin);
-    part(neck,eyeSurface(side,{lid:true,upper:false}),skin);
-    part(neck,faceRibbon([[side*.018,.177,.002],[side*.037,.179,.002],[side*.058,.177,.002]],.0030),hair);
-    part(neck,faceRibbon([[side*.006,.107,.0018],[side*.012,.106,.002],[side*.019,.109,.0015]],.0022),lip);
-  }
-  part(neck,faceRibbon([[-.025,.079,.0014],[-.010,.080,.0016],[0,.0785,.0018],[.011,.080,.0016],[.025,.079,.0014]],.0028),lip);
-  part(neck,faceRibbon([[-.024,.076,.0018],[0,.075,.002],[.024,.076,.0018]],.0012),mat('#523f36',.92));
-  part(neck,hairCap(),hair);
-  // Swept locks join the cranial mass; their tapered silhouette breaks the
-  // helmet outline, and the rear hair gathers into a restrained tied knot.
-  for(const side of [-1,1]){
-    for(let sector=0;sector<3;sector++)part(neck,scalpLock(side,sector),hair);
-  }
-  part(neck,loft([[.214,.009,.014,.082],[.232,.039,.033,.090],[.265,.042,.030,.081],[.291,.019,.020,.067],[.296,.002,.004,.062]],
-    {segments:24,rows:14,fold:.002,folds:9}),hair);
-  part(neck,loft([[.260,.043,.032,.080],[.270,.037,.029,.078]],{segments:24,rows:2}),cord);
-  // Narrow, shaped fabric band. It follows the hairline without a torus halo.
-  part(neck,loft([[.184,.095,.109,.014],[.197,.093,.107,.014]],{segments:40,rows:2}),shadow);
+  const figure=nativeFigure(id);
+  // The collar follows the imported lower neck and hides its extraction cut.
+  // It is carried by the chest; the exposed head/neck retains its own pivot.
+  part(chest,nativeCollar(figure.head),cloth,0,neck.position.y,0);
+  part(neck,nativeGeometry(figure.head),resources.native.skin);
+  part(neck,nativeGeometry(figure.eyes),resources.native.eyes);
+  part(neck,nativeGeometry(figure.hair),resources.native.hair);
+  part(neck,nativeGeometry(figure.brows),resources.native.brows);
+  // The fitted hairline is the CC0 short04 asset. The tied rear lock is an
+  // original, modest addition; this pilot does not claim a finished hairstyle.
+  part(neck,loft([[.245,.012,.013,.049],[.268,.031,.027,.053],[.291,.032,.025,.043],[.308,.016,.014,.028],[.310,.002,.003,.024]],
+    {segments:22,rows:12,fold:.001,folds:9}),hair);
+  part(neck,loft([[.279,.034,.027,.048],[.287,.032,.025,.045]],{segments:22,rows:2}),cord);
   if(id==='warden'){
     part(neck,surface(36,14,(u,v)=>{
-      const theta=u*Math.PI*2,phi=.1+v*1.24;
-      return [Math.sin(theta)*Math.sin(phi)*.102,.177+Math.cos(phi)*.119,.017+Math.cos(theta)*Math.sin(phi)*.112];
+      const theta=u*Math.PI*2,phi=.10+v*1.24;
+      return [Math.sin(theta)*Math.sin(phi)*.111,.171+Math.cos(phi)*.127,-.027+Math.cos(theta)*Math.sin(phi)*.124];
     },{wrap:true,flip:true}),armor);
     part(neck,surface(4,18,(u,v)=>{
       const theta=Math.PI+(u-.5)*.14,phi=.16+v*1.03;
-      return [Math.sin(theta)*Math.sin(phi)*.1035,.177+Math.cos(phi)*.1205,
-        .017+Math.cos(theta)*Math.sin(phi)*.1135];
+      return [Math.sin(theta)*Math.sin(phi)*.1125,.171+Math.cos(phi)*.1285,
+        -.027+Math.cos(theta)*Math.sin(phi)*.1255];
     },{flip:true}),brass);
-    part(neck,surface(24,10,(u,v)=>{
-      const x=(u-.5)*(.083+v*.056),y=.036+v*.063+.010*(u*2-1)**4;
-      return facePoint(x,y,.0045);
-    },{flip:true}),armor);
+    part(neck,nativeGeometry(figure.mask),armor);
   }
 
   const limbs=[],panels=[],ties=[];
@@ -156,9 +142,10 @@ export function createCharacterRig(id, resources=createCharacterResources()) {
     for(let plate=0;plate<shoulderRows;plate++)part(arm,shoulderPlate(side,plate),armor);
     part(arm,loft([[-.329,.085,.079,.002],[-.305,.094,.089,.005]],{segments:26,rows:2}),shadow);
     const elbow=new T.Group();elbow.name='elbow';elbow.position.y=-ANATOMY.upperArm;arm.add(elbow);
-    // Covered skin stays inside the cloth, including during wrist rotation.
-    part(elbow,loft([[-.302,.027,.026,0],[-.272,.037,.033,0],[-.244,.041,.037,0],[-.224,.039,.035,0]],
-      {segments:22,rows:14}),skin);
+    // A cloth cuff overlaps the native wrist cut. There is one continuous
+    // exposed hand surface rather than a separate skin tube under the sleeve.
+    part(elbow,loft([[-.307,.032,.031,0],[-.283,.037,.035,0],[-.244,.044,.040,0],[-.224,.044,.040,0]],
+      {segments:22,rows:10,fold:.001,folds:7}),shadow);
     part(elbow,loft([[-.112,.061,.056,.002],[-.024,.072,.066,.003],[.029,.067,.064,0],[.058,.034,.038,0]],
       {segments:24,rows:14,fold:.002,folds:7}),shadow);
     part(elbow,loft([[-.244,.044,.040,0],[-.175,.061,.055,.002],[-.058,.070,.064,.003]],
@@ -172,18 +159,15 @@ export function createCharacterRig(id, resources=createCharacterResources()) {
       part(elbow,loft([[y-.008,r,r*.94,.002],[y+.006,r+.001,r*.94+.001,.002]],{segments:22,rows:2}),cord);
     }
     const wrist=new T.Group();wrist.name='wrist';wrist.position.y=-ANATOMY.forearm;elbow.add(wrist);
-    part(wrist,handSculpt(side),skin);
-    for(let finger=0;finger<4;finger++)part(wrist,fingerSculpt(finger,side),skin);
-    part(wrist,new T.TubeGeometry(new T.CatmullRomCurve3([
-      new T.Vector3(side*.035,.024,.006),new T.Vector3(side*.050,.004,-.012),
-      new T.Vector3(side*.034,-.009,-.035),new T.Vector3(side*.021,-.007,-.037)]),16,.012,8,false),skin);
-    limbs.push({side,hip,knee,ankle,arm,elbow,wrist,hand:wrist});
+    const importedHand=nativeHand(side);
+    part(wrist,nativeGeometry(importedHand.geometry),resources.native.skin);
+    const gripOffset=new T.Vector3(...importedHand.gripOffset);
+    limbs.push({side,hip,knee,ankle,arm,elbow,wrist,hand:wrist,gripOffset});
     for(const front of [-1,1]){
       const panel=new T.Group();panel.name=front<0?'hakama-front':'hakama-back';panel.position.set(side*.128,-.041,front*.139);body.add(panel);
       part(panel,hakamaPanel(side,front),cloth);panels.push({node:panel,side,front});
     }
-    const tie=new T.Group();tie.name='headband-tail';tie.position.set(side*.022,.188,.122);neck.add(tie);
-    part(tie,clothRibbon([[0,0,0],[side*.009,-.052,.012],[side*.014,-.126,.017],[side*.020,-.169,.005]],.017,{fray:.0005}),shadow);ties.push(tie);
+
   }
   const sash=new T.Group();sash.name='sash-tail';sash.position.set(-.19,.030,.138);body.add(sash);
   part(sash,clothRibbon([[0,0,0],[-.006,-.09,.015],[.013,-.18,.021],[.026,-.262,.012]],.048,{fray:.0008}),
@@ -233,7 +217,7 @@ export function createCharacterRig(id, resources=createCharacterResources()) {
       if(seen.has(key))continue;seen.add(key);contactPositions.push(x,y,z);
     }
     geometry.userData.contactPositions=new Float32Array(contactPositions);
-    const mesh=new T.Mesh(geometry,material);mesh.castShadow=mesh.receiveShadow=true;parent.add(mesh);
+    const mesh=new T.Mesh(geometry,material);mesh.castShadow=material.userData.castShadow!==false;mesh.receiveShadow=true;parent.add(mesh);
   }
   let meshes=0,triangles=0,groundContactPoints=0;
   root.traverse(node=>{if(node.isMesh){
@@ -242,5 +226,7 @@ export function createCharacterRig(id, resources=createCharacterResources()) {
   }});
   return {id,root,body,chest,neck,limbs,panels,ties,sword,blade,scabbard,ring,signal,contact,
     metrics:{generatedParts,drawMeshes:meshes,triangles,groundContactPoints,articulatedJoints:24,
-      surfaceConstruction:'anatomical-section-sculpt-and-draped-cuts',externalRuntimeAssets:0},motion:null};
+      surfaceConstruction:'CC0-native-head-neck-hands-and-original-draped-clothing',externalRuntimeAssets:5,
+      importedTextureAssets:4,importedGeometryAssets:1,
+      assetSource:'MakeHuman MPFB hm08 CC0',textureState:resources.native.state},motion:null};
 }

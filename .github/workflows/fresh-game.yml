@@ -10,6 +10,36 @@ concurrency:
   group: fresh-game-${{ github.ref }}
   cancel-in-progress: false
 jobs:
+  asset-readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Build the same source with bundled character assets
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          node node_modules/vite/bin/vite.js build --config fresh/vite.config.mjs
+          git diff --exit-code HEAD -- .
+      - name: Verify actual delayed and failed character asset requests
+        run: node fresh/assets-browser-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fresh-asset-readiness-${{ github.sha }}
+          path: AI_DEVELOPMENT/EVIDENCE/fresh-asset-readiness/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Read back asset readiness states and original frames
+        if: always()
+        run: python .github/scripts/emit-fresh-media.py asset-readiness
   fresh:
     runs-on: ubuntu-latest
     timeout-minutes: 20

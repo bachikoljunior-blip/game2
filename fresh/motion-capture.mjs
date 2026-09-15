@@ -23,6 +23,7 @@ import {createWorld,OBSTACLES} from '/@fs/${root}/fresh/simulation.js';
 import {groundHeightAt} from '/@fs/${root}/fresh/terrain.js';
 import {explorationSolidAt} from '/@fs/${root}/fresh/exploration.js';
 const view=createPresentation(document.querySelector('canvas'));
+await view.assetsReady;
 let world, previous='';
 const event=(type,target='player')=>({type,time:world.time,source:'sentinel',target,x:world.player.x,z:world.player.z});
 const raycaster=new T.Raycaster();

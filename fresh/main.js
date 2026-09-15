@@ -8,7 +8,8 @@ import {explorationText} from './exploration.js';
 import {INTRO,ENDING_PHRASES,objectiveText,canLightSignal} from './mission.js';
 const canvas=document.querySelector('#scene'),menu=document.querySelector('#menu'),hud=document.querySelector('#hud'),
   message=document.querySelector('#message'),start=document.querySelector('#start'),notice=document.querySelector('#notice'),objective=document.querySelector('#objective'),exploration=document.querySelector('#exploration');
-let view,world=createWorld(),running=false,paused=false,last=0,contextLost=false;
+let view,world=createWorld(),running=false,paused=false,last=0,contextLost=false,assetsReady=false;
+start.disabled=true;start.textContent='準備中…';
 const audio=createGameAudio();
 const timings={scope:'Actual rAF intervals and JavaScript advance/render call durations in this browser; not isolated GPU time or physical-device performance. Includes each recorded mode; bounded to first3000 callbacks.',samples:[],omitted:0};
 let previousFrameStamp=null;
@@ -22,15 +23,21 @@ menu.dataset.mode='intro';
 function pause(){audio.pause();if(!running)return;running=false;paused=true;input.setActive(false);menu.hidden=false;menu.dataset.mode='pause';message.textContent='風の中で、ひと息。';start.textContent='続ける';}
 const input=createInput(canvas,pause);
 try{view=createPresentation(canvas);}catch(e){message.textContent='描画を開始できませんでした。WebGLが利用可能なブラウザで再読み込みしてください。';start.disabled=true;throw e;}
+view.assetsReady.then(()=>{
+  assetsReady=true;start.disabled=contextLost;start.textContent='山道へ';
+},()=>{
+  start.disabled=true;start.textContent='読み込み失敗';
+  message.textContent='人物の読み込みに失敗しました。通信を確認し、再読み込みしてください。';
+});
 start.addEventListener('click',()=>{
-  if(contextLost)return;
+  if(contextLost||!assetsReady)return;
   if(!paused){world=createWorld();view.beginWorld(world);}paused=false;running=true;menu.hidden=true;menu.dataset.mode='playing';hud.hidden=false;notice.textContent='';input.setActive(true);
   audio.resume(world);last=performance.now();
 });
 document.querySelector('#pause').addEventListener('click',pause);
 window.addEventListener('resize',()=>view.resize());
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();contextLost=true;pause();start.disabled=true;message.textContent='描画を復旧しています…';});
-canvas.addEventListener('webglcontextrestored',()=>{contextLost=false;start.disabled=false;message.textContent='描画が復旧しました。';view.resize();});
+canvas.addEventListener('webglcontextrestored',()=>{contextLost=false;start.disabled=!assetsReady;if(assetsReady)message.textContent='描画が復旧しました。';view.resize();});
 function frame(now){
   requestAnimationFrame(frame);const interval=previousFrameStamp===null?null:now-previousFrameStamp;
   previousFrameStamp=now;const dt=last?Math.min(.25,(now-last)/1000):0;last=now;
@@ -54,7 +61,7 @@ function frame(now){
   // simulation ends. A pause, hidden page, or lost context silences all voices.
   if(!running&&!paused&&!contextLost&&world.mode!=='playing')audio.update(world,dt,input.orbit);
   let renderCallMs=null;
-  if(!contextLost){const renderStart=performance.now();view.render(world,dt,input.orbit,{animate:running||world.mode==='victory'||world.mode==='defeat'});renderCallMs=performance.now()-renderStart;}
+  if(!contextLost&&assetsReady){const renderStart=performance.now();view.render(world,dt,input.orbit,{animate:running||world.mode==='victory'||world.mode==='defeat'});renderCallMs=performance.now()-renderStart;}
   if(timings.samples.length<3000)timings.samples.push({mode:world.mode,running,intervalMs:interval,simulationMs,renderCallMs});else timings.omitted++;
 }
 requestAnimationFrame(frame);

@@ -212,3 +212,221 @@ actual browser playback/recording of the final integration, checking masking and
 weight across device playback conditions, and valid source-concealed reference
 comparison. The reported numeric corrections and passing regressions do not
 complete these unmeasured quality requirements.
+
+## Follow-up: actual browser PCM independently decoded at 13:02 UTC
+
+On `2026-09-15T13:02:33Z`, I, the same performing agent
+`/root/game2_ultra_art_sound_physics/sound_revision`, completed the integrator's
+additional finite artifact-analysis task. I changed no runtime. This follow-up
+adds actual browser-output evidence for the revised audio, while the earlier
+local missing-Chromium attempt remains an accurate historical observation.
+Listening/naturalness remains **not measured**.
+
+The integrator supplied the authorized readback from `34971381554`, archive
+SHA-256 `6f55a8c53b5c94560de3c1deeff6e97f3267bf65e573620ff0fd5a685b4b2949`,
+and reported full ZIP CRC agreement. My own checks below operate on the exact
+extracted audio files at
+`.review/34969080023/experience/audio/`; the ZIP acquisition/CRC check belongs
+to the integrator and is not represented as my own action.
+
+The capture report identifies source/CI
+`037fd9d10d35453695bb92da8ed47649e1405eae`, actual Chromium master-bus recording,
+and served bundle `index-p-GxVTiw.js` (646,830 bytes, SHA-256
+`0e4112ed5aee4812f2c798760ff2b999b9a0a6b684c1f9643d9a009d26d95ff9`).
+Its audio-capture result is passed; this does not turn the separate route-matrix
+failure in run `34969080023` into a whole-CI pass.
+
+I independently read the local Git objects for this source and
+`acf0f9ec86996245ad712d6adc72e5d6159f6711`: `fresh/audio.js` has the same
+`d38cc9a7e5055c6c8bfa4c849bfbab27046790327223e55dff098f293ecc5dcf`
+SHA-256 in both. A source diff of audio.js, wind.js, character-motion.js,
+route-layout.js and exploration.js is empty. The generated manifest's 22
+category hashes and both 33-second scene hashes also match my prior generated
+artifacts. Thus this is revised-audio evidence, unlike the earlier historical
+9.24-second capture. It is still the 037fd9d capture, not a new recording of acf.
+
+### Actual decode and level measurements
+
+I decoded the WebM, WAV and muted negative with the repository's ffmpeg-backed
+`decodePcm`. WebM bytes match the report hash. Its complete measured PCM object
+matches the capture report exactly, including all sample counts and gate values.
+The independently decoded negative also matches its report exactly.
+
+| Actual artifact / measurement | Result |
+|---|---|
+| Recording format | 24,000 Hz, stereo, 11.28 seconds, 541,440 channel samples |
+| WebM decoded RMS | 0.006183146, **−44.18 dBFS** |
+| Decoded sample peak | 0.16366075, **−15.72 dBFS** |
+| Maximum 50 ms RMS | **−24.03 dBFS**, sample interval 5.10–5.15 seconds |
+| Median 50 ms RMS | **−57.03 dBFS**, including startup/silent windows |
+| Fraction of 50 ms windows above −60 dBFS | **61.50%**, an absolute digital threshold |
+| Nonfinite / clipped samples | 0 / 0 |
+| 16-bit WAV RMS | 0.006183158; same duration/sample count as WebM decode |
+| WAV vs float WebM decode | Maximum error **1/65,536**, RMS error 0.0000079101; consistent with 16-bit rounding |
+| Deliberately muted negative | 1.20 seconds / 57,600 channel samples; RMS 0, peak 0; rejected as silent |
+
+The full recording contains **2.15933 seconds of leading exact-zero PCM**.
+Its first sample exceeding absolute magnitude `1e-6` occurs at 2.17354 seconds.
+For transparency about the effect of that prefix, the remaining 9.10646-second
+diagnostic region has RMS **−43.25 dBFS**. The delivered recording was not trimmed
+or normalized; the full-clip result above remains the main measurement. Neither
+threshold is a human audibility claim.
+
+Stereo energy fractions of the actual combined master bus are **8.21% below
+200 Hz**, **17.19% at 200–1000 Hz**, **36.15% at 1000–4000 Hz**, and **38.45%
+above 4000 Hz**. This is a spectrum of all mixed actions and ambience, not an
+isolated wind spectrum or a naturalness score. A complete half-second level
+timeline and 50 ms statistics are saved in the scratch analysis described below.
+
+### Actual event volume and limits on alignment
+
+The capture report supplies these cumulative, actual runtime counters:
+
+| Observation | Wind | Leaves | Stone contacts | Cloth | Swish | Dodge | Live voices |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Started | 1 | 0 | 0 | 0 | 0 | 0 | 1 |
+| Movement observed | 1 | 1 | 2 | 2 | 0 | 0 | 4 |
+| Swing and dodge observed | 1 | 1 | 2 | 4 | 1 | 1 | 3 |
+| Paused | 1 | 1 | 3 | 5 | 1 | 1 | **0** |
+| Resumed | **2** | **2** | 3 | 5 | 1 | 1 | 2 |
+
+Unknown events and pending events are zero at all recorded checkpoints. The
+observed wind increment is one bed on start and one on resume after all prior
+voices were stopped. This short stop/resume capture does not exercise the full
+long-term ambient renewal/overlap schedule. It has three stone contacts and one
+swish/dodge; it does not cover earth footsteps, multiple walk/run groups,
+parry/block/hit, a full fight or all sound categories.
+
+Only the combined master was recorded. An isolated air-bus RMS, wind/foot
+masking ratio, and actual per-voice gain automation were **not separately
+measured**. The event report contains wall-clock checkpoints and simulation
+times but lacks a sample-aligned recorder/event anchor. I therefore do not label
+the 5.10-second peak or other waveform windows as particular individual sounds,
+or derive input/voice latency from them. Runtime event counts and actual waveform
+levels are both evidence, with different timing resolution.
+
+The earlier 60-second model keeps a prescribed pressure .45, 80 footsteps and
+three combat-contact pairs. The 33-second audition uses authored contact times;
+the present 11.28-second file is real browser output with startup and stop/resume.
+Their RMS values are not a matched before/after comparison. In particular,
+the modeled **−15.66 dB wind reduction** remains a modeled result; it is not
+relabelled as a measured wind-only reduction from this master-bus recording.
+No-clipping, nonzero sound, successful decoding or matching hashes is used to
+declare naturalness achieved. I have not listened through a supported model.
+
+### Follow-up artifacts and identities
+
+My analysis outputs are at
+`/workspace/scratch/27301e95ee53/actual-audio-34969080023/`:
+`decode-verification.json`, `decoded-webm.f32`, and `levels.json`.
+
+| File | SHA-256 |
+|---|---|
+| Actual `actual-gameplay-audio.webm` | `54c5a25f20e9c4fd6daf9a28381c44c09972f5c0feea5d598c7115ea785e8925` |
+| Actual `actual-gameplay-audio.wav` | `fa5658d78bd03c3080d5dd9a934580806adeffee96425ea48185deb90658ecd1` |
+| Actual `muted-negative-probe.webm` | `a34934ce1dc3f83f755efa5940b8be54d52d404a4fd2f19c33888a0ae5c61b0e` |
+| Actual `actual-capture-report.json` | `84f974f110c2d32d43da18304a154e695546a101575df969780bfb8de7c43669` |
+| Actual generated `manifest.json` | `ed95182976da9f57d0b299ef232967f686b42b7cfdbb33e6253d676fe7bad85f` |
+| My `decode-verification.json` | `d62de9a41341fd0a434ff22f6b76706facb8948c6339e84e2c5153a75ca259bf` |
+| My `levels.json` | `7514170d1bfd942bea1eed5afc26e9e9ca49a7e5394be2e937950bfa41ab0efb` |
+
+The next exact-source CI audio artifact can be checked separately when available.
+Perceptual listening and all 10 formal source-concealed comparisons remain
+**not measured**, and the fixed deadline is unchanged.
+
+## Follow-up: acf0f9ec actual audio verified at 13:24 UTC
+
+I, `/root/game2_ultra_art_sound_physics/sound_revision`, accepted and completed
+the integrator's next finite actual-audio check at `2026-09-15T13:24:18Z`, using
+the existing Ultra assignment without redelegation. The integrator reports all
+four jobs of CI `34971788118` completed successfully and supplied the verified
+experience artifact at `.review/34971788118/experience/audio/`. Its acquisition
+and ZIP verification belong to the integrator; my own work is the independent
+file/hash/decode/level/counter analysis below. Only this evidence file was edited.
+
+The new capture report names source and CI
+`acf0f9ec86996245ad712d6adc72e5d6159f6711`. Its served bundle is
+`index-CaXCJhF9.js`, 647,956 bytes, SHA-256
+`9d31fc3c31d7ea109209501b782aa1c201ab35b6dfd9346b48923e6a34903656`.
+I again read `fresh/audio.js` from the 037fd9d and acf0f9ec local Git objects:
+both hash to
+`d38cc9a7e5055c6c8bfa4c849bfbab27046790327223e55dff098f293ecc5dcf`.
+The generated manifest is byte-identical to the previous artifact, and all
+22 categories plus both 33-second designed scene identities match.
+
+### Actual output and pause/resume
+
+Independent ffmpeg decoding reproduces the entire new capture-report PCM object
+exactly. WebM and negative-file SHA values match that report. ffprobe identifies
+the WAV as 16-bit PCM, 24 kHz stereo, 1,198,158 bytes. The WAV contains the same
+599,040 channel samples as the WebM decode, with a maximum difference
+0.00001525873 and RMS difference 0.00000794474, consistent with 16-bit rounding.
+
+| Observation | acf0f9ec actual recording |
+|---|---:|
+| Decoded duration | **12.48 seconds** |
+| Full master RMS | **0.00593528 / −44.53 dBFS** |
+| Sample peak | **0.16751593 / −15.52 dBFS** |
+| Maximum 50 ms RMS | **−24.38 dBFS**, sample interval 6.25–6.30 s |
+| Median 50 ms RMS | **−56.98 dBFS**, including startup/silent windows |
+| Windows above digital −60 dBFS | **63.60%** |
+| Leading exact-zero interval | **0–2.30683 seconds** |
+| First sample above absolute `1e-6` | **2.31279 seconds** |
+| Remaining-region diagnostic RMS | **−43.64 dBFS**, 10.16721 seconds; original file untrimmed |
+| Nonfinite / clipped samples | **0 / 0** |
+| Deliberately muted negative | **1.20 seconds**, 57,600 channel samples, RMS/peak **0 / 0**; correctly rejected |
+
+The combined stereo spectral fractions are 8.39% below 200 Hz, 17.28% at
+200–1000 Hz, 36.24% at 1000–4000 Hz and 38.09% above 4000 Hz. They remain
+whole-master measurements, not measurements of an isolated wind bus.
+
+The actual report shows wind **1** at start, **1** at pause, and **2** after
+resume. At pause `active=false`, context `suspended`, and **liveVoices=0**.
+After resume the context is running, active/ready are true and liveVoices=2.
+The final counters are **wind 2, leaves 3, stone contacts 3, cloth 5, swish 1,
+dodge 1**, with zero unknown or pending events. Leaves increased from 1 to 2
+before pause and to 3 on resume; the extra leaf event is not an extra wind bed.
+
+Scanning the actual PCM finds no further interval of at least 50 ms containing
+only exact-zero samples after the leading interval. The recording does not
+provide a sample-aligned event/audio-clock anchor for the pause checkpoint.
+Accordingly, suspension/all-voices-stopped is confirmed from the actual runtime
+snapshot, and the deliberately muted negative confirms a real silent capture;
+I do not claim that a particular later waveform segment independently measures
+the wall-clock pause. No window is mislabeled as an individually isolated sound.
+
+### Difference from the previous actual capture
+
+| Actual observation | 037fd9d / run 34969080023 | acf0f9ec / run 34971788118 |
+|---|---:|---:|
+| Duration | 11.28 s | 12.48 s |
+| Full master RMS | −44.18 dBFS | −44.53 dBFS |
+| Sample peak | −15.72 dBFS | −15.52 dBFS |
+| Maximum 50 ms RMS | −24.03 dBFS | −24.38 dBFS |
+| Leading exact-zero PCM | 2.15933 s | 2.30683 s |
+| Final wind / leaves / stone contacts | 2 / 2 / 3 | 2 / 3 / 3 |
+
+The full RMS differs by −0.355 dB, sample peak by +0.202 dB and maximum 50 ms
+RMS by −0.352 dB. These are two observations of **unchanged audio code**, with
+different recording duration, startup timing and environmental trigger count.
+They are not a controlled mix A/B or evidence of a new sound-quality change.
+The earlier 60-second modeled wind reduction remains a modeled result.
+No supported model listening occurred; perceptual naturalness and all formal
+10-element comparisons remain **not measured**.
+
+My new outputs are at
+`/workspace/scratch/27301e95ee53/actual-audio-34971788118/`:
+`decode-verification.json`, `decoded-webm.f32`, and `levels.json` (including
+half-second levels and the complete silence/threshold measurements).
+
+| Artifact | SHA-256 |
+|---|---|
+| Actual WebM | `7cae7bd226beb2f3620a24eb4971febe019cd5c21a9aa4fe7121b688ca58723f` |
+| Actual WAV | `a3e8a576f8efa4b57d1fdb8c834dc50dcabe879885f6b09a0c2d82aaccae9c72` |
+| Muted negative WebM | `2f5c1bd5a44a47ed1c7d75c94fb2292b10986a8a78aec5e19e1f8ff3dd7f39d0` |
+| Capture report | `dc307d826c6e9675133bdda8cb9caeb16aea4a722b708bf70094c77a86810790` |
+| My decode verification | `c60d798d30caaa57686476fe1d825a3d6b817c73c36a951d7620edb3790b0211` |
+| My level analysis | `7c08140e5ff17ed1d4accde7053325f3337d0cf7d44a6186706b76d15c225c19` |
+
+No runtime, old evidence artifact, stage, commit, remote or automation was changed
+by this follow-up. The fixed deadline remains `2026-09-20T07:51:53Z`.

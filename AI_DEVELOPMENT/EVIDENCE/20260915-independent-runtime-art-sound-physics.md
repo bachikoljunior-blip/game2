@@ -137,3 +137,179 @@ This reviewer independently ran `node --test fresh/character-sculpt.test.mjs fre
 | Warden | 54,620 | 29,666 | 66 | 5,215,040 |
 
 No additional source-known blocker/major was found in this frozen character delta. The character owner separately reported the full four terrain tests passing; this reviewer did not duplicate that terrain run. **The reported neck/shoulder, forearm, hakama, eye-socket, and helmet appearance defects are not declared visually closed by these technical checks.** New native images remain required, as do the existing independent media and formal comparison work. All 10 formal elements remain **not measured**, deadline **2026-09-20T07:51:53Z** unchanged.
+
+## Recovery-input observer review — 2026-09-15T13:16Z
+
+The integrator assigned this same independent reviewer a further finite, read-only review of source **`acf0f9ec86996245ad712d6adc72e5d6159f6711`**: the new recovery-dodge observation helper/tests and its two smoke-test callers. The checkout HEAD and all four below hashes matched that source; the files remained unchanged through the review. Only this evidence file was edited.
+
+| Reviewed file | SHA-256 |
+| --- | --- |
+| `fresh/input-observation.mjs` | `e7455432f66621d0c78d1b45cc3927895f9b67d9fbb0bb1af593fe79f3376a8d` |
+| `fresh/input-observation.test.mjs` | `9bfff0b910d86346a0735be94afb81a64c700ec44a8df318a93be3d25ff43a42` |
+| `fresh/browser-smoke.mjs` | `abbef0903b5ce3f4b7dc6a68d514eba36b8dc9756a105415cb277869036dc56a` |
+| `fresh/route-matrix-smoke.mjs` | `a9ff6dd8f63c2c870ccc86acb2872bf6fe2ba6320cfc5ee40417423669488c69` |
+
+### Scope and source findings
+
+The old loop read the dodge counter, sent a touch pulse, then checked its deadline before reading again. A completed pulse that crossed the deadline could therefore be discarded without observing its result. The new loop reads after each completed pulse, including the last crossing pulse, then rejects another input when its host start timestamp is at or beyond the same 3000 ms deadline. It does not add a post-deadline polling loop or extend the new-input window. A slow initial diagnostic read also cannot initiate a fresh pulse after the deadline. Both callers capture `startedAt` **before** the helper's dynamic import, so setup remains within that input window.
+
+The success predicate remains an increase of the actual `world.totals.dodges` counter relative to the caller's prior observation. Source inspection confirmed that the simulation increments this counter when the player dodge is accepted, and the diagnostic API returns a read-only JSON copy. No timer, event timestamp, visual state, or fabricated result substitutes for counter growth. The callers use one diagnostic snapshot per read and preserve the original CDP touch pulse, including its existing 50 ms and 110 ms waits. Runtime input/simulation and the overall mission success checks are unchanged by this repair.
+
+The recorded clock fields have different meanings: `readStartedAtMs`/`receivedAtMs` and pulse times are host wall timestamps; `browserObservedAtMs` is browser snapshot wall time; `worldTime` and `lastDodgeEventTime` are simulation seconds. Only host receipt time classifies an observation as inside or after the input window. Missing/pruned event history remains null. The code correctly states that **actual input-to-acceptance latency and acceptance within 3000 ms are not measured**. A final read may finish later; this is a recovery-input acknowledgement, not a latency PASS.
+
+One existing ordering nuance was explicitly checked: counter growth is tested before terminal mission mode, as in the old loop. A snapshot with `mode:'defeat'` and a newly increased dodge counter therefore acknowledges the dodge, but does **not** declare the mission successful. The unchanged callers still require actual victory, its observed 180-second bound, route/arrival/signal progression, and real guarding/block-or-parry conditions. The new unit test's terminal-state case covers absence of counter growth; it should not be read as proving all terminal snapshots are rejected by the helper. This preserved ordering is not a newly weakened whole-mission criterion.
+
+### Independently performed checks
+
+- `node --test fresh/input-observation.test.mjs`: **5/5 PASS**, no failures/skips/cancellations. This includes a negative reproduction of the old missed-final-read loop, crossing-pulse success/failure, no fresh tap at 3000/3001 ms, already-observed success without a duplicate tap, setup time, and terminal failure without counter growth.
+- Reviewer-authored stdin code exercised **120 additional injected-clock combinations**: two setup durations, five read durations, three pulse durations, and success on the first/second/fifth/no pulse. Results were **47 expected acknowledgements and 73 expected rejections**. Every completed-pulse trace had `reads = taps + 1`, every new pulse's host start was `< 3000 ms`, acknowledgements required counter growth, and late/within classification used host receipt despite deliberately unrelated browser/simulation timestamps.
+- **Two exception cases** verified read and tap failures propagate without retries or false success; the failing pulse's finish timestamp is retained.
+- **One terminal-with-counter-growth case** verified the preserved ordering described above and retained the terminal mode in the acknowledgement record.
+- Both changed smoke files passed `node --check`. The commit diff and both call sites were inspected, including the unchanged whole-mission assertions.
+
+**Finding:** no source-known blocker/major was found in this bounded observer repair. The five repository tests plus 123 supplemental fixture cases are apparatus checks, not a new browser mission or input-latency measurement. The integrator reported CI `34971788118` **fresh job `104389572336` succeeded** while experience/motion work was still running. This reviewer made no remote CI call and does **not** label the entire CI successful. Remaining checks belong to the ongoing exact-source CI/media work. All 10 formal elements remain **not measured**; deadline **2026-09-20T07:51:53Z** is unchanged.
+
+## Independent motion-media inspection — 2026-09-15T13:30Z
+
+The same accepted Ultra reviewer was assigned six actual rendered motion clips from source **`acf0f9ec86996245ad712d6adc72e5d6159f6711`**, CI **`34971788118`**. The integrator now reports all four CI jobs succeeded and that the original experience archive was recovered through the regular job log with ZIP CRC/archive SHA verification. Those remote/recovery checks are attributed to the integrator; this reviewer made no remote call. This reviewer personally read the recovered `motion-study/report.json`, verified its exact source revision, hashed the six original MP4s below, and independently decoded each complete clip using `ffmpeg -v error -xerror -i <clip> -f null -`.
+
+All six complete decodes passed: **204 encoded frames, 17 authored seconds**, 960 × 540 at 12 fps. This is a codec-integrity result. Visual inspection consisted of **53 unique native extracted frames individually displayed**, plus seven exact native crops of already-counted frames, with no continuous playback. Original MP4s were unchanged. The other eight motion-study clips and the four normal-input route videos were not independently viewed in this task.
+
+| Original clip | Frames / seconds | Independently calculated SHA-256 |
+| --- | --- | --- |
+| `start-run-stop.mp4` | 48 / 4 | `e4dcc4e9ed0f873f7516ee008c6b0ddf46594265340e984abc0d991ec5cc9f31` |
+| `guard.mp4` | 24 / 2 | `a1370e0197a7f3c391b77c73c91482cebc6a07b2222bf488460978fda6895526` |
+| `parry.mp4` | 24 / 2 | `6b51a5f2fee6e3df5c4ae1e8f347b28b9b4ef8906b9eb3f455cdfef799349217` |
+| `hit.mp4` | 24 / 2 | `b37af1b7947cb7f42cd66cf27bfe00d4ff79dd4c63787e5c5896349f760023ae` |
+| `death.mp4` | 36 / 3 | `5e844c26c49f23bf0e17312d5e3189af3ebb5fe6b9c889162bc8427ca9e17d3f` |
+| `victory.mp4` | 48 / 4 | `92f64d85013cae98f85d16f8f07392fe951a7d82be84efcd73094e2b799c1598` |
+
+### Actual visual coverage
+
+Frame indices below are zero-based. Authored time is exactly `frame / 12` seconds; decimal values are rounded only for display. Thus the table identifies every actually viewed source frame, without treating the unviewed intervening frames as visually approved.
+
+| Clip | Viewed frame indices | Corresponding authored seconds |
+| --- | --- | --- |
+| start-run-stop | 0, 6, 10, 11, 12, 13, 14, 15, 16, 18, 24, 32, 40, 47 | 0, .5, .8333, .9167, 1, 1.0833, 1.1667, 1.25, 1.3333, 1.5, 2, 2.6667, 3.3333, 3.9167 |
+| guard | 0, 3, 6, 12, 23 | 0, .25, .5, 1, 1.9167 |
+| parry | 0, 3, 6, 9, 12, 18, 23 | 0, .25, .5, .75, 1, 1.5, 1.9167 |
+| hit | 0, 3, 6, 9, 12, 18, 23 | 0, .25, .5, .75, 1, 1.5, 1.9167 |
+| death | 0, 3, 6, 9, 10, 11, 12, 15, 18, 24, 35 | 0, .25, .5, .75, .8333, .9167, 1, 1.25, 1.5, 2, 2.9167 |
+| victory | 0, 6, 12, 18, 24, 30, 36, 42, 47 | 0, .5, 1, 1.5, 2, 2.5, 3, 3.5, 3.9167 |
+
+The seven additional crop views were run frame 14, guard frame 12, death frames 9/12/35, and victory frames 18/30, each using the identical native rectangle `[390,150,570,420)` with no resampling or enhancement. Extraction/viewing files are in `/workspace/scratch/27301e95ee53/independent-motion-view-34971788118/`; `independent-view-index.json` records all source and extracted-frame SHA-256 identities. These are disposable viewing intermediates outside the repository. The original clips remain under `.review/34971788118/experience/motion-study/`.
+
+### Finding returned immediately: major visual clothing residual
+
+**The hakama repair cannot yet be considered complete in motion.** In `start-run-stop` frame **13 (1.0833 s)**, the lifted dark knee appears as an oval patch partway through the hanging blue front panel; in frame **14 (1.1667 s)** the knee/upper leg projects prominently in front of that still largely straight panel. Frames 11–16 were viewed consecutively to distinguish the changing leg from a single-frame reading error. The garment does not visibly bend or gather around the rising knee. This is an apparent clothing-intersection/rigid-panel appearance; no geometric intersection depth has been measured.
+
+In `death` frames **9–12 (.75–1 s)**, the blue hem projects sideways as thin, pointed rigid fins around the bent legs. The native frame and crop show this in the lower-body silhouette, not solely at subpixel detail. The two observations are treated as **one major clothing-motion appearance residual**, because running and falling are ordinary, repeated character states and the current repair specifically addresses hakama appearance. This severity is a visual-art diagnostic judgment, not a runtime crash or gameplay blocker.
+
+After observing the images, the reviewer read the corresponding unchanged source. `character-motion.js:446` rotates each whole panel using `hipPitch * .34` with a clamped rotation; `character-sculpt.js:143` builds a fixed pleated surface. This is consistent with the visible rigid-panel behavior. The source corroborates the diagnosis but is not a substitute for the observed frames. The inspection-time checkout had advanced to documentation-only commit `3bcc5df515eb394c484e6eaf9caf0efcd50e78c5`; `git diff --name-only acf0f9ec... HEAD` confirmed no runtime file delta, so this source explanation still applies to the exact media revision.
+
+### Other observations and limits
+
+No obvious detached neck/shoulder, missing forearm section, free-floating hand/sword, or reversed knee was found in the **viewed samples at this camera angle**. Guard/parry samples show the hands clustered at the hilt; victory samples show raised sword, turn toward the waist, and a sheathed ending; death samples show a bent-knee fall and a separate sword resting ahead of the body. These observations do not validate grip geometry, all sheath-transition frames, clothing contact, or motion timing as a whole.
+
+The upright player is approximately 220 pixels tall in these native frames. Fingers, facial joins, and small surface intersections have limited visibility; rear surfaces and the helmeted enemies are not shown. This review therefore does not close the earlier neck/shoulder, face, sleeve, and helmet findings for all four characters. The report itself identifies an isolated inspection camera and synthetic scene states: these are actual rendered generated assets, but they are not normal-input combat recordings or real-time/device performance evidence. No listening was performed.
+
+The prior `037fd9d` image rejection remains integrator-reported context; this reviewer did not conduct a paired native-image comparison against that source. This is a source-known technical/art diagnosis, **not a blind comparison, PS4 acceptance, formal comparison, or real-device PASS**. CC0 materials are absent from these media and the proposed next pilot is unevaluated. Only this owned evidence file was changed in the repository; no production/runtime, remote, staging, or automation action was taken. All 10 formal elements remain **not measured**; deadline **2026-09-20T07:51:53Z** is unchanged.
+
+## Frozen scene-art source review — 2026-09-15T13:38Z
+
+The integrator assigned the same independent Ultra reviewer author commit **`3622a5827fa196e7aeea25c89bfda4fde2dc51bd`**, based on **`acf0f9ec86996245ad712d6adc72e5d6159f6711`**. Review and tests ran in the frozen isolated checkout `/workspace/scratch/27301e95ee53/game2-scene-art`; its HEAD matched the assigned author commit. The three runtime/test files also matched the copies transferred to the canonical checkout. Other pending character/vegetation work was excluded. No author source, report, test, stage, commit, remote, or automation was changed by this reviewer; only this canonical evidence file was appended.
+
+| Reviewed file | SHA-256 |
+| --- | --- |
+| `fresh/scene-art.js` | `66f301ef74e70783571cc309aa5d1d37e121d46f188424d5e77fae607a181b88` |
+| `fresh/presentation.js` | `e30465c962e84836c7db9feffee3510aac936a359174288a31d34a2981b3e507` |
+| `fresh/scene-art.test.mjs` | `99e38775bf223aafe55fe16617baa910263f153fd20bdea08972b0f816fd2fce` |
+
+### Source and fixture review
+
+The scoped diff replaces the central ridge, shrine structure, paving shapes, ground material, and side-outcrop shapes. Collision rectangles, route coordinates, terrain sampling, actor/input rules, foreground algorithms, and existing tests remain unchanged. New procedural variation uses its own hash; each retained call to the presentation's original random generator consumes the same number of values in the same order. `addOutcrop` receives the same placement/scale/rotation arguments as the prior decorative rocks. Material batches merge static pieces and dispose intermediate geometries; the nine ridge sections remain separate registered foreground meshes so that opacity, depth writing, and shadows can reset locally.
+
+The new ridge tests intersect the actual generated triangles for positive footprint coverage and assert no intersection in both walking corridors. The historic actor/head/blade fixture now correctly represents an unobstructed case at the lower far end; a separate ray through a real triangle exercises the positive fade. This does not delete or weaken the existing old-shape regression fixture. The positive test alone covers one section/triangle, rather than proving every possible ray, and the explicit reset assertions retain opacity, depth writing, and cast-shadow requirements.
+
+The shrine test has both a negative ray at the stopped-foot boundary and a positive wall hit. Its actual base is contained in the unchanged 10 × 7 collision footprint; front decorative posts extend less than the actor's existing .35 m exclusion radius, and roof overhangs are above actor height. Ridge side/end profiles and paving caps were inspected for winding and ground placement. The new material data is generated locally; this delta introduces no fetch, model loader, external asset, or dependency.
+
+One coverage distinction matters: the existing presentation-contract test named “clears the shrine lattice” still analytically checks **old** red/brass lattice coordinates. Its success does not prove visibility through the rebuilt wall. The direct geometry check below therefore tested the unchanged signal lamp against the actual candidate shrine, rather than treating that old formula as evidence for the new surfaces. No actual lamp occlusion was found in those new checks.
+
+### Independently performed checks
+
+- `node --test fresh/scene-art.test.mjs fresh/foreground-visibility.test.mjs fresh/terrain.test.mjs fresh/route-layout.test.mjs fresh/presentation-contract.test.mjs`: **39/39 PASS**, no failures/skips/cancellations, 5.72 s in this run. These are the final assigned scene files, not the author's earlier pre-adjustment 201-test run.
+- Reviewer-authored stdin code constructed both the base and candidate presentations using the same installed dependencies, with **WebGLRenderer and Canvas2D drawing stubbed**. All **114 vegetation assemblies** matched exactly in every geometry attribute, index data, world matrix, instance matrix, and instance count. The actual ground mesh's complete position buffer also matched exactly. This supports retained plant placement/support geometry and terrain, without claiming a rendered image or GPU execution.
+- The candidate's **17 scene-art meshes, 92,394 vertices and 30,798 triangles** had zero nonfinite attribute values, zero non-unit normals within `1e-5`, zero degenerate triangles at the checked `1e-16` squared-area threshold, and zero vertex normals facing against their corresponding triangle. All 17 retained cast/receive shadow flags. Geometry attribute storage was **4,065,336 bytes**. These counts exclude the rest of the game. The four generated 256 × 256 RGBA textures total **1,048,576 data bytes**, excluding mipmaps, GPU expansion and the retained old textures.
+- **104 real FrontSide ray checks** hit correctly facing nearest surfaces: 60 down onto both roof slopes, 36 up beneath both eaves, and 8 inward toward the two gables. These used the generated candidate meshes and original FrontSide materials, without substituting DoubleSide to conceal a winding error.
+- **15 additional signal rays** used the actual lamp cylinder dimensions/position and candidate shrine geometry: five lamp heights at each of 16:9, 844:390 and 390:844 authored arrival-camera aspects. Every nearest intersection was the lamp, rather than the replacement lattice/wall. This is finite geometric visibility evidence; it does not measure emitted light, tone mapping, HUD coverage or final perceptual prominence.
+
+**Finding:** no source-known blocker/major was found in this bounded frozen scene delta. The author separately records final build success and 39 related tests; this reviewer independently repeated the relevant tests above, and did not relabel the author's earlier **201-test pre-final-adjustment run** as a final full-suite result. This review did not rerun an unnecessary complete suite or produce a WebGL capture.
+
+### Required next native-media observations
+
+The final integrated source still needs actual PC/touch route and arrival media. Particular visual risks are the **FrontSide half-cylinder tile strips from both oblique sides**, roof undersides and layered edges, lattice/shingle flicker at distance, the new 2 m ground-pattern scale, paving contact and conspicuity, and ridge-section fade transitions against the actor/weapon. Static batching reduces object count but does not measure browser frame time, fill rate or mobile loading. The author's Node construction timings and CPU shape plots remain diagnostic only; no CPU plot was treated as a game screenshot here.
+
+This scene-only review does **not** close the separately observed hakama motion major, evaluate the pending CC0 character or vegetation candidates, or establish integrated visual improvement. It remains a source-known technical review, not a blind comparison or PS4 acceptance. All 10 formal elements remain **not measured**; deadline **2026-09-20T07:51:53Z** is unchanged.
+
+## First CC0 character candidate source review — 2026-09-15T13:45Z
+
+The same independent Ultra reviewer was assigned the first preserved native-character candidate **`1e7eed79e7dec1ce28470c77c1fb93a74e40cd15`**, base **`acf0f9ec86996245ad712d6adc72e5d6159f6711`**. Because the author was continuing a separate hakama repair in `/workspace/scratch/27301e95ee53/game2-mpfb-pilot`, source reads used **`git show 1e7eed79:<path>`**. The corresponding canonical character files matched that frozen source before and after independent tests; the separately merged scene-art delta was not treated as part of this character commit. The revised CLAUDE section explicitly records the integrator's authorized method change to bundled CC0 anatomy/materials; this was not represented as a new user-specified asset name or a change to the fixed quality goal.
+
+| Frozen file | SHA-256 |
+| --- | --- |
+| `fresh/character-assets.js` | `4951b0257e6a1cde08c0fab76fe38b902f6bb441773d54c539bb5fb10c515ac3` |
+| `fresh/character-assets/native-data.js` | `b0300de3b9e1a554af7d4586dff412857e262c9a4e88ffb3510b14dbb8ca001b` |
+| `fresh/character-tools/derive-mpfb.mjs` | `a54fd2121badf4daed9f3e8802039c0504e4a5ef10b8f8ea696d363096e3c7a5` |
+| `fresh/character-assets/provenance.json` | `e71011bdf4cdcc10a6b68d955f4292cb3ed5cea9c399912cad5d05f02325f991` |
+| `fresh/character-assets/LICENSE.CC0.md` | `f6089cba01cb570a24712b41ab8a586ccd3cc5ef53dc266ca50b95c288956d2c` |
+| `fresh/character-rig.js` | `5266988e51e0f49aaa30beb69fc55a1d6922cc0805bffe01de9f31ff4e1fa47a` |
+| `fresh/character-motion.js` | `0f47020978f7b651d865479a108ced355d55faf5f4d574c4d996e5f1e8442352` |
+| `fresh/main.js` | `0a38ad3342bc964502134e1f49d6d831b3d418d975039ba9485e25e47af91c03` |
+| `fresh/character-assets.test.mjs` | `5ae04cf0fa3fbafa8a0ba5cceba01169c770264ede265d5f1684009e6f5c29d5` |
+
+### Stored origin, license statements and exact derivation
+
+This reviewer read the retained MPFB license, CC0 text, base mesh header, and eye/hair/brow fitting/material headers. The original headers explicitly declare the CC0 asset release and named holders; the stored MPFB license distinguishes GPL program logic from CC0 mesh, texture, target, rig and related graphical data. The actual derivation imports Three.js and Node utilities, rather than MPFB program code. Original source helper data is retained for fitting, while rendered extraction uses the `body` faces and excludes helper vertex ranges. The fixed comparison game's creative material is not an input to this derivation.
+
+All **27 provenance entries** independently matched both stored-file SHA-256 and recorded original-byte SHA-256/length. Where a source was newly gzip-wrapped, its decompressed bytes matched; targets whose original source already ended in `.gz` correctly matched the original compressed bytes. The README's general decompression wording should be read with that distinction. This review verifies the retained statements and byte lineage; the supplier's original upstream acquisition/archive verification remains attributed to that supplier. No upstream download or external legal determination was performed by this reviewer.
+
+The exact frozen `derive-mpfb.mjs` was then executed with only its filesystem reads routed to the frozen commit and its writes captured in memory. Its fitting, morph, bone, skinning, UV and packing calculations were unchanged. Both outputs reproduced **byte-for-byte**: `native-data.js`, **3,428,098 bytes**, hash as above; and `derivation-report.json`, **13,077 bytes**, SHA-256 `bc45d9ca164c1e43245305b6be55007ef072443edf5606b5082dc2f77d3b72b1`. No asset or report file was rewritten.
+
+### Independent tests and geometry/attachment checks
+
+- `node --test fresh/character-assets.test.mjs fresh/character-motion.test.mjs`: **25/25 PASS**, no failures/skips/cancellations, 7.00 s. The native eye/nose rays use FrontSide geometry, UV-split indices address actual vertices, and head/hand source IDs exclude the helper range. The small changes to the old costume test remove the superseded generated-part/headband counts and zero-import assertion; motion timing, leg/contact tolerances, grasp tolerance, and draw-mesh bound remain intact. Legacy procedural facial utility tests were not counted as proof of the native face.
+- Head, eye, hair, brow, mask and hand data had finite positions/normals/UVs, valid indices, no zero normals, and unit normals within the checked rounding tolerance. Native eyes/hair/brows had no triangle-versus-vertex-normal reversal; the face/mask exceptions are recorded separately below. Each generated collar contains 370 triangles and showed no face-versus-averaged-normal reversal in all four figures.
+- **432 pose frames** across nine states compared the old base motion implementation against the new implementation using identical native rigs with `gripOffset` removed. **Every node's full world matrix matched exactly**, establishing the explicit zero-offset fallback independently of the new test's wrist-only assertion.
+- For **384 non-death frames** using the actual nonzero grasp offset, pelvis, sword, scabbard, hip, knee and ankle world matrices exactly matched the same rig without that offset. **195 zero-grasp wrist observations**, including ordinary free hands, scabbard support and released hands, matched exactly; maximum difference was zero. The offset changes the arm target while preserving the existing weapon target. This is not a claim that a differently shaped whole figure has identical ground clearance in every falling pose.
+- Existing tests check connected finger-chain lengths and skin-vertex clearance. An additional **26,464 hand triangle-interior samples** (centroids and edge midpoints across both 3,308-triangle hands) remained outside the actual handle cylinder's tapered circular envelope. This strengthens the vertex-only check but is not an exhaustive triangle collision proof and does not include every raised cord-wrap detail.
+
+### Bounded normal concern, not an independently established major
+
+The warden's face guard is made by offsetting selected head vertices **6 mm along the original normals** while retaining those normals. Of its **2,884 triangles**, **232** face against their averaged stored normals, totaling approximately **0.000563 m²**. Many are internal mouth/nose surfaces. The unoffset player/warden heads each have 16 such tiny lip triangles, totaling approximately **0.00000588 m²**; each posed hand has two small exceptions totaling approximately **0.00000332 m²**. These observations prevent a blanket claim of perfect normal consistency.
+
+To distinguish hidden folds from exposed ones, the reviewer cast **4,505 actual FrontSide rays** over the warden lower face. The face guard was the nearest surface for **3,330** rays; **two** exposed upper-side samples had an interpolated normal pointing significantly away from the front view: local `(x,y,z) ≈ (±.079,.134,-.037374)`, face indices **1386/2807**, normal Z approximately **+.6474**. The issue was immediately reported to the integrator. Its limited measured exposure does not establish a new major visible defect without native imagery; it remains a concrete local offset/normal concern for the face-guard close views. Flipping material sides would not establish that the offset surface itself is sound.
+
+### Loading, size and remaining validation
+
+Source inspection confirms four same-origin Vite-resolved PNG assets, shared native materials, explicit pending/ready/failed states, and start/render gating in `main.js`. Node-only construction reports `geometry-only`. The independent browser-readiness apparatus review belongs to another assigned reviewer and was not duplicated here. Source readiness and the injected-loader unit test do not prove actual browser decoding/upload time or first rendered appearance.
+
+The four exact frozen PNGs independently decoded fully with Pillow: skin **2048² RGB**, eye **1024² RGBA**, hair **2048² RGBA**, brow **512² RGBA**. Total original PNG bytes are **6,601,667**. A four-channel GPU representation would require **38,797,312 base-level bytes**, approximately **51.7 MB with a full mip chain**; that is a layout estimate, not measured GPU allocation or device performance. Native geometry also adds the parsed data module plus derived typed buffers. These costs require the real browser/mobile-oriented capture and existing timing gates.
+
+**Finding:** no additional source-known blocker/major was established for this frozen first CC0 candidate; the limited face-guard normal issue is retained explicitly. The author reports 48 related tests and terrain tests from before the final collar extension. This reviewer independently ran the 25 tests above and does **not** reuse that earlier terrain result for the final collar; the exact integration terrain run remains the integrator's separate check. No native WebGL image of this candidate was viewed here. Static grasp after release, collar/head motion, skin/hair/eye appearance, helmet/face-guard fit, startup cost, and the separately reported hakama major remain relevant to the next native media. All 10 formal elements remain **not measured**; deadline **2026-09-20T07:51:53Z** is unchanged.
+
+## Integrated Node scene-fixture repair — 2026-09-15
+
+The integrator reported **205 passing / 6 failing out of 211** integrated tests: the vegetation helper's canvas-only fake document caused the native image loader to call an absent `createElementNS`. The assigned repair was limited to an optional character-resource argument in production presentation construction and explicit real Node geometry-only resource injection in the vegetation test helper. The previously failed foreground/leaf test rerun belongs to the integrator; this review did not claim or repeat a complete suite result.
+
+| Reviewed integrated file | SHA-256 |
+| --- | --- |
+| `fresh/presentation.js` | `c1a8d323a62b8107682b23b8b85834d278812db4d11be125358cf0006731fe22` |
+| `fresh/vegetation-test-support.mjs` | `fec52309bc6e323fbb67ce630682851089674d21dea0eb87cb5e3c6748f7a87d` |
+
+The exact diff changes `createPresentation(canvas,{characterResources}={})` and chooses `characterResources ?? createCharacterResources()`. The test helper creates its real character resources **before** installing the canvas-only fake document, passes those resources explicitly, awaits `view.assetsReady`, and restores global descriptors in `finally`. It does not inject fake meshes, textures, a successful image-load count, or a `ready` status. The production `main.js` and `character-assets.js` hashes remained **`0a38ad3342bc964502134e1f49d6d831b3d418d975039ba9485e25e47af91c03`** and **`4951b0257e6a1cde08c0fab76fe38b902f6bb441773d54c539bb5fb10c515ac3`**. Main still calls the single-argument `createPresentation(canvas)`, so its four actual image loads, failure path, and start/render gate are unchanged.
+
+This reviewer independently generated **one actual integrated Node scene, 236 meshes**, with the helper's renderer/Canvas2D stubs. Its diagnostic asset state was **`geometry-only`**, `textureCount:4`, `readyCount:0`, `pendingCount:0`, `failedCount:0`, `error:null`. Exact prior property descriptors for `document`, `innerWidth`, `innerHeight`, and `devicePixelRatio` were restored, including a deliberately non-enumerable preexisting width property. One additional **synthetic constructor-failure control**, without generating another scene, also restored every descriptor and propagated the original error. Reviewed hashes remained unchanged afterward, and the two-file diff passed whitespace checks.
+
+Current callers await the helper sequentially within their test process. Because it temporarily replaces shared globals and yields while awaiting readiness, it is **not a guarantee of safe concurrent helper calls inside one process**; no such concurrent call was found in the reviewed callers. The success/failure restoration result concerns the actual sequential usage. The helper does not persist its fake document or alter the separately run production browser.
+
+**Finding:** no blocker/major was found in this bounded apparatus repair. It preserves the distinction between geometry-only Node checks and production image readiness. This single-scene result is not a full-suite PASS, browser decode result, rendered quality finding, or a closure of the existing character/art findings. Only this owned evidence file was edited by the reviewer. All 10 formal elements remain **not measured**; deadline **2026-09-20T07:51:53Z** is unchanged.

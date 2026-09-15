@@ -37,10 +37,44 @@ export function characterSightPoints(rig,out=[]){
 
 // The render and intersection passes read the SAME current support state.
 // Re-solving an old wind formula here would fade leaves that are not on the ray.
-function bendLeaves(geometry,source,time,physics){
-  const p=geometry.attributes.position;
-  for(let i=0;i<p.count;i++)p.setXYZ(i,...physics.deformVertex(source,i,time));
-  geometry.computeBoundingSphere();geometry.computeBoundingBox();
+function bendLeaves(part,time,physics,matrixWorld,meetsSphere){
+  const {proxy,source,ranges,sphere}=part,p=proxy.geometry.attributes.position,index=proxy.geometry.index.array;
+  let count=0;proxy.geometry.boundingBox.makeEmpty();
+  for(const range of ranges){
+    if(range.pivot){
+      sphere.center.fromArray(physics.frameAt(range.beam,range.pivot).position);sphere.radius=range.radius;sphere.applyMatrix4(matrixWorld);
+      if(!meetsSphere(sphere))continue;
+    }
+    for(const i of range.vertices){
+      const point=physics.deformVertex(source,i,time);p.setXYZ(i,...point);part.vertex.fromArray(point);proxy.geometry.boundingBox.expandByPoint(part.vertex);
+    }
+    index.set(range.indices,count);count+=range.indices.length;
+  }
+  proxy.geometry.setDrawRange(0,count);
+  // Mesh.raycast uses this bound before individual triangles. Only the active
+  // vertices above participate; unselected leaves keep their immutable source.
+  if(count)proxy.geometry.boundingBox.getBoundingSphere(proxy.geometry.boundingSphere);
+  return count>0;
+}
+
+function leafRanges(source){
+  const p=source.attributes.position,pivot=source.attributes.leafPivot,support=source.attributes.windSupport,direction=source.attributes.leafDirection,
+    groups=new Map(),byVertex=[];
+  for(let i=0;i<p.count;i++){
+    const leaf=pivot.getW(i)>0,key=leaf?[pivot.getX(i),pivot.getY(i),pivot.getZ(i),direction.getW(i)].join('/'):'wood';
+    let range=groups.get(key);
+    if(!range){range={vertices:[],indices:[],beam:support.getW(i),pivot:leaf?[pivot.getX(i),pivot.getY(i),pivot.getZ(i)]:null,radius:0};groups.set(key,range);}
+    range.vertices.push(i);byVertex[i]=range;
+    if(leaf){
+      const offset=new T.Vector3(support.getX(i)-pivot.getX(i),support.getY(i)-pivot.getY(i),support.getZ(i)-pivot.getZ(i)),axis=new T.Vector3(direction.getX(i),direction.getY(i),direction.getZ(i)),along=offset.dot(axis);
+      // Triangle inequality: curved centreline arc plus perpendicular offset.
+      // Rotation cannot enlarge either length. The 6 mm guard also covers the
+      // small-angle centreline approximation and Float32 bind rounding.
+      range.radius=Math.max(range.radius,Math.abs(along)+offset.addScaledVector(axis,-along).length()+.006);
+    }
+  }
+  for(let i=0;i<source.index.count;i++){const vertex=source.index.getX(i);byVertex[vertex].indices.push(vertex);}
+  return [...groups.values()];
 }
 
 // Rendering retains the existing spatial batches. CPU intersection proxies
@@ -66,8 +100,8 @@ function leafProxies(source,material){
     const source=new T.BufferGeometry();
     for(const name of names)source.setAttribute(name,new T.Float32BufferAttribute(group[name],name==='position'?3:4));
     source.setIndex(group.indices);source.computeBoundingBox();
-    const proxy=new T.Mesh(source.clone(),material);proxy.matrixAutoUpdate=false;
-    return {source,proxy,bounds:source.boundingBox.clone().expandByScalar(1.4),worldBounds:new T.Box3()};
+    const proxy=new T.Mesh(source.clone(),material);proxy.matrixAutoUpdate=false;proxy.geometry.boundingSphere=new T.Sphere();
+    return {source,proxy,ranges:leafRanges(source),sphere:new T.Sphere(),vertex:new T.Vector3(),bounds:source.boundingBox.clone().expandByScalar(1.4),worldBounds:new T.Box3()};
   });
 }
 
@@ -110,6 +144,11 @@ export function createForegroundVisibility(){
       return bounds.containsPoint(camera)||
         (raycaster.ray.intersectBox(bounds,intersection)&&intersection.distanceTo(camera)<distance);
     });
+    const meetsSphere=sphere=>points.some(point=>{
+      const distance=direction.subVectors(point,camera).length();if(distance<.08)return false;
+      raycaster.set(camera,direction.multiplyScalar(1/distance));
+      return sphere.containsPoint(camera)||(raycaster.ray.intersectSphere(sphere,intersection)&&intersection.distanceTo(camera)<distance);
+    });
     for(const entry of entries){
       const {mesh,proxy}=entry;
       mesh.updateWorldMatrix(true,false);proxy.matrixWorld.copy(mesh.matrixWorld);
@@ -127,7 +166,8 @@ export function createForegroundVisibility(){
       if(nearby&&entry.vegetation)for(const part of entry.leafParts){
         part.worldBounds.copy(part.bounds).applyMatrix4(mesh.matrixWorld);
         if(!meetsSightline(part.worldBounds))continue;
-        part.proxy.matrixWorld.copy(mesh.matrixWorld);bendLeaves(part.proxy.geometry,part.source,windTime,entry.vegetation);proxies.push(part.proxy);
+        part.proxy.matrixWorld.copy(mesh.matrixWorld);
+        if(bendLeaves(part,windTime,entry.vegetation,mesh.matrixWorld,meetsSphere))proxies.push(part.proxy);
       }
       entry.blocked=false;
       if(nearby)for(const point of points){

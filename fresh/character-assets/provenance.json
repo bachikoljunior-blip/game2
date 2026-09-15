@@ -1,0 +1,202 @@
+{
+  "license": "CC0-1.0",
+  "bodyArchive": "https://codeload.github.com/makehumancommunity/mpfb2/zip/refs/heads/master",
+  "bodyArchiveSha256": "e82923cd5a8b5fe2587605419a6d9bdd3c3757fcdb11248e14137d868b3d82b9",
+  "systemAssetsPage": "https://static.makehumancommunity.org/assets/assetpacks/makehuman_system_assets.html",
+  "assetAuthorCopyrightAtCC0Release": [
+    "Data Collection AB",
+    "Joel Palmius",
+    "Jonas Hauquier"
+  ],
+  "files": [
+    {
+      "source": "mpfb-core/base.obj",
+      "file": "source/base.obj.gz",
+      "sourceBytes": 1749303,
+      "sourceSha256": "8e761e6624b8f54536409135d1636da63b32486a90d4897f84e121d144f6fb4c",
+      "fileSha256": "abe544ec8046b07ffe3a31bb0ee88203d773cb1febb8ce58e89c0efc6b1d783c"
+    },
+    {
+      "source": "mpfb-core/rig.game_engine.json",
+      "file": "source/rig.game_engine.json.gz",
+      "sourceBytes": 40936,
+      "sourceSha256": "b324ddb4b707721c19630bfadb87c3e3b38eed3b6e4590bb3cead43ea918f799",
+      "fileSha256": "2bb136564ef01645481cc274ee9fb126c5da676ac5fc2bf5ac7a40cf9b79d3e6"
+    },
+    {
+      "source": "mpfb-core/weights.game_engine.json",
+      "file": "source/weights.game_engine.json.gz",
+      "sourceBytes": 3026778,
+      "sourceSha256": "9f4a773e74ce5ba08415b4f30070338e9f75bae5971b5075b10cd6b9caa58473",
+      "fileSha256": "36735ac5d9d16a9e3514c11145615d489b0d31d8abe49571030f3c7275882cd1"
+    },
+    {
+      "source": "mpfb-core/LICENSE.ASSETS.md",
+      "file": "LICENSE.CC0.md",
+      "sourceBytes": 6962,
+      "sourceSha256": "f6089cba01cb570a24712b41ab8a586ccd3cc5ef53dc266ca50b95c288956d2c",
+      "fileSha256": "f6089cba01cb570a24712b41ab8a586ccd3cc5ef53dc266ca50b95c288956d2c"
+    },
+    {
+      "source": "mpfb-core/LICENSE.md",
+      "file": "source/LICENSE.MPFB.md.gz",
+      "sourceBytes": 3188,
+      "sourceSha256": "5cefb60680cb9efd4550a2e65d719021cfbec9dad3658481d11d48ae863ce04d",
+      "fileSha256": "c1a9c8882a5c37fc1dd369fd4d6db79d8b8dd181aefb77d60c736ae4bc85c875"
+    },
+    {
+      "source": "mpfb-system-sample/eyes/low-poly/low-poly.obj",
+      "file": "source/eyes.obj.gz",
+      "sourceBytes": 6604,
+      "sourceSha256": "783fe1e6331162c876520b4c2bed7a8ca06354ca15497e8ebd68bb1b59f4d3de",
+      "fileSha256": "8c915ed4b3b16f345cee52be1b498eef1f176b0b40da83b760062d91a3ec969d"
+    },
+    {
+      "source": "mpfb-system-sample/eyes/low-poly/low-poly.mhclo",
+      "file": "source/eyes.mhclo.gz",
+      "sourceBytes": 1344,
+      "sourceSha256": "68582e28e9176cba7cfcf35208f671b6201b8d1bc95c32decff61a3160ec34d8",
+      "fileSha256": "898837c3ec45a8111a1f063bea92c401a80903c8dff515384b05938c6f081cf2"
+    },
+    {
+      "source": "mpfb-system-sample/eyes/materials/brown.mhmat",
+      "file": "source/brown.mhmat",
+      "sourceBytes": 1247,
+      "sourceSha256": "4abad93ce50541c08127721e77bce035640c9f16bed16cd0f5524b1cd5908465",
+      "fileSha256": "4abad93ce50541c08127721e77bce035640c9f16bed16cd0f5524b1cd5908465"
+    },
+    {
+      "source": "mpfb-system-sample/eyes/materials/brown_eye.png",
+      "file": "textures/brown-eye.png",
+      "sourceBytes": 610817,
+      "sourceSha256": "4659691c7295ad6206c78b003e5fd0e5f91dcd53032fa914a229bb48cabe424b",
+      "fileSha256": "4659691c7295ad6206c78b003e5fd0e5f91dcd53032fa914a229bb48cabe424b"
+    },
+    {
+      "source": "mpfb-system-sample/skins/young_asian_male/young_asian_male.mhmat",
+      "file": "source/skin.mhmat",
+      "sourceBytes": 1452,
+      "sourceSha256": "9fdfc9863cd15d1359311435f2da7de3906f81d6eea549fba6bf14cd82ceb6a0",
+      "fileSha256": "9fdfc9863cd15d1359311435f2da7de3906f81d6eea549fba6bf14cd82ceb6a0"
+    },
+    {
+      "source": "mpfb-system-sample/skins/young_asian_male/young_lightskinned_male_diffuse3.png",
+      "file": "textures/young-asian-male.png",
+      "sourceBytes": 3593099,
+      "sourceSha256": "f50016a5507fc687dc8df06599c8ea48de950cd185de33a71cafc1319ddab4d5",
+      "fileSha256": "f50016a5507fc687dc8df06599c8ea48de950cd185de33a71cafc1319ddab4d5"
+    },
+    {
+      "source": "mpfb-system-sample/hair/short04/short04.obj",
+      "file": "source/hair.obj.gz",
+      "sourceBytes": 55152,
+      "sourceSha256": "676964a133ee35ffcea1195382bf75542da7a298931e4001bc7b0d7b707225de",
+      "fileSha256": "5185d326ab42937c94c2f932d01b0adf6ed57aa83b5c5523b3fc80b0ff5f7ada"
+    },
+    {
+      "source": "mpfb-system-sample/hair/short04/short04.mhclo",
+      "file": "source/hair.mhclo.gz",
+      "sourceBytes": 59195,
+      "sourceSha256": "d60640aa4c4ffce1aa269647ba436b6ee0bb21bb948f927b84e27a48d2107157",
+      "fileSha256": "0abc0f8f5609eb978f99508d400d75d3234741efd0633ab922c40fc315627347"
+    },
+    {
+      "source": "mpfb-system-sample/hair/short04/short04.mhmat",
+      "file": "source/hair.mhmat",
+      "sourceBytes": 1316,
+      "sourceSha256": "7a3ac74db8478aa0afdb8a596c6fe3997d1a8a09d12211d70e8f1e9f0b7e0e97",
+      "fileSha256": "7a3ac74db8478aa0afdb8a596c6fe3997d1a8a09d12211d70e8f1e9f0b7e0e97"
+    },
+    {
+      "source": "mpfb-system-sample/hair/short04/short04_diffuse.png",
+      "file": "textures/short-hair.png",
+      "sourceBytes": 2308132,
+      "sourceSha256": "0bef7fc0e403db5a40fabb2111ebfa6f7e8158e204c6e56b8da98e9ef527846e",
+      "fileSha256": "0bef7fc0e403db5a40fabb2111ebfa6f7e8158e204c6e56b8da98e9ef527846e"
+    },
+    {
+      "source": "mpfb-targets/macrodetails/asian-male-young.target.gz",
+      "file": "targets/asian-male-young.target.gz",
+      "sourceBytes": 130005,
+      "sourceSha256": "0928ed8b9f08f60afb9884cf9e9f33a939ed3a85d7f136de9ccc88a76981d6d7",
+      "fileSha256": "0928ed8b9f08f60afb9884cf9e9f33a939ed3a85d7f136de9ccc88a76981d6d7"
+    },
+    {
+      "source": "mpfb-targets/head/head-age-incr.target.gz",
+      "file": "targets/head-age-incr.target.gz",
+      "sourceBytes": 13932,
+      "sourceSha256": "ea5b7b9404daa1f6b8ea14a11a0e8ae6a082e98d0d65f63cc2150057a168e396",
+      "fileSha256": "ea5b7b9404daa1f6b8ea14a11a0e8ae6a082e98d0d65f63cc2150057a168e396"
+    },
+    {
+      "source": "mpfb-targets/chin/chin-width-incr.target.gz",
+      "file": "targets/chin-width-incr.target.gz",
+      "sourceBytes": 1110,
+      "sourceSha256": "68764b6ec7c923597beaaf643f71c41f00c93639d9bb522c169c279db2ad299e",
+      "fileSha256": "68764b6ec7c923597beaaf643f71c41f00c93639d9bb522c169c279db2ad299e"
+    },
+    {
+      "source": "mpfb-targets/chin/chin-width-decr.target.gz",
+      "file": "targets/chin-width-decr.target.gz",
+      "sourceBytes": 768,
+      "sourceSha256": "6c3aaca074630e89951184130a4a158b6f62c9d0cf57cf8eb828c445ff40c21a",
+      "fileSha256": "6c3aaca074630e89951184130a4a158b6f62c9d0cf57cf8eb828c445ff40c21a"
+    },
+    {
+      "source": "mpfb-targets/nose/nose-scale-depth-incr.target.gz",
+      "file": "targets/nose-scale-depth-incr.target.gz",
+      "sourceBytes": 1384,
+      "sourceSha256": "49f63b72f04f637ed38061acce579c0948d29175d949bf21e6bfed354c0a10bf",
+      "fileSha256": "49f63b72f04f637ed38061acce579c0948d29175d949bf21e6bfed354c0a10bf"
+    },
+    {
+      "source": "mpfb-targets/cheek/l-cheek-volume-decr.target.gz",
+      "file": "targets/l-cheek-volume-decr.target.gz",
+      "sourceBytes": 787,
+      "sourceSha256": "202ff036e39abea154e0896ad34641184c5e8b77610dca9e1e8e4ce4a5db1bc4",
+      "fileSha256": "202ff036e39abea154e0896ad34641184c5e8b77610dca9e1e8e4ce4a5db1bc4"
+    },
+    {
+      "source": "mpfb-targets/cheek/r-cheek-volume-decr.target.gz",
+      "file": "targets/r-cheek-volume-decr.target.gz",
+      "sourceBytes": 765,
+      "sourceSha256": "ea12455c7a85e7b3b5e6e4882b4b68823a00bcaef4ea048cc49be452a139c1bc",
+      "fileSha256": "ea12455c7a85e7b3b5e6e4882b4b68823a00bcaef4ea048cc49be452a139c1bc"
+    },
+    {
+      "source": "mpfb-targets/head/head-scale-horiz-incr.target.gz",
+      "file": "targets/head-scale-horiz-incr.target.gz",
+      "sourceBytes": 21695,
+      "sourceSha256": "671542640aec14d1740c1263deb0e274f3044edec761e6d4171329f0419be084",
+      "fileSha256": "671542640aec14d1740c1263deb0e274f3044edec761e6d4171329f0419be084"
+    },
+    {
+      "source": "mpfb-system-sample/eyebrows/eyebrow001/eyebrow001.obj",
+      "file": "source/brows.obj.gz",
+      "sourceBytes": 8227,
+      "sourceSha256": "88b13146395133f3901715e11706cdfd293e5d6087ad7c5e01efe1485a26b513",
+      "fileSha256": "e88746eae0bad837be812bb6f68e08f2cbc6d9b042257f17dcb8751c37585a70"
+    },
+    {
+      "source": "mpfb-system-sample/eyebrows/eyebrow001/eyebrow001.mhclo",
+      "file": "source/brows.mhclo.gz",
+      "sourceBytes": 9141,
+      "sourceSha256": "54c8892c2ba577f4152d779ce1f20f7cd323beb8cbd9cb701796165c221b4f5b",
+      "fileSha256": "a7ce9e842c598eea3bd66d5fc877c4fdd34e11908ebeb5f8880468da861d4bbb"
+    },
+    {
+      "source": "mpfb-system-sample/eyebrows/eyebrow001/eyebrow001.mhmat",
+      "file": "source/brows.mhmat",
+      "sourceBytes": 1098,
+      "sourceSha256": "976e5f4f1d3922d7a11c6e2db233f8b4584b068d00619d5749687e81c92d61fc",
+      "fileSha256": "976e5f4f1d3922d7a11c6e2db233f8b4584b068d00619d5749687e81c92d61fc"
+    },
+    {
+      "source": "mpfb-system-sample/eyebrows/eyebrow001/eyebrow001.png",
+      "file": "textures/eyebrows.png",
+      "sourceBytes": 89619,
+      "sourceSha256": "9940f7d0b1b223709a19b05156ba6f6e9e4dbdbced02d7574f4d51d72c58967b",
+      "fileSha256": "9940f7d0b1b223709a19b05156ba6f6e9e4dbdbced02d7574f4d51d72c58967b"
+    }
+  ]
+}

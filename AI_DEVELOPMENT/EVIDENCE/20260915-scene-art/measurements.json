@@ -1,0 +1,2851 @@
+{
+  "base": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+  "kind": "Node CPU construction and geometry inspection; Canvas2D/WebGL stubs; not GPU, device or game render",
+  "baseline": {
+    "samples": [
+      {
+        "cpuGenerationMs": 658.9750200000001,
+        "meshCount": 243,
+        "vertexCount": 287382,
+        "triangleInstances": 208928,
+        "uniqueGeometryVertices": 232592,
+        "vegetation": [
+          {
+            "name": "",
+            "position": "0f0f2f84bb194c4967d9c78543354279276c7571092802132a4e931a26bc8fb5"
+          },
+          {
+            "name": "",
+            "position": "30d97e6210611c7d73e0603eeb8bfa5b3b94955cdac29a49f3a0d741d782bc5c"
+          },
+          {
+            "name": "",
+            "position": "ff6c79bae4dd1ebc12c34b781776fe176eae26e8130020e8fc4ad678e1ce63cc"
+          },
+          {
+            "name": "",
+            "position": "9ed1a33d80167a6f8dc930620f2e61a1840cd28d5526611abb4c3b2be9e3cb5b"
+          },
+          {
+            "name": "",
+            "position": "a54c7d86c905d897f0b74968af6f040233991ad60492403b7a852c74b8145171"
+          },
+          {
+            "name": "",
+            "position": "a980054abf29efc1fed9456a9448a3dd7a22667026f0ccb80d7333e718c329cd"
+          },
+          {
+            "name": "",
+            "position": "7cd8816bb495bf06a96c293c792ddaba521a5f3339b160d62b32c6572d592120"
+          },
+          {
+            "name": "",
+            "position": "0eb5d3de4dcdb856a41af47f809a6ab3f45d318594e00f79b2d17c063eab5ffd"
+          },
+          {
+            "name": "",
+            "position": "920d876ac3b2ce74db5b491e9e87746e62816ca342fd0efc36772996ea7b951f"
+          },
+          {
+            "name": "",
+            "position": "3901e9aa740371c64149eab40e74584de894a751f63da94fd8e8a97f78fbba00"
+          },
+          {
+            "name": "",
+            "position": "b756df2f5e5e83560e2ec5692c67671d7d7eca6e0dc10446f21bc69dbabd4738"
+          },
+          {
+            "name": "",
+            "position": "1f671ef4edb028888e6a9aa9ceee6b24c7a48b5da3c84fa98f54a378830a92d7"
+          },
+          {
+            "name": "",
+            "position": "b877fa2afec3b0c4d9b7e368a66e7f970aef2d7284e523bdfaaee0c3bf6a0271"
+          },
+          {
+            "name": "",
+            "position": "1c0c05203911e15cdea78443d3d32954850211b47f9cc9fd02071ec74fdf5369"
+          },
+          {
+            "name": "",
+            "position": "f3de31509ceb205a7dca55f85ed6c092673c449d96b8138a762bf5260d597020"
+          },
+          {
+            "name": "",
+            "position": "b738d1d2bab85646fc631933cfb83c90b05eacbefdace3ceadeb742554e10d87"
+          },
+          {
+            "name": "",
+            "position": "a9e9c6616f4076aa677269b68a190ad52fa58f1f2dfb04e0ffed3e35fc4b73fa"
+          },
+          {
+            "name": "",
+            "position": "3aa5fc279fcb68042ca4c397b0b36c273b3660c436e520fded762616e3387649"
+          },
+          {
+            "name": "",
+            "position": "77612f813b11f61a230c145ba4a3405f0b9ddf05ace8877f0f19012198cb5d44"
+          },
+          {
+            "name": "",
+            "position": "7fd754685a28bbedfa9891c3148f03ca71926a5f9b168c1d3249b9b4a088b329"
+          },
+          {
+            "name": "",
+            "position": "8f3a6d46d0ac8c22894f838518742756424835bdfd4f58572283cfde92039390"
+          },
+          {
+            "name": "",
+            "position": "70dd0c21a3898e3d87f9c1418173344f8a2123b3b79c7d95d97f4a11eea7c6b1"
+          },
+          {
+            "name": "",
+            "position": "35a60e43a8ca3f4e199666ed01b73b84d0f5c52d81e6a4575cf41a72d90afc17"
+          },
+          {
+            "name": "",
+            "position": "f93347317bcbacd4d9a08dcbb0d42e3b3376f592f16ad51d50e3ea288ee69f4a"
+          },
+          {
+            "name": "",
+            "position": "b4763b0bef646e532fc23ce2109f187f9366a6f46192e4fa3c19e237fbdd82fc"
+          },
+          {
+            "name": "",
+            "position": "e322ea4bfe4ebc0cdc54aab8640b3553eaa2ff2084b5145da4c3439568edbf61"
+          },
+          {
+            "name": "",
+            "position": "978237ba7db148d64b73e3426999d0d94a7f8e2d7f97ac6e3cd7bc75b5bbdacc"
+          },
+          {
+            "name": "",
+            "position": "0bae671b90e1c9a13058bd00a0270234a4edc6755d738344347cce4d3d1e1e19"
+          },
+          {
+            "name": "",
+            "position": "d5babedd8b3d7d7741bf78894d4467b3458bd03c07b2f4a3be37804af86df38f"
+          },
+          {
+            "name": "",
+            "position": "6e868cad4dfb5057fd338414d311a23f342beccbc24b997d70591abdfd5fef75"
+          },
+          {
+            "name": "",
+            "position": "54d77737e40f85ee0a3ff24d71d110fd45b81d9db4bb584868b71758a73c6d73"
+          },
+          {
+            "name": "",
+            "position": "9ca1d37468d6a41949d1ae43aa1cba6698c278dd5640b483c86ff3fa060f578e"
+          },
+          {
+            "name": "",
+            "position": "e4e270d380f8c81779e593af48c5b8344c7d2e31d187b556a04ebac66f935be8"
+          },
+          {
+            "name": "",
+            "position": "e7d134f79f8558bf81a404c67e240cba9e3490f0b70d53bf111b7714ce7547b5"
+          },
+          {
+            "name": "",
+            "position": "3c1c95f341c2cae7fc86ebe86b0e113029dfb3f2c6a739463362792093e531a4"
+          },
+          {
+            "name": "",
+            "position": "3a46aadc8deaa83e690be4518e0d797609c6f22351475aa59def1b8f556de904"
+          },
+          {
+            "name": "",
+            "position": "817b7568596f0fded948579736bca26f375914141790ba8e26c3fe9db0b651fd"
+          },
+          {
+            "name": "",
+            "position": "a64bf5d65370d8b538eb6a8a6935479644c0e6f783f6bf5e8a3b3bbf6522f73d"
+          },
+          {
+            "name": "",
+            "position": "0b371605e831d8037f2b9de5bf983726dabb25dcbdac8034a149008de8fe7239"
+          },
+          {
+            "name": "",
+            "position": "86683b49b8f325fa8372f40b044dc1e6dfdfb2af1952a3d460d365213ce71fa6"
+          },
+          {
+            "name": "",
+            "position": "8552e576336d6d7d208cb168aa714224ab6362085de434353054e771a03dd33e"
+          },
+          {
+            "name": "",
+            "position": "2e24fd8ad19a287e6f38f1ec031fb5966d75790fe85333db9fe8b8fbfd6ad22c"
+          },
+          {
+            "name": "",
+            "position": "2a911cad1c1bcdbe36007a979880c0fb2a7498bb62c01e971b875c44d9ab8fb9"
+          },
+          {
+            "name": "",
+            "position": "48d57a21d7632d69b777595e3d71f7ee6b15bded3ee970a49897d2bdddd4325f"
+          },
+          {
+            "name": "",
+            "position": "6e5a451ddb3585f2a1d2d2431860c12122ef340e415c2d3e28c98ccb21fb85e3"
+          },
+          {
+            "name": "",
+            "position": "050a132153394bc6069c056b68054d97f9c725a0161bbd987d623e9abc13a288"
+          },
+          {
+            "name": "",
+            "position": "56fe0e58fb2e1c9a33f1876b51a7d2ff7d0bd26d490f96a5c1308710fd109da0"
+          },
+          {
+            "name": "",
+            "position": "390b88c2b187b9265fec339d4df87408d156e1e1e41f03f6c7c682c0dca25341"
+          },
+          {
+            "name": "",
+            "position": "6a08ff188deaf8b1cef75c5b9d19608aaf74e086cfd1e502c00dbb1617b04952"
+          },
+          {
+            "name": "",
+            "position": "dc8360e5221f235765f00bd14ede48aaeaac7f6e5e7ad556ca52592ac0d1de59"
+          },
+          {
+            "name": "",
+            "position": "a450ed7ae29a45cb4877da1aff5dae56d2a8278de339ccb0275837ab6f844d2b"
+          },
+          {
+            "name": "",
+            "position": "392aa6564f230f4265c345c0e05aed6c39838f623d6f66df599c4b4fe7212b76"
+          },
+          {
+            "name": "",
+            "position": "bbee3566e00da2b157712811c2d71c66229f4bcd6536dd799d75cd768715d52d"
+          },
+          {
+            "name": "",
+            "position": "5d5b59916e7286dbe1a8d0cdfb8fae2e7e9f20cfd33c6c6219ab33e3352ae3cf"
+          },
+          {
+            "name": "",
+            "position": "ad51c367cdfb14c4bb0b8530c4ce4c978ed1c596c1d1e6a4857dfb9757aa4e7f"
+          },
+          {
+            "name": "",
+            "position": "fd34d4415c5b69b81274ae1c4057f0c67094de7b02ee89faa481e0e0031cfed3"
+          },
+          {
+            "name": "",
+            "position": "2620a977a0f61f6810cb64368b14a8b7c10dc2d83277ba3eb95eea5ba5c5ff28"
+          },
+          {
+            "name": "",
+            "position": "e65a6af3f27840a08ce600f5971d8ba1c0a3374371f49b652165fdcebfd0a006"
+          },
+          {
+            "name": "",
+            "position": "38e0940685fcdd838d528ad8816c323203ea04c8f72e7d9aadb4593df66a8eba"
+          },
+          {
+            "name": "",
+            "position": "2398b2da6c7acad7157469400c96adbbfe952a5ce0fce35a765942066099fb73"
+          },
+          {
+            "name": "",
+            "position": "b8cc083e63f75af159bfb3895ec7e3493328e92d4235298555d31027857d3341"
+          },
+          {
+            "name": "",
+            "position": "f7c51b989a386c9ba266d16afc9008c9eefa7b1e38475db9658cfd0063d8aa21"
+          },
+          {
+            "name": "",
+            "position": "ac97ef60bbcd05927d9d44fe012c55aae4c4dc5f9ed0149911955bf7737e88ce"
+          },
+          {
+            "name": "",
+            "position": "54e224ab4960ff23e7fb5020fa04fb935a8a3237887b85d9dd125e2f7080e09c"
+          },
+          {
+            "name": "",
+            "position": "ef23b39cfafab826fcc61eb7dd9b823562c735126ff2cdaf77da4078d770b7e8"
+          },
+          {
+            "name": "",
+            "position": "667380c4c4fc8c431498f832bdeb5d0f2be0ca0c821edf69ca5d9aeb227d7f9e"
+          },
+          {
+            "name": "",
+            "position": "9e9302d48cc5541d93c962796eebe0abc95b32dfada9e0a168bf0a7ebd9290b5"
+          },
+          {
+            "name": "",
+            "position": "ed823f9d144afb6e315f5ddcd99a56a115fa5f5a027430abf84fee4e1d3eba5f"
+          },
+          {
+            "name": "",
+            "position": "e7621bd4d3813cef7970619f5e614de69f6cdc929f421d8da6f807b0115ad412"
+          },
+          {
+            "name": "bamboo-leaves-2,-2",
+            "position": "efd6d6098bd5c2b0eaa20668a353df8089e40fdf6fbe14c69cf82e850bc5e774"
+          },
+          {
+            "name": "bamboo-leaves--2,-1",
+            "position": "405d060158b908e6036914228c570899bdc9da3dd3e65636dd2fceeec11486e1"
+          },
+          {
+            "name": "bamboo-leaves--2,0",
+            "position": "20cc6e70ce3e2d9e3ad69378c657c29871928fe7a44521e3c62fbf1fe73e0902"
+          },
+          {
+            "name": "bamboo-leaves-0,1",
+            "position": "66429fae66877b2ad505437e3cbe9b868073cee47c26d1f20ce9b4e0c206f4c2"
+          },
+          {
+            "name": "bamboo-leaves-1,1",
+            "position": "da4d6c9cc3b8ad8fedfb22014694a06a4dad08816454120cb0643080eb0610c9"
+          },
+          {
+            "name": "bamboo-leaves-1,-1",
+            "position": "7f94803fdbbda70adf4555cc92837dc6e850928c971b1b2454082f6ec2d95e6f"
+          },
+          {
+            "name": "bamboo-leaves-1,0",
+            "position": "d29780ee10ed4dc52d841c8e2fdebb70b2db9419692af1ae432a96c6e318fde7"
+          },
+          {
+            "name": "bamboo-leaves--3,-3",
+            "position": "6bbe2c16c9f5acaf18a51477740b21170229a535ad78bea08c02c466daab77df"
+          },
+          {
+            "name": "bamboo-leaves-2,-3",
+            "position": "21e7ca6105d7c38827319d9fe43db3e22fe4c85a7867dc02ed59e8ae2df79ca9"
+          },
+          {
+            "name": "bamboo-leaves-1,-2",
+            "position": "0e44dc17612c618dd9aa36beb367405810e5a293e55de2d3c01ffee676c55d5d"
+          },
+          {
+            "name": "bamboo-leaves-1,-3",
+            "position": "b1dd98c7b571274953b51cdfb3d06909402be8f8b51931b92951c92f8d54b50e"
+          },
+          {
+            "name": "bamboo-leaves--3,-1",
+            "position": "363b7d578d7870191da546327680af760249c0d2120368198de8be22ef5d7393"
+          },
+          {
+            "name": "bamboo-leaves--2,-2",
+            "position": "6f717b2b7f0f4320e3947b8566d4717154291967b6d62f77a6bd9e2c7c2be413"
+          },
+          {
+            "name": "bamboo-leaves--1,1",
+            "position": "b9b6d3d10f41c59c2c0628c0bf7467591b2c6289278303960f3c59bf46947f18"
+          },
+          {
+            "name": "bamboo-leaves--1,2",
+            "position": "8f37440f6ce81015e598416275d3d3d0183d16f0650f19f6101f6b3f2971abb1"
+          },
+          {
+            "name": "bamboo-leaves--3,-2",
+            "position": "f8aeeb84a326ad528a51fb23e658e6979bdbb7ccd1f6e068da17e56e19d8dfea"
+          },
+          {
+            "name": "bamboo-leaves-1,2",
+            "position": "32cd1bcf277276fd462e79e7f8a354ff5abec439279dd1ae762132c5fc91cfeb"
+          },
+          {
+            "name": "bamboo-leaves--2,1",
+            "position": "517a7d8df7d202c450845ad6be345dd5be4ac0a580661d20f5b4b0e608b3f4e9"
+          },
+          {
+            "name": "bamboo-leaves-2,1",
+            "position": "9b75fce77453a2973335b2f6d1564c783accbdaaac9e9656f6a3bfe9467bb5d7"
+          },
+          {
+            "name": "bamboo-leaves-2,-1",
+            "position": "791e8a2fbd304d996a12292b581aec71ed82326541bddd3a75238a9f2d4474d3"
+          },
+          {
+            "name": "bamboo-leaves--1,-1",
+            "position": "0f3942aae498f68b646cf9482df0fd3bce7d050cc6e4cfe05fbe9f9e88621e04"
+          },
+          {
+            "name": "bamboo-leaves-0,0",
+            "position": "9b58ee09f6a303ab25e46e5ce6c9a1abc57a12fe8c484045ae5c0ba5d9f76954"
+          },
+          {
+            "name": "bamboo-leaves-1,-4",
+            "position": "289df10e6f285fd604f7dfc2a134a326fd7373da05baed44a189daed0ead4a1b"
+          },
+          {
+            "name": "bamboo-leaves--2,-3",
+            "position": "9073381f7d31d9167c75dc8d526e542f2cd5fc6b0dd8c36b21db0e7eb7369c17"
+          },
+          {
+            "name": "bamboo-leaves--1,-2",
+            "position": "f0f373a0ea0e021cbfee79eea24553f84b3c04b55d636f442d24913927e161d0"
+          },
+          {
+            "name": "bamboo-leaves--2,-4",
+            "position": "ef887012e5a967a9aacb8dfa44e2d71db5f7ce905cf9e1eb4ce170906dac00e5"
+          },
+          {
+            "name": "bamboo-leaves--2,2",
+            "position": "196df51c87197b6a092e04e569d3791f5c8d95934915f10e516ea7eea8a42b4a"
+          },
+          {
+            "name": "bamboo-leaves-0,-4",
+            "position": "ffa0349c3f93ff2a92e651046e950d6496b0720aaedf9b681be7ecad46b1e4fe"
+          },
+          {
+            "name": "bamboo-leaves-0,-1",
+            "position": "1966b49655ce204f9efbedaeea196f501a604eb4213cf5308eabd9ea80d05cd8"
+          },
+          {
+            "name": "bamboo-leaves--1,0",
+            "position": "ceea778084beffd9707c15938390c607b1fc3c29853f0fd50942e3c760e7e87c"
+          },
+          {
+            "name": "bamboo-leaves-0,-3",
+            "position": "203afbd562d1832f27eb6dbf156e930eb95130e92cdb7b8fd30d749f0439c5d1"
+          },
+          {
+            "name": "bamboo-leaves-0,-2",
+            "position": "8c099862d7d73967a7c23827dad792a1eed5174bc14f93b4c9f8861882457538"
+          },
+          {
+            "name": "bamboo-leaves-2,0",
+            "position": "abccc764e0947a5f9ebbf8c465381e0d528f65e072b406518088eeaa01d86695"
+          },
+          {
+            "name": "bamboo-leaves--1,-4",
+            "position": "a2e2bab4b1fd198f4bc3dd4817a19117a0b05444600f30b9b0aaf49b910a38bc"
+          },
+          {
+            "name": "bamboo-leaves--1,-3",
+            "position": "ccfaa6ee302d776cf64059ad28e5a7177751d3ec3435f3792b2bc7d2c2329fe6"
+          },
+          {
+            "name": "bamboo-leaves--3,-4",
+            "position": "9bbcc9c293c53f994bcd82c6d0af0811c03fb8ef219adfca21662df34286711a"
+          },
+          {
+            "name": "bamboo-leaves--3,1",
+            "position": "4df61fb7ab065e09e5b90635ee6f1071a94da927be7b8ae04134ae56251aaeae"
+          },
+          {
+            "name": "maple-wood--2,0",
+            "position": "910397f2f07f6cb70538a36fcad5f66141fe24667366bbef2f2d653ca75c42dd"
+          },
+          {
+            "name": "maple-wood--1,-3",
+            "position": "11f1a3cc95ffa13f0d4bca0030c7e6dc471c9cf00c6d122dd738c3a24b641a9f"
+          },
+          {
+            "name": "maple-wood--1,-2",
+            "position": "cf2a8726db8e4aa5a1820927d1611a2fa391186b4e8691e4aaee24326f695032"
+          },
+          {
+            "name": "maple-wood-0,-3",
+            "position": "a466861a58ddc0e39fc4356da22768bee4ba9290d6530d503946a9ac9a3458c6"
+          },
+          {
+            "name": "maple-leaves--2,0",
+            "position": "2e7df220789431e52c9e3db26387387e1a68fde2e662b86a9e174766f7b8df88"
+          },
+          {
+            "name": "maple-leaves--1,-3",
+            "position": "53110537ae794d4091c8251cc5fa909d1020672db49c2a953b1587c89e9966e1"
+          },
+          {
+            "name": "maple-leaves--1,-2",
+            "position": "832cddddc05629906a02bc5c6a3576ae25e6f46d7e34f34e6e53a9c065313e05"
+          },
+          {
+            "name": "maple-leaves-0,-3",
+            "position": "23a4084945ebc149267ab3df97b04b8677b31daace0b724edadcd3c07150727c"
+          }
+        ],
+        "sceneArt": null,
+        "groundPosition": "488d7affd21f6dac371ea3bc0059025afdc7099efbb62fa4656198f35ea30d98"
+      },
+      {
+        "cpuGenerationMs": 505.6977220000001,
+        "meshCount": 243,
+        "vertexCount": 287382,
+        "triangleInstances": 208928,
+        "uniqueGeometryVertices": 232592,
+        "vegetation": [
+          {
+            "name": "",
+            "position": "0f0f2f84bb194c4967d9c78543354279276c7571092802132a4e931a26bc8fb5"
+          },
+          {
+            "name": "",
+            "position": "30d97e6210611c7d73e0603eeb8bfa5b3b94955cdac29a49f3a0d741d782bc5c"
+          },
+          {
+            "name": "",
+            "position": "ff6c79bae4dd1ebc12c34b781776fe176eae26e8130020e8fc4ad678e1ce63cc"
+          },
+          {
+            "name": "",
+            "position": "9ed1a33d80167a6f8dc930620f2e61a1840cd28d5526611abb4c3b2be9e3cb5b"
+          },
+          {
+            "name": "",
+            "position": "a54c7d86c905d897f0b74968af6f040233991ad60492403b7a852c74b8145171"
+          },
+          {
+            "name": "",
+            "position": "a980054abf29efc1fed9456a9448a3dd7a22667026f0ccb80d7333e718c329cd"
+          },
+          {
+            "name": "",
+            "position": "7cd8816bb495bf06a96c293c792ddaba521a5f3339b160d62b32c6572d592120"
+          },
+          {
+            "name": "",
+            "position": "0eb5d3de4dcdb856a41af47f809a6ab3f45d318594e00f79b2d17c063eab5ffd"
+          },
+          {
+            "name": "",
+            "position": "920d876ac3b2ce74db5b491e9e87746e62816ca342fd0efc36772996ea7b951f"
+          },
+          {
+            "name": "",
+            "position": "3901e9aa740371c64149eab40e74584de894a751f63da94fd8e8a97f78fbba00"
+          },
+          {
+            "name": "",
+            "position": "b756df2f5e5e83560e2ec5692c67671d7d7eca6e0dc10446f21bc69dbabd4738"
+          },
+          {
+            "name": "",
+            "position": "1f671ef4edb028888e6a9aa9ceee6b24c7a48b5da3c84fa98f54a378830a92d7"
+          },
+          {
+            "name": "",
+            "position": "b877fa2afec3b0c4d9b7e368a66e7f970aef2d7284e523bdfaaee0c3bf6a0271"
+          },
+          {
+            "name": "",
+            "position": "1c0c05203911e15cdea78443d3d32954850211b47f9cc9fd02071ec74fdf5369"
+          },
+          {
+            "name": "",
+            "position": "f3de31509ceb205a7dca55f85ed6c092673c449d96b8138a762bf5260d597020"
+          },
+          {
+            "name": "",
+            "position": "b738d1d2bab85646fc631933cfb83c90b05eacbefdace3ceadeb742554e10d87"
+          },
+          {
+            "name": "",
+            "position": "a9e9c6616f4076aa677269b68a190ad52fa58f1f2dfb04e0ffed3e35fc4b73fa"
+          },
+          {
+            "name": "",
+            "position": "3aa5fc279fcb68042ca4c397b0b36c273b3660c436e520fded762616e3387649"
+          },
+          {
+            "name": "",
+            "position": "77612f813b11f61a230c145ba4a3405f0b9ddf05ace8877f0f19012198cb5d44"
+          },
+          {
+            "name": "",
+            "position": "7fd754685a28bbedfa9891c3148f03ca71926a5f9b168c1d3249b9b4a088b329"
+          },
+          {
+            "name": "",
+            "position": "8f3a6d46d0ac8c22894f838518742756424835bdfd4f58572283cfde92039390"
+          },
+          {
+            "name": "",
+            "position": "70dd0c21a3898e3d87f9c1418173344f8a2123b3b79c7d95d97f4a11eea7c6b1"
+          },
+          {
+            "name": "",
+            "position": "35a60e43a8ca3f4e199666ed01b73b84d0f5c52d81e6a4575cf41a72d90afc17"
+          },
+          {
+            "name": "",
+            "position": "f93347317bcbacd4d9a08dcbb0d42e3b3376f592f16ad51d50e3ea288ee69f4a"
+          },
+          {
+            "name": "",
+            "position": "b4763b0bef646e532fc23ce2109f187f9366a6f46192e4fa3c19e237fbdd82fc"
+          },
+          {
+            "name": "",
+            "position": "e322ea4bfe4ebc0cdc54aab8640b3553eaa2ff2084b5145da4c3439568edbf61"
+          },
+          {
+            "name": "",
+            "position": "978237ba7db148d64b73e3426999d0d94a7f8e2d7f97ac6e3cd7bc75b5bbdacc"
+          },
+          {
+            "name": "",
+            "position": "0bae671b90e1c9a13058bd00a0270234a4edc6755d738344347cce4d3d1e1e19"
+          },
+          {
+            "name": "",
+            "position": "d5babedd8b3d7d7741bf78894d4467b3458bd03c07b2f4a3be37804af86df38f"
+          },
+          {
+            "name": "",
+            "position": "6e868cad4dfb5057fd338414d311a23f342beccbc24b997d70591abdfd5fef75"
+          },
+          {
+            "name": "",
+            "position": "54d77737e40f85ee0a3ff24d71d110fd45b81d9db4bb584868b71758a73c6d73"
+          },
+          {
+            "name": "",
+            "position": "9ca1d37468d6a41949d1ae43aa1cba6698c278dd5640b483c86ff3fa060f578e"
+          },
+          {
+            "name": "",
+            "position": "e4e270d380f8c81779e593af48c5b8344c7d2e31d187b556a04ebac66f935be8"
+          },
+          {
+            "name": "",
+            "position": "e7d134f79f8558bf81a404c67e240cba9e3490f0b70d53bf111b7714ce7547b5"
+          },
+          {
+            "name": "",
+            "position": "3c1c95f341c2cae7fc86ebe86b0e113029dfb3f2c6a739463362792093e531a4"
+          },
+          {
+            "name": "",
+            "position": "3a46aadc8deaa83e690be4518e0d797609c6f22351475aa59def1b8f556de904"
+          },
+          {
+            "name": "",
+            "position": "817b7568596f0fded948579736bca26f375914141790ba8e26c3fe9db0b651fd"
+          },
+          {
+            "name": "",
+            "position": "a64bf5d65370d8b538eb6a8a6935479644c0e6f783f6bf5e8a3b3bbf6522f73d"
+          },
+          {
+            "name": "",
+            "position": "0b371605e831d8037f2b9de5bf983726dabb25dcbdac8034a149008de8fe7239"
+          },
+          {
+            "name": "",
+            "position": "86683b49b8f325fa8372f40b044dc1e6dfdfb2af1952a3d460d365213ce71fa6"
+          },
+          {
+            "name": "",
+            "position": "8552e576336d6d7d208cb168aa714224ab6362085de434353054e771a03dd33e"
+          },
+          {
+            "name": "",
+            "position": "2e24fd8ad19a287e6f38f1ec031fb5966d75790fe85333db9fe8b8fbfd6ad22c"
+          },
+          {
+            "name": "",
+            "position": "2a911cad1c1bcdbe36007a979880c0fb2a7498bb62c01e971b875c44d9ab8fb9"
+          },
+          {
+            "name": "",
+            "position": "48d57a21d7632d69b777595e3d71f7ee6b15bded3ee970a49897d2bdddd4325f"
+          },
+          {
+            "name": "",
+            "position": "6e5a451ddb3585f2a1d2d2431860c12122ef340e415c2d3e28c98ccb21fb85e3"
+          },
+          {
+            "name": "",
+            "position": "050a132153394bc6069c056b68054d97f9c725a0161bbd987d623e9abc13a288"
+          },
+          {
+            "name": "",
+            "position": "56fe0e58fb2e1c9a33f1876b51a7d2ff7d0bd26d490f96a5c1308710fd109da0"
+          },
+          {
+            "name": "",
+            "position": "390b88c2b187b9265fec339d4df87408d156e1e1e41f03f6c7c682c0dca25341"
+          },
+          {
+            "name": "",
+            "position": "6a08ff188deaf8b1cef75c5b9d19608aaf74e086cfd1e502c00dbb1617b04952"
+          },
+          {
+            "name": "",
+            "position": "dc8360e5221f235765f00bd14ede48aaeaac7f6e5e7ad556ca52592ac0d1de59"
+          },
+          {
+            "name": "",
+            "position": "a450ed7ae29a45cb4877da1aff5dae56d2a8278de339ccb0275837ab6f844d2b"
+          },
+          {
+            "name": "",
+            "position": "392aa6564f230f4265c345c0e05aed6c39838f623d6f66df599c4b4fe7212b76"
+          },
+          {
+            "name": "",
+            "position": "bbee3566e00da2b157712811c2d71c66229f4bcd6536dd799d75cd768715d52d"
+          },
+          {
+            "name": "",
+            "position": "5d5b59916e7286dbe1a8d0cdfb8fae2e7e9f20cfd33c6c6219ab33e3352ae3cf"
+          },
+          {
+            "name": "",
+            "position": "ad51c367cdfb14c4bb0b8530c4ce4c978ed1c596c1d1e6a4857dfb9757aa4e7f"
+          },
+          {
+            "name": "",
+            "position": "fd34d4415c5b69b81274ae1c4057f0c67094de7b02ee89faa481e0e0031cfed3"
+          },
+          {
+            "name": "",
+            "position": "2620a977a0f61f6810cb64368b14a8b7c10dc2d83277ba3eb95eea5ba5c5ff28"
+          },
+          {
+            "name": "",
+            "position": "e65a6af3f27840a08ce600f5971d8ba1c0a3374371f49b652165fdcebfd0a006"
+          },
+          {
+            "name": "",
+            "position": "38e0940685fcdd838d528ad8816c323203ea04c8f72e7d9aadb4593df66a8eba"
+          },
+          {
+            "name": "",
+            "position": "2398b2da6c7acad7157469400c96adbbfe952a5ce0fce35a765942066099fb73"
+          },
+          {
+            "name": "",
+            "position": "b8cc083e63f75af159bfb3895ec7e3493328e92d4235298555d31027857d3341"
+          },
+          {
+            "name": "",
+            "position": "f7c51b989a386c9ba266d16afc9008c9eefa7b1e38475db9658cfd0063d8aa21"
+          },
+          {
+            "name": "",
+            "position": "ac97ef60bbcd05927d9d44fe012c55aae4c4dc5f9ed0149911955bf7737e88ce"
+          },
+          {
+            "name": "",
+            "position": "54e224ab4960ff23e7fb5020fa04fb935a8a3237887b85d9dd125e2f7080e09c"
+          },
+          {
+            "name": "",
+            "position": "ef23b39cfafab826fcc61eb7dd9b823562c735126ff2cdaf77da4078d770b7e8"
+          },
+          {
+            "name": "",
+            "position": "667380c4c4fc8c431498f832bdeb5d0f2be0ca0c821edf69ca5d9aeb227d7f9e"
+          },
+          {
+            "name": "",
+            "position": "9e9302d48cc5541d93c962796eebe0abc95b32dfada9e0a168bf0a7ebd9290b5"
+          },
+          {
+            "name": "",
+            "position": "ed823f9d144afb6e315f5ddcd99a56a115fa5f5a027430abf84fee4e1d3eba5f"
+          },
+          {
+            "name": "",
+            "position": "e7621bd4d3813cef7970619f5e614de69f6cdc929f421d8da6f807b0115ad412"
+          },
+          {
+            "name": "bamboo-leaves-2,-2",
+            "position": "efd6d6098bd5c2b0eaa20668a353df8089e40fdf6fbe14c69cf82e850bc5e774"
+          },
+          {
+            "name": "bamboo-leaves--2,-1",
+            "position": "405d060158b908e6036914228c570899bdc9da3dd3e65636dd2fceeec11486e1"
+          },
+          {
+            "name": "bamboo-leaves--2,0",
+            "position": "20cc6e70ce3e2d9e3ad69378c657c29871928fe7a44521e3c62fbf1fe73e0902"
+          },
+          {
+            "name": "bamboo-leaves-0,1",
+            "position": "66429fae66877b2ad505437e3cbe9b868073cee47c26d1f20ce9b4e0c206f4c2"
+          },
+          {
+            "name": "bamboo-leaves-1,1",
+            "position": "da4d6c9cc3b8ad8fedfb22014694a06a4dad08816454120cb0643080eb0610c9"
+          },
+          {
+            "name": "bamboo-leaves-1,-1",
+            "position": "7f94803fdbbda70adf4555cc92837dc6e850928c971b1b2454082f6ec2d95e6f"
+          },
+          {
+            "name": "bamboo-leaves-1,0",
+            "position": "d29780ee10ed4dc52d841c8e2fdebb70b2db9419692af1ae432a96c6e318fde7"
+          },
+          {
+            "name": "bamboo-leaves--3,-3",
+            "position": "6bbe2c16c9f5acaf18a51477740b21170229a535ad78bea08c02c466daab77df"
+          },
+          {
+            "name": "bamboo-leaves-2,-3",
+            "position": "21e7ca6105d7c38827319d9fe43db3e22fe4c85a7867dc02ed59e8ae2df79ca9"
+          },
+          {
+            "name": "bamboo-leaves-1,-2",
+            "position": "0e44dc17612c618dd9aa36beb367405810e5a293e55de2d3c01ffee676c55d5d"
+          },
+          {
+            "name": "bamboo-leaves-1,-3",
+            "position": "b1dd98c7b571274953b51cdfb3d06909402be8f8b51931b92951c92f8d54b50e"
+          },
+          {
+            "name": "bamboo-leaves--3,-1",
+            "position": "363b7d578d7870191da546327680af760249c0d2120368198de8be22ef5d7393"
+          },
+          {
+            "name": "bamboo-leaves--2,-2",
+            "position": "6f717b2b7f0f4320e3947b8566d4717154291967b6d62f77a6bd9e2c7c2be413"
+          },
+          {
+            "name": "bamboo-leaves--1,1",
+            "position": "b9b6d3d10f41c59c2c0628c0bf7467591b2c6289278303960f3c59bf46947f18"
+          },
+          {
+            "name": "bamboo-leaves--1,2",
+            "position": "8f37440f6ce81015e598416275d3d3d0183d16f0650f19f6101f6b3f2971abb1"
+          },
+          {
+            "name": "bamboo-leaves--3,-2",
+            "position": "f8aeeb84a326ad528a51fb23e658e6979bdbb7ccd1f6e068da17e56e19d8dfea"
+          },
+          {
+            "name": "bamboo-leaves-1,2",
+            "position": "32cd1bcf277276fd462e79e7f8a354ff5abec439279dd1ae762132c5fc91cfeb"
+          },
+          {
+            "name": "bamboo-leaves--2,1",
+            "position": "517a7d8df7d202c450845ad6be345dd5be4ac0a580661d20f5b4b0e608b3f4e9"
+          },
+          {
+            "name": "bamboo-leaves-2,1",
+            "position": "9b75fce77453a2973335b2f6d1564c783accbdaaac9e9656f6a3bfe9467bb5d7"
+          },
+          {
+            "name": "bamboo-leaves-2,-1",
+            "position": "791e8a2fbd304d996a12292b581aec71ed82326541bddd3a75238a9f2d4474d3"
+          },
+          {
+            "name": "bamboo-leaves--1,-1",
+            "position": "0f3942aae498f68b646cf9482df0fd3bce7d050cc6e4cfe05fbe9f9e88621e04"
+          },
+          {
+            "name": "bamboo-leaves-0,0",
+            "position": "9b58ee09f6a303ab25e46e5ce6c9a1abc57a12fe8c484045ae5c0ba5d9f76954"
+          },
+          {
+            "name": "bamboo-leaves-1,-4",
+            "position": "289df10e6f285fd604f7dfc2a134a326fd7373da05baed44a189daed0ead4a1b"
+          },
+          {
+            "name": "bamboo-leaves--2,-3",
+            "position": "9073381f7d31d9167c75dc8d526e542f2cd5fc6b0dd8c36b21db0e7eb7369c17"
+          },
+          {
+            "name": "bamboo-leaves--1,-2",
+            "position": "f0f373a0ea0e021cbfee79eea24553f84b3c04b55d636f442d24913927e161d0"
+          },
+          {
+            "name": "bamboo-leaves--2,-4",
+            "position": "ef887012e5a967a9aacb8dfa44e2d71db5f7ce905cf9e1eb4ce170906dac00e5"
+          },
+          {
+            "name": "bamboo-leaves--2,2",
+            "position": "196df51c87197b6a092e04e569d3791f5c8d95934915f10e516ea7eea8a42b4a"
+          },
+          {
+            "name": "bamboo-leaves-0,-4",
+            "position": "ffa0349c3f93ff2a92e651046e950d6496b0720aaedf9b681be7ecad46b1e4fe"
+          },
+          {
+            "name": "bamboo-leaves-0,-1",
+            "position": "1966b49655ce204f9efbedaeea196f501a604eb4213cf5308eabd9ea80d05cd8"
+          },
+          {
+            "name": "bamboo-leaves--1,0",
+            "position": "ceea778084beffd9707c15938390c607b1fc3c29853f0fd50942e3c760e7e87c"
+          },
+          {
+            "name": "bamboo-leaves-0,-3",
+            "position": "203afbd562d1832f27eb6dbf156e930eb95130e92cdb7b8fd30d749f0439c5d1"
+          },
+          {
+            "name": "bamboo-leaves-0,-2",
+            "position": "8c099862d7d73967a7c23827dad792a1eed5174bc14f93b4c9f8861882457538"
+          },
+          {
+            "name": "bamboo-leaves-2,0",
+            "position": "abccc764e0947a5f9ebbf8c465381e0d528f65e072b406518088eeaa01d86695"
+          },
+          {
+            "name": "bamboo-leaves--1,-4",
+            "position": "a2e2bab4b1fd198f4bc3dd4817a19117a0b05444600f30b9b0aaf49b910a38bc"
+          },
+          {
+            "name": "bamboo-leaves--1,-3",
+            "position": "ccfaa6ee302d776cf64059ad28e5a7177751d3ec3435f3792b2bc7d2c2329fe6"
+          },
+          {
+            "name": "bamboo-leaves--3,-4",
+            "position": "9bbcc9c293c53f994bcd82c6d0af0811c03fb8ef219adfca21662df34286711a"
+          },
+          {
+            "name": "bamboo-leaves--3,1",
+            "position": "4df61fb7ab065e09e5b90635ee6f1071a94da927be7b8ae04134ae56251aaeae"
+          },
+          {
+            "name": "maple-wood--2,0",
+            "position": "910397f2f07f6cb70538a36fcad5f66141fe24667366bbef2f2d653ca75c42dd"
+          },
+          {
+            "name": "maple-wood--1,-3",
+            "position": "11f1a3cc95ffa13f0d4bca0030c7e6dc471c9cf00c6d122dd738c3a24b641a9f"
+          },
+          {
+            "name": "maple-wood--1,-2",
+            "position": "cf2a8726db8e4aa5a1820927d1611a2fa391186b4e8691e4aaee24326f695032"
+          },
+          {
+            "name": "maple-wood-0,-3",
+            "position": "a466861a58ddc0e39fc4356da22768bee4ba9290d6530d503946a9ac9a3458c6"
+          },
+          {
+            "name": "maple-leaves--2,0",
+            "position": "2e7df220789431e52c9e3db26387387e1a68fde2e662b86a9e174766f7b8df88"
+          },
+          {
+            "name": "maple-leaves--1,-3",
+            "position": "53110537ae794d4091c8251cc5fa909d1020672db49c2a953b1587c89e9966e1"
+          },
+          {
+            "name": "maple-leaves--1,-2",
+            "position": "832cddddc05629906a02bc5c6a3576ae25e6f46d7e34f34e6e53a9c065313e05"
+          },
+          {
+            "name": "maple-leaves-0,-3",
+            "position": "23a4084945ebc149267ab3df97b04b8677b31daace0b724edadcd3c07150727c"
+          }
+        ],
+        "sceneArt": null,
+        "groundPosition": "488d7affd21f6dac371ea3bc0059025afdc7099efbb62fa4656198f35ea30d98"
+      },
+      {
+        "cpuGenerationMs": 536.6348189999999,
+        "meshCount": 243,
+        "vertexCount": 287382,
+        "triangleInstances": 208928,
+        "uniqueGeometryVertices": 232592,
+        "vegetation": [
+          {
+            "name": "",
+            "position": "0f0f2f84bb194c4967d9c78543354279276c7571092802132a4e931a26bc8fb5"
+          },
+          {
+            "name": "",
+            "position": "30d97e6210611c7d73e0603eeb8bfa5b3b94955cdac29a49f3a0d741d782bc5c"
+          },
+          {
+            "name": "",
+            "position": "ff6c79bae4dd1ebc12c34b781776fe176eae26e8130020e8fc4ad678e1ce63cc"
+          },
+          {
+            "name": "",
+            "position": "9ed1a33d80167a6f8dc930620f2e61a1840cd28d5526611abb4c3b2be9e3cb5b"
+          },
+          {
+            "name": "",
+            "position": "a54c7d86c905d897f0b74968af6f040233991ad60492403b7a852c74b8145171"
+          },
+          {
+            "name": "",
+            "position": "a980054abf29efc1fed9456a9448a3dd7a22667026f0ccb80d7333e718c329cd"
+          },
+          {
+            "name": "",
+            "position": "7cd8816bb495bf06a96c293c792ddaba521a5f3339b160d62b32c6572d592120"
+          },
+          {
+            "name": "",
+            "position": "0eb5d3de4dcdb856a41af47f809a6ab3f45d318594e00f79b2d17c063eab5ffd"
+          },
+          {
+            "name": "",
+            "position": "920d876ac3b2ce74db5b491e9e87746e62816ca342fd0efc36772996ea7b951f"
+          },
+          {
+            "name": "",
+            "position": "3901e9aa740371c64149eab40e74584de894a751f63da94fd8e8a97f78fbba00"
+          },
+          {
+            "name": "",
+            "position": "b756df2f5e5e83560e2ec5692c67671d7d7eca6e0dc10446f21bc69dbabd4738"
+          },
+          {
+            "name": "",
+            "position": "1f671ef4edb028888e6a9aa9ceee6b24c7a48b5da3c84fa98f54a378830a92d7"
+          },
+          {
+            "name": "",
+            "position": "b877fa2afec3b0c4d9b7e368a66e7f970aef2d7284e523bdfaaee0c3bf6a0271"
+          },
+          {
+            "name": "",
+            "position": "1c0c05203911e15cdea78443d3d32954850211b47f9cc9fd02071ec74fdf5369"
+          },
+          {
+            "name": "",
+            "position": "f3de31509ceb205a7dca55f85ed6c092673c449d96b8138a762bf5260d597020"
+          },
+          {
+            "name": "",
+            "position": "b738d1d2bab85646fc631933cfb83c90b05eacbefdace3ceadeb742554e10d87"
+          },
+          {
+            "name": "",
+            "position": "a9e9c6616f4076aa677269b68a190ad52fa58f1f2dfb04e0ffed3e35fc4b73fa"
+          },
+          {
+            "name": "",
+            "position": "3aa5fc279fcb68042ca4c397b0b36c273b3660c436e520fded762616e3387649"
+          },
+          {
+            "name": "",
+            "position": "77612f813b11f61a230c145ba4a3405f0b9ddf05ace8877f0f19012198cb5d44"
+          },
+          {
+            "name": "",
+            "position": "7fd754685a28bbedfa9891c3148f03ca71926a5f9b168c1d3249b9b4a088b329"
+          },
+          {
+            "name": "",
+            "position": "8f3a6d46d0ac8c22894f838518742756424835bdfd4f58572283cfde92039390"
+          },
+          {
+            "name": "",
+            "position": "70dd0c21a3898e3d87f9c1418173344f8a2123b3b79c7d95d97f4a11eea7c6b1"
+          },
+          {
+            "name": "",
+            "position": "35a60e43a8ca3f4e199666ed01b73b84d0f5c52d81e6a4575cf41a72d90afc17"
+          },
+          {
+            "name": "",
+            "position": "f93347317bcbacd4d9a08dcbb0d42e3b3376f592f16ad51d50e3ea288ee69f4a"
+          },
+          {
+            "name": "",
+            "position": "b4763b0bef646e532fc23ce2109f187f9366a6f46192e4fa3c19e237fbdd82fc"
+          },
+          {
+            "name": "",
+            "position": "e322ea4bfe4ebc0cdc54aab8640b3553eaa2ff2084b5145da4c3439568edbf61"
+          },
+          {
+            "name": "",
+            "position": "978237ba7db148d64b73e3426999d0d94a7f8e2d7f97ac6e3cd7bc75b5bbdacc"
+          },
+          {
+            "name": "",
+            "position": "0bae671b90e1c9a13058bd00a0270234a4edc6755d738344347cce4d3d1e1e19"
+          },
+          {
+            "name": "",
+            "position": "d5babedd8b3d7d7741bf78894d4467b3458bd03c07b2f4a3be37804af86df38f"
+          },
+          {
+            "name": "",
+            "position": "6e868cad4dfb5057fd338414d311a23f342beccbc24b997d70591abdfd5fef75"
+          },
+          {
+            "name": "",
+            "position": "54d77737e40f85ee0a3ff24d71d110fd45b81d9db4bb584868b71758a73c6d73"
+          },
+          {
+            "name": "",
+            "position": "9ca1d37468d6a41949d1ae43aa1cba6698c278dd5640b483c86ff3fa060f578e"
+          },
+          {
+            "name": "",
+            "position": "e4e270d380f8c81779e593af48c5b8344c7d2e31d187b556a04ebac66f935be8"
+          },
+          {
+            "name": "",
+            "position": "e7d134f79f8558bf81a404c67e240cba9e3490f0b70d53bf111b7714ce7547b5"
+          },
+          {
+            "name": "",
+            "position": "3c1c95f341c2cae7fc86ebe86b0e113029dfb3f2c6a739463362792093e531a4"
+          },
+          {
+            "name": "",
+            "position": "3a46aadc8deaa83e690be4518e0d797609c6f22351475aa59def1b8f556de904"
+          },
+          {
+            "name": "",
+            "position": "817b7568596f0fded948579736bca26f375914141790ba8e26c3fe9db0b651fd"
+          },
+          {
+            "name": "",
+            "position": "a64bf5d65370d8b538eb6a8a6935479644c0e6f783f6bf5e8a3b3bbf6522f73d"
+          },
+          {
+            "name": "",
+            "position": "0b371605e831d8037f2b9de5bf983726dabb25dcbdac8034a149008de8fe7239"
+          },
+          {
+            "name": "",
+            "position": "86683b49b8f325fa8372f40b044dc1e6dfdfb2af1952a3d460d365213ce71fa6"
+          },
+          {
+            "name": "",
+            "position": "8552e576336d6d7d208cb168aa714224ab6362085de434353054e771a03dd33e"
+          },
+          {
+            "name": "",
+            "position": "2e24fd8ad19a287e6f38f1ec031fb5966d75790fe85333db9fe8b8fbfd6ad22c"
+          },
+          {
+            "name": "",
+            "position": "2a911cad1c1bcdbe36007a979880c0fb2a7498bb62c01e971b875c44d9ab8fb9"
+          },
+          {
+            "name": "",
+            "position": "48d57a21d7632d69b777595e3d71f7ee6b15bded3ee970a49897d2bdddd4325f"
+          },
+          {
+            "name": "",
+            "position": "6e5a451ddb3585f2a1d2d2431860c12122ef340e415c2d3e28c98ccb21fb85e3"
+          },
+          {
+            "name": "",
+            "position": "050a132153394bc6069c056b68054d97f9c725a0161bbd987d623e9abc13a288"
+          },
+          {
+            "name": "",
+            "position": "56fe0e58fb2e1c9a33f1876b51a7d2ff7d0bd26d490f96a5c1308710fd109da0"
+          },
+          {
+            "name": "",
+            "position": "390b88c2b187b9265fec339d4df87408d156e1e1e41f03f6c7c682c0dca25341"
+          },
+          {
+            "name": "",
+            "position": "6a08ff188deaf8b1cef75c5b9d19608aaf74e086cfd1e502c00dbb1617b04952"
+          },
+          {
+            "name": "",
+            "position": "dc8360e5221f235765f00bd14ede48aaeaac7f6e5e7ad556ca52592ac0d1de59"
+          },
+          {
+            "name": "",
+            "position": "a450ed7ae29a45cb4877da1aff5dae56d2a8278de339ccb0275837ab6f844d2b"
+          },
+          {
+            "name": "",
+            "position": "392aa6564f230f4265c345c0e05aed6c39838f623d6f66df599c4b4fe7212b76"
+          },
+          {
+            "name": "",
+            "position": "bbee3566e00da2b157712811c2d71c66229f4bcd6536dd799d75cd768715d52d"
+          },
+          {
+            "name": "",
+            "position": "5d5b59916e7286dbe1a8d0cdfb8fae2e7e9f20cfd33c6c6219ab33e3352ae3cf"
+          },
+          {
+            "name": "",
+            "position": "ad51c367cdfb14c4bb0b8530c4ce4c978ed1c596c1d1e6a4857dfb9757aa4e7f"
+          },
+          {
+            "name": "",
+            "position": "fd34d4415c5b69b81274ae1c4057f0c67094de7b02ee89faa481e0e0031cfed3"
+          },
+          {
+            "name": "",
+            "position": "2620a977a0f61f6810cb64368b14a8b7c10dc2d83277ba3eb95eea5ba5c5ff28"
+          },
+          {
+            "name": "",
+            "position": "e65a6af3f27840a08ce600f5971d8ba1c0a3374371f49b652165fdcebfd0a006"
+          },
+          {
+            "name": "",
+            "position": "38e0940685fcdd838d528ad8816c323203ea04c8f72e7d9aadb4593df66a8eba"
+          },
+          {
+            "name": "",
+            "position": "2398b2da6c7acad7157469400c96adbbfe952a5ce0fce35a765942066099fb73"
+          },
+          {
+            "name": "",
+            "position": "b8cc083e63f75af159bfb3895ec7e3493328e92d4235298555d31027857d3341"
+          },
+          {
+            "name": "",
+            "position": "f7c51b989a386c9ba266d16afc9008c9eefa7b1e38475db9658cfd0063d8aa21"
+          },
+          {
+            "name": "",
+            "position": "ac97ef60bbcd05927d9d44fe012c55aae4c4dc5f9ed0149911955bf7737e88ce"
+          },
+          {
+            "name": "",
+            "position": "54e224ab4960ff23e7fb5020fa04fb935a8a3237887b85d9dd125e2f7080e09c"
+          },
+          {
+            "name": "",
+            "position": "ef23b39cfafab826fcc61eb7dd9b823562c735126ff2cdaf77da4078d770b7e8"
+          },
+          {
+            "name": "",
+            "position": "667380c4c4fc8c431498f832bdeb5d0f2be0ca0c821edf69ca5d9aeb227d7f9e"
+          },
+          {
+            "name": "",
+            "position": "9e9302d48cc5541d93c962796eebe0abc95b32dfada9e0a168bf0a7ebd9290b5"
+          },
+          {
+            "name": "",
+            "position": "ed823f9d144afb6e315f5ddcd99a56a115fa5f5a027430abf84fee4e1d3eba5f"
+          },
+          {
+            "name": "",
+            "position": "e7621bd4d3813cef7970619f5e614de69f6cdc929f421d8da6f807b0115ad412"
+          },
+          {
+            "name": "bamboo-leaves-2,-2",
+            "position": "efd6d6098bd5c2b0eaa20668a353df8089e40fdf6fbe14c69cf82e850bc5e774"
+          },
+          {
+            "name": "bamboo-leaves--2,-1",
+            "position": "405d060158b908e6036914228c570899bdc9da3dd3e65636dd2fceeec11486e1"
+          },
+          {
+            "name": "bamboo-leaves--2,0",
+            "position": "20cc6e70ce3e2d9e3ad69378c657c29871928fe7a44521e3c62fbf1fe73e0902"
+          },
+          {
+            "name": "bamboo-leaves-0,1",
+            "position": "66429fae66877b2ad505437e3cbe9b868073cee47c26d1f20ce9b4e0c206f4c2"
+          },
+          {
+            "name": "bamboo-leaves-1,1",
+            "position": "da4d6c9cc3b8ad8fedfb22014694a06a4dad08816454120cb0643080eb0610c9"
+          },
+          {
+            "name": "bamboo-leaves-1,-1",
+            "position": "7f94803fdbbda70adf4555cc92837dc6e850928c971b1b2454082f6ec2d95e6f"
+          },
+          {
+            "name": "bamboo-leaves-1,0",
+            "position": "d29780ee10ed4dc52d841c8e2fdebb70b2db9419692af1ae432a96c6e318fde7"
+          },
+          {
+            "name": "bamboo-leaves--3,-3",
+            "position": "6bbe2c16c9f5acaf18a51477740b21170229a535ad78bea08c02c466daab77df"
+          },
+          {
+            "name": "bamboo-leaves-2,-3",
+            "position": "21e7ca6105d7c38827319d9fe43db3e22fe4c85a7867dc02ed59e8ae2df79ca9"
+          },
+          {
+            "name": "bamboo-leaves-1,-2",
+            "position": "0e44dc17612c618dd9aa36beb367405810e5a293e55de2d3c01ffee676c55d5d"
+          },
+          {
+            "name": "bamboo-leaves-1,-3",
+            "position": "b1dd98c7b571274953b51cdfb3d06909402be8f8b51931b92951c92f8d54b50e"
+          },
+          {
+            "name": "bamboo-leaves--3,-1",
+            "position": "363b7d578d7870191da546327680af760249c0d2120368198de8be22ef5d7393"
+          },
+          {
+            "name": "bamboo-leaves--2,-2",
+            "position": "6f717b2b7f0f4320e3947b8566d4717154291967b6d62f77a6bd9e2c7c2be413"
+          },
+          {
+            "name": "bamboo-leaves--1,1",
+            "position": "b9b6d3d10f41c59c2c0628c0bf7467591b2c6289278303960f3c59bf46947f18"
+          },
+          {
+            "name": "bamboo-leaves--1,2",
+            "position": "8f37440f6ce81015e598416275d3d3d0183d16f0650f19f6101f6b3f2971abb1"
+          },
+          {
+            "name": "bamboo-leaves--3,-2",
+            "position": "f8aeeb84a326ad528a51fb23e658e6979bdbb7ccd1f6e068da17e56e19d8dfea"
+          },
+          {
+            "name": "bamboo-leaves-1,2",
+            "position": "32cd1bcf277276fd462e79e7f8a354ff5abec439279dd1ae762132c5fc91cfeb"
+          },
+          {
+            "name": "bamboo-leaves--2,1",
+            "position": "517a7d8df7d202c450845ad6be345dd5be4ac0a580661d20f5b4b0e608b3f4e9"
+          },
+          {
+            "name": "bamboo-leaves-2,1",
+            "position": "9b75fce77453a2973335b2f6d1564c783accbdaaac9e9656f6a3bfe9467bb5d7"
+          },
+          {
+            "name": "bamboo-leaves-2,-1",
+            "position": "791e8a2fbd304d996a12292b581aec71ed82326541bddd3a75238a9f2d4474d3"
+          },
+          {
+            "name": "bamboo-leaves--1,-1",
+            "position": "0f3942aae498f68b646cf9482df0fd3bce7d050cc6e4cfe05fbe9f9e88621e04"
+          },
+          {
+            "name": "bamboo-leaves-0,0",
+            "position": "9b58ee09f6a303ab25e46e5ce6c9a1abc57a12fe8c484045ae5c0ba5d9f76954"
+          },
+          {
+            "name": "bamboo-leaves-1,-4",
+            "position": "289df10e6f285fd604f7dfc2a134a326fd7373da05baed44a189daed0ead4a1b"
+          },
+          {
+            "name": "bamboo-leaves--2,-3",
+            "position": "9073381f7d31d9167c75dc8d526e542f2cd5fc6b0dd8c36b21db0e7eb7369c17"
+          },
+          {
+            "name": "bamboo-leaves--1,-2",
+            "position": "f0f373a0ea0e021cbfee79eea24553f84b3c04b55d636f442d24913927e161d0"
+          },
+          {
+            "name": "bamboo-leaves--2,-4",
+            "position": "ef887012e5a967a9aacb8dfa44e2d71db5f7ce905cf9e1eb4ce170906dac00e5"
+          },
+          {
+            "name": "bamboo-leaves--2,2",
+            "position": "196df51c87197b6a092e04e569d3791f5c8d95934915f10e516ea7eea8a42b4a"
+          },
+          {
+            "name": "bamboo-leaves-0,-4",
+            "position": "ffa0349c3f93ff2a92e651046e950d6496b0720aaedf9b681be7ecad46b1e4fe"
+          },
+          {
+            "name": "bamboo-leaves-0,-1",
+            "position": "1966b49655ce204f9efbedaeea196f501a604eb4213cf5308eabd9ea80d05cd8"
+          },
+          {
+            "name": "bamboo-leaves--1,0",
+            "position": "ceea778084beffd9707c15938390c607b1fc3c29853f0fd50942e3c760e7e87c"
+          },
+          {
+            "name": "bamboo-leaves-0,-3",
+            "position": "203afbd562d1832f27eb6dbf156e930eb95130e92cdb7b8fd30d749f0439c5d1"
+          },
+          {
+            "name": "bamboo-leaves-0,-2",
+            "position": "8c099862d7d73967a7c23827dad792a1eed5174bc14f93b4c9f8861882457538"
+          },
+          {
+            "name": "bamboo-leaves-2,0",
+            "position": "abccc764e0947a5f9ebbf8c465381e0d528f65e072b406518088eeaa01d86695"
+          },
+          {
+            "name": "bamboo-leaves--1,-4",
+            "position": "a2e2bab4b1fd198f4bc3dd4817a19117a0b05444600f30b9b0aaf49b910a38bc"
+          },
+          {
+            "name": "bamboo-leaves--1,-3",
+            "position": "ccfaa6ee302d776cf64059ad28e5a7177751d3ec3435f3792b2bc7d2c2329fe6"
+          },
+          {
+            "name": "bamboo-leaves--3,-4",
+            "position": "9bbcc9c293c53f994bcd82c6d0af0811c03fb8ef219adfca21662df34286711a"
+          },
+          {
+            "name": "bamboo-leaves--3,1",
+            "position": "4df61fb7ab065e09e5b90635ee6f1071a94da927be7b8ae04134ae56251aaeae"
+          },
+          {
+            "name": "maple-wood--2,0",
+            "position": "910397f2f07f6cb70538a36fcad5f66141fe24667366bbef2f2d653ca75c42dd"
+          },
+          {
+            "name": "maple-wood--1,-3",
+            "position": "11f1a3cc95ffa13f0d4bca0030c7e6dc471c9cf00c6d122dd738c3a24b641a9f"
+          },
+          {
+            "name": "maple-wood--1,-2",
+            "position": "cf2a8726db8e4aa5a1820927d1611a2fa391186b4e8691e4aaee24326f695032"
+          },
+          {
+            "name": "maple-wood-0,-3",
+            "position": "a466861a58ddc0e39fc4356da22768bee4ba9290d6530d503946a9ac9a3458c6"
+          },
+          {
+            "name": "maple-leaves--2,0",
+            "position": "2e7df220789431e52c9e3db26387387e1a68fde2e662b86a9e174766f7b8df88"
+          },
+          {
+            "name": "maple-leaves--1,-3",
+            "position": "53110537ae794d4091c8251cc5fa909d1020672db49c2a953b1587c89e9966e1"
+          },
+          {
+            "name": "maple-leaves--1,-2",
+            "position": "832cddddc05629906a02bc5c6a3576ae25e6f46d7e34f34e6e53a9c065313e05"
+          },
+          {
+            "name": "maple-leaves-0,-3",
+            "position": "23a4084945ebc149267ab3df97b04b8677b31daace0b724edadcd3c07150727c"
+          }
+        ],
+        "sceneArt": null,
+        "groundPosition": "488d7affd21f6dac371ea3bc0059025afdc7099efbb62fa4656198f35ea30d98"
+      }
+    ],
+    "medianCpuGenerationMs": 536.6348189999999
+  },
+  "candidate": {
+    "samples": [
+      {
+        "cpuGenerationMs": 800.9934850000002,
+        "meshCount": 238,
+        "vertexCount": 358296,
+        "triangleInstances": 231290,
+        "uniqueGeometryVertices": 303506,
+        "vegetation": [
+          {
+            "name": "",
+            "position": "0f0f2f84bb194c4967d9c78543354279276c7571092802132a4e931a26bc8fb5"
+          },
+          {
+            "name": "",
+            "position": "30d97e6210611c7d73e0603eeb8bfa5b3b94955cdac29a49f3a0d741d782bc5c"
+          },
+          {
+            "name": "",
+            "position": "ff6c79bae4dd1ebc12c34b781776fe176eae26e8130020e8fc4ad678e1ce63cc"
+          },
+          {
+            "name": "",
+            "position": "9ed1a33d80167a6f8dc930620f2e61a1840cd28d5526611abb4c3b2be9e3cb5b"
+          },
+          {
+            "name": "",
+            "position": "a54c7d86c905d897f0b74968af6f040233991ad60492403b7a852c74b8145171"
+          },
+          {
+            "name": "",
+            "position": "a980054abf29efc1fed9456a9448a3dd7a22667026f0ccb80d7333e718c329cd"
+          },
+          {
+            "name": "",
+            "position": "7cd8816bb495bf06a96c293c792ddaba521a5f3339b160d62b32c6572d592120"
+          },
+          {
+            "name": "",
+            "position": "0eb5d3de4dcdb856a41af47f809a6ab3f45d318594e00f79b2d17c063eab5ffd"
+          },
+          {
+            "name": "",
+            "position": "920d876ac3b2ce74db5b491e9e87746e62816ca342fd0efc36772996ea7b951f"
+          },
+          {
+            "name": "",
+            "position": "3901e9aa740371c64149eab40e74584de894a751f63da94fd8e8a97f78fbba00"
+          },
+          {
+            "name": "",
+            "position": "b756df2f5e5e83560e2ec5692c67671d7d7eca6e0dc10446f21bc69dbabd4738"
+          },
+          {
+            "name": "",
+            "position": "1f671ef4edb028888e6a9aa9ceee6b24c7a48b5da3c84fa98f54a378830a92d7"
+          },
+          {
+            "name": "",
+            "position": "b877fa2afec3b0c4d9b7e368a66e7f970aef2d7284e523bdfaaee0c3bf6a0271"
+          },
+          {
+            "name": "",
+            "position": "1c0c05203911e15cdea78443d3d32954850211b47f9cc9fd02071ec74fdf5369"
+          },
+          {
+            "name": "",
+            "position": "f3de31509ceb205a7dca55f85ed6c092673c449d96b8138a762bf5260d597020"
+          },
+          {
+            "name": "",
+            "position": "b738d1d2bab85646fc631933cfb83c90b05eacbefdace3ceadeb742554e10d87"
+          },
+          {
+            "name": "",
+            "position": "a9e9c6616f4076aa677269b68a190ad52fa58f1f2dfb04e0ffed3e35fc4b73fa"
+          },
+          {
+            "name": "",
+            "position": "3aa5fc279fcb68042ca4c397b0b36c273b3660c436e520fded762616e3387649"
+          },
+          {
+            "name": "",
+            "position": "77612f813b11f61a230c145ba4a3405f0b9ddf05ace8877f0f19012198cb5d44"
+          },
+          {
+            "name": "",
+            "position": "7fd754685a28bbedfa9891c3148f03ca71926a5f9b168c1d3249b9b4a088b329"
+          },
+          {
+            "name": "",
+            "position": "8f3a6d46d0ac8c22894f838518742756424835bdfd4f58572283cfde92039390"
+          },
+          {
+            "name": "",
+            "position": "70dd0c21a3898e3d87f9c1418173344f8a2123b3b79c7d95d97f4a11eea7c6b1"
+          },
+          {
+            "name": "",
+            "position": "35a60e43a8ca3f4e199666ed01b73b84d0f5c52d81e6a4575cf41a72d90afc17"
+          },
+          {
+            "name": "",
+            "position": "f93347317bcbacd4d9a08dcbb0d42e3b3376f592f16ad51d50e3ea288ee69f4a"
+          },
+          {
+            "name": "",
+            "position": "b4763b0bef646e532fc23ce2109f187f9366a6f46192e4fa3c19e237fbdd82fc"
+          },
+          {
+            "name": "",
+            "position": "e322ea4bfe4ebc0cdc54aab8640b3553eaa2ff2084b5145da4c3439568edbf61"
+          },
+          {
+            "name": "",
+            "position": "978237ba7db148d64b73e3426999d0d94a7f8e2d7f97ac6e3cd7bc75b5bbdacc"
+          },
+          {
+            "name": "",
+            "position": "0bae671b90e1c9a13058bd00a0270234a4edc6755d738344347cce4d3d1e1e19"
+          },
+          {
+            "name": "",
+            "position": "d5babedd8b3d7d7741bf78894d4467b3458bd03c07b2f4a3be37804af86df38f"
+          },
+          {
+            "name": "",
+            "position": "6e868cad4dfb5057fd338414d311a23f342beccbc24b997d70591abdfd5fef75"
+          },
+          {
+            "name": "",
+            "position": "54d77737e40f85ee0a3ff24d71d110fd45b81d9db4bb584868b71758a73c6d73"
+          },
+          {
+            "name": "",
+            "position": "9ca1d37468d6a41949d1ae43aa1cba6698c278dd5640b483c86ff3fa060f578e"
+          },
+          {
+            "name": "",
+            "position": "e4e270d380f8c81779e593af48c5b8344c7d2e31d187b556a04ebac66f935be8"
+          },
+          {
+            "name": "",
+            "position": "e7d134f79f8558bf81a404c67e240cba9e3490f0b70d53bf111b7714ce7547b5"
+          },
+          {
+            "name": "",
+            "position": "3c1c95f341c2cae7fc86ebe86b0e113029dfb3f2c6a739463362792093e531a4"
+          },
+          {
+            "name": "",
+            "position": "3a46aadc8deaa83e690be4518e0d797609c6f22351475aa59def1b8f556de904"
+          },
+          {
+            "name": "",
+            "position": "817b7568596f0fded948579736bca26f375914141790ba8e26c3fe9db0b651fd"
+          },
+          {
+            "name": "",
+            "position": "a64bf5d65370d8b538eb6a8a6935479644c0e6f783f6bf5e8a3b3bbf6522f73d"
+          },
+          {
+            "name": "",
+            "position": "0b371605e831d8037f2b9de5bf983726dabb25dcbdac8034a149008de8fe7239"
+          },
+          {
+            "name": "",
+            "position": "86683b49b8f325fa8372f40b044dc1e6dfdfb2af1952a3d460d365213ce71fa6"
+          },
+          {
+            "name": "",
+            "position": "8552e576336d6d7d208cb168aa714224ab6362085de434353054e771a03dd33e"
+          },
+          {
+            "name": "",
+            "position": "2e24fd8ad19a287e6f38f1ec031fb5966d75790fe85333db9fe8b8fbfd6ad22c"
+          },
+          {
+            "name": "",
+            "position": "2a911cad1c1bcdbe36007a979880c0fb2a7498bb62c01e971b875c44d9ab8fb9"
+          },
+          {
+            "name": "",
+            "position": "48d57a21d7632d69b777595e3d71f7ee6b15bded3ee970a49897d2bdddd4325f"
+          },
+          {
+            "name": "",
+            "position": "6e5a451ddb3585f2a1d2d2431860c12122ef340e415c2d3e28c98ccb21fb85e3"
+          },
+          {
+            "name": "",
+            "position": "050a132153394bc6069c056b68054d97f9c725a0161bbd987d623e9abc13a288"
+          },
+          {
+            "name": "",
+            "position": "56fe0e58fb2e1c9a33f1876b51a7d2ff7d0bd26d490f96a5c1308710fd109da0"
+          },
+          {
+            "name": "",
+            "position": "390b88c2b187b9265fec339d4df87408d156e1e1e41f03f6c7c682c0dca25341"
+          },
+          {
+            "name": "",
+            "position": "6a08ff188deaf8b1cef75c5b9d19608aaf74e086cfd1e502c00dbb1617b04952"
+          },
+          {
+            "name": "",
+            "position": "dc8360e5221f235765f00bd14ede48aaeaac7f6e5e7ad556ca52592ac0d1de59"
+          },
+          {
+            "name": "",
+            "position": "a450ed7ae29a45cb4877da1aff5dae56d2a8278de339ccb0275837ab6f844d2b"
+          },
+          {
+            "name": "",
+            "position": "392aa6564f230f4265c345c0e05aed6c39838f623d6f66df599c4b4fe7212b76"
+          },
+          {
+            "name": "",
+            "position": "bbee3566e00da2b157712811c2d71c66229f4bcd6536dd799d75cd768715d52d"
+          },
+          {
+            "name": "",
+            "position": "5d5b59916e7286dbe1a8d0cdfb8fae2e7e9f20cfd33c6c6219ab33e3352ae3cf"
+          },
+          {
+            "name": "",
+            "position": "ad51c367cdfb14c4bb0b8530c4ce4c978ed1c596c1d1e6a4857dfb9757aa4e7f"
+          },
+          {
+            "name": "",
+            "position": "fd34d4415c5b69b81274ae1c4057f0c67094de7b02ee89faa481e0e0031cfed3"
+          },
+          {
+            "name": "",
+            "position": "2620a977a0f61f6810cb64368b14a8b7c10dc2d83277ba3eb95eea5ba5c5ff28"
+          },
+          {
+            "name": "",
+            "position": "e65a6af3f27840a08ce600f5971d8ba1c0a3374371f49b652165fdcebfd0a006"
+          },
+          {
+            "name": "",
+            "position": "38e0940685fcdd838d528ad8816c323203ea04c8f72e7d9aadb4593df66a8eba"
+          },
+          {
+            "name": "",
+            "position": "2398b2da6c7acad7157469400c96adbbfe952a5ce0fce35a765942066099fb73"
+          },
+          {
+            "name": "",
+            "position": "b8cc083e63f75af159bfb3895ec7e3493328e92d4235298555d31027857d3341"
+          },
+          {
+            "name": "",
+            "position": "f7c51b989a386c9ba266d16afc9008c9eefa7b1e38475db9658cfd0063d8aa21"
+          },
+          {
+            "name": "",
+            "position": "ac97ef60bbcd05927d9d44fe012c55aae4c4dc5f9ed0149911955bf7737e88ce"
+          },
+          {
+            "name": "",
+            "position": "54e224ab4960ff23e7fb5020fa04fb935a8a3237887b85d9dd125e2f7080e09c"
+          },
+          {
+            "name": "",
+            "position": "ef23b39cfafab826fcc61eb7dd9b823562c735126ff2cdaf77da4078d770b7e8"
+          },
+          {
+            "name": "",
+            "position": "667380c4c4fc8c431498f832bdeb5d0f2be0ca0c821edf69ca5d9aeb227d7f9e"
+          },
+          {
+            "name": "",
+            "position": "9e9302d48cc5541d93c962796eebe0abc95b32dfada9e0a168bf0a7ebd9290b5"
+          },
+          {
+            "name": "",
+            "position": "ed823f9d144afb6e315f5ddcd99a56a115fa5f5a027430abf84fee4e1d3eba5f"
+          },
+          {
+            "name": "",
+            "position": "e7621bd4d3813cef7970619f5e614de69f6cdc929f421d8da6f807b0115ad412"
+          },
+          {
+            "name": "bamboo-leaves-2,-2",
+            "position": "efd6d6098bd5c2b0eaa20668a353df8089e40fdf6fbe14c69cf82e850bc5e774"
+          },
+          {
+            "name": "bamboo-leaves--2,-1",
+            "position": "405d060158b908e6036914228c570899bdc9da3dd3e65636dd2fceeec11486e1"
+          },
+          {
+            "name": "bamboo-leaves--2,0",
+            "position": "20cc6e70ce3e2d9e3ad69378c657c29871928fe7a44521e3c62fbf1fe73e0902"
+          },
+          {
+            "name": "bamboo-leaves-0,1",
+            "position": "66429fae66877b2ad505437e3cbe9b868073cee47c26d1f20ce9b4e0c206f4c2"
+          },
+          {
+            "name": "bamboo-leaves-1,1",
+            "position": "da4d6c9cc3b8ad8fedfb22014694a06a4dad08816454120cb0643080eb0610c9"
+          },
+          {
+            "name": "bamboo-leaves-1,-1",
+            "position": "7f94803fdbbda70adf4555cc92837dc6e850928c971b1b2454082f6ec2d95e6f"
+          },
+          {
+            "name": "bamboo-leaves-1,0",
+            "position": "d29780ee10ed4dc52d841c8e2fdebb70b2db9419692af1ae432a96c6e318fde7"
+          },
+          {
+            "name": "bamboo-leaves--3,-3",
+            "position": "6bbe2c16c9f5acaf18a51477740b21170229a535ad78bea08c02c466daab77df"
+          },
+          {
+            "name": "bamboo-leaves-2,-3",
+            "position": "21e7ca6105d7c38827319d9fe43db3e22fe4c85a7867dc02ed59e8ae2df79ca9"
+          },
+          {
+            "name": "bamboo-leaves-1,-2",
+            "position": "0e44dc17612c618dd9aa36beb367405810e5a293e55de2d3c01ffee676c55d5d"
+          },
+          {
+            "name": "bamboo-leaves-1,-3",
+            "position": "b1dd98c7b571274953b51cdfb3d06909402be8f8b51931b92951c92f8d54b50e"
+          },
+          {
+            "name": "bamboo-leaves--3,-1",
+            "position": "363b7d578d7870191da546327680af760249c0d2120368198de8be22ef5d7393"
+          },
+          {
+            "name": "bamboo-leaves--2,-2",
+            "position": "6f717b2b7f0f4320e3947b8566d4717154291967b6d62f77a6bd9e2c7c2be413"
+          },
+          {
+            "name": "bamboo-leaves--1,1",
+            "position": "b9b6d3d10f41c59c2c0628c0bf7467591b2c6289278303960f3c59bf46947f18"
+          },
+          {
+            "name": "bamboo-leaves--1,2",
+            "position": "8f37440f6ce81015e598416275d3d3d0183d16f0650f19f6101f6b3f2971abb1"
+          },
+          {
+            "name": "bamboo-leaves--3,-2",
+            "position": "f8aeeb84a326ad528a51fb23e658e6979bdbb7ccd1f6e068da17e56e19d8dfea"
+          },
+          {
+            "name": "bamboo-leaves-1,2",
+            "position": "32cd1bcf277276fd462e79e7f8a354ff5abec439279dd1ae762132c5fc91cfeb"
+          },
+          {
+            "name": "bamboo-leaves--2,1",
+            "position": "517a7d8df7d202c450845ad6be345dd5be4ac0a580661d20f5b4b0e608b3f4e9"
+          },
+          {
+            "name": "bamboo-leaves-2,1",
+            "position": "9b75fce77453a2973335b2f6d1564c783accbdaaac9e9656f6a3bfe9467bb5d7"
+          },
+          {
+            "name": "bamboo-leaves-2,-1",
+            "position": "791e8a2fbd304d996a12292b581aec71ed82326541bddd3a75238a9f2d4474d3"
+          },
+          {
+            "name": "bamboo-leaves--1,-1",
+            "position": "0f3942aae498f68b646cf9482df0fd3bce7d050cc6e4cfe05fbe9f9e88621e04"
+          },
+          {
+            "name": "bamboo-leaves-0,0",
+            "position": "9b58ee09f6a303ab25e46e5ce6c9a1abc57a12fe8c484045ae5c0ba5d9f76954"
+          },
+          {
+            "name": "bamboo-leaves-1,-4",
+            "position": "289df10e6f285fd604f7dfc2a134a326fd7373da05baed44a189daed0ead4a1b"
+          },
+          {
+            "name": "bamboo-leaves--2,-3",
+            "position": "9073381f7d31d9167c75dc8d526e542f2cd5fc6b0dd8c36b21db0e7eb7369c17"
+          },
+          {
+            "name": "bamboo-leaves--1,-2",
+            "position": "f0f373a0ea0e021cbfee79eea24553f84b3c04b55d636f442d24913927e161d0"
+          },
+          {
+            "name": "bamboo-leaves--2,-4",
+            "position": "ef887012e5a967a9aacb8dfa44e2d71db5f7ce905cf9e1eb4ce170906dac00e5"
+          },
+          {
+            "name": "bamboo-leaves--2,2",
+            "position": "196df51c87197b6a092e04e569d3791f5c8d95934915f10e516ea7eea8a42b4a"
+          },
+          {
+            "name": "bamboo-leaves-0,-4",
+            "position": "ffa0349c3f93ff2a92e651046e950d6496b0720aaedf9b681be7ecad46b1e4fe"
+          },
+          {
+            "name": "bamboo-leaves-0,-1",
+            "position": "1966b49655ce204f9efbedaeea196f501a604eb4213cf5308eabd9ea80d05cd8"
+          },
+          {
+            "name": "bamboo-leaves--1,0",
+            "position": "ceea778084beffd9707c15938390c607b1fc3c29853f0fd50942e3c760e7e87c"
+          },
+          {
+            "name": "bamboo-leaves-0,-3",
+            "position": "203afbd562d1832f27eb6dbf156e930eb95130e92cdb7b8fd30d749f0439c5d1"
+          },
+          {
+            "name": "bamboo-leaves-0,-2",
+            "position": "8c099862d7d73967a7c23827dad792a1eed5174bc14f93b4c9f8861882457538"
+          },
+          {
+            "name": "bamboo-leaves-2,0",
+            "position": "abccc764e0947a5f9ebbf8c465381e0d528f65e072b406518088eeaa01d86695"
+          },
+          {
+            "name": "bamboo-leaves--1,-4",
+            "position": "a2e2bab4b1fd198f4bc3dd4817a19117a0b05444600f30b9b0aaf49b910a38bc"
+          },
+          {
+            "name": "bamboo-leaves--1,-3",
+            "position": "ccfaa6ee302d776cf64059ad28e5a7177751d3ec3435f3792b2bc7d2c2329fe6"
+          },
+          {
+            "name": "bamboo-leaves--3,-4",
+            "position": "9bbcc9c293c53f994bcd82c6d0af0811c03fb8ef219adfca21662df34286711a"
+          },
+          {
+            "name": "bamboo-leaves--3,1",
+            "position": "4df61fb7ab065e09e5b90635ee6f1071a94da927be7b8ae04134ae56251aaeae"
+          },
+          {
+            "name": "maple-wood--2,0",
+            "position": "910397f2f07f6cb70538a36fcad5f66141fe24667366bbef2f2d653ca75c42dd"
+          },
+          {
+            "name": "maple-wood--1,-3",
+            "position": "11f1a3cc95ffa13f0d4bca0030c7e6dc471c9cf00c6d122dd738c3a24b641a9f"
+          },
+          {
+            "name": "maple-wood--1,-2",
+            "position": "cf2a8726db8e4aa5a1820927d1611a2fa391186b4e8691e4aaee24326f695032"
+          },
+          {
+            "name": "maple-wood-0,-3",
+            "position": "a466861a58ddc0e39fc4356da22768bee4ba9290d6530d503946a9ac9a3458c6"
+          },
+          {
+            "name": "maple-leaves--2,0",
+            "position": "2e7df220789431e52c9e3db26387387e1a68fde2e662b86a9e174766f7b8df88"
+          },
+          {
+            "name": "maple-leaves--1,-3",
+            "position": "53110537ae794d4091c8251cc5fa909d1020672db49c2a953b1587c89e9966e1"
+          },
+          {
+            "name": "maple-leaves--1,-2",
+            "position": "832cddddc05629906a02bc5c6a3576ae25e6f46d7e34f34e6e53a9c065313e05"
+          },
+          {
+            "name": "maple-leaves-0,-3",
+            "position": "23a4084945ebc149267ab3df97b04b8677b31daace0b724edadcd3c07150727c"
+          }
+        ],
+        "sceneArt": {
+          "vertices": 92394,
+          "triangles": 30798,
+          "meshes": 17,
+          "ridgeSections": 9,
+          "pavingStones": 265,
+          "pavingPieces": 421,
+          "generatedTextureBytes": 1048576,
+          "generationCpuMs": 122.36598299999855
+        },
+        "groundPosition": "488d7affd21f6dac371ea3bc0059025afdc7099efbb62fa4656198f35ea30d98"
+      },
+      {
+        "cpuGenerationMs": 600.4153470000001,
+        "meshCount": 238,
+        "vertexCount": 358296,
+        "triangleInstances": 231290,
+        "uniqueGeometryVertices": 303506,
+        "vegetation": [
+          {
+            "name": "",
+            "position": "0f0f2f84bb194c4967d9c78543354279276c7571092802132a4e931a26bc8fb5"
+          },
+          {
+            "name": "",
+            "position": "30d97e6210611c7d73e0603eeb8bfa5b3b94955cdac29a49f3a0d741d782bc5c"
+          },
+          {
+            "name": "",
+            "position": "ff6c79bae4dd1ebc12c34b781776fe176eae26e8130020e8fc4ad678e1ce63cc"
+          },
+          {
+            "name": "",
+            "position": "9ed1a33d80167a6f8dc930620f2e61a1840cd28d5526611abb4c3b2be9e3cb5b"
+          },
+          {
+            "name": "",
+            "position": "a54c7d86c905d897f0b74968af6f040233991ad60492403b7a852c74b8145171"
+          },
+          {
+            "name": "",
+            "position": "a980054abf29efc1fed9456a9448a3dd7a22667026f0ccb80d7333e718c329cd"
+          },
+          {
+            "name": "",
+            "position": "7cd8816bb495bf06a96c293c792ddaba521a5f3339b160d62b32c6572d592120"
+          },
+          {
+            "name": "",
+            "position": "0eb5d3de4dcdb856a41af47f809a6ab3f45d318594e00f79b2d17c063eab5ffd"
+          },
+          {
+            "name": "",
+            "position": "920d876ac3b2ce74db5b491e9e87746e62816ca342fd0efc36772996ea7b951f"
+          },
+          {
+            "name": "",
+            "position": "3901e9aa740371c64149eab40e74584de894a751f63da94fd8e8a97f78fbba00"
+          },
+          {
+            "name": "",
+            "position": "b756df2f5e5e83560e2ec5692c67671d7d7eca6e0dc10446f21bc69dbabd4738"
+          },
+          {
+            "name": "",
+            "position": "1f671ef4edb028888e6a9aa9ceee6b24c7a48b5da3c84fa98f54a378830a92d7"
+          },
+          {
+            "name": "",
+            "position": "b877fa2afec3b0c4d9b7e368a66e7f970aef2d7284e523bdfaaee0c3bf6a0271"
+          },
+          {
+            "name": "",
+            "position": "1c0c05203911e15cdea78443d3d32954850211b47f9cc9fd02071ec74fdf5369"
+          },
+          {
+            "name": "",
+            "position": "f3de31509ceb205a7dca55f85ed6c092673c449d96b8138a762bf5260d597020"
+          },
+          {
+            "name": "",
+            "position": "b738d1d2bab85646fc631933cfb83c90b05eacbefdace3ceadeb742554e10d87"
+          },
+          {
+            "name": "",
+            "position": "a9e9c6616f4076aa677269b68a190ad52fa58f1f2dfb04e0ffed3e35fc4b73fa"
+          },
+          {
+            "name": "",
+            "position": "3aa5fc279fcb68042ca4c397b0b36c273b3660c436e520fded762616e3387649"
+          },
+          {
+            "name": "",
+            "position": "77612f813b11f61a230c145ba4a3405f0b9ddf05ace8877f0f19012198cb5d44"
+          },
+          {
+            "name": "",
+            "position": "7fd754685a28bbedfa9891c3148f03ca71926a5f9b168c1d3249b9b4a088b329"
+          },
+          {
+            "name": "",
+            "position": "8f3a6d46d0ac8c22894f838518742756424835bdfd4f58572283cfde92039390"
+          },
+          {
+            "name": "",
+            "position": "70dd0c21a3898e3d87f9c1418173344f8a2123b3b79c7d95d97f4a11eea7c6b1"
+          },
+          {
+            "name": "",
+            "position": "35a60e43a8ca3f4e199666ed01b73b84d0f5c52d81e6a4575cf41a72d90afc17"
+          },
+          {
+            "name": "",
+            "position": "f93347317bcbacd4d9a08dcbb0d42e3b3376f592f16ad51d50e3ea288ee69f4a"
+          },
+          {
+            "name": "",
+            "position": "b4763b0bef646e532fc23ce2109f187f9366a6f46192e4fa3c19e237fbdd82fc"
+          },
+          {
+            "name": "",
+            "position": "e322ea4bfe4ebc0cdc54aab8640b3553eaa2ff2084b5145da4c3439568edbf61"
+          },
+          {
+            "name": "",
+            "position": "978237ba7db148d64b73e3426999d0d94a7f8e2d7f97ac6e3cd7bc75b5bbdacc"
+          },
+          {
+            "name": "",
+            "position": "0bae671b90e1c9a13058bd00a0270234a4edc6755d738344347cce4d3d1e1e19"
+          },
+          {
+            "name": "",
+            "position": "d5babedd8b3d7d7741bf78894d4467b3458bd03c07b2f4a3be37804af86df38f"
+          },
+          {
+            "name": "",
+            "position": "6e868cad4dfb5057fd338414d311a23f342beccbc24b997d70591abdfd5fef75"
+          },
+          {
+            "name": "",
+            "position": "54d77737e40f85ee0a3ff24d71d110fd45b81d9db4bb584868b71758a73c6d73"
+          },
+          {
+            "name": "",
+            "position": "9ca1d37468d6a41949d1ae43aa1cba6698c278dd5640b483c86ff3fa060f578e"
+          },
+          {
+            "name": "",
+            "position": "e4e270d380f8c81779e593af48c5b8344c7d2e31d187b556a04ebac66f935be8"
+          },
+          {
+            "name": "",
+            "position": "e7d134f79f8558bf81a404c67e240cba9e3490f0b70d53bf111b7714ce7547b5"
+          },
+          {
+            "name": "",
+            "position": "3c1c95f341c2cae7fc86ebe86b0e113029dfb3f2c6a739463362792093e531a4"
+          },
+          {
+            "name": "",
+            "position": "3a46aadc8deaa83e690be4518e0d797609c6f22351475aa59def1b8f556de904"
+          },
+          {
+            "name": "",
+            "position": "817b7568596f0fded948579736bca26f375914141790ba8e26c3fe9db0b651fd"
+          },
+          {
+            "name": "",
+            "position": "a64bf5d65370d8b538eb6a8a6935479644c0e6f783f6bf5e8a3b3bbf6522f73d"
+          },
+          {
+            "name": "",
+            "position": "0b371605e831d8037f2b9de5bf983726dabb25dcbdac8034a149008de8fe7239"
+          },
+          {
+            "name": "",
+            "position": "86683b49b8f325fa8372f40b044dc1e6dfdfb2af1952a3d460d365213ce71fa6"
+          },
+          {
+            "name": "",
+            "position": "8552e576336d6d7d208cb168aa714224ab6362085de434353054e771a03dd33e"
+          },
+          {
+            "name": "",
+            "position": "2e24fd8ad19a287e6f38f1ec031fb5966d75790fe85333db9fe8b8fbfd6ad22c"
+          },
+          {
+            "name": "",
+            "position": "2a911cad1c1bcdbe36007a979880c0fb2a7498bb62c01e971b875c44d9ab8fb9"
+          },
+          {
+            "name": "",
+            "position": "48d57a21d7632d69b777595e3d71f7ee6b15bded3ee970a49897d2bdddd4325f"
+          },
+          {
+            "name": "",
+            "position": "6e5a451ddb3585f2a1d2d2431860c12122ef340e415c2d3e28c98ccb21fb85e3"
+          },
+          {
+            "name": "",
+            "position": "050a132153394bc6069c056b68054d97f9c725a0161bbd987d623e9abc13a288"
+          },
+          {
+            "name": "",
+            "position": "56fe0e58fb2e1c9a33f1876b51a7d2ff7d0bd26d490f96a5c1308710fd109da0"
+          },
+          {
+            "name": "",
+            "position": "390b88c2b187b9265fec339d4df87408d156e1e1e41f03f6c7c682c0dca25341"
+          },
+          {
+            "name": "",
+            "position": "6a08ff188deaf8b1cef75c5b9d19608aaf74e086cfd1e502c00dbb1617b04952"
+          },
+          {
+            "name": "",
+            "position": "dc8360e5221f235765f00bd14ede48aaeaac7f6e5e7ad556ca52592ac0d1de59"
+          },
+          {
+            "name": "",
+            "position": "a450ed7ae29a45cb4877da1aff5dae56d2a8278de339ccb0275837ab6f844d2b"
+          },
+          {
+            "name": "",
+            "position": "392aa6564f230f4265c345c0e05aed6c39838f623d6f66df599c4b4fe7212b76"
+          },
+          {
+            "name": "",
+            "position": "bbee3566e00da2b157712811c2d71c66229f4bcd6536dd799d75cd768715d52d"
+          },
+          {
+            "name": "",
+            "position": "5d5b59916e7286dbe1a8d0cdfb8fae2e7e9f20cfd33c6c6219ab33e3352ae3cf"
+          },
+          {
+            "name": "",
+            "position": "ad51c367cdfb14c4bb0b8530c4ce4c978ed1c596c1d1e6a4857dfb9757aa4e7f"
+          },
+          {
+            "name": "",
+            "position": "fd34d4415c5b69b81274ae1c4057f0c67094de7b02ee89faa481e0e0031cfed3"
+          },
+          {
+            "name": "",
+            "position": "2620a977a0f61f6810cb64368b14a8b7c10dc2d83277ba3eb95eea5ba5c5ff28"
+          },
+          {
+            "name": "",
+            "position": "e65a6af3f27840a08ce600f5971d8ba1c0a3374371f49b652165fdcebfd0a006"
+          },
+          {
+            "name": "",
+            "position": "38e0940685fcdd838d528ad8816c323203ea04c8f72e7d9aadb4593df66a8eba"
+          },
+          {
+            "name": "",
+            "position": "2398b2da6c7acad7157469400c96adbbfe952a5ce0fce35a765942066099fb73"
+          },
+          {
+            "name": "",
+            "position": "b8cc083e63f75af159bfb3895ec7e3493328e92d4235298555d31027857d3341"
+          },
+          {
+            "name": "",
+            "position": "f7c51b989a386c9ba266d16afc9008c9eefa7b1e38475db9658cfd0063d8aa21"
+          },
+          {
+            "name": "",
+            "position": "ac97ef60bbcd05927d9d44fe012c55aae4c4dc5f9ed0149911955bf7737e88ce"
+          },
+          {
+            "name": "",
+            "position": "54e224ab4960ff23e7fb5020fa04fb935a8a3237887b85d9dd125e2f7080e09c"
+          },
+          {
+            "name": "",
+            "position": "ef23b39cfafab826fcc61eb7dd9b823562c735126ff2cdaf77da4078d770b7e8"
+          },
+          {
+            "name": "",
+            "position": "667380c4c4fc8c431498f832bdeb5d0f2be0ca0c821edf69ca5d9aeb227d7f9e"
+          },
+          {
+            "name": "",
+            "position": "9e9302d48cc5541d93c962796eebe0abc95b32dfada9e0a168bf0a7ebd9290b5"
+          },
+          {
+            "name": "",
+            "position": "ed823f9d144afb6e315f5ddcd99a56a115fa5f5a027430abf84fee4e1d3eba5f"
+          },
+          {
+            "name": "",
+            "position": "e7621bd4d3813cef7970619f5e614de69f6cdc929f421d8da6f807b0115ad412"
+          },
+          {
+            "name": "bamboo-leaves-2,-2",
+            "position": "efd6d6098bd5c2b0eaa20668a353df8089e40fdf6fbe14c69cf82e850bc5e774"
+          },
+          {
+            "name": "bamboo-leaves--2,-1",
+            "position": "405d060158b908e6036914228c570899bdc9da3dd3e65636dd2fceeec11486e1"
+          },
+          {
+            "name": "bamboo-leaves--2,0",
+            "position": "20cc6e70ce3e2d9e3ad69378c657c29871928fe7a44521e3c62fbf1fe73e0902"
+          },
+          {
+            "name": "bamboo-leaves-0,1",
+            "position": "66429fae66877b2ad505437e3cbe9b868073cee47c26d1f20ce9b4e0c206f4c2"
+          },
+          {
+            "name": "bamboo-leaves-1,1",
+            "position": "da4d6c9cc3b8ad8fedfb22014694a06a4dad08816454120cb0643080eb0610c9"
+          },
+          {
+            "name": "bamboo-leaves-1,-1",
+            "position": "7f94803fdbbda70adf4555cc92837dc6e850928c971b1b2454082f6ec2d95e6f"
+          },
+          {
+            "name": "bamboo-leaves-1,0",
+            "position": "d29780ee10ed4dc52d841c8e2fdebb70b2db9419692af1ae432a96c6e318fde7"
+          },
+          {
+            "name": "bamboo-leaves--3,-3",
+            "position": "6bbe2c16c9f5acaf18a51477740b21170229a535ad78bea08c02c466daab77df"
+          },
+          {
+            "name": "bamboo-leaves-2,-3",
+            "position": "21e7ca6105d7c38827319d9fe43db3e22fe4c85a7867dc02ed59e8ae2df79ca9"
+          },
+          {
+            "name": "bamboo-leaves-1,-2",
+            "position": "0e44dc17612c618dd9aa36beb367405810e5a293e55de2d3c01ffee676c55d5d"
+          },
+          {
+            "name": "bamboo-leaves-1,-3",
+            "position": "b1dd98c7b571274953b51cdfb3d06909402be8f8b51931b92951c92f8d54b50e"
+          },
+          {
+            "name": "bamboo-leaves--3,-1",
+            "position": "363b7d578d7870191da546327680af760249c0d2120368198de8be22ef5d7393"
+          },
+          {
+            "name": "bamboo-leaves--2,-2",
+            "position": "6f717b2b7f0f4320e3947b8566d4717154291967b6d62f77a6bd9e2c7c2be413"
+          },
+          {
+            "name": "bamboo-leaves--1,1",
+            "position": "b9b6d3d10f41c59c2c0628c0bf7467591b2c6289278303960f3c59bf46947f18"
+          },
+          {
+            "name": "bamboo-leaves--1,2",
+            "position": "8f37440f6ce81015e598416275d3d3d0183d16f0650f19f6101f6b3f2971abb1"
+          },
+          {
+            "name": "bamboo-leaves--3,-2",
+            "position": "f8aeeb84a326ad528a51fb23e658e6979bdbb7ccd1f6e068da17e56e19d8dfea"
+          },
+          {
+            "name": "bamboo-leaves-1,2",
+            "position": "32cd1bcf277276fd462e79e7f8a354ff5abec439279dd1ae762132c5fc91cfeb"
+          },
+          {
+            "name": "bamboo-leaves--2,1",
+            "position": "517a7d8df7d202c450845ad6be345dd5be4ac0a580661d20f5b4b0e608b3f4e9"
+          },
+          {
+            "name": "bamboo-leaves-2,1",
+            "position": "9b75fce77453a2973335b2f6d1564c783accbdaaac9e9656f6a3bfe9467bb5d7"
+          },
+          {
+            "name": "bamboo-leaves-2,-1",
+            "position": "791e8a2fbd304d996a12292b581aec71ed82326541bddd3a75238a9f2d4474d3"
+          },
+          {
+            "name": "bamboo-leaves--1,-1",
+            "position": "0f3942aae498f68b646cf9482df0fd3bce7d050cc6e4cfe05fbe9f9e88621e04"
+          },
+          {
+            "name": "bamboo-leaves-0,0",
+            "position": "9b58ee09f6a303ab25e46e5ce6c9a1abc57a12fe8c484045ae5c0ba5d9f76954"
+          },
+          {
+            "name": "bamboo-leaves-1,-4",
+            "position": "289df10e6f285fd604f7dfc2a134a326fd7373da05baed44a189daed0ead4a1b"
+          },
+          {
+            "name": "bamboo-leaves--2,-3",
+            "position": "9073381f7d31d9167c75dc8d526e542f2cd5fc6b0dd8c36b21db0e7eb7369c17"
+          },
+          {
+            "name": "bamboo-leaves--1,-2",
+            "position": "f0f373a0ea0e021cbfee79eea24553f84b3c04b55d636f442d24913927e161d0"
+          },
+          {
+            "name": "bamboo-leaves--2,-4",
+            "position": "ef887012e5a967a9aacb8dfa44e2d71db5f7ce905cf9e1eb4ce170906dac00e5"
+          },
+          {
+            "name": "bamboo-leaves--2,2",
+            "position": "196df51c87197b6a092e04e569d3791f5c8d95934915f10e516ea7eea8a42b4a"
+          },
+          {
+            "name": "bamboo-leaves-0,-4",
+            "position": "ffa0349c3f93ff2a92e651046e950d6496b0720aaedf9b681be7ecad46b1e4fe"
+          },
+          {
+            "name": "bamboo-leaves-0,-1",
+            "position": "1966b49655ce204f9efbedaeea196f501a604eb4213cf5308eabd9ea80d05cd8"
+          },
+          {
+            "name": "bamboo-leaves--1,0",
+            "position": "ceea778084beffd9707c15938390c607b1fc3c29853f0fd50942e3c760e7e87c"
+          },
+          {
+            "name": "bamboo-leaves-0,-3",
+            "position": "203afbd562d1832f27eb6dbf156e930eb95130e92cdb7b8fd30d749f0439c5d1"
+          },
+          {
+            "name": "bamboo-leaves-0,-2",
+            "position": "8c099862d7d73967a7c23827dad792a1eed5174bc14f93b4c9f8861882457538"
+          },
+          {
+            "name": "bamboo-leaves-2,0",
+            "position": "abccc764e0947a5f9ebbf8c465381e0d528f65e072b406518088eeaa01d86695"
+          },
+          {
+            "name": "bamboo-leaves--1,-4",
+            "position": "a2e2bab4b1fd198f4bc3dd4817a19117a0b05444600f30b9b0aaf49b910a38bc"
+          },
+          {
+            "name": "bamboo-leaves--1,-3",
+            "position": "ccfaa6ee302d776cf64059ad28e5a7177751d3ec3435f3792b2bc7d2c2329fe6"
+          },
+          {
+            "name": "bamboo-leaves--3,-4",
+            "position": "9bbcc9c293c53f994bcd82c6d0af0811c03fb8ef219adfca21662df34286711a"
+          },
+          {
+            "name": "bamboo-leaves--3,1",
+            "position": "4df61fb7ab065e09e5b90635ee6f1071a94da927be7b8ae04134ae56251aaeae"
+          },
+          {
+            "name": "maple-wood--2,0",
+            "position": "910397f2f07f6cb70538a36fcad5f66141fe24667366bbef2f2d653ca75c42dd"
+          },
+          {
+            "name": "maple-wood--1,-3",
+            "position": "11f1a3cc95ffa13f0d4bca0030c7e6dc471c9cf00c6d122dd738c3a24b641a9f"
+          },
+          {
+            "name": "maple-wood--1,-2",
+            "position": "cf2a8726db8e4aa5a1820927d1611a2fa391186b4e8691e4aaee24326f695032"
+          },
+          {
+            "name": "maple-wood-0,-3",
+            "position": "a466861a58ddc0e39fc4356da22768bee4ba9290d6530d503946a9ac9a3458c6"
+          },
+          {
+            "name": "maple-leaves--2,0",
+            "position": "2e7df220789431e52c9e3db26387387e1a68fde2e662b86a9e174766f7b8df88"
+          },
+          {
+            "name": "maple-leaves--1,-3",
+            "position": "53110537ae794d4091c8251cc5fa909d1020672db49c2a953b1587c89e9966e1"
+          },
+          {
+            "name": "maple-leaves--1,-2",
+            "position": "832cddddc05629906a02bc5c6a3576ae25e6f46d7e34f34e6e53a9c065313e05"
+          },
+          {
+            "name": "maple-leaves-0,-3",
+            "position": "23a4084945ebc149267ab3df97b04b8677b31daace0b724edadcd3c07150727c"
+          }
+        ],
+        "sceneArt": {
+          "vertices": 92394,
+          "triangles": 30798,
+          "meshes": 17,
+          "ridgeSections": 9,
+          "pavingStones": 265,
+          "pavingPieces": 421,
+          "generatedTextureBytes": 1048576,
+          "generationCpuMs": 118.73839200000111
+        },
+        "groundPosition": "488d7affd21f6dac371ea3bc0059025afdc7099efbb62fa4656198f35ea30d98"
+      },
+      {
+        "cpuGenerationMs": 625.9954769999999,
+        "meshCount": 238,
+        "vertexCount": 358296,
+        "triangleInstances": 231290,
+        "uniqueGeometryVertices": 303506,
+        "vegetation": [
+          {
+            "name": "",
+            "position": "0f0f2f84bb194c4967d9c78543354279276c7571092802132a4e931a26bc8fb5"
+          },
+          {
+            "name": "",
+            "position": "30d97e6210611c7d73e0603eeb8bfa5b3b94955cdac29a49f3a0d741d782bc5c"
+          },
+          {
+            "name": "",
+            "position": "ff6c79bae4dd1ebc12c34b781776fe176eae26e8130020e8fc4ad678e1ce63cc"
+          },
+          {
+            "name": "",
+            "position": "9ed1a33d80167a6f8dc930620f2e61a1840cd28d5526611abb4c3b2be9e3cb5b"
+          },
+          {
+            "name": "",
+            "position": "a54c7d86c905d897f0b74968af6f040233991ad60492403b7a852c74b8145171"
+          },
+          {
+            "name": "",
+            "position": "a980054abf29efc1fed9456a9448a3dd7a22667026f0ccb80d7333e718c329cd"
+          },
+          {
+            "name": "",
+            "position": "7cd8816bb495bf06a96c293c792ddaba521a5f3339b160d62b32c6572d592120"
+          },
+          {
+            "name": "",
+            "position": "0eb5d3de4dcdb856a41af47f809a6ab3f45d318594e00f79b2d17c063eab5ffd"
+          },
+          {
+            "name": "",
+            "position": "920d876ac3b2ce74db5b491e9e87746e62816ca342fd0efc36772996ea7b951f"
+          },
+          {
+            "name": "",
+            "position": "3901e9aa740371c64149eab40e74584de894a751f63da94fd8e8a97f78fbba00"
+          },
+          {
+            "name": "",
+            "position": "b756df2f5e5e83560e2ec5692c67671d7d7eca6e0dc10446f21bc69dbabd4738"
+          },
+          {
+            "name": "",
+            "position": "1f671ef4edb028888e6a9aa9ceee6b24c7a48b5da3c84fa98f54a378830a92d7"
+          },
+          {
+            "name": "",
+            "position": "b877fa2afec3b0c4d9b7e368a66e7f970aef2d7284e523bdfaaee0c3bf6a0271"
+          },
+          {
+            "name": "",
+            "position": "1c0c05203911e15cdea78443d3d32954850211b47f9cc9fd02071ec74fdf5369"
+          },
+          {
+            "name": "",
+            "position": "f3de31509ceb205a7dca55f85ed6c092673c449d96b8138a762bf5260d597020"
+          },
+          {
+            "name": "",
+            "position": "b738d1d2bab85646fc631933cfb83c90b05eacbefdace3ceadeb742554e10d87"
+          },
+          {
+            "name": "",
+            "position": "a9e9c6616f4076aa677269b68a190ad52fa58f1f2dfb04e0ffed3e35fc4b73fa"
+          },
+          {
+            "name": "",
+            "position": "3aa5fc279fcb68042ca4c397b0b36c273b3660c436e520fded762616e3387649"
+          },
+          {
+            "name": "",
+            "position": "77612f813b11f61a230c145ba4a3405f0b9ddf05ace8877f0f19012198cb5d44"
+          },
+          {
+            "name": "",
+            "position": "7fd754685a28bbedfa9891c3148f03ca71926a5f9b168c1d3249b9b4a088b329"
+          },
+          {
+            "name": "",
+            "position": "8f3a6d46d0ac8c22894f838518742756424835bdfd4f58572283cfde92039390"
+          },
+          {
+            "name": "",
+            "position": "70dd0c21a3898e3d87f9c1418173344f8a2123b3b79c7d95d97f4a11eea7c6b1"
+          },
+          {
+            "name": "",
+            "position": "35a60e43a8ca3f4e199666ed01b73b84d0f5c52d81e6a4575cf41a72d90afc17"
+          },
+          {
+            "name": "",
+            "position": "f93347317bcbacd4d9a08dcbb0d42e3b3376f592f16ad51d50e3ea288ee69f4a"
+          },
+          {
+            "name": "",
+            "position": "b4763b0bef646e532fc23ce2109f187f9366a6f46192e4fa3c19e237fbdd82fc"
+          },
+          {
+            "name": "",
+            "position": "e322ea4bfe4ebc0cdc54aab8640b3553eaa2ff2084b5145da4c3439568edbf61"
+          },
+          {
+            "name": "",
+            "position": "978237ba7db148d64b73e3426999d0d94a7f8e2d7f97ac6e3cd7bc75b5bbdacc"
+          },
+          {
+            "name": "",
+            "position": "0bae671b90e1c9a13058bd00a0270234a4edc6755d738344347cce4d3d1e1e19"
+          },
+          {
+            "name": "",
+            "position": "d5babedd8b3d7d7741bf78894d4467b3458bd03c07b2f4a3be37804af86df38f"
+          },
+          {
+            "name": "",
+            "position": "6e868cad4dfb5057fd338414d311a23f342beccbc24b997d70591abdfd5fef75"
+          },
+          {
+            "name": "",
+            "position": "54d77737e40f85ee0a3ff24d71d110fd45b81d9db4bb584868b71758a73c6d73"
+          },
+          {
+            "name": "",
+            "position": "9ca1d37468d6a41949d1ae43aa1cba6698c278dd5640b483c86ff3fa060f578e"
+          },
+          {
+            "name": "",
+            "position": "e4e270d380f8c81779e593af48c5b8344c7d2e31d187b556a04ebac66f935be8"
+          },
+          {
+            "name": "",
+            "position": "e7d134f79f8558bf81a404c67e240cba9e3490f0b70d53bf111b7714ce7547b5"
+          },
+          {
+            "name": "",
+            "position": "3c1c95f341c2cae7fc86ebe86b0e113029dfb3f2c6a739463362792093e531a4"
+          },
+          {
+            "name": "",
+            "position": "3a46aadc8deaa83e690be4518e0d797609c6f22351475aa59def1b8f556de904"
+          },
+          {
+            "name": "",
+            "position": "817b7568596f0fded948579736bca26f375914141790ba8e26c3fe9db0b651fd"
+          },
+          {
+            "name": "",
+            "position": "a64bf5d65370d8b538eb6a8a6935479644c0e6f783f6bf5e8a3b3bbf6522f73d"
+          },
+          {
+            "name": "",
+            "position": "0b371605e831d8037f2b9de5bf983726dabb25dcbdac8034a149008de8fe7239"
+          },
+          {
+            "name": "",
+            "position": "86683b49b8f325fa8372f40b044dc1e6dfdfb2af1952a3d460d365213ce71fa6"
+          },
+          {
+            "name": "",
+            "position": "8552e576336d6d7d208cb168aa714224ab6362085de434353054e771a03dd33e"
+          },
+          {
+            "name": "",
+            "position": "2e24fd8ad19a287e6f38f1ec031fb5966d75790fe85333db9fe8b8fbfd6ad22c"
+          },
+          {
+            "name": "",
+            "position": "2a911cad1c1bcdbe36007a979880c0fb2a7498bb62c01e971b875c44d9ab8fb9"
+          },
+          {
+            "name": "",
+            "position": "48d57a21d7632d69b777595e3d71f7ee6b15bded3ee970a49897d2bdddd4325f"
+          },
+          {
+            "name": "",
+            "position": "6e5a451ddb3585f2a1d2d2431860c12122ef340e415c2d3e28c98ccb21fb85e3"
+          },
+          {
+            "name": "",
+            "position": "050a132153394bc6069c056b68054d97f9c725a0161bbd987d623e9abc13a288"
+          },
+          {
+            "name": "",
+            "position": "56fe0e58fb2e1c9a33f1876b51a7d2ff7d0bd26d490f96a5c1308710fd109da0"
+          },
+          {
+            "name": "",
+            "position": "390b88c2b187b9265fec339d4df87408d156e1e1e41f03f6c7c682c0dca25341"
+          },
+          {
+            "name": "",
+            "position": "6a08ff188deaf8b1cef75c5b9d19608aaf74e086cfd1e502c00dbb1617b04952"
+          },
+          {
+            "name": "",
+            "position": "dc8360e5221f235765f00bd14ede48aaeaac7f6e5e7ad556ca52592ac0d1de59"
+          },
+          {
+            "name": "",
+            "position": "a450ed7ae29a45cb4877da1aff5dae56d2a8278de339ccb0275837ab6f844d2b"
+          },
+          {
+            "name": "",
+            "position": "392aa6564f230f4265c345c0e05aed6c39838f623d6f66df599c4b4fe7212b76"
+          },
+          {
+            "name": "",
+            "position": "bbee3566e00da2b157712811c2d71c66229f4bcd6536dd799d75cd768715d52d"
+          },
+          {
+            "name": "",
+            "position": "5d5b59916e7286dbe1a8d0cdfb8fae2e7e9f20cfd33c6c6219ab33e3352ae3cf"
+          },
+          {
+            "name": "",
+            "position": "ad51c367cdfb14c4bb0b8530c4ce4c978ed1c596c1d1e6a4857dfb9757aa4e7f"
+          },
+          {
+            "name": "",
+            "position": "fd34d4415c5b69b81274ae1c4057f0c67094de7b02ee89faa481e0e0031cfed3"
+          },
+          {
+            "name": "",
+            "position": "2620a977a0f61f6810cb64368b14a8b7c10dc2d83277ba3eb95eea5ba5c5ff28"
+          },
+          {
+            "name": "",
+            "position": "e65a6af3f27840a08ce600f5971d8ba1c0a3374371f49b652165fdcebfd0a006"
+          },
+          {
+            "name": "",
+            "position": "38e0940685fcdd838d528ad8816c323203ea04c8f72e7d9aadb4593df66a8eba"
+          },
+          {
+            "name": "",
+            "position": "2398b2da6c7acad7157469400c96adbbfe952a5ce0fce35a765942066099fb73"
+          },
+          {
+            "name": "",
+            "position": "b8cc083e63f75af159bfb3895ec7e3493328e92d4235298555d31027857d3341"
+          },
+          {
+            "name": "",
+            "position": "f7c51b989a386c9ba266d16afc9008c9eefa7b1e38475db9658cfd0063d8aa21"
+          },
+          {
+            "name": "",
+            "position": "ac97ef60bbcd05927d9d44fe012c55aae4c4dc5f9ed0149911955bf7737e88ce"
+          },
+          {
+            "name": "",
+            "position": "54e224ab4960ff23e7fb5020fa04fb935a8a3237887b85d9dd125e2f7080e09c"
+          },
+          {
+            "name": "",
+            "position": "ef23b39cfafab826fcc61eb7dd9b823562c735126ff2cdaf77da4078d770b7e8"
+          },
+          {
+            "name": "",
+            "position": "667380c4c4fc8c431498f832bdeb5d0f2be0ca0c821edf69ca5d9aeb227d7f9e"
+          },
+          {
+            "name": "",
+            "position": "9e9302d48cc5541d93c962796eebe0abc95b32dfada9e0a168bf0a7ebd9290b5"
+          },
+          {
+            "name": "",
+            "position": "ed823f9d144afb6e315f5ddcd99a56a115fa5f5a027430abf84fee4e1d3eba5f"
+          },
+          {
+            "name": "",
+            "position": "e7621bd4d3813cef7970619f5e614de69f6cdc929f421d8da6f807b0115ad412"
+          },
+          {
+            "name": "bamboo-leaves-2,-2",
+            "position": "efd6d6098bd5c2b0eaa20668a353df8089e40fdf6fbe14c69cf82e850bc5e774"
+          },
+          {
+            "name": "bamboo-leaves--2,-1",
+            "position": "405d060158b908e6036914228c570899bdc9da3dd3e65636dd2fceeec11486e1"
+          },
+          {
+            "name": "bamboo-leaves--2,0",
+            "position": "20cc6e70ce3e2d9e3ad69378c657c29871928fe7a44521e3c62fbf1fe73e0902"
+          },
+          {
+            "name": "bamboo-leaves-0,1",
+            "position": "66429fae66877b2ad505437e3cbe9b868073cee47c26d1f20ce9b4e0c206f4c2"
+          },
+          {
+            "name": "bamboo-leaves-1,1",
+            "position": "da4d6c9cc3b8ad8fedfb22014694a06a4dad08816454120cb0643080eb0610c9"
+          },
+          {
+            "name": "bamboo-leaves-1,-1",
+            "position": "7f94803fdbbda70adf4555cc92837dc6e850928c971b1b2454082f6ec2d95e6f"
+          },
+          {
+            "name": "bamboo-leaves-1,0",
+            "position": "d29780ee10ed4dc52d841c8e2fdebb70b2db9419692af1ae432a96c6e318fde7"
+          },
+          {
+            "name": "bamboo-leaves--3,-3",
+            "position": "6bbe2c16c9f5acaf18a51477740b21170229a535ad78bea08c02c466daab77df"
+          },
+          {
+            "name": "bamboo-leaves-2,-3",
+            "position": "21e7ca6105d7c38827319d9fe43db3e22fe4c85a7867dc02ed59e8ae2df79ca9"
+          },
+          {
+            "name": "bamboo-leaves-1,-2",
+            "position": "0e44dc17612c618dd9aa36beb367405810e5a293e55de2d3c01ffee676c55d5d"
+          },
+          {
+            "name": "bamboo-leaves-1,-3",
+            "position": "b1dd98c7b571274953b51cdfb3d06909402be8f8b51931b92951c92f8d54b50e"
+          },
+          {
+            "name": "bamboo-leaves--3,-1",
+            "position": "363b7d578d7870191da546327680af760249c0d2120368198de8be22ef5d7393"
+          },
+          {
+            "name": "bamboo-leaves--2,-2",
+            "position": "6f717b2b7f0f4320e3947b8566d4717154291967b6d62f77a6bd9e2c7c2be413"
+          },
+          {
+            "name": "bamboo-leaves--1,1",
+            "position": "b9b6d3d10f41c59c2c0628c0bf7467591b2c6289278303960f3c59bf46947f18"
+          },
+          {
+            "name": "bamboo-leaves--1,2",
+            "position": "8f37440f6ce81015e598416275d3d3d0183d16f0650f19f6101f6b3f2971abb1"
+          },
+          {
+            "name": "bamboo-leaves--3,-2",
+            "position": "f8aeeb84a326ad528a51fb23e658e6979bdbb7ccd1f6e068da17e56e19d8dfea"
+          },
+          {
+            "name": "bamboo-leaves-1,2",
+            "position": "32cd1bcf277276fd462e79e7f8a354ff5abec439279dd1ae762132c5fc91cfeb"
+          },
+          {
+            "name": "bamboo-leaves--2,1",
+            "position": "517a7d8df7d202c450845ad6be345dd5be4ac0a580661d20f5b4b0e608b3f4e9"
+          },
+          {
+            "name": "bamboo-leaves-2,1",
+            "position": "9b75fce77453a2973335b2f6d1564c783accbdaaac9e9656f6a3bfe9467bb5d7"
+          },
+          {
+            "name": "bamboo-leaves-2,-1",
+            "position": "791e8a2fbd304d996a12292b581aec71ed82326541bddd3a75238a9f2d4474d3"
+          },
+          {
+            "name": "bamboo-leaves--1,-1",
+            "position": "0f3942aae498f68b646cf9482df0fd3bce7d050cc6e4cfe05fbe9f9e88621e04"
+          },
+          {
+            "name": "bamboo-leaves-0,0",
+            "position": "9b58ee09f6a303ab25e46e5ce6c9a1abc57a12fe8c484045ae5c0ba5d9f76954"
+          },
+          {
+            "name": "bamboo-leaves-1,-4",
+            "position": "289df10e6f285fd604f7dfc2a134a326fd7373da05baed44a189daed0ead4a1b"
+          },
+          {
+            "name": "bamboo-leaves--2,-3",
+            "position": "9073381f7d31d9167c75dc8d526e542f2cd5fc6b0dd8c36b21db0e7eb7369c17"
+          },
+          {
+            "name": "bamboo-leaves--1,-2",
+            "position": "f0f373a0ea0e021cbfee79eea24553f84b3c04b55d636f442d24913927e161d0"
+          },
+          {
+            "name": "bamboo-leaves--2,-4",
+            "position": "ef887012e5a967a9aacb8dfa44e2d71db5f7ce905cf9e1eb4ce170906dac00e5"
+          },
+          {
+            "name": "bamboo-leaves--2,2",
+            "position": "196df51c87197b6a092e04e569d3791f5c8d95934915f10e516ea7eea8a42b4a"
+          },
+          {
+            "name": "bamboo-leaves-0,-4",
+            "position": "ffa0349c3f93ff2a92e651046e950d6496b0720aaedf9b681be7ecad46b1e4fe"
+          },
+          {
+            "name": "bamboo-leaves-0,-1",
+            "position": "1966b49655ce204f9efbedaeea196f501a604eb4213cf5308eabd9ea80d05cd8"
+          },
+          {
+            "name": "bamboo-leaves--1,0",
+            "position": "ceea778084beffd9707c15938390c607b1fc3c29853f0fd50942e3c760e7e87c"
+          },
+          {
+            "name": "bamboo-leaves-0,-3",
+            "position": "203afbd562d1832f27eb6dbf156e930eb95130e92cdb7b8fd30d749f0439c5d1"
+          },
+          {
+            "name": "bamboo-leaves-0,-2",
+            "position": "8c099862d7d73967a7c23827dad792a1eed5174bc14f93b4c9f8861882457538"
+          },
+          {
+            "name": "bamboo-leaves-2,0",
+            "position": "abccc764e0947a5f9ebbf8c465381e0d528f65e072b406518088eeaa01d86695"
+          },
+          {
+            "name": "bamboo-leaves--1,-4",
+            "position": "a2e2bab4b1fd198f4bc3dd4817a19117a0b05444600f30b9b0aaf49b910a38bc"
+          },
+          {
+            "name": "bamboo-leaves--1,-3",
+            "position": "ccfaa6ee302d776cf64059ad28e5a7177751d3ec3435f3792b2bc7d2c2329fe6"
+          },
+          {
+            "name": "bamboo-leaves--3,-4",
+            "position": "9bbcc9c293c53f994bcd82c6d0af0811c03fb8ef219adfca21662df34286711a"
+          },
+          {
+            "name": "bamboo-leaves--3,1",
+            "position": "4df61fb7ab065e09e5b90635ee6f1071a94da927be7b8ae04134ae56251aaeae"
+          },
+          {
+            "name": "maple-wood--2,0",
+            "position": "910397f2f07f6cb70538a36fcad5f66141fe24667366bbef2f2d653ca75c42dd"
+          },
+          {
+            "name": "maple-wood--1,-3",
+            "position": "11f1a3cc95ffa13f0d4bca0030c7e6dc471c9cf00c6d122dd738c3a24b641a9f"
+          },
+          {
+            "name": "maple-wood--1,-2",
+            "position": "cf2a8726db8e4aa5a1820927d1611a2fa391186b4e8691e4aaee24326f695032"
+          },
+          {
+            "name": "maple-wood-0,-3",
+            "position": "a466861a58ddc0e39fc4356da22768bee4ba9290d6530d503946a9ac9a3458c6"
+          },
+          {
+            "name": "maple-leaves--2,0",
+            "position": "2e7df220789431e52c9e3db26387387e1a68fde2e662b86a9e174766f7b8df88"
+          },
+          {
+            "name": "maple-leaves--1,-3",
+            "position": "53110537ae794d4091c8251cc5fa909d1020672db49c2a953b1587c89e9966e1"
+          },
+          {
+            "name": "maple-leaves--1,-2",
+            "position": "832cddddc05629906a02bc5c6a3576ae25e6f46d7e34f34e6e53a9c065313e05"
+          },
+          {
+            "name": "maple-leaves-0,-3",
+            "position": "23a4084945ebc149267ab3df97b04b8677b31daace0b724edadcd3c07150727c"
+          }
+        ],
+        "sceneArt": {
+          "vertices": 92394,
+          "triangles": 30798,
+          "meshes": 17,
+          "ridgeSections": 9,
+          "pavingStones": 265,
+          "pavingPieces": 421,
+          "generatedTextureBytes": 1048576,
+          "generationCpuMs": 112.82602300000462
+        },
+        "groundPosition": "488d7affd21f6dac371ea3bc0059025afdc7099efbb62fa4656198f35ea30d98"
+      }
+    ],
+    "medianCpuGenerationMs": 625.9954769999999
+  },
+  "delta": {
+    "meshCount": -5,
+    "vertexCount": 70914,
+    "triangleInstances": 22362,
+    "uniqueGeometryVertices": 70914
+  },
+  "vegetationPositionEqual": true,
+  "groundPositionEqual": true
+}

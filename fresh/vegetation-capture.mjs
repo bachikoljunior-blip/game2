@@ -14,25 +14,28 @@ import * as T from 'three';
 import {createPresentation} from '/@fs/${root}/fresh/presentation.js';
 import {createWorld} from '/@fs/${root}/fresh/simulation.js';
 import {groundHeightAt} from '/@fs/${root}/fresh/terrain.js';
-const view=createPresentation(document.querySelector('canvas'));let world,previous;
+import {chooseVegetationInspection} from '/@fs/${root}/fresh/vegetation-inspection.js';
+const view=createPresentation(document.querySelector('canvas'));await view.assetsReady;let world,previous,inspection;
 window.foliageFrame=(name,t)=>{
- if(name!==previous){world=createWorld();previous=name;}
+ if(name!==previous){world=createWorld();previous=name;inspection=null;}
  const specimens=view.scene.userData.vegetationSpecimens;
  if(!specimens?.bamboo||!specimens?.maple)throw new Error('The production specimen roots are required.');
  const specimen=name==='bamboo'?specimens.bamboo:specimens.maple;
  world.player.x=specimen.x+6;world.player.z=specimen.z+8;world.time=t;
  view.render(world,1/12,0,{animate:true});
  const {x,y,z,height}=specimen,close=name==='maple-leaf';
- const position=close?new T.Vector3(x+3.5,y+height*.81,z+3.5):new T.Vector3(x+height*.82,y+height*.59,z+height*1.32);
- const target=close?new T.Vector3(x+.65,y+height*.76,z+.5):new T.Vector3(x,y+height*.5,z);
+ // Select once after settling, then keep the same viewpoint for every frame.
+ if(t>=8&&!inspection)inspection=chooseVegetationInspection(view,specimen,{close,time:t});
+ const position=inspection?new T.Vector3(...inspection.position):new T.Vector3(x+height*.82,y+height*.59,z+height*1.32);
+ const target=inspection?new T.Vector3(...inspection.target):new T.Vector3(x,y+height*.5,z);
  view.renderInspection(position,target);view.camera.updateMatrixWorld();
  const projections=[new T.Vector3(x,y,z),new T.Vector3(x,y+height,z)].map(p=>p.project(view.camera).toArray());
- return {name,time:t,specimen,camera:view.camera.position.toArray(),projections,landscape:view.landscapeDiagnostics(),render:view.renderer.info.render};
+ return {name,time:t,specimen,inspection,camera:view.camera.position.toArray(),projections,landscape:view.landscapeDiagnostics(),render:view.renderer.info.render};
 };window.foliageReady=true;
 </script></body></html>`;
 await writeFile(resolve(temp,'index.html'),html);
 const server=await createServer({configFile:false,root:temp,server:{host:'127.0.0.1',port:4194,strictPort:true,fs:{allow:[root]}}});
-const report={sourceRevision:revision,scope:'Actual production vegetation at fixed inspection cameras, 12 authored frames per second. Gameplay obstruction fading is restored to base opacity for these plant studies. Root and undeformed stem-tip projections are framing guides; actual branch/leaf visibility and motion require native-media review. Not ordinary input or camera-obstruction verification, physical-device timing, perceptual or source-blind quality acceptance.',fps:12,cases:[],errors:[]};
+const report={sourceRevision:revision,scope:'Actual production vegetation at fixed inspection cameras, 12 authored frames per second. Gameplay obstruction fading is restored to base opacity for these plant studies. Camera selection checks other woody objects with the reported target-support exclusions; its zero count does not mean all woody geometry is clear. Self/other/all woody ray counts are saved separately at selection time. Root and undeformed stem-tip projections are framing guides; actual branch/leaf visibility and motion require native-media review. Not ordinary input or camera-obstruction verification, physical-device timing, perceptual or source-blind quality acceptance.',fps:12,cases:[],errors:[]};
 let browser;
 try{
  await server.listen();browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
@@ -45,6 +48,7 @@ try{
   for(let i=0;i<96;i++)await page.evaluate(([n,t])=>foliageFrame(n,t),[name,i/12]);
   for(let i=0;i<frames;i++){
    const sample=await page.evaluate(([n,t])=>foliageFrame(n,t),[name,8+i/12]);
+   if(i===0)assert.equal(sample.inspection.selectionOccludedRays,0,'selection rays avoid other woody objects with the documented target-support exclusions; all-wood clearance is not asserted');
    if(name!=='maple-leaf')for(const p of sample.projections)assert.ok(Math.abs(p[0])<.94&&Math.abs(p[1])<.94&&p[2]>-1&&p[2]<1,'root and stem tip remain in frame');
    if(i%6===0)samples.push({frame:i,...sample});
    await page.screenshot({path:resolve(folder,String(i).padStart(4,'0')+'.png')});
