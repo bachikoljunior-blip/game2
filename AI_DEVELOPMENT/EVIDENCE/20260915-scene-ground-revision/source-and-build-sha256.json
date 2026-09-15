@@ -1,0 +1,52 @@
+[
+  {
+    "file": "fresh/scene-art.js",
+    "sha256": "301f4e173678b10bb59addae64890b5a9dd1d0f871e2faff3b2b19c9ffb6d1ce",
+    "bytes": 17350
+  },
+  {
+    "file": "fresh/scene-surface.js",
+    "sha256": "0a4cbbba6b312fa1f0956ae04cfdf5e1c455390c4b198074d23514cd1b2d8c80",
+    "bytes": 3828
+  },
+  {
+    "file": "fresh/presentation.js",
+    "sha256": "6fed03147015c50dcad593899e869abff0cca57ff52f74cf45ac05b227149cef",
+    "bytes": 42099
+  },
+  {
+    "file": "fresh/terrain.js",
+    "sha256": "8d33d411734ca5cc7a46d15dd63057856acca8df0bb3ba9634da49fd41a0fdb2",
+    "bytes": 3166
+  },
+  {
+    "file": "fresh/route-layout.js",
+    "sha256": "8a25b3a609bb3bb230270f9c49a692d5c0228b25e5f6faafc11292c94f580d4b",
+    "bytes": 4333
+  },
+  {
+    "file": "fresh/foreground-visibility.js",
+    "sha256": "eac57b378bdbdfa26c949d834667b6065f131bee33f85afcc539f6376029eec5",
+    "bytes": 8378
+  },
+  {
+    "file": "fresh-dist/assets/index-COupR98v.js",
+    "sha256": "7ea4438d76d2d007ae99ad1e0f26d4176918ecc40a5bc8569889aa1bd3538f0e",
+    "bytes": 657944
+  },
+  {
+    "file": "fresh-dist/assets/index-CZO7hwZ8.js",
+    "sha256": "87c3edb85c1c3c1b4a934ac35e87c77fdd45877fd080cf357020b170bcea8160",
+    "bytes": 661671
+  },
+  {
+    "file": "fresh-dist/assets/index-Ck_X98_2.css",
+    "sha256": "7c991e93c0471bdc554ebd9e79cd027afc380ee964520eb5fbc278319f16da3d",
+    "bytes": 6472
+  },
+  {
+    "file": "fresh-dist/index.html",
+    "sha256": "e0b6332f9f45e0770535254148800405e9ced4566c62c9fc4dadfbab07c5f635",
+    "bytes": 1772
+  }
+]

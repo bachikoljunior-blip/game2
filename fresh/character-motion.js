@@ -1,5 +1,7 @@
 import * as T from 'three';
 import { ANATOMY } from './character-rig.js';
+import {deformHakamaPanel} from './character-sculpt.js';
+import {deformAnchoredHead} from './character-assets.js';
 
 // Audio and gait use actual displacement, never input intent or actor.stride.
 export const LOCOMOTION=Object.freeze({stepDistance:.72,stanceFraction:.60,runStepDistance:1.12,runStanceFraction:.40,walkSpeed:1.8,runSpeed:3.8});
@@ -235,6 +237,15 @@ function groundPenetration(group,heightAt){
     box.copy(geometry.boundingBox).applyMatrix4(mesh.matrixWorld);
     const x=(box.min.x+box.max.x)/2,z=(box.min.z+box.max.z)/2,h=heightAt(x,z),span=.04;
     const gx=(heightAt(x+span,z)-heightAt(x-span,z))/(2*span),gz=(heightAt(x,z+span)-heightAt(x,z-span))/(2*span);
+    if(typeof heightAt.maximumInRect==='function'){
+      // Preserve both branches of the existing contact algorithm: its exact
+      // terrain lookup and its locally fitted plane (including seam tolerance).
+      // Bounding the plane as well avoids changing even that approximation.
+      let maximum=heightAt.maximumInRect(box.min.x,box.min.z,box.max.x,box.max.z);
+      for(const px of [box.min.x,box.max.x])for(const pz of [box.min.z,box.max.z])maximum=Math.max(maximum,h+gx*(px-x)+gz*(pz-z));
+      const rounding=Number.EPSILON*Math.max(1,Math.abs(maximum),Math.abs(box.min.y))*32;
+      if(maximum+rounding-box.min.y<=penetration)return;
+    }
     let planar=true;
     for(const px of [box.min.x,x,box.max.x])for(const pz of [box.min.z,z,box.max.z]){
       if(Math.abs(heightAt(px,pz)-(h+gx*(px-x)+gz*(pz-z)))>1e-6)planar=false;
@@ -352,6 +363,7 @@ export function updateCharacterRig(rig,actor,world,seconds,{animate=true,groundH
   rig.ring.quaternion.copy(terrainRotation).multiply(new T.Quaternion().setFromAxisAngle(new T.Vector3(1,0,0),Math.PI/2));
   if(state==='dead')rig.body.quaternion.premultiply(new T.Quaternion().slerp(terrainRotation,pose.fall));
   rig.chest.rotation.fromArray([...pose.chest,'XYZ']);rig.neck.rotation.fromArray([...pose.head,'XYZ']);
+  deformAnchoredHead(rig.headSkin,rig.neck.quaternion);
   rig.scabbard.rotation.x=mix(1.76,Math.PI/2-pose.body[0],clamp(pose.fall*2));
   // Keep planted legs inside their anatomical reach by lowering the pelvis,
   // not by hyperextending knees or changing the segment lengths.
@@ -414,20 +426,29 @@ export function updateCharacterRig(rig,actor,world,seconds,{animate=true,groundH
   for(let i=0;i<2;i++){
     const freeLeft=toVector(pose.leftHand);freeLeft.y+=upperBodyOffset;
     const limb=rig.limbs[i],target=i===1?rightGrip.clone():rig.root.localToWorld(freeLeft).lerp(leftGrip,pose.twoHands);
+    let gripWeight=i===1?1:pose.twoHands;
     if(state==='dead'&&m.age>.45&&i===1){
-      const release=rig.chest.localToWorld(new T.Vector3(.31,-.37,.07));target.lerp(release,ease((m.age-.45)/.30));
+      const release=rig.chest.localToWorld(new T.Vector3(.31,-.37,.07)),amount=ease((m.age-.45)/.30);
+      target.lerp(release,amount);gripWeight=1-amount;
     }
-    if(state==='victory'&&m.victoryAge>=1.44&&m.victoryAge<2.6&&i===0)rig.scabbard.getWorldPosition(target);
+    if(state==='victory'&&m.victoryAge>=1.44&&m.victoryAge<2.6&&i===0){rig.scabbard.getWorldPosition(target);gripWeight=0;}
     if(state==='victory'&&m.victoryAge>2.65&&i===1){
-      const rest=rig.root.localToWorld(new T.Vector3(.28,1.00,-.025));target.lerp(rest,ease((m.victoryAge-2.65)/.4));
+      const rest=rig.root.localToWorld(new T.Vector3(.28,1.00,-.025)),amount=ease((m.victoryAge-2.65)/.4);
+      target.lerp(rest,amount);gripWeight=1-amount;
     }
+    // The anatomical wrist is proximal to the centre of a closed hand. Keep
+    // the existing exact handle target and solve the wrist that places the
+    // baked hand's grip centre on it. Free/released wrists have zero weight;
+    // old rigs without this asset retain an explicit zero-offset fallback.
+    const gripOffset=(limb.gripOffset||new T.Vector3()).clone().applyQuaternion(rig.sword.getWorldQuaternion(new T.Quaternion()));
+    target.addScaledVector(gripOffset,-gripWeight);
     const chestInverse=rig.chest.matrixWorld.clone().invert();target.applyMatrix4(chestInverse);
     const elbowPole=state==='dead'?new T.Vector3(limb.side*.8,.8,0).applyQuaternion(rig.chest.getWorldQuaternion(new T.Quaternion()).invert()):new T.Vector3(limb.side*.8,-.15,.40);
     const solved=solveTwoBone(limb.arm.position,target,elbowPole,ANATOMY.upperArm,ANATOMY.forearm);
     limb.arm.quaternion.copy(solved.upperQuaternion);limb.elbow.quaternion.copy(solved.lowerQuaternion);
     const chain=rig.body.quaternion.clone().multiply(rig.chest.quaternion).multiply(limb.arm.quaternion).multiply(limb.elbow.quaternion);
     limb.wrist.quaternion.copy(chain.invert()).multiply(rig.sword.quaternion);
-    armMetrics.push({side:limb.side,reachError:solved.reachError});
+    armMetrics.push({side:limb.side,reachError:solved.reachError,gripWeight});
   }
   // Damped cloth follows acceleration, turns and body motion. The low-amplitude
   // air ripple is secondary to the inertia, and every driver stops on pause.
@@ -436,9 +457,11 @@ export function updateCharacterRig(rig,actor,world,seconds,{animate=true,groundH
   for(let n=0;n<steps;n++){m.clothVelocity+=(clothTarget-m.cloth)*h*90-m.clothVelocity*h*14;m.cloth+=m.clothVelocity*h;}
   for(const panel of rig.panels){
     const leg=rig.limbs[panel.side<0?0:1];
-    const hipPitch=new T.Euler().setFromQuaternion(leg.hip.quaternion).x;
-    panel.node.rotation.set(clamp(m.cloth+hipPitch*.34+(panel.front<0?.045:-.035),-.52,.55),
-      clamp(-m.turn*.014,-.18,.18),panel.side*.02+Math.sin(m.time*1.25+panel.side)*.009);
+    if(!deformHakamaPanel(panel,leg,rig.body,{cloth:m.cloth,fall:pose.fall,time:m.time,groundHeightAt})){
+      const hipPitch=new T.Euler().setFromQuaternion(leg.hip.quaternion).x;
+      panel.node.rotation.set(clamp(m.cloth+hipPitch*.34+(panel.front<0?.045:-.035),-.52,.55),
+        clamp(-m.turn*.014,-.18,.18),panel.side*.02+Math.sin(m.time*1.25+panel.side)*.009);
+    }
   }
   rig.ties.forEach((tie,i)=>tie.rotation.set(clamp(m.cloth*.7+.06,-.18,.3),clamp(-m.turn*.015,-.25,.25),Math.sin(m.time*1.4+i*.9)*.018+m.turn*.012));
   rig.contact.scale.set(1+pose.fall*.5,1+pose.fall*.1,1);rig.contact.material.opacity=.24-pose.fall*.05;
@@ -446,6 +469,7 @@ export function updateCharacterRig(rig,actor,world,seconds,{animate=true,groundH
   rig.root.updateMatrixWorld(true);
   let bodyGroundLift=0,weaponGroundLift=0;
   if(state==='broken'||state==='dodge')for(const panel of rig.panels){
+    if(panel.mesh?.geometry.userData.restPositions)continue;
     // A low stance folds the free hem away from a rising bank. It does not
     // raise the planted actor to accommodate a rigid cloth rectangle.
     for(let n=0;n<5&&groundPenetration(panel.node,groundHeightAt)>.001;n++){

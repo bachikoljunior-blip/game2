@@ -1,0 +1,48 @@
+✔ 414 touch recorded duel positions expose both intervening banners without fading the third (595.59207ms)
+✔ 414 desktop recorded first locked frame fades the intersecting ridge rock independently (391.954684ms)
+✔ head, chest and blade rays use the current rig transforms and cover a sword-only obstruction (173.728367ms)
+✔ wind-deformed cloth intersections preserve visible and depth shaders and source vertices (1.041385ms)
+✔ fade is local, continuous, pauseable and fully restores opacity, depth and shadows (0.546752ms)
+✔ slender generated leaves no longer obscure the historical water-route position or trigger false fades (1506.31907ms)
+✔ actual animated leaf triangles have matching positive/negative CPU ray proxies after the wind moves them (753.245913ms)
+✔ recorded old-waystone wood fades locally, freezes when paused and restores on retry (1248.145685ms)
+ℹ Recorded position: maple wood detected in 13/13 wind phases; other 3 cells remain opaque. All 364 supports occupy 4 correct spatial cells.
+✔ ordinary tracking keeps the actual actor in frame throughout all circuits even with250ms simulation frames (59.998447ms)
+✔ junction and arrival cameras release to player follow on every optional walk (0.560011ms)
+✔ locked camera separates player and close target instead of stacking them (0.263361ms)
+✔ portrait framing preserves a smaller lateral offset (0.212666ms)
+✔ a reversing lock bearing cannot pull the interpolated camera overhead (0.536126ms)
+✔ large authored composition changes remain continuous after a dropped frame (0.479842ms)
+✔ vista exit and arrival entry retain the same per-frame continuity bound (1.122145ms)
+✔ post-rejoin unlocked descent makes the later lock satisfy the unchanged duel angle (3.240079ms)
+✔ coincident fighters retain a finite camera direction and standoff (1.244958ms)
+✔ victory framing shows the signal from an authored oblique angle (0.35686ms)
+✔ pre-rejoin vista contains both physical route exits and their shared join (1.012684ms)
+✔ unlit arrival uses the same oblique signal frame as victory and clears the shrine lattice (1.315833ms)
+✔ only the near foreground torii post fades for the verified first encounter frame (0.195289ms)
+✔ interface gives labels an opaque backing and keeps victory title off the lamp (0.761491ms)
+✔ generated landscape replaces flat background and cone bamboo without external assets (0.479612ms)
+✔ scene and actor pass preserves density while clearing combat silhouettes and sheathing the victory pose (906.78944ms)
+✔ foreground, signal, actor and branching-route hierarchy use the shared gameplay geometry (0.581092ms)
+✔ route checkpoint images are decoded after capture instead of perturbing held movement (0.915268ms)
+✔ one approach physically divides outside the ridge and reconverges (1.352498ms)
+✔ each side has a distinct landmark and the wind-cloth path is the longer consequence (0.318793ms)
+✔ route choice exists only beside the ridge and records its real position once (1.813121ms)
+✔ choice is recorded before route-specific observations even at a landmark (0.465611ms)
+✔ unknown route ids are rejected instead of silently becoming the left route (0.369668ms)
+✔ encounter availability follows approach, chosen branch and reconvergence (0.105406ms)
+✔ the ridge stops a central shortcut while both ordinary movement routes pass it (28.917022ms)
+✔ new exposed rock triangles cover the collision spine and leave both walking corridors clear (120.440832ms)
+✔ new lower ridge clears historic anatomy rays and still fades on actual intersecting triangles (560.245561ms)
+✔ the rebuilt shrine keeps feet clear at the unchanged collision boundary (150.838031ms)
+✔ ground sampling agrees with actual rendered triangles, including diagonal interiors (239.604719ms)
+✔ the verified central path stays level while the valley shoulders rise (0.371531ms)
+✔ shrine decorative base cannot project beyond the solid collision footprint (0.15442ms)
+ℹ tests 39
+ℹ suites 0
+ℹ pass 39
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4860.358066

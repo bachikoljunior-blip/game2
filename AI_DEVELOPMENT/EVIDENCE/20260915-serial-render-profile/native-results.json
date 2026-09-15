@@ -1,0 +1,3032 @@
+{
+  "schemaVersion": 1,
+  "analysis": "Independent recovery, exact-source verification and raw timing recomputation by c06_reference_material; source identities known, not blind evaluation. No runtime/workflow/tool edit or new render in this analysis.",
+  "analyzedAt": "2026-09-15T16:11:39.555802+00:00",
+  "result": "passed",
+  "failures": [],
+  "runUrl": "https://github.com/bachikoljunior-blip/game2/actions/runs/34992058990",
+  "jobUrl": "https://github.com/bachikoljunior-blip/game2/actions/runs/34992058990/job/104458930625",
+  "provenance": {
+    "acquisition": "Legitimate read-only GitHub fetch_workflow_job_logs and fetch_workflow_job_steps connectors on completed job. The exact decoded log returned by the connector was preserved as UTF-8 including BOM; no authentication/network restriction bypass. MEDIA byte archives independently decoded with sizes, SHA256, CRC and member hashes verified.",
+    "rawRoot": "/workspace/scratch/27301e95ee53/game2-ultra/.review/34992058990",
+    "logFile": "/workspace/scratch/27301e95ee53/game2-ultra/.review/34992058990/profile-job104458930625.log",
+    "logBytes": 5507754,
+    "logSha256": "7a565658804bb77ecf2553368a455713dce5a416e35cd4c7ee34c77e5e05e681",
+    "recovery": {
+      "job": 104458930625,
+      "run": 34992058990,
+      "source": "GitHub fetch_workflow_job_logs decoded original completed-job log",
+      "logBytes": 5507754,
+      "logSha256": "7a565658804bb77ecf2553368a455713dce5a416e35cd4c7ee34c77e5e05e681",
+      "envelopes": [
+        {
+          "version": "render-profile-01-acf",
+          "runnerRevision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+          "run": "34992058990",
+          "bytes": 665903,
+          "sha256": "0b06fe2a4694929c15936540399c3b16e5cc13617914dd0ad8a3fc89073657e3",
+          "files": [
+            {
+              "path": "01-acf/report.json",
+              "bytes": 147082,
+              "sha256": "e61ecb0418da161f2b2d653a5ac617f1196f7aa3b45788585f98644c861e003b"
+            },
+            {
+              "path": "01-acf/full.png",
+              "bytes": 647140,
+              "sha256": "f00eeb892729a2e46ae9b370fddb49394aae025128dd410183673ee79bdac824"
+            },
+            {
+              "path": "01-acf/ordinal.json",
+              "bytes": 1870,
+              "sha256": "1f1eb2eb6d56aaee8e652d2cb02963d27a3945de694911e745f97b9addc4303a"
+            }
+          ],
+          "ordinal": 1,
+          "sourceRevision": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+          "hostRecordSha256": "c36063c08ac01b0920de7404a032050ed5910bf925a21208b42a109ff4290299"
+        },
+        {
+          "version": "render-profile-02-906",
+          "runnerRevision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+          "run": "34992058990",
+          "bytes": 675162,
+          "sha256": "066e49b1eb4f0cebbfea8299423b70113cf858f53d9819b2eef5dd5979e04141",
+          "files": [
+            {
+              "path": "02-906/report.json",
+              "bytes": 157472,
+              "sha256": "0a5baf8c62665623e4b57a70b226590ebc472d3e43e6f9b0c774c70512d921c4"
+            },
+            {
+              "path": "02-906/full.png",
+              "bytes": 653004,
+              "sha256": "c7094722f42a42a25eaf61491734e97398b8820672c390c3341cf9d73deb7461"
+            },
+            {
+              "path": "02-906/ordinal.json",
+              "bytes": 1876,
+              "sha256": "7878bef44de509f3fae0a7c3dc3253dac06dff94e54e5881e3eccca896829fd8"
+            }
+          ],
+          "ordinal": 2,
+          "sourceRevision": "9068522520b0f269cc937057b444f06c7c187978",
+          "hostRecordSha256": "c36063c08ac01b0920de7404a032050ed5910bf925a21208b42a109ff4290299"
+        },
+        {
+          "version": "render-profile-03-current",
+          "runnerRevision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+          "run": "34992058990",
+          "bytes": 679612,
+          "sha256": "4115b1495873b520a64a1a11b65ad1bc963d810973e446396ea973aa1f4061fd",
+          "files": [
+            {
+              "path": "03-current/report.json",
+              "bytes": 158082,
+              "sha256": "e12849c7ff4d86b887c5adeae6833ce066bbd68f41674809c50f280a3af2a832"
+            },
+            {
+              "path": "03-current/full.png",
+              "bytes": 657270,
+              "sha256": "4db93b67c1887cca3e0aaba2f6dff4d7ed747a6a262433add56f7e9a4da051c8"
+            },
+            {
+              "path": "03-current/ordinal.json",
+              "bytes": 1911,
+              "sha256": "6a077347570b1163b3d83dd4c7f6bcd34a66378061dc9ea78c64e926039a305b"
+            }
+          ],
+          "ordinal": 3,
+          "sourceRevision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+          "hostRecordSha256": "c36063c08ac01b0920de7404a032050ed5910bf925a21208b42a109ff4290299"
+        },
+        {
+          "version": "render-profile-04-current",
+          "runnerRevision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+          "run": "34992058990",
+          "bytes": 679473,
+          "sha256": "86fea8db41dd3140698f26e667d5e1bce888ae0556da21c5abed523bb857d596",
+          "files": [
+            {
+              "path": "04-current/report.json",
+              "bytes": 157996,
+              "sha256": "fed2e1889dd96ffcb9e74903af966c3972cdd91f25b1b7aeebe2fbd7f719f3dd"
+            },
+            {
+              "path": "04-current/full.png",
+              "bytes": 657270,
+              "sha256": "4db93b67c1887cca3e0aaba2f6dff4d7ed747a6a262433add56f7e9a4da051c8"
+            },
+            {
+              "path": "04-current/ordinal.json",
+              "bytes": 1843,
+              "sha256": "b6bbcb986babdf6cb72d50469c616c9697b17cf2f398cba29754e8f20213920b"
+            }
+          ],
+          "ordinal": 4,
+          "sourceRevision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+          "hostRecordSha256": "c36063c08ac01b0920de7404a032050ed5910bf925a21208b42a109ff4290299"
+        },
+        {
+          "version": "render-profile-05-906",
+          "runnerRevision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+          "run": "34992058990",
+          "bytes": 675179,
+          "sha256": "04b09df311169c3ec3bd905444f4d187a1bc739f02a2a509e69b1dc70535a014",
+          "files": [
+            {
+              "path": "05-906/report.json",
+              "bytes": 157701,
+              "sha256": "51a203d4b7e13ab676cea17f64d5c4dc63c39a11e05c1b66a6c9b711d950263b"
+            },
+            {
+              "path": "05-906/full.png",
+              "bytes": 653004,
+              "sha256": "c7094722f42a42a25eaf61491734e97398b8820672c390c3341cf9d73deb7461"
+            },
+            {
+              "path": "05-906/ordinal.json",
+              "bytes": 1834,
+              "sha256": "d76a86b63b3e00fd68e9b7720220c8125bce80478a46f5eb84679790e2ed080e"
+            }
+          ],
+          "ordinal": 5,
+          "sourceRevision": "9068522520b0f269cc937057b444f06c7c187978",
+          "hostRecordSha256": "c36063c08ac01b0920de7404a032050ed5910bf925a21208b42a109ff4290299"
+        },
+        {
+          "version": "render-profile-06-acf",
+          "runnerRevision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+          "run": "34992058990",
+          "bytes": 665861,
+          "sha256": "f6930702adfa2e97911b9570203995a4c32c49f8df40e541898aec38f03f69e7",
+          "files": [
+            {
+              "path": "06-acf/report.json",
+              "bytes": 147176,
+              "sha256": "06884b6f352819cea593ad3a55375e10a1f7d67ce79db6b8780a8a3c4840dbfa"
+            },
+            {
+              "path": "06-acf/full.png",
+              "bytes": 647140,
+              "sha256": "f00eeb892729a2e46ae9b370fddb49394aae025128dd410183673ee79bdac824"
+            },
+            {
+              "path": "06-acf/ordinal.json",
+              "bytes": 1865,
+              "sha256": "c808fe3bd90d27e8113b2ad7f91be328db8ca21b3f1fed32bd207337e6ab71df"
+            }
+          ],
+          "ordinal": 6,
+          "sourceRevision": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+          "hostRecordSha256": "c36063c08ac01b0920de7404a032050ed5910bf925a21208b42a109ff4290299"
+        },
+        {
+          "version": "render-profile-serial-summary",
+          "runnerRevision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+          "run": "34992058990",
+          "bytes": 4213,
+          "sha256": "d21b9d5dcbbc756a985adc1c73266e218939d9a660ccd91dd1b70181a49e5372",
+          "files": [
+            {
+              "path": "manifest.json",
+              "bytes": 2814,
+              "sha256": "53c64073dd7586e56c36bd0752597d41262c0c64fa18db7982dbd12d3f521bd6"
+            },
+            {
+              "path": "summary.json",
+              "bytes": 21347,
+              "sha256": "3588f7c484f8613038ba26b453419884e9bdeeca1180e0f442a61ec9c74265a3"
+            }
+          ],
+          "hostRecordSha256": "c36063c08ac01b0920de7404a032050ed5910bf925a21208b42a109ff4290299"
+        }
+      ],
+      "allZipAndFileHashesVerified": true,
+      "serialStatusLines": [
+        "SERIAL_PROFILE_ORDINAL {\"ordinal\": 1, \"revision\": \"acf0f9ec86996245ad712d6adc72e5d6159f6711\", \"result\": \"passed\", \"errors\": []}",
+        "SERIAL_PROFILE_ORDINAL {\"ordinal\": 2, \"revision\": \"9068522520b0f269cc937057b444f06c7c187978\", \"result\": \"passed\", \"errors\": []}",
+        "SERIAL_PROFILE_ORDINAL {\"ordinal\": 3, \"revision\": \"4fa13484c88dfa3d572c189e3a8999e8f254e70e\", \"result\": \"passed\", \"errors\": []}",
+        "SERIAL_PROFILE_ORDINAL {\"ordinal\": 4, \"revision\": \"4fa13484c88dfa3d572c189e3a8999e8f254e70e\", \"result\": \"passed\", \"errors\": []}",
+        "SERIAL_PROFILE_ORDINAL {\"ordinal\": 5, \"revision\": \"9068522520b0f269cc937057b444f06c7c187978\", \"result\": \"passed\", \"errors\": []}",
+        "SERIAL_PROFILE_ORDINAL {\"ordinal\": 6, \"revision\": \"acf0f9ec86996245ad712d6adc72e5d6159f6711\", \"result\": \"passed\", \"errors\": []}",
+        "SERIAL_PROFILE_RESULT {\"result\": \"passed\", \"order\": [\"acf0f9ec86996245ad712d6adc72e5d6159f6711\", \"9068522520b0f269cc937057b444f06c7c187978\", \"4fa13484c88dfa3d572c189e3a8999e8f254e70e\", \"4fa13484c88dfa3d572c189e3a8999e8f254e70e\", \"9068522520b0f269cc937057b444f06c7c187978\", \"acf0f9ec86996245ad712d6adc72e5d6159f6711\"]}"
+      ]
+    },
+    "job": {
+      "jobs": [
+        {
+          "conclusion": "success",
+          "id": 104458930625,
+          "logs_url": null,
+          "name": "profile",
+          "run_id": 34992058990,
+          "status": "completed",
+          "steps": [
+            {
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Run actions/checkout@v4",
+              "number": 2,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Run actions/setup-node@v4",
+              "number": 3,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Run npm ci",
+              "number": 4,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Run npx playwright install --with-deps chromium",
+              "number": 5,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Measure six serial full scenes on the same host",
+              "number": 6,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Run actions/upload-artifact@v4",
+              "number": 7,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Retain every failed ordinal in the final job result",
+              "number": 8,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Post Run actions/setup-node@v4",
+              "number": 15,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Post Run actions/checkout@v4",
+              "number": 16,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 17,
+              "status": "completed"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "manifest": {
+    "schemaVersion": 1,
+    "startedAt": "2026-09-15T15:59:47.936805+00:00",
+    "eventRevision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+    "run": "34992058990",
+    "attempt": "1",
+    "job": "profile",
+    "host": {
+      "os": "Linux",
+      "osRelease": "6.17.0-1022-azure",
+      "osVersion": "#22-Ubuntu SMP Mon Jul 27 17:24:03 UTC 2026",
+      "machine": "x86_64",
+      "logicalCpuCount": 4,
+      "cpu": {
+        "vendor_id": "GenuineIntel",
+        "cpu family": "6",
+        "model": "207",
+        "model name": "INTEL(R) XEON(R) PLATINUM 8573C",
+        "stepping": "2"
+      },
+      "runnerOS": "Linux",
+      "runnerArch": "X64",
+      "imageOS": "ubuntu24",
+      "imageVersion": "20260907.300.1"
+    },
+    "hostRecordSha256": "c36063c08ac01b0920de7404a032050ed5910bf925a21208b42a109ff4290299",
+    "nodeVersion": "v22.23.2",
+    "dependencies": {
+      "three": "0.180.0",
+      "vite": "6.4.3",
+      "playwright": "1.56.1"
+    },
+    "apparatusSha256": "1e915d1ed590327b0528efb39ed3cd815815ecfaada08900acc8428033da6651",
+    "viewport": {
+      "width": 960,
+      "height": 720,
+      "dpr": 1
+    },
+    "variants": [
+      "full"
+    ],
+    "comparisonReason": "Use 906 as the preceding rendered candidate to isolate the forthcoming fixed foliage-placement change. Historical e188 measurements remain separate and unchanged.",
+    "order": [
+      {
+        "ordinal": 1,
+        "label": "acf",
+        "revision": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+        "freshTree": "7b4ca3643630ee9420ce2423b69190ac80ed8db4"
+      },
+      {
+        "ordinal": 2,
+        "label": "906",
+        "revision": "9068522520b0f269cc937057b444f06c7c187978",
+        "freshTree": "7e6eda4aea523982c3fb6f102d8b95bb684b1abb"
+      },
+      {
+        "ordinal": 3,
+        "label": "current",
+        "revision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+        "freshTree": "92755d9c54d9c814d441801cb536d29d1461888e"
+      },
+      {
+        "ordinal": 4,
+        "label": "current",
+        "revision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+        "freshTree": "92755d9c54d9c814d441801cb536d29d1461888e"
+      },
+      {
+        "ordinal": 5,
+        "label": "906",
+        "revision": "9068522520b0f269cc937057b444f06c7c187978",
+        "freshTree": "7e6eda4aea523982c3fb6f102d8b95bb684b1abb"
+      },
+      {
+        "ordinal": 6,
+        "label": "acf",
+        "revision": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+        "freshTree": "7b4ca3643630ee9420ce2423b69190ac80ed8db4"
+      }
+    ],
+    "scope": "Six serial independent browser processes in one job/host. Same tool and dependencies; full 13 frames each. Cold frame and warm 12 remain separate. SwiftShader readback, not physical-device or pure GPU timing.",
+    "limits": "Job limit remains 18 minutes including setup. Original tool operation/build limits are unchanged. Hard cancellation can leave later ordinals unattempted; completed ordinals are emitted immediately."
+  },
+  "workflowSha256": "d88d8675b65030fa846a918fd69033a5642755e63d77e4cf82a93232a71fad66",
+  "independentlyVerifiedSources": {
+    "acf0f9ec86996245ad712d6adc72e5d6159f6711": {
+      "freshTree": "7b4ca3643630ee9420ce2423b69190ac80ed8db4",
+      "packageLockSha256": "0ab32168c5c04959d96a86558c9e65d5c3a3cd97773389a8034c78264d23b261",
+      "lockedDependencies": {
+        "three": "0.180.0",
+        "vite": "6.4.3",
+        "playwright": "1.56.1"
+      },
+      "freshFileCount": 66,
+      "freshFingerprintSha256": "206f474d9c81779beb142d59680574f0cdc1d0fb6bd04b205424c7aeff88ad47"
+    },
+    "9068522520b0f269cc937057b444f06c7c187978": {
+      "freshTree": "7e6eda4aea523982c3fb6f102d8b95bb684b1abb",
+      "packageLockSha256": "0ab32168c5c04959d96a86558c9e65d5c3a3cd97773389a8034c78264d23b261",
+      "lockedDependencies": {
+        "three": "0.180.0",
+        "vite": "6.4.3",
+        "playwright": "1.56.1"
+      },
+      "freshFileCount": 120,
+      "freshFingerprintSha256": "8acf757156b6f47ac788029d6d7cefe4d3a998a1587bb2c67e67c57387b7db5a"
+    },
+    "4fa13484c88dfa3d572c189e3a8999e8f254e70e": {
+      "freshTree": "92755d9c54d9c814d441801cb536d29d1461888e",
+      "packageLockSha256": "0ab32168c5c04959d96a86558c9e65d5c3a3cd97773389a8034c78264d23b261",
+      "lockedDependencies": {
+        "three": "0.180.0",
+        "vite": "6.4.3",
+        "playwright": "1.56.1"
+      },
+      "freshFileCount": 122,
+      "freshFingerprintSha256": "2c20db5f5910f2daf41f1ca83f697030343e0287c83d5ae2b3e88617813de309"
+    }
+  },
+  "checks": [
+    {
+      "check": "one completed successful GitHub job and every step successful",
+      "passed": true
+    },
+    {
+      "check": "six expected source ordinals",
+      "passed": true
+    },
+    {
+      "check": "completed success summary",
+      "passed": true
+    },
+    {
+      "check": "host record hash",
+      "passed": true
+    },
+    {
+      "check": "event/tool identity",
+      "passed": true
+    },
+    {
+      "check": "original decoded UTF-8 job log hash",
+      "passed": true
+    },
+    {
+      "check": "archive render-profile-01-acf.zip",
+      "passed": true
+    },
+    {
+      "check": "ZIP CRC and exact member allowlist render-profile-01-acf.zip",
+      "passed": true
+    },
+    {
+      "check": "recovered original 01-acf/report.json",
+      "passed": true
+    },
+    {
+      "check": "recovered original 01-acf/full.png",
+      "passed": true
+    },
+    {
+      "check": "recovered original 01-acf/ordinal.json",
+      "passed": true
+    },
+    {
+      "check": "archive render-profile-02-906.zip",
+      "passed": true
+    },
+    {
+      "check": "ZIP CRC and exact member allowlist render-profile-02-906.zip",
+      "passed": true
+    },
+    {
+      "check": "recovered original 02-906/report.json",
+      "passed": true
+    },
+    {
+      "check": "recovered original 02-906/full.png",
+      "passed": true
+    },
+    {
+      "check": "recovered original 02-906/ordinal.json",
+      "passed": true
+    },
+    {
+      "check": "archive render-profile-03-current.zip",
+      "passed": true
+    },
+    {
+      "check": "ZIP CRC and exact member allowlist render-profile-03-current.zip",
+      "passed": true
+    },
+    {
+      "check": "recovered original 03-current/report.json",
+      "passed": true
+    },
+    {
+      "check": "recovered original 03-current/full.png",
+      "passed": true
+    },
+    {
+      "check": "recovered original 03-current/ordinal.json",
+      "passed": true
+    },
+    {
+      "check": "archive render-profile-04-current.zip",
+      "passed": true
+    },
+    {
+      "check": "ZIP CRC and exact member allowlist render-profile-04-current.zip",
+      "passed": true
+    },
+    {
+      "check": "recovered original 04-current/report.json",
+      "passed": true
+    },
+    {
+      "check": "recovered original 04-current/full.png",
+      "passed": true
+    },
+    {
+      "check": "recovered original 04-current/ordinal.json",
+      "passed": true
+    },
+    {
+      "check": "archive render-profile-05-906.zip",
+      "passed": true
+    },
+    {
+      "check": "ZIP CRC and exact member allowlist render-profile-05-906.zip",
+      "passed": true
+    },
+    {
+      "check": "recovered original 05-906/report.json",
+      "passed": true
+    },
+    {
+      "check": "recovered original 05-906/full.png",
+      "passed": true
+    },
+    {
+      "check": "recovered original 05-906/ordinal.json",
+      "passed": true
+    },
+    {
+      "check": "archive render-profile-06-acf.zip",
+      "passed": true
+    },
+    {
+      "check": "ZIP CRC and exact member allowlist render-profile-06-acf.zip",
+      "passed": true
+    },
+    {
+      "check": "recovered original 06-acf/report.json",
+      "passed": true
+    },
+    {
+      "check": "recovered original 06-acf/full.png",
+      "passed": true
+    },
+    {
+      "check": "recovered original 06-acf/ordinal.json",
+      "passed": true
+    },
+    {
+      "check": "archive render-profile-serial-summary.zip",
+      "passed": true
+    },
+    {
+      "check": "ZIP CRC and exact member allowlist render-profile-serial-summary.zip",
+      "passed": true
+    },
+    {
+      "check": "recovered original manifest.json",
+      "passed": true
+    },
+    {
+      "check": "recovered original summary.json",
+      "passed": true
+    },
+    {
+      "check": "all dependency versions match event installed versions acf0f9ec86996245ad712d6adc72e5d6159f6711",
+      "passed": true
+    },
+    {
+      "check": "all dependency versions match event installed versions 9068522520b0f269cc937057b444f06c7c187978",
+      "passed": true
+    },
+    {
+      "check": "all dependency versions match event installed versions 4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+      "passed": true
+    },
+    {
+      "check": "1: source immutable full git file fingerprint",
+      "passed": true,
+      "detail": {
+        "trackedFreshFiles": 66
+      }
+    },
+    {
+      "check": "1: tool/runtime/host provenance",
+      "passed": true
+    },
+    {
+      "check": "1: exact ordinal matches summary",
+      "passed": true
+    },
+    {
+      "check": "1: normal full fixture and viewport",
+      "passed": true
+    },
+    {
+      "check": "1: browser and real full readback agreement",
+      "passed": true
+    },
+    {
+      "check": "1: expected assets ready",
+      "passed": true
+    },
+    {
+      "check": "1: status/errors/cleanup",
+      "passed": true
+    },
+    {
+      "check": "1: retained warnings are ReadPixels performance stalls",
+      "passed": true
+    },
+    {
+      "check": "1: 13 actual valid nontrivial frames at authored times",
+      "passed": true
+    },
+    {
+      "check": "1: final page mirrors every actual sample",
+      "passed": true
+    },
+    {
+      "check": "1: independent warm12 statistics and cold sample",
+      "passed": true
+    },
+    {
+      "check": "1: exact real PNG and capture hash",
+      "passed": true
+    },
+    {
+      "check": "1: serial nonoverlap",
+      "passed": true
+    },
+    {
+      "check": "1: constant reported draw counts within 13 frames",
+      "passed": true
+    },
+    {
+      "check": "2: source immutable full git file fingerprint",
+      "passed": true,
+      "detail": {
+        "trackedFreshFiles": 120
+      }
+    },
+    {
+      "check": "2: tool/runtime/host provenance",
+      "passed": true
+    },
+    {
+      "check": "2: exact ordinal matches summary",
+      "passed": true
+    },
+    {
+      "check": "2: normal full fixture and viewport",
+      "passed": true
+    },
+    {
+      "check": "2: browser and real full readback agreement",
+      "passed": true
+    },
+    {
+      "check": "2: expected assets ready",
+      "passed": true
+    },
+    {
+      "check": "2: status/errors/cleanup",
+      "passed": true
+    },
+    {
+      "check": "2: retained warnings are ReadPixels performance stalls",
+      "passed": true
+    },
+    {
+      "check": "2: 13 actual valid nontrivial frames at authored times",
+      "passed": true
+    },
+    {
+      "check": "2: final page mirrors every actual sample",
+      "passed": true
+    },
+    {
+      "check": "2: independent warm12 statistics and cold sample",
+      "passed": true
+    },
+    {
+      "check": "2: exact real PNG and capture hash",
+      "passed": true
+    },
+    {
+      "check": "2: serial nonoverlap",
+      "passed": true
+    },
+    {
+      "check": "2: constant reported draw counts within 13 frames",
+      "passed": true
+    },
+    {
+      "check": "3: source immutable full git file fingerprint",
+      "passed": true,
+      "detail": {
+        "trackedFreshFiles": 122
+      }
+    },
+    {
+      "check": "3: tool/runtime/host provenance",
+      "passed": true
+    },
+    {
+      "check": "3: exact ordinal matches summary",
+      "passed": true
+    },
+    {
+      "check": "3: normal full fixture and viewport",
+      "passed": true
+    },
+    {
+      "check": "3: browser and real full readback agreement",
+      "passed": true
+    },
+    {
+      "check": "3: expected assets ready",
+      "passed": true
+    },
+    {
+      "check": "3: status/errors/cleanup",
+      "passed": true
+    },
+    {
+      "check": "3: retained warnings are ReadPixels performance stalls",
+      "passed": true
+    },
+    {
+      "check": "3: 13 actual valid nontrivial frames at authored times",
+      "passed": true
+    },
+    {
+      "check": "3: final page mirrors every actual sample",
+      "passed": true
+    },
+    {
+      "check": "3: independent warm12 statistics and cold sample",
+      "passed": true
+    },
+    {
+      "check": "3: exact real PNG and capture hash",
+      "passed": true
+    },
+    {
+      "check": "3: serial nonoverlap",
+      "passed": true
+    },
+    {
+      "check": "3: constant reported draw counts within 13 frames",
+      "passed": true
+    },
+    {
+      "check": "4: source immutable full git file fingerprint",
+      "passed": true,
+      "detail": {
+        "trackedFreshFiles": 122
+      }
+    },
+    {
+      "check": "4: tool/runtime/host provenance",
+      "passed": true
+    },
+    {
+      "check": "4: exact ordinal matches summary",
+      "passed": true
+    },
+    {
+      "check": "4: normal full fixture and viewport",
+      "passed": true
+    },
+    {
+      "check": "4: browser and real full readback agreement",
+      "passed": true
+    },
+    {
+      "check": "4: expected assets ready",
+      "passed": true
+    },
+    {
+      "check": "4: status/errors/cleanup",
+      "passed": true
+    },
+    {
+      "check": "4: retained warnings are ReadPixels performance stalls",
+      "passed": true
+    },
+    {
+      "check": "4: 13 actual valid nontrivial frames at authored times",
+      "passed": true
+    },
+    {
+      "check": "4: final page mirrors every actual sample",
+      "passed": true
+    },
+    {
+      "check": "4: independent warm12 statistics and cold sample",
+      "passed": true
+    },
+    {
+      "check": "4: exact real PNG and capture hash",
+      "passed": true
+    },
+    {
+      "check": "4: serial nonoverlap",
+      "passed": true
+    },
+    {
+      "check": "4: constant reported draw counts within 13 frames",
+      "passed": true
+    },
+    {
+      "check": "5: source immutable full git file fingerprint",
+      "passed": true,
+      "detail": {
+        "trackedFreshFiles": 120
+      }
+    },
+    {
+      "check": "5: tool/runtime/host provenance",
+      "passed": true
+    },
+    {
+      "check": "5: exact ordinal matches summary",
+      "passed": true
+    },
+    {
+      "check": "5: normal full fixture and viewport",
+      "passed": true
+    },
+    {
+      "check": "5: browser and real full readback agreement",
+      "passed": true
+    },
+    {
+      "check": "5: expected assets ready",
+      "passed": true
+    },
+    {
+      "check": "5: status/errors/cleanup",
+      "passed": true
+    },
+    {
+      "check": "5: retained warnings are ReadPixels performance stalls",
+      "passed": true
+    },
+    {
+      "check": "5: 13 actual valid nontrivial frames at authored times",
+      "passed": true
+    },
+    {
+      "check": "5: final page mirrors every actual sample",
+      "passed": true
+    },
+    {
+      "check": "5: independent warm12 statistics and cold sample",
+      "passed": true
+    },
+    {
+      "check": "5: exact real PNG and capture hash",
+      "passed": true
+    },
+    {
+      "check": "5: serial nonoverlap",
+      "passed": true
+    },
+    {
+      "check": "5: constant reported draw counts within 13 frames",
+      "passed": true
+    },
+    {
+      "check": "6: source immutable full git file fingerprint",
+      "passed": true,
+      "detail": {
+        "trackedFreshFiles": 66
+      }
+    },
+    {
+      "check": "6: tool/runtime/host provenance",
+      "passed": true
+    },
+    {
+      "check": "6: exact ordinal matches summary",
+      "passed": true
+    },
+    {
+      "check": "6: normal full fixture and viewport",
+      "passed": true
+    },
+    {
+      "check": "6: browser and real full readback agreement",
+      "passed": true
+    },
+    {
+      "check": "6: expected assets ready",
+      "passed": true
+    },
+    {
+      "check": "6: status/errors/cleanup",
+      "passed": true
+    },
+    {
+      "check": "6: retained warnings are ReadPixels performance stalls",
+      "passed": true
+    },
+    {
+      "check": "6: 13 actual valid nontrivial frames at authored times",
+      "passed": true
+    },
+    {
+      "check": "6: final page mirrors every actual sample",
+      "passed": true
+    },
+    {
+      "check": "6: independent warm12 statistics and cold sample",
+      "passed": true
+    },
+    {
+      "check": "6: exact real PNG and capture hash",
+      "passed": true
+    },
+    {
+      "check": "6: serial nonoverlap",
+      "passed": true
+    },
+    {
+      "check": "6: constant reported draw counts within 13 frames",
+      "passed": true
+    },
+    {
+      "check": "1/6: repeated source, built bytes and screenshot agreement",
+      "passed": true
+    },
+    {
+      "check": "2/5: repeated source, built bytes and screenshot agreement",
+      "passed": true
+    },
+    {
+      "check": "3/4: repeated source, built bytes and screenshot agreement",
+      "passed": true
+    },
+    {
+      "check": "original job log span within unchanged 18 minute job cap",
+      "passed": true,
+      "detail": {
+        "seconds": 186.864528,
+        "firstTimestamp": "2026-09-15T15:59:12.3353276Z",
+        "lastTimestamp": "2026-09-15T16:02:19.1998555Z"
+      }
+    },
+    {
+      "check": "all 6 local source roots distinct",
+      "passed": true
+    },
+    {
+      "check": "original JSON copy path either absent or identical native-manifest.json",
+      "passed": true
+    },
+    {
+      "check": "original JSON copy path either absent or identical native-summary.json",
+      "passed": true
+    },
+    {
+      "check": "original JSON copy path either absent or identical native-recovery.json",
+      "passed": true
+    },
+    {
+      "check": "original JSON copy path either absent or identical native-job-status.json",
+      "passed": true
+    },
+    {
+      "check": "original JSON copy path either absent or identical native-01-acf-report.json",
+      "passed": true
+    },
+    {
+      "check": "original JSON copy path either absent or identical native-02-906-report.json",
+      "passed": true
+    },
+    {
+      "check": "original JSON copy path either absent or identical native-03-current-report.json",
+      "passed": true
+    },
+    {
+      "check": "original JSON copy path either absent or identical native-04-current-report.json",
+      "passed": true
+    },
+    {
+      "check": "original JSON copy path either absent or identical native-05-906-report.json",
+      "passed": true
+    },
+    {
+      "check": "original JSON copy path either absent or identical native-06-acf-report.json",
+      "passed": true
+    }
+  ],
+  "checkCount": 142,
+  "sampleCount": 78,
+  "ordinals": [
+    {
+      "ordinal": 1,
+      "label": "acf",
+      "revision": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+      "result": "passed",
+      "sourceFingerprintSha256": "206f474d9c81779beb142d59680574f0cdc1d0fb6bd04b205424c7aeff88ad47",
+      "originalReportSha256": "e61ecb0418da161f2b2d653a5ac617f1196f7aa3b45788585f98644c861e003b",
+      "cold": {
+        "cpuRenderMs": 883.6999999999971,
+        "readbackWallMs": 1659.8999999999942,
+        "totalWallMs": 2543.5999999999913,
+        "bufferResetCpuMs": 1.5,
+        "pixelAnalysisCpuMs": 26
+      },
+      "warm12": {
+        "cpuRenderMs": {
+          "min": 14,
+          "median": 17.549999999995634,
+          "max": 25.5
+        },
+        "readbackWallMs": {
+          "min": 790.6999999999971,
+          "median": 800.7999999999956,
+          "max": 1064.7000000000116
+        },
+        "totalWallMs": {
+          "min": 806.9000000000087,
+          "median": 817.7999999999956,
+          "max": 1078.7000000000116
+        },
+        "bufferResetCpuMs": {
+          "min": 0.19999999999708962,
+          "median": 0.3000000000029104,
+          "max": 0.40000000000873115
+        },
+        "pixelAnalysisCpuMs": {
+          "min": 17.60000000000582,
+          "median": 31.0,
+          "max": 40.39999999999418
+        }
+      },
+      "rawTimings": [
+        {
+          "frame": 0,
+          "worldTime": 0,
+          "cpuRenderMs": 883.6999999999971,
+          "readbackWallMs": 1659.8999999999942,
+          "totalWallMs": 2543.5999999999913,
+          "bufferResetCpuMs": 1.5,
+          "pixelAnalysisCpuMs": 26,
+          "nodeRoundTripWallMs": 2601.009067
+        },
+        {
+          "frame": 1,
+          "worldTime": 0.016666666666666666,
+          "cpuRenderMs": 24.59999999999127,
+          "readbackWallMs": 805.5,
+          "totalWallMs": 830.0999999999913,
+          "bufferResetCpuMs": 0.3000000000029104,
+          "pixelAnalysisCpuMs": 17.60000000000582,
+          "nodeRoundTripWallMs": 854.1939409999995
+        },
+        {
+          "frame": 2,
+          "worldTime": 0.03333333333333333,
+          "cpuRenderMs": 25.5,
+          "readbackWallMs": 801.5,
+          "totalWallMs": 827,
+          "bufferResetCpuMs": 0.3000000000029104,
+          "pixelAnalysisCpuMs": 38.10000000000582,
+          "nodeRoundTripWallMs": 873.0470920000007
+        },
+        {
+          "frame": 3,
+          "worldTime": 0.05,
+          "cpuRenderMs": 17.19999999999709,
+          "readbackWallMs": 793.6999999999971,
+          "totalWallMs": 810.8999999999942,
+          "bufferResetCpuMs": 0.39999999999417923,
+          "pixelAnalysisCpuMs": 30.90000000000873,
+          "nodeRoundTripWallMs": 847.5663679999998
+        },
+        {
+          "frame": 4,
+          "worldTime": 0.06666666666666667,
+          "cpuRenderMs": 15.5,
+          "readbackWallMs": 800.0999999999913,
+          "totalWallMs": 815.5999999999913,
+          "bufferResetCpuMs": 0.20000000001164153,
+          "pixelAnalysisCpuMs": 31.09999999999127,
+          "nodeRoundTripWallMs": 851.6968309999993
+        },
+        {
+          "frame": 5,
+          "worldTime": 0.08333333333333333,
+          "cpuRenderMs": 17.80000000000291,
+          "readbackWallMs": 795.1000000000058,
+          "totalWallMs": 812.9000000000087,
+          "bufferResetCpuMs": 0.3000000000029104,
+          "pixelAnalysisCpuMs": 31,
+          "nodeRoundTripWallMs": 848.9936790000011
+        },
+        {
+          "frame": 6,
+          "worldTime": 0.1,
+          "cpuRenderMs": 17.59999999999127,
+          "readbackWallMs": 802.4000000000087,
+          "totalWallMs": 820,
+          "bufferResetCpuMs": 0.3000000000029104,
+          "pixelAnalysisCpuMs": 30.69999999999709,
+          "nodeRoundTripWallMs": 855.6967110000005
+        },
+        {
+          "frame": 7,
+          "worldTime": 0.11666666666666667,
+          "cpuRenderMs": 16.89999999999418,
+          "readbackWallMs": 803.9000000000087,
+          "totalWallMs": 820.8000000000029,
+          "bufferResetCpuMs": 0.19999999999708962,
+          "pixelAnalysisCpuMs": 30.80000000000291,
+          "nodeRoundTripWallMs": 856.6735440000011
+        },
+        {
+          "frame": 8,
+          "worldTime": 0.13333333333333333,
+          "cpuRenderMs": 15,
+          "readbackWallMs": 791.9000000000087,
+          "totalWallMs": 806.9000000000087,
+          "bufferResetCpuMs": 0.19999999999708962,
+          "pixelAnalysisCpuMs": 31,
+          "nodeRoundTripWallMs": 842.0525359999992
+        },
+        {
+          "frame": 9,
+          "worldTime": 0.15,
+          "cpuRenderMs": 18.60000000000582,
+          "readbackWallMs": 790.6999999999971,
+          "totalWallMs": 809.3000000000029,
+          "bufferResetCpuMs": 0.39999999999417923,
+          "pixelAnalysisCpuMs": 31,
+          "nodeRoundTripWallMs": 845.270509
+        },
+        {
+          "frame": 10,
+          "worldTime": 0.16666666666666666,
+          "cpuRenderMs": 17.5,
+          "readbackWallMs": 793,
+          "totalWallMs": 810.5,
+          "bufferResetCpuMs": 0.40000000000873115,
+          "pixelAnalysisCpuMs": 30.59999999999127,
+          "nodeRoundTripWallMs": 845.6976930000001
+        },
+        {
+          "frame": 11,
+          "worldTime": 0.18333333333333332,
+          "cpuRenderMs": 17.89999999999418,
+          "readbackWallMs": 932.4000000000087,
+          "totalWallMs": 950.3000000000029,
+          "bufferResetCpuMs": 0.19999999999708962,
+          "pixelAnalysisCpuMs": 40.39999999999418,
+          "nodeRoundTripWallMs": 1024.2196509999994
+        },
+        {
+          "frame": 12,
+          "worldTime": 0.2,
+          "cpuRenderMs": 14,
+          "readbackWallMs": 1064.7000000000116,
+          "totalWallMs": 1078.7000000000116,
+          "bufferResetCpuMs": 0.29999999998835847,
+          "pixelAnalysisCpuMs": 36,
+          "nodeRoundTripWallMs": 1120.217603000001
+        }
+      ],
+      "drawInfo": {
+        "frame": 1,
+        "calls": 409,
+        "triangles": 362586,
+        "points": 0,
+        "lines": 0
+      },
+      "memory": {
+        "geometries": 414,
+        "textures": 25
+      },
+      "programs": 19,
+      "leafScan": {
+        "geometryCount": 115,
+        "verticesVisited": 180640,
+        "meshCount": 42,
+        "triangles": 88480,
+        "scope": "Whole drawables containing at least one leafPivot.w > 0.5 vertex, including mixed woody side branches; not isolated leaf triangles"
+      },
+      "assets": {
+        "state": "no-external-character-assets-at-baseline",
+        "textureCount": 0
+      },
+      "buildWallMs": 1614.649659,
+      "createPresentationCpuMs": 809.5,
+      "assetWaitWallMs": 0,
+      "captureElapsedMs": 295.9204659999996,
+      "ordinalWallSeconds": 18.288183,
+      "hostLoadAverageAtStart": [
+        0.6630859375,
+        0.19873046875,
+        0.0693359375
+      ],
+      "consoleWarnings": [
+        {
+          "text": "[.WebGL-0x2a40010b000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        },
+        {
+          "text": "[.WebGL-0x2a40010b000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        },
+        {
+          "text": "[.WebGL-0x2a40010b000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        },
+        {
+          "text": "[.WebGL-0x2a40010b000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        }
+      ],
+      "restoration": {
+        "restored": true
+      },
+      "cleanup": {
+        "browserClosed": true,
+        "browserProcessClosed": true,
+        "serverClosed": true
+      },
+      "sourceWorktreeRemoved": true,
+      "warmOutliersOverMedian20Percent": [
+        {
+          "frame": 12,
+          "cpuRenderMs": 14,
+          "readbackWallMs": 1064.7000000000116,
+          "totalWallMs": 1078.7000000000116
+        }
+      ]
+    },
+    {
+      "ordinal": 2,
+      "label": "906",
+      "revision": "9068522520b0f269cc937057b444f06c7c187978",
+      "result": "passed",
+      "sourceFingerprintSha256": "8acf757156b6f47ac788029d6d7cefe4d3a998a1587bb2c67e67c57387b7db5a",
+      "originalReportSha256": "0a5baf8c62665623e4b57a70b226590ebc472d3e43e6f9b0c774c70512d921c4",
+      "cold": {
+        "cpuRenderMs": 1040.199999999997,
+        "readbackWallMs": 2575.5,
+        "totalWallMs": 3615.699999999997,
+        "bufferResetCpuMs": 1.1000000000058208,
+        "pixelAnalysisCpuMs": 26
+      },
+      "warm12": {
+        "cpuRenderMs": {
+          "min": 21.19999999999709,
+          "median": 25.549999999995634,
+          "max": 39.19999999999709
+        },
+        "readbackWallMs": {
+          "min": 1010.3000000000029,
+          "median": 1024.6500000000015,
+          "max": 1039.199999999997
+        },
+        "totalWallMs": {
+          "min": 1041,
+          "median": 1052.5999999999913,
+          "max": 1065
+        },
+        "bufferResetCpuMs": {
+          "min": 0.19999999999708962,
+          "median": 0.3000000000029104,
+          "max": 0.40000000000873115
+        },
+        "pixelAnalysisCpuMs": {
+          "min": 17.70000000001164,
+          "median": 31.19999999999709,
+          "max": 43.89999999999418
+        }
+      },
+      "rawTimings": [
+        {
+          "frame": 0,
+          "worldTime": 0,
+          "cpuRenderMs": 1040.199999999997,
+          "readbackWallMs": 2575.5,
+          "totalWallMs": 3615.699999999997,
+          "bufferResetCpuMs": 1.1000000000058208,
+          "pixelAnalysisCpuMs": 26,
+          "nodeRoundTripWallMs": 3648.385607
+        },
+        {
+          "frame": 1,
+          "worldTime": 0.016666666666666666,
+          "cpuRenderMs": 39.19999999999709,
+          "readbackWallMs": 1015.6999999999971,
+          "totalWallMs": 1054.8999999999942,
+          "bufferResetCpuMs": 0.20000000001164153,
+          "pixelAnalysisCpuMs": 17.70000000001164,
+          "nodeRoundTripWallMs": 1077.6479199999994
+        },
+        {
+          "frame": 2,
+          "worldTime": 0.03333333333333333,
+          "cpuRenderMs": 30.69999999999709,
+          "readbackWallMs": 1010.3000000000029,
+          "totalWallMs": 1041,
+          "bufferResetCpuMs": 0.19999999999708962,
+          "pixelAnalysisCpuMs": 37.5,
+          "nodeRoundTripWallMs": 1083.1857060000002
+        },
+        {
+          "frame": 3,
+          "worldTime": 0.05,
+          "cpuRenderMs": 25.5,
+          "readbackWallMs": 1022.2000000000116,
+          "totalWallMs": 1047.7000000000116,
+          "bufferResetCpuMs": 0.29999999998835847,
+          "pixelAnalysisCpuMs": 30.80000000000291,
+          "nodeRoundTripWallMs": 1083.5927059999995
+        },
+        {
+          "frame": 4,
+          "worldTime": 0.06666666666666667,
+          "cpuRenderMs": 26.89999999999418,
+          "readbackWallMs": 1016,
+          "totalWallMs": 1042.8999999999942,
+          "bufferResetCpuMs": 0.40000000000873115,
+          "pixelAnalysisCpuMs": 31.30000000000291,
+          "nodeRoundTripWallMs": 1079.3617709999999
+        },
+        {
+          "frame": 5,
+          "worldTime": 0.08333333333333333,
+          "cpuRenderMs": 23.79999999998836,
+          "readbackWallMs": 1024.6000000000058,
+          "totalWallMs": 1048.3999999999942,
+          "bufferResetCpuMs": 0.20000000001164153,
+          "pixelAnalysisCpuMs": 31.09999999999127,
+          "nodeRoundTripWallMs": 1083.8871040000013
+        },
+        {
+          "frame": 6,
+          "worldTime": 0.1,
+          "cpuRenderMs": 24.30000000000291,
+          "readbackWallMs": 1039.199999999997,
+          "totalWallMs": 1063.5,
+          "bufferResetCpuMs": 0.39999999999417923,
+          "pixelAnalysisCpuMs": 32,
+          "nodeRoundTripWallMs": 1100.616857000001
+        },
+        {
+          "frame": 7,
+          "worldTime": 0.11666666666666667,
+          "cpuRenderMs": 29.30000000000291,
+          "readbackWallMs": 1035.699999999997,
+          "totalWallMs": 1065,
+          "bufferResetCpuMs": 0.3000000000029104,
+          "pixelAnalysisCpuMs": 31.59999999999127,
+          "nodeRoundTripWallMs": 1102.1886069999964
+        },
+        {
+          "frame": 8,
+          "worldTime": 0.13333333333333333,
+          "cpuRenderMs": 23.70000000001164,
+          "readbackWallMs": 1032.699999999997,
+          "totalWallMs": 1056.4000000000087,
+          "bufferResetCpuMs": 0.29999999998835847,
+          "pixelAnalysisCpuMs": 32,
+          "nodeRoundTripWallMs": 1093.1445769999991
+        },
+        {
+          "frame": 9,
+          "worldTime": 0.15,
+          "cpuRenderMs": 21.19999999999709,
+          "readbackWallMs": 1021.8999999999942,
+          "totalWallMs": 1043.0999999999913,
+          "bufferResetCpuMs": 0.40000000000873115,
+          "pixelAnalysisCpuMs": 30.80000000000291,
+          "nodeRoundTripWallMs": 1078.4901219999992
+        },
+        {
+          "frame": 10,
+          "worldTime": 0.16666666666666666,
+          "cpuRenderMs": 25.59999999999127,
+          "readbackWallMs": 1024.699999999997,
+          "totalWallMs": 1050.2999999999884,
+          "bufferResetCpuMs": 0.40000000000873115,
+          "pixelAnalysisCpuMs": 31,
+          "nodeRoundTripWallMs": 1085.8619069999986
+        },
+        {
+          "frame": 11,
+          "worldTime": 0.18333333333333332,
+          "cpuRenderMs": 39,
+          "readbackWallMs": 1025.8999999999942,
+          "totalWallMs": 1064.8999999999942,
+          "bufferResetCpuMs": 0.3000000000029104,
+          "pixelAnalysisCpuMs": 30.69999999999709,
+          "nodeRoundTripWallMs": 1107.7372209999994
+        },
+        {
+          "frame": 12,
+          "worldTime": 0.2,
+          "cpuRenderMs": 25,
+          "readbackWallMs": 1030.199999999997,
+          "totalWallMs": 1055.199999999997,
+          "bufferResetCpuMs": 0.3000000000029104,
+          "pixelAnalysisCpuMs": 43.89999999999418,
+          "nodeRoundTripWallMs": 1106.035409
+        }
+      ],
+      "drawInfo": {
+        "frame": 1,
+        "calls": 374,
+        "triangles": 448448,
+        "points": 0,
+        "lines": 0
+      },
+      "memory": {
+        "geometries": 379,
+        "textures": 35
+      },
+      "programs": 25,
+      "leafScan": {
+        "geometryCount": 113,
+        "verticesVisited": 440362,
+        "meshCount": 40,
+        "triangles": 375296,
+        "scope": "Whole drawables containing at least one leafPivot.w > 0.5 vertex, including mixed woody side branches; not isolated leaf triangles"
+      },
+      "assets": {
+        "source": "MakeHuman MPFB hm08",
+        "license": "CC0-1.0",
+        "textureCount": 4,
+        "geometry": "static head-neck and posed hands; native eye/hair/eyebrow fitting",
+        "skin": "young_asian_male / diffuse only",
+        "eyes": "Low-Poly / brown",
+        "hair": "short04 with original tied knot",
+        "state": "ready",
+        "pendingCount": 0,
+        "readyCount": 4,
+        "failedCount": 0,
+        "error": null
+      },
+      "buildWallMs": 4991.570619,
+      "createPresentationCpuMs": 3521,
+      "assetWaitWallMs": 90,
+      "captureElapsedMs": 267.72207100000014,
+      "ordinalWallSeconds": 29.274216,
+      "hostLoadAverageAtStart": [
+        1.8564453125,
+        0.49560546875,
+        0.17041015625
+      ],
+      "consoleWarnings": [
+        {
+          "text": "[.WebGL-0xa5c0013b000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        },
+        {
+          "text": "[.WebGL-0xa5c0013b000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        },
+        {
+          "text": "[.WebGL-0xa5c0013b000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        },
+        {
+          "text": "[.WebGL-0xa5c0013b000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        }
+      ],
+      "restoration": {
+        "restored": true
+      },
+      "cleanup": {
+        "browserClosed": true,
+        "browserProcessClosed": true,
+        "serverClosed": true
+      },
+      "sourceWorktreeRemoved": true,
+      "warmOutliersOverMedian20Percent": []
+    },
+    {
+      "ordinal": 3,
+      "label": "current",
+      "revision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+      "result": "passed",
+      "sourceFingerprintSha256": "2c20db5f5910f2daf41f1ca83f697030343e0287c83d5ae2b3e88617813de309",
+      "originalReportSha256": "e12849c7ff4d86b887c5adeae6833ce066bbd68f41674809c50f280a3af2a832",
+      "cold": {
+        "cpuRenderMs": 1064.699999999997,
+        "readbackWallMs": 2564.899999999994,
+        "totalWallMs": 3629.5999999999913,
+        "bufferResetCpuMs": 1.2000000000116415,
+        "pixelAnalysisCpuMs": 23.89999999999418
+      },
+      "warm12": {
+        "cpuRenderMs": {
+          "min": 19.20000000001164,
+          "median": 24.69999999999709,
+          "max": 48.60000000000582
+        },
+        "readbackWallMs": {
+          "min": 973.6999999999971,
+          "median": 980.0500000000102,
+          "max": 1003.2999999999884
+        },
+        "totalWallMs": {
+          "min": 995.2000000000116,
+          "median": 1004.5999999999913,
+          "max": 1043.199999999997
+        },
+        "bufferResetCpuMs": {
+          "min": 0.19999999999708962,
+          "median": 0.3000000000029104,
+          "max": 0.40000000002328306
+        },
+        "pixelAnalysisCpuMs": {
+          "min": 17.39999999999418,
+          "median": 30.900000000001455,
+          "max": 50.69999999999709
+        }
+      },
+      "rawTimings": [
+        {
+          "frame": 0,
+          "worldTime": 0,
+          "cpuRenderMs": 1064.699999999997,
+          "readbackWallMs": 2564.899999999994,
+          "totalWallMs": 3629.5999999999913,
+          "bufferResetCpuMs": 1.2000000000116415,
+          "pixelAnalysisCpuMs": 23.89999999999418,
+          "nodeRoundTripWallMs": 3659.7860010000004
+        },
+        {
+          "frame": 1,
+          "worldTime": 0.016666666666666666,
+          "cpuRenderMs": 39.10000000000582,
+          "readbackWallMs": 981.1999999999971,
+          "totalWallMs": 1020.3000000000029,
+          "bufferResetCpuMs": 0.3000000000029104,
+          "pixelAnalysisCpuMs": 17.39999999999418,
+          "nodeRoundTripWallMs": 1043.4429879999989
+        },
+        {
+          "frame": 2,
+          "worldTime": 0.03333333333333333,
+          "cpuRenderMs": 48.60000000000582,
+          "readbackWallMs": 994.5999999999913,
+          "totalWallMs": 1043.199999999997,
+          "bufferResetCpuMs": 0.3000000000029104,
+          "pixelAnalysisCpuMs": 50.69999999999709,
+          "nodeRoundTripWallMs": 1102.9846650000018
+        },
+        {
+          "frame": 3,
+          "worldTime": 0.05,
+          "cpuRenderMs": 25.19999999999709,
+          "readbackWallMs": 988.8000000000029,
+          "totalWallMs": 1014,
+          "bufferResetCpuMs": 0.19999999999708962,
+          "pixelAnalysisCpuMs": 30.89999999999418,
+          "nodeRoundTripWallMs": 1050.3242309999987
+        },
+        {
+          "frame": 4,
+          "worldTime": 0.06666666666666667,
+          "cpuRenderMs": 24.19999999999709,
+          "readbackWallMs": 977.5,
+          "totalWallMs": 1001.6999999999971,
+          "bufferResetCpuMs": 0.40000000000873115,
+          "pixelAnalysisCpuMs": 30.90000000000873,
+          "nodeRoundTripWallMs": 1036.9798670000018
+        },
+        {
+          "frame": 5,
+          "worldTime": 0.08333333333333333,
+          "cpuRenderMs": 27.80000000000291,
+          "readbackWallMs": 973.6999999999971,
+          "totalWallMs": 1001.5,
+          "bufferResetCpuMs": 0.3000000000029104,
+          "pixelAnalysisCpuMs": 31.099999999976717,
+          "nodeRoundTripWallMs": 1037.1507689999999
+        },
+        {
+          "frame": 6,
+          "worldTime": 0.1,
+          "cpuRenderMs": 24.199999999982538,
+          "readbackWallMs": 978.9000000000233,
+          "totalWallMs": 1003.1000000000058,
+          "bufferResetCpuMs": 0.39999999999417923,
+          "pixelAnalysisCpuMs": 31.10000000000582,
+          "nodeRoundTripWallMs": 1039.0061619999979
+        },
+        {
+          "frame": 7,
+          "worldTime": 0.11666666666666667,
+          "cpuRenderMs": 25.60000000000582,
+          "readbackWallMs": 984.3999999999942,
+          "totalWallMs": 1010,
+          "bufferResetCpuMs": 0.29999999998835847,
+          "pixelAnalysisCpuMs": 30.89999999999418,
+          "nodeRoundTripWallMs": 1046.0765229999997
+        },
+        {
+          "frame": 8,
+          "worldTime": 0.13333333333333333,
+          "cpuRenderMs": 31.70000000001164,
+          "readbackWallMs": 1003.2999999999884,
+          "totalWallMs": 1035,
+          "bufferResetCpuMs": 0.29999999998835847,
+          "pixelAnalysisCpuMs": 30.79999999998836,
+          "nodeRoundTripWallMs": 1070.379058999999
+        },
+        {
+          "frame": 9,
+          "worldTime": 0.15,
+          "cpuRenderMs": 23.900000000023283,
+          "readbackWallMs": 976.8999999999942,
+          "totalWallMs": 1000.8000000000175,
+          "bufferResetCpuMs": 0.29999999998835847,
+          "pixelAnalysisCpuMs": 30.800000000017462,
+          "nodeRoundTripWallMs": 1036.791366999998
+        },
+        {
+          "frame": 10,
+          "worldTime": 0.16666666666666666,
+          "cpuRenderMs": 24.199999999982538,
+          "readbackWallMs": 977.3000000000175,
+          "totalWallMs": 1001.5,
+          "bufferResetCpuMs": 0.40000000002328306,
+          "pixelAnalysisCpuMs": 30.70000000001164,
+          "nodeRoundTripWallMs": 1036.8228129999989
+        },
+        {
+          "frame": 11,
+          "worldTime": 0.18333333333333332,
+          "cpuRenderMs": 21.29999999998836,
+          "readbackWallMs": 984.7999999999884,
+          "totalWallMs": 1006.0999999999767,
+          "bufferResetCpuMs": 0.40000000002328306,
+          "pixelAnalysisCpuMs": 31.89999999999418,
+          "nodeRoundTripWallMs": 1042.9030029999994
+        },
+        {
+          "frame": 12,
+          "worldTime": 0.2,
+          "cpuRenderMs": 19.20000000001164,
+          "readbackWallMs": 976,
+          "totalWallMs": 995.2000000000116,
+          "bufferResetCpuMs": 0.29999999998835847,
+          "pixelAnalysisCpuMs": 31.20000000001164,
+          "nodeRoundTripWallMs": 1032.7293759999993
+        }
+      ],
+      "drawInfo": {
+        "frame": 1,
+        "calls": 374,
+        "triangles": 408948,
+        "points": 0,
+        "lines": 0
+      },
+      "memory": {
+        "geometries": 379,
+        "textures": 35
+      },
+      "programs": 25,
+      "leafScan": {
+        "geometryCount": 113,
+        "verticesVisited": 440362,
+        "meshCount": 40,
+        "triangles": 375296,
+        "scope": "Whole drawables containing at least one leafPivot.w > 0.5 vertex, including mixed woody side branches; not isolated leaf triangles"
+      },
+      "assets": {
+        "source": "MakeHuman MPFB hm08",
+        "license": "CC0-1.0",
+        "textureCount": 4,
+        "geometry": "static head-neck and posed hands; native eye/hair/eyebrow fitting",
+        "skin": "young_asian_male / diffuse only",
+        "eyes": "Low-Poly / brown",
+        "hair": "short04 with original tied knot",
+        "state": "ready",
+        "pendingCount": 0,
+        "readyCount": 4,
+        "failedCount": 0,
+        "error": null
+      },
+      "buildWallMs": 4563.164444999999,
+      "createPresentationCpuMs": 3340.5,
+      "assetWaitWallMs": 84.20000000001164,
+      "captureElapsedMs": 288.1584460000013,
+      "ordinalWallSeconds": 27.993194,
+      "hostLoadAverageAtStart": [
+        2.96875,
+        0.8837890625,
+        0.31005859375
+      ],
+      "consoleWarnings": [
+        {
+          "text": "[.WebGL-0xabc0013b000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        },
+        {
+          "text": "[.WebGL-0xabc0013b000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        },
+        {
+          "text": "[.WebGL-0xabc0013b000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        },
+        {
+          "text": "[.WebGL-0xabc0013b000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        }
+      ],
+      "restoration": {
+        "restored": true
+      },
+      "cleanup": {
+        "browserClosed": true,
+        "browserProcessClosed": true,
+        "serverClosed": true
+      },
+      "sourceWorktreeRemoved": true,
+      "warmOutliersOverMedian20Percent": []
+    },
+    {
+      "ordinal": 4,
+      "label": "current",
+      "revision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+      "result": "passed",
+      "sourceFingerprintSha256": "2c20db5f5910f2daf41f1ca83f697030343e0287c83d5ae2b3e88617813de309",
+      "originalReportSha256": "fed2e1889dd96ffcb9e74903af966c3972cdd91f25b1b7aeebe2fbd7f719f3dd",
+      "cold": {
+        "cpuRenderMs": 1049.5999999999767,
+        "readbackWallMs": 2585.4000000000233,
+        "totalWallMs": 3635,
+        "bufferResetCpuMs": 1.2000000000116415,
+        "pixelAnalysisCpuMs": 26.29999999998836
+      },
+      "warm12": {
+        "cpuRenderMs": {
+          "min": 19.60000000000582,
+          "median": 25.10000000000582,
+          "max": 42
+        },
+        "readbackWallMs": {
+          "min": 975,
+          "median": 982.7500000000146,
+          "max": 1018
+        },
+        "totalWallMs": {
+          "min": 997.9000000000233,
+          "median": 1010.4500000000116,
+          "max": 1045.1000000000058
+        },
+        "bufferResetCpuMs": {
+          "min": 0.09999999997671694,
+          "median": 0.29999999998835847,
+          "max": 0.39999999999417923
+        },
+        "pixelAnalysisCpuMs": {
+          "min": 17.29999999998836,
+          "median": 30.85000000000582,
+          "max": 50
+        }
+      },
+      "rawTimings": [
+        {
+          "frame": 0,
+          "worldTime": 0,
+          "cpuRenderMs": 1049.5999999999767,
+          "readbackWallMs": 2585.4000000000233,
+          "totalWallMs": 3635,
+          "bufferResetCpuMs": 1.2000000000116415,
+          "pixelAnalysisCpuMs": 26.29999999998836,
+          "nodeRoundTripWallMs": 3667.4747509999997
+        },
+        {
+          "frame": 1,
+          "worldTime": 0.016666666666666666,
+          "cpuRenderMs": 39.20000000001164,
+          "readbackWallMs": 980.3999999999942,
+          "totalWallMs": 1019.6000000000058,
+          "bufferResetCpuMs": 0.29999999998835847,
+          "pixelAnalysisCpuMs": 17.29999999998836,
+          "nodeRoundTripWallMs": 1043.1256790000007
+        },
+        {
+          "frame": 2,
+          "worldTime": 0.03333333333333333,
+          "cpuRenderMs": 42,
+          "readbackWallMs": 1003.1000000000058,
+          "totalWallMs": 1045.1000000000058,
+          "bufferResetCpuMs": 0.39999999999417923,
+          "pixelAnalysisCpuMs": 50,
+          "nodeRoundTripWallMs": 1100.1174580000006
+        },
+        {
+          "frame": 3,
+          "worldTime": 0.05,
+          "cpuRenderMs": 27.800000000017462,
+          "readbackWallMs": 975.6000000000058,
+          "totalWallMs": 1003.4000000000233,
+          "bufferResetCpuMs": 0.1999999999825377,
+          "pixelAnalysisCpuMs": 30.60000000000582,
+          "nodeRoundTripWallMs": 1039.779943999998
+        },
+        {
+          "frame": 4,
+          "worldTime": 0.06666666666666667,
+          "cpuRenderMs": 25,
+          "readbackWallMs": 989.6000000000058,
+          "totalWallMs": 1014.6000000000058,
+          "bufferResetCpuMs": 0.3000000000174623,
+          "pixelAnalysisCpuMs": 31.20000000001164,
+          "nodeRoundTripWallMs": 1050.472778000003
+        },
+        {
+          "frame": 5,
+          "worldTime": 0.08333333333333333,
+          "cpuRenderMs": 25.20000000001164,
+          "readbackWallMs": 979.6000000000058,
+          "totalWallMs": 1004.8000000000175,
+          "bufferResetCpuMs": 0.29999999998835847,
+          "pixelAnalysisCpuMs": 30.60000000000582,
+          "nodeRoundTripWallMs": 1040.1467940000002
+        },
+        {
+          "frame": 6,
+          "worldTime": 0.1,
+          "cpuRenderMs": 22.60000000000582,
+          "readbackWallMs": 976.3999999999942,
+          "totalWallMs": 999,
+          "bufferResetCpuMs": 0.1999999999825377,
+          "pixelAnalysisCpuMs": 30.89999999999418,
+          "nodeRoundTripWallMs": 1034.9349189999994
+        },
+        {
+          "frame": 7,
+          "worldTime": 0.11666666666666667,
+          "cpuRenderMs": 30.10000000000582,
+          "readbackWallMs": 988.8000000000175,
+          "totalWallMs": 1018.9000000000233,
+          "bufferResetCpuMs": 0.29999999998835847,
+          "pixelAnalysisCpuMs": 30.70000000001164,
+          "nodeRoundTripWallMs": 1054.4015820000022
+        },
+        {
+          "frame": 8,
+          "worldTime": 0.13333333333333333,
+          "cpuRenderMs": 22.900000000023283,
+          "readbackWallMs": 975,
+          "totalWallMs": 997.9000000000233,
+          "bufferResetCpuMs": 0.09999999997671694,
+          "pixelAnalysisCpuMs": 30.89999999999418,
+          "nodeRoundTripWallMs": 1033.427201999999
+        },
+        {
+          "frame": 9,
+          "worldTime": 0.15,
+          "cpuRenderMs": 20.29999999998836,
+          "readbackWallMs": 981.6000000000058,
+          "totalWallMs": 1001.8999999999942,
+          "bufferResetCpuMs": 0.20000000001164153,
+          "pixelAnalysisCpuMs": 31.29999999998836,
+          "nodeRoundTripWallMs": 1038.1862849999998
+        },
+        {
+          "frame": 10,
+          "worldTime": 0.16666666666666666,
+          "cpuRenderMs": 26.79999999998836,
+          "readbackWallMs": 983.9000000000233,
+          "totalWallMs": 1010.7000000000116,
+          "bufferResetCpuMs": 0.39999999999417923,
+          "pixelAnalysisCpuMs": 30.800000000017462,
+          "nodeRoundTripWallMs": 1045.7564600000005
+        },
+        {
+          "frame": 11,
+          "worldTime": 0.18333333333333332,
+          "cpuRenderMs": 19.60000000000582,
+          "readbackWallMs": 990.6000000000058,
+          "totalWallMs": 1010.2000000000116,
+          "bufferResetCpuMs": 0.20000000001164153,
+          "pixelAnalysisCpuMs": 31,
+          "nodeRoundTripWallMs": 1045.6385039999986
+        },
+        {
+          "frame": 12,
+          "worldTime": 0.2,
+          "cpuRenderMs": 21.70000000001164,
+          "readbackWallMs": 1018,
+          "totalWallMs": 1039.7000000000116,
+          "bufferResetCpuMs": 0.29999999998835847,
+          "pixelAnalysisCpuMs": 30.800000000017462,
+          "nodeRoundTripWallMs": 1077.3271160000004
+        }
+      ],
+      "drawInfo": {
+        "frame": 1,
+        "calls": 374,
+        "triangles": 408948,
+        "points": 0,
+        "lines": 0
+      },
+      "memory": {
+        "geometries": 379,
+        "textures": 35
+      },
+      "programs": 25,
+      "leafScan": {
+        "geometryCount": 113,
+        "verticesVisited": 440362,
+        "meshCount": 40,
+        "triangles": 375296,
+        "scope": "Whole drawables containing at least one leafPivot.w > 0.5 vertex, including mixed woody side branches; not isolated leaf triangles"
+      },
+      "assets": {
+        "source": "MakeHuman MPFB hm08",
+        "license": "CC0-1.0",
+        "textureCount": 4,
+        "geometry": "static head-neck and posed hands; native eye/hair/eyebrow fitting",
+        "skin": "young_asian_male / diffuse only",
+        "eyes": "Low-Poly / brown",
+        "hair": "short04 with original tied knot",
+        "state": "ready",
+        "pendingCount": 0,
+        "readyCount": 4,
+        "failedCount": 0,
+        "error": null
+      },
+      "buildWallMs": 4480.3031550000005,
+      "createPresentationCpuMs": 3315.399999999994,
+      "assetWaitWallMs": 91.19999999998254,
+      "captureElapsedMs": 268.23394199999893,
+      "ordinalWallSeconds": 27.859999,
+      "hostLoadAverageAtStart": [
+        3.62890625,
+        1.2138671875,
+        0.435546875
+      ],
+      "consoleWarnings": [
+        {
+          "text": "[.WebGL-0x2b1c00103000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        },
+        {
+          "text": "[.WebGL-0x2b1c00103000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        },
+        {
+          "text": "[.WebGL-0x2b1c00103000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        },
+        {
+          "text": "[.WebGL-0x2b1c00103000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        }
+      ],
+      "restoration": {
+        "restored": true
+      },
+      "cleanup": {
+        "browserClosed": true,
+        "browserProcessClosed": true,
+        "serverClosed": true
+      },
+      "sourceWorktreeRemoved": true,
+      "warmOutliersOverMedian20Percent": []
+    },
+    {
+      "ordinal": 5,
+      "label": "906",
+      "revision": "9068522520b0f269cc937057b444f06c7c187978",
+      "result": "passed",
+      "sourceFingerprintSha256": "8acf757156b6f47ac788029d6d7cefe4d3a998a1587bb2c67e67c57387b7db5a",
+      "originalReportSha256": "51a203d4b7e13ab676cea17f64d5c4dc63c39a11e05c1b66a6c9b711d950263b",
+      "cold": {
+        "cpuRenderMs": 1059.6000000000058,
+        "readbackWallMs": 2615.399999999994,
+        "totalWallMs": 3675,
+        "bufferResetCpuMs": 1.1000000000058208,
+        "pixelAnalysisCpuMs": 23.800000000017462
+      },
+      "warm12": {
+        "cpuRenderMs": {
+          "min": 22,
+          "median": 24.70000000001164,
+          "max": 41.89999999999418
+        },
+        "readbackWallMs": {
+          "min": 1008.1000000000058,
+          "median": 1014.5,
+          "max": 1027.5
+        },
+        "totalWallMs": {
+          "min": 1031.5,
+          "median": 1039.8999999999942,
+          "max": 1058.2000000000116
+        },
+        "bufferResetCpuMs": {
+          "min": 0.1999999999825377,
+          "median": 0.29999999998835847,
+          "max": 0.39999999999417923
+        },
+        "pixelAnalysisCpuMs": {
+          "min": 17.39999999999418,
+          "median": 30.80000000000291,
+          "max": 37.5
+        }
+      },
+      "rawTimings": [
+        {
+          "frame": 0,
+          "worldTime": 0,
+          "cpuRenderMs": 1059.6000000000058,
+          "readbackWallMs": 2615.399999999994,
+          "totalWallMs": 3675,
+          "bufferResetCpuMs": 1.1000000000058208,
+          "pixelAnalysisCpuMs": 23.800000000017462,
+          "nodeRoundTripWallMs": 3704.612664
+        },
+        {
+          "frame": 1,
+          "worldTime": 0.016666666666666666,
+          "cpuRenderMs": 41.89999999999418,
+          "readbackWallMs": 1016.3000000000175,
+          "totalWallMs": 1058.2000000000116,
+          "bufferResetCpuMs": 0.20000000001164153,
+          "pixelAnalysisCpuMs": 17.39999999999418,
+          "nodeRoundTripWallMs": 1080.5443309999991
+        },
+        {
+          "frame": 2,
+          "worldTime": 0.03333333333333333,
+          "cpuRenderMs": 30.39999999999418,
+          "readbackWallMs": 1014.7999999999884,
+          "totalWallMs": 1045.1999999999825,
+          "bufferResetCpuMs": 0.3000000000174623,
+          "pixelAnalysisCpuMs": 37.5,
+          "nodeRoundTripWallMs": 1087.5782539999982
+        },
+        {
+          "frame": 3,
+          "worldTime": 0.05,
+          "cpuRenderMs": 26.89999999999418,
+          "readbackWallMs": 1012.1999999999825,
+          "totalWallMs": 1039.0999999999767,
+          "bufferResetCpuMs": 0.3000000000174623,
+          "pixelAnalysisCpuMs": 31,
+          "nodeRoundTripWallMs": 1076.1127149999993
+        },
+        {
+          "frame": 4,
+          "worldTime": 0.06666666666666667,
+          "cpuRenderMs": 24.60000000000582,
+          "readbackWallMs": 1010.7000000000116,
+          "totalWallMs": 1035.3000000000175,
+          "bufferResetCpuMs": 0.29999999998835847,
+          "pixelAnalysisCpuMs": 30.60000000000582,
+          "nodeRoundTripWallMs": 1070.7368129999995
+        },
+        {
+          "frame": 5,
+          "worldTime": 0.08333333333333333,
+          "cpuRenderMs": 25.400000000023283,
+          "readbackWallMs": 1017.3999999999942,
+          "totalWallMs": 1042.8000000000175,
+          "bufferResetCpuMs": 0.39999999999417923,
+          "pixelAnalysisCpuMs": 31.70000000001164,
+          "nodeRoundTripWallMs": 1079.1401240000014
+        },
+        {
+          "frame": 6,
+          "worldTime": 0.1,
+          "cpuRenderMs": 23.39999999999418,
+          "readbackWallMs": 1008.1000000000058,
+          "totalWallMs": 1031.5,
+          "bufferResetCpuMs": 0.20000000001164153,
+          "pixelAnalysisCpuMs": 30.800000000017462,
+          "nodeRoundTripWallMs": 1067.228352000002
+        },
+        {
+          "frame": 7,
+          "worldTime": 0.11666666666666667,
+          "cpuRenderMs": 26.800000000017462,
+          "readbackWallMs": 1027.5,
+          "totalWallMs": 1054.3000000000175,
+          "bufferResetCpuMs": 0.29999999998835847,
+          "pixelAnalysisCpuMs": 30.70000000001164,
+          "nodeRoundTripWallMs": 1090.350555000001
+        },
+        {
+          "frame": 8,
+          "worldTime": 0.13333333333333333,
+          "cpuRenderMs": 22,
+          "readbackWallMs": 1014.2000000000116,
+          "totalWallMs": 1036.2000000000116,
+          "bufferResetCpuMs": 0.39999999999417923,
+          "pixelAnalysisCpuMs": 30.70000000001164,
+          "nodeRoundTripWallMs": 1071.6928619999999
+        },
+        {
+          "frame": 9,
+          "worldTime": 0.15,
+          "cpuRenderMs": 24.300000000017462,
+          "readbackWallMs": 1019.2999999999884,
+          "totalWallMs": 1043.6000000000058,
+          "bufferResetCpuMs": 0.1999999999825377,
+          "pixelAnalysisCpuMs": 30.900000000023283,
+          "nodeRoundTripWallMs": 1079.2645379999994
+        },
+        {
+          "frame": 10,
+          "worldTime": 0.16666666666666666,
+          "cpuRenderMs": 24.800000000017462,
+          "readbackWallMs": 1015.8999999999942,
+          "totalWallMs": 1040.7000000000116,
+          "bufferResetCpuMs": 0.29999999998835847,
+          "pixelAnalysisCpuMs": 30.89999999999418,
+          "nodeRoundTripWallMs": 1076.2176320000035
+        },
+        {
+          "frame": 11,
+          "worldTime": 0.18333333333333332,
+          "cpuRenderMs": 23.20000000001164,
+          "readbackWallMs": 1011.2000000000116,
+          "totalWallMs": 1034.4000000000233,
+          "bufferResetCpuMs": 0.29999999998835847,
+          "pixelAnalysisCpuMs": 30.70000000001164,
+          "nodeRoundTripWallMs": 1069.6457949999967
+        },
+        {
+          "frame": 12,
+          "worldTime": 0.2,
+          "cpuRenderMs": 22.89999999999418,
+          "readbackWallMs": 1014.1000000000058,
+          "totalWallMs": 1037,
+          "bufferResetCpuMs": 0.39999999999417923,
+          "pixelAnalysisCpuMs": 30.79999999998836,
+          "nodeRoundTripWallMs": 1074.260809000003
+        }
+      ],
+      "drawInfo": {
+        "frame": 1,
+        "calls": 374,
+        "triangles": 448448,
+        "points": 0,
+        "lines": 0
+      },
+      "memory": {
+        "geometries": 379,
+        "textures": 35
+      },
+      "programs": 25,
+      "leafScan": {
+        "geometryCount": 113,
+        "verticesVisited": 440362,
+        "meshCount": 40,
+        "triangles": 375296,
+        "scope": "Whole drawables containing at least one leafPivot.w > 0.5 vertex, including mixed woody side branches; not isolated leaf triangles"
+      },
+      "assets": {
+        "source": "MakeHuman MPFB hm08",
+        "license": "CC0-1.0",
+        "textureCount": 4,
+        "geometry": "static head-neck and posed hands; native eye/hair/eyebrow fitting",
+        "skin": "young_asian_male / diffuse only",
+        "eyes": "Low-Poly / brown",
+        "hair": "short04 with original tied knot",
+        "state": "ready",
+        "pendingCount": 0,
+        "readyCount": 4,
+        "failedCount": 0,
+        "error": null
+      },
+      "buildWallMs": 4560.1190639999995,
+      "createPresentationCpuMs": 3369.0999999999767,
+      "assetWaitWallMs": 89.5,
+      "captureElapsedMs": 265.48401899999953,
+      "ordinalWallSeconds": 28.360421,
+      "hostLoadAverageAtStart": [
+        3.4521484375,
+        1.4013671875,
+        0.5234375
+      ],
+      "consoleWarnings": [
+        {
+          "text": "[.WebGL-0x2c9c00113000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        },
+        {
+          "text": "[.WebGL-0x2c9c00113000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        },
+        {
+          "text": "[.WebGL-0x2c9c00113000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        },
+        {
+          "text": "[.WebGL-0x2c9c00113000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        }
+      ],
+      "restoration": {
+        "restored": true
+      },
+      "cleanup": {
+        "browserClosed": true,
+        "browserProcessClosed": true,
+        "serverClosed": true
+      },
+      "sourceWorktreeRemoved": true,
+      "warmOutliersOverMedian20Percent": []
+    },
+    {
+      "ordinal": 6,
+      "label": "acf",
+      "revision": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+      "result": "passed",
+      "sourceFingerprintSha256": "206f474d9c81779beb142d59680574f0cdc1d0fb6bd04b205424c7aeff88ad47",
+      "originalReportSha256": "06884b6f352819cea593ad3a55375e10a1f7d67ce79db6b8780a8a3c4840dbfa",
+      "cold": {
+        "cpuRenderMs": 768.3000000000175,
+        "readbackWallMs": 1753.2999999999884,
+        "totalWallMs": 2521.600000000006,
+        "bufferResetCpuMs": 1.5,
+        "pixelAnalysisCpuMs": 26.300000000017462
+      },
+      "warm12": {
+        "cpuRenderMs": {
+          "min": 14.299999999988358,
+          "median": 16.15000000000873,
+          "max": 22.39999999999418
+        },
+        "readbackWallMs": {
+          "min": 800.5,
+          "median": 804.9000000000087,
+          "max": 855.6000000000058
+        },
+        "totalWallMs": {
+          "min": 816.2999999999884,
+          "median": 822.1999999999971,
+          "max": 875.8999999999942
+        },
+        "bufferResetCpuMs": {
+          "min": 0.1999999999825377,
+          "median": 0.3000000000029104,
+          "max": 0.39999999999417923
+        },
+        "pixelAnalysisCpuMs": {
+          "min": 17.5,
+          "median": 31.0,
+          "max": 37.79999999998836
+        }
+      },
+      "rawTimings": [
+        {
+          "frame": 0,
+          "worldTime": 0,
+          "cpuRenderMs": 768.3000000000175,
+          "readbackWallMs": 1753.2999999999884,
+          "totalWallMs": 2521.600000000006,
+          "bufferResetCpuMs": 1.5,
+          "pixelAnalysisCpuMs": 26.300000000017462,
+          "nodeRoundTripWallMs": 2578.996898
+        },
+        {
+          "frame": 1,
+          "worldTime": 0.016666666666666666,
+          "cpuRenderMs": 20.29999999998836,
+          "readbackWallMs": 855.6000000000058,
+          "totalWallMs": 875.8999999999942,
+          "bufferResetCpuMs": 0.29999999998835847,
+          "pixelAnalysisCpuMs": 17.5,
+          "nodeRoundTripWallMs": 899.3437190000004
+        },
+        {
+          "frame": 2,
+          "worldTime": 0.03333333333333333,
+          "cpuRenderMs": 22.39999999999418,
+          "readbackWallMs": 805.2000000000116,
+          "totalWallMs": 827.6000000000058,
+          "bufferResetCpuMs": 0.1999999999825377,
+          "pixelAnalysisCpuMs": 37.79999999998836,
+          "nodeRoundTripWallMs": 869.6471609999999
+        },
+        {
+          "frame": 3,
+          "worldTime": 0.05,
+          "cpuRenderMs": 18,
+          "readbackWallMs": 802.7999999999884,
+          "totalWallMs": 820.7999999999884,
+          "bufferResetCpuMs": 0.39999999999417923,
+          "pixelAnalysisCpuMs": 31,
+          "nodeRoundTripWallMs": 857.9071569999996
+        },
+        {
+          "frame": 4,
+          "worldTime": 0.06666666666666667,
+          "cpuRenderMs": 15.89999999999418,
+          "readbackWallMs": 802.7000000000116,
+          "totalWallMs": 818.6000000000058,
+          "bufferResetCpuMs": 0.3000000000174623,
+          "pixelAnalysisCpuMs": 30.800000000017462,
+          "nodeRoundTripWallMs": 854.218832999999
+        },
+        {
+          "frame": 5,
+          "worldTime": 0.08333333333333333,
+          "cpuRenderMs": 15,
+          "readbackWallMs": 807.5,
+          "totalWallMs": 822.5,
+          "bufferResetCpuMs": 0.29999999998835847,
+          "pixelAnalysisCpuMs": 31.29999999998836,
+          "nodeRoundTripWallMs": 859.6887150000002
+        },
+        {
+          "frame": 6,
+          "worldTime": 0.1,
+          "cpuRenderMs": 16.10000000000582,
+          "readbackWallMs": 800.6000000000058,
+          "totalWallMs": 816.7000000000116,
+          "bufferResetCpuMs": 0.29999999998835847,
+          "pixelAnalysisCpuMs": 32.29999999998836,
+          "nodeRoundTripWallMs": 854.0776339999993
+        },
+        {
+          "frame": 7,
+          "worldTime": 0.11666666666666667,
+          "cpuRenderMs": 17.29999999998836,
+          "readbackWallMs": 804.6000000000058,
+          "totalWallMs": 821.8999999999942,
+          "bufferResetCpuMs": 0.3000000000174623,
+          "pixelAnalysisCpuMs": 30.79999999998836,
+          "nodeRoundTripWallMs": 857.4131779999989
+        },
+        {
+          "frame": 8,
+          "worldTime": 0.13333333333333333,
+          "cpuRenderMs": 15.099999999976717,
+          "readbackWallMs": 813.9000000000233,
+          "totalWallMs": 829,
+          "bufferResetCpuMs": 0.20000000001164153,
+          "pixelAnalysisCpuMs": 30.800000000017462,
+          "nodeRoundTripWallMs": 867.1133069999996
+        },
+        {
+          "frame": 9,
+          "worldTime": 0.15,
+          "cpuRenderMs": 18,
+          "readbackWallMs": 806.5,
+          "totalWallMs": 824.5,
+          "bufferResetCpuMs": 0.20000000001164153,
+          "pixelAnalysisCpuMs": 31.5,
+          "nodeRoundTripWallMs": 860.4007989999991
+        },
+        {
+          "frame": 10,
+          "worldTime": 0.16666666666666666,
+          "cpuRenderMs": 15.299999999988358,
+          "readbackWallMs": 809.8000000000175,
+          "totalWallMs": 825.1000000000058,
+          "bufferResetCpuMs": 0.3000000000174623,
+          "pixelAnalysisCpuMs": 30.70000000001164,
+          "nodeRoundTripWallMs": 860.4653670000007
+        },
+        {
+          "frame": 11,
+          "worldTime": 0.18333333333333332,
+          "cpuRenderMs": 16.20000000001164,
+          "readbackWallMs": 800.5,
+          "totalWallMs": 816.7000000000116,
+          "bufferResetCpuMs": 0.39999999999417923,
+          "pixelAnalysisCpuMs": 31,
+          "nodeRoundTripWallMs": 852.2174400000004
+        },
+        {
+          "frame": 12,
+          "worldTime": 0.2,
+          "cpuRenderMs": 14.299999999988358,
+          "readbackWallMs": 802,
+          "totalWallMs": 816.2999999999884,
+          "bufferResetCpuMs": 0.39999999999417923,
+          "pixelAnalysisCpuMs": 31,
+          "nodeRoundTripWallMs": 851.7083399999992
+        }
+      ],
+      "drawInfo": {
+        "frame": 1,
+        "calls": 409,
+        "triangles": 362586,
+        "points": 0,
+        "lines": 0
+      },
+      "memory": {
+        "geometries": 414,
+        "textures": 25
+      },
+      "programs": 19,
+      "leafScan": {
+        "geometryCount": 115,
+        "verticesVisited": 180640,
+        "meshCount": 42,
+        "triangles": 88480,
+        "scope": "Whole drawables containing at least one leafPivot.w > 0.5 vertex, including mixed woody side branches; not isolated leaf triangles"
+      },
+      "assets": {
+        "state": "no-external-character-assets-at-baseline",
+        "textureCount": 0
+      },
+      "buildWallMs": 1650.7984179999999,
+      "createPresentationCpuMs": 796.6000000000058,
+      "assetWaitWallMs": 0,
+      "captureElapsedMs": 284.54551699999865,
+      "ordinalWallSeconds": 16.96349,
+      "hostLoadAverageAtStart": [
+        3.15673828125,
+        1.484375,
+        0.5751953125
+      ],
+      "consoleWarnings": [
+        {
+          "text": "[.WebGL-0xf2c00137000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        },
+        {
+          "text": "[.WebGL-0xf2c00137000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        },
+        {
+          "text": "[.WebGL-0xf2c00137000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        },
+        {
+          "text": "[.WebGL-0xf2c00137000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)",
+          "location": {
+            "url": "http://127.0.0.1:4196/",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        }
+      ],
+      "restoration": {
+        "restored": true
+      },
+      "cleanup": {
+        "browserClosed": true,
+        "browserProcessClosed": true,
+        "serverClosed": true
+      },
+      "sourceWorktreeRemoved": true,
+      "warmOutliersOverMedian20Percent": []
+    }
+  ],
+  "sameSourceOrderDrift": [
+    {
+      "label": "acf",
+      "ordinals": [
+        1,
+        6
+      ],
+      "warmMedianDrift": {
+        "cpuRenderMs": {
+          "from": 17.549999999995634,
+          "to": 16.15000000000873,
+          "deltaMs": -1.3999999999869033,
+          "deltaPercent": -7.977207977135336
+        },
+        "readbackWallMs": {
+          "from": 800.7999999999956,
+          "to": 804.9000000000087,
+          "deltaMs": 4.100000000013097,
+          "deltaPercent": 0.5119880119896392
+        },
+        "totalWallMs": {
+          "from": 817.7999999999956,
+          "to": 822.1999999999971,
+          "deltaMs": 4.400000000001455,
+          "deltaPercent": 0.5380288579116543
+        }
+      },
+      "coldDrift": {
+        "cpuRenderMs": {
+          "from": 883.6999999999971,
+          "to": 768.3000000000175,
+          "deltaMs": -115.39999999997963,
+          "deltaPercent": -13.058730338347857
+        },
+        "readbackWallMs": {
+          "from": 1659.8999999999942,
+          "to": 1753.2999999999884,
+          "deltaMs": 93.39999999999418,
+          "deltaPercent": 5.62684499066175
+        },
+        "totalWallMs": {
+          "from": 2543.5999999999913,
+          "to": 2521.600000000006,
+          "deltaMs": -21.999999999985448,
+          "deltaPercent": -0.864915867274163
+        }
+      },
+      "identicalBuildFileHashes": true,
+      "identicalPngBytes": true,
+      "identicalDecodedPixels": true
+    },
+    {
+      "label": "906",
+      "ordinals": [
+        2,
+        5
+      ],
+      "warmMedianDrift": {
+        "cpuRenderMs": {
+          "from": 25.549999999995634,
+          "to": 24.70000000001164,
+          "deltaMs": -0.8499999999839929,
+          "deltaPercent": -3.3268101760631663
+        },
+        "readbackWallMs": {
+          "from": 1024.6500000000015,
+          "to": 1014.5,
+          "deltaMs": -10.150000000001455,
+          "deltaPercent": -0.9905821500025835
+        },
+        "totalWallMs": {
+          "from": 1052.5999999999913,
+          "to": 1039.8999999999942,
+          "deltaMs": -12.69999999999709,
+          "deltaPercent": -1.206536196085617
+        }
+      },
+      "coldDrift": {
+        "cpuRenderMs": {
+          "from": 1040.199999999997,
+          "to": 1059.6000000000058,
+          "deltaMs": 19.40000000000873,
+          "deltaPercent": 1.8650259565476723
+        },
+        "readbackWallMs": {
+          "from": 2575.5,
+          "to": 2615.399999999994,
+          "deltaMs": 39.89999999999418,
+          "deltaPercent": 1.5492137449036658
+        },
+        "totalWallMs": {
+          "from": 3615.699999999997,
+          "to": 3675,
+          "deltaMs": 59.30000000000291,
+          "deltaPercent": 1.6400696960478633
+        }
+      },
+      "identicalBuildFileHashes": true,
+      "identicalPngBytes": true,
+      "identicalDecodedPixels": true
+    },
+    {
+      "label": "current",
+      "ordinals": [
+        3,
+        4
+      ],
+      "warmMedianDrift": {
+        "cpuRenderMs": {
+          "from": 24.69999999999709,
+          "to": 25.10000000000582,
+          "deltaMs": 0.40000000000873115,
+          "deltaPercent": 1.6194331984161092
+        },
+        "readbackWallMs": {
+          "from": 980.0500000000102,
+          "to": 982.7500000000146,
+          "deltaMs": 2.7000000000043656,
+          "deltaPercent": 0.2754961481561402
+        },
+        "totalWallMs": {
+          "from": 1004.5999999999913,
+          "to": 1010.4500000000116,
+          "deltaMs": 5.850000000020373,
+          "deltaPercent": 0.5823213219211976
+        }
+      },
+      "coldDrift": {
+        "cpuRenderMs": {
+          "from": 1064.699999999997,
+          "to": 1049.5999999999767,
+          "deltaMs": -15.100000000020373,
+          "deltaPercent": -1.4182398797802587
+        },
+        "readbackWallMs": {
+          "from": 2564.899999999994,
+          "to": 2585.4000000000233,
+          "deltaMs": 20.500000000029104,
+          "deltaPercent": 0.7992514328055256
+        },
+        "totalWallMs": {
+          "from": 3629.5999999999913,
+          "to": 3635,
+          "deltaMs": 5.400000000008731,
+          "deltaPercent": 0.14877672470818837
+        }
+      },
+      "identicalBuildFileHashes": true,
+      "identicalPngBytes": true,
+      "identicalDecodedPixels": true
+    }
+  ],
+  "candidateVs906": [
+    {
+      "name": "forward 906 to current",
+      "ordinals": [
+        2,
+        3
+      ],
+      "warmMedian": {
+        "cpuRenderMs": {
+          "from": 25.549999999995634,
+          "to": 24.69999999999709,
+          "deltaMs": -0.8499999999985448,
+          "deltaPercent": -3.3268101761201208
+        },
+        "readbackWallMs": {
+          "from": 1024.6500000000015,
+          "to": 980.0500000000102,
+          "deltaMs": -44.59999999999127,
+          "deltaPercent": -4.3527058019803055
+        },
+        "totalWallMs": {
+          "from": 1052.5999999999913,
+          "to": 1004.5999999999913,
+          "deltaMs": -48.0,
+          "deltaPercent": -4.5601368041041646
+        }
+      },
+      "cold": {
+        "cpuRenderMs": {
+          "from": 1040.199999999997,
+          "to": 1064.699999999997,
+          "deltaMs": 24.5,
+          "deltaPercent": 2.355316285329745
+        },
+        "readbackWallMs": {
+          "from": 2575.5,
+          "to": 2564.899999999994,
+          "deltaMs": -10.60000000000582,
+          "deltaPercent": -0.4115705688218174
+        },
+        "totalWallMs": {
+          "from": 3615.699999999997,
+          "to": 3629.5999999999913,
+          "deltaMs": 13.89999999999418,
+          "deltaPercent": 0.38443454932639565
+        }
+      }
+    },
+    {
+      "name": "reverse corresponding 906 to current",
+      "ordinals": [
+        5,
+        4
+      ],
+      "warmMedian": {
+        "cpuRenderMs": {
+          "from": 24.70000000001164,
+          "to": 25.10000000000582,
+          "deltaMs": 0.39999999999417923,
+          "deltaPercent": 1.619433198356246
+        },
+        "readbackWallMs": {
+          "from": 1014.5,
+          "to": 982.7500000000146,
+          "deltaMs": -31.749999999985448,
+          "deltaPercent": -3.1296205027092627
+        },
+        "totalWallMs": {
+          "from": 1039.8999999999942,
+          "to": 1010.4500000000116,
+          "deltaMs": -29.449999999982538,
+          "deltaPercent": -2.8320030772173044
+        }
+      },
+      "cold": {
+        "cpuRenderMs": {
+          "from": 1059.6000000000058,
+          "to": 1049.5999999999767,
+          "deltaMs": -10.000000000029104,
+          "deltaPercent": -0.9437523593836428
+        },
+        "readbackWallMs": {
+          "from": 2615.399999999994,
+          "to": 2585.4000000000233,
+          "deltaMs": -29.999999999970896,
+          "deltaPercent": -1.1470520761631464
+        },
+        "totalWallMs": {
+          "from": 3675,
+          "to": 3635,
+          "deltaMs": -40,
+          "deltaPercent": -1.0884353741496544
+        }
+      }
+    }
+  ],
+  "meanOfRunWarmMedians": {
+    "acf": {
+      "cpuRenderMs": 16.850000000002183,
+      "readbackWallMs": 802.8500000000022,
+      "totalWallMs": 819.9999999999964
+    },
+    "906": {
+      "cpuRenderMs": 25.125000000003638,
+      "readbackWallMs": 1019.5750000000007,
+      "totalWallMs": 1046.2499999999927
+    },
+    "current": {
+      "cpuRenderMs": 24.900000000001455,
+      "readbackWallMs": 981.4000000000124,
+      "totalWallMs": 1007.5250000000015
+    }
+  },
+  "currentVs906MeanOfRunMedians": {
+    "cpuRenderMs": {
+      "from": 25.125000000003638,
+      "to": 24.900000000001455,
+      "deltaMs": -0.2250000000021828,
+      "deltaPercent": -0.8955223880682595
+    },
+    "readbackWallMs": {
+      "from": 1019.5750000000007,
+      "to": 981.4000000000124,
+      "deltaMs": -38.17499999998836,
+      "deltaPercent": -3.7442071451328607
+    },
+    "totalWallMs": {
+      "from": 1046.2499999999927,
+      "to": 1007.5250000000015,
+      "deltaMs": -38.72499999999127,
+      "deltaPercent": -3.701314217442442
+    }
+  },
+  "currentVsAcfMeanOfRunMedians": {
+    "cpuRenderMs": {
+      "from": 16.850000000002183,
+      "to": 24.900000000001455,
+      "deltaMs": 8.049999999999272,
+      "deltaPercent": 47.774480712155665
+    },
+    "readbackWallMs": {
+      "from": 802.8500000000022,
+      "to": 981.4000000000124,
+      "deltaMs": 178.5500000000102,
+      "deltaPercent": 22.239521703930954
+    },
+    "totalWallMs": {
+      "from": 819.9999999999964,
+      "to": 1007.5250000000015,
+      "deltaMs": 187.5250000000051,
+      "deltaPercent": 22.868902439025106
+    }
+  },
+  "images": [
+    {
+      "ordinal": 1,
+      "file": "/workspace/scratch/27301e95ee53/game2-ultra/.review/34992058990/01-acf/full.png",
+      "bytes": 647140,
+      "sha256": "f00eeb892729a2e46ae9b370fddb49394aae025128dd410183673ee79bdac824",
+      "pixelSha256Rgba": "886b58b62f69ad2ff35de02c42eaad1d85137c76b71753363ca0c71082ec4328",
+      "size": [
+        960,
+        720
+      ],
+      "grossVisualInspection": "Actually opened with view_image: populated game scene; no blank root or catastrophic scene disappearance. Wide frame insufficient to certify ridge-ground seam or PS4 quality."
+    },
+    {
+      "ordinal": 2,
+      "file": "/workspace/scratch/27301e95ee53/game2-ultra/.review/34992058990/02-906/full.png",
+      "bytes": 653004,
+      "sha256": "c7094722f42a42a25eaf61491734e97398b8820672c390c3341cf9d73deb7461",
+      "pixelSha256Rgba": "76152e35323df30fc05b9f446daf341e3fe18f0d1a7e72ac012d38703a3ac500",
+      "size": [
+        960,
+        720
+      ],
+      "grossVisualInspection": "Actually opened with view_image: populated game scene; no blank root or catastrophic scene disappearance. Wide frame insufficient to certify ridge-ground seam or PS4 quality."
+    },
+    {
+      "ordinal": 3,
+      "file": "/workspace/scratch/27301e95ee53/game2-ultra/.review/34992058990/03-current/full.png",
+      "bytes": 657270,
+      "sha256": "4db93b67c1887cca3e0aaba2f6dff4d7ed747a6a262433add56f7e9a4da051c8",
+      "pixelSha256Rgba": "22f6d95e3fcc38fb976d6936e1acfba4ba5dba805dc93f476195d1fe3d63cc8d",
+      "size": [
+        960,
+        720
+      ],
+      "grossVisualInspection": "Actually opened with view_image: populated game scene; no blank root or catastrophic scene disappearance. Wide frame insufficient to certify ridge-ground seam or PS4 quality."
+    },
+    {
+      "ordinal": 4,
+      "file": "/workspace/scratch/27301e95ee53/game2-ultra/.review/34992058990/04-current/full.png",
+      "bytes": 657270,
+      "sha256": "4db93b67c1887cca3e0aaba2f6dff4d7ed747a6a262433add56f7e9a4da051c8",
+      "pixelSha256Rgba": "22f6d95e3fcc38fb976d6936e1acfba4ba5dba805dc93f476195d1fe3d63cc8d",
+      "size": [
+        960,
+        720
+      ],
+      "grossVisualInspection": "Actually opened with view_image: populated game scene; no blank root or catastrophic scene disappearance. Wide frame insufficient to certify ridge-ground seam or PS4 quality."
+    },
+    {
+      "ordinal": 5,
+      "file": "/workspace/scratch/27301e95ee53/game2-ultra/.review/34992058990/05-906/full.png",
+      "bytes": 653004,
+      "sha256": "c7094722f42a42a25eaf61491734e97398b8820672c390c3341cf9d73deb7461",
+      "pixelSha256Rgba": "76152e35323df30fc05b9f446daf341e3fe18f0d1a7e72ac012d38703a3ac500",
+      "size": [
+        960,
+        720
+      ],
+      "grossVisualInspection": "Actually opened with view_image: populated game scene; no blank root or catastrophic scene disappearance. Wide frame insufficient to certify ridge-ground seam or PS4 quality."
+    },
+    {
+      "ordinal": 6,
+      "file": "/workspace/scratch/27301e95ee53/game2-ultra/.review/34992058990/06-acf/full.png",
+      "bytes": 647140,
+      "sha256": "f00eeb892729a2e46ae9b370fddb49394aae025128dd410183673ee79bdac824",
+      "pixelSha256Rgba": "886b58b62f69ad2ff35de02c42eaad1d85137c76b71753363ca0c71082ec4328",
+      "size": [
+        960,
+        720
+      ],
+      "grossVisualInspection": "Actually opened with view_image: populated game scene; no blank root or catastrophic scene disappearance. Wide frame insufficient to certify ridge-ground seam or PS4 quality."
+    }
+  ],
+  "jobLogSpanSeconds": 186.864528,
+  "serialMeasurementSpanSeconds": 148.880393,
+  "findings": [
+    "All six ordinals and all 78 frame samples passed original and independent checks. Sources, complete tracked fresh file hashes, tool, installed dependency versions, viewport, camera trajectory, initial world/actor positions, Chromium version and SwiftShader GL identity agree as intended. Every owned browser/preview close and worktree cleanup is recorded successful before next ordinal.",
+    "Current warm total-wall run medians are lower than both 906 run medians. The forward matched difference is -4.56%, reverse corresponding difference is -2.83%; the mean of two run medians is 1007.525 ms versus 1046.25 ms, -3.70%. This is a finite same-host observation, not proof of pure runtime improvement under every load.",
+    "The observed median reduction is concentrated in synchronous readback wall time; mean-of-run CPU render medians are 24.9 ms current versus 25.125 ms 906. Per-metric medians do not add exactly to the median of totals.",
+    "Cold total wall current is 3629.6 / 3635.0 ms versus 906 3615.7 / 3675.0 ms. Their ranges overlap; cold improvement is not established. Cold frame excludes construction and asset wait, which are separately preserved.",
+    "Within-source later-minus-earlier warm median drift is +0.54% acf, -1.21% 906 and +0.58% current. First acf warm frame12 reaches 1078.7 ms (readback 1064.7 ms) and is retained rather than discarded. All warm samples are preserved.",
+    "All same-source pairs have byte-identical original PNGs and byte-identical inspection-build output fingerprints. Current versus 906 reported renderer triangle count is 408948 versus 448448 (-39500, -8.81%) while calls374, geometries379, textures35 and scanned leaf-containing batch triangles375296 agree. These are renderer.info observations, not total GPU workload or proof of the precise culling cause.",
+    "All six original images were viewed. Current shows more leaf faces and changed foliage shadows compared with 906; broad bare ground and sparse scene remain. No blank scene was observed. Wide frames cannot certify the ridge-ground seam or PS4 visual quality."
+  ],
+  "limitations": [
+    "Single GitHub Linux host with two independent browser runs per source, fixed symmetric order, no randomized repetitions and no external-host load control; hostLoadAverageAtStart changes and is retained. Same-job provenance and close records support host/process isolation; per-process PID inventory is not recorded.",
+    "Chromium 141.0.7390.37 using ANGLE SwiftShader on a virtualized Xeon host. Not physical-device performance, not a pure GPU timer, not actual game FPS.",
+    "cpuRenderMs includes JS and any driver/compiler blocking inside view.render; synchronous readbackWallMs includes pending drawing, synchronization/IPC and 2764800-byte RGBA transfer. totalWallMs is their sum, excluding reset, GL status queries and pixel analysis (warm median about31 ms) and Node round-trip overhead.",
+    "Four ReadPixels GPU-stall performance warnings occur per ordinal and all24 remain in originals and this result. No observed GL error, context loss, page/console error or failed request; this does not prove absence of unreported driver faults.",
+    "finalPage.restored=false is a snapshot captured before the subsequent explicit restore call; final report.restoration.restored=true and cleanup true are checked. It is not an observed restoration failure.",
+    "No variants, video, combat simulation, input, sound or mobile performance measured here. Authored world time is frame/60 with dt1/60 and no simulation advance. Old e188 or finish-based different-host measurements are excluded from quantitative comparisons.",
+    "PNG identity only proves repeatability of this specific view/time. It does not establish ten-element quality acceptance, PS4 target attainment, or root-contact correctness.",
+    "The actual 906-to-4fa runtime diff includes both bamboo crown and maple leaf fixed inclinations. Measurements isolate this complete candidate, not a bamboo-only edit or any single mechanism."
+  ],
+  "originalJsonCopies": [
+    {
+      "path": "AI_DEVELOPMENT/EVIDENCE/20260915-serial-render-profile/native-manifest.json",
+      "bytes": 2814,
+      "sha256": "53c64073dd7586e56c36bd0752597d41262c0c64fa18db7982dbd12d3f521bd6"
+    },
+    {
+      "path": "AI_DEVELOPMENT/EVIDENCE/20260915-serial-render-profile/native-summary.json",
+      "bytes": 21347,
+      "sha256": "3588f7c484f8613038ba26b453419884e9bdeeca1180e0f442a61ec9c74265a3"
+    },
+    {
+      "path": "AI_DEVELOPMENT/EVIDENCE/20260915-serial-render-profile/native-recovery.json",
+      "bytes": 8209,
+      "sha256": "37765cee33ed8df79e292ec2b61d5e6e291c2fe9d119c2599dc606b38612fa91"
+    },
+    {
+      "path": "AI_DEVELOPMENT/EVIDENCE/20260915-serial-render-profile/native-job-status.json",
+      "bytes": 1999,
+      "sha256": "3eda0816048692994ec48337dd5a72716c194a9049817c666279123786fd8ec5"
+    },
+    {
+      "path": "AI_DEVELOPMENT/EVIDENCE/20260915-serial-render-profile/native-01-acf-report.json",
+      "bytes": 147082,
+      "sha256": "e61ecb0418da161f2b2d653a5ac617f1196f7aa3b45788585f98644c861e003b"
+    },
+    {
+      "path": "AI_DEVELOPMENT/EVIDENCE/20260915-serial-render-profile/native-02-906-report.json",
+      "bytes": 157472,
+      "sha256": "0a5baf8c62665623e4b57a70b226590ebc472d3e43e6f9b0c774c70512d921c4"
+    },
+    {
+      "path": "AI_DEVELOPMENT/EVIDENCE/20260915-serial-render-profile/native-03-current-report.json",
+      "bytes": 158082,
+      "sha256": "e12849c7ff4d86b887c5adeae6833ce066bbd68f41674809c50f280a3af2a832"
+    },
+    {
+      "path": "AI_DEVELOPMENT/EVIDENCE/20260915-serial-render-profile/native-04-current-report.json",
+      "bytes": 157996,
+      "sha256": "fed2e1889dd96ffcb9e74903af966c3972cdd91f25b1b7aeebe2fbd7f719f3dd"
+    },
+    {
+      "path": "AI_DEVELOPMENT/EVIDENCE/20260915-serial-render-profile/native-05-906-report.json",
+      "bytes": 157701,
+      "sha256": "51a203d4b7e13ab676cea17f64d5c4dc63c39a11e05c1b66a6c9b711d950263b"
+    },
+    {
+      "path": "AI_DEVELOPMENT/EVIDENCE/20260915-serial-render-profile/native-06-acf-report.json",
+      "bytes": 147176,
+      "sha256": "06884b6f352819cea593ad3a55375e10a1f7d67ce79db6b8780a8a3c4840dbfa"
+    }
+  ],
+  "candidateDiffScope": {
+    "from": "9068522520b0f269cc937057b444f06c7c187978",
+    "to": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+    "changedFreshOrToolOrLockFiles": [
+      "fresh/bamboo-frond.js",
+      "fresh/canopy-projection.test.mjs",
+      "fresh/foliage-lod.test.mjs",
+      "fresh/foreground-visibility.test.mjs",
+      "fresh/maple-inclination.test.mjs",
+      "fresh/presentation.js"
+    ],
+    "runtimeChange": "Fixed bamboo crown roll and maple lamina inclination changes in fresh/presentation.js; bamboo-frond.js has explanatory comment changes. Remaining fresh diff files are tests. This is not a bamboo-only causal isolation. Tool and lockfile have no diff.",
+    "drawCountInterpretation": "Geometry scan agrees, while renderer-reported drawn triangles differ. No independent per-pass culling breakdown was captured; the cause of the draw-count change is not claimed."
+  }
+}

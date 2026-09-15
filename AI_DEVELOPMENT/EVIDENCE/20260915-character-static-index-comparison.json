@@ -1,0 +1,3246 @@
+{
+  "base": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+  "method": "Exact expanded corner bytes against extracted baseline, every mesh/attribute; dynamic/contact/motion unchanged; no renderer",
+  "unchanged": [
+    "character-motion.js",
+    "character-assets.js",
+    "character-assets/native-data.js",
+    "character-sculpt.js",
+    "main.js",
+    "character-assets/textures/young-asian-male.png",
+    "character-assets/textures/brown-eye.png",
+    "character-assets/textures/short-hair.png",
+    "character-assets/textures/eyebrows.png"
+  ],
+  "actors": [
+    {
+      "id": "player",
+      "metrics": {
+        "generatedParts": 113,
+        "drawMeshes": 57,
+        "triangles": 53748,
+        "groundContactPoints": 28896,
+        "articulatedJoints": 24,
+        "surfaceConstruction": "CC0-native-head-neck-hands-and-original-draped-clothing",
+        "externalRuntimeAssets": 5,
+        "importedTextureAssets": 4,
+        "importedGeometryAssets": 1,
+        "assetSource": "MakeHuman MPFB hm08 CC0",
+        "textureState": "geometry-only"
+      },
+      "before": {
+        "vertices": 148684,
+        "staticVertices": 119782,
+        "attributeBytes": 4761200,
+        "indexBytes": 30744
+      },
+      "after": {
+        "vertices": 54088,
+        "staticVertices": 25186,
+        "attributeBytes": 1729568,
+        "indexBytes": 269820
+      },
+      "meshes": [
+        {
+          "parent": "neck",
+          "name": "anchored-native-head-neck",
+          "material": "mpfb-cc0-skin",
+          "triangles": 8770,
+          "beforeVertices": 26310,
+          "afterVertices": 26310,
+          "expandedSha256": {
+            "position": "90a060c9aaaa305c9a02ca5e4db4bf226d07bcc6881dfd10596ed3809c2219b4",
+            "normal": "420c52f34113de795ee03e75bd4d5a081b69f41af85743fd4f26d088caa98aa3",
+            "uv": "63bfa520eb954447584c5aaf976076ace2dd07140a9590396d5d1f66a3a7fd17"
+          }
+        },
+        {
+          "parent": "neck",
+          "name": "",
+          "material": "mpfb-cc0-eyes",
+          "triangles": 172,
+          "beforeVertices": 516,
+          "afterVertices": 96,
+          "expandedSha256": {
+            "position": "5e39b52249f6e66d58c8680548fb1ce39af06cf76086f103a44cfa412088aa78",
+            "normal": "68e03619a3bff285d0daa5554b143cbd753ebc22df649a20f9945b3437363e65",
+            "uv": "bc736c00dc7ca9a84c93d7627b3135915e8e68e364a8d11809bc793efffe6d84",
+            "color": "ccabfb926e7a90b8d1b3b11d74096975310c41a4e92320258671548a4f79827c"
+          }
+        },
+        {
+          "parent": "neck",
+          "name": "",
+          "material": "mpfb-cc0-hair",
+          "triangles": 1050,
+          "beforeVertices": 3150,
+          "afterVertices": 983,
+          "expandedSha256": {
+            "position": "314b1e29ec77ceda3f62904f16b11002ac28dd544a439d5eda4ecc9b41cb8a4f",
+            "normal": "e423be7f6ba506448e685a4b3af8664a4f69f813aefecc386a64911c70f26f1a",
+            "uv": "60e57a0b34ba7c6d686c62a52366874b1e983b9421bd6e66646e42dbe30ab98c"
+          }
+        },
+        {
+          "parent": "neck",
+          "name": "",
+          "material": "mpfb-cc0-eyebrows",
+          "triangles": 192,
+          "beforeVertices": 576,
+          "afterVertices": 124,
+          "expandedSha256": {
+            "position": "0b6547ebf556f538b2f694775414cc83bee5903b5607c62410c67a7948ba194e",
+            "normal": "7d02bfa70bf22d533af98fbc2830a512967791681e97d6f6280141b4fed982a7",
+            "uv": "d3434a975a7fdfd83e50f322a4908ae2606c7c07e68434464c267dc7af433232"
+          }
+        },
+        {
+          "parent": "neck",
+          "name": "",
+          "material": "character-hair-#252420",
+          "triangles": 1176,
+          "beforeVertices": 3528,
+          "afterVertices": 669,
+          "expandedSha256": {
+            "position": "2dde4ba214b2c17ae5c715f606e465371480f28837bb933e21c9725fd1a01d68",
+            "uv": "fd7f2f40e74220c9ba4f9c60f902f1fbad8bf0a41004113053d28a91a05847ca",
+            "normal": "6d0f00d462a709bcfb1e974c354709739255528c84a6eee219c8051920a2aef5"
+          }
+        },
+        {
+          "parent": "neck",
+          "name": "",
+          "material": "character-cord-#9e987d",
+          "triangles": 168,
+          "beforeVertices": 504,
+          "afterVertices": 116,
+          "expandedSha256": {
+            "position": "99091c0abd1349b447ebbb894d64b562211d879f6b406d23de544dbac9f11130",
+            "uv": "3205da671d8602430b236e8cb3ed045a0b391fa38b7274e37802c70d4832854d",
+            "normal": "b299cdaecb79e95313201df88196908c7d64663f736287003d783c6578853679"
+          }
+        },
+        {
+          "parent": "wrist",
+          "name": "",
+          "material": "mpfb-cc0-skin",
+          "triangles": 3308,
+          "beforeVertices": 9924,
+          "afterVertices": 1897,
+          "expandedSha256": {
+            "position": "50cf0f8ca893a1934afebedabdc54d63a4b3f2ae637855b1ad14737d73514854",
+            "normal": "9a9dade929fd2b2e622483b4f10ca9b2e442eec6e66b77fa6976729c4a9ad6f9",
+            "uv": "eb6eb8bcfa94b876d70a384b13127fbcd966183374aa371aea2fd554497be883"
+          }
+        },
+        {
+          "parent": "elbow",
+          "name": "",
+          "material": "character-cloth-#273e50",
+          "triangles": 2020,
+          "beforeVertices": 6060,
+          "afterVertices": 1205,
+          "expandedSha256": {
+            "position": "c95222af1501b067fa1ebd62ed12127fc59dddb266ac00e660185bd752305692",
+            "uv": "9f88354cb7efaac0e97c9016de54cb8df21d660ab576528ecd6b0506735e100c",
+            "normal": "06783d3232aeb067111a28b9c555b0c9d22328e75d78f26c7b4bc55e973b7075"
+          }
+        },
+        {
+          "parent": "elbow",
+          "name": "",
+          "material": "character-metal-#343e43",
+          "triangles": 320,
+          "beforeVertices": 960,
+          "afterVertices": 187,
+          "expandedSha256": {
+            "position": "cdb6574bfba741756fcb6be9e672d943e68b860accd2f9accbba84dde5649853",
+            "uv": "9467b411d0814fc2a39c98eb0166f013559ff2377a7a66e8672a643013193a83",
+            "normal": "8e36916d9db96540cdde1e6cd87a4639b246cb3740cb3620ff7d4d46c631820c"
+          }
+        },
+        {
+          "parent": "elbow",
+          "name": "",
+          "material": "character-cord-#9e987d",
+          "triangles": 396,
+          "beforeVertices": 1188,
+          "afterVertices": 351,
+          "expandedSha256": {
+            "position": "fcb3bedf228bae97dba683e3f61cdd6b28990cbd58306dbf3a2679bdbf056c34",
+            "uv": "8e234899401cfb53c5f1e2eebbe97fbd9310088acb0c55d129e66fdd76dd89dc",
+            "normal": "ba410a785ee4984eb7cffb5f54522e9c63800227d3ca7e015e5795095f307f9a"
+          }
+        },
+        {
+          "parent": "left-shoulder",
+          "name": "",
+          "material": "character-cloth-#426781",
+          "triangles": 1728,
+          "beforeVertices": 5184,
+          "afterVertices": 959,
+          "expandedSha256": {
+            "position": "9d7c374bc5bd0384507feca43a94c81c3dc74c08c05dad54e66eb49ce69c7e4c",
+            "uv": "ac6f8f2d8f1d9453ecedc0d00d0b8d5e8b694b1cbe5a02eff171c70637d6b6bc",
+            "normal": "34cf98e7ad73f6bc9e6a711fd67b8db704248e22110d4735d01251f7c67e00ec"
+          }
+        },
+        {
+          "parent": "left-shoulder",
+          "name": "",
+          "material": "character-metal-#343e43",
+          "triangles": 1192,
+          "beforeVertices": 3576,
+          "afterVertices": 600,
+          "expandedSha256": {
+            "position": "d4dc3feeb72f12b0715af341f658203f60d5381493d08914e486d37b76b5d6b9",
+            "uv": "74614566a39856cdba86447e1983d1a229f2fa0d5ac756186cdf39c1cb7a271d",
+            "normal": "93d148765b2cc25dbcf491913a772cf6bed15c1b57595cad9f2e2191e23332d4"
+          }
+        },
+        {
+          "parent": "left-shoulder",
+          "name": "",
+          "material": "character-cloth-#273e50",
+          "triangles": 156,
+          "beforeVertices": 468,
+          "afterVertices": 137,
+          "expandedSha256": {
+            "position": "e871c5b4548e900f8dc62b1150b0d9116028cbe3c5f0a5da95fb56cdd51ab778",
+            "uv": "c1bb9f7475333120954a53b08e5769a3635a7c7a1de36f48040bf8390c3474e1",
+            "normal": "4e694ae15140d9730cd491f76995559b76799cd08b83e0d92f5dcd1aa5d9797f"
+          }
+        },
+        {
+          "parent": "wrist",
+          "name": "",
+          "material": "mpfb-cc0-skin",
+          "triangles": 3308,
+          "beforeVertices": 9924,
+          "afterVertices": 1897,
+          "expandedSha256": {
+            "position": "ccd0ffc64c731747cf83e24ac36af025a2d7cb9d19f98abadba6bc26404502f0",
+            "normal": "ad5b2fd13dc3731c74c23fbebac4ad1ffb5b893b0df4f623746b25bcea68e163",
+            "uv": "1c0392d32b3b6c67a7ab8b204ce33b175bd9c79feac9478d8ce921aa10bf7840"
+          }
+        },
+        {
+          "parent": "elbow",
+          "name": "",
+          "material": "character-cloth-#273e50",
+          "triangles": 2020,
+          "beforeVertices": 6060,
+          "afterVertices": 1205,
+          "expandedSha256": {
+            "position": "c95222af1501b067fa1ebd62ed12127fc59dddb266ac00e660185bd752305692",
+            "uv": "9f88354cb7efaac0e97c9016de54cb8df21d660ab576528ecd6b0506735e100c",
+            "normal": "06783d3232aeb067111a28b9c555b0c9d22328e75d78f26c7b4bc55e973b7075"
+          }
+        },
+        {
+          "parent": "elbow",
+          "name": "",
+          "material": "character-metal-#343e43",
+          "triangles": 320,
+          "beforeVertices": 960,
+          "afterVertices": 187,
+          "expandedSha256": {
+            "position": "cdb6574bfba741756fcb6be9e672d943e68b860accd2f9accbba84dde5649853",
+            "uv": "9467b411d0814fc2a39c98eb0166f013559ff2377a7a66e8672a643013193a83",
+            "normal": "8e36916d9db96540cdde1e6cd87a4639b246cb3740cb3620ff7d4d46c631820c"
+          }
+        },
+        {
+          "parent": "elbow",
+          "name": "",
+          "material": "character-cord-#9e987d",
+          "triangles": 396,
+          "beforeVertices": 1188,
+          "afterVertices": 351,
+          "expandedSha256": {
+            "position": "fcb3bedf228bae97dba683e3f61cdd6b28990cbd58306dbf3a2679bdbf056c34",
+            "uv": "8e234899401cfb53c5f1e2eebbe97fbd9310088acb0c55d129e66fdd76dd89dc",
+            "normal": "ba410a785ee4984eb7cffb5f54522e9c63800227d3ca7e015e5795095f307f9a"
+          }
+        },
+        {
+          "parent": "right-shoulder",
+          "name": "",
+          "material": "character-cloth-#426781",
+          "triangles": 1728,
+          "beforeVertices": 5184,
+          "afterVertices": 959,
+          "expandedSha256": {
+            "position": "796be26fe1a91d610eb080a5273631dc30142e5b7131c3f438f87e74d6216e3c",
+            "uv": "ac6f8f2d8f1d9453ecedc0d00d0b8d5e8b694b1cbe5a02eff171c70637d6b6bc",
+            "normal": "89a3d0814aae629e9b865348d7c58430e3bee7d630170caa54b60c5e0c321c14"
+          }
+        },
+        {
+          "parent": "right-shoulder",
+          "name": "",
+          "material": "character-metal-#343e43",
+          "triangles": 1192,
+          "beforeVertices": 3576,
+          "afterVertices": 600,
+          "expandedSha256": {
+            "position": "253e6a2550f3acb392288e85ebfe680452fad959c43729f17fd6fb476a482b1a",
+            "uv": "74614566a39856cdba86447e1983d1a229f2fa0d5ac756186cdf39c1cb7a271d",
+            "normal": "f488b680ce8dcc518517ce91a2e4cbd18d5422d6d87a78ab6c3f2c31f9203bb5"
+          }
+        },
+        {
+          "parent": "right-shoulder",
+          "name": "",
+          "material": "character-cloth-#273e50",
+          "triangles": 156,
+          "beforeVertices": 468,
+          "afterVertices": 137,
+          "expandedSha256": {
+            "position": "e871c5b4548e900f8dc62b1150b0d9116028cbe3c5f0a5da95fb56cdd51ab778",
+            "uv": "c1bb9f7475333120954a53b08e5769a3635a7c7a1de36f48040bf8390c3474e1",
+            "normal": "4e694ae15140d9730cd491f76995559b76799cd08b83e0d92f5dcd1aa5d9797f"
+          }
+        },
+        {
+          "parent": "ribcage",
+          "name": "",
+          "material": "character-cloth-#426781",
+          "triangles": 2656,
+          "beforeVertices": 7968,
+          "afterVertices": 1523,
+          "expandedSha256": {
+            "position": "945e0cd2aec76424afb1bf3950cc9cc4abdc2da39bee382889224915569ab671",
+            "uv": "07d37f6b4b6531d75ffb2098b5edac049460814695b5b264714739cb754b4724",
+            "normal": "6302e1d7395bfd9fb413c814df3a00f994ea377e739b69ce041e1d51fe74d125"
+          }
+        },
+        {
+          "parent": "ribcage",
+          "name": "",
+          "material": "character-metal-#343e43",
+          "triangles": 960,
+          "beforeVertices": 2880,
+          "afterVertices": 625,
+          "expandedSha256": {
+            "position": "c18a8a625687e89f5fca58ad9e71fed9c61134fdd54523e97829ff7dcd60eba4",
+            "uv": "1c2ebd63f4fa135423d267434cf552975e32251d7a1ad1cfced9e1781d588e56",
+            "normal": "198014a905716af840c8c8156b6f00f95639044a361f46f60f5cbf805d255bd7"
+          }
+        },
+        {
+          "parent": "ribcage",
+          "name": "",
+          "material": "character-cord-#9e987d",
+          "triangles": 480,
+          "beforeVertices": 1440,
+          "afterVertices": 360,
+          "expandedSha256": {
+            "position": "e19a8c2b427733ea303fdb641f5959fc0c4100da2cbe63bc4a917f1c5bdc5481",
+            "uv": "8396f05e7d21084143b807677a99f12023f4ddaf27b4f412665481bd8a930d00",
+            "normal": "e3f447f5ab64d8538571b512ade5974cdc0244c5573e18097103ae529d9ba42c"
+          }
+        },
+        {
+          "parent": "ribcage",
+          "name": "",
+          "material": "character-cloth-#a8ad9f",
+          "triangles": 800,
+          "beforeVertices": 2400,
+          "afterVertices": 500,
+          "expandedSha256": {
+            "position": "54fcea52ec0aa85a9bafb800f6bf7f699a8c6532d18f6b67f836075a5a0e344d",
+            "uv": "17689e68870508820aa9dcf54c10b57c38b8ddc3b466f4129fef9a6726f7d642",
+            "normal": "5434089688287a9830c0aa1887193e1618d9dea4887bcfd8bed053f834c2cd42"
+          }
+        },
+        {
+          "parent": "ribcage",
+          "name": "",
+          "material": "character-cloth-#273e50",
+          "triangles": 240,
+          "beforeVertices": 720,
+          "afterVertices": 168,
+          "expandedSha256": {
+            "position": "2c635532ddc7cdef91319209c4aa996e2e324354270f511eceeeeda9d2c48a27",
+            "uv": "df90111482a4438624558e373be11db3be928e30c6f0288f352382f9d95d024d",
+            "normal": "8ad8bca2fe1c977901bab78c76df26d893e1acf7457a86c1e475da2b38239497"
+          }
+        },
+        {
+          "parent": "ankle",
+          "name": "",
+          "material": "character-cloth-#928c76",
+          "triangles": 1468,
+          "beforeVertices": 4404,
+          "afterVertices": 840,
+          "expandedSha256": {
+            "position": "e135b9ff036c19596c997641a2ed776842d0cd3c3cc5177935af9b49cffacbfe",
+            "uv": "07184122fa94ca9ab6cc1db5b7ed7d482ee6fedf871b93d7eefdbedd365de007",
+            "normal": "b7ac45fafd2c88fbdf915bb14b6b76990210d2f6b6a2303493121a8a48172622"
+          }
+        },
+        {
+          "parent": "ankle",
+          "name": "",
+          "material": "character-cord-#9e987d",
+          "triangles": 896,
+          "beforeVertices": 2688,
+          "afterVertices": 493,
+          "expandedSha256": {
+            "position": "3a5a556b0ac68c3c22e50fb44d47eb7b01c7dcd79ffaaa84429ac1e5a4d893cf",
+            "uv": "55ee4b03d89f582edf43f51f3e3929866c171d7c779c30706f8edc7564a8f634",
+            "normal": "2df6f660cc07466d79d045c5dd64aed97305201d697eca1007f5a3ebd50c76d4"
+          }
+        },
+        {
+          "parent": "ankle",
+          "name": "",
+          "material": "character-leather-#242523",
+          "triangles": 360,
+          "beforeVertices": 1080,
+          "afterVertices": 252,
+          "expandedSha256": {
+            "position": "827ab3e30a260d01f5cbcb7573e6b2e1de6532a127677088c075666784fd87dc",
+            "uv": "556859c54b08ca98267b79d97f482bdf7310f2eed429bb65ec8c74b34f7582ef",
+            "normal": "124b31fba9867e1fca528189c3a18b0e278a162f061c4d7eb8454f5f803b1d84"
+          }
+        },
+        {
+          "parent": "knee",
+          "name": "",
+          "material": "character-cloth-#273e50",
+          "triangles": 1008,
+          "beforeVertices": 3024,
+          "afterVertices": 577,
+          "expandedSha256": {
+            "position": "1392a15ff26dc33d237c12143776d2f4da36e8d7e615142ddfa491883c4376d4",
+            "uv": "77a320459a1d40941c061beec54acc2cf8d2618fafd7e3b9d122a42f2840803c",
+            "normal": "8dfe835bc19624530d9a67040d94bce7e6ee54b3b0390138bcb0e3c906a0f69b"
+          }
+        },
+        {
+          "parent": "knee",
+          "name": "",
+          "material": "character-metal-#343e43",
+          "triangles": 320,
+          "beforeVertices": 960,
+          "afterVertices": 187,
+          "expandedSha256": {
+            "position": "2d5f33eb2dbf4524768cc618e9f58a2743d3a1d21ed6d2f350f8e99479fe6d4c",
+            "uv": "9467b411d0814fc2a39c98eb0166f013559ff2377a7a66e8672a643013193a83",
+            "normal": "b960582704d5893ad9734728dcccd21b7fdcb7ed0c4a154b489f3a86a7ed8a56"
+          }
+        },
+        {
+          "parent": "knee",
+          "name": "",
+          "material": "character-cord-#9e987d",
+          "triangles": 528,
+          "beforeVertices": 1584,
+          "afterVertices": 468,
+          "expandedSha256": {
+            "position": "620e856a5f64d737ae949be0e8030bf6424775187979a555e5bf3b8b9b1c0e46",
+            "uv": "1186cebc2daacade1c01a3a431b4dfd522a3180c28f21a2f7e900f2b335aeb01",
+            "normal": "acc165b268938808ad4b0ab005330f9695aa3f9ae8f0313104d891548c158f27"
+          }
+        },
+        {
+          "parent": "left-hip",
+          "name": "",
+          "material": "character-cloth-#273e50",
+          "triangles": 1288,
+          "beforeVertices": 3864,
+          "afterVertices": 727,
+          "expandedSha256": {
+            "position": "d087f8c97fe84a1c74a3ec0d3767ff8ad9f8bae98293b3a828f04ed376c80258",
+            "uv": "3f4beeafa4b2c472a683bf126dcd75546e7bcb0c663699e25ef505cb7509223c",
+            "normal": "1d77e1037afcef7b7e929c4b6d9d7f7bca5f7b0a9e5958aaf8b713b19fbffa90"
+          }
+        },
+        {
+          "parent": "hakama-front",
+          "name": "articulated-hakama-surface",
+          "material": "character-cloth-#426781",
+          "triangles": 1196,
+          "beforeVertices": 648,
+          "afterVertices": 648,
+          "expandedSha256": {
+            "position": "3942aa3a9685b05730f5995cb19bc832afd8f4936fe050c0332c1fcc244d75ec",
+            "uv": "fc02e22ec0b5c7961282b9aede5c8cd15595eb737918694b09c542a67eed5145",
+            "normal": "a9939ca9921bab7202031f2892f57fc05ef363c9b681578c46a6dc84ec4eca7b"
+          }
+        },
+        {
+          "parent": "hakama-back",
+          "name": "articulated-hakama-surface",
+          "material": "character-cloth-#426781",
+          "triangles": 1196,
+          "beforeVertices": 648,
+          "afterVertices": 648,
+          "expandedSha256": {
+            "position": "018b4fda3cedc967f8a70c261123cce68eb1d43e7338ce60446e70cae89599c8",
+            "uv": "fc02e22ec0b5c7961282b9aede5c8cd15595eb737918694b09c542a67eed5145",
+            "normal": "1e38bb25c06d03160cc42420d19d55339eff2ae361a6fc0a5ac421cd6f6dc76d"
+          }
+        },
+        {
+          "parent": "ankle",
+          "name": "",
+          "material": "character-cloth-#928c76",
+          "triangles": 1468,
+          "beforeVertices": 4404,
+          "afterVertices": 840,
+          "expandedSha256": {
+            "position": "9ae8222d74d38edc51133c1107839f6ac3b273cfa3f1df15822e1952b39cce0c",
+            "uv": "07184122fa94ca9ab6cc1db5b7ed7d482ee6fedf871b93d7eefdbedd365de007",
+            "normal": "9d49e6f6980f01a4dab09b385e5945178cc5757ca3a34230c581af3227d32393"
+          }
+        },
+        {
+          "parent": "ankle",
+          "name": "",
+          "material": "character-cord-#9e987d",
+          "triangles": 896,
+          "beforeVertices": 2688,
+          "afterVertices": 493,
+          "expandedSha256": {
+            "position": "8a75688eeb663b9cbe2b511a84f96b9b28d5bc35ee09483f8093f356e5e863d1",
+            "uv": "55ee4b03d89f582edf43f51f3e3929866c171d7c779c30706f8edc7564a8f634",
+            "normal": "c2989baaa28d027566b4685bd8b89d7450531ea5df0264c56a8d1f84d92c7f63"
+          }
+        },
+        {
+          "parent": "ankle",
+          "name": "",
+          "material": "character-leather-#242523",
+          "triangles": 360,
+          "beforeVertices": 1080,
+          "afterVertices": 252,
+          "expandedSha256": {
+            "position": "c5675a8a375ef309a3feb0c0d3259126bc39a93ea12090fe60fd284451ed5cc9",
+            "uv": "556859c54b08ca98267b79d97f482bdf7310f2eed429bb65ec8c74b34f7582ef",
+            "normal": "cdeaeb2e5ad39fc355e6dda8cb5fffe3187912e7b25dabd887d084a172adec40"
+          }
+        },
+        {
+          "parent": "knee",
+          "name": "",
+          "material": "character-cloth-#273e50",
+          "triangles": 1008,
+          "beforeVertices": 3024,
+          "afterVertices": 577,
+          "expandedSha256": {
+            "position": "1392a15ff26dc33d237c12143776d2f4da36e8d7e615142ddfa491883c4376d4",
+            "uv": "77a320459a1d40941c061beec54acc2cf8d2618fafd7e3b9d122a42f2840803c",
+            "normal": "8dfe835bc19624530d9a67040d94bce7e6ee54b3b0390138bcb0e3c906a0f69b"
+          }
+        },
+        {
+          "parent": "knee",
+          "name": "",
+          "material": "character-metal-#343e43",
+          "triangles": 320,
+          "beforeVertices": 960,
+          "afterVertices": 187,
+          "expandedSha256": {
+            "position": "2d5f33eb2dbf4524768cc618e9f58a2743d3a1d21ed6d2f350f8e99479fe6d4c",
+            "uv": "9467b411d0814fc2a39c98eb0166f013559ff2377a7a66e8672a643013193a83",
+            "normal": "b960582704d5893ad9734728dcccd21b7fdcb7ed0c4a154b489f3a86a7ed8a56"
+          }
+        },
+        {
+          "parent": "knee",
+          "name": "",
+          "material": "character-cord-#9e987d",
+          "triangles": 528,
+          "beforeVertices": 1584,
+          "afterVertices": 468,
+          "expandedSha256": {
+            "position": "620e856a5f64d737ae949be0e8030bf6424775187979a555e5bf3b8b9b1c0e46",
+            "uv": "1186cebc2daacade1c01a3a431b4dfd522a3180c28f21a2f7e900f2b335aeb01",
+            "normal": "acc165b268938808ad4b0ab005330f9695aa3f9ae8f0313104d891548c158f27"
+          }
+        },
+        {
+          "parent": "right-hip",
+          "name": "",
+          "material": "character-cloth-#273e50",
+          "triangles": 1288,
+          "beforeVertices": 3864,
+          "afterVertices": 727,
+          "expandedSha256": {
+            "position": "0227fdc1bd99e2ae8ef03f91b544fca7ca5d32a4269cf9a2a9f66986c626be00",
+            "uv": "3f4beeafa4b2c472a683bf126dcd75546e7bcb0c663699e25ef505cb7509223c",
+            "normal": "d4b9b19fe2dbae24c95c9207a43bceaf84de445a78337b9fc4b7ad94ef094587"
+          }
+        },
+        {
+          "parent": "hakama-front",
+          "name": "articulated-hakama-surface",
+          "material": "character-cloth-#426781",
+          "triangles": 1196,
+          "beforeVertices": 648,
+          "afterVertices": 648,
+          "expandedSha256": {
+            "position": "81f0e0b2bb72e3336a64d5bd62f719dbd73560087bd3f5ba788812a981975ed5",
+            "uv": "fc02e22ec0b5c7961282b9aede5c8cd15595eb737918694b09c542a67eed5145",
+            "normal": "3808f984d120e215aae47d14c425cc6e5990a25ca771f40c7e5e3e923e15c3a4"
+          }
+        },
+        {
+          "parent": "hakama-back",
+          "name": "articulated-hakama-surface",
+          "material": "character-cloth-#426781",
+          "triangles": 1196,
+          "beforeVertices": 648,
+          "afterVertices": 648,
+          "expandedSha256": {
+            "position": "3bf4a414041ec029eec2a71264cca980d73e8210f0560d76c54fa679c968bf62",
+            "uv": "fc02e22ec0b5c7961282b9aede5c8cd15595eb737918694b09c542a67eed5145",
+            "normal": "bde4cda0cbda140a0c841f8c8bb3bb5ec6e75014d6b094f9380cd64c7704beaf"
+          }
+        },
+        {
+          "parent": "sash-tail",
+          "name": "",
+          "material": "character-cord-#9e987d",
+          "triangles": 120,
+          "beforeVertices": 360,
+          "afterVertices": 84,
+          "expandedSha256": {
+            "position": "55b995c3c9368239a95714939ae41fd0bc5de15aa7fa12acb9f9902420125676",
+            "uv": "b27f0634aeb77f1a53472879e36b475155e817f5170fcd8162b8595d5cc6f892",
+            "normal": "7f865295a9fb2ce219566b84b8bc0639a4cf3247455f39456a6bb2c7bb7b1e59"
+          }
+        },
+        {
+          "parent": "scabbard",
+          "name": "",
+          "material": "character-leather-#242523",
+          "triangles": 40,
+          "beforeVertices": 120,
+          "afterVertices": 46,
+          "expandedSha256": {
+            "position": "74b8a94157931236383b6e0db8b07d4bf4f4ce500e945d5f1ead848fcbc534e7",
+            "normal": "4f7bafb4c926624491df95175165b59d3c1fd92422782b8b48543f35f5923698",
+            "uv": "ac3bc6f3add8446ff7168334c0566b10b38fab4374922dcd3616525038f0743c"
+          }
+        },
+        {
+          "parent": "scabbard",
+          "name": "",
+          "material": "character-plain-#b7955b",
+          "triangles": 80,
+          "beforeVertices": 240,
+          "afterVertices": 92,
+          "expandedSha256": {
+            "position": "b965708d4b388bf4610bf3d1835b595e6217f747836ec1d248536f1776e24c15",
+            "normal": "ab35a1a06aa9c3dff351ce8267732acab5c8159eafe8d51b00f1fa9fadccc12c",
+            "uv": "aed025174662c7b676b442c6d723c4464d38a2a7b12e2b10e21a074658626432"
+          }
+        },
+        {
+          "parent": "scabbard",
+          "name": "",
+          "material": "character-cord-#9e987d",
+          "triangles": 80,
+          "beforeVertices": 240,
+          "afterVertices": 92,
+          "expandedSha256": {
+            "position": "e6bcaeb657b90e6574912a08e41b36a1fefca0673f06afc55eceb9704a556156",
+            "normal": "d28bca630bcf97880ed8e4d16bbf8341555edcd133a9c3b5da1045181512fd38",
+            "uv": "aed025174662c7b676b442c6d723c4464d38a2a7b12e2b10e21a074658626432"
+          }
+        },
+        {
+          "parent": "pelvis",
+          "name": "",
+          "material": "character-cloth-#273e50",
+          "triangles": 504,
+          "beforeVertices": 1512,
+          "afterVertices": 321,
+          "expandedSha256": {
+            "position": "0d49d377fa1499c38832a4024767294ba8fa6cdf3ddae3537d26b1cf5b412f0a",
+            "uv": "5706e3492d9f61765c5aa3547324df4b0ee992bfa7db7c401276fa189469e916",
+            "normal": "046753d123d91f965de9546f5c20a13388f2aee63cd4b76a43be46913a88f60b"
+          }
+        },
+        {
+          "parent": "pelvis",
+          "name": "",
+          "material": "character-cord-#9e987d",
+          "triangles": 744,
+          "beforeVertices": 2232,
+          "afterVertices": 609,
+          "expandedSha256": {
+            "position": "8ef1ba532b6add26d783c21a6fe0c2711a34bf16d82e4a975fa582fbbd65e2df",
+            "uv": "ec813c9e2128c3a105c54601028c842f52d65f19122ab2613dc248430d8e381e",
+            "normal": "e335776fd9d09c1a2ca59dc29953f5159dbdec3e88d438af04a92cbf3a5c9f23"
+          }
+        },
+        {
+          "parent": "curved-blade",
+          "name": "",
+          "material": "character-plain-#e7f4f4",
+          "triangles": 60,
+          "beforeVertices": 180,
+          "afterVertices": 148,
+          "expandedSha256": {
+            "position": "c66f61c9aaa20e152465cb1c00abf3ba59eae213c9833b2d9e2bc383604ca177",
+            "normal": "cbd87b528094d6301153841f9ba126d73575ce6b7e306cb90346ff7916618bf3"
+          }
+        },
+        {
+          "parent": "curved-blade",
+          "name": "",
+          "material": "character-plain-#eff4e5",
+          "triangles": 60,
+          "beforeVertices": 180,
+          "afterVertices": 152,
+          "expandedSha256": {
+            "position": "69bb9dc9394952d487795007a230c3352ae6e4e18cc8d41e2419aefdd8d0256d",
+            "normal": "ea93c970cfbba44ea6c1a510b85dc8eec4055309d47a57caa49139d84bbbf821"
+          }
+        },
+        {
+          "parent": "katana",
+          "name": "",
+          "material": "character-leather-#242523",
+          "triangles": 40,
+          "beforeVertices": 120,
+          "afterVertices": 46,
+          "expandedSha256": {
+            "position": "9140ae6bf8638954f310376efbb48ce01f9e71d50b6964aa94356091f36c91d2",
+            "normal": "a766535d25291d8c641baa9f61cbd2773b4324ba3a41da0eb486ace770c8ac93",
+            "uv": "ac3bc6f3add8446ff7168334c0566b10b38fab4374922dcd3616525038f0743c"
+          }
+        },
+        {
+          "parent": "katana",
+          "name": "",
+          "material": "character-cord-#9e987d",
+          "triangles": 168,
+          "beforeVertices": 504,
+          "afterVertices": 336,
+          "expandedSha256": {
+            "position": "841d43babe30fc7d2ba9da0a8006128557f3787af6c58f992bcc84b69e3cc3f5",
+            "normal": "a018f84ade8349bb0559f32afc70ecff34251ba117d404afa925306e710a72e1",
+            "uv": "f19757b735c69fa36bff36ee154b546522e1286f204868f82721124a6b88b66a"
+          }
+        },
+        {
+          "parent": "katana",
+          "name": "",
+          "material": "character-plain-#b7955b",
+          "triangles": 80,
+          "beforeVertices": 240,
+          "afterVertices": 92,
+          "expandedSha256": {
+            "position": "63d062620d3ea209cb28ba4ac5ceeee75f479c9a9a9f2eb7144661f5d9a0819c",
+            "normal": "6af9e00723e650a17c96c26dab91ba9988a7373e2fe54cee02391bf0fd997d22",
+            "uv": "aed025174662c7b676b442c6d723c4464d38a2a7b12e2b10e21a074658626432"
+          }
+        },
+        {
+          "parent": "actor-player",
+          "name": "",
+          "material": "",
+          "triangles": 20,
+          "beforeVertices": 22,
+          "afterVertices": 22,
+          "expandedSha256": {
+            "position": "dad3292438de9aaf415fb035f942596d4d8168ed9ad46a3cec2c6951b90b5a1c",
+            "normal": "5743b1ba5128d7809e24c5ff17e3fdfd8b8c4f52335bc9c12823d6270c7ff5d2",
+            "uv": "c14f9ba5cc97ecec766d50725c1e88918a2c86b246bbe03feb5878e612dcb95f"
+          }
+        },
+        {
+          "parent": "actor-player",
+          "name": "",
+          "material": "character-plain-#b7955b",
+          "triangles": 320,
+          "beforeVertices": 198,
+          "afterVertices": 198,
+          "expandedSha256": {
+            "position": "5be3604311a70d3103280facf95def429675eea7bf7c8d3c993c4ea823a07175",
+            "normal": "02fec4195ddad3e1c699ad2e309c58aee9913d82dcc8935e3f515f6ec293b9da",
+            "uv": "80bea15999e24bd65176309fbd06621dbfc0e0a51063279ab61ce0695619d30a"
+          }
+        },
+        {
+          "parent": "actor-player",
+          "name": "",
+          "material": "character-plain-#b7955b",
+          "triangles": 8,
+          "beforeVertices": 24,
+          "afterVertices": 24,
+          "expandedSha256": {
+            "position": "c54db36ceead5096daf31e6322765191841290283d84f987f05e976c098e4bcc",
+            "normal": "45759e13d8039116427af5da9d223b25d69da49cbe9ebf4168d86cf1abab6042",
+            "uv": "89488edf2f1454eeb3003e08fb91aada4cf169bd9464dbbc16a54643400a6f8e"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sentinel",
+      "metrics": {
+        "generatedParts": 115,
+        "drawMeshes": 57,
+        "triangles": 54940,
+        "groundContactPoints": 29496,
+        "articulatedJoints": 24,
+        "surfaceConstruction": "CC0-native-head-neck-hands-and-original-draped-clothing",
+        "externalRuntimeAssets": 5,
+        "importedTextureAssets": 4,
+        "importedGeometryAssets": 1,
+        "assetSource": "MakeHuman MPFB hm08 CC0",
+        "textureState": "geometry-only"
+      },
+      "before": {
+        "vertices": 152260,
+        "staticVertices": 123358,
+        "attributeBytes": 4875632,
+        "indexBytes": 30744
+      },
+      "after": {
+        "vertices": 54688,
+        "staticVertices": 25786,
+        "attributeBytes": 1748768,
+        "indexBytes": 276972
+      },
+      "meshes": [
+        {
+          "parent": "neck",
+          "name": "anchored-native-head-neck",
+          "material": "mpfb-cc0-skin",
+          "triangles": 8770,
+          "beforeVertices": 26310,
+          "afterVertices": 26310,
+          "expandedSha256": {
+            "position": "9db53bc9452df85b178ef86bbf6fb5fb986c9376b009ffb99ca26472e347c07f",
+            "normal": "5c887b6fd846e632dc82180514ede25e2ea92399f0f2ff095c85895afa21ac08",
+            "uv": "f3e6c9d9886e87099740ec9d07681a2b934b2d3d3b3db0899f22b403338821c8"
+          }
+        },
+        {
+          "parent": "neck",
+          "name": "",
+          "material": "mpfb-cc0-eyes",
+          "triangles": 172,
+          "beforeVertices": 516,
+          "afterVertices": 96,
+          "expandedSha256": {
+            "position": "3f100c6ec543a73ce579a185c90b2a7752f5aa57ee393710bfe16d9f2787686b",
+            "normal": "229995e3510670132618b9cb209990d7ef377f1c59a29131dab6a8565e22f870",
+            "uv": "bc736c00dc7ca9a84c93d7627b3135915e8e68e364a8d11809bc793efffe6d84",
+            "color": "ccabfb926e7a90b8d1b3b11d74096975310c41a4e92320258671548a4f79827c"
+          }
+        },
+        {
+          "parent": "neck",
+          "name": "",
+          "material": "mpfb-cc0-hair",
+          "triangles": 1050,
+          "beforeVertices": 3150,
+          "afterVertices": 983,
+          "expandedSha256": {
+            "position": "ab2dc57a1cc15188d1947cd0b7a7a39aa51c71ffe8e6cbfd260341fdc46a5948",
+            "normal": "e4589a2cf66a996d96bd9cfbbfd1266c32f621b3b4b1de32b00fcdd18c4d9834",
+            "uv": "60e57a0b34ba7c6d686c62a52366874b1e983b9421bd6e66646e42dbe30ab98c"
+          }
+        },
+        {
+          "parent": "neck",
+          "name": "",
+          "material": "mpfb-cc0-eyebrows",
+          "triangles": 192,
+          "beforeVertices": 576,
+          "afterVertices": 124,
+          "expandedSha256": {
+            "position": "61cc398726442197e8a8a8323a22d80075a69a8f04f307ac63fdf80e210e8083",
+            "normal": "66b4a4eec7751332343c2efa74dbbd6413e2f6de193b01fbbc36407f8c4a66d8",
+            "uv": "d3434a975a7fdfd83e50f322a4908ae2606c7c07e68434464c267dc7af433232"
+          }
+        },
+        {
+          "parent": "neck",
+          "name": "",
+          "material": "character-hair-#252420",
+          "triangles": 1176,
+          "beforeVertices": 3528,
+          "afterVertices": 669,
+          "expandedSha256": {
+            "position": "2dde4ba214b2c17ae5c715f606e465371480f28837bb933e21c9725fd1a01d68",
+            "uv": "fd7f2f40e74220c9ba4f9c60f902f1fbad8bf0a41004113053d28a91a05847ca",
+            "normal": "6d0f00d462a709bcfb1e974c354709739255528c84a6eee219c8051920a2aef5"
+          }
+        },
+        {
+          "parent": "neck",
+          "name": "",
+          "material": "character-cord-#b99d73",
+          "triangles": 168,
+          "beforeVertices": 504,
+          "afterVertices": 116,
+          "expandedSha256": {
+            "position": "99091c0abd1349b447ebbb894d64b562211d879f6b406d23de544dbac9f11130",
+            "uv": "3205da671d8602430b236e8cb3ed045a0b391fa38b7274e37802c70d4832854d",
+            "normal": "b299cdaecb79e95313201df88196908c7d64663f736287003d783c6578853679"
+          }
+        },
+        {
+          "parent": "wrist",
+          "name": "",
+          "material": "mpfb-cc0-skin",
+          "triangles": 3308,
+          "beforeVertices": 9924,
+          "afterVertices": 1897,
+          "expandedSha256": {
+            "position": "50cf0f8ca893a1934afebedabdc54d63a4b3f2ae637855b1ad14737d73514854",
+            "normal": "9a9dade929fd2b2e622483b4f10ca9b2e442eec6e66b77fa6976729c4a9ad6f9",
+            "uv": "eb6eb8bcfa94b876d70a384b13127fbcd966183374aa371aea2fd554497be883"
+          }
+        },
+        {
+          "parent": "elbow",
+          "name": "",
+          "material": "character-cloth-#472b25",
+          "triangles": 2020,
+          "beforeVertices": 6060,
+          "afterVertices": 1205,
+          "expandedSha256": {
+            "position": "c95222af1501b067fa1ebd62ed12127fc59dddb266ac00e660185bd752305692",
+            "uv": "9f88354cb7efaac0e97c9016de54cb8df21d660ab576528ecd6b0506735e100c",
+            "normal": "06783d3232aeb067111a28b9c555b0c9d22328e75d78f26c7b4bc55e973b7075"
+          }
+        },
+        {
+          "parent": "elbow",
+          "name": "",
+          "material": "character-metal-#42382d",
+          "triangles": 320,
+          "beforeVertices": 960,
+          "afterVertices": 187,
+          "expandedSha256": {
+            "position": "cdb6574bfba741756fcb6be9e672d943e68b860accd2f9accbba84dde5649853",
+            "uv": "9467b411d0814fc2a39c98eb0166f013559ff2377a7a66e8672a643013193a83",
+            "normal": "8e36916d9db96540cdde1e6cd87a4639b246cb3740cb3620ff7d4d46c631820c"
+          }
+        },
+        {
+          "parent": "elbow",
+          "name": "",
+          "material": "character-cord-#b99d73",
+          "triangles": 396,
+          "beforeVertices": 1188,
+          "afterVertices": 351,
+          "expandedSha256": {
+            "position": "fcb3bedf228bae97dba683e3f61cdd6b28990cbd58306dbf3a2679bdbf056c34",
+            "uv": "8e234899401cfb53c5f1e2eebbe97fbd9310088acb0c55d129e66fdd76dd89dc",
+            "normal": "ba410a785ee4984eb7cffb5f54522e9c63800227d3ca7e015e5795095f307f9a"
+          }
+        },
+        {
+          "parent": "left-shoulder",
+          "name": "",
+          "material": "character-cloth-#774934",
+          "triangles": 1728,
+          "beforeVertices": 5184,
+          "afterVertices": 959,
+          "expandedSha256": {
+            "position": "9d7c374bc5bd0384507feca43a94c81c3dc74c08c05dad54e66eb49ce69c7e4c",
+            "uv": "ac6f8f2d8f1d9453ecedc0d00d0b8d5e8b694b1cbe5a02eff171c70637d6b6bc",
+            "normal": "34cf98e7ad73f6bc9e6a711fd67b8db704248e22110d4735d01251f7c67e00ec"
+          }
+        },
+        {
+          "parent": "left-shoulder",
+          "name": "",
+          "material": "character-metal-#42382d",
+          "triangles": 1788,
+          "beforeVertices": 5364,
+          "afterVertices": 900,
+          "expandedSha256": {
+            "position": "efb435ee004204d1013aa9d1b2cf4fbb029b0f386c1b642165110e9a0daa56dc",
+            "uv": "6f49e943b061c203a63ce0fc408bde30bc0bca5c1f0967394937570903de854e",
+            "normal": "d03203d0b8a00064443d34a9f2e96deefc5b25b48ea51d10614a2fc8ce063594"
+          }
+        },
+        {
+          "parent": "left-shoulder",
+          "name": "",
+          "material": "character-cloth-#472b25",
+          "triangles": 156,
+          "beforeVertices": 468,
+          "afterVertices": 137,
+          "expandedSha256": {
+            "position": "e871c5b4548e900f8dc62b1150b0d9116028cbe3c5f0a5da95fb56cdd51ab778",
+            "uv": "c1bb9f7475333120954a53b08e5769a3635a7c7a1de36f48040bf8390c3474e1",
+            "normal": "4e694ae15140d9730cd491f76995559b76799cd08b83e0d92f5dcd1aa5d9797f"
+          }
+        },
+        {
+          "parent": "wrist",
+          "name": "",
+          "material": "mpfb-cc0-skin",
+          "triangles": 3308,
+          "beforeVertices": 9924,
+          "afterVertices": 1897,
+          "expandedSha256": {
+            "position": "ccd0ffc64c731747cf83e24ac36af025a2d7cb9d19f98abadba6bc26404502f0",
+            "normal": "ad5b2fd13dc3731c74c23fbebac4ad1ffb5b893b0df4f623746b25bcea68e163",
+            "uv": "1c0392d32b3b6c67a7ab8b204ce33b175bd9c79feac9478d8ce921aa10bf7840"
+          }
+        },
+        {
+          "parent": "elbow",
+          "name": "",
+          "material": "character-cloth-#472b25",
+          "triangles": 2020,
+          "beforeVertices": 6060,
+          "afterVertices": 1205,
+          "expandedSha256": {
+            "position": "c95222af1501b067fa1ebd62ed12127fc59dddb266ac00e660185bd752305692",
+            "uv": "9f88354cb7efaac0e97c9016de54cb8df21d660ab576528ecd6b0506735e100c",
+            "normal": "06783d3232aeb067111a28b9c555b0c9d22328e75d78f26c7b4bc55e973b7075"
+          }
+        },
+        {
+          "parent": "elbow",
+          "name": "",
+          "material": "character-metal-#42382d",
+          "triangles": 320,
+          "beforeVertices": 960,
+          "afterVertices": 187,
+          "expandedSha256": {
+            "position": "cdb6574bfba741756fcb6be9e672d943e68b860accd2f9accbba84dde5649853",
+            "uv": "9467b411d0814fc2a39c98eb0166f013559ff2377a7a66e8672a643013193a83",
+            "normal": "8e36916d9db96540cdde1e6cd87a4639b246cb3740cb3620ff7d4d46c631820c"
+          }
+        },
+        {
+          "parent": "elbow",
+          "name": "",
+          "material": "character-cord-#b99d73",
+          "triangles": 396,
+          "beforeVertices": 1188,
+          "afterVertices": 351,
+          "expandedSha256": {
+            "position": "fcb3bedf228bae97dba683e3f61cdd6b28990cbd58306dbf3a2679bdbf056c34",
+            "uv": "8e234899401cfb53c5f1e2eebbe97fbd9310088acb0c55d129e66fdd76dd89dc",
+            "normal": "ba410a785ee4984eb7cffb5f54522e9c63800227d3ca7e015e5795095f307f9a"
+          }
+        },
+        {
+          "parent": "right-shoulder",
+          "name": "",
+          "material": "character-cloth-#774934",
+          "triangles": 1728,
+          "beforeVertices": 5184,
+          "afterVertices": 959,
+          "expandedSha256": {
+            "position": "796be26fe1a91d610eb080a5273631dc30142e5b7131c3f438f87e74d6216e3c",
+            "uv": "ac6f8f2d8f1d9453ecedc0d00d0b8d5e8b694b1cbe5a02eff171c70637d6b6bc",
+            "normal": "89a3d0814aae629e9b865348d7c58430e3bee7d630170caa54b60c5e0c321c14"
+          }
+        },
+        {
+          "parent": "right-shoulder",
+          "name": "",
+          "material": "character-metal-#42382d",
+          "triangles": 1788,
+          "beforeVertices": 5364,
+          "afterVertices": 900,
+          "expandedSha256": {
+            "position": "e7000d484b3292ad5faf98fcee0e9de08f2c814801510c74b32b545894a75765",
+            "uv": "6f49e943b061c203a63ce0fc408bde30bc0bca5c1f0967394937570903de854e",
+            "normal": "0b9bea3d1ec30e9fd08eb104ba652ad4e2ef90cfcb42e1ae809dd57933191bce"
+          }
+        },
+        {
+          "parent": "right-shoulder",
+          "name": "",
+          "material": "character-cloth-#472b25",
+          "triangles": 156,
+          "beforeVertices": 468,
+          "afterVertices": 137,
+          "expandedSha256": {
+            "position": "e871c5b4548e900f8dc62b1150b0d9116028cbe3c5f0a5da95fb56cdd51ab778",
+            "uv": "c1bb9f7475333120954a53b08e5769a3635a7c7a1de36f48040bf8390c3474e1",
+            "normal": "4e694ae15140d9730cd491f76995559b76799cd08b83e0d92f5dcd1aa5d9797f"
+          }
+        },
+        {
+          "parent": "ribcage",
+          "name": "",
+          "material": "character-cloth-#774934",
+          "triangles": 2656,
+          "beforeVertices": 7968,
+          "afterVertices": 1523,
+          "expandedSha256": {
+            "position": "dcfdd810f0a52104bcb69eb4d2771bbcf82fc8fc3119cc605f700b50215dd04c",
+            "uv": "07d37f6b4b6531d75ffb2098b5edac049460814695b5b264714739cb754b4724",
+            "normal": "dc53aab05b634e483c44a2e09a138da861c9b5a61277457438609f80efd9f039"
+          }
+        },
+        {
+          "parent": "ribcage",
+          "name": "",
+          "material": "character-metal-#42382d",
+          "triangles": 960,
+          "beforeVertices": 2880,
+          "afterVertices": 625,
+          "expandedSha256": {
+            "position": "c18a8a625687e89f5fca58ad9e71fed9c61134fdd54523e97829ff7dcd60eba4",
+            "uv": "1c2ebd63f4fa135423d267434cf552975e32251d7a1ad1cfced9e1781d588e56",
+            "normal": "198014a905716af840c8c8156b6f00f95639044a361f46f60f5cbf805d255bd7"
+          }
+        },
+        {
+          "parent": "ribcage",
+          "name": "",
+          "material": "character-cord-#b99d73",
+          "triangles": 480,
+          "beforeVertices": 1440,
+          "afterVertices": 360,
+          "expandedSha256": {
+            "position": "e19a8c2b427733ea303fdb641f5959fc0c4100da2cbe63bc4a917f1c5bdc5481",
+            "uv": "8396f05e7d21084143b807677a99f12023f4ddaf27b4f412665481bd8a930d00",
+            "normal": "e3f447f5ab64d8538571b512ade5974cdc0244c5573e18097103ae529d9ba42c"
+          }
+        },
+        {
+          "parent": "ribcage",
+          "name": "",
+          "material": "character-cloth-#bb9868",
+          "triangles": 800,
+          "beforeVertices": 2400,
+          "afterVertices": 500,
+          "expandedSha256": {
+            "position": "5a31c2bd775c360a80d4c538a4343fd2ded70e5fc77d3b2d702a330644eea945",
+            "uv": "17689e68870508820aa9dcf54c10b57c38b8ddc3b466f4129fef9a6726f7d642",
+            "normal": "98f3c00ab99d9d75aca9a7b81b9c3c298bdd7045b57a39deb8112097e0a5fadc"
+          }
+        },
+        {
+          "parent": "ribcage",
+          "name": "",
+          "material": "character-cloth-#472b25",
+          "triangles": 240,
+          "beforeVertices": 720,
+          "afterVertices": 168,
+          "expandedSha256": {
+            "position": "2c635532ddc7cdef91319209c4aa996e2e324354270f511eceeeeda9d2c48a27",
+            "uv": "df90111482a4438624558e373be11db3be928e30c6f0288f352382f9d95d024d",
+            "normal": "8ad8bca2fe1c977901bab78c76df26d893e1acf7457a86c1e475da2b38239497"
+          }
+        },
+        {
+          "parent": "ankle",
+          "name": "",
+          "material": "character-cloth-#928c76",
+          "triangles": 1468,
+          "beforeVertices": 4404,
+          "afterVertices": 840,
+          "expandedSha256": {
+            "position": "e135b9ff036c19596c997641a2ed776842d0cd3c3cc5177935af9b49cffacbfe",
+            "uv": "07184122fa94ca9ab6cc1db5b7ed7d482ee6fedf871b93d7eefdbedd365de007",
+            "normal": "b7ac45fafd2c88fbdf915bb14b6b76990210d2f6b6a2303493121a8a48172622"
+          }
+        },
+        {
+          "parent": "ankle",
+          "name": "",
+          "material": "character-cord-#b99d73",
+          "triangles": 896,
+          "beforeVertices": 2688,
+          "afterVertices": 493,
+          "expandedSha256": {
+            "position": "3a5a556b0ac68c3c22e50fb44d47eb7b01c7dcd79ffaaa84429ac1e5a4d893cf",
+            "uv": "55ee4b03d89f582edf43f51f3e3929866c171d7c779c30706f8edc7564a8f634",
+            "normal": "2df6f660cc07466d79d045c5dd64aed97305201d697eca1007f5a3ebd50c76d4"
+          }
+        },
+        {
+          "parent": "ankle",
+          "name": "",
+          "material": "character-leather-#242523",
+          "triangles": 360,
+          "beforeVertices": 1080,
+          "afterVertices": 252,
+          "expandedSha256": {
+            "position": "827ab3e30a260d01f5cbcb7573e6b2e1de6532a127677088c075666784fd87dc",
+            "uv": "556859c54b08ca98267b79d97f482bdf7310f2eed429bb65ec8c74b34f7582ef",
+            "normal": "124b31fba9867e1fca528189c3a18b0e278a162f061c4d7eb8454f5f803b1d84"
+          }
+        },
+        {
+          "parent": "knee",
+          "name": "",
+          "material": "character-cloth-#472b25",
+          "triangles": 1008,
+          "beforeVertices": 3024,
+          "afterVertices": 577,
+          "expandedSha256": {
+            "position": "1392a15ff26dc33d237c12143776d2f4da36e8d7e615142ddfa491883c4376d4",
+            "uv": "77a320459a1d40941c061beec54acc2cf8d2618fafd7e3b9d122a42f2840803c",
+            "normal": "8dfe835bc19624530d9a67040d94bce7e6ee54b3b0390138bcb0e3c906a0f69b"
+          }
+        },
+        {
+          "parent": "knee",
+          "name": "",
+          "material": "character-metal-#42382d",
+          "triangles": 320,
+          "beforeVertices": 960,
+          "afterVertices": 187,
+          "expandedSha256": {
+            "position": "2d5f33eb2dbf4524768cc618e9f58a2743d3a1d21ed6d2f350f8e99479fe6d4c",
+            "uv": "9467b411d0814fc2a39c98eb0166f013559ff2377a7a66e8672a643013193a83",
+            "normal": "b960582704d5893ad9734728dcccd21b7fdcb7ed0c4a154b489f3a86a7ed8a56"
+          }
+        },
+        {
+          "parent": "knee",
+          "name": "",
+          "material": "character-cord-#b99d73",
+          "triangles": 528,
+          "beforeVertices": 1584,
+          "afterVertices": 468,
+          "expandedSha256": {
+            "position": "620e856a5f64d737ae949be0e8030bf6424775187979a555e5bf3b8b9b1c0e46",
+            "uv": "1186cebc2daacade1c01a3a431b4dfd522a3180c28f21a2f7e900f2b335aeb01",
+            "normal": "acc165b268938808ad4b0ab005330f9695aa3f9ae8f0313104d891548c158f27"
+          }
+        },
+        {
+          "parent": "left-hip",
+          "name": "",
+          "material": "character-cloth-#472b25",
+          "triangles": 1288,
+          "beforeVertices": 3864,
+          "afterVertices": 727,
+          "expandedSha256": {
+            "position": "d087f8c97fe84a1c74a3ec0d3767ff8ad9f8bae98293b3a828f04ed376c80258",
+            "uv": "3f4beeafa4b2c472a683bf126dcd75546e7bcb0c663699e25ef505cb7509223c",
+            "normal": "1d77e1037afcef7b7e929c4b6d9d7f7bca5f7b0a9e5958aaf8b713b19fbffa90"
+          }
+        },
+        {
+          "parent": "hakama-front",
+          "name": "articulated-hakama-surface",
+          "material": "character-cloth-#774934",
+          "triangles": 1196,
+          "beforeVertices": 648,
+          "afterVertices": 648,
+          "expandedSha256": {
+            "position": "3942aa3a9685b05730f5995cb19bc832afd8f4936fe050c0332c1fcc244d75ec",
+            "uv": "fc02e22ec0b5c7961282b9aede5c8cd15595eb737918694b09c542a67eed5145",
+            "normal": "a9939ca9921bab7202031f2892f57fc05ef363c9b681578c46a6dc84ec4eca7b"
+          }
+        },
+        {
+          "parent": "hakama-back",
+          "name": "articulated-hakama-surface",
+          "material": "character-cloth-#774934",
+          "triangles": 1196,
+          "beforeVertices": 648,
+          "afterVertices": 648,
+          "expandedSha256": {
+            "position": "018b4fda3cedc967f8a70c261123cce68eb1d43e7338ce60446e70cae89599c8",
+            "uv": "fc02e22ec0b5c7961282b9aede5c8cd15595eb737918694b09c542a67eed5145",
+            "normal": "1e38bb25c06d03160cc42420d19d55339eff2ae361a6fc0a5ac421cd6f6dc76d"
+          }
+        },
+        {
+          "parent": "ankle",
+          "name": "",
+          "material": "character-cloth-#928c76",
+          "triangles": 1468,
+          "beforeVertices": 4404,
+          "afterVertices": 840,
+          "expandedSha256": {
+            "position": "9ae8222d74d38edc51133c1107839f6ac3b273cfa3f1df15822e1952b39cce0c",
+            "uv": "07184122fa94ca9ab6cc1db5b7ed7d482ee6fedf871b93d7eefdbedd365de007",
+            "normal": "9d49e6f6980f01a4dab09b385e5945178cc5757ca3a34230c581af3227d32393"
+          }
+        },
+        {
+          "parent": "ankle",
+          "name": "",
+          "material": "character-cord-#b99d73",
+          "triangles": 896,
+          "beforeVertices": 2688,
+          "afterVertices": 493,
+          "expandedSha256": {
+            "position": "8a75688eeb663b9cbe2b511a84f96b9b28d5bc35ee09483f8093f356e5e863d1",
+            "uv": "55ee4b03d89f582edf43f51f3e3929866c171d7c779c30706f8edc7564a8f634",
+            "normal": "c2989baaa28d027566b4685bd8b89d7450531ea5df0264c56a8d1f84d92c7f63"
+          }
+        },
+        {
+          "parent": "ankle",
+          "name": "",
+          "material": "character-leather-#242523",
+          "triangles": 360,
+          "beforeVertices": 1080,
+          "afterVertices": 252,
+          "expandedSha256": {
+            "position": "c5675a8a375ef309a3feb0c0d3259126bc39a93ea12090fe60fd284451ed5cc9",
+            "uv": "556859c54b08ca98267b79d97f482bdf7310f2eed429bb65ec8c74b34f7582ef",
+            "normal": "cdeaeb2e5ad39fc355e6dda8cb5fffe3187912e7b25dabd887d084a172adec40"
+          }
+        },
+        {
+          "parent": "knee",
+          "name": "",
+          "material": "character-cloth-#472b25",
+          "triangles": 1008,
+          "beforeVertices": 3024,
+          "afterVertices": 577,
+          "expandedSha256": {
+            "position": "1392a15ff26dc33d237c12143776d2f4da36e8d7e615142ddfa491883c4376d4",
+            "uv": "77a320459a1d40941c061beec54acc2cf8d2618fafd7e3b9d122a42f2840803c",
+            "normal": "8dfe835bc19624530d9a67040d94bce7e6ee54b3b0390138bcb0e3c906a0f69b"
+          }
+        },
+        {
+          "parent": "knee",
+          "name": "",
+          "material": "character-metal-#42382d",
+          "triangles": 320,
+          "beforeVertices": 960,
+          "afterVertices": 187,
+          "expandedSha256": {
+            "position": "2d5f33eb2dbf4524768cc618e9f58a2743d3a1d21ed6d2f350f8e99479fe6d4c",
+            "uv": "9467b411d0814fc2a39c98eb0166f013559ff2377a7a66e8672a643013193a83",
+            "normal": "b960582704d5893ad9734728dcccd21b7fdcb7ed0c4a154b489f3a86a7ed8a56"
+          }
+        },
+        {
+          "parent": "knee",
+          "name": "",
+          "material": "character-cord-#b99d73",
+          "triangles": 528,
+          "beforeVertices": 1584,
+          "afterVertices": 468,
+          "expandedSha256": {
+            "position": "620e856a5f64d737ae949be0e8030bf6424775187979a555e5bf3b8b9b1c0e46",
+            "uv": "1186cebc2daacade1c01a3a431b4dfd522a3180c28f21a2f7e900f2b335aeb01",
+            "normal": "acc165b268938808ad4b0ab005330f9695aa3f9ae8f0313104d891548c158f27"
+          }
+        },
+        {
+          "parent": "right-hip",
+          "name": "",
+          "material": "character-cloth-#472b25",
+          "triangles": 1288,
+          "beforeVertices": 3864,
+          "afterVertices": 727,
+          "expandedSha256": {
+            "position": "0227fdc1bd99e2ae8ef03f91b544fca7ca5d32a4269cf9a2a9f66986c626be00",
+            "uv": "3f4beeafa4b2c472a683bf126dcd75546e7bcb0c663699e25ef505cb7509223c",
+            "normal": "d4b9b19fe2dbae24c95c9207a43bceaf84de445a78337b9fc4b7ad94ef094587"
+          }
+        },
+        {
+          "parent": "hakama-front",
+          "name": "articulated-hakama-surface",
+          "material": "character-cloth-#774934",
+          "triangles": 1196,
+          "beforeVertices": 648,
+          "afterVertices": 648,
+          "expandedSha256": {
+            "position": "81f0e0b2bb72e3336a64d5bd62f719dbd73560087bd3f5ba788812a981975ed5",
+            "uv": "fc02e22ec0b5c7961282b9aede5c8cd15595eb737918694b09c542a67eed5145",
+            "normal": "3808f984d120e215aae47d14c425cc6e5990a25ca771f40c7e5e3e923e15c3a4"
+          }
+        },
+        {
+          "parent": "hakama-back",
+          "name": "articulated-hakama-surface",
+          "material": "character-cloth-#774934",
+          "triangles": 1196,
+          "beforeVertices": 648,
+          "afterVertices": 648,
+          "expandedSha256": {
+            "position": "3bf4a414041ec029eec2a71264cca980d73e8210f0560d76c54fa679c968bf62",
+            "uv": "fc02e22ec0b5c7961282b9aede5c8cd15595eb737918694b09c542a67eed5145",
+            "normal": "bde4cda0cbda140a0c841f8c8bb3bb5ec6e75014d6b094f9380cd64c7704beaf"
+          }
+        },
+        {
+          "parent": "sash-tail",
+          "name": "",
+          "material": "character-cord-#b99d73",
+          "triangles": 120,
+          "beforeVertices": 360,
+          "afterVertices": 84,
+          "expandedSha256": {
+            "position": "55b995c3c9368239a95714939ae41fd0bc5de15aa7fa12acb9f9902420125676",
+            "uv": "b27f0634aeb77f1a53472879e36b475155e817f5170fcd8162b8595d5cc6f892",
+            "normal": "7f865295a9fb2ce219566b84b8bc0639a4cf3247455f39456a6bb2c7bb7b1e59"
+          }
+        },
+        {
+          "parent": "scabbard",
+          "name": "",
+          "material": "character-leather-#242523",
+          "triangles": 40,
+          "beforeVertices": 120,
+          "afterVertices": 46,
+          "expandedSha256": {
+            "position": "74b8a94157931236383b6e0db8b07d4bf4f4ce500e945d5f1ead848fcbc534e7",
+            "normal": "4f7bafb4c926624491df95175165b59d3c1fd92422782b8b48543f35f5923698",
+            "uv": "ac3bc6f3add8446ff7168334c0566b10b38fab4374922dcd3616525038f0743c"
+          }
+        },
+        {
+          "parent": "scabbard",
+          "name": "",
+          "material": "character-plain-#b7955b",
+          "triangles": 80,
+          "beforeVertices": 240,
+          "afterVertices": 92,
+          "expandedSha256": {
+            "position": "b965708d4b388bf4610bf3d1835b595e6217f747836ec1d248536f1776e24c15",
+            "normal": "ab35a1a06aa9c3dff351ce8267732acab5c8159eafe8d51b00f1fa9fadccc12c",
+            "uv": "aed025174662c7b676b442c6d723c4464d38a2a7b12e2b10e21a074658626432"
+          }
+        },
+        {
+          "parent": "scabbard",
+          "name": "",
+          "material": "character-cord-#b99d73",
+          "triangles": 80,
+          "beforeVertices": 240,
+          "afterVertices": 92,
+          "expandedSha256": {
+            "position": "e6bcaeb657b90e6574912a08e41b36a1fefca0673f06afc55eceb9704a556156",
+            "normal": "d28bca630bcf97880ed8e4d16bbf8341555edcd133a9c3b5da1045181512fd38",
+            "uv": "aed025174662c7b676b442c6d723c4464d38a2a7b12e2b10e21a074658626432"
+          }
+        },
+        {
+          "parent": "pelvis",
+          "name": "",
+          "material": "character-cloth-#472b25",
+          "triangles": 504,
+          "beforeVertices": 1512,
+          "afterVertices": 321,
+          "expandedSha256": {
+            "position": "0d49d377fa1499c38832a4024767294ba8fa6cdf3ddae3537d26b1cf5b412f0a",
+            "uv": "5706e3492d9f61765c5aa3547324df4b0ee992bfa7db7c401276fa189469e916",
+            "normal": "046753d123d91f965de9546f5c20a13388f2aee63cd4b76a43be46913a88f60b"
+          }
+        },
+        {
+          "parent": "pelvis",
+          "name": "",
+          "material": "character-cord-#b99d73",
+          "triangles": 744,
+          "beforeVertices": 2232,
+          "afterVertices": 609,
+          "expandedSha256": {
+            "position": "8ef1ba532b6add26d783c21a6fe0c2711a34bf16d82e4a975fa582fbbd65e2df",
+            "uv": "ec813c9e2128c3a105c54601028c842f52d65f19122ab2613dc248430d8e381e",
+            "normal": "e335776fd9d09c1a2ca59dc29953f5159dbdec3e88d438af04a92cbf3a5c9f23"
+          }
+        },
+        {
+          "parent": "curved-blade",
+          "name": "",
+          "material": "character-plain-#ffe0a6",
+          "triangles": 60,
+          "beforeVertices": 180,
+          "afterVertices": 148,
+          "expandedSha256": {
+            "position": "c66f61c9aaa20e152465cb1c00abf3ba59eae213c9833b2d9e2bc383604ca177",
+            "normal": "cbd87b528094d6301153841f9ba126d73575ce6b7e306cb90346ff7916618bf3"
+          }
+        },
+        {
+          "parent": "curved-blade",
+          "name": "",
+          "material": "character-plain-#eff4e5",
+          "triangles": 60,
+          "beforeVertices": 180,
+          "afterVertices": 152,
+          "expandedSha256": {
+            "position": "69bb9dc9394952d487795007a230c3352ae6e4e18cc8d41e2419aefdd8d0256d",
+            "normal": "ea93c970cfbba44ea6c1a510b85dc8eec4055309d47a57caa49139d84bbbf821"
+          }
+        },
+        {
+          "parent": "katana",
+          "name": "",
+          "material": "character-leather-#242523",
+          "triangles": 40,
+          "beforeVertices": 120,
+          "afterVertices": 46,
+          "expandedSha256": {
+            "position": "9140ae6bf8638954f310376efbb48ce01f9e71d50b6964aa94356091f36c91d2",
+            "normal": "a766535d25291d8c641baa9f61cbd2773b4324ba3a41da0eb486ace770c8ac93",
+            "uv": "ac3bc6f3add8446ff7168334c0566b10b38fab4374922dcd3616525038f0743c"
+          }
+        },
+        {
+          "parent": "katana",
+          "name": "",
+          "material": "character-cord-#b99d73",
+          "triangles": 168,
+          "beforeVertices": 504,
+          "afterVertices": 336,
+          "expandedSha256": {
+            "position": "841d43babe30fc7d2ba9da0a8006128557f3787af6c58f992bcc84b69e3cc3f5",
+            "normal": "a018f84ade8349bb0559f32afc70ecff34251ba117d404afa925306e710a72e1",
+            "uv": "f19757b735c69fa36bff36ee154b546522e1286f204868f82721124a6b88b66a"
+          }
+        },
+        {
+          "parent": "katana",
+          "name": "",
+          "material": "character-plain-#b7955b",
+          "triangles": 80,
+          "beforeVertices": 240,
+          "afterVertices": 92,
+          "expandedSha256": {
+            "position": "63d062620d3ea209cb28ba4ac5ceeee75f479c9a9a9f2eb7144661f5d9a0819c",
+            "normal": "6af9e00723e650a17c96c26dab91ba9988a7373e2fe54cee02391bf0fd997d22",
+            "uv": "aed025174662c7b676b442c6d723c4464d38a2a7b12e2b10e21a074658626432"
+          }
+        },
+        {
+          "parent": "actor-sentinel",
+          "name": "",
+          "material": "",
+          "triangles": 20,
+          "beforeVertices": 22,
+          "afterVertices": 22,
+          "expandedSha256": {
+            "position": "dad3292438de9aaf415fb035f942596d4d8168ed9ad46a3cec2c6951b90b5a1c",
+            "normal": "5743b1ba5128d7809e24c5ff17e3fdfd8b8c4f52335bc9c12823d6270c7ff5d2",
+            "uv": "c14f9ba5cc97ecec766d50725c1e88918a2c86b246bbe03feb5878e612dcb95f"
+          }
+        },
+        {
+          "parent": "actor-sentinel",
+          "name": "",
+          "material": "character-plain-#b7955b",
+          "triangles": 320,
+          "beforeVertices": 198,
+          "afterVertices": 198,
+          "expandedSha256": {
+            "position": "5be3604311a70d3103280facf95def429675eea7bf7c8d3c993c4ea823a07175",
+            "normal": "02fec4195ddad3e1c699ad2e309c58aee9913d82dcc8935e3f515f6ec293b9da",
+            "uv": "80bea15999e24bd65176309fbd06621dbfc0e0a51063279ab61ce0695619d30a"
+          }
+        },
+        {
+          "parent": "actor-sentinel",
+          "name": "",
+          "material": "character-plain-#b7955b",
+          "triangles": 8,
+          "beforeVertices": 24,
+          "afterVertices": 24,
+          "expandedSha256": {
+            "position": "c54db36ceead5096daf31e6322765191841290283d84f987f05e976c098e4bcc",
+            "normal": "45759e13d8039116427af5da9d223b25d69da49cbe9ebf4168d86cf1abab6042",
+            "uv": "89488edf2f1454eeb3003e08fb91aada4cf169bd9464dbbc16a54643400a6f8e"
+          }
+        }
+      ]
+    },
+    {
+      "id": "retainer",
+      "metrics": {
+        "generatedParts": 115,
+        "drawMeshes": 57,
+        "triangles": 54940,
+        "groundContactPoints": 29496,
+        "articulatedJoints": 24,
+        "surfaceConstruction": "CC0-native-head-neck-hands-and-original-draped-clothing",
+        "externalRuntimeAssets": 5,
+        "importedTextureAssets": 4,
+        "importedGeometryAssets": 1,
+        "assetSource": "MakeHuman MPFB hm08 CC0",
+        "textureState": "geometry-only"
+      },
+      "before": {
+        "vertices": 152260,
+        "staticVertices": 123358,
+        "attributeBytes": 4875632,
+        "indexBytes": 30744
+      },
+      "after": {
+        "vertices": 54688,
+        "staticVertices": 25786,
+        "attributeBytes": 1748768,
+        "indexBytes": 276972
+      },
+      "meshes": [
+        {
+          "parent": "neck",
+          "name": "anchored-native-head-neck",
+          "material": "mpfb-cc0-skin",
+          "triangles": 8770,
+          "beforeVertices": 26310,
+          "afterVertices": 26310,
+          "expandedSha256": {
+            "position": "a6fd655122bd03e2e31b06900484e2f290914e86139faaaae4e38f6136bb0c28",
+            "normal": "90980f32712b4802a9ba0eaee752e9e58652a48bbca2e9c1853614a3426ac5bf",
+            "uv": "63bfa520eb954447584c5aaf976076ace2dd07140a9590396d5d1f66a3a7fd17"
+          }
+        },
+        {
+          "parent": "neck",
+          "name": "",
+          "material": "mpfb-cc0-eyes",
+          "triangles": 172,
+          "beforeVertices": 516,
+          "afterVertices": 96,
+          "expandedSha256": {
+            "position": "5e39b52249f6e66d58c8680548fb1ce39af06cf76086f103a44cfa412088aa78",
+            "normal": "68e03619a3bff285d0daa5554b143cbd753ebc22df649a20f9945b3437363e65",
+            "uv": "bc736c00dc7ca9a84c93d7627b3135915e8e68e364a8d11809bc793efffe6d84",
+            "color": "ccabfb926e7a90b8d1b3b11d74096975310c41a4e92320258671548a4f79827c"
+          }
+        },
+        {
+          "parent": "neck",
+          "name": "",
+          "material": "mpfb-cc0-hair",
+          "triangles": 1050,
+          "beforeVertices": 3150,
+          "afterVertices": 983,
+          "expandedSha256": {
+            "position": "906f075330cf83f14b1e7acee46c1526a5edc7d8314b8627432e4bcd0dcf91e5",
+            "normal": "d08f081a19f934e6d2d0bd1efdcdaf9d8f97a77be851cac56ecd3332249227e7",
+            "uv": "60e57a0b34ba7c6d686c62a52366874b1e983b9421bd6e66646e42dbe30ab98c"
+          }
+        },
+        {
+          "parent": "neck",
+          "name": "",
+          "material": "mpfb-cc0-eyebrows",
+          "triangles": 192,
+          "beforeVertices": 576,
+          "afterVertices": 124,
+          "expandedSha256": {
+            "position": "6c311779e7853a8f79ff9fba2309c7076cec7edb94be893d7a4b91efaa19cae9",
+            "normal": "22b599e8bf7c0e1e0316e2d8c85b909a547fd70df4a43e93d83cf5e4c615d767",
+            "uv": "d3434a975a7fdfd83e50f322a4908ae2606c7c07e68434464c267dc7af433232"
+          }
+        },
+        {
+          "parent": "neck",
+          "name": "",
+          "material": "character-hair-#252420",
+          "triangles": 1176,
+          "beforeVertices": 3528,
+          "afterVertices": 669,
+          "expandedSha256": {
+            "position": "2dde4ba214b2c17ae5c715f606e465371480f28837bb933e21c9725fd1a01d68",
+            "uv": "fd7f2f40e74220c9ba4f9c60f902f1fbad8bf0a41004113053d28a91a05847ca",
+            "normal": "6d0f00d462a709bcfb1e974c354709739255528c84a6eee219c8051920a2aef5"
+          }
+        },
+        {
+          "parent": "neck",
+          "name": "",
+          "material": "character-cord-#9eaa96",
+          "triangles": 168,
+          "beforeVertices": 504,
+          "afterVertices": 116,
+          "expandedSha256": {
+            "position": "99091c0abd1349b447ebbb894d64b562211d879f6b406d23de544dbac9f11130",
+            "uv": "3205da671d8602430b236e8cb3ed045a0b391fa38b7274e37802c70d4832854d",
+            "normal": "b299cdaecb79e95313201df88196908c7d64663f736287003d783c6578853679"
+          }
+        },
+        {
+          "parent": "wrist",
+          "name": "",
+          "material": "mpfb-cc0-skin",
+          "triangles": 3308,
+          "beforeVertices": 9924,
+          "afterVertices": 1897,
+          "expandedSha256": {
+            "position": "50cf0f8ca893a1934afebedabdc54d63a4b3f2ae637855b1ad14737d73514854",
+            "normal": "9a9dade929fd2b2e622483b4f10ca9b2e442eec6e66b77fa6976729c4a9ad6f9",
+            "uv": "eb6eb8bcfa94b876d70a384b13127fbcd966183374aa371aea2fd554497be883"
+          }
+        },
+        {
+          "parent": "elbow",
+          "name": "",
+          "material": "character-cloth-#373e39",
+          "triangles": 2020,
+          "beforeVertices": 6060,
+          "afterVertices": 1205,
+          "expandedSha256": {
+            "position": "c95222af1501b067fa1ebd62ed12127fc59dddb266ac00e660185bd752305692",
+            "uv": "9f88354cb7efaac0e97c9016de54cb8df21d660ab576528ecd6b0506735e100c",
+            "normal": "06783d3232aeb067111a28b9c555b0c9d22328e75d78f26c7b4bc55e973b7075"
+          }
+        },
+        {
+          "parent": "elbow",
+          "name": "",
+          "material": "character-metal-#313a39",
+          "triangles": 320,
+          "beforeVertices": 960,
+          "afterVertices": 187,
+          "expandedSha256": {
+            "position": "cdb6574bfba741756fcb6be9e672d943e68b860accd2f9accbba84dde5649853",
+            "uv": "9467b411d0814fc2a39c98eb0166f013559ff2377a7a66e8672a643013193a83",
+            "normal": "8e36916d9db96540cdde1e6cd87a4639b246cb3740cb3620ff7d4d46c631820c"
+          }
+        },
+        {
+          "parent": "elbow",
+          "name": "",
+          "material": "character-cord-#9eaa96",
+          "triangles": 396,
+          "beforeVertices": 1188,
+          "afterVertices": 351,
+          "expandedSha256": {
+            "position": "fcb3bedf228bae97dba683e3f61cdd6b28990cbd58306dbf3a2679bdbf056c34",
+            "uv": "8e234899401cfb53c5f1e2eebbe97fbd9310088acb0c55d129e66fdd76dd89dc",
+            "normal": "ba410a785ee4984eb7cffb5f54522e9c63800227d3ca7e015e5795095f307f9a"
+          }
+        },
+        {
+          "parent": "left-shoulder",
+          "name": "",
+          "material": "character-cloth-#656253",
+          "triangles": 1728,
+          "beforeVertices": 5184,
+          "afterVertices": 959,
+          "expandedSha256": {
+            "position": "9d7c374bc5bd0384507feca43a94c81c3dc74c08c05dad54e66eb49ce69c7e4c",
+            "uv": "ac6f8f2d8f1d9453ecedc0d00d0b8d5e8b694b1cbe5a02eff171c70637d6b6bc",
+            "normal": "34cf98e7ad73f6bc9e6a711fd67b8db704248e22110d4735d01251f7c67e00ec"
+          }
+        },
+        {
+          "parent": "left-shoulder",
+          "name": "",
+          "material": "character-metal-#313a39",
+          "triangles": 1788,
+          "beforeVertices": 5364,
+          "afterVertices": 900,
+          "expandedSha256": {
+            "position": "efb435ee004204d1013aa9d1b2cf4fbb029b0f386c1b642165110e9a0daa56dc",
+            "uv": "6f49e943b061c203a63ce0fc408bde30bc0bca5c1f0967394937570903de854e",
+            "normal": "d03203d0b8a00064443d34a9f2e96deefc5b25b48ea51d10614a2fc8ce063594"
+          }
+        },
+        {
+          "parent": "left-shoulder",
+          "name": "",
+          "material": "character-cloth-#373e39",
+          "triangles": 156,
+          "beforeVertices": 468,
+          "afterVertices": 137,
+          "expandedSha256": {
+            "position": "e871c5b4548e900f8dc62b1150b0d9116028cbe3c5f0a5da95fb56cdd51ab778",
+            "uv": "c1bb9f7475333120954a53b08e5769a3635a7c7a1de36f48040bf8390c3474e1",
+            "normal": "4e694ae15140d9730cd491f76995559b76799cd08b83e0d92f5dcd1aa5d9797f"
+          }
+        },
+        {
+          "parent": "wrist",
+          "name": "",
+          "material": "mpfb-cc0-skin",
+          "triangles": 3308,
+          "beforeVertices": 9924,
+          "afterVertices": 1897,
+          "expandedSha256": {
+            "position": "ccd0ffc64c731747cf83e24ac36af025a2d7cb9d19f98abadba6bc26404502f0",
+            "normal": "ad5b2fd13dc3731c74c23fbebac4ad1ffb5b893b0df4f623746b25bcea68e163",
+            "uv": "1c0392d32b3b6c67a7ab8b204ce33b175bd9c79feac9478d8ce921aa10bf7840"
+          }
+        },
+        {
+          "parent": "elbow",
+          "name": "",
+          "material": "character-cloth-#373e39",
+          "triangles": 2020,
+          "beforeVertices": 6060,
+          "afterVertices": 1205,
+          "expandedSha256": {
+            "position": "c95222af1501b067fa1ebd62ed12127fc59dddb266ac00e660185bd752305692",
+            "uv": "9f88354cb7efaac0e97c9016de54cb8df21d660ab576528ecd6b0506735e100c",
+            "normal": "06783d3232aeb067111a28b9c555b0c9d22328e75d78f26c7b4bc55e973b7075"
+          }
+        },
+        {
+          "parent": "elbow",
+          "name": "",
+          "material": "character-metal-#313a39",
+          "triangles": 320,
+          "beforeVertices": 960,
+          "afterVertices": 187,
+          "expandedSha256": {
+            "position": "cdb6574bfba741756fcb6be9e672d943e68b860accd2f9accbba84dde5649853",
+            "uv": "9467b411d0814fc2a39c98eb0166f013559ff2377a7a66e8672a643013193a83",
+            "normal": "8e36916d9db96540cdde1e6cd87a4639b246cb3740cb3620ff7d4d46c631820c"
+          }
+        },
+        {
+          "parent": "elbow",
+          "name": "",
+          "material": "character-cord-#9eaa96",
+          "triangles": 396,
+          "beforeVertices": 1188,
+          "afterVertices": 351,
+          "expandedSha256": {
+            "position": "fcb3bedf228bae97dba683e3f61cdd6b28990cbd58306dbf3a2679bdbf056c34",
+            "uv": "8e234899401cfb53c5f1e2eebbe97fbd9310088acb0c55d129e66fdd76dd89dc",
+            "normal": "ba410a785ee4984eb7cffb5f54522e9c63800227d3ca7e015e5795095f307f9a"
+          }
+        },
+        {
+          "parent": "right-shoulder",
+          "name": "",
+          "material": "character-cloth-#656253",
+          "triangles": 1728,
+          "beforeVertices": 5184,
+          "afterVertices": 959,
+          "expandedSha256": {
+            "position": "796be26fe1a91d610eb080a5273631dc30142e5b7131c3f438f87e74d6216e3c",
+            "uv": "ac6f8f2d8f1d9453ecedc0d00d0b8d5e8b694b1cbe5a02eff171c70637d6b6bc",
+            "normal": "89a3d0814aae629e9b865348d7c58430e3bee7d630170caa54b60c5e0c321c14"
+          }
+        },
+        {
+          "parent": "right-shoulder",
+          "name": "",
+          "material": "character-metal-#313a39",
+          "triangles": 1788,
+          "beforeVertices": 5364,
+          "afterVertices": 900,
+          "expandedSha256": {
+            "position": "e7000d484b3292ad5faf98fcee0e9de08f2c814801510c74b32b545894a75765",
+            "uv": "6f49e943b061c203a63ce0fc408bde30bc0bca5c1f0967394937570903de854e",
+            "normal": "0b9bea3d1ec30e9fd08eb104ba652ad4e2ef90cfcb42e1ae809dd57933191bce"
+          }
+        },
+        {
+          "parent": "right-shoulder",
+          "name": "",
+          "material": "character-cloth-#373e39",
+          "triangles": 156,
+          "beforeVertices": 468,
+          "afterVertices": 137,
+          "expandedSha256": {
+            "position": "e871c5b4548e900f8dc62b1150b0d9116028cbe3c5f0a5da95fb56cdd51ab778",
+            "uv": "c1bb9f7475333120954a53b08e5769a3635a7c7a1de36f48040bf8390c3474e1",
+            "normal": "4e694ae15140d9730cd491f76995559b76799cd08b83e0d92f5dcd1aa5d9797f"
+          }
+        },
+        {
+          "parent": "ribcage",
+          "name": "",
+          "material": "character-cloth-#656253",
+          "triangles": 2656,
+          "beforeVertices": 7968,
+          "afterVertices": 1523,
+          "expandedSha256": {
+            "position": "945e0cd2aec76424afb1bf3950cc9cc4abdc2da39bee382889224915569ab671",
+            "uv": "07d37f6b4b6531d75ffb2098b5edac049460814695b5b264714739cb754b4724",
+            "normal": "6302e1d7395bfd9fb413c814df3a00f994ea377e739b69ce041e1d51fe74d125"
+          }
+        },
+        {
+          "parent": "ribcage",
+          "name": "",
+          "material": "character-metal-#313a39",
+          "triangles": 960,
+          "beforeVertices": 2880,
+          "afterVertices": 625,
+          "expandedSha256": {
+            "position": "c18a8a625687e89f5fca58ad9e71fed9c61134fdd54523e97829ff7dcd60eba4",
+            "uv": "1c2ebd63f4fa135423d267434cf552975e32251d7a1ad1cfced9e1781d588e56",
+            "normal": "198014a905716af840c8c8156b6f00f95639044a361f46f60f5cbf805d255bd7"
+          }
+        },
+        {
+          "parent": "ribcage",
+          "name": "",
+          "material": "character-cord-#9eaa96",
+          "triangles": 480,
+          "beforeVertices": 1440,
+          "afterVertices": 360,
+          "expandedSha256": {
+            "position": "e19a8c2b427733ea303fdb641f5959fc0c4100da2cbe63bc4a917f1c5bdc5481",
+            "uv": "8396f05e7d21084143b807677a99f12023f4ddaf27b4f412665481bd8a930d00",
+            "normal": "e3f447f5ab64d8538571b512ade5974cdc0244c5573e18097103ae529d9ba42c"
+          }
+        },
+        {
+          "parent": "ribcage",
+          "name": "",
+          "material": "character-cloth-#b8ad83",
+          "triangles": 800,
+          "beforeVertices": 2400,
+          "afterVertices": 500,
+          "expandedSha256": {
+            "position": "54fcea52ec0aa85a9bafb800f6bf7f699a8c6532d18f6b67f836075a5a0e344d",
+            "uv": "17689e68870508820aa9dcf54c10b57c38b8ddc3b466f4129fef9a6726f7d642",
+            "normal": "5434089688287a9830c0aa1887193e1618d9dea4887bcfd8bed053f834c2cd42"
+          }
+        },
+        {
+          "parent": "ribcage",
+          "name": "",
+          "material": "character-cloth-#373e39",
+          "triangles": 240,
+          "beforeVertices": 720,
+          "afterVertices": 168,
+          "expandedSha256": {
+            "position": "2c635532ddc7cdef91319209c4aa996e2e324354270f511eceeeeda9d2c48a27",
+            "uv": "df90111482a4438624558e373be11db3be928e30c6f0288f352382f9d95d024d",
+            "normal": "8ad8bca2fe1c977901bab78c76df26d893e1acf7457a86c1e475da2b38239497"
+          }
+        },
+        {
+          "parent": "ankle",
+          "name": "",
+          "material": "character-cloth-#928c76",
+          "triangles": 1468,
+          "beforeVertices": 4404,
+          "afterVertices": 840,
+          "expandedSha256": {
+            "position": "e135b9ff036c19596c997641a2ed776842d0cd3c3cc5177935af9b49cffacbfe",
+            "uv": "07184122fa94ca9ab6cc1db5b7ed7d482ee6fedf871b93d7eefdbedd365de007",
+            "normal": "b7ac45fafd2c88fbdf915bb14b6b76990210d2f6b6a2303493121a8a48172622"
+          }
+        },
+        {
+          "parent": "ankle",
+          "name": "",
+          "material": "character-cord-#9eaa96",
+          "triangles": 896,
+          "beforeVertices": 2688,
+          "afterVertices": 493,
+          "expandedSha256": {
+            "position": "3a5a556b0ac68c3c22e50fb44d47eb7b01c7dcd79ffaaa84429ac1e5a4d893cf",
+            "uv": "55ee4b03d89f582edf43f51f3e3929866c171d7c779c30706f8edc7564a8f634",
+            "normal": "2df6f660cc07466d79d045c5dd64aed97305201d697eca1007f5a3ebd50c76d4"
+          }
+        },
+        {
+          "parent": "ankle",
+          "name": "",
+          "material": "character-leather-#242523",
+          "triangles": 360,
+          "beforeVertices": 1080,
+          "afterVertices": 252,
+          "expandedSha256": {
+            "position": "827ab3e30a260d01f5cbcb7573e6b2e1de6532a127677088c075666784fd87dc",
+            "uv": "556859c54b08ca98267b79d97f482bdf7310f2eed429bb65ec8c74b34f7582ef",
+            "normal": "124b31fba9867e1fca528189c3a18b0e278a162f061c4d7eb8454f5f803b1d84"
+          }
+        },
+        {
+          "parent": "knee",
+          "name": "",
+          "material": "character-cloth-#373e39",
+          "triangles": 1008,
+          "beforeVertices": 3024,
+          "afterVertices": 577,
+          "expandedSha256": {
+            "position": "1392a15ff26dc33d237c12143776d2f4da36e8d7e615142ddfa491883c4376d4",
+            "uv": "77a320459a1d40941c061beec54acc2cf8d2618fafd7e3b9d122a42f2840803c",
+            "normal": "8dfe835bc19624530d9a67040d94bce7e6ee54b3b0390138bcb0e3c906a0f69b"
+          }
+        },
+        {
+          "parent": "knee",
+          "name": "",
+          "material": "character-metal-#313a39",
+          "triangles": 320,
+          "beforeVertices": 960,
+          "afterVertices": 187,
+          "expandedSha256": {
+            "position": "2d5f33eb2dbf4524768cc618e9f58a2743d3a1d21ed6d2f350f8e99479fe6d4c",
+            "uv": "9467b411d0814fc2a39c98eb0166f013559ff2377a7a66e8672a643013193a83",
+            "normal": "b960582704d5893ad9734728dcccd21b7fdcb7ed0c4a154b489f3a86a7ed8a56"
+          }
+        },
+        {
+          "parent": "knee",
+          "name": "",
+          "material": "character-cord-#9eaa96",
+          "triangles": 528,
+          "beforeVertices": 1584,
+          "afterVertices": 468,
+          "expandedSha256": {
+            "position": "620e856a5f64d737ae949be0e8030bf6424775187979a555e5bf3b8b9b1c0e46",
+            "uv": "1186cebc2daacade1c01a3a431b4dfd522a3180c28f21a2f7e900f2b335aeb01",
+            "normal": "acc165b268938808ad4b0ab005330f9695aa3f9ae8f0313104d891548c158f27"
+          }
+        },
+        {
+          "parent": "left-hip",
+          "name": "",
+          "material": "character-cloth-#373e39",
+          "triangles": 1288,
+          "beforeVertices": 3864,
+          "afterVertices": 727,
+          "expandedSha256": {
+            "position": "d087f8c97fe84a1c74a3ec0d3767ff8ad9f8bae98293b3a828f04ed376c80258",
+            "uv": "3f4beeafa4b2c472a683bf126dcd75546e7bcb0c663699e25ef505cb7509223c",
+            "normal": "1d77e1037afcef7b7e929c4b6d9d7f7bca5f7b0a9e5958aaf8b713b19fbffa90"
+          }
+        },
+        {
+          "parent": "hakama-front",
+          "name": "articulated-hakama-surface",
+          "material": "character-cloth-#656253",
+          "triangles": 1196,
+          "beforeVertices": 648,
+          "afterVertices": 648,
+          "expandedSha256": {
+            "position": "3942aa3a9685b05730f5995cb19bc832afd8f4936fe050c0332c1fcc244d75ec",
+            "uv": "fc02e22ec0b5c7961282b9aede5c8cd15595eb737918694b09c542a67eed5145",
+            "normal": "a9939ca9921bab7202031f2892f57fc05ef363c9b681578c46a6dc84ec4eca7b"
+          }
+        },
+        {
+          "parent": "hakama-back",
+          "name": "articulated-hakama-surface",
+          "material": "character-cloth-#656253",
+          "triangles": 1196,
+          "beforeVertices": 648,
+          "afterVertices": 648,
+          "expandedSha256": {
+            "position": "018b4fda3cedc967f8a70c261123cce68eb1d43e7338ce60446e70cae89599c8",
+            "uv": "fc02e22ec0b5c7961282b9aede5c8cd15595eb737918694b09c542a67eed5145",
+            "normal": "1e38bb25c06d03160cc42420d19d55339eff2ae361a6fc0a5ac421cd6f6dc76d"
+          }
+        },
+        {
+          "parent": "ankle",
+          "name": "",
+          "material": "character-cloth-#928c76",
+          "triangles": 1468,
+          "beforeVertices": 4404,
+          "afterVertices": 840,
+          "expandedSha256": {
+            "position": "9ae8222d74d38edc51133c1107839f6ac3b273cfa3f1df15822e1952b39cce0c",
+            "uv": "07184122fa94ca9ab6cc1db5b7ed7d482ee6fedf871b93d7eefdbedd365de007",
+            "normal": "9d49e6f6980f01a4dab09b385e5945178cc5757ca3a34230c581af3227d32393"
+          }
+        },
+        {
+          "parent": "ankle",
+          "name": "",
+          "material": "character-cord-#9eaa96",
+          "triangles": 896,
+          "beforeVertices": 2688,
+          "afterVertices": 493,
+          "expandedSha256": {
+            "position": "8a75688eeb663b9cbe2b511a84f96b9b28d5bc35ee09483f8093f356e5e863d1",
+            "uv": "55ee4b03d89f582edf43f51f3e3929866c171d7c779c30706f8edc7564a8f634",
+            "normal": "c2989baaa28d027566b4685bd8b89d7450531ea5df0264c56a8d1f84d92c7f63"
+          }
+        },
+        {
+          "parent": "ankle",
+          "name": "",
+          "material": "character-leather-#242523",
+          "triangles": 360,
+          "beforeVertices": 1080,
+          "afterVertices": 252,
+          "expandedSha256": {
+            "position": "c5675a8a375ef309a3feb0c0d3259126bc39a93ea12090fe60fd284451ed5cc9",
+            "uv": "556859c54b08ca98267b79d97f482bdf7310f2eed429bb65ec8c74b34f7582ef",
+            "normal": "cdeaeb2e5ad39fc355e6dda8cb5fffe3187912e7b25dabd887d084a172adec40"
+          }
+        },
+        {
+          "parent": "knee",
+          "name": "",
+          "material": "character-cloth-#373e39",
+          "triangles": 1008,
+          "beforeVertices": 3024,
+          "afterVertices": 577,
+          "expandedSha256": {
+            "position": "1392a15ff26dc33d237c12143776d2f4da36e8d7e615142ddfa491883c4376d4",
+            "uv": "77a320459a1d40941c061beec54acc2cf8d2618fafd7e3b9d122a42f2840803c",
+            "normal": "8dfe835bc19624530d9a67040d94bce7e6ee54b3b0390138bcb0e3c906a0f69b"
+          }
+        },
+        {
+          "parent": "knee",
+          "name": "",
+          "material": "character-metal-#313a39",
+          "triangles": 320,
+          "beforeVertices": 960,
+          "afterVertices": 187,
+          "expandedSha256": {
+            "position": "2d5f33eb2dbf4524768cc618e9f58a2743d3a1d21ed6d2f350f8e99479fe6d4c",
+            "uv": "9467b411d0814fc2a39c98eb0166f013559ff2377a7a66e8672a643013193a83",
+            "normal": "b960582704d5893ad9734728dcccd21b7fdcb7ed0c4a154b489f3a86a7ed8a56"
+          }
+        },
+        {
+          "parent": "knee",
+          "name": "",
+          "material": "character-cord-#9eaa96",
+          "triangles": 528,
+          "beforeVertices": 1584,
+          "afterVertices": 468,
+          "expandedSha256": {
+            "position": "620e856a5f64d737ae949be0e8030bf6424775187979a555e5bf3b8b9b1c0e46",
+            "uv": "1186cebc2daacade1c01a3a431b4dfd522a3180c28f21a2f7e900f2b335aeb01",
+            "normal": "acc165b268938808ad4b0ab005330f9695aa3f9ae8f0313104d891548c158f27"
+          }
+        },
+        {
+          "parent": "right-hip",
+          "name": "",
+          "material": "character-cloth-#373e39",
+          "triangles": 1288,
+          "beforeVertices": 3864,
+          "afterVertices": 727,
+          "expandedSha256": {
+            "position": "0227fdc1bd99e2ae8ef03f91b544fca7ca5d32a4269cf9a2a9f66986c626be00",
+            "uv": "3f4beeafa4b2c472a683bf126dcd75546e7bcb0c663699e25ef505cb7509223c",
+            "normal": "d4b9b19fe2dbae24c95c9207a43bceaf84de445a78337b9fc4b7ad94ef094587"
+          }
+        },
+        {
+          "parent": "hakama-front",
+          "name": "articulated-hakama-surface",
+          "material": "character-cloth-#656253",
+          "triangles": 1196,
+          "beforeVertices": 648,
+          "afterVertices": 648,
+          "expandedSha256": {
+            "position": "81f0e0b2bb72e3336a64d5bd62f719dbd73560087bd3f5ba788812a981975ed5",
+            "uv": "fc02e22ec0b5c7961282b9aede5c8cd15595eb737918694b09c542a67eed5145",
+            "normal": "3808f984d120e215aae47d14c425cc6e5990a25ca771f40c7e5e3e923e15c3a4"
+          }
+        },
+        {
+          "parent": "hakama-back",
+          "name": "articulated-hakama-surface",
+          "material": "character-cloth-#656253",
+          "triangles": 1196,
+          "beforeVertices": 648,
+          "afterVertices": 648,
+          "expandedSha256": {
+            "position": "3bf4a414041ec029eec2a71264cca980d73e8210f0560d76c54fa679c968bf62",
+            "uv": "fc02e22ec0b5c7961282b9aede5c8cd15595eb737918694b09c542a67eed5145",
+            "normal": "bde4cda0cbda140a0c841f8c8bb3bb5ec6e75014d6b094f9380cd64c7704beaf"
+          }
+        },
+        {
+          "parent": "sash-tail",
+          "name": "",
+          "material": "character-cord-#9eaa96",
+          "triangles": 120,
+          "beforeVertices": 360,
+          "afterVertices": 84,
+          "expandedSha256": {
+            "position": "55b995c3c9368239a95714939ae41fd0bc5de15aa7fa12acb9f9902420125676",
+            "uv": "b27f0634aeb77f1a53472879e36b475155e817f5170fcd8162b8595d5cc6f892",
+            "normal": "7f865295a9fb2ce219566b84b8bc0639a4cf3247455f39456a6bb2c7bb7b1e59"
+          }
+        },
+        {
+          "parent": "scabbard",
+          "name": "",
+          "material": "character-leather-#242523",
+          "triangles": 40,
+          "beforeVertices": 120,
+          "afterVertices": 46,
+          "expandedSha256": {
+            "position": "74b8a94157931236383b6e0db8b07d4bf4f4ce500e945d5f1ead848fcbc534e7",
+            "normal": "4f7bafb4c926624491df95175165b59d3c1fd92422782b8b48543f35f5923698",
+            "uv": "ac3bc6f3add8446ff7168334c0566b10b38fab4374922dcd3616525038f0743c"
+          }
+        },
+        {
+          "parent": "scabbard",
+          "name": "",
+          "material": "character-plain-#b7955b",
+          "triangles": 80,
+          "beforeVertices": 240,
+          "afterVertices": 92,
+          "expandedSha256": {
+            "position": "b965708d4b388bf4610bf3d1835b595e6217f747836ec1d248536f1776e24c15",
+            "normal": "ab35a1a06aa9c3dff351ce8267732acab5c8159eafe8d51b00f1fa9fadccc12c",
+            "uv": "aed025174662c7b676b442c6d723c4464d38a2a7b12e2b10e21a074658626432"
+          }
+        },
+        {
+          "parent": "scabbard",
+          "name": "",
+          "material": "character-cord-#9eaa96",
+          "triangles": 80,
+          "beforeVertices": 240,
+          "afterVertices": 92,
+          "expandedSha256": {
+            "position": "e6bcaeb657b90e6574912a08e41b36a1fefca0673f06afc55eceb9704a556156",
+            "normal": "d28bca630bcf97880ed8e4d16bbf8341555edcd133a9c3b5da1045181512fd38",
+            "uv": "aed025174662c7b676b442c6d723c4464d38a2a7b12e2b10e21a074658626432"
+          }
+        },
+        {
+          "parent": "pelvis",
+          "name": "",
+          "material": "character-cloth-#373e39",
+          "triangles": 504,
+          "beforeVertices": 1512,
+          "afterVertices": 321,
+          "expandedSha256": {
+            "position": "0d49d377fa1499c38832a4024767294ba8fa6cdf3ddae3537d26b1cf5b412f0a",
+            "uv": "5706e3492d9f61765c5aa3547324df4b0ee992bfa7db7c401276fa189469e916",
+            "normal": "046753d123d91f965de9546f5c20a13388f2aee63cd4b76a43be46913a88f60b"
+          }
+        },
+        {
+          "parent": "pelvis",
+          "name": "",
+          "material": "character-cord-#9eaa96",
+          "triangles": 744,
+          "beforeVertices": 2232,
+          "afterVertices": 609,
+          "expandedSha256": {
+            "position": "8ef1ba532b6add26d783c21a6fe0c2711a34bf16d82e4a975fa582fbbd65e2df",
+            "uv": "ec813c9e2128c3a105c54601028c842f52d65f19122ab2613dc248430d8e381e",
+            "normal": "e335776fd9d09c1a2ca59dc29953f5159dbdec3e88d438af04a92cbf3a5c9f23"
+          }
+        },
+        {
+          "parent": "curved-blade",
+          "name": "",
+          "material": "character-plain-#ffe0a6",
+          "triangles": 60,
+          "beforeVertices": 180,
+          "afterVertices": 148,
+          "expandedSha256": {
+            "position": "c66f61c9aaa20e152465cb1c00abf3ba59eae213c9833b2d9e2bc383604ca177",
+            "normal": "cbd87b528094d6301153841f9ba126d73575ce6b7e306cb90346ff7916618bf3"
+          }
+        },
+        {
+          "parent": "curved-blade",
+          "name": "",
+          "material": "character-plain-#eff4e5",
+          "triangles": 60,
+          "beforeVertices": 180,
+          "afterVertices": 152,
+          "expandedSha256": {
+            "position": "69bb9dc9394952d487795007a230c3352ae6e4e18cc8d41e2419aefdd8d0256d",
+            "normal": "ea93c970cfbba44ea6c1a510b85dc8eec4055309d47a57caa49139d84bbbf821"
+          }
+        },
+        {
+          "parent": "katana",
+          "name": "",
+          "material": "character-leather-#242523",
+          "triangles": 40,
+          "beforeVertices": 120,
+          "afterVertices": 46,
+          "expandedSha256": {
+            "position": "9140ae6bf8638954f310376efbb48ce01f9e71d50b6964aa94356091f36c91d2",
+            "normal": "a766535d25291d8c641baa9f61cbd2773b4324ba3a41da0eb486ace770c8ac93",
+            "uv": "ac3bc6f3add8446ff7168334c0566b10b38fab4374922dcd3616525038f0743c"
+          }
+        },
+        {
+          "parent": "katana",
+          "name": "",
+          "material": "character-cord-#9eaa96",
+          "triangles": 168,
+          "beforeVertices": 504,
+          "afterVertices": 336,
+          "expandedSha256": {
+            "position": "841d43babe30fc7d2ba9da0a8006128557f3787af6c58f992bcc84b69e3cc3f5",
+            "normal": "a018f84ade8349bb0559f32afc70ecff34251ba117d404afa925306e710a72e1",
+            "uv": "f19757b735c69fa36bff36ee154b546522e1286f204868f82721124a6b88b66a"
+          }
+        },
+        {
+          "parent": "katana",
+          "name": "",
+          "material": "character-plain-#b7955b",
+          "triangles": 80,
+          "beforeVertices": 240,
+          "afterVertices": 92,
+          "expandedSha256": {
+            "position": "63d062620d3ea209cb28ba4ac5ceeee75f479c9a9a9f2eb7144661f5d9a0819c",
+            "normal": "6af9e00723e650a17c96c26dab91ba9988a7373e2fe54cee02391bf0fd997d22",
+            "uv": "aed025174662c7b676b442c6d723c4464d38a2a7b12e2b10e21a074658626432"
+          }
+        },
+        {
+          "parent": "actor-retainer",
+          "name": "",
+          "material": "",
+          "triangles": 20,
+          "beforeVertices": 22,
+          "afterVertices": 22,
+          "expandedSha256": {
+            "position": "dad3292438de9aaf415fb035f942596d4d8168ed9ad46a3cec2c6951b90b5a1c",
+            "normal": "5743b1ba5128d7809e24c5ff17e3fdfd8b8c4f52335bc9c12823d6270c7ff5d2",
+            "uv": "c14f9ba5cc97ecec766d50725c1e88918a2c86b246bbe03feb5878e612dcb95f"
+          }
+        },
+        {
+          "parent": "actor-retainer",
+          "name": "",
+          "material": "character-plain-#b7955b",
+          "triangles": 320,
+          "beforeVertices": 198,
+          "afterVertices": 198,
+          "expandedSha256": {
+            "position": "5be3604311a70d3103280facf95def429675eea7bf7c8d3c993c4ea823a07175",
+            "normal": "02fec4195ddad3e1c699ad2e309c58aee9913d82dcc8935e3f515f6ec293b9da",
+            "uv": "80bea15999e24bd65176309fbd06621dbfc0e0a51063279ab61ce0695619d30a"
+          }
+        },
+        {
+          "parent": "actor-retainer",
+          "name": "",
+          "material": "character-plain-#b7955b",
+          "triangles": 8,
+          "beforeVertices": 24,
+          "afterVertices": 24,
+          "expandedSha256": {
+            "position": "c54db36ceead5096daf31e6322765191841290283d84f987f05e976c098e4bcc",
+            "normal": "45759e13d8039116427af5da9d223b25d69da49cbe9ebf4168d86cf1abab6042",
+            "uv": "89488edf2f1454eeb3003e08fb91aada4cf169bd9464dbbc16a54643400a6f8e"
+          }
+        }
+      ]
+    },
+    {
+      "id": "warden",
+      "metrics": {
+        "generatedParts": 120,
+        "drawMeshes": 59,
+        "triangles": 61396,
+        "groundContactPoints": 32804,
+        "articulatedJoints": 24,
+        "surfaceConstruction": "CC0-native-head-neck-hands-and-original-draped-clothing",
+        "externalRuntimeAssets": 5,
+        "importedTextureAssets": 4,
+        "importedGeometryAssets": 1,
+        "assetSource": "MakeHuman MPFB hm08 CC0",
+        "textureState": "geometry-only"
+      },
+      "before": {
+        "vertices": 171628,
+        "staticVertices": 142726,
+        "attributeBytes": 5495408,
+        "indexBytes": 30744
+      },
+      "after": {
+        "vertices": 57996,
+        "staticVertices": 29094,
+        "attributeBytes": 1854624,
+        "indexBytes": 315708
+      },
+      "meshes": [
+        {
+          "parent": "neck",
+          "name": "anchored-native-head-neck",
+          "material": "mpfb-cc0-skin",
+          "triangles": 8770,
+          "beforeVertices": 26310,
+          "afterVertices": 26310,
+          "expandedSha256": {
+            "position": "984e6a0b133715044ce5634a27da8c214d9de0aae62ff2a0876264a697ca2acc",
+            "normal": "ae08fc2b6b6f577b2a4d7930a076a9b33de2ece2cfd8599490a3165ada2c302c",
+            "uv": "63bfa520eb954447584c5aaf976076ace2dd07140a9590396d5d1f66a3a7fd17"
+          }
+        },
+        {
+          "parent": "neck",
+          "name": "",
+          "material": "mpfb-cc0-eyes",
+          "triangles": 172,
+          "beforeVertices": 516,
+          "afterVertices": 96,
+          "expandedSha256": {
+            "position": "5e39b52249f6e66d58c8680548fb1ce39af06cf76086f103a44cfa412088aa78",
+            "normal": "68e03619a3bff285d0daa5554b143cbd753ebc22df649a20f9945b3437363e65",
+            "uv": "bc736c00dc7ca9a84c93d7627b3135915e8e68e364a8d11809bc793efffe6d84",
+            "color": "ccabfb926e7a90b8d1b3b11d74096975310c41a4e92320258671548a4f79827c"
+          }
+        },
+        {
+          "parent": "neck",
+          "name": "",
+          "material": "mpfb-cc0-hair",
+          "triangles": 1050,
+          "beforeVertices": 3150,
+          "afterVertices": 983,
+          "expandedSha256": {
+            "position": "ac4f8e59fe7b31e4126bb9a5e507fc04a5422640c27bdb991ca0b908f967a400",
+            "normal": "a7014fc208edac38693d6aa61a63ddc5741e63baf7adcbf0ec7b0ff094d7963f",
+            "uv": "60e57a0b34ba7c6d686c62a52366874b1e983b9421bd6e66646e42dbe30ab98c"
+          }
+        },
+        {
+          "parent": "neck",
+          "name": "",
+          "material": "mpfb-cc0-eyebrows",
+          "triangles": 192,
+          "beforeVertices": 576,
+          "afterVertices": 124,
+          "expandedSha256": {
+            "position": "c1dd6a0329bd0878905624900dc02d4246dccf3d850da5dd974616f718c0a942",
+            "normal": "f4bf83c6b7f7fec1da73659fcb62804e3856e9266bb1698af488fa54ae7511db",
+            "uv": "d3434a975a7fdfd83e50f322a4908ae2606c7c07e68434464c267dc7af433232"
+          }
+        },
+        {
+          "parent": "neck",
+          "name": "",
+          "material": "character-hair-#252420",
+          "triangles": 1176,
+          "beforeVertices": 3528,
+          "afterVertices": 669,
+          "expandedSha256": {
+            "position": "2dde4ba214b2c17ae5c715f606e465371480f28837bb933e21c9725fd1a01d68",
+            "uv": "fd7f2f40e74220c9ba4f9c60f902f1fbad8bf0a41004113053d28a91a05847ca",
+            "normal": "6d0f00d462a709bcfb1e974c354709739255528c84a6eee219c8051920a2aef5"
+          }
+        },
+        {
+          "parent": "neck",
+          "name": "",
+          "material": "character-cord-#bba07b",
+          "triangles": 168,
+          "beforeVertices": 504,
+          "afterVertices": 116,
+          "expandedSha256": {
+            "position": "99091c0abd1349b447ebbb894d64b562211d879f6b406d23de544dbac9f11130",
+            "uv": "3205da671d8602430b236e8cb3ed045a0b391fa38b7274e37802c70d4832854d",
+            "normal": "b299cdaecb79e95313201df88196908c7d64663f736287003d783c6578853679"
+          }
+        },
+        {
+          "parent": "neck",
+          "name": "",
+          "material": "character-metal-#303439",
+          "triangles": 5120,
+          "beforeVertices": 15360,
+          "afterVertices": 2613,
+          "expandedSha256": {
+            "position": "ccd8517f99dd416b75d9e08fc1f3ad97fd05acdba5b90e1bfd1a4dbc4768bd81",
+            "uv": "c3bfa5708b630bbe788321c29a118248d4aff7fc819dad614ab58e26a44427c0",
+            "normal": "6eeb7dc7868166685e5c20a80dc377609b148ea389809a6bdddcccfa8a909491"
+          }
+        },
+        {
+          "parent": "neck",
+          "name": "",
+          "material": "character-plain-#b7955b",
+          "triangles": 144,
+          "beforeVertices": 432,
+          "afterVertices": 95,
+          "expandedSha256": {
+            "position": "37ca32a65425dfbf626ebddd26ecd9c785cee3cb2755925faf533e45ee513798",
+            "uv": "f1809faeb16be1d5f3999cf19fe9ba12ad1cc105cbcc9570a8577f399b6cc35f",
+            "normal": "574e25528d45c3c0e8977f1daf88c3faed663d24f9cf82ad5b1075db47bc674c"
+          }
+        },
+        {
+          "parent": "wrist",
+          "name": "",
+          "material": "mpfb-cc0-skin",
+          "triangles": 3308,
+          "beforeVertices": 9924,
+          "afterVertices": 1897,
+          "expandedSha256": {
+            "position": "50cf0f8ca893a1934afebedabdc54d63a4b3f2ae637855b1ad14737d73514854",
+            "normal": "9a9dade929fd2b2e622483b4f10ca9b2e442eec6e66b77fa6976729c4a9ad6f9",
+            "uv": "eb6eb8bcfa94b876d70a384b13127fbcd966183374aa371aea2fd554497be883"
+          }
+        },
+        {
+          "parent": "elbow",
+          "name": "",
+          "material": "character-cloth-#412c2d",
+          "triangles": 2020,
+          "beforeVertices": 6060,
+          "afterVertices": 1205,
+          "expandedSha256": {
+            "position": "c95222af1501b067fa1ebd62ed12127fc59dddb266ac00e660185bd752305692",
+            "uv": "9f88354cb7efaac0e97c9016de54cb8df21d660ab576528ecd6b0506735e100c",
+            "normal": "06783d3232aeb067111a28b9c555b0c9d22328e75d78f26c7b4bc55e973b7075"
+          }
+        },
+        {
+          "parent": "elbow",
+          "name": "",
+          "material": "character-metal-#303439",
+          "triangles": 320,
+          "beforeVertices": 960,
+          "afterVertices": 187,
+          "expandedSha256": {
+            "position": "cdb6574bfba741756fcb6be9e672d943e68b860accd2f9accbba84dde5649853",
+            "uv": "9467b411d0814fc2a39c98eb0166f013559ff2377a7a66e8672a643013193a83",
+            "normal": "8e36916d9db96540cdde1e6cd87a4639b246cb3740cb3620ff7d4d46c631820c"
+          }
+        },
+        {
+          "parent": "elbow",
+          "name": "",
+          "material": "character-cord-#bba07b",
+          "triangles": 396,
+          "beforeVertices": 1188,
+          "afterVertices": 351,
+          "expandedSha256": {
+            "position": "fcb3bedf228bae97dba683e3f61cdd6b28990cbd58306dbf3a2679bdbf056c34",
+            "uv": "8e234899401cfb53c5f1e2eebbe97fbd9310088acb0c55d129e66fdd76dd89dc",
+            "normal": "ba410a785ee4984eb7cffb5f54522e9c63800227d3ca7e015e5795095f307f9a"
+          }
+        },
+        {
+          "parent": "left-shoulder",
+          "name": "",
+          "material": "character-cloth-#724640",
+          "triangles": 1728,
+          "beforeVertices": 5184,
+          "afterVertices": 959,
+          "expandedSha256": {
+            "position": "9d7c374bc5bd0384507feca43a94c81c3dc74c08c05dad54e66eb49ce69c7e4c",
+            "uv": "ac6f8f2d8f1d9453ecedc0d00d0b8d5e8b694b1cbe5a02eff171c70637d6b6bc",
+            "normal": "34cf98e7ad73f6bc9e6a711fd67b8db704248e22110d4735d01251f7c67e00ec"
+          }
+        },
+        {
+          "parent": "left-shoulder",
+          "name": "",
+          "material": "character-metal-#303439",
+          "triangles": 2384,
+          "beforeVertices": 7152,
+          "afterVertices": 1200,
+          "expandedSha256": {
+            "position": "a1116adee255e63e81c184cf5bf66da429a7fdf8e2bb3d483d67adff22258344",
+            "uv": "a3c7df200e2e820d06cc214e6dfb2f2d798cd28d687fbb192e94e6d76de428cb",
+            "normal": "c865a32bc461ccee1364bdc38abfb9453184d90fa7fc0909602428215d64ba6e"
+          }
+        },
+        {
+          "parent": "left-shoulder",
+          "name": "",
+          "material": "character-cloth-#412c2d",
+          "triangles": 156,
+          "beforeVertices": 468,
+          "afterVertices": 137,
+          "expandedSha256": {
+            "position": "e871c5b4548e900f8dc62b1150b0d9116028cbe3c5f0a5da95fb56cdd51ab778",
+            "uv": "c1bb9f7475333120954a53b08e5769a3635a7c7a1de36f48040bf8390c3474e1",
+            "normal": "4e694ae15140d9730cd491f76995559b76799cd08b83e0d92f5dcd1aa5d9797f"
+          }
+        },
+        {
+          "parent": "wrist",
+          "name": "",
+          "material": "mpfb-cc0-skin",
+          "triangles": 3308,
+          "beforeVertices": 9924,
+          "afterVertices": 1897,
+          "expandedSha256": {
+            "position": "ccd0ffc64c731747cf83e24ac36af025a2d7cb9d19f98abadba6bc26404502f0",
+            "normal": "ad5b2fd13dc3731c74c23fbebac4ad1ffb5b893b0df4f623746b25bcea68e163",
+            "uv": "1c0392d32b3b6c67a7ab8b204ce33b175bd9c79feac9478d8ce921aa10bf7840"
+          }
+        },
+        {
+          "parent": "elbow",
+          "name": "",
+          "material": "character-cloth-#412c2d",
+          "triangles": 2020,
+          "beforeVertices": 6060,
+          "afterVertices": 1205,
+          "expandedSha256": {
+            "position": "c95222af1501b067fa1ebd62ed12127fc59dddb266ac00e660185bd752305692",
+            "uv": "9f88354cb7efaac0e97c9016de54cb8df21d660ab576528ecd6b0506735e100c",
+            "normal": "06783d3232aeb067111a28b9c555b0c9d22328e75d78f26c7b4bc55e973b7075"
+          }
+        },
+        {
+          "parent": "elbow",
+          "name": "",
+          "material": "character-metal-#303439",
+          "triangles": 320,
+          "beforeVertices": 960,
+          "afterVertices": 187,
+          "expandedSha256": {
+            "position": "cdb6574bfba741756fcb6be9e672d943e68b860accd2f9accbba84dde5649853",
+            "uv": "9467b411d0814fc2a39c98eb0166f013559ff2377a7a66e8672a643013193a83",
+            "normal": "8e36916d9db96540cdde1e6cd87a4639b246cb3740cb3620ff7d4d46c631820c"
+          }
+        },
+        {
+          "parent": "elbow",
+          "name": "",
+          "material": "character-cord-#bba07b",
+          "triangles": 396,
+          "beforeVertices": 1188,
+          "afterVertices": 351,
+          "expandedSha256": {
+            "position": "fcb3bedf228bae97dba683e3f61cdd6b28990cbd58306dbf3a2679bdbf056c34",
+            "uv": "8e234899401cfb53c5f1e2eebbe97fbd9310088acb0c55d129e66fdd76dd89dc",
+            "normal": "ba410a785ee4984eb7cffb5f54522e9c63800227d3ca7e015e5795095f307f9a"
+          }
+        },
+        {
+          "parent": "right-shoulder",
+          "name": "",
+          "material": "character-cloth-#724640",
+          "triangles": 1728,
+          "beforeVertices": 5184,
+          "afterVertices": 959,
+          "expandedSha256": {
+            "position": "796be26fe1a91d610eb080a5273631dc30142e5b7131c3f438f87e74d6216e3c",
+            "uv": "ac6f8f2d8f1d9453ecedc0d00d0b8d5e8b694b1cbe5a02eff171c70637d6b6bc",
+            "normal": "89a3d0814aae629e9b865348d7c58430e3bee7d630170caa54b60c5e0c321c14"
+          }
+        },
+        {
+          "parent": "right-shoulder",
+          "name": "",
+          "material": "character-metal-#303439",
+          "triangles": 2384,
+          "beforeVertices": 7152,
+          "afterVertices": 1200,
+          "expandedSha256": {
+            "position": "1f66fd0f49b72dba0810965511e042f120533c760aa1126d500bf73068e33f3d",
+            "uv": "a3c7df200e2e820d06cc214e6dfb2f2d798cd28d687fbb192e94e6d76de428cb",
+            "normal": "0e4542ec78072fab02a43edd4be0b9604edb03b51d18a5383b70f0126d420a5d"
+          }
+        },
+        {
+          "parent": "right-shoulder",
+          "name": "",
+          "material": "character-cloth-#412c2d",
+          "triangles": 156,
+          "beforeVertices": 468,
+          "afterVertices": 137,
+          "expandedSha256": {
+            "position": "e871c5b4548e900f8dc62b1150b0d9116028cbe3c5f0a5da95fb56cdd51ab778",
+            "uv": "c1bb9f7475333120954a53b08e5769a3635a7c7a1de36f48040bf8390c3474e1",
+            "normal": "4e694ae15140d9730cd491f76995559b76799cd08b83e0d92f5dcd1aa5d9797f"
+          }
+        },
+        {
+          "parent": "ribcage",
+          "name": "",
+          "material": "character-cloth-#724640",
+          "triangles": 2656,
+          "beforeVertices": 7968,
+          "afterVertices": 1523,
+          "expandedSha256": {
+            "position": "945e0cd2aec76424afb1bf3950cc9cc4abdc2da39bee382889224915569ab671",
+            "uv": "07d37f6b4b6531d75ffb2098b5edac049460814695b5b264714739cb754b4724",
+            "normal": "6302e1d7395bfd9fb413c814df3a00f994ea377e739b69ce041e1d51fe74d125"
+          }
+        },
+        {
+          "parent": "ribcage",
+          "name": "",
+          "material": "character-metal-#303439",
+          "triangles": 960,
+          "beforeVertices": 2880,
+          "afterVertices": 625,
+          "expandedSha256": {
+            "position": "c18a8a625687e89f5fca58ad9e71fed9c61134fdd54523e97829ff7dcd60eba4",
+            "uv": "1c2ebd63f4fa135423d267434cf552975e32251d7a1ad1cfced9e1781d588e56",
+            "normal": "198014a905716af840c8c8156b6f00f95639044a361f46f60f5cbf805d255bd7"
+          }
+        },
+        {
+          "parent": "ribcage",
+          "name": "",
+          "material": "character-cord-#bba07b",
+          "triangles": 480,
+          "beforeVertices": 1440,
+          "afterVertices": 360,
+          "expandedSha256": {
+            "position": "e19a8c2b427733ea303fdb641f5959fc0c4100da2cbe63bc4a917f1c5bdc5481",
+            "uv": "8396f05e7d21084143b807677a99f12023f4ddaf27b4f412665481bd8a930d00",
+            "normal": "e3f447f5ab64d8538571b512ade5974cdc0244c5573e18097103ae529d9ba42c"
+          }
+        },
+        {
+          "parent": "ribcage",
+          "name": "",
+          "material": "character-cloth-#bba071",
+          "triangles": 800,
+          "beforeVertices": 2400,
+          "afterVertices": 500,
+          "expandedSha256": {
+            "position": "54fcea52ec0aa85a9bafb800f6bf7f699a8c6532d18f6b67f836075a5a0e344d",
+            "uv": "17689e68870508820aa9dcf54c10b57c38b8ddc3b466f4129fef9a6726f7d642",
+            "normal": "5434089688287a9830c0aa1887193e1618d9dea4887bcfd8bed053f834c2cd42"
+          }
+        },
+        {
+          "parent": "ribcage",
+          "name": "",
+          "material": "character-cloth-#412c2d",
+          "triangles": 240,
+          "beforeVertices": 720,
+          "afterVertices": 168,
+          "expandedSha256": {
+            "position": "2c635532ddc7cdef91319209c4aa996e2e324354270f511eceeeeda9d2c48a27",
+            "uv": "df90111482a4438624558e373be11db3be928e30c6f0288f352382f9d95d024d",
+            "normal": "8ad8bca2fe1c977901bab78c76df26d893e1acf7457a86c1e475da2b38239497"
+          }
+        },
+        {
+          "parent": "ankle",
+          "name": "",
+          "material": "character-cloth-#928c76",
+          "triangles": 1468,
+          "beforeVertices": 4404,
+          "afterVertices": 840,
+          "expandedSha256": {
+            "position": "e135b9ff036c19596c997641a2ed776842d0cd3c3cc5177935af9b49cffacbfe",
+            "uv": "07184122fa94ca9ab6cc1db5b7ed7d482ee6fedf871b93d7eefdbedd365de007",
+            "normal": "b7ac45fafd2c88fbdf915bb14b6b76990210d2f6b6a2303493121a8a48172622"
+          }
+        },
+        {
+          "parent": "ankle",
+          "name": "",
+          "material": "character-cord-#bba07b",
+          "triangles": 896,
+          "beforeVertices": 2688,
+          "afterVertices": 493,
+          "expandedSha256": {
+            "position": "3a5a556b0ac68c3c22e50fb44d47eb7b01c7dcd79ffaaa84429ac1e5a4d893cf",
+            "uv": "55ee4b03d89f582edf43f51f3e3929866c171d7c779c30706f8edc7564a8f634",
+            "normal": "2df6f660cc07466d79d045c5dd64aed97305201d697eca1007f5a3ebd50c76d4"
+          }
+        },
+        {
+          "parent": "ankle",
+          "name": "",
+          "material": "character-leather-#242523",
+          "triangles": 360,
+          "beforeVertices": 1080,
+          "afterVertices": 252,
+          "expandedSha256": {
+            "position": "827ab3e30a260d01f5cbcb7573e6b2e1de6532a127677088c075666784fd87dc",
+            "uv": "556859c54b08ca98267b79d97f482bdf7310f2eed429bb65ec8c74b34f7582ef",
+            "normal": "124b31fba9867e1fca528189c3a18b0e278a162f061c4d7eb8454f5f803b1d84"
+          }
+        },
+        {
+          "parent": "knee",
+          "name": "",
+          "material": "character-cloth-#412c2d",
+          "triangles": 1008,
+          "beforeVertices": 3024,
+          "afterVertices": 577,
+          "expandedSha256": {
+            "position": "1392a15ff26dc33d237c12143776d2f4da36e8d7e615142ddfa491883c4376d4",
+            "uv": "77a320459a1d40941c061beec54acc2cf8d2618fafd7e3b9d122a42f2840803c",
+            "normal": "8dfe835bc19624530d9a67040d94bce7e6ee54b3b0390138bcb0e3c906a0f69b"
+          }
+        },
+        {
+          "parent": "knee",
+          "name": "",
+          "material": "character-metal-#303439",
+          "triangles": 320,
+          "beforeVertices": 960,
+          "afterVertices": 187,
+          "expandedSha256": {
+            "position": "2d5f33eb2dbf4524768cc618e9f58a2743d3a1d21ed6d2f350f8e99479fe6d4c",
+            "uv": "9467b411d0814fc2a39c98eb0166f013559ff2377a7a66e8672a643013193a83",
+            "normal": "b960582704d5893ad9734728dcccd21b7fdcb7ed0c4a154b489f3a86a7ed8a56"
+          }
+        },
+        {
+          "parent": "knee",
+          "name": "",
+          "material": "character-cord-#bba07b",
+          "triangles": 528,
+          "beforeVertices": 1584,
+          "afterVertices": 468,
+          "expandedSha256": {
+            "position": "620e856a5f64d737ae949be0e8030bf6424775187979a555e5bf3b8b9b1c0e46",
+            "uv": "1186cebc2daacade1c01a3a431b4dfd522a3180c28f21a2f7e900f2b335aeb01",
+            "normal": "acc165b268938808ad4b0ab005330f9695aa3f9ae8f0313104d891548c158f27"
+          }
+        },
+        {
+          "parent": "left-hip",
+          "name": "",
+          "material": "character-cloth-#412c2d",
+          "triangles": 1288,
+          "beforeVertices": 3864,
+          "afterVertices": 727,
+          "expandedSha256": {
+            "position": "d087f8c97fe84a1c74a3ec0d3767ff8ad9f8bae98293b3a828f04ed376c80258",
+            "uv": "3f4beeafa4b2c472a683bf126dcd75546e7bcb0c663699e25ef505cb7509223c",
+            "normal": "1d77e1037afcef7b7e929c4b6d9d7f7bca5f7b0a9e5958aaf8b713b19fbffa90"
+          }
+        },
+        {
+          "parent": "hakama-front",
+          "name": "articulated-hakama-surface",
+          "material": "character-cloth-#724640",
+          "triangles": 1196,
+          "beforeVertices": 648,
+          "afterVertices": 648,
+          "expandedSha256": {
+            "position": "3942aa3a9685b05730f5995cb19bc832afd8f4936fe050c0332c1fcc244d75ec",
+            "uv": "fc02e22ec0b5c7961282b9aede5c8cd15595eb737918694b09c542a67eed5145",
+            "normal": "a9939ca9921bab7202031f2892f57fc05ef363c9b681578c46a6dc84ec4eca7b"
+          }
+        },
+        {
+          "parent": "hakama-back",
+          "name": "articulated-hakama-surface",
+          "material": "character-cloth-#724640",
+          "triangles": 1196,
+          "beforeVertices": 648,
+          "afterVertices": 648,
+          "expandedSha256": {
+            "position": "018b4fda3cedc967f8a70c261123cce68eb1d43e7338ce60446e70cae89599c8",
+            "uv": "fc02e22ec0b5c7961282b9aede5c8cd15595eb737918694b09c542a67eed5145",
+            "normal": "1e38bb25c06d03160cc42420d19d55339eff2ae361a6fc0a5ac421cd6f6dc76d"
+          }
+        },
+        {
+          "parent": "ankle",
+          "name": "",
+          "material": "character-cloth-#928c76",
+          "triangles": 1468,
+          "beforeVertices": 4404,
+          "afterVertices": 840,
+          "expandedSha256": {
+            "position": "9ae8222d74d38edc51133c1107839f6ac3b273cfa3f1df15822e1952b39cce0c",
+            "uv": "07184122fa94ca9ab6cc1db5b7ed7d482ee6fedf871b93d7eefdbedd365de007",
+            "normal": "9d49e6f6980f01a4dab09b385e5945178cc5757ca3a34230c581af3227d32393"
+          }
+        },
+        {
+          "parent": "ankle",
+          "name": "",
+          "material": "character-cord-#bba07b",
+          "triangles": 896,
+          "beforeVertices": 2688,
+          "afterVertices": 493,
+          "expandedSha256": {
+            "position": "8a75688eeb663b9cbe2b511a84f96b9b28d5bc35ee09483f8093f356e5e863d1",
+            "uv": "55ee4b03d89f582edf43f51f3e3929866c171d7c779c30706f8edc7564a8f634",
+            "normal": "c2989baaa28d027566b4685bd8b89d7450531ea5df0264c56a8d1f84d92c7f63"
+          }
+        },
+        {
+          "parent": "ankle",
+          "name": "",
+          "material": "character-leather-#242523",
+          "triangles": 360,
+          "beforeVertices": 1080,
+          "afterVertices": 252,
+          "expandedSha256": {
+            "position": "c5675a8a375ef309a3feb0c0d3259126bc39a93ea12090fe60fd284451ed5cc9",
+            "uv": "556859c54b08ca98267b79d97f482bdf7310f2eed429bb65ec8c74b34f7582ef",
+            "normal": "cdeaeb2e5ad39fc355e6dda8cb5fffe3187912e7b25dabd887d084a172adec40"
+          }
+        },
+        {
+          "parent": "knee",
+          "name": "",
+          "material": "character-cloth-#412c2d",
+          "triangles": 1008,
+          "beforeVertices": 3024,
+          "afterVertices": 577,
+          "expandedSha256": {
+            "position": "1392a15ff26dc33d237c12143776d2f4da36e8d7e615142ddfa491883c4376d4",
+            "uv": "77a320459a1d40941c061beec54acc2cf8d2618fafd7e3b9d122a42f2840803c",
+            "normal": "8dfe835bc19624530d9a67040d94bce7e6ee54b3b0390138bcb0e3c906a0f69b"
+          }
+        },
+        {
+          "parent": "knee",
+          "name": "",
+          "material": "character-metal-#303439",
+          "triangles": 320,
+          "beforeVertices": 960,
+          "afterVertices": 187,
+          "expandedSha256": {
+            "position": "2d5f33eb2dbf4524768cc618e9f58a2743d3a1d21ed6d2f350f8e99479fe6d4c",
+            "uv": "9467b411d0814fc2a39c98eb0166f013559ff2377a7a66e8672a643013193a83",
+            "normal": "b960582704d5893ad9734728dcccd21b7fdcb7ed0c4a154b489f3a86a7ed8a56"
+          }
+        },
+        {
+          "parent": "knee",
+          "name": "",
+          "material": "character-cord-#bba07b",
+          "triangles": 528,
+          "beforeVertices": 1584,
+          "afterVertices": 468,
+          "expandedSha256": {
+            "position": "620e856a5f64d737ae949be0e8030bf6424775187979a555e5bf3b8b9b1c0e46",
+            "uv": "1186cebc2daacade1c01a3a431b4dfd522a3180c28f21a2f7e900f2b335aeb01",
+            "normal": "acc165b268938808ad4b0ab005330f9695aa3f9ae8f0313104d891548c158f27"
+          }
+        },
+        {
+          "parent": "right-hip",
+          "name": "",
+          "material": "character-cloth-#412c2d",
+          "triangles": 1288,
+          "beforeVertices": 3864,
+          "afterVertices": 727,
+          "expandedSha256": {
+            "position": "0227fdc1bd99e2ae8ef03f91b544fca7ca5d32a4269cf9a2a9f66986c626be00",
+            "uv": "3f4beeafa4b2c472a683bf126dcd75546e7bcb0c663699e25ef505cb7509223c",
+            "normal": "d4b9b19fe2dbae24c95c9207a43bceaf84de445a78337b9fc4b7ad94ef094587"
+          }
+        },
+        {
+          "parent": "hakama-front",
+          "name": "articulated-hakama-surface",
+          "material": "character-cloth-#724640",
+          "triangles": 1196,
+          "beforeVertices": 648,
+          "afterVertices": 648,
+          "expandedSha256": {
+            "position": "81f0e0b2bb72e3336a64d5bd62f719dbd73560087bd3f5ba788812a981975ed5",
+            "uv": "fc02e22ec0b5c7961282b9aede5c8cd15595eb737918694b09c542a67eed5145",
+            "normal": "3808f984d120e215aae47d14c425cc6e5990a25ca771f40c7e5e3e923e15c3a4"
+          }
+        },
+        {
+          "parent": "hakama-back",
+          "name": "articulated-hakama-surface",
+          "material": "character-cloth-#724640",
+          "triangles": 1196,
+          "beforeVertices": 648,
+          "afterVertices": 648,
+          "expandedSha256": {
+            "position": "3bf4a414041ec029eec2a71264cca980d73e8210f0560d76c54fa679c968bf62",
+            "uv": "fc02e22ec0b5c7961282b9aede5c8cd15595eb737918694b09c542a67eed5145",
+            "normal": "bde4cda0cbda140a0c841f8c8bb3bb5ec6e75014d6b094f9380cd64c7704beaf"
+          }
+        },
+        {
+          "parent": "sash-tail",
+          "name": "",
+          "material": "character-cord-#bba07b",
+          "triangles": 120,
+          "beforeVertices": 360,
+          "afterVertices": 84,
+          "expandedSha256": {
+            "position": "55b995c3c9368239a95714939ae41fd0bc5de15aa7fa12acb9f9902420125676",
+            "uv": "b27f0634aeb77f1a53472879e36b475155e817f5170fcd8162b8595d5cc6f892",
+            "normal": "7f865295a9fb2ce219566b84b8bc0639a4cf3247455f39456a6bb2c7bb7b1e59"
+          }
+        },
+        {
+          "parent": "scabbard",
+          "name": "",
+          "material": "character-leather-#242523",
+          "triangles": 40,
+          "beforeVertices": 120,
+          "afterVertices": 46,
+          "expandedSha256": {
+            "position": "74b8a94157931236383b6e0db8b07d4bf4f4ce500e945d5f1ead848fcbc534e7",
+            "normal": "4f7bafb4c926624491df95175165b59d3c1fd92422782b8b48543f35f5923698",
+            "uv": "ac3bc6f3add8446ff7168334c0566b10b38fab4374922dcd3616525038f0743c"
+          }
+        },
+        {
+          "parent": "scabbard",
+          "name": "",
+          "material": "character-plain-#b7955b",
+          "triangles": 80,
+          "beforeVertices": 240,
+          "afterVertices": 92,
+          "expandedSha256": {
+            "position": "b965708d4b388bf4610bf3d1835b595e6217f747836ec1d248536f1776e24c15",
+            "normal": "ab35a1a06aa9c3dff351ce8267732acab5c8159eafe8d51b00f1fa9fadccc12c",
+            "uv": "aed025174662c7b676b442c6d723c4464d38a2a7b12e2b10e21a074658626432"
+          }
+        },
+        {
+          "parent": "scabbard",
+          "name": "",
+          "material": "character-cord-#bba07b",
+          "triangles": 80,
+          "beforeVertices": 240,
+          "afterVertices": 92,
+          "expandedSha256": {
+            "position": "e6bcaeb657b90e6574912a08e41b36a1fefca0673f06afc55eceb9704a556156",
+            "normal": "d28bca630bcf97880ed8e4d16bbf8341555edcd133a9c3b5da1045181512fd38",
+            "uv": "aed025174662c7b676b442c6d723c4464d38a2a7b12e2b10e21a074658626432"
+          }
+        },
+        {
+          "parent": "pelvis",
+          "name": "",
+          "material": "character-cloth-#412c2d",
+          "triangles": 504,
+          "beforeVertices": 1512,
+          "afterVertices": 321,
+          "expandedSha256": {
+            "position": "0d49d377fa1499c38832a4024767294ba8fa6cdf3ddae3537d26b1cf5b412f0a",
+            "uv": "5706e3492d9f61765c5aa3547324df4b0ee992bfa7db7c401276fa189469e916",
+            "normal": "046753d123d91f965de9546f5c20a13388f2aee63cd4b76a43be46913a88f60b"
+          }
+        },
+        {
+          "parent": "pelvis",
+          "name": "",
+          "material": "character-cord-#bba07b",
+          "triangles": 744,
+          "beforeVertices": 2232,
+          "afterVertices": 609,
+          "expandedSha256": {
+            "position": "8ef1ba532b6add26d783c21a6fe0c2711a34bf16d82e4a975fa582fbbd65e2df",
+            "uv": "ec813c9e2128c3a105c54601028c842f52d65f19122ab2613dc248430d8e381e",
+            "normal": "e335776fd9d09c1a2ca59dc29953f5159dbdec3e88d438af04a92cbf3a5c9f23"
+          }
+        },
+        {
+          "parent": "curved-blade",
+          "name": "",
+          "material": "character-plain-#ffe0a6",
+          "triangles": 60,
+          "beforeVertices": 180,
+          "afterVertices": 148,
+          "expandedSha256": {
+            "position": "c66f61c9aaa20e152465cb1c00abf3ba59eae213c9833b2d9e2bc383604ca177",
+            "normal": "cbd87b528094d6301153841f9ba126d73575ce6b7e306cb90346ff7916618bf3"
+          }
+        },
+        {
+          "parent": "curved-blade",
+          "name": "",
+          "material": "character-plain-#eff4e5",
+          "triangles": 60,
+          "beforeVertices": 180,
+          "afterVertices": 152,
+          "expandedSha256": {
+            "position": "69bb9dc9394952d487795007a230c3352ae6e4e18cc8d41e2419aefdd8d0256d",
+            "normal": "ea93c970cfbba44ea6c1a510b85dc8eec4055309d47a57caa49139d84bbbf821"
+          }
+        },
+        {
+          "parent": "katana",
+          "name": "",
+          "material": "character-leather-#242523",
+          "triangles": 40,
+          "beforeVertices": 120,
+          "afterVertices": 46,
+          "expandedSha256": {
+            "position": "9140ae6bf8638954f310376efbb48ce01f9e71d50b6964aa94356091f36c91d2",
+            "normal": "a766535d25291d8c641baa9f61cbd2773b4324ba3a41da0eb486ace770c8ac93",
+            "uv": "ac3bc6f3add8446ff7168334c0566b10b38fab4374922dcd3616525038f0743c"
+          }
+        },
+        {
+          "parent": "katana",
+          "name": "",
+          "material": "character-cord-#bba07b",
+          "triangles": 168,
+          "beforeVertices": 504,
+          "afterVertices": 336,
+          "expandedSha256": {
+            "position": "841d43babe30fc7d2ba9da0a8006128557f3787af6c58f992bcc84b69e3cc3f5",
+            "normal": "a018f84ade8349bb0559f32afc70ecff34251ba117d404afa925306e710a72e1",
+            "uv": "f19757b735c69fa36bff36ee154b546522e1286f204868f82721124a6b88b66a"
+          }
+        },
+        {
+          "parent": "katana",
+          "name": "",
+          "material": "character-plain-#b7955b",
+          "triangles": 80,
+          "beforeVertices": 240,
+          "afterVertices": 92,
+          "expandedSha256": {
+            "position": "63d062620d3ea209cb28ba4ac5ceeee75f479c9a9a9f2eb7144661f5d9a0819c",
+            "normal": "6af9e00723e650a17c96c26dab91ba9988a7373e2fe54cee02391bf0fd997d22",
+            "uv": "aed025174662c7b676b442c6d723c4464d38a2a7b12e2b10e21a074658626432"
+          }
+        },
+        {
+          "parent": "actor-warden",
+          "name": "",
+          "material": "",
+          "triangles": 20,
+          "beforeVertices": 22,
+          "afterVertices": 22,
+          "expandedSha256": {
+            "position": "dad3292438de9aaf415fb035f942596d4d8168ed9ad46a3cec2c6951b90b5a1c",
+            "normal": "5743b1ba5128d7809e24c5ff17e3fdfd8b8c4f52335bc9c12823d6270c7ff5d2",
+            "uv": "c14f9ba5cc97ecec766d50725c1e88918a2c86b246bbe03feb5878e612dcb95f"
+          }
+        },
+        {
+          "parent": "actor-warden",
+          "name": "",
+          "material": "character-plain-#b7955b",
+          "triangles": 320,
+          "beforeVertices": 198,
+          "afterVertices": 198,
+          "expandedSha256": {
+            "position": "5be3604311a70d3103280facf95def429675eea7bf7c8d3c993c4ea823a07175",
+            "normal": "02fec4195ddad3e1c699ad2e309c58aee9913d82dcc8935e3f515f6ec293b9da",
+            "uv": "80bea15999e24bd65176309fbd06621dbfc0e0a51063279ab61ce0695619d30a"
+          }
+        },
+        {
+          "parent": "actor-warden",
+          "name": "",
+          "material": "character-plain-#b7955b",
+          "triangles": 8,
+          "beforeVertices": 24,
+          "afterVertices": 24,
+          "expandedSha256": {
+            "position": "c54db36ceead5096daf31e6322765191841290283d84f987f05e976c098e4bcc",
+            "normal": "45759e13d8039116427af5da9d223b25d69da49cbe9ebf4168d86cf1abab6042",
+            "uv": "89488edf2f1454eeb3003e08fb91aada4cf169bd9464dbbc16a54643400a6f8e"
+          }
+        }
+      ]
+    }
+  ],
+  "poses": [
+    {
+      "id": "player",
+      "state": "idle",
+      "frames": 18,
+      "identical": true
+    },
+    {
+      "id": "player",
+      "state": "attack",
+      "frames": 22,
+      "identical": true
+    },
+    {
+      "id": "player",
+      "state": "broken",
+      "frames": 18,
+      "identical": true
+    },
+    {
+      "id": "player",
+      "state": "dead",
+      "frames": 32,
+      "identical": true
+    },
+    {
+      "id": "player",
+      "state": "victory",
+      "frames": 88,
+      "identical": true
+    },
+    {
+      "id": "sentinel",
+      "state": "idle",
+      "frames": 18,
+      "identical": true
+    },
+    {
+      "id": "sentinel",
+      "state": "attack",
+      "frames": 22,
+      "identical": true
+    },
+    {
+      "id": "sentinel",
+      "state": "broken",
+      "frames": 18,
+      "identical": true
+    },
+    {
+      "id": "sentinel",
+      "state": "dead",
+      "frames": 32,
+      "identical": true
+    },
+    {
+      "id": "sentinel",
+      "state": "victory",
+      "frames": 88,
+      "identical": true
+    },
+    {
+      "id": "retainer",
+      "state": "idle",
+      "frames": 18,
+      "identical": true
+    },
+    {
+      "id": "retainer",
+      "state": "attack",
+      "frames": 22,
+      "identical": true
+    },
+    {
+      "id": "retainer",
+      "state": "broken",
+      "frames": 18,
+      "identical": true
+    },
+    {
+      "id": "retainer",
+      "state": "dead",
+      "frames": 32,
+      "identical": true
+    },
+    {
+      "id": "retainer",
+      "state": "victory",
+      "frames": 88,
+      "identical": true
+    },
+    {
+      "id": "warden",
+      "state": "idle",
+      "frames": 18,
+      "identical": true
+    },
+    {
+      "id": "warden",
+      "state": "attack",
+      "frames": 22,
+      "identical": true
+    },
+    {
+      "id": "warden",
+      "state": "broken",
+      "frames": 18,
+      "identical": true
+    },
+    {
+      "id": "warden",
+      "state": "dead",
+      "frames": 32,
+      "identical": true
+    },
+    {
+      "id": "warden",
+      "state": "victory",
+      "frames": 88,
+      "identical": true
+    }
+  ],
+  "passed": true
+}

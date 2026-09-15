@@ -1,0 +1,124 @@
+{
+  "base": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+  "scope": "Node CPU only; WebGL/Canvas painting stubbed. Base presentation AND foreground module loaded from base commit. No hardware GPU, ordinary input, or quality acceptance.",
+  "initialSmallLeafDraft": {
+    "scope": "Node CPU only; actual scene builders with WebGL/Canvas painting stubbed. Physics-only updates and synthetic stationary-world render snapshots, not GPU/device timing or ordinary input acceptance.",
+    "base": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+    "physics": {
+      "before": {
+        "samples": 780,
+        "medianMs": 2.2899889999998777,
+        "p95Ms": 3.7567149999999856,
+        "maxMs": 30.704435000000103
+      },
+      "after": {
+        "samples": 780,
+        "medianMs": 2.3626070000000254,
+        "p95Ms": 5.244333999999981,
+        "maxMs": 56.747841999999764
+      }
+    },
+    "snapshots": {
+      "approach": {
+        "before": {
+          "samples": 120,
+          "medianMs": 3.566722999999911,
+          "p95Ms": 6.124419000000671,
+          "maxMs": 9.510424000000057
+        },
+        "after": {
+          "samples": 120,
+          "medianMs": 3.3675179999991087,
+          "p95Ms": 5.613671999999497,
+          "maxMs": 6.848132999999507
+        }
+      },
+      "water": {
+        "before": {
+          "samples": 120,
+          "medianMs": 7.14043700000002,
+          "p95Ms": 9.60273000000052,
+          "maxMs": 11.593015000000378
+        },
+        "after": {
+          "samples": 120,
+          "medianMs": 7.431929000000309,
+          "p95Ms": 12.618056000001161,
+          "maxMs": 15.372164000000339
+        }
+      },
+      "waystone": {
+        "before": {
+          "samples": 120,
+          "medianMs": 5.010034999999334,
+          "p95Ms": 6.54085699999996,
+          "maxMs": 7.42551099999946
+        },
+        "after": {
+          "samples": 120,
+          "medianMs": 28.401691000000937,
+          "p95Ms": 48.29033700000036,
+          "maxMs": 135.0705020000005
+        }
+      }
+    }
+  },
+  "physics": {
+    "before": {
+      "samples": 780,
+      "medianMs": 3.228692000000592,
+      "p95Ms": 4.721127000000706,
+      "maxMs": 5.966054999999869
+    },
+    "after": {
+      "samples": 780,
+      "medianMs": 2.4405920000008337,
+      "p95Ms": 4.180284999999458,
+      "maxMs": 43.71014699999978
+    }
+  },
+  "snapshots": {
+    "approach": {
+      "before": {
+        "samples": 120,
+        "medianMs": 3.4563300000008894,
+        "p95Ms": 4.807936000001064,
+        "maxMs": 5.681953999999678
+      },
+      "after": {
+        "samples": 120,
+        "medianMs": 2.8092990000004647,
+        "p95Ms": 4.553909000000203,
+        "maxMs": 4.667638000000807
+      }
+    },
+    "water": {
+      "before": {
+        "samples": 120,
+        "medianMs": 7.900096000001213,
+        "p95Ms": 10.514456000000791,
+        "maxMs": 12.441025000000081
+      },
+      "after": {
+        "samples": 120,
+        "medianMs": 5.418062000000646,
+        "p95Ms": 7.71339799999987,
+        "maxMs": 12.466403999998874
+      }
+    },
+    "waystone": {
+      "before": {
+        "samples": 120,
+        "medianMs": 7.310872000000018,
+        "p95Ms": 8.740643000001,
+        "maxMs": 9.32401899999968
+      },
+      "after": {
+        "samples": 120,
+        "medianMs": 6.655542000000423,
+        "p95Ms": 8.390011999999842,
+        "maxMs": 9.202476000000388
+      }
+    }
+  }
+}

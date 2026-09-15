@@ -1,0 +1,397 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-09-15T15:57:28.664560+00:00",
+  "owner": "/root/game2_ultra_art_sound_physics",
+  "sourceCheckpoint": "9068522520b0f269cc937057b444f06c7c187978",
+  "mainStill": "b06ade1ad5ab8b72de9bb9996f323a063f5db5ef",
+  "previewStill": "a6722c5cf7b1933f1956c6c33ec4edc6adf47640",
+  "nativeCI": {
+    "run": 34988388555,
+    "result": "failure",
+    "jobs": {
+      "fresh": "failure",
+      "art": "success",
+      "vegetation": "success",
+      "asset-readiness": "success",
+      "experience": "success"
+    },
+    "unitTests": 230,
+    "successfulRoutes": [
+      "PC-left",
+      "PC-right",
+      "touch-right"
+    ],
+    "failedRoute": "touch-left: playing after the unchanged 180-second mission loop; all three enemies defeated but no shrine arrival or lit signal",
+    "recording": "All four raw recordings fully decoded; three derived successful-route clips; touch-left missing arrival checkpoints is semantic failure, not codec corruption"
+  },
+  "profile": {
+    "run": 34988388499,
+    "separateHosts": true,
+    "baselineAcfWarmTotalMedianMs": 705.15,
+    "candidate906WarmTotalMedianMs": 1212.65,
+    "scope": "Completed readPixels wall time includes transfer/synchronization; neither physical-device performance nor isolated GPU time. Historical baseline varied substantially so cross-run absolute differences cannot establish the local change effect."
+  },
+  "realMedia": {
+    "archiveEnvelopes": [
+      {
+        "version": "fresh",
+        "runnerRevision": "9068522520b0f269cc937057b444f06c7c187978",
+        "run": "34988388555",
+        "job": "fresh",
+        "bytes": 24665895,
+        "sha256": "d30c64d2833183b2bbf4ea4d79f44996888e25ef894a6b00a98053e559803710",
+        "files": [
+          {
+            "path": "browser-report.json",
+            "bytes": 401043,
+            "sha256": "3f46168a15a14a083d5a0f15ab3b47befe0b9ba73ea8820bb3c7bea59d9595db"
+          },
+          {
+            "path": "build-fingerprint.json",
+            "bytes": 1388,
+            "sha256": "5089b026c4149b39379089a2616ba08c0d88456b7d258cbfd2131e55a937d156"
+          },
+          {
+            "path": "decoded/decoded-desktop-destination-arrival.png",
+            "bytes": 892752,
+            "sha256": "130b281d977bc71af5b2b34de387cd4324fcbff1a12778be782b134e48f2e737"
+          },
+          {
+            "path": "decoded/decoded-desktop-right-destination-arrival.png",
+            "bytes": 857534,
+            "sha256": "07e54b05d6ad0b99039ba75236bd39e048b2ebbf8f7b3ff8c89a970ae88bbf57"
+          },
+          {
+            "path": "decoded/decoded-desktop-right-signal-lit.png",
+            "bytes": 962326,
+            "sha256": "41cb4e95bb16bd9a83a99abd9c4d54cb576e448058c07d958b9b3b75ae99c5fb"
+          },
+          {
+            "path": "decoded/decoded-desktop-signal-lit.png",
+            "bytes": 901568,
+            "sha256": "d4baae0a8319c3a114e66ff57f102f641a7d9eb83abe828bffba7b9c061c6dd1"
+          },
+          {
+            "path": "decoded/decoded-touch-destination-arrival.png",
+            "bytes": 463169,
+            "sha256": "e4788eeca73366171705ce210d33ae573c1999b6e8921f453572528121077c34"
+          },
+          {
+            "path": "decoded/decoded-touch-signal-lit.png",
+            "bytes": 432166,
+            "sha256": "f11f2df87fbd0a6eed62a5b4da08302f4d54437f63006b0c9f9e3d5e67ea7089"
+          },
+          {
+            "path": "derived/desktop-fixed-five.json",
+            "bytes": 1975,
+            "sha256": "8b431e9d66539349e7d66590f177c8d2e4cfaabc444d26a34db8e7fed10900a4"
+          },
+          {
+            "path": "derived/desktop-fork-to-signal.mp4",
+            "bytes": 6010308,
+            "sha256": "861ea7a28944cc97cc584ffda38e3c858d6796be5975154f24d42b24874f17b1"
+          },
+          {
+            "path": "derived/desktop-right-fixed-five.json",
+            "bytes": 2027,
+            "sha256": "bf99a1f6abd48ee06d15d7e530e8f0d43867e2b4fb0c5a45c47575e415d395aa"
+          },
+          {
+            "path": "derived/desktop-right-fork-to-signal.mp4",
+            "bytes": 4807103,
+            "sha256": "77038a72e14c0baa5c40d32376dcac0ed50035a406b174f24f2ae11299c3f2b3"
+          },
+          {
+            "path": "derived/touch-fixed-five.json",
+            "bytes": 1971,
+            "sha256": "c8275e0272e8be0637cff4dbd907e60341546e4d62d107eb52eea118c57ccf8d"
+          },
+          {
+            "path": "derived/touch-fork-to-signal.mp4",
+            "bytes": 5338405,
+            "sha256": "cce4fd65fa863e7b595894eb6b7bcdb8d76b6ebe0f0428e0219ffeab543da79d"
+          },
+          {
+            "path": "desktop-right-victory.png",
+            "bytes": 657564,
+            "sha256": "9bcfe0f8ed8f274fcd5deeb073020e1e0e91d32404a4119a18ba7effd59ec3c5"
+          },
+          {
+            "path": "encounter.png",
+            "bytes": 1009417,
+            "sha256": "76f4245f5f767d97ae266c1fde070a4e00de17e4570c159851e3e0d71b85c7e2"
+          },
+          {
+            "path": "mission-victory.png",
+            "bytes": 645119,
+            "sha256": "29abeb3eb0360b2b683c9df16362ebf00638676de7419c200667a1f60d429069"
+          },
+          {
+            "path": "mobile-mission-victory-portrait.png",
+            "bytes": 188264,
+            "sha256": "94e6c1d9dcf019158d2ef0a2cf0fb5e8ec74e729183355a284b6291adf45a95c"
+          },
+          {
+            "path": "mobile-mission-victory.png",
+            "bytes": 272802,
+            "sha256": "ed172942d374d033dee3748970a0c55083e1828539491d12285be8627b8e6f90"
+          },
+          {
+            "path": "mobile.png",
+            "bytes": 362984,
+            "sha256": "9f5adf80d0719df0cb624b7969d4dbf73658aed30e457eace9d6797585e2b364"
+          },
+          {
+            "path": "recording-report.json",
+            "bytes": 42526,
+            "sha256": "95d479282a09bd511e7c8fdcaa5314326d9fbe09f81fc681cfa1cc3bf5adfb85"
+          },
+          {
+            "path": "route-matrix-report.json",
+            "bytes": 203385,
+            "sha256": "ba8334272e726bd4a76f9b2bd3594abdf308f194d6af6acc0b7305e29e71e7b9"
+          },
+          {
+            "path": "title.png",
+            "bytes": 924584,
+            "sha256": "85873debe70f477b2b527ff6d24ea69a20e486519e19d9c8ef1c65608f728f38"
+          }
+        ]
+      },
+      {
+        "version": "experience",
+        "runnerRevision": "9068522520b0f269cc937057b444f06c7c187978",
+        "run": "34988388555",
+        "job": "experience",
+        "bytes": 7315001,
+        "sha256": "88e68223d45f640afc78f567fb21c46da464bae0b77afa8f52e93e4c8f760ed0",
+        "files": [
+          {
+            "path": "audio/actual-capture-report.json",
+            "bytes": 6761,
+            "sha256": "82f6f667ed8d017d2eab04f35039d93958b96508fb6fd20baf3fd92be7cc3c0f"
+          },
+          {
+            "path": "audio/actual-gameplay-audio.wav",
+            "bytes": 1255758,
+            "sha256": "23d5c721d780256844097b67e762e652f0d1bb04d713c2d731fe39e7ceea0ce3"
+          },
+          {
+            "path": "audio/actual-gameplay-audio.webm",
+            "bytes": 174963,
+            "sha256": "3dca42dedccf1fb725f1cdea786ab1e160dd589ca04683b301378425c1230da8"
+          },
+          {
+            "path": "audio/generated/manifest.json",
+            "bytes": 16853,
+            "sha256": "ed95182976da9f57d0b299ef232967f686b42b7cfdbb33e6253d676fe7bad85f"
+          },
+          {
+            "path": "audio/muted-negative-probe.webm",
+            "bytes": 489,
+            "sha256": "cfbf94a90f9a821698324cd55b8ac0e57ca81dfad4fda60788392ee35e2f9812"
+          },
+          {
+            "path": "experience-report.json",
+            "bytes": 123988,
+            "sha256": "c285c72e41f30a74f12cc892b084f330bcc68f3d4be2b6383a98ec9668dccf43"
+          },
+          {
+            "path": "explore-old-waystone.png",
+            "bytes": 492763,
+            "sha256": "d5ebb35c9e3a7791827e3db6c2de976c2a965a3b62ec32b5771297e6c198ac41"
+          },
+          {
+            "path": "explore-spring-basin.png",
+            "bytes": 516976,
+            "sha256": "059bd82d8b9978a8b4e0502d946a1969972d4250ec5120ae160aa7167db98a89"
+          },
+          {
+            "path": "explore-stream-stones.png",
+            "bytes": 420824,
+            "sha256": "c580649d7626992e835b8239c02cb0c4a2560766f6342ef2a94b9844d9f0faa6"
+          },
+          {
+            "path": "explore-sun-ring.png",
+            "bytes": 435846,
+            "sha256": "ab4808f724efbc7263aaca85c41ce67bbf12d5846994a641c5e15bb04c4144ad"
+          },
+          {
+            "path": "explore-valley-frame.png",
+            "bytes": 542062,
+            "sha256": "e6c26d425a0d7e6f1ca8ae2f3df67782c46464f3f3cb2568cb503ad0189d247e"
+          },
+          {
+            "path": "explore-white-tree.png",
+            "bytes": 328271,
+            "sha256": "a7275ad0732ebda7512ee434d34bd7278bee8340e3f0dd6292c30d18ddf54953"
+          },
+          {
+            "path": "motion-study/attack.mp4",
+            "bytes": 221494,
+            "sha256": "00719055f1b5d9e0bfeab357d00dd49a48267812a7fffda1947758a994526409"
+          },
+          {
+            "path": "motion-study/block.mp4",
+            "bytes": 139718,
+            "sha256": "8a6ff9170714b7337c172937f5e1ab0991de59339a791c7f6037d88dec0ad772"
+          },
+          {
+            "path": "motion-study/broken.mp4",
+            "bytes": 177714,
+            "sha256": "1f5836b84277151e9ed1ab666980885ab72ea7ed5cf670bbcadccd9dec247c8d"
+          },
+          {
+            "path": "motion-study/death.mp4",
+            "bytes": 196468,
+            "sha256": "d2433eab8e4bdd091850992a7d3602b566738b9a91c2587a615e190cd3c3e1b0"
+          },
+          {
+            "path": "motion-study/dodge.mp4",
+            "bytes": 411077,
+            "sha256": "7cc71e86f83c28bfd40b423013262b8cdfe3b84c8a256830f3e160645c1877c2"
+          },
+          {
+            "path": "motion-study/guard.mp4",
+            "bytes": 137523,
+            "sha256": "1f4224a32733f9d27bbf8eafe4dc6e6a8275bf6c3f2f859f714f4b14cfeb02b1"
+          },
+          {
+            "path": "motion-study/hit.mp4",
+            "bytes": 154116,
+            "sha256": "3fc9546dabcfaeebd419880ea22df2f41255945c1483501538b32dd27e97b855"
+          },
+          {
+            "path": "motion-study/idle.mp4",
+            "bytes": 164752,
+            "sha256": "34bb5d2cd2b175c7833a95b4965b4d2e81c8ecb24b445cd34d679379fe862987"
+          },
+          {
+            "path": "motion-study/parry.mp4",
+            "bytes": 137593,
+            "sha256": "fdd3a87e2bf0da7caa58d71f523539eca7ca2194e333cadbc644b530f62aa7dd"
+          },
+          {
+            "path": "motion-study/report.json",
+            "bytes": 4623138,
+            "sha256": "ccbcd6c5f2389b7c21ee9074303e9fbdc3b15339ef7d0cce2f4d27aefcee60ad"
+          },
+          {
+            "path": "motion-study/start-run-stop.mp4",
+            "bytes": 856028,
+            "sha256": "79328a9744ececb327b01439ff9e687ad6ef11bd5540a38fdb9e0a971919338e"
+          },
+          {
+            "path": "motion-study/turn.mp4",
+            "bytes": 364226,
+            "sha256": "3e48aac6ef46f50db0f64cfc8c744636b8ed992d8a70bfe82a693936f7d0d97d"
+          },
+          {
+            "path": "motion-study/victory.mp4",
+            "bytes": 233397,
+            "sha256": "b0f6787349a7e5f825d000177eb5c5d91f9f9f9bfcab73581c3af46420d1f9cf"
+          },
+          {
+            "path": "motion-study/wind.mp4",
+            "bytes": 252069,
+            "sha256": "558a5bf779b6484a2b059761e7f30af0f2cbd23b44232cb1ae122b5cbcfac099"
+          },
+          {
+            "path": "motion-study/windup-attack.mp4",
+            "bytes": 227084,
+            "sha256": "70735a48afb7d5a02653a56edf11831b1eba282fb3c4199ec665fee4c4adc2ec"
+          }
+        ]
+      }
+    ],
+    "staticFigures": "Independent selected views confirm old major neck/collar/guard openings absent, but simplified shoulders and cloth, eyes/hair and whole ordinary scene remain below PS4 target. Motion review is ongoing and remains separate.",
+    "plants": "Three actual clips decoded 360 frames; ordinary bamboo and whole maple leaf faces still collapse to lines. Visible sway is too small in selected frames to certify perceived differential naturalness.",
+    "assets": "Normal four same-origin images decoded, matched body hashes and WebGL API upload; intentional missing image blocks start. Normal frame took20.1915seconds and retains slow-capture flag.",
+    "audio": "Original capture recovered; independent PCM analysis pending. No supported perceptual listening claimed.",
+    "motion": "Independent complete decode14MP4/474frames/39.5seconds and selected32native frames: old mid-cloth knee exposure and flat death hem not reproduced; no new obvious neck/shoulder/weapon detachment in the finite sample. Hidden cloth interior, precise finger contact, seam shading, naturalness and PS4 target remain limited."
+  },
+  "newLocalComponents": [
+    {
+      "author": "vegetation_physics",
+      "commit": "ef36bc10a117a6e193b9bf59d0c271dd43289df4",
+      "scope": "Incline complete bamboo support-bound sprays; preserve leaves, wood stiffness/damping, roots, cutout mips and drawables."
+    },
+    {
+      "author": "vegetation_physics",
+      "commit": "2b5b1baf946f8708b75993a7a0458812e4f46914",
+      "scope": "Distribute maple leaf inclination around the same fixed petioles without changing physical leaf dimensions or counts."
+    },
+    {
+      "author": "c06_reference_material",
+      "commit": "271b830397f64918e676abd046057a32d6fa31b2",
+      "scope": "Six serial full profiles acf/906/event/event/906/acf on one host, identical immutable readPixels tool, immediate original media recovery, original18minute cap."
+    }
+  ],
+  "integration": "All three local commits applied without conflict over906; runtime delta limited to support/leaf orientation and derived projected wind load. Character anatomy, animation, audio, input and scene materials are unchanged.",
+  "localVerification": {
+    "newProjectionTests": {
+      "passed": 2,
+      "failed": 0,
+      "scope": "CPU geometry projection, not visual acceptance"
+    },
+    "cleanBuild": "passed",
+    "cleanBuildSeconds": 4.1,
+    "integratedForegroundLodTests": {
+      "passed": 13,
+      "failed": 0,
+      "durationMs": 24067.843208
+    },
+    "cleanBuildFiles": [
+      {
+        "path": "assets/brown-eye-DsUMil5J.png",
+        "bytes": 610817,
+        "sha256": "4659691c7295ad6206c78b003e5fd0e5f91dcd53032fa914a229bb48cabe424b"
+      },
+      {
+        "path": "assets/eyebrows-CAObckBg.png",
+        "bytes": 89619,
+        "sha256": "9940f7d0b1b223709a19b05156ba6f6e9e4dbdbced02d7574f4d51d72c58967b"
+      },
+      {
+        "path": "assets/index-Ck_X98_2.css",
+        "bytes": 6472,
+        "sha256": "7c991e93c0471bdc554ebd9e79cd027afc380ee964520eb5fbc278319f16da3d"
+      },
+      {
+        "path": "assets/index-DiXGdRhL.js",
+        "bytes": 4042491,
+        "sha256": "0fec71f311291d164778d6d7373eb90a6543e0ffe703860a78b4e38a4c676433"
+      },
+      {
+        "path": "assets/short-hair-hshXq62u.png",
+        "bytes": 2308132,
+        "sha256": "0bef7fc0e403db5a40fabb2111ebfa6f7e8158e204c6e56b8da98e9ef527846e"
+      },
+      {
+        "path": "assets/young-asian-male-CWnOsWsU.png",
+        "bytes": 3593099,
+        "sha256": "f50016a5507fc687dc8df06599c8ea48de950cd185de33a71cafc1319ddab4d5"
+      },
+      {
+        "path": "index.html",
+        "bytes": 1772,
+        "sha256": "ec16f7d360a291dd21609e7472b6d186927d096ab2519f33a270f6ad0536f344"
+      }
+    ],
+    "preservedRootDocsPublicDeltaFiles": 0
+  },
+  "deadline": {
+    "deadline": "2026-09-20T07:51:53+00:00",
+    "remainingHours": 111.90675984444444,
+    "prediction": "Not grounded as can meet whole fixed comparisons and PS4 visual target; preserve criteria and change the method where evidence shows defects.",
+    "fixedTen": {
+      "satisfied": 0,
+      "notSatisfied": 0,
+      "notMeasured": 10
+    },
+    "changedMethod": "Replace the shared nearly horizontal canopy plane with distributed support-fixed inclinations; measure same-source gameplay and actual ordinary frames, and replace different-host comparison with one-host counterbalanced serial samples."
+  },
+  "next": "Run exact-source native Fresh CI and six same-host profiles. Reject ordinary route failures or unresolved major visual regressions before actual main/preview integration. Retain PS4 and perceptual-audio limits explicitly.",
+  "publicationDone": false,
+  "automation": "Unchanged game2=false,survival=false,Q=true"
+}

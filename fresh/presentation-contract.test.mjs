@@ -231,7 +231,12 @@ test('generated landscape replaces flat background and cone bamboo without exter
   const source=readFileSync(new URL('./presentation.js',import.meta.url),'utf8');
   assert.match(source,/new T\.ShaderMaterial/);
   assert.match(source,/new T\.PlaneGeometry\(160,200,64,80\)/);
-  assert.match(source,/const leafCluster=mergeGeometries/);
+  // Leaf surface generation is now a module with several small twig variants;
+  // the actual silhouette, sizing and attachment are exercised by its scene
+  // tests. Keep the original no-external-assets contract across that boundary.
+  const leafSource=readFileSync(new URL('./leaf-surface.js',import.meta.url),'utf8');
+  assert.match(source,/createBambooLeafGeometry/);
+  assert.doesNotMatch(leafSource,/TextureLoader|\.glb|\.gltf|fetch\(/);
   assert.match(source,/new T\.DodecahedronGeometry/);
   assert.match(source,/const rim=new T\.DirectionalLight/);
   assert.match(readFileSync(new URL('./character-rig.js',import.meta.url),'utf8'),/new T\.CircleGeometry\(\.46,20\)/);

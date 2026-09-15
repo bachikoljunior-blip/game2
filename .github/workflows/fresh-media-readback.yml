@@ -1,0 +1,38 @@
+name: Read back exact fresh CI media
+on:
+  push:
+    branches: [codex/game2-rebuild-20260913]
+    paths: ['.github/workflows/fresh-media-readback.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  captured-media:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        include:
+          - group: vegetation
+            artifact: fresh-art-037fd9d10d35453695bb92da8ed47649e1405eae
+            path: AI_DEVELOPMENT/EVIDENCE/fresh-20260915-art
+          - group: fresh
+            artifact: fresh-game-037fd9d10d35453695bb92da8ed47649e1405eae
+            path: AI_DEVELOPMENT/EVIDENCE/fresh-20260913
+          - group: experience
+            artifact: fresh-experience-037fd9d10d35453695bb92da8ed47649e1405eae
+            path: AI_DEVELOPMENT/EVIDENCE/fresh-20260913
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          repository: bachikoljunior-blip/game2
+          run-id: 34969080023
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.path }}
+      - name: Read original captured bytes with their digest
+        run: python .github/scripts/emit-fresh-media.py ${{ matrix.group }}

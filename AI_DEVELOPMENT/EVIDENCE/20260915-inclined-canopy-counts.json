@@ -1,0 +1,568 @@
+{
+  "scope": "57a2 foliage versus inclined-crown working source, actual production scene with WebGL stub only. Projection and sampled woody occlusion are source/numeric diagnostics, not native visibility or GPU time.",
+  "cases": [
+    {
+      "name": "arrival",
+      "before": {
+        "camera": [
+          0.85,
+          2.8,
+          23.8
+        ],
+        "fullyVisible": 329,
+        "far": 167,
+        "medianHeight": 1.1449207676403859,
+        "medianWidth": 10.178057721555149,
+        "medianArea": 6.299554039917224,
+        "medianFace": 0.11154005996664566,
+        "activeBambooTriangles": 134850,
+        "lod": {
+          "fullTriangles": 372024,
+          "activeTriangles": 185394,
+          "nearTwigs": 309,
+          "farTwigs": 915,
+          "transitions": 915,
+          "scope": "Index-selected detailed maple / simplified maple margins and detailed bamboo / support-bound cutout fronds. GPU timing and visual transitions require rendered media."
+        },
+        "woodyOcclusion": {
+          "subjects": 20,
+          "rays": 60,
+          "self": 3,
+          "other": 1,
+          "all": 4,
+          "scope": "Three alpha-covered sample points per nearest fully-onscreen crown; ray to current frond plane, woody triangles only, not full leaf/terrain/building visibility."
+        },
+        "cpuUpdate": {
+          "scope": "Stub renderer, complete presentation update; no GPU measurement",
+          "medianMs": 3.987617999999202,
+          "p95Ms": 5.190453000000161
+        }
+      },
+      "after": {
+        "camera": [
+          0.85,
+          2.8,
+          23.8
+        ],
+        "fullyVisible": 328,
+        "far": 301,
+        "medianHeight": 8.465804935319298,
+        "medianWidth": 6.713769382380804,
+        "medianArea": 38.97145630718575,
+        "medianFace": 0.7036379569562156,
+        "activeBambooTriangles": 99600,
+        "lod": {
+          "fullTriangles": 372024,
+          "activeTriangles": 150144,
+          "nearTwigs": 168,
+          "farTwigs": 1056,
+          "transitions": 1056,
+          "scope": "Index-selected detailed maple / simplified maple margins and detailed bamboo / support-bound cutout fronds. GPU timing and visual transitions require rendered media."
+        },
+        "woodyOcclusion": {
+          "subjects": 20,
+          "rays": 60,
+          "self": 2,
+          "other": 2,
+          "all": 4,
+          "scope": "Three alpha-covered sample points per nearest fully-onscreen crown; ray to current frond plane, woody triangles only, not full leaf/terrain/building visibility."
+        },
+        "cpuUpdate": {
+          "scope": "Stub renderer, complete presentation update; no GPU measurement",
+          "medianMs": 4.178761999999551,
+          "p95Ms": 7.69705199999953
+        }
+      }
+    },
+    {
+      "name": "arrival-left",
+      "before": {
+        "camera": [
+          -2.833409924502332,
+          2.8,
+          23.131694476460158
+        ],
+        "fullyVisible": 229,
+        "far": 114,
+        "medianHeight": 1.0495164162063588,
+        "medianWidth": 9.222023809540588,
+        "medianArea": 5.967169920626404,
+        "medianFace": 0.10966916050255214,
+        "activeBambooTriangles": 127100,
+        "lod": {
+          "fullTriangles": 372024,
+          "activeTriangles": 177644,
+          "nearTwigs": 278,
+          "farTwigs": 946,
+          "transitions": 946,
+          "scope": "Index-selected detailed maple / simplified maple margins and detailed bamboo / support-bound cutout fronds. GPU timing and visual transitions require rendered media."
+        },
+        "cpuUpdate": {
+          "scope": "Stub renderer, complete presentation update; no GPU measurement",
+          "medianMs": 4.025052999999389,
+          "p95Ms": 5.5464910000009695
+        }
+      },
+      "after": {
+        "camera": [
+          -2.833409924502332,
+          2.8,
+          23.131694476460158
+        ],
+        "fullyVisible": 225,
+        "far": 209,
+        "medianHeight": 8.201582026085987,
+        "medianWidth": 6.069374298229093,
+        "medianArea": 33.61331836859607,
+        "medianFace": 0.6472367848008792,
+        "activeBambooTriangles": 90600,
+        "lod": {
+          "fullTriangles": 372024,
+          "activeTriangles": 141144,
+          "nearTwigs": 132,
+          "farTwigs": 1092,
+          "transitions": 1100,
+          "scope": "Index-selected detailed maple / simplified maple margins and detailed bamboo / support-bound cutout fronds. GPU timing and visual transitions require rendered media."
+        },
+        "cpuUpdate": {
+          "scope": "Stub renderer, complete presentation update; no GPU measurement",
+          "medianMs": 3.939706000001024,
+          "p95Ms": 5.741720999998506
+        }
+      }
+    },
+    {
+      "name": "arrival-right",
+      "before": {
+        "camera": [
+          4.186752382035727,
+          2.8,
+          22.10287758670889
+        ],
+        "fullyVisible": 323,
+        "far": 234,
+        "medianHeight": 1.4711640496785634,
+        "medianWidth": 11.094577018586051,
+        "medianArea": 8.985561103039206,
+        "medianFace": 0.12733553378252394,
+        "activeBambooTriangles": 122350,
+        "lod": {
+          "fullTriangles": 372024,
+          "activeTriangles": 172894,
+          "nearTwigs": 259,
+          "farTwigs": 965,
+          "transitions": 969,
+          "scope": "Index-selected detailed maple / simplified maple margins and detailed bamboo / support-bound cutout fronds. GPU timing and visual transitions require rendered media."
+        },
+        "cpuUpdate": {
+          "scope": "Stub renderer, complete presentation update; no GPU measurement",
+          "medianMs": 4.7618469999997615,
+          "p95Ms": 9.722348000001148
+        }
+      },
+      "after": {
+        "camera": [
+          4.186752382035727,
+          2.8,
+          22.10287758670889
+        ],
+        "fullyVisible": 317,
+        "far": 298,
+        "medianHeight": 9.619313416483834,
+        "medianWidth": 7.459410141351555,
+        "medianArea": 47.45397342467419,
+        "medianFace": 0.712277022495216,
+        "activeBambooTriangles": 89350,
+        "lod": {
+          "fullTriangles": 372024,
+          "activeTriangles": 139894,
+          "nearTwigs": 127,
+          "farTwigs": 1097,
+          "transitions": 1143,
+          "scope": "Index-selected detailed maple / simplified maple margins and detailed bamboo / support-bound cutout fronds. GPU timing and visual transitions require rendered media."
+        },
+        "cpuUpdate": {
+          "scope": "Stub renderer, complete presentation update; no GPU measurement",
+          "medianMs": 4.160564000001614,
+          "p95Ms": 6.605922999999166
+        }
+      }
+    },
+    {
+      "name": "water",
+      "before": {
+        "camera": [
+          -27.199963906898088,
+          4.851130994138258,
+          4.558377816033626
+        ],
+        "fullyVisible": 148,
+        "far": 99,
+        "medianHeight": 1.8597071652133366,
+        "medianWidth": 13.664810106805191,
+        "medianArea": 14.678194114013076,
+        "medianFace": 0.13328721446958353,
+        "activeBambooTriangles": 151100,
+        "lod": {
+          "fullTriangles": 372024,
+          "activeTriangles": 218684,
+          "nearTwigs": 516,
+          "farTwigs": 708,
+          "transitions": 1288,
+          "scope": "Index-selected detailed maple / simplified maple margins and detailed bamboo / support-bound cutout fronds. GPU timing and visual transitions require rendered media."
+        },
+        "cpuUpdate": {
+          "scope": "Stub renderer, complete presentation update; no GPU measurement",
+          "medianMs": 6.540186000000176,
+          "p95Ms": 9.234935000000405
+        }
+      },
+      "after": {
+        "camera": [
+          -27.199963906898088,
+          4.851130994138258,
+          4.558377816033626
+        ],
+        "fullyVisible": 144,
+        "far": 138,
+        "medianHeight": 12.320828815977826,
+        "medianWidth": 8.915770666421508,
+        "medianArea": 69.50170653569882,
+        "medianFace": 0.6815851830924523,
+        "activeBambooTriangles": 92350,
+        "lod": {
+          "fullTriangles": 372024,
+          "activeTriangles": 159934,
+          "nearTwigs": 281,
+          "farTwigs": 943,
+          "transitions": 1505,
+          "scope": "Index-selected detailed maple / simplified maple margins and detailed bamboo / support-bound cutout fronds. GPU timing and visual transitions require rendered media."
+        },
+        "cpuUpdate": {
+          "scope": "Stub renderer, complete presentation update; no GPU measurement",
+          "medianMs": 5.101830999999947,
+          "p95Ms": 8.108132999999725
+        }
+      }
+    }
+  ],
+  "before": {
+    "grassHash": "70733f5d139fb4d7f2a898540bcd3e16a2e6dd1bbc08efc4951cbed3507c81c1",
+    "woodModesHash": "edee13ea5558d5a6a533c4bc6285c221f7b2ba767343ccf7d97095b15e459bc7",
+    "atlasMips": [
+      "dbddcabf4b17da028c38dc21055b38180f2fbeff8c3d7031b870896345ca3323",
+      "80a8dd421a7189bbf4185c74ebbfe7b83076fbb17b00cdbb5126a33b05c0b22e",
+      "02b2e031906aff5e8cb48b09b112be4de8236248e6e6d46d2f73108eb22bc44c",
+      "a489bf7e68f8ad3f644e753aad3d79d6a6fd1f11a800744ee8038bc8fa1de400",
+      "1cda42f9f3965d1fe4c9adea3eb1b546f51aac967a1ff1950dde5dbc62673bb0",
+      "c37f887fd39199ebfe49247d80cde6e19c25c2c991f96a3f4cc157acf83c8c1e",
+      "12f93142d6965f68e66b1eb6e70e7daace8535287f48886780ef635c9f92a28a"
+    ],
+    "storedVertices": 440338,
+    "storedTriangles": 408812,
+    "batches": 112,
+    "beamCount": 2317,
+    "foliage": {
+      "mapleLeaves": 3888,
+      "bambooLeaves": 32400,
+      "rigidSideShoots": 1800,
+      "maplePetioleRange": [
+        0.024000001933682496,
+        0.03199999060873575
+      ],
+      "mapleWidthRange": [
+        0.07300000000035813,
+        0.09699999826620445
+      ],
+      "bambooLengthRange": [
+        0.11830609529693611,
+        0.177577095246315
+      ],
+      "geometry": {
+        "vertices": 440338,
+        "triangles": 408812,
+        "batches": 112
+      },
+      "atlas": {
+        "width": 512,
+        "height": 512,
+        "bytes": 2097152,
+        "coverageMips": [
+          {
+            "size": 256,
+            "fronds": [
+              0.1651611328125,
+              0.1639404296875,
+              0.1619873046875
+            ],
+            "filteredFronds": [
+              0.1669921875,
+              0.165771484375,
+              0.162841796875
+            ]
+          },
+          {
+            "size": 128,
+            "fronds": [
+              0.166015625,
+              0.16552734375,
+              0.163818359375
+            ],
+            "filteredFronds": [
+              0.166015625,
+              0.16552734375,
+              0.163818359375
+            ]
+          },
+          {
+            "size": 64,
+            "fronds": [
+              0.173828125,
+              0.1767578125,
+              0.1669921875
+            ],
+            "filteredFronds": [
+              0.165771484375,
+              0.166015625,
+              0.1630859375
+            ]
+          },
+          {
+            "size": 32,
+            "fronds": [
+              0.1796875,
+              0.1640625,
+              0.1875
+            ],
+            "filteredFronds": [
+              0.165771484375,
+              0.164794921875,
+              0.16357421875
+            ]
+          },
+          {
+            "size": 16,
+            "fronds": [
+              0.171875,
+              0.1875,
+              0.1875
+            ],
+            "filteredFronds": [
+              0.166259765625,
+              0.1650390625,
+              0.162109375
+            ]
+          },
+          {
+            "size": 8,
+            "fronds": [
+              0.25,
+              0.25,
+              0.25
+            ],
+            "filteredFronds": [
+              0.165283203125,
+              0.163818359375,
+              0.16259765625
+            ]
+          }
+        ],
+        "filteredCoverageTarget": [
+          0.1657867431640625,
+          0.1650238037109375,
+          0.1627655029296875
+        ],
+        "minMipSize": 8,
+        "coverage": [
+          0.1657867431640625,
+          0.1650238037109375,
+          0.1627655029296875
+        ]
+      },
+      "frondTemplates": [
+        {
+          "area": 0.06290824893719325,
+          "oldArea": 0.010472957572271102,
+          "crosswindArea": 0.007686622034759601,
+          "oldCrosswindArea": 0.0018252301140062517,
+          "collapsedDepth": 0.0929362679719925
+        },
+        {
+          "area": 0.06738075354674028,
+          "oldArea": 0.01129740993472372,
+          "crosswindArea": 0.007893649965484653,
+          "oldCrosswindArea": 0.0018867044096679943,
+          "collapsedDepth": 0.097308026522398
+        },
+        {
+          "area": 0.07147363045609362,
+          "oldArea": 0.011949177556621011,
+          "crosswindArea": 0.008117007809034597,
+          "oldCrosswindArea": 0.001874757018166269,
+          "collapsedDepth": 0.10002972920238973
+        }
+      ]
+    }
+  },
+  "after": {
+    "grassHash": "70733f5d139fb4d7f2a898540bcd3e16a2e6dd1bbc08efc4951cbed3507c81c1",
+    "woodModesHash": "edee13ea5558d5a6a533c4bc6285c221f7b2ba767343ccf7d97095b15e459bc7",
+    "atlasMips": [
+      "dbddcabf4b17da028c38dc21055b38180f2fbeff8c3d7031b870896345ca3323",
+      "80a8dd421a7189bbf4185c74ebbfe7b83076fbb17b00cdbb5126a33b05c0b22e",
+      "02b2e031906aff5e8cb48b09b112be4de8236248e6e6d46d2f73108eb22bc44c",
+      "a489bf7e68f8ad3f644e753aad3d79d6a6fd1f11a800744ee8038bc8fa1de400",
+      "1cda42f9f3965d1fe4c9adea3eb1b546f51aac967a1ff1950dde5dbc62673bb0",
+      "c37f887fd39199ebfe49247d80cde6e19c25c2c991f96a3f4cc157acf83c8c1e",
+      "12f93142d6965f68e66b1eb6e70e7daace8535287f48886780ef635c9f92a28a"
+    ],
+    "storedVertices": 440338,
+    "storedTriangles": 408812,
+    "batches": 112,
+    "beamCount": 2317,
+    "foliage": {
+      "mapleLeaves": 3888,
+      "bambooLeaves": 32400,
+      "rigidSideShoots": 1800,
+      "maplePetioleRange": [
+        0.024000001933682496,
+        0.03199999060873575
+      ],
+      "mapleWidthRange": [
+        0.07300000000035813,
+        0.09699999826620445
+      ],
+      "bambooLengthRange": [
+        0.11830609529693611,
+        0.177577095246315
+      ],
+      "geometry": {
+        "vertices": 440338,
+        "triangles": 408812,
+        "batches": 112
+      },
+      "atlas": {
+        "width": 512,
+        "height": 512,
+        "bytes": 2097152,
+        "coverageMips": [
+          {
+            "size": 256,
+            "fronds": [
+              0.1651611328125,
+              0.1639404296875,
+              0.1619873046875
+            ],
+            "filteredFronds": [
+              0.1669921875,
+              0.165771484375,
+              0.162841796875
+            ]
+          },
+          {
+            "size": 128,
+            "fronds": [
+              0.166015625,
+              0.16552734375,
+              0.163818359375
+            ],
+            "filteredFronds": [
+              0.166015625,
+              0.16552734375,
+              0.163818359375
+            ]
+          },
+          {
+            "size": 64,
+            "fronds": [
+              0.173828125,
+              0.1767578125,
+              0.1669921875
+            ],
+            "filteredFronds": [
+              0.165771484375,
+              0.166015625,
+              0.1630859375
+            ]
+          },
+          {
+            "size": 32,
+            "fronds": [
+              0.1796875,
+              0.1640625,
+              0.1875
+            ],
+            "filteredFronds": [
+              0.165771484375,
+              0.164794921875,
+              0.16357421875
+            ]
+          },
+          {
+            "size": 16,
+            "fronds": [
+              0.171875,
+              0.1875,
+              0.1875
+            ],
+            "filteredFronds": [
+              0.166259765625,
+              0.1650390625,
+              0.162109375
+            ]
+          },
+          {
+            "size": 8,
+            "fronds": [
+              0.25,
+              0.25,
+              0.25
+            ],
+            "filteredFronds": [
+              0.165283203125,
+              0.163818359375,
+              0.16259765625
+            ]
+          }
+        ],
+        "filteredCoverageTarget": [
+          0.1657867431640625,
+          0.1650238037109375,
+          0.1627655029296875
+        ],
+        "minMipSize": 8,
+        "coverage": [
+          0.1657867431640625,
+          0.1650238037109375,
+          0.1627655029296875
+        ]
+      },
+      "frondTemplates": [
+        {
+          "area": 0.06290824893719325,
+          "oldArea": 0.010472957572271102,
+          "crosswindArea": 0.028916541046365898,
+          "oldCrosswindArea": 0.0018252301140062517,
+          "collapsedDepth": 0.0929362679719925,
+          "crownRoll": -1.1
+        },
+        {
+          "area": 0.06738075354674028,
+          "oldArea": 0.01129740993472372,
+          "crosswindArea": 0.03323386740963706,
+          "oldCrosswindArea": 0.0018867044096679943,
+          "collapsedDepth": 0.097308026522398,
+          "crownRoll": 1.24
+        },
+        {
+          "area": 0.07147363045609362,
+          "oldArea": 0.011949177556621011,
+          "crosswindArea": 0.03623731862489257,
+          "oldCrosswindArea": 0.001874757018166269,
+          "collapsedDepth": 0.10002972920238973,
+          "crownRoll": -1.35
+        }
+      ]
+    }
+  }
+}

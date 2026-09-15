@@ -1,0 +1,113 @@
+{
+  "result": "passed",
+  "eventSourceNegativeControls": [
+    {
+      "control": "exact commit",
+      "rejectedBeforeMeasurement": true
+    },
+    {
+      "control": "checkout must match",
+      "rejectedBeforeMeasurement": true
+    }
+  ],
+  "scope": "Parsed exact YAML/Python; executed exact orchestration with synthetic subprocess/report/PNG-byte fixtures. No real browser, image, timing, remote action or host-comparison result.",
+  "workflowSha256": "d88d8675b65030fa846a918fd69033a5642755e63d77e4cf82a93232a71fad66",
+  "unchangedProfilerSha256": "1e915d1ed590327b0528efb39ed3cd815815ecfaada08900acc8428033da6651",
+  "scenarios": [
+    {
+      "scenario": "success",
+      "exitCode": 0,
+      "worktreeAttempts": 6,
+      "toolCalls": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "ordinalResults": [
+        "passed",
+        "passed",
+        "passed",
+        "passed",
+        "passed",
+        "passed"
+      ],
+      "archives": [
+        "render-profile-01-acf",
+        "render-profile-02-906",
+        "render-profile-03-current",
+        "render-profile-04-current",
+        "render-profile-05-906",
+        "render-profile-06-acf",
+        "render-profile-serial-summary"
+      ],
+      "originalByteFilesVerified": 12,
+      "ownedWorktreesRemoved": 6
+    },
+    {
+      "scenario": "mixed-failures",
+      "exitCode": 1,
+      "worktreeAttempts": 6,
+      "toolCalls": [
+        1,
+        2,
+        3,
+        5,
+        6
+      ],
+      "ordinalResults": [
+        "passed",
+        "failed",
+        "passed",
+        "failed",
+        "failed",
+        "passed"
+      ],
+      "archives": [
+        "render-profile-01-acf",
+        "render-profile-02-906",
+        "render-profile-03-current",
+        "render-profile-04-current",
+        "render-profile-05-906",
+        "render-profile-06-acf",
+        "render-profile-serial-summary"
+      ],
+      "originalByteFilesVerified": 9,
+      "ownedWorktreesRemoved": 5
+    },
+    {
+      "scenario": "unsafe-and-invalid",
+      "exitCode": 1,
+      "worktreeAttempts": 6,
+      "toolCalls": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "ordinalResults": [
+        "passed",
+        "failed",
+        "failed",
+        "passed",
+        "passed",
+        "passed"
+      ],
+      "archives": [
+        "render-profile-01-acf",
+        "render-profile-02-906",
+        "render-profile-03-current",
+        "render-profile-04-current",
+        "render-profile-05-906",
+        "render-profile-06-acf",
+        "render-profile-serial-summary"
+      ],
+      "originalByteFilesVerified": 11,
+      "ownedWorktreesRemoved": 6
+    }
+  ]
+}

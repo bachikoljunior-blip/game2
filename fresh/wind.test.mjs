@@ -6,7 +6,7 @@ import {advanceEnvironmentClock,bendStem,clothDisplacement,createEnvironmentCloc
 test('the whole shared wind field stays bounded and advances continuously through gusts',()=>{
   for(const [x,z] of [[0,0],[-28,14],[30,10],[-12,-39]])for(let t=0;t<45;t+=.1){
     const a=sampleWind(x,z,t),b=sampleWind(x,z,t+1/60);
-    assert.ok(a.pressure>.35&&a.pressure<1.5);
+    assert.ok(a.pressure>=.28&&a.pressure<=.64,'normalized mild-breeze pressure is not the former strong-gust range');
     assert.ok(Math.hypot(a.x-b.x,a.z-b.z)<.013,'no per-frame random kick');
   }
   const here=sampleWind(0,0,5),later=sampleWind(10,0,5+.55);
@@ -42,6 +42,7 @@ test('visible and shadow materials receive identical deformation and the same ad
     assert.equal(a.vertexShader,b.vertexShader);assert.equal(a.uniforms.windTime,clock);assert.equal(b.uniforms.windTime,clock);
     clock.value+=.1;assert.equal(a.uniforms.windTime.value,clock.value);
     assert.ok(a.vertexShader.includes('valleyWind'));
+    if(kind!=='cloth')assert.ok(a.vertexShader.includes('windNormal'),'positions and normals share deformation');
   }
 });
 test('wind injection preserves preprocessor line boundaries in the actual Three visible and depth shaders',()=>{

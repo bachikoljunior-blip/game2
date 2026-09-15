@@ -1,0 +1,198 @@
+{
+  "scope": "Local Node process CPU and wall time; same actor/input/terrain, no renderer; not mobile or GPU performance",
+  "samples": {
+    "baseline": {
+      "metrics": {
+        "generatedParts": 114,
+        "drawMeshes": 57,
+        "triangles": 48334,
+        "groundContactPoints": 26164,
+        "articulatedJoints": 24,
+        "surfaceConstruction": "CC0-native-head-neck-hands-and-original-draped-clothing",
+        "externalRuntimeAssets": 5,
+        "importedTextureAssets": 4,
+        "importedGeometryAssets": 1,
+        "assetSource": "MakeHuman MPFB hm08 CC0",
+        "textureState": "geometry-only"
+      },
+      "cases": {
+        "running": {
+          "frames": 180,
+          "medianWallMs": 12.648382999999967,
+          "medianCpuMs": 21.051,
+          "runs": [
+            {
+              "wallMs": 12.648382999999967,
+              "cpuMs": 21.051,
+              "groundSamples": 0
+            },
+            {
+              "wallMs": 13.772891999999956,
+              "cpuMs": 27.41,
+              "groundSamples": 0
+            },
+            {
+              "wallMs": 10.998212999999964,
+              "cpuMs": 14.688,
+              "groundSamples": 0
+            }
+          ]
+        },
+        "attacking": {
+          "frames": 180,
+          "medianWallMs": 12.957320999999979,
+          "medianCpuMs": 18.714,
+          "runs": [
+            {
+              "wallMs": 13.91576299999997,
+              "cpuMs": 18.714,
+              "groundSamples": 0
+            },
+            {
+              "wallMs": 12.957320999999979,
+              "cpuMs": 19.015,
+              "groundSamples": 0
+            },
+            {
+              "wallMs": 9.143619999999942,
+              "cpuMs": 10.366,
+              "groundSamples": 0
+            }
+          ]
+        },
+        "falling": {
+          "frames": 180,
+          "medianWallMs": 55.66044999999997,
+          "medianCpuMs": 57.553,
+          "runs": [
+            {
+              "wallMs": 61.788224000000014,
+              "cpuMs": 74.64,
+              "groundSamples": 0
+            },
+            {
+              "wallMs": 55.66044999999997,
+              "cpuMs": 57.553,
+              "groundSamples": 0
+            },
+            {
+              "wallMs": 53.620731999999975,
+              "cpuMs": 55.593,
+              "groundSamples": 0
+            }
+          ]
+        }
+      }
+    },
+    "new": {
+      "metrics": {
+        "generatedParts": 114,
+        "drawMeshes": 57,
+        "triangles": 48542,
+        "groundContactPoints": 26272,
+        "articulatedJoints": 24,
+        "surfaceConstruction": "CC0-native-head-neck-hands-and-original-draped-clothing",
+        "externalRuntimeAssets": 5,
+        "importedTextureAssets": 4,
+        "importedGeometryAssets": 1,
+        "assetSource": "MakeHuman MPFB hm08 CC0",
+        "textureState": "geometry-only"
+      },
+      "cases": {
+        "running": {
+          "frames": 180,
+          "medianWallMs": 195.09962100000007,
+          "medianCpuMs": 207.28,
+          "runs": [
+            {
+              "wallMs": 205.11178999999993,
+              "cpuMs": 217.023,
+              "groundSamples": 0
+            },
+            {
+              "wallMs": 190.1147719999999,
+              "cpuMs": 193.533,
+              "groundSamples": 0
+            },
+            {
+              "wallMs": 195.09962100000007,
+              "cpuMs": 207.28,
+              "groundSamples": 0
+            }
+          ]
+        },
+        "attacking": {
+          "frames": 180,
+          "medianWallMs": 181.06935699999985,
+          "medianCpuMs": 182.044,
+          "runs": [
+            {
+              "wallMs": 185.5341840000001,
+              "cpuMs": 195.353,
+              "groundSamples": 0
+            },
+            {
+              "wallMs": 181.06935699999985,
+              "cpuMs": 182.044,
+              "groundSamples": 0
+            },
+            {
+              "wallMs": 165.8918020000001,
+              "cpuMs": 169.518,
+              "groundSamples": 0
+            }
+          ]
+        },
+        "falling": {
+          "frames": 180,
+          "medianWallMs": 282.5289899999998,
+          "medianCpuMs": 285.448,
+          "runs": [
+            {
+              "wallMs": 290.91713100000015,
+              "cpuMs": 292.574,
+              "groundSamples": 95256
+            },
+            {
+              "wallMs": 282.5289899999998,
+              "cpuMs": 285.448,
+              "groundSamples": 95256
+            },
+            {
+              "wallMs": 266.57094400000005,
+              "cpuMs": 278.204,
+              "groundSamples": 95256
+            }
+          ]
+        }
+      }
+    }
+  },
+  "ratios": {
+    "running": {
+      "cpu": 9.84656310864092,
+      "additionalCpuMsPerFrame": 1.0346055555555556
+    },
+    "attacking": {
+      "cpu": 9.72769049909159,
+      "additionalCpuMsPerFrame": 0.9073888888888889
+    },
+    "falling": {
+      "cpu": 4.9597414557017006,
+      "additionalCpuMsPerFrame": 1.2660833333333332
+    }
+  },
+  "baselineCommit": "1e7eed79e7dec1ce28470c77c1fb93a74e40cd15",
+  "sourceSha256": {
+    "baseline": {
+      "fresh/character-rig.js": "5266988e51e0f49aaa30beb69fc55a1d6922cc0805bffe01de9f31ff4e1fa47a",
+      "fresh/character-motion.js": "0f47020978f7b651d865479a108ced355d55faf5f4d574c4d996e5f1e8442352",
+      "fresh/character-sculpt.js": "0d40059bcb748e47c08f2ec66163aafb266d5eff7729b671070722b727479639"
+    },
+    "candidate": {
+      "fresh/character-rig.js": "7ab85050957c92c1dab84ff560ea51ab9a2420bf94b7a156d483c3071a55c667",
+      "fresh/character-motion.js": "488d5f2f8994272e5473f36b5ed7dc7ba8427caa4e079ce1092b9df6b74a009b",
+      "fresh/character-sculpt.js": "f608c38f6f2e3b8fb9b02b52a3b1aac8cdde1a46e34242535ec1c1a00983eb4c"
+    }
+  }
+}

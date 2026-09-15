@@ -1,0 +1,104 @@
+{
+  "at": "2026-09-15T13:50:00.865775+00:00",
+  "integrator": "/root/game2_ultra_art_sound_physics",
+  "sourceParent": "3bcc5df515eb394c484e6eaf9caf0efcd50e78c5",
+  "purpose": "Early actual rendering of imported anatomy, physically sized foliage and reconstructed landscape while the separately evidenced dynamic hakama major is repaired. This checkpoint is not approved for publication.",
+  "components": [
+    {
+      "owner": "/root/game2_ultra_art_sound_physics/character_art",
+      "localCommit": "1e7eed79e7dec1ce28470c77c1fb93a74e40cd15",
+      "integration": "git cherry-pick --no-commit",
+      "role": "CC0 anatomy,UV,hands,4textures,gripOffset and decoded-asset gate",
+      "authorEvidence": "20260915-character-mpfb-pilot.md"
+    },
+    {
+      "owner": "/root/game2_ultra_art_sound_physics/c06_reference_material",
+      "localCommit": "3622a5827fa196e7aeea25c89bfda4fde2dc51bd",
+      "integration": "git cherry-pick --no-commit",
+      "role": "rocks,shrine,paving,ground materials",
+      "authorEvidence": "20260915-scene-art/report.md"
+    },
+    {
+      "owner": "/root/game2_ultra_art_sound_physics/vegetation_physics",
+      "localCommit": "079511e895a1915d36d9eb6bdb0443d168998f64",
+      "integration": "git cherry-pick --no-commit; one adjacent construction conflict resolved retaining sceneArt.finish then new foliage construction",
+      "role": "connected small leaves,crowns and conservative leaf-ray calculation",
+      "authorEvidence": "20260915-foliage-pilot.md",
+      "diagnosticFollowup": "e635154aed068c5e903d56d384c7e3be80cd1f64"
+    }
+  ],
+  "additionalApparatus": {
+    "owner": "/root/game2_ultra_art_sound_physics/sound_revision",
+    "file": "fresh/assets-browser-smoke.mjs",
+    "sha256": "f09729c3dad03e347a6207a96da9f85365b51a2e9422d9e6226654a9792145e5",
+    "authorVMAssertions": 32,
+    "independentClassifications": 12,
+    "actualBrowser": "not run locally; exact-source CI required",
+    "scope": "real PNG response and native image dimensions, submission to original WebGL image API, rendered frames and readiness states. API submission alone is not a successful GPU texel-transfer measurement."
+  },
+  "localVerification": {
+    "initialCombinedSuite": {
+      "tests": 211,
+      "passed": 205,
+      "failed": 6,
+      "durationMs": 139644.066406,
+      "cause": "Canvas-only fake document in plant numerical fixture accidentally selected browser TextureLoader and lacked createElementNS."
+    },
+    "repair": "Allow explicitly injected character resources in createPresentation. Numerical helper constructs genuine geometry-only Node resources before setting the fake canvas document. Ordinary production/main still constructs and awaits all4 actual textures. No failed browser load is replaced by fake readiness.",
+    "targetedRepair": {
+      "tests": 13,
+      "passed": 13,
+      "failed": 0,
+      "durationMs": 8449.345371,
+      "includesAll6Failures": true
+    },
+    "nativeTerrainAndPresentationBeforePlantMerge": {
+      "tests": 27,
+      "passed": 27,
+      "scope": "Includes final imported neck collar hem, real hand grip and1680 terrain poses; before new plant merge and dynamic hakama repair."
+    },
+    "build": "Initial combined anatomy/scene/leaf production build succeeded with4 PNGs; final exact-source CI build and fingerprint still required.",
+    "gates": "state selftest14/14,catalog negatives6,ownership,diff whitespace; no root/docs/source legacy edits",
+    "inspectionScopeCorrection": {
+      "testsPassed": 4,
+      "cameraChanged": false,
+      "selection": "other woody objects with explicitly named specimen support exclusions",
+      "actualSelfOtherAll": {
+        "maple": [
+          10,
+          0,
+          10,
+          20
+        ],
+        "mapleLeaf": [
+          1,
+          0,
+          1,
+          15
+        ],
+        "bamboo": [
+          8,
+          0,
+          8,
+          25
+        ]
+      },
+      "scope": "Selected camera rays can hit the specimen itself; zero selection obstruction does not mean zero self-occlusion."
+    }
+  },
+  "independentReviews": [
+    "20260915-independent-runtime-art-sound-physics.md",
+    "20260915-independent-asset-readiness.md",
+    "20260915-independent-art-revision.md"
+  ],
+  "knownRemaining": [
+    "Dynamic hakama exposes knee and thin pointed hem in old actual running/death films; character author has begun a closed-section continuously deformed cloth replacement.",
+    "Native imported figure and new foliage/landscape not yet viewed in WebGL.",
+    "Small exposed mask normal inconsistency needs actual candidate image inspection.",
+    "New foliage GPU load and texture footprint need actual browser checks; Node timing is not GPU/phone performance.",
+    "Perceptual listening unsupported; numeric/live audio evidence is not naturalness acceptance.",
+    "PS4 target and all10 formal comparisons remain not measured.",
+    "Main/preview still previous a672 published build."
+  ],
+  "remainingHours": 114.0311483588889
+}

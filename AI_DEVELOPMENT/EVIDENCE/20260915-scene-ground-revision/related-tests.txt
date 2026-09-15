@@ -1,0 +1,39 @@
+✔ all action phases fit the actual triangular terrain at six discoveries and eight facings (89328.812684ms)
+ℹ {"spring-basin":{"poses":280,"lowestClearance":-2.4424906541753444e-15},"stream-stones":{"poses":280,"lowestClearance":-2.220446049250313e-15},"valley-frame":{"poses":280,"lowestClearance":-3.552713678800501e-15},"sun-ring":{"poses":280,"lowestClearance":-0.0004444457185170947},"old-waystone":{"poses":280,"lowestClearance":-5.551115123125783e-15},"white-tree":{"poses":280,"lowestClearance":-2.6645352591003757e-15}}
+✔ sloped running plants feet at their own world positions through acceleration and deceleration (22926.777049ms)
+✔ state blending on the steep sun-ring cannot accumulate terrain offsets or change authored poses (11763.738199ms)
+✔ parry and block keep grounded soles and reachable grips across discovery slopes (14760.224616ms)
+✔ 414 touch recorded duel positions expose both intervening banners without fading the third (638.969929ms)
+✔ 414 desktop recorded first locked frame fades the intersecting ridge rock independently (1855.541027ms)
+✔ head, chest and blade rays use the current rig transforms and cover a sword-only obstruction (136.263084ms)
+✔ wind-deformed cloth intersections preserve visible and depth shaders and source vertices (1.207893ms)
+✔ fade is local, continuous, pauseable and fully restores opacity, depth and shadows (0.868129ms)
+✔ slender generated leaves no longer obscure the historical water-route position or trigger false fades (1452.814471ms)
+✔ actual animated leaf triangles have matching positive/negative CPU ray proxies after the wind moves them (934.758518ms)
+✔ recorded old-waystone wood fades locally, freezes when paused and restores on retry (1245.635463ms)
+ℹ Recorded position: maple wood detected in 13/13 wind phases; other 3 cells remain opaque. All 364 supports occupy 4 correct spatial cells.
+✔ one approach physically divides outside the ridge and reconverges (1.759701ms)
+✔ each side has a distinct landmark and the wind-cloth path is the longer consequence (0.259926ms)
+✔ route choice exists only beside the ridge and records its real position once (1.571582ms)
+✔ choice is recorded before route-specific observations even at a landmark (0.897132ms)
+✔ unknown route ids are rejected instead of silently becoming the left route (0.554012ms)
+✔ encounter availability follows approach, chosen branch and reconvergence (0.111575ms)
+✔ the ridge stops a central shortcut while both ordinary movement routes pass it (24.72387ms)
+✔ new exposed rock triangles cover the collision spine and leave both walking corridors clear (197.872552ms)
+✔ new lower ridge clears historic anatomy rays and still fades on actual intersecting triangles (677.047956ms)
+✔ the rebuilt shrine keeps feet clear at the unchanged collision boundary (200.745926ms)
+✔ terrain maximum matches clipped triangles at grid lines, diagonals, negatives and clamped edges (76.342497ms)
+✔ bound preserves each articulated pose and lift while reducing exact height queries on the 48k figure (2152.862815ms)
+ℹ {"kind":"Node CPU, same current generated figure, not browser/device timing","reports":[{"state":"dead","frames":90,"oldCalls":1762265,"newCalls":227695,"boundCalls":5490,"heightCallReduction":0.8707941200670728,"oldMsPerFrame":8.313658288888886,"newMsPerFrame":1.3941360999999979},{"state":"broken","frames":90,"oldCalls":233640,"newCalls":6840,"boundCalls":360,"heightCallReduction":0.9707241910631741,"oldMsPerFrame":1.1291608888888782,"newMsPerFrame":0.2026394111111055},{"state":"dodge","frames":90,"oldCalls":233640,"newCalls":6840,"boundCalls":360,"heightCallReduction":0.9707241910631741,"oldMsPerFrame":2.787461444444438,"newMsPerFrame":0.22560924444444228}]}
+✔ generic flat and nonterrain providers retain the previous no-bound fallback (275.83319ms)
+✔ ground sampling agrees with actual rendered triangles, including diagonal interiors (172.624724ms)
+✔ the verified central path stays level while the valley shoulders rise (0.514414ms)
+✔ shrine decorative base cannot project beyond the solid collision footprint (0.17526ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 28
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 138994.227937

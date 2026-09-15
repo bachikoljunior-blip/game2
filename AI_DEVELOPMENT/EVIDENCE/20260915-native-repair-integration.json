@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "author": "/root/game2_ultra_art_sound_physics",
+  "at": "2026-09-15T15:23:21.267802+00:00",
+  "purpose": "Finite repair of actual native-image and completed-render failures before publishing the latest direct art/sound/physics request.",
+  "canonicalRemoteBase": "e42674349963d756617acdbb0be351d922e69b92",
+  "canonicalMainStill": "b06ade1ad5ab8b72de9bb9996f323a063f5db5ef",
+  "previewUrl": "https://bachikoljunior-blip.github.io/game2/preview/",
+  "previewRuntimeStill": "a6722c5cf7b1933f1956c6c33ec4edc6adf47640",
+  "acceptedDelegationEvidence": "AI_DEVELOPMENT/EVIDENCE/20260915-art-sound-physics-intake.json",
+  "singleRemoteWriter": true,
+  "automationChanges": false,
+  "integratedLocalComponents": [
+    {
+      "sha": "f869fc24b2bc0143e33eda8d104fe474f16cd1b7",
+      "author": "character_art",
+      "change": "Continuous closed left/right hakama follows pelvis/thigh/knee/shin; ground clearance, normal/contact/bounds caches remain synchronized.",
+      "nativeAcceptance": "pending"
+    },
+    {
+      "sha": "c824c1a61ba3e78c6a7c46d140d2b7ef256288c1",
+      "author": "character_art",
+      "change": "Continuous shoulder tailoring, head opening and ear-side guard revision.",
+      "nativeAcceptance": "pending",
+      "independentKnownDefect": "Dynamic lower neck separates from fixed collar; actual guard edges intersect head. Further repair in progress."
+    },
+    {
+      "sha": "374e9b1e907a4aefbe965a320d6c4847d4b363a6",
+      "author": "vegetation_physics",
+      "change": "Inspection settles production updates without rendering unseen intermediate frames; recorded frames still each draw once.",
+      "nativeAcceptance": "pending"
+    },
+    {
+      "sha": "1dd29a763a6521e0aadb52a8d5d8fba1df471b4e",
+      "author": "vegetation_physics",
+      "change": "Detailed near leaves and twig-bound projected distant fronds restore ordinary-distance canopy mass as a candidate without extra scene drawables. Woody and leaf hierarchical dynamics preserved.",
+      "nativeAcceptance": "pending",
+      "limitation": "Distant cards approximate individual leaf flutter and depth; actual canopy appearance and render cost unmeasured."
+    },
+    {
+      "sha": "26a7b47cda779980a968ceb3a48a1ae44e8a8b49",
+      "author": "vegetation_physics",
+      "change": "Separate texture cutout mask from foreground opacity in shared visible/depth shader hook; preserve CPU base-mask definition.",
+      "sourceChecks": "Author14 tests and independent14672 mask/fade cases plus10609 base-alpha samples pass; GPU drawing pending.",
+      "nativeAcceptance": "pending"
+    },
+    {
+      "sha": "613efa56fa3d2f43314212c21935c8f01ee4e914",
+      "author": "c06_reference_material",
+      "change": "Four unequal fractured rock masses, broad soil/path accumulation and original ground-leaf texture.",
+      "nativeAcceptance": "pending",
+      "independentKnownDefect": "All ridge lower vertices are 5.5cm above flat ground; horizontal rays pass underneath. Further grounding repair in progress."
+    },
+    {
+      "sha": "f428e4f8b9b8a622180b4475b24163c24ed19d3c",
+      "author": "character_art",
+      "change": "Deform the lower anatomical neck with chest weights while preserving existing upper-neck motion; synchronize normals/contact/bounds and clear collar lining and upper guard edges.",
+      "authorVerification": "58 related tests plus4 terrain pass; 4actors*5poses65280rays0openings, collar/skin edges0 and guard6168edges0intersections.",
+      "independentVerification": "Original defect fixtures independently rechecked with no neck/collar/guard intersections or rock gap; actual native appearance remains pending. See independent-runtime evidence.",
+      "nativeAcceptance": "pending"
+    },
+    {
+      "sha": "d7b584538d717194c9acb53063d893b5bb19224f",
+      "author": "c06_reference_material",
+      "change": "Close the fractured ridge base sides/bottom and extend original lowest rings to 8cm below unchanged ground; upper vertices unchanged.",
+      "authorVerification": "22 related tests/build pass. Original horizontal-ray defect0/0/8→10/10/8 at .025/.054/.056m; production FrontSide5/5/4, upper/lower/outside negative controls retained.",
+      "independentVerification": "Original defect fixtures independently rechecked with no neck/collar/guard intersections or rock gap; actual native appearance remains pending. See independent-runtime evidence.",
+      "nativeAcceptance": "pending"
+    },
+    {
+      "sha": "57a2d750a003c593e00429279da9ea348e581732",
+      "author": "vegetation_physics",
+      "change": "Preserve source painted color/alpha, extend only transparent RGB within tiles, alpha-weighted Float64 mip color and filtered-area-preserving alpha; seven immutable levels512→8.",
+      "authorVerification": "16 related tests/build plus2-test54 trilinear-case checks pass. Covered mip color remains near50–51 instead of62–72; terminal filtered coverage16.24–16.60%. Actual installed Three uploader allocates and supplies7levels in GL-call stub.",
+      "independentVerification": "Independent direct-base color, filtered coverage, guard alpha, unchanged source and actual Three uploader checks found no new source blocker. Driver and native visual behavior remain pending.",
+      "nativeAcceptance": "pending",
+      "limitations": [
+        "Actual driver/rasterization not established by GL-call stubs.",
+        "Very distant tiny fronds may alias or shimmer.",
+        "The approximately0.6% base union coverage approximation remains unchanged."
+      ]
+    }
+  ],
+  "ownerFiniteValidation": {
+    "tests": 11,
+    "passed": 11,
+    "failed": 0,
+    "files": [
+      "fresh/scene-art.test.mjs",
+      "fresh/foliage-lod.test.mjs",
+      "fresh/vegetation-capture-update.test.mjs",
+      "fresh/character-cloth.test.mjs"
+    ],
+    "scope": "Integrated local shape/selection/update/collision contracts before the later finite alpha, neck and rock repairs; not final whole-runtime CI or native quality."
+  },
+  "priorRejectedRuntimeEvidence": "AI_DEVELOPMENT/EVIDENCE/20260915-e188-validation-rejected.json",
+  "correctedRenderingEvidence": "AI_DEVELOPMENT/EVIDENCE/20260915-render-profile-34983898913.json",
+  "independentArtEvidence": "AI_DEVELOPMENT/EVIDENCE/20260915-independent-art-revision.md",
+  "independentRuntimeEvidence": "AI_DEVELOPMENT/EVIDENCE/20260915-independent-runtime-art-sound-physics.md",
+  "recordingRepair": {
+    "reason": "e188 PC-right derived clip ended before the actual lamp and ending while the later original recording did contain them.",
+    "change": "Keep the complete original raw tail, including recorded retry, and explicitly retain approximate event/video alignment. Export additional original destination/signal snapshots without claiming their filenames prove visible content.",
+    "nextVerification": "Next exact-source raw and derived full decoding, followed by actual visual review of the retained tail."
+  },
+  "publicVerificationPreparation": {
+    "requiredAssets": 4,
+    "scope": "Same-build HTML/JS/CSS and four bundled CC0 PNG HTTP hashes plus actual cold PC/touch response body hashes/readiness and explicit input behavior.",
+    "status": "prepared privately; final source/package pins and public execution pending"
+  },
+  "formalStatus": {
+    "satisfied": 0,
+    "notSatisfied": 0,
+    "notMeasured": 10,
+    "ps4TargetReached": false,
+    "audioPerceptualListening": "not measured",
+    "physicalDevicePerformance": "not measured"
+  },
+  "status": "Frozen runtime passed230 local tests and clean7-file production build; submitting native CI. Not yet publishable or complete.",
+  "targetedNativeCaptureAddition": {
+    "reason": "Static portraits cannot establish dynamic neckline closure, and one guard profile cannot inspect both sides.",
+    "files": [
+      "fresh/art-direction-capture.mjs",
+      ".github/scripts/emit-fresh-media.py"
+    ],
+    "newImagesPerSide": 9,
+    "neckPoses": [
+      {
+        "state": "broken",
+        "age": 0.3
+      },
+      {
+        "state": "dead",
+        "age": 0.5
+      },
+      {
+        "state": "victory",
+        "age": 1.45
+      },
+      {
+        "state": "stagger",
+        "age": 0.05
+      }
+    ],
+    "views": "player neck front/back for four poses; warden opposite profile",
+    "conditions": "Same production character factories/materials and fixed neutral-stage lights.24 idle updates precede each synthetic pose sequence. Old20portrait views remain. This is not ordinary-input gameplay or a blind reference comparison.",
+    "validation": "Outer capture script and generated inner module syntax passed; new actual images pending nextCI."
+  },
+  "remainingSourceRepair": null,
+  "finalLocalValidation": {
+    "at": "2026-09-15T15:23:21.267802+00:00",
+    "frozenRuntimeIndexFreshTree": "7e6eda4aea523982c3fb6f102d8b95bb684b1abb",
+    "command": "node --test fresh/*.test.mjs",
+    "tests": 230,
+    "passed": 230,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 163098.116396,
+    "testLogSha256": "28f72c99926f271d9a6daeea8bcb40c6d4c88be941cdb6631ad94dceea20ae17",
+    "cleanBuild": "passed",
+    "cleanBuildFiles": 7,
+    "sourceScope": "Local frozen-index runtime; native exact-source CI and public update still pending."
+  }
+}

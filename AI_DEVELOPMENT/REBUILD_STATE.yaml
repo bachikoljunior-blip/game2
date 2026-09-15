@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-15T11:23:04.684386+00:00",
-  "phase": "fresh-seven-fixes-all-animation",
+  "updatedAt": "2026-09-15T16:23:01.561626+00:00",
+  "phase": "fresh-art-sound-physics-revision",
   "userInstruction": "一旦ゲーム自体はゼロから作り直してくれる？",
   "activeBranch": "codex/game2-rebuild-20260913",
   "fixedInstructions": "AI_DEVELOPMENT/FIXED_INSTRUCTIONS.md",
@@ -15,7 +15,7 @@
     "oldPr": 10,
     "optionalRebuildRouting": "ec2480166809f57fa623929bec0fbcb4d5a623a2"
   },
-  "continuation": "Preserve this bounded foreground checkpoint; next authorized production should address remaining motion/contact and vegetation gaps, obtain supported perceptual sound evidence, and continue lawful anonymous readiness/comparison. No persistent producer or automation reactivation is claimed.",
+  "continuation": "Run exact-source Fresh validation of the indexed static-character candidate and same-host completed-pixel comparison against4fa with original fullPNG equality. Keep 180second missions and all appearance/input gates. Publish only a candidate that clears required operations, then verify the same7files at the actual preview URL; continue remaining PS4 visual work without calling publication completion.",
   "status": "not measured",
   "publication": "Same-byte verified a672 preview published at https://bachikoljunior-blip.github.io/game2/preview/ through PR22/maina213ed5. Pages34961958960 and actual publicCI34962622024 pass. Existing root/docs/public preserved. Whole-product quality remains not measured.",
   "procedureAuthority": "Fixed instructions and explicit user directives govern. Tests, task plans and architecture documents are tools chosen by the AI, not additional fixed rules.",
@@ -140,12 +140,48 @@
     "previewEvidence": "AI_DEVELOPMENT/EVIDENCE/20260915-public-preview-verified.json",
     "finalPublicVerification": "db20986a/CI34962622024 completed success; direct public bytes,PC/touch render/start and separated input. CloudBrowser WebGL limitation recorded independently."
   },
-  "pendingCandidate": null,
+  "pendingCandidate": {
+    "kind": "preliminary imported-anatomy/foliage/scene capture; not release-approved",
+    "parentSource": "3bcc5df515eb394c484e6eaf9caf0efcd50e78c5",
+    "evidence": "AI_DEVELOPMENT/EVIDENCE/20260915-cc0-foliage-scene-integration.json",
+    "localSuite": "205/211 then all6 failures repaired in13/13 target checks",
+    "next": "exact-source early media CI plus closed-section dynamic hakama repair",
+    "public": "unchanged previous a672 build"
+  },
   "preview": {
     "url": "https://bachikoljunior-blip.github.io/game2/preview/",
     "status": "published; actual public bytes/render/input verified",
     "sourceRevision": "a6722c5cf7b1933f1956c6c33ec4edc6adf47640",
     "mainIntegration": "a213ed5cc6013759320d6f15fda588821878d127",
     "evidence": "AI_DEVELOPMENT/EVIDENCE/20260915-public-preview-verified.json"
+  },
+  "latestPresentationRequest": "どんだけ風吹いてんの？おと。足音重すぎ木の葉っぱとみきの揺れ方は違うし物理を考えて揺れ方考えるべき。人の造形もおざなりps4のげーむのビジュアルくらいのクオリティにして",
+  "activeForegroundEvidence": "AI_DEVELOPMENT/EVIDENCE/20260915-art-sound-physics-intake.json",
+  "currentForegroundExecution": {
+    "owner": "/root/game2_ultra_art_sound_physics",
+    "source": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+    "main": "b06ade1ad5ab8b72de9bb9996f323a063f5db5ef",
+    "pr": 24,
+    "mode": "authorized foreground; no automation changes",
+    "evidence": "AI_DEVELOPMENT/EVIDENCE/20260915-art-sound-physics-intake.json",
+    "remainingHours": 114.51263382916667
+  },
+  "latestArtSoundPhysicsBoundary": {
+    "sourceCheckpoint": "31a56e1d6fc0b6693532a634c016fceda5b3af76",
+    "runtimeAtCheckpoint": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+    "mainStill": "b06ade1ad5ab8b72de9bb9996f323a063f5db5ef",
+    "previewStill": "a6722c5cf7b1933f1956c6c33ec4edc6adf47640",
+    "evidence": "AI_DEVELOPMENT/EVIDENCE/20260915-4fa-normal-failure-and-static-index.json",
+    "normalCI": {
+      "run": 34992059112,
+      "freshConclusion": "failure",
+      "touchFailures": 2,
+      "pcPassed": 2
+    },
+    "pendingLocalComponents": [
+      "fd559cc exact static character index"
+    ],
+    "formalCompletion": false,
+    "nextAction": "Run exact-source Fresh validation of the indexed static-character candidate and same-host completed-pixel comparison against4fa with original fullPNG equality. Keep 180second missions and all appearance/input gates. Publish only a candidate that clears required operations, then verify the same7files at the actual preview URL; continue remaining PS4 visual work without calling publication completion."
   }
 }

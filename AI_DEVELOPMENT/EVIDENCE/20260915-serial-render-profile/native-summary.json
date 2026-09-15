@@ -1,0 +1,710 @@
+{
+  "schemaVersion": 1,
+  "result": "passed",
+  "eventRevision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+  "hostRecordSha256": "c36063c08ac01b0920de7404a032050ed5910bf925a21208b42a109ff4290299",
+  "order": [
+    {
+      "ordinal": 1,
+      "label": "acf",
+      "revision": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+      "freshTree": "7b4ca3643630ee9420ce2423b69190ac80ed8db4"
+    },
+    {
+      "ordinal": 2,
+      "label": "906",
+      "revision": "9068522520b0f269cc937057b444f06c7c187978",
+      "freshTree": "7e6eda4aea523982c3fb6f102d8b95bb684b1abb"
+    },
+    {
+      "ordinal": 3,
+      "label": "current",
+      "revision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+      "freshTree": "92755d9c54d9c814d441801cb536d29d1461888e"
+    },
+    {
+      "ordinal": 4,
+      "label": "current",
+      "revision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+      "freshTree": "92755d9c54d9c814d441801cb536d29d1461888e"
+    },
+    {
+      "ordinal": 5,
+      "label": "906",
+      "revision": "9068522520b0f269cc937057b444f06c7c187978",
+      "freshTree": "7e6eda4aea523982c3fb6f102d8b95bb684b1abb"
+    },
+    {
+      "ordinal": 6,
+      "label": "acf",
+      "revision": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+      "freshTree": "7b4ca3643630ee9420ce2423b69190ac80ed8db4"
+    }
+  ],
+  "ordinals": [
+    {
+      "ordinal": 1,
+      "label": "acf",
+      "revision": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+      "freshTree": "7b4ca3643630ee9420ce2423b69190ac80ed8db4",
+      "eventRevision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+      "run": "34992058990",
+      "attempt": "1",
+      "job": "profile",
+      "hostRecordSha256": "c36063c08ac01b0920de7404a032050ed5910bf925a21208b42a109ff4290299",
+      "startedAt": "2026-09-15T15:59:47.940559+00:00",
+      "result": "passed",
+      "toolExitCode": 0,
+      "errors": [],
+      "observations": {
+        "firstCompileFrame": {
+          "cpuRenderMs": 883.6999999999971,
+          "readbackWallMs": 1659.8999999999942,
+          "totalWallMs": 2543.5999999999913
+        },
+        "warm12Summary": {
+          "cpuRenderMs": {
+            "min": 14,
+            "median": 17.549999999995634,
+            "max": 25.5
+          },
+          "readbackWallMs": {
+            "min": 790.6999999999971,
+            "median": 800.7999999999956,
+            "max": 1064.7000000000116
+          },
+          "totalWallMs": {
+            "min": 806.9000000000087,
+            "median": 817.7999999999956,
+            "max": 1078.7000000000116
+          },
+          "bufferResetCpuMs": {
+            "min": 0.19999999999708962,
+            "median": 0.3000000000029104,
+            "max": 0.40000000000873115
+          },
+          "pixelAnalysisCpuMs": {
+            "min": 17.60000000000582,
+            "median": 31,
+            "max": 40.39999999999418
+          }
+        }
+      },
+      "files": [
+        {
+          "path": "report.json",
+          "bytes": 147082,
+          "sha256": "e61ecb0418da161f2b2d653a5ac617f1196f7aa3b45788585f98644c861e003b"
+        },
+        {
+          "path": "full.png",
+          "bytes": 647140,
+          "sha256": "f00eeb892729a2e46ae9b370fddb49394aae025128dd410183673ee79bdac824"
+        }
+      ],
+      "hostLoadAverageAtStart": [
+        0.6630859375,
+        0.19873046875,
+        0.0693359375
+      ],
+      "sourceWorktreeRemoved": true,
+      "originalReportResult": "passed",
+      "finishedAt": "2026-09-15T16:00:06.228742+00:00"
+    },
+    {
+      "ordinal": 2,
+      "label": "906",
+      "revision": "9068522520b0f269cc937057b444f06c7c187978",
+      "freshTree": "7e6eda4aea523982c3fb6f102d8b95bb684b1abb",
+      "eventRevision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+      "run": "34992058990",
+      "attempt": "1",
+      "job": "profile",
+      "hostRecordSha256": "c36063c08ac01b0920de7404a032050ed5910bf925a21208b42a109ff4290299",
+      "startedAt": "2026-09-15T16:00:06.252316+00:00",
+      "result": "passed",
+      "toolExitCode": 0,
+      "errors": [],
+      "observations": {
+        "firstCompileFrame": {
+          "cpuRenderMs": 1040.199999999997,
+          "readbackWallMs": 2575.5,
+          "totalWallMs": 3615.699999999997
+        },
+        "warm12Summary": {
+          "cpuRenderMs": {
+            "min": 21.19999999999709,
+            "median": 25.549999999995634,
+            "max": 39.19999999999709
+          },
+          "readbackWallMs": {
+            "min": 1010.3000000000029,
+            "median": 1024.6500000000015,
+            "max": 1039.199999999997
+          },
+          "totalWallMs": {
+            "min": 1041,
+            "median": 1052.5999999999913,
+            "max": 1065
+          },
+          "bufferResetCpuMs": {
+            "min": 0.19999999999708962,
+            "median": 0.3000000000029104,
+            "max": 0.40000000000873115
+          },
+          "pixelAnalysisCpuMs": {
+            "min": 17.70000000001164,
+            "median": 31.19999999999709,
+            "max": 43.89999999999418
+          }
+        }
+      },
+      "files": [
+        {
+          "path": "report.json",
+          "bytes": 157472,
+          "sha256": "0a5baf8c62665623e4b57a70b226590ebc472d3e43e6f9b0c774c70512d921c4"
+        },
+        {
+          "path": "full.png",
+          "bytes": 653004,
+          "sha256": "c7094722f42a42a25eaf61491734e97398b8820672c390c3341cf9d73deb7461"
+        }
+      ],
+      "hostLoadAverageAtStart": [
+        1.8564453125,
+        0.49560546875,
+        0.17041015625
+      ],
+      "sourceWorktreeRemoved": true,
+      "originalReportResult": "passed",
+      "finishedAt": "2026-09-15T16:00:35.526532+00:00"
+    },
+    {
+      "ordinal": 3,
+      "label": "current",
+      "revision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+      "freshTree": "92755d9c54d9c814d441801cb536d29d1461888e",
+      "eventRevision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+      "run": "34992058990",
+      "attempt": "1",
+      "job": "profile",
+      "hostRecordSha256": "c36063c08ac01b0920de7404a032050ed5910bf925a21208b42a109ff4290299",
+      "startedAt": "2026-09-15T16:00:35.550284+00:00",
+      "result": "passed",
+      "toolExitCode": 0,
+      "errors": [],
+      "observations": {
+        "firstCompileFrame": {
+          "cpuRenderMs": 1064.699999999997,
+          "readbackWallMs": 2564.899999999994,
+          "totalWallMs": 3629.5999999999913
+        },
+        "warm12Summary": {
+          "cpuRenderMs": {
+            "min": 19.20000000001164,
+            "median": 24.69999999999709,
+            "max": 48.60000000000582
+          },
+          "readbackWallMs": {
+            "min": 973.6999999999971,
+            "median": 980.0500000000102,
+            "max": 1003.2999999999884
+          },
+          "totalWallMs": {
+            "min": 995.2000000000116,
+            "median": 1004.5999999999913,
+            "max": 1043.199999999997
+          },
+          "bufferResetCpuMs": {
+            "min": 0.19999999999708962,
+            "median": 0.3000000000029104,
+            "max": 0.40000000002328306
+          },
+          "pixelAnalysisCpuMs": {
+            "min": 17.39999999999418,
+            "median": 30.900000000001455,
+            "max": 50.69999999999709
+          }
+        }
+      },
+      "files": [
+        {
+          "path": "report.json",
+          "bytes": 158082,
+          "sha256": "e12849c7ff4d86b887c5adeae6833ce066bbd68f41674809c50f280a3af2a832"
+        },
+        {
+          "path": "full.png",
+          "bytes": 657270,
+          "sha256": "4db93b67c1887cca3e0aaba2f6dff4d7ed747a6a262433add56f7e9a4da051c8"
+        }
+      ],
+      "hostLoadAverageAtStart": [
+        2.96875,
+        0.8837890625,
+        0.31005859375
+      ],
+      "sourceWorktreeRemoved": true,
+      "originalReportResult": "passed",
+      "finishedAt": "2026-09-15T16:01:03.543478+00:00"
+    },
+    {
+      "ordinal": 4,
+      "label": "current",
+      "revision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+      "freshTree": "92755d9c54d9c814d441801cb536d29d1461888e",
+      "eventRevision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+      "run": "34992058990",
+      "attempt": "1",
+      "job": "profile",
+      "hostRecordSha256": "c36063c08ac01b0920de7404a032050ed5910bf925a21208b42a109ff4290299",
+      "startedAt": "2026-09-15T16:01:03.565820+00:00",
+      "result": "passed",
+      "toolExitCode": 0,
+      "errors": [],
+      "observations": {
+        "firstCompileFrame": {
+          "cpuRenderMs": 1049.5999999999767,
+          "readbackWallMs": 2585.4000000000233,
+          "totalWallMs": 3635
+        },
+        "warm12Summary": {
+          "cpuRenderMs": {
+            "min": 19.60000000000582,
+            "median": 25.10000000000582,
+            "max": 42
+          },
+          "readbackWallMs": {
+            "min": 975,
+            "median": 982.7500000000146,
+            "max": 1018
+          },
+          "totalWallMs": {
+            "min": 997.9000000000233,
+            "median": 1010.4500000000116,
+            "max": 1045.1000000000058
+          },
+          "bufferResetCpuMs": {
+            "min": 0.09999999997671694,
+            "median": 0.29999999998835847,
+            "max": 0.39999999999417923
+          },
+          "pixelAnalysisCpuMs": {
+            "min": 17.29999999998836,
+            "median": 30.85000000000582,
+            "max": 50
+          }
+        }
+      },
+      "files": [
+        {
+          "path": "report.json",
+          "bytes": 157996,
+          "sha256": "fed2e1889dd96ffcb9e74903af966c3972cdd91f25b1b7aeebe2fbd7f719f3dd"
+        },
+        {
+          "path": "full.png",
+          "bytes": 657270,
+          "sha256": "4db93b67c1887cca3e0aaba2f6dff4d7ed747a6a262433add56f7e9a4da051c8"
+        }
+      ],
+      "hostLoadAverageAtStart": [
+        3.62890625,
+        1.2138671875,
+        0.435546875
+      ],
+      "sourceWorktreeRemoved": true,
+      "originalReportResult": "passed",
+      "finishedAt": "2026-09-15T16:01:31.425819+00:00"
+    },
+    {
+      "ordinal": 5,
+      "label": "906",
+      "revision": "9068522520b0f269cc937057b444f06c7c187978",
+      "freshTree": "7e6eda4aea523982c3fb6f102d8b95bb684b1abb",
+      "eventRevision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+      "run": "34992058990",
+      "attempt": "1",
+      "job": "profile",
+      "hostRecordSha256": "c36063c08ac01b0920de7404a032050ed5910bf925a21208b42a109ff4290299",
+      "startedAt": "2026-09-15T16:01:31.448596+00:00",
+      "result": "passed",
+      "toolExitCode": 0,
+      "errors": [],
+      "observations": {
+        "firstCompileFrame": {
+          "cpuRenderMs": 1059.6000000000058,
+          "readbackWallMs": 2615.399999999994,
+          "totalWallMs": 3675
+        },
+        "warm12Summary": {
+          "cpuRenderMs": {
+            "min": 22,
+            "median": 24.70000000001164,
+            "max": 41.89999999999418
+          },
+          "readbackWallMs": {
+            "min": 1008.1000000000058,
+            "median": 1014.5,
+            "max": 1027.5
+          },
+          "totalWallMs": {
+            "min": 1031.5,
+            "median": 1039.8999999999942,
+            "max": 1058.2000000000116
+          },
+          "bufferResetCpuMs": {
+            "min": 0.1999999999825377,
+            "median": 0.29999999998835847,
+            "max": 0.39999999999417923
+          },
+          "pixelAnalysisCpuMs": {
+            "min": 17.39999999999418,
+            "median": 30.80000000000291,
+            "max": 37.5
+          }
+        }
+      },
+      "files": [
+        {
+          "path": "report.json",
+          "bytes": 157701,
+          "sha256": "51a203d4b7e13ab676cea17f64d5c4dc63c39a11e05c1b66a6c9b711d950263b"
+        },
+        {
+          "path": "full.png",
+          "bytes": 653004,
+          "sha256": "c7094722f42a42a25eaf61491734e97398b8820672c390c3341cf9d73deb7461"
+        }
+      ],
+      "hostLoadAverageAtStart": [
+        3.4521484375,
+        1.4013671875,
+        0.5234375
+      ],
+      "sourceWorktreeRemoved": true,
+      "originalReportResult": "passed",
+      "finishedAt": "2026-09-15T16:01:59.809017+00:00"
+    },
+    {
+      "ordinal": 6,
+      "label": "acf",
+      "revision": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+      "freshTree": "7b4ca3643630ee9420ce2423b69190ac80ed8db4",
+      "eventRevision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+      "run": "34992058990",
+      "attempt": "1",
+      "job": "profile",
+      "hostRecordSha256": "c36063c08ac01b0920de7404a032050ed5910bf925a21208b42a109ff4290299",
+      "startedAt": "2026-09-15T16:01:59.831552+00:00",
+      "result": "passed",
+      "toolExitCode": 0,
+      "errors": [],
+      "observations": {
+        "firstCompileFrame": {
+          "cpuRenderMs": 768.3000000000175,
+          "readbackWallMs": 1753.2999999999884,
+          "totalWallMs": 2521.600000000006
+        },
+        "warm12Summary": {
+          "cpuRenderMs": {
+            "min": 14.299999999988358,
+            "median": 16.15000000000873,
+            "max": 22.39999999999418
+          },
+          "readbackWallMs": {
+            "min": 800.5,
+            "median": 804.9000000000087,
+            "max": 855.6000000000058
+          },
+          "totalWallMs": {
+            "min": 816.2999999999884,
+            "median": 822.1999999999971,
+            "max": 875.8999999999942
+          },
+          "bufferResetCpuMs": {
+            "min": 0.1999999999825377,
+            "median": 0.3000000000029104,
+            "max": 0.39999999999417923
+          },
+          "pixelAnalysisCpuMs": {
+            "min": 17.5,
+            "median": 31,
+            "max": 37.79999999998836
+          }
+        }
+      },
+      "files": [
+        {
+          "path": "report.json",
+          "bytes": 147176,
+          "sha256": "06884b6f352819cea593ad3a55375e10a1f7d67ce79db6b8780a8a3c4840dbfa"
+        },
+        {
+          "path": "full.png",
+          "bytes": 647140,
+          "sha256": "f00eeb892729a2e46ae9b370fddb49394aae025128dd410183673ee79bdac824"
+        }
+      ],
+      "hostLoadAverageAtStart": [
+        3.15673828125,
+        1.484375,
+        0.5751953125
+      ],
+      "sourceWorktreeRemoved": true,
+      "originalReportResult": "passed",
+      "finishedAt": "2026-09-15T16:02:16.795042+00:00"
+    }
+  ],
+  "pairs": [
+    {
+      "label": "acf",
+      "ordinals": [
+        1,
+        6
+      ],
+      "revision": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+      "results": [
+        "passed",
+        "passed"
+      ],
+      "observations": [
+        {
+          "firstCompileFrame": {
+            "cpuRenderMs": 883.6999999999971,
+            "readbackWallMs": 1659.8999999999942,
+            "totalWallMs": 2543.5999999999913
+          },
+          "warm12Summary": {
+            "cpuRenderMs": {
+              "min": 14,
+              "median": 17.549999999995634,
+              "max": 25.5
+            },
+            "readbackWallMs": {
+              "min": 790.6999999999971,
+              "median": 800.7999999999956,
+              "max": 1064.7000000000116
+            },
+            "totalWallMs": {
+              "min": 806.9000000000087,
+              "median": 817.7999999999956,
+              "max": 1078.7000000000116
+            },
+            "bufferResetCpuMs": {
+              "min": 0.19999999999708962,
+              "median": 0.3000000000029104,
+              "max": 0.40000000000873115
+            },
+            "pixelAnalysisCpuMs": {
+              "min": 17.60000000000582,
+              "median": 31,
+              "max": 40.39999999999418
+            }
+          }
+        },
+        {
+          "firstCompileFrame": {
+            "cpuRenderMs": 768.3000000000175,
+            "readbackWallMs": 1753.2999999999884,
+            "totalWallMs": 2521.600000000006
+          },
+          "warm12Summary": {
+            "cpuRenderMs": {
+              "min": 14.299999999988358,
+              "median": 16.15000000000873,
+              "max": 22.39999999999418
+            },
+            "readbackWallMs": {
+              "min": 800.5,
+              "median": 804.9000000000087,
+              "max": 855.6000000000058
+            },
+            "totalWallMs": {
+              "min": 816.2999999999884,
+              "median": 822.1999999999971,
+              "max": 875.8999999999942
+            },
+            "bufferResetCpuMs": {
+              "min": 0.1999999999825377,
+              "median": 0.3000000000029104,
+              "max": 0.39999999999417923
+            },
+            "pixelAnalysisCpuMs": {
+              "min": 17.5,
+              "median": 31,
+              "max": 37.79999999998836
+            }
+          }
+        }
+      ]
+    },
+    {
+      "label": "906",
+      "ordinals": [
+        2,
+        5
+      ],
+      "revision": "9068522520b0f269cc937057b444f06c7c187978",
+      "results": [
+        "passed",
+        "passed"
+      ],
+      "observations": [
+        {
+          "firstCompileFrame": {
+            "cpuRenderMs": 1040.199999999997,
+            "readbackWallMs": 2575.5,
+            "totalWallMs": 3615.699999999997
+          },
+          "warm12Summary": {
+            "cpuRenderMs": {
+              "min": 21.19999999999709,
+              "median": 25.549999999995634,
+              "max": 39.19999999999709
+            },
+            "readbackWallMs": {
+              "min": 1010.3000000000029,
+              "median": 1024.6500000000015,
+              "max": 1039.199999999997
+            },
+            "totalWallMs": {
+              "min": 1041,
+              "median": 1052.5999999999913,
+              "max": 1065
+            },
+            "bufferResetCpuMs": {
+              "min": 0.19999999999708962,
+              "median": 0.3000000000029104,
+              "max": 0.40000000000873115
+            },
+            "pixelAnalysisCpuMs": {
+              "min": 17.70000000001164,
+              "median": 31.19999999999709,
+              "max": 43.89999999999418
+            }
+          }
+        },
+        {
+          "firstCompileFrame": {
+            "cpuRenderMs": 1059.6000000000058,
+            "readbackWallMs": 2615.399999999994,
+            "totalWallMs": 3675
+          },
+          "warm12Summary": {
+            "cpuRenderMs": {
+              "min": 22,
+              "median": 24.70000000001164,
+              "max": 41.89999999999418
+            },
+            "readbackWallMs": {
+              "min": 1008.1000000000058,
+              "median": 1014.5,
+              "max": 1027.5
+            },
+            "totalWallMs": {
+              "min": 1031.5,
+              "median": 1039.8999999999942,
+              "max": 1058.2000000000116
+            },
+            "bufferResetCpuMs": {
+              "min": 0.1999999999825377,
+              "median": 0.29999999998835847,
+              "max": 0.39999999999417923
+            },
+            "pixelAnalysisCpuMs": {
+              "min": 17.39999999999418,
+              "median": 30.80000000000291,
+              "max": 37.5
+            }
+          }
+        }
+      ]
+    },
+    {
+      "label": "current",
+      "ordinals": [
+        3,
+        4
+      ],
+      "revision": "4fa13484c88dfa3d572c189e3a8999e8f254e70e",
+      "results": [
+        "passed",
+        "passed"
+      ],
+      "observations": [
+        {
+          "firstCompileFrame": {
+            "cpuRenderMs": 1064.699999999997,
+            "readbackWallMs": 2564.899999999994,
+            "totalWallMs": 3629.5999999999913
+          },
+          "warm12Summary": {
+            "cpuRenderMs": {
+              "min": 19.20000000001164,
+              "median": 24.69999999999709,
+              "max": 48.60000000000582
+            },
+            "readbackWallMs": {
+              "min": 973.6999999999971,
+              "median": 980.0500000000102,
+              "max": 1003.2999999999884
+            },
+            "totalWallMs": {
+              "min": 995.2000000000116,
+              "median": 1004.5999999999913,
+              "max": 1043.199999999997
+            },
+            "bufferResetCpuMs": {
+              "min": 0.19999999999708962,
+              "median": 0.3000000000029104,
+              "max": 0.40000000002328306
+            },
+            "pixelAnalysisCpuMs": {
+              "min": 17.39999999999418,
+              "median": 30.900000000001455,
+              "max": 50.69999999999709
+            }
+          }
+        },
+        {
+          "firstCompileFrame": {
+            "cpuRenderMs": 1049.5999999999767,
+            "readbackWallMs": 2585.4000000000233,
+            "totalWallMs": 3635
+          },
+          "warm12Summary": {
+            "cpuRenderMs": {
+              "min": 19.60000000000582,
+              "median": 25.10000000000582,
+              "max": 42
+            },
+            "readbackWallMs": {
+              "min": 975,
+              "median": 982.7500000000146,
+              "max": 1018
+            },
+            "totalWallMs": {
+              "min": 997.9000000000233,
+              "median": 1010.4500000000116,
+              "max": 1045.1000000000058
+            },
+            "bufferResetCpuMs": {
+              "min": 0.09999999997671694,
+              "median": 0.29999999998835847,
+              "max": 0.39999999999417923
+            },
+            "pixelAnalysisCpuMs": {
+              "min": 17.29999999998836,
+              "median": 30.85000000000582,
+              "max": 50
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "comparisonComplete": true,
+  "finishedAt": "2026-09-15T16:02:16.817198+00:00"
+}

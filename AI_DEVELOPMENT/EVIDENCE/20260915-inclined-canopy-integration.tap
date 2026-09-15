@@ -1,0 +1,27 @@
+✔ draw selection preserves opaque wood and all physical leaves, uses one cutout per distant twig, and reverses without new drawables (7016.583688ms)
+ℹ {"fullTriangles":372024,"activeTriangles":134394,"nearTwigs":105,"farTwigs":1119,"transitions":1671,"scope":"Index-selected detailed maple / simplified maple margins and detailed bamboo / support-bound cutout fronds. GPU timing and visual transitions require rendered media."}
+✔ original atlas masks have gaps, preserve near wood opacity and share alpha-aware visible/depth/proxy silhouettes (177.294188ms)
+ℹ {"atlasCoverage":[0.1657867431640625,0.1650238037109375,0.1627655029296875],"holes":18,"opaque":6,"woodVertices":1316}
+✔ added foliage carries finite modal mass and measured projected-area loads while roots, woody stiffness and damping remain fixed (4594.261831ms)
+ℹ {"loaded":900,"totalAdditionalLaminaMassKg":3.1595769577481696,"maxShortMemberStrain":0.0015674286214899524,"maxTipByKind":{"wood":0.000800854063647524,"woodBranch":0.005851979766756795,"bamboo":0.05684524150224612,"bambooBranch":0.013503014193015351,"twig":0.017194280494976934}}
+✔ distant maple retains each real leaf and major lobe while CPU rays follow its selected shared-vertex triangles (644.252491ms)
+✔ 414 touch recorded duel positions expose both intervening banners without fading the third (1478.314989ms)
+✔ 414 desktop recorded first locked frame fades the intersecting ridge rock independently (993.635613ms)
+✔ head, chest and blade rays use the current rig transforms and cover a sword-only obstruction (204.691979ms)
+✔ wind-deformed cloth intersections preserve visible and depth shaders and source vertices (1.085521ms)
+✔ fade is local, continuous, pauseable and fully restores opacity, depth and shadows (0.543877ms)
+✔ small branched leaves fade only actual intersections at the historical water-route position (8716.719736ms)
+ℹ Inclined small leaves: 0/13 wind phases intersect; 39 nearby cells verified against full deformation.
+✔ per-leaf broad phase matches full deformed geometry across leaf hits and misses while avoiding unrelated vertex work (4746.26607ms)
+ℹ {"rays":162,"deformedVertices":30860,"fullDeformationVertices":4429728}
+✔ actual animated leaf triangles have matching positive/negative CPU ray proxies after the wind moves them (3398.479838ms)
+✔ reshaped wood preserves exact spatial binding and only fades where an actual woody triangle crosses the ray (4228.299015ms)
+ℹ Recorded position: maple wood detected in 0/13 wind phases; other 3 cells remain opaque. All 364 supports occupy 4 correct spatial cells.
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 24067.843208

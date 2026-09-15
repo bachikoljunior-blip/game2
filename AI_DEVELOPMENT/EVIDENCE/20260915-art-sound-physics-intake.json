@@ -1,0 +1,311 @@
+{
+  "id": "DIRECT-ART-SOUND-PHYSICS-20260915",
+  "at": "2026-09-15T12:28:10.626132+00:00",
+  "owner": "/root/game2_ultra_art_sound_physics",
+  "userOriginal": "どんだけ風吹いてんの？おと。足音重すぎ木の葉っぱとみきの揺れ方は違うし物理を考えて揺れ方考えるべき。人の造形もおざなりps4のげーむのビジュアルくらいのクオリティにして",
+  "baseline": {
+    "main": "b06ade1ad5ab8b72de9bb9996f323a063f5db5ef",
+    "source": "b06ade1ad5ab8b72de9bb9996f323a063f5db5ef",
+    "local": "b06ade1ad5ab8b72de9bb9996f323a063f5db5ef",
+    "runtime": "a6722c5cf7b1933f1956c6c33ec4edc6adf47640",
+    "readMethod": "Official GitHub connector branch/commit/open PR and recent workflow collection reads",
+    "openPrs": [
+      8,
+      9,
+      10
+    ],
+    "recentRunningWorkflows": [],
+    "trackedLocalDifferences": [],
+    "preservedUntracked": [
+      ".review/",
+      "AI_DEVELOPMENT/EVIDENCE/fresh-20260913/"
+    ],
+    "priorOwnerCompleted": true,
+    "parentUnfinishedWrites": false
+  },
+  "scope": [
+    "Quiet air and leaf ambience without persistent strong-wind bass",
+    "Lighter footwear and terrain contact without the heavy low resonance",
+    "Species-specific stem/branch/leaf dynamics with stable supports",
+    "Replace piecemeal primitive anatomy and flat clothes with coherent sculpted surfaces; PS4 quality remains the target"
+  ],
+  "userQualityEvidence": "Latest direct listening and visual criticism supersedes any inference of naturalness from previous passing technical CI.",
+  "publication": "https://bachikoljunior-blip.github.io/game2/preview/",
+  "exclusiveWriter": "/root/game2_ultra_art_sound_physics",
+  "automationChangeAuthorizedOrPerformed": false,
+  "spawn": {
+    "task_name": "game2_ultra_art_sound_physics",
+    "reasoning_effort": "ultra",
+    "fork_turns": "none",
+    "model": "omitted",
+    "acceptance": {
+      "task_name": "/root/game2_ultra_art_sound_physics"
+    },
+    "source": "Parent relayed exact spawning arguments and raw acceptance; this owner records its own subsequent work."
+  },
+  "children": [
+    {
+      "role": "sound design, implementation and measurement",
+      "arguments": {
+        "task_name": "sound_revision",
+        "reasoning_effort": "ultra",
+        "fork_turns": "none",
+        "model": "omitted"
+      },
+      "acceptance": {
+        "task_name": "/root/game2_ultra_art_sound_physics/sound_revision"
+      },
+      "implemented": true,
+      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260915-sound-revision.md",
+      "measurement": "AI_DEVELOPMENT/EVIDENCE/20260915-sound-pcm-mix-measurements.json",
+      "tests": "40 related tests, final16 sound tests; new browser/audio perception pending."
+    },
+    {
+      "role": "vegetation mechanics, shader/geometry and verification",
+      "arguments": {
+        "task_name": "vegetation_physics",
+        "reasoning_effort": "ultra",
+        "fork_turns": "none",
+        "model": "omitted"
+      },
+      "acceptance": {
+        "task_name": "/root/game2_ultra_art_sound_physics/vegetation_physics"
+      },
+      "implemented": true,
+      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260915-vegetation-physics.md",
+      "tests": "23 related tests; new shader/pixels pending."
+    },
+    {
+      "role": "character surface/art implementation",
+      "arguments": {
+        "task_name": "character_art",
+        "reasoning_effort": "ultra",
+        "fork_turns": "none",
+        "model": "omitted"
+      },
+      "acceptance": {
+        "task_name": "/root/game2_ultra_art_sound_physics/character_art"
+      },
+      "implemented": true,
+      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260915-character-art.md",
+      "tests": "42 motion/terrain/presentation tests on pre-nose source; subsequent3 FrontSide ray regressions; final full CI pending."
+    },
+    {
+      "role": "independent actual-media critique and candidate review",
+      "arguments": {
+        "task_name": "independent_art_review",
+        "reasoning_effort": "ultra",
+        "fork_turns": "none",
+        "model": "omitted"
+      },
+      "acceptance": {
+        "task_name": "/root/game2_ultra_art_sound_physics/independent_art_review"
+      },
+      "implemented": true,
+      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260915-independent-art-revision.md",
+      "scope": "16 baseline PNGs examined; four native MP4s fully decoded; source-known diagnostic and inspection-runner review, not blind comparison."
+    },
+    {
+      "role": "lawful actual C06 fixed-reference material preparation; not a blind evaluator",
+      "arguments": {
+        "task_name": "c06_reference_material",
+        "reasoning_effort": "ultra",
+        "fork_turns": "none",
+        "model": "omitted"
+      },
+      "acceptance": {
+        "task_name": "/root/game2_ultra_art_sound_physics/c06_reference_material"
+      },
+      "implemented": true,
+      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260915-c06-reference-preparation.md",
+      "scope": "12 official1600x900 images decoded and hashed; no continuous motion reference, identity/rights limitations retained."
+    },
+    {
+      "role": "independent source-known character/audio/vegetation technical review",
+      "arguments": {
+        "task_name": "independent_runtime_review",
+        "reasoning_effort": "ultra",
+        "fork_turns": "none",
+        "model": "omitted"
+      },
+      "acceptance": {
+        "task_name": "/root/game2_ultra_art_sound_physics/independent_runtime_review"
+      },
+      "implemented": true,
+      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260915-independent-runtime-art-sound-physics.md",
+      "findings": "Reproduced and independently closed eyelid/nostril/sash backface defects; identified increased terrain-contact CPU, exact conservative repair independently checked with equal pose matrices and no underbound."
+    }
+  ],
+  "limitations": [
+    "All 10 formal whole-element comparisons remain not measured.",
+    "Previous audio input was unsupported; no perception claim follows from unclipped PCM.",
+    "Current local Chromium attempt with writable TMPDIR exited SIGTRAP; actual render verification will use working GitHub Chromium/SwiftShader, not physical-device performance."
+  ],
+  "deadlineAssessment": {
+    "deadline": "2026-09-20T07:51:53Z",
+    "remainingHours": 115.97731595861111,
+    "satisfied": 0,
+    "notSatisfied": 0,
+    "notMeasured": 10,
+    "prediction": "Not grounded as can meet; user again identified substantive perceptual gaps after prior implementation.",
+    "methodDefect": "Primitive-detail accumulation and technical PCM/CI checks were insufficient to establish the requested perceptual quality.",
+    "changedMethod": "Independent anatomy surface redesign, branch/leaf mechanical modeling and low-frequency/contact audio redesign in parallel; acquire matched native close/whole/gameplay renders, isolated audio before-after measurements and actual public byte/input verification before reporting."
+  },
+  "additionalDelegation": {
+    "attempt": {
+      "task_name": "terrain_contact_acceleration",
+      "reasoning_effort": "ultra",
+      "fork_turns": "none",
+      "model": "omitted",
+      "result": "collab spawn failed: agent thread limit reached",
+      "accepted": false
+    },
+    "continuedWith": {
+      "tool": "collaboration.followup_task",
+      "target": "/root/game2_ultra_art_sound_physics/sound_revision",
+      "role": "bounded exact terrain-contact acceleration after completing sound task",
+      "previousAcceptedUltraSpawnRetained": true,
+      "ownerAcknowledgement": "New finite terrain-contact CPU role accepted; audio remains frozen; exact terrain upper bounds and groundPenetration early rejection only.",
+      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260915-terrain-contact-acceleration.md"
+    }
+  },
+  "preliminaryIntegration": {
+    "at": "2026-09-15T12:18:29.098546+00:00",
+    "unitTests": {
+      "passed": 185,
+      "failed": 0,
+      "scope": "Local precursor suite started before final facial index winding and sash-only material changes; not certification of final complete source."
+    },
+    "builds": "Both fresh and preserved original root build passed; final fresh build will be rerun after the measured contact-CPU repair.",
+    "independentDefects": [
+      "Lower eyelids and left nostril FrontSide face winding: corrected and independently verified.",
+      "Rear sash FrontSide ribbon: isolated DoubleSide material and negative-control ray closure.",
+      "Higher-detail character terrain contact CPU increased: exact conservative acceleration in progress."
+    ],
+    "actualCandidateMedia": "not yet captured",
+    "publicUpdate": "not yet performed"
+  },
+  "finalLocalIntegration": {
+    "at": "2026-09-15T12:28:10.626132+00:00",
+    "unitTests": {
+      "passed": 191,
+      "failed": 0,
+      "durationMs": 129764.068354,
+      "scope": "All final runtime source, including facial winding, sash material and exact terrain contact acceleration."
+    },
+    "build": "Fresh production build succeeded; assets/index-p-GxVTiw.js. Original root build and exact legacy source preservation succeeded.",
+    "gates": [
+      "project state including negative self-tests",
+      "fixed comparison catalog",
+      "ownership",
+      "git diff whitespace"
+    ],
+    "remaining": [
+      "Exact-source GitHub Chromium/SwiftShader render and input CI",
+      "Native candidate media independent review",
+      "Current browser audio recording and numerical checks; perception unavailable",
+      "Matching preview publication and actual HTTP/asset/input verification"
+    ]
+  },
+  "nativeCandidateReview": {
+    "at": "2026-09-15T12:39:35.568056+00:00",
+    "runtime": "037fd9d10d35453695bb92da8ed47649e1405eae",
+    "ci": 34969080023,
+    "artifact": 10396910778,
+    "views": 40,
+    "pairedCameraTargetIdentity": "20/20 matched",
+    "recovery": {
+      "directArtifactConnector": "success; official signed download URL returned",
+      "ordinaryFileGET": "403 Cloudflare1010 in child and parent; no bypass attempted",
+      "approvedReadOnlyJob": 34969622342,
+      "beforeZipSha256": "5b9a2fc3e8627fc052c71865fd1dfe4e14d3bb3940d0f2d468ff3a32aac4a9c7",
+      "afterZipSha256": "ce3c8f49e046c1c0c9c262d62e6473a5b2143b0acc2df6fd5228e1bf33862765",
+      "archiveCRC": "all passed",
+      "renderedAgain": false
+    },
+    "observedImprovements": [
+      "coherent cheek and nose surface replaces balls",
+      "curved torso, sleeve and skirt surfaces replace box and boards",
+      "less square footwear; cloth/metal response differentiated"
+    ],
+    "blockingVisualDefects": [
+      "long thin exposed neck and undersized head",
+      "open black shoulder rings and incomplete torso-arm connection",
+      "forearm/hand skin fragments and black skirt intersections",
+      "overdeep eye sockets and tiny pupils",
+      "floating warden helmet gold band"
+    ],
+    "decision": "Do not publish this visual candidate; bounded body connection and face repair followed by fresh native capture. PS4 target not reached; formal comparisons remain unmeasured."
+  },
+  "candidateRepair": {
+    "at": "2026-09-15T12:55:22.328936+00:00",
+    "rigSha256": "4d3ee3249123879c35dfc4a617f28e74e3489669098ee93a4ff6ee6f57315f65",
+    "sculptSha256": "0d40059bcb748e47c08f2ec66163aafb266d5eff7729b671070722b727479639",
+    "producerTests": {
+      "passed": 29,
+      "scope": "motion20, terrain4, meaningful visibility5"
+    },
+    "independentTests": {
+      "passed": 25,
+      "additional": "16 front-eye rays over all actual head meshes and four-rig finite attributes"
+    },
+    "nativeVisualClosure": "pending new exact-source capture",
+    "sourceFixes": [
+      "neck/torso/shoulder attachment and proportions",
+      "closed sleeve endpoints and undercloth skin containment",
+      "skirt separation",
+      "shallower eye sockets with circular pupils",
+      "less periodic skin/hair surface and fitted helmet metal"
+    ],
+    "oldCI": {
+      "id": 34969080023,
+      "art": "success",
+      "experience": "success",
+      "fresh": "failure: touch-left final dodge observation; other3 routes completed",
+      "decode": "raw4 decodable; touch-left incomplete so required sequence gate failed"
+    },
+    "apparatusFix": {
+      "evidence": "AI_DEVELOPMENT/EVIDENCE/20260915-final-dodge-observation.md",
+      "testsPassed": 14,
+      "scope": "Preserve3000ms limit on starting inputs; always read result of final sent pulse once. Late observation is explicitly recorded, not proof of actual acceptance latency."
+    },
+    "higherQualityMethod": "Official CC0 MPFB anatomy acquired for concrete material evaluation; not yet incorporated into runtime."
+  },
+  "anatomicalMethodChange": {
+    "at": "2026-09-15T13:21:07.518215+00:00",
+    "basis": "Actual acf0 native close/whole images close earlier holes but retain mechanical shoulder/collar and mannequin face/hair; ordinary scenes retain primitive rock/shrine masses. PS4 target includes normal scene appearance.",
+    "authorization": "Existing blanket scope permits legal material selection and implementation; integrator method decision, not invented user material directive.",
+    "materialsEvidence": "AI_DEVELOPMENT/EVIDENCE/20260915-cc0-character-material-acquisition.md",
+    "pilots": [
+      {
+        "owner": "/root/game2_ultra_art_sound_physics/character_art",
+        "tool": "collaboration.followup_task",
+        "existingAcceptedUltraSpawnRetained": true,
+        "worktree": "game2-mpfb-pilot",
+        "base": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+        "status": "4 head-neck meshes, helper-fitted eyes/hair and weighted grip-baked native hands derived; runtime connection underway; native not measured",
+        "editScope": "isolated character assets/converter/licenses/rig/sculpt/readiness; arm-target gripOffset only in motion; no remote writes"
+      },
+      {
+        "owner": "/root/game2_ultra_art_sound_physics/vegetation_physics",
+        "tool": "collaboration.followup_task",
+        "existingAcceptedUltraSpawnRetained": true,
+        "worktree": "game2-foliage-pilot",
+        "base": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+        "status": "physical-scale leaves and tree/bamboo tips implemented; support count2317 and coefficients retained; fixtures/camera/CPU verification underway",
+        "editScope": "isolated vegetation geometry/material/bind/capture/proxy/tests; no remote writes"
+      },
+      {
+        "owner": "/root/game2_ultra_art_sound_physics/c06_reference_material",
+        "tool": "collaboration.followup_task",
+        "existingAcceptedUltraSpawnRetained": true,
+        "worktree": "game2-scene-art",
+        "base": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+        "status": "bounded scene-art task delivered after actual normal-image review; implementation not yet received",
+        "editScope": "nonvegetation/noncharacter rock/shrine/stone/ground material only; collision,terrainheight,route,UI preserved; no remote writes"
+      }
+    ],
+    "scope": "Integration/native/PS4 acceptance not yet claimed; each actual author must return own evidence",
+    "remainingHours": 114.51263382916667
+  }
+}

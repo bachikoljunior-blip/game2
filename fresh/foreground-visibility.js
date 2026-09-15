@@ -1,5 +1,6 @@
 import * as T from 'three';
-import {clothDisplacement,sampleWind} from './wind.js';
+import {clothDisplacement} from './wind.js';
+import {foliageHitIsOpaque} from './foliage-lod.js';
 
 // The authored ridge keeps its seed, transforms and solid footprint. Separate
 // drawables let an intervening rock fade without changing the distant spine.
@@ -35,52 +36,77 @@ export function characterSightPoints(rig,out=[]){
   return out;
 }
 
-// CPU counterpart of VEGETATION_TRANSFORM then stemWind. It is used only for
-// nearby leaf cells whose conservative bounds already meet a subject ray.
-function bendLeaves(geometry,source,time){
-  const p=geometry.attributes.position,r=source.attributes.windRoot,b=source.attributes.windBranch,l=source.attributes.windLeaf;
-  const original=source.attributes.position,branches=new Map();
-  for(let i=0;i<p.count;i++){
-    const rx=r.getX(i),ry=r.getY(i),rz=r.getZ(i),height=r.getW(i);
-    const key=rx+','+rz;
-    let wind=branches.get(key);if(!wind){wind=sampleWind(rx,rz,time-.35);branches.set(key,wind);}
-    let x=original.getX(i),y=original.getY(i),z=original.getZ(i);
-    const reach=(x-b.getX(i))**2+(z-b.getZ(i))**2,flex=reach*b.getW(i);
-    x+=wind.x*.035*flex;y-=wind.pressure*.028*flex;z+=wind.z*.035*flex;
-    y+=Math.sin(time*3.3-l.getX(i)*.51-l.getZ(i)*.37)*l.getW(i)*.025*wind.pressure;
-    const h=Math.max(0,y-ry),u=Math.max(0,Math.min(1,h/height)),stem=sampleWind(rx,rz,time-u*.32);
-    const dx=stem.x*height*.042*u*u,dz=stem.z*height*.042*u*u;
-    p.setXYZ(i,x+dx,y-(dx*dx+dz*dz)/Math.max(.2,2*h),z+dz);
+// The render and intersection passes read the SAME current support state.
+// Re-solving an old wind formula here would fade leaves that are not on the ray.
+function bendLeaves(part,time,physics,matrixWorld,meetsSphere){
+  const {proxy,source,ranges,sphere}=part,p=proxy.geometry.attributes.position,index=proxy.geometry.index.array;
+  let count=0;proxy.geometry.boundingBox.makeEmpty();
+  for(const range of ranges){
+    const level=part.lodGroup?.level??0,selected=range.indicesByLevel[level];
+    if(!selected.length)continue;
+    if(range.pivot){
+      sphere.center.fromArray(physics.frameAt(range.beam,range.pivot).position);sphere.radius=range.radius;sphere.applyMatrix4(matrixWorld);
+      if(!meetsSphere(sphere))continue;
+    }
+    for(const i of range.verticesByLevel[level]){
+      const point=physics.deformVertex(source,i,time);p.setXYZ(i,...point);part.vertex.fromArray(point);proxy.geometry.boundingBox.expandByPoint(part.vertex);
+    }
+    index.set(selected,count);count+=selected.length;
   }
-  geometry.computeBoundingSphere();geometry.computeBoundingBox();
+  proxy.geometry.setDrawRange(0,count);
+  // Mesh.raycast uses this bound before individual triangles. Only the active
+  // vertices above participate; unselected leaves keep their immutable source.
+  if(count)proxy.geometry.boundingBox.getBoundingSphere(proxy.geometry.boundingSphere);
+  return count>0;
+}
+
+function leafRanges(source,nearIndices=source.index.array,farIndices=nearIndices){
+  const p=source.attributes.position,pivot=source.attributes.leafPivot,support=source.attributes.windSupport,direction=source.attributes.leafDirection,
+    groups=new Map(),byVertex=[];
+  for(let i=0;i<p.count;i++){
+    const kind=pivot.getW(i),leaf=kind>0,key=leaf?[pivot.getX(i),pivot.getY(i),pivot.getZ(i),direction.getW(i)].join('/'):kind<0?'frond':'wood';
+    let range=groups.get(key);
+    if(!range){range={kind,vertices:[],indicesByLevel:[[],[]],beam:support.getW(i),pivot:leaf?[pivot.getX(i),pivot.getY(i),pivot.getZ(i)]:null,radius:0};groups.set(key,range);}
+    range.vertices.push(i);byVertex[i]=range;
+    if(leaf){
+      const offset=new T.Vector3(support.getX(i)-pivot.getX(i),support.getY(i)-pivot.getY(i),support.getZ(i)-pivot.getZ(i)),axis=new T.Vector3(direction.getX(i),direction.getY(i),direction.getZ(i)),along=offset.dot(axis);
+      // Triangle inequality: curved centreline arc plus perpendicular offset.
+      // Rotation cannot enlarge either length. The 6 mm guard also covers the
+      // small-angle centreline approximation and Float32 bind rounding.
+      range.radius=Math.max(range.radius,Math.abs(along)+offset.addScaledVector(axis,-along).length()+.006);
+    }
+  }
+  for(const [level,indices] of [[0,nearIndices],[1,farIndices]])for(const vertex of indices)byVertex[vertex].indicesByLevel[level].push(vertex);
+  for(const range of groups.values())range.verticesByLevel=range.indicesByLevel.map(indices=>[...new Set(indices)]);
+  return [...groups.values()];
 }
 
 // Rendering retains the existing spatial batches. CPU intersection proxies
 // have smaller branch bounds, so a near cell does not animate all its leaves
 // on the CPU merely because one branch is in front of the camera.
-function leafProxies(source,material){
-  const groups=new Map(),r=source.attributes.windRoot,b=source.attributes.windBranch;
+function leafProxies(source,material,alpha){
+  const lod=source.userData.vegetationLod,groups=new Map(),support=source.attributes.windSupport,names=['position','uv','windSupport','leafPivot','leafAxis','leafDirection'];
   const vertexGroup=[],localIndex=[];
   for(let i=0;i<source.attributes.position.count;i++){
-    const key=[r.getX(i),r.getZ(i),b.getX(i),b.getY(i),b.getZ(i)].join(',');
+    const key=support.getW(i);
     let group=groups.get(key);
-    if(!group){group={positions:[],windRoot:[],windBranch:[],windLeaf:[],indices:[]};groups.set(key,group);}
-    vertexGroup[i]=group;localIndex[i]=group.positions.length/3;
-    for(const [name,target] of [['position','positions'],['windRoot','windRoot'],['windBranch','windBranch'],['windLeaf','windLeaf']]){
-      const a=source.attributes[name];for(let k=0;k<a.itemSize;k++)group[target].push(a.array[i*a.itemSize+k]);
+    if(!group){group=Object.fromEntries([...names,'indices'].map(name=>[name,[]]));group.lodGroup=lod?.groups.get(key);groups.set(key,group);}
+    vertexGroup[i]=group;localIndex[i]=group.position.length/3;
+    for(const name of names){
+      const a=source.attributes[name];for(let k=0;k<a.itemSize;k++)group[name].push(a.array[i*a.itemSize+k]);
     }
   }
-  const count=source.index?source.index.count:source.attributes.position.count;
+  const indices=lod?.allIndices??source.index?.array,count=indices?.length??source.attributes.position.count;
   for(let i=0;i<count;i++){
-    const vertex=source.index?source.index.getX(i):i;vertexGroup[vertex].indices.push(localIndex[vertex]);
+    const vertex=indices?indices[i]:i;vertexGroup[vertex].indices.push(localIndex[vertex]);
   }
   return [...groups.values()].map(group=>{
+    const nearIndices=group.lodGroup?Array.from(group.lodGroup.near,i=>localIndex[i]):group.indices,farIndices=group.lodGroup?Array.from(group.lodGroup.far,i=>localIndex[i]):nearIndices;
     const source=new T.BufferGeometry();
-    source.setAttribute('position',new T.Float32BufferAttribute(group.positions,3));
-    for(const name of ['windRoot','windBranch','windLeaf'])source.setAttribute(name,new T.Float32BufferAttribute(group[name],4));
+    for(const name of names)source.setAttribute(name,new T.Float32BufferAttribute(group[name],name==='position'?3:name==='uv'?2:4));
     source.setIndex(group.indices);source.computeBoundingBox();
-    const proxy=new T.Mesh(source.clone(),material);proxy.matrixAutoUpdate=false;
-    return {source,proxy,bounds:source.boundingBox.clone().expandByScalar(1.4),worldBounds:new T.Box3()};
+    const proxy=new T.Mesh(source.clone(),material);proxy.matrixAutoUpdate=false;proxy.geometry.boundingSphere=new T.Sphere();proxy.userData.foliageAlpha=alpha;
+    return {source,proxy,lodGroup:group.lodGroup,ranges:leafRanges(source,nearIndices,farIndices),sphere:new T.Sphere(),vertex:new T.Vector3(),bounds:source.boundingBox.clone().expandByScalar(1.4),worldBounds:new T.Box3()};
   });
 }
 
@@ -99,7 +125,7 @@ export function createForegroundVisibility(){
     const proxy=new T.Mesh(geometry,rayMaterial);proxy.matrixAutoUpdate=false;
     mesh.geometry.computeBoundingBox();
     const bounds=mesh.geometry.boundingBox.clone();if(cloth||vegetation)bounds.expandByScalar(1.4);
-    entries.push({id,mesh,proxy,cloth,vegetation,leafParts:vegetation?leafProxies(mesh.geometry,rayMaterial):[],bounds,worldBounds:new T.Box3(),positions:cloth?mesh.geometry.attributes.position.array.slice():null,
+    entries.push({id,mesh,proxy,cloth,vegetation,leafParts:vegetation?leafProxies(mesh.geometry,rayMaterial,mesh.userData.foliageAlpha):[],bounds,worldBounds:new T.Box3(),positions:cloth?mesh.geometry.attributes.position.array.slice():null,
       opacity:source.opacity,baseOpacity:source.opacity,transparent:source.transparent,
       depthWrite:source.depthWrite,castShadow:mesh.castShadow,hold:0,blocked:false});
     return mesh;
@@ -123,6 +149,11 @@ export function createForegroundVisibility(){
       return bounds.containsPoint(camera)||
         (raycaster.ray.intersectBox(bounds,intersection)&&intersection.distanceTo(camera)<distance);
     });
+    const meetsSphere=sphere=>points.some(point=>{
+      const distance=direction.subVectors(point,camera).length();if(distance<.08)return false;
+      raycaster.set(camera,direction.multiplyScalar(1/distance));
+      return sphere.containsPoint(camera)||(raycaster.ray.intersectSphere(sphere,intersection)&&intersection.distanceTo(camera)<distance);
+    });
     for(const entry of entries){
       const {mesh,proxy}=entry;
       mesh.updateWorldMatrix(true,false);proxy.matrixWorld.copy(mesh.matrixWorld);
@@ -140,7 +171,8 @@ export function createForegroundVisibility(){
       if(nearby&&entry.vegetation)for(const part of entry.leafParts){
         part.worldBounds.copy(part.bounds).applyMatrix4(mesh.matrixWorld);
         if(!meetsSightline(part.worldBounds))continue;
-        part.proxy.matrixWorld.copy(mesh.matrixWorld);bendLeaves(part.proxy.geometry,part.source,windTime);proxies.push(part.proxy);
+        part.proxy.matrixWorld.copy(mesh.matrixWorld);
+        if(bendLeaves(part,windTime,entry.vegetation,mesh.matrixWorld,meetsSphere))proxies.push(part.proxy);
       }
       entry.blocked=false;
       if(nearby)for(const point of points){
@@ -148,7 +180,7 @@ export function createForegroundVisibility(){
         if(distance<.08)continue;
         raycaster.set(camera,direction.multiplyScalar(1/distance));
         raycaster.near=.02;raycaster.far=distance-.035;
-        if(raycaster.intersectObjects(proxies,false).length){entry.blocked=true;break;}
+        if(raycaster.intersectObjects(proxies,false).some(foliageHitIsOpaque)){entry.blocked=true;break;}
       }
       // Brief release hysteresis stops a fluttering edge or sword tip from
       // repeatedly switching the material; opacity itself remains continuous.
