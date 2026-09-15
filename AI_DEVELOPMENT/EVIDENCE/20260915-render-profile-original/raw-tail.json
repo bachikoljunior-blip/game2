@@ -1,0 +1,29 @@
+{
+  "sourceRevision": "e18820165d6008fedfca28d2cc7073a9c4b74b28",
+  "sourceRun": 34978382509,
+  "sourceRaw": "desktop-right-continuous.webm",
+  "sourceRawSha256": "9086ff0cf575ad72a9485427478e4ba00f213f2a88f2d5e8bb28af60549c2596",
+  "rawFullDecode": "passed",
+  "rawDurationSeconds": 196.72,
+  "tailStartSeconds": 172.72,
+  "tailFullDecode": "passed",
+  "samples": [
+    {
+      "rawOffsetSeconds": 184,
+      "file": "raw-184.png"
+    },
+    {
+      "rawOffsetSeconds": 188,
+      "file": "raw-188.png"
+    },
+    {
+      "rawOffsetSeconds": 192,
+      "file": "raw-192.png"
+    },
+    {
+      "rawOffsetSeconds": 196,
+      "file": "raw-196.png"
+    }
+  ],
+  "scope": "Later frames from the already-recorded raw video; no new game rendering and no inferred signal-visibility acceptance. The original derived clip ended before the actual ending was visible."
+}

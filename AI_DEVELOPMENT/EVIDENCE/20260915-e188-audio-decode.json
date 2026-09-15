@@ -1,0 +1,26 @@
+{
+  "owner": "/root/game2_ultra_art_sound_physics",
+  "runtime": "e18820165d6008fedfca28d2cc7073a9c4b74b28",
+  "ci": 34978382509,
+  "files": {
+    "actual-gameplay-audio.webm": {
+      "sha256": "7b58b20f9a4843e9cb4e27aa42eec7d025fb6c3ee4c6863b93d57bd8a60cf270",
+      "seconds": 10.98,
+      "samples": 527040,
+      "finite": true,
+      "peak": 0.10986771434545517,
+      "rms": 0.005218017669630253,
+      "nonzero": 420872
+    },
+    "muted-negative-probe.webm": {
+      "sha256": "f74b785f1c68d531dce5c1eaaad913e53fa2b0d957b74bdf31c7721f77c6d36a",
+      "seconds": 1.2,
+      "samples": 57600,
+      "finite": true,
+      "peak": 0.0,
+      "rms": 0.0,
+      "nonzero": 0
+    }
+  },
+  "scope": "Independent full ffmpeg decode and numerical measurement of actual captured game PCM. Naturalness/listening not measured; no unsupported audio hearing claim. Source audio is unchanged from the acf sound revision. Different event/timing conditions prevent attributing level differences between CI recordings to a new audio code change."
+}

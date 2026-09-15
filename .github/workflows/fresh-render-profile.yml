@@ -2,65 +2,14 @@ name: Fresh rendering diagnosis
 on:
   push:
     branches: [codex/game2-rebuild-20260913]
-    paths: ['tools/fresh-render-profile.mjs', '.github/workflows/fresh-render-profile.yml']
+    paths: ['fresh/**', 'tools/fresh-render-profile.mjs', '.github/workflows/fresh-render-profile.yml']
   workflow_dispatch:
 permissions:
   contents: read
-  actions: read
 concurrency:
   group: fresh-render-profile-${{ github.ref }}
   cancel-in-progress: false
 jobs:
-  original-tail:
-    runs-on: ubuntu-latest
-    timeout-minutes: 6
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          github-token: ${{ github.token }}
-          repository: bachikoljunior-blip/game2
-          run-id: 34978382509
-          name: fresh-game-e18820165d6008fedfca28d2cc7073a9c4b74b28
-          path: original
-      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
-      - name: Preserve the omitted tail of the existing recording
-        run: |
-          python - <<'PY'
-          import pathlib, hashlib, json, subprocess, io, zipfile, base64, os
-          raw=pathlib.Path('original/desktop-right-continuous.webm')
-          expected='9086ff0cf575ad72a9485427478e4ba00f213f2a88f2d5e8bb28af60549c2596'
-          assert not raw.is_symlink() and hashlib.sha256(raw.read_bytes()).hexdigest()==expected
-          probe=json.loads(subprocess.check_output(['ffprobe','-v','error','-show_format','-show_streams','-of','json',str(raw)]))
-          duration=float(probe['format']['duration']); start=max(0,duration-24)
-          out=pathlib.Path('tail');out.mkdir()
-          subprocess.run(['ffmpeg','-v','error','-xerror','-i',str(raw),'-f','null','-'],check=True,timeout=120)
-          subprocess.run(['ffmpeg','-v','error','-ss',str(start),'-i',str(raw),'-an','-c:v','libx264','-preset','veryfast','-crf','20','-y',str(out/'tail.mp4')],check=True,timeout=120)
-          subprocess.run(['ffmpeg','-v','error','-xerror','-i',str(out/'tail.mp4'),'-f','null','-'],check=True,timeout=120)
-          samples=[]
-          for seconds in [184,188,192,196]:
-              assert seconds<duration
-              name=f'raw-{seconds}.png'
-              subprocess.run(['ffmpeg','-v','error','-ss',str(seconds),'-i',str(raw),'-frames:v','1','-y',str(out/name)],check=True,timeout=60)
-              samples.append({'rawOffsetSeconds':seconds,'file':name})
-          report={'sourceRevision':'e18820165d6008fedfca28d2cc7073a9c4b74b28','sourceRun':34978382509,'sourceRaw':raw.name,'sourceRawSha256':expected,'rawFullDecode':'passed','rawDurationSeconds':duration,'tailStartSeconds':start,'tailFullDecode':'passed','samples':samples,'scope':'Later frames from the already-recorded raw video; no new game rendering and no inferred signal-visibility acceptance. The original derived clip ended before the actual ending was visible.'}
-          (out/'report.json').write_text(json.dumps(report,indent=2)+'\n')
-          names=['report.json','tail.mp4']+[s['file'] for s in samples]
-          buf=io.BytesIO();files=[]
-          with zipfile.ZipFile(buf,'w',zipfile.ZIP_DEFLATED) as z:
-              for name in names:
-                  b=(out/name).read_bytes();assert len(b)<12000000;z.writestr(name,b);files.append({'path':name,'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()})
-          b=buf.getvalue(); print('MEDIA_ARCHIVE_BEGIN '+json.dumps({'version':'raw-tail','runnerRevision':os.environ['GITHUB_SHA'],'run':os.environ['GITHUB_RUN_ID'],'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest(),'files':files}))
-          encoded=base64.b64encode(b).decode()
-          for i in range(0,len(encoded),6000):print('MEDIA_BYTES '+encoded[i:i+6000])
-          print('MEDIA_ARCHIVE_END')
-          PY
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: original-e188-ending-tail-${{ github.sha }}
-          path: tail/
-          if-no-files-found: error
-          retention-days: 90
   profile:
     runs-on: ubuntu-latest
     timeout-minutes: 18
@@ -71,10 +20,11 @@ jobs:
           - label: baseline
             revision: acf0f9ec86996245ad712d6adc72e5d6159f6711
           - label: candidate
-            revision: e18820165d6008fedfca28d2cc7073a9c4b74b28
+            revision: current
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.sha }}
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
@@ -86,6 +36,7 @@ jobs:
         env:
           PROFILE_REVISION: ${{ matrix.revision }}
         run: |
+          if [ "$PROFILE_REVISION" = current ]; then PROFILE_REVISION="$GITHUB_SHA"; fi
           git worktree add --detach ../profile-runtime "$PROFILE_REVISION"
           ln -s "$GITHUB_WORKSPACE/node_modules" ../profile-runtime/node_modules
           test "$(git -C ../profile-runtime rev-parse HEAD)" = "$PROFILE_REVISION"

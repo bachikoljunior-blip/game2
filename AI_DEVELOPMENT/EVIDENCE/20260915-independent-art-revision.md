@@ -462,3 +462,262 @@ At the end of this review the author had begun the integrator-requested wording 
 | `AI_DEVELOPMENT/EVIDENCE/20260915-foliage-pilot-cpu.json` | `8ab0d240c8f7f4a609b4350d23be87380d85fbd12965befe7d45c54fe227bafe` |
 
 Foliage source review appended at: 2026-09-15T13:55:56.492489+00:00
+
+
+## Independent native figure review — e188201
+
+### Receipt and personally inspected scope
+
+- Received runtime **`e18820165d6008fedfca28d2cc7073a9c4b74b28`**, CI **`34978382509`**, art job **`104411930711`**, with 40 original PNGs and two reports in `.review/34978382509/figures/{before,after}/`. The integrator reported successful original ZIP/SHA/CRC verification; this reviewer did not perform the remote acquisition.
+- Personally opened **all 20 new after PNGs at original detail**, covering player, sentinel, retainer and warden, each in full-body, back, front face, three-quarter face and profile. Each original is **960×720**.
+- Reopened six supplied baseline PNGs: player full/back/front-face/profile and warden front-face/profile. Independently compared all 20 baseline PNG bytes against `.review/34971788118/figures/before/`: **20/20 identical**. The other 14 baseline images were previously inspected in the earlier full native review and were not unnecessarily reopened in this task. This is not a claim to have newly displayed all 40 supplied PNGs.
+- Also reopened four exact previous repaired-candidate images from `.review/34971788118/figures/after/`: player full/front-face/profile and warden three-quarter. These establish which problems are new relative to **acf0f9ec86996245ad712d6adc72e5d6159f6711**, rather than attributing every old defect to the latest head.
+- Reports identify baseline source b06ade1ad5ab8b72de9bb9996f323a063f5db5ef and new source e188201, with e188201 as runner revision on both. The images are a synthetic idle pose on a neutral stage. Report success and asset-ready labels are provenance, not perceptual acceptance.
+- Camera/target comparison: current baseline versus new has **8/8 matching full/back cameras**. The 12 face cameras follow the already lowered head target, shifting about **-0.0549957358 m in y and -0.0006848680 m in z** relative to b06. Current e188 after versus previous acf0 after has **20/20 exactly matching camera and target arrays**. Thus the explicitly reopened acf0 comparison supports localized regression judgments without that camera shift.
+- This is known-source technical/appearance review. No author self-evaluation was supplied or used. No new fixed C06 reference inspection or anonymous comparison was conducted. Formal ten comparison elements remain `not measured`. Ordinary gameplay screens, motion, audio, grip under action and device performance are outside these still images. The integrated PS4 visual target remains incomplete and cannot be closed from these portraits.
+
+### Actual improvements
+
+1. **The face now reads as human anatomy.** The player/sentinel/retainer front, three-quarter and profile images show connected orbital rims, nasal bridge and nostril wings, upper/lower lips, cheek planes, jaw and a continuous neck. Ears have recognizable outer and inner folds and sit naturally against the side of the head. The imported-looking skin color variation and small surface detail are visibly present. This is a substantial improvement over the b06 disconnected cheek/nose/ear solids and also over acf0's smooth mannequin head with separate ear plates.
+2. **The anatomical profile and scalp are more coherent.** The side of the face flows from forehead through nose, lips and chin. Hair follows the scalp around the ear and nape more closely than acf0's broad separate cap and straps. The forehead no longer reads as a helmet-like solid band on the three unhelmeted characters. This improvement does not remove the hair-edge and topknot defects listed below.
+3. **Earlier full-body progress survives.** Relative to b06, full/back images retain curved sleeves, a rounded torso, folded lower cloth, rounded shin armor and shaped feet instead of the old boxes and hanging boards. These improvements largely predate e188 and are not all credited to this particular revision. The extreme 037 neck/shoulder openings, loose skin shards and large black garment tears do not visibly recur in these supplied idle full views. Hands are small in these frames, so detailed finger contact and grip quality remain unmeasured.
+4. **The helmet stripe remains attached in the visible views.** The warden's gold stripe follows the crown rather than floating above it as in the earlier failed candidate. Its face covering creates a separate serious problem below.
+
+### Major defects, regressions and concrete evidence
+
+| Priority / status | Direct visible finding | Native evidence and review limit |
+|---|---|---|
+| **Major new regression versus acf0** | **The raised collar does not join the torso cleanly.** Both collar ends form triangular openings through which the stage background is visible. A separate dark curved strip sits across the upper chest beneath the neck. The pale diagonal front trim remains partly buried in the chest, leaving a thin sliver and a separate short pale patch. The result resembles several intersecting cut pieces, not a finished overlapping garment. | All four `after/*-face-front.png` and three-quarter views; especially `player-face-front.png` and `sentinel-face-threequarter.png`. The collar-end gaps and extra separated strip are new compared with reopened acf0 player front; the partly buried pale trim was already reported at acf0. Full-body views also expose the disconnected front-trim arrangement. |
+| **Major new regression versus acf0** | **The warden's black lower-face covering has large sawtooth edges and bulbous facial protrusions.** The upper cheek edge, ear-side boundary and underside break into large triangular teeth. The nasal area becomes a round black protrusion, and the mouth/nose relief merges into a dark solid mass. This visually overwhelms the improved face. | `after/warden-face-front.png`, `warden-face-threequarter.png`, `warden-face-profile.png`, visible even in `warden-full.png`. Reopened acf0 warden three-quarter had a smoother trapezoidal covering; the new edge is clearly worse. From images alone, this reviewer does not assign a code cause or assume whether the intended object is armor, a mask or facial hair. |
+| **Major residual from acf0** | **Shoulders still read as mechanical caps and floating armor arcs.** The sleeve ends have a large flat circular fill with a smaller round disk at its center. The black shoulder plate forms a broad arch separated from the underlying cloth, with background visible under parts of the rim. | All four front/three-quarter face images and full/back views. `player-face-threequarter.png` and `warden-face-threequarter.png` make the circular surface and rim gap especially clear. Reopened acf0 images show the same construction; it is retained, not newly introduced. |
+| **Residual, not newly introduced** | **The topknot contains a conspicuous pale triangular interior.** In profile and three-quarter views the dark loop-like hair form has pale/background-colored triangular pieces inside, giving the impression of an open shell rather than a dense tied bundle. | Player/sentinel/retainer profiles and three-quarter images; also partly visible behind the warden helmet. The same feature exists in reopened acf0 player profile. The initial early message was corrected: this is an old unresolved defect, not a new e188 regression. Its precise geometry/material cause is not established by the still image. |
+| **P1 facial finish** | **Eyes are excessively dark within the openings, and hair/brow edges are coarse.** Pupil/iris and sclera separate weakly; little white or catchlight is visible, giving a black-slot appearance despite improved eyelids. The forehead/temple hairline and eyebrows have dense jagged edge steps. | Player, sentinel and retainer front/three-quarter; the warden's exposed eyes repeat the issue. This is a rendered appearance finding under this fixed lighting, not proof of missing eyeballs, a specific shader bug or absent eye textures. |
+| **P1 art consistency / variety** | **The realistic head and simple costume now differ sharply in finish.** Sleeves remain broad near-cylinders, the breastplate consists of repeated horizontal bars, the belt has flat layered strips and a lumpy central knot, and the back is a mostly uniform slab of cloth with limited tailoring. The three exposed faces appear visually indistinguishable; costume color does most of the identification. | All full/back views and the three exposed front faces. The family resemblance and repeated costumes do not establish distinct characters comparable to the requested visual reference. No hidden asset identities are inferred from the image similarities. |
+
+### Finite repair priorities
+
+1. **Close and fit the neckline:** make the raised collar ends, upper chest and crossing pale trim read as one continuous layered garment from front, three-quarter and profile, without background triangles or stray strip/sliver shapes.
+2. **Rebuild the warden covering's visible boundary and fit:** remove the large triangular edge teeth and black nasal bulb; keep a clear intentional material/form and attachment around cheeks, ears and jaw.
+3. **Finish the existing shoulder and hair assembly:** bring the armor rim into a believable relation with the sleeve, remove the circular hub/cap impression, and close the exposed topknot interior. These are residual issues made more conspicuous by the better head.
+4. **Refine eye and hair-edge rendering:** restore readable iris/sclera/light response and a finer hair/brow boundary in all three face views. Confirm that any change still reads at normal gameplay distance.
+
+The first two are the clearest new regressions to address before presenting the character revision as finished. The new anatomical head is a visible and substantial improvement worth preserving. These neutral-stage figures still do not support a claim of completed PS4-reference-level visual finish: visible clothing and equipment assembly defects, eye/hair finish and repeated character appearance remain. The forthcoming ordinary gameplay images are needed to assess the character together with the surrounding world; this review does not anticipate their outcome.
+
+### Inspected media and local SHA-256
+
+`Displayed now` below distinguishes actual native display in this task from byte verification against previously inspected originals. Hashing a PNG is not a visual inspection.
+
+| File relative to `.review/34978382509/figures/` | Displayed now | SHA-256 |
+|---|---|---|
+| `before/player-back.png` | yes | `7c537eefaea45f6939b6e969f36a69360277ce61b3fb81cef9f0b561f3d38bb5` |
+| `before/player-face-front.png` | yes | `4d2fcb6d87c41a9ca8702f4ef0546ec61975d5e58dda954c8a6c65dd8e8dcdfa` |
+| `before/player-face-profile.png` | yes | `9d8af2dfaa2482cbdb50a961c776e440751b80fb17a0c9315e72692e0d5d9b57` |
+| `before/player-face-threequarter.png` | previously viewed; bytes reverified | `7ad205aff7afea6596d3c5e6af22e2e6f5b732edf91272caa35dc9b63cf4068a` |
+| `before/player-full.png` | yes | `13b44c4dccbd5f9f19970f12abd5af279b6624b3f46c96b867e5890298f4fe96` |
+| `before/retainer-back.png` | previously viewed; bytes reverified | `9ff6acb2809b682136964ad5ca5daaa5871daa37d3c35cbf034f155af537ca23` |
+| `before/retainer-face-front.png` | previously viewed; bytes reverified | `ad0233888867c8f65ba230f4030ff4f352efcde1e13bbeea566d337177e9df45` |
+| `before/retainer-face-profile.png` | previously viewed; bytes reverified | `3f6a9747e09c4b6eddc043a96e39b4ee89009d8befa34f04aaaa0918ddd7718a` |
+| `before/retainer-face-threequarter.png` | previously viewed; bytes reverified | `ed4c95806590536b232af228c692dabe132bb767b7a8c9f38c25ea8b5a4d8697` |
+| `before/retainer-full.png` | previously viewed; bytes reverified | `70a6e98f6992aec20bbf5e857e5b90359a790ca06842c2b2467af32026160f40` |
+| `before/sentinel-back.png` | previously viewed; bytes reverified | `887fe1f2f21bc62ecca5c520992a4afc2558fb012496138f5540d157e9756da8` |
+| `before/sentinel-face-front.png` | previously viewed; bytes reverified | `80271e34afa4c9b78a8b39fb9c6f4c73c80d38689731605d75e3706b70a73a0b` |
+| `before/sentinel-face-profile.png` | previously viewed; bytes reverified | `70705106cdf157295a61c2ba6e3e1cfe85e40be01516e29f1d1001941d140ee9` |
+| `before/sentinel-face-threequarter.png` | previously viewed; bytes reverified | `def38fcfb4f7c642d2bc29a0205551d2163959a449f984697f7734306c531a58` |
+| `before/sentinel-full.png` | previously viewed; bytes reverified | `b23f9050faf55b947efc6fc5af63d169f85645077462048f9758f02aca35a0ee` |
+| `before/warden-back.png` | previously viewed; bytes reverified | `f81d5ba9ffa5ac29efc1c18b7b4561bfac97b59ab1d77557536f04e2a645a937` |
+| `before/warden-face-front.png` | yes | `a5b9ed8f1165d83eaff38f3dc26a09a583625b47bcc51973d9612b20452f89e0` |
+| `before/warden-face-profile.png` | yes | `ddfdd7ce33b0e9f150e95df08431f1bfd2b10d2f750540c414796840c2735b30` |
+| `before/warden-face-threequarter.png` | previously viewed; bytes reverified | `adee63c9fa3b266e3686913eb15f37015be76b923e1532e3daa7090e2ac08f6c` |
+| `before/warden-full.png` | previously viewed; bytes reverified | `9bebfcb901ac4759ba1db95b5ef4dd7426cc9f1fa0df3e677daca02f0284e539` |
+| `before/report.json` | metadata read | `c5a0a3a3e9e7e126be5045164afdfc6a87574151ce1f39f2b4f8b313e7e0f2b3` |
+| `after/player-back.png` | yes | `6209ce0532b6573c27700b3177abc7aa570e5c20383bffa61e19a41bb052e471` |
+| `after/player-face-front.png` | yes | `c73003f27c1507394be4fb20f68cc2920e90764d5eec725b0fa921111b3b7fc6` |
+| `after/player-face-profile.png` | yes | `a9cc0a3a3854e33dad7f14d5626348f02dfd255217805b5631cd20babc63750c` |
+| `after/player-face-threequarter.png` | yes | `31ca9d0bc6ee28184d1a4d0e2f9f40c548dcf3393e88929b65db3cb660a85906` |
+| `after/player-full.png` | yes | `12b366cab3811bc89587f8733115f49e35280aa2df5d958b08fe76cd176b37fb` |
+| `after/retainer-back.png` | yes | `7e20b13ad7747869b82593197e7d8c10d60c8140075c57ac996adfab1c130cce` |
+| `after/retainer-face-front.png` | yes | `73df45ddd00b8343c2b04f925bc8500abdd26f0be0f3b543c82c990bcee1b168` |
+| `after/retainer-face-profile.png` | yes | `3e02c303c1b4ee52036982b032c1e7b557d1969b0562dc8b8b95a650f6a2cf30` |
+| `after/retainer-face-threequarter.png` | yes | `df4c94c505af1c340b9ab56a1c83c0e3232c9d447bb891c1baaa35fd8730b0d7` |
+| `after/retainer-full.png` | yes | `d8cd2173b599f3dfbeec265fe97a8340d4d9272cd2fe4b418fa194095cd2ca98` |
+| `after/sentinel-back.png` | yes | `e58bee168fea7745a9e0325fb7c6704c6cd3002584dae4d39267fb27f6e56f88` |
+| `after/sentinel-face-front.png` | yes | `e5b7ef2580ff647fa02af2ea6cdbfcaa901142306cb14ca4165d54b772ce2e08` |
+| `after/sentinel-face-profile.png` | yes | `af7dc3bf5ee009c26da262470ddde2214d1b99ecfa120b7b379cae21010cb8ee` |
+| `after/sentinel-face-threequarter.png` | yes | `14379654e547e6e71df3059170c0088f1f2bd5cab76fd1e3b8a891deec588a7c` |
+| `after/sentinel-full.png` | yes | `8120b860fad0c1a4e9008349548b2dbbdad76dcb5c2851103eac9703a393b457` |
+| `after/warden-back.png` | yes | `4b19434b4de8191f4174a0f97c95da64f009af7d4adc0887fe17472fc138f098` |
+| `after/warden-face-front.png` | yes | `d46a0fd667d6e0cc115ca623826466ee88a0a19fa17f1b7473ba035dcaf207ac` |
+| `after/warden-face-profile.png` | yes | `9e2ffcdd6f7cbc46a02a8a511d2b22df2a6d314040a0e1ae00656b1623232545` |
+| `after/warden-face-threequarter.png` | yes | `fa81cbebbfc458ded3bf49b052c42748820566d5a7397d4fb4b4a817896e4233` |
+| `after/warden-full.png` | yes | `00a94c856d88f3c9357c9bde5853662ca8b99be74510d264e4b2ed98a65ed94b` |
+| `after/report.json` | metadata read | `f655a5c6773322d303a29509da04f1a0fadc5644d3ea68cf878f75a4acc763d3` |
+
+Additional acf0 originals reopened from `.review/34971788118/figures/after/`:
+
+| File | SHA-256 |
+|---|---|
+| `warden-face-threequarter.png` | `70990b8586ec3ce8285bb91c20fff044c55bf31bb1c641410cf337f798894a1e` |
+| `player-face-front.png` | `4622bd57cb36b15dda0c509c058153a1ce4a3ef84196e609630ad267fc0ca433` |
+| `player-face-profile.png` | `2bad329e57b8ccbef0e637bb372a8f6f4aa735b8a16e148a901519e2c2b5f4a4` |
+| `player-full.png` | `7c1777347a3527465382510ed1173ce31c7f009b45bbb53a2bb72343b2a19ca9` |
+
+Change scope: this owned evidence section only; no runtime or other author document edited. Native figure review appended at: 2026-09-15T14:12:14.668371+00:00
+
+
+## Independent ordinary-screen / finite video-frame review — e188201
+
+### Receipt, actual display and failure boundaries
+
+- Received the same runtime **e18820165d6008fedfca28d2cc7073a9c4b74b28**, CI **34978382509**, ordinary-media directory `.review/34978382509/fresh/`. No author visual ratings were supplied. The future closed-hakama repair f869 is **not present in this evidence** and receives no credit in this review.
+- Personally opened all four supplied original PNGs at original detail: **title.png, encounter.png and desktop-right-victory.png at 1280×720; mobile.png at 844×390**. Reopened the four same-named acf0 PNGs from `.review/34971788118/fresh/` for direct comparison of corresponding situations. These are source-known, non-pixel-matched scene comparisons: the situations correspond, but actor timing/camera/scene content are not certified identical.
+- Supplied video: `derived/desktop-right-fork-to-signal.mp4`, SHA-256 **84a156620c857b1d7fe8a501a5318fb026558df8067b43023d18cfd06201c734**, locally verified equal to the received hash. H.264, **960×540, 25 encoded fps, 133.52 s, 3,338 frames**, video stream only.
+- Ran ffmpeg through the **entire video stream** to a null sink with error reporting; exit 0, no decode errors. A complete frame-hash decode also emitted 3,338 frames. This proves decoding of the supplied stream, not full continuous perceptual playback.
+- Personally displayed **15 selected, unscaled decoded PNG frames at original detail**, at relative clip times **0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130 and 133.48 seconds**, corresponding to frame indices **0, 250, 500, 750, 1000, 1250, 1500, 1750, 2000, 2250, 2500, 2750, 3000, 3250 and 3337**. This is finite chronological image sampling, not a claim to have visually watched every frame or judged continuous motion smoothness. Temporary decoded inspection files were made outside the repository; the repository edit is this owned record only.
+- An initial sampling-filter command failed because its commas were incorrectly quoted; it emitted no sample images. The corrected argument-list invocation succeeded. The original full-decode verification was a separate successful command. This was a local extraction-command error, not a source-media defect.
+- Read provenance/failure metadata from the build fingerprint and browser/route/recording reports. The fingerprint gives fresh tree **fba4359ccf034502acc04eff43201fe065cc79ba**. Browser and route reports identify Chromium/SwiftShader and explicitly say this is not physical-device performance. All three browser/route/recording reports have **result: failed**; empty error arrays and saved recording filenames do not turn them into passes.
+- The integrator reports **211 tests succeeded**, followed by ordinary-route failures and some cancelled work, with severe slowdown making e188 unsuitable for publication. This reviewer did not rerun that suite. The integrator reports only the **PC-right mission** complete in this run; PC-left and touch-left/right completion remain unavailable. None of the visual improvements below supersedes those failed/incomplete checks.
+- No audio was heard or evaluated; the supplied MP4 has no audio stream. No physical phone, live input, complete route matrix, control latency, frame-rate acceptance or source-blind reference assessment was performed. Formal ten-element comparison status remains **not measured**.
+
+### Coverage mismatch in the supplied derived video
+
+The file is named `fork-to-signal`, but its last decoded frame (**3337 / 133.48 s**) shows the two characters by the shrine with the enemy kneeling and a visible decisive-hit label. It does **not** show the lantern turning on or the victory screen. The t=130 s sample is also in this final duel/defeat sequence. Therefore the filename is not evidence of continuous coverage through signaling. The separate supplied `desktop-right-victory.png` visibly shows a lit lantern and result overlay, and the reported PC-right mission completion remains a separate source of evidence. This is a coverage limit of the reviewed derived clip, not a claim that the full source PC-right mission failed. It was promptly reported to the integrator so future clip selection can be checked by actual ending frames.
+
+The encoded 25 fps rate also does not establish a responsive 25 fps game. A diagnostic exact-pixel hash pass found 3,312 distinct hashes and 24 adjacent identical pairs, with a longest identical run of three encoded frames (0.12 s); codec variation and other pixel changes make this unsuitable for counting actual rendered gameplay updates. No smoothness or slowdown conclusion is derived from that hash statistic. The reported CI slowdown remains unresolved regardless.
+
+### Improvements actually visible in the integrated screen
+
+1. **The shrine now reads as a constructed building.** In new `encounter.png`, roof tiles and the eave line are visible. New `desktop-right-victory.png` shows lattice doors, upper wall panels, projecting eave brackets/beams and a stone-colored base course. The corresponding acf0 result view was dominated by a flat wall and repeated bare vertical posts. This is a clear improvement in depth and recognizable construction. Video samples at t=20–110 s show those forms from changing approach and elevated viewpoints, so the improvement is not confined to one still.
+2. **The paving has more distinct stone form and surface.** New title/encounter/mobile views show irregular edges, small height/thickness cues and varied surface shading, replacing much of the old uniformly flat rectangular-strip appearance. The pale paving separates the playable route clearly from the soil. The route remains readable toward the torii, around the obstacle, and toward the shrine. These are visible strengths; the repeated patch layout and abrupt ground meeting still need work below.
+3. **The central obstacle has a more coherent large silhouette.** The old encounter image showed many similar rounded lumps arranged on a rectangular support. The new image/video shows a connected outcrop-like mass. That is a local improvement, although the very large planar facets and straight lower boundary remain a strong defect.
+4. **The closer anatomical face survives ordinary scene placement, with limited screen impact.** The opponent's face in the 1280×720 encounter view is more recognizably human, and the player's scalp/topknot silhouette is visible from behind. Clothing curvature and the blue/brown actor separation remain readable. Most normal views show small rear-facing characters, so the close-up facial improvement affects much less screen area than the world. These normal images do not close the previously reported collar/face-covering defects merely because those features become small.
+5. **Some excessive ground-grain contrast is reduced.** Against the reopened acf0 title/encounter images, the new brown surface has less conspicuous fine noisy grain. That reduces one synthetic cue but leaves large areas too uniform. The existing warm lantern and legible result typography remain compositional strengths; they are not all newly introduced by this revision.
+
+### Largest remaining defects and visible regression
+
+| Priority | Direct observation | Evidence / precise scope |
+|---|---|---|
+| **P0 for the requested integrated visual target; visible regression in foliage mass** | **Bamboo now reads mainly as thin bare poles.** The earlier large leaf sprays were artificial but supplied visible clusters. In the new title, mobile and encounter images those clusters are largely absent at ordinary distance; most stems end in almost invisible lines or tiny specks. A pale branching tree behind the shrine also reads as bare branches. Small individual leaf shape cannot be judged in these views. The scene has lost foliage volume and layering rather than achieving a convincing forest. | Direct new/old PNG comparison, plus video t=0–60 and t=120–133.48 s. This establishes screen appearance, not that leaf geometry failed to exist or failed to render. CPU-valid real-size leaves do not by themselves supply adequate visible canopy density. |
+| **P0/P1** | **Large bare ground areas and repeated upright grass dominate.** Soil covers most hillsides and much of the foreground with little convincing leaf litter, roots, low vegetation, pebble variation or gradual transition into paths. Thin yellow-green blades recur at similar scale and spacing over broad areas, resembling scattered repeated marks. Long dark shadows stripe the same open surface. | All ordinary PNGs and the entire span of sampled video views. The architecture improvement occupies a smaller part of the overall screen than these unresolved surfaces. Grass is visibly present; this is not a claim of a missing grass system. |
+| **P1** | **The connected rock still looks like a very coarse polygon mass.** Huge flat faces meet along straight diagonals, broad repeated peaks run along the ridge, and the lower silhouette is nearly a straight horizontal cut against the soil. It is now one coherent form but still resembles an unfinished terrain/obstacle mesh. | New encounter and video t=0, 20, 30, 40, 70–100, 120 s. At t=70–100 the elevated camera gives much of the foreground to this simple mass. No collision/route-footprint change is requested by this observation. |
+| **P1** | **Repeated props and paving are still visibly assembled.** Stone lanterns repeat simple cap/post/base solids; red banners are broad uniform rectangles; many paving blocks recur in similarly sized separated rectangular patches, with abrupt dark gaps and weak soil blending. Pale yellow rectangular pieces remain conspicuous near the destination. | New mobile/encounter/result and video t=20–133.48. Improved stone edges do not by themselves make the overall paving arrangement or terrain contact natural. The origin of the pale destination pieces is not inferred from their appearance. |
+| **P1** | **Material and light integration remain limited.** The shrine has better geometry, but broad timber/roof surfaces repeat similar tones and patterns; lower walls and ground become very dark. Foreground soil, bright stones and simple grass lack a convincing shared weathering/contact treatment. | Especially new result and video t=70–133.48. This is a visual residual, not a diagnosis of a particular light/shader defect. Existing foreground transparency in some frames is not treated as proof that the new foliage was removed. |
+| **P1 character residual** | **The improved head still sits in a simpler costume silhouette.** Shoulder caps/armor rings and a largely uniform blue back remain visible. In raised-leg/running samples, the lower garment separates into strip-like panels around the legs. The ordinary frames do not establish a continuous, repaired hakama shell. | New encounter/mobile and selected video t=10, 20, 30, 60, 110, 120 s. These are selected poses only; no tear-free animation or completed clothing repair is claimed. The later f869 closed-hakama work is explicitly excluded. |
+| **Composition residual** | **The ending remains dominated by one dark wall, and the overview emphasizes empty ground and the coarse obstacle.** The richer shrine wall is better than the old panel, yet the result gradient obscures much of the remaining world. Elevated route views are readable but expose how little natural variation surrounds the path. | `desktop-right-victory.png`, video t=70–110 s. This is an assessment of the visible composition, not a request to weaken the route's readability or input behavior. |
+
+### What the selected video frames do and do not establish
+
+Across the selected timestamps, characters occupy different positions and poses, the camera moves from the front approach to the right of the obstacle and then to an elevated view, and nearer banners sometimes become translucent. These frames establish that the improved architecture and the identified world defects recur across multiple views. They do not establish contact correctness, smooth gait, timely camera transitions, natural cloth motion, or a responsive game.
+
+Leaves are too small and sparse at this capture scale to distinguish trunk-versus-leaf phase, frequency or attachment quality from these finite normal-camera frames. The prior CPU hierarchy checks and earlier plant-study footage cannot replace a perceptual review of this exact revised foliage. No claim of natural wind behavior, stable whole-canopy attachment or successful ordinary-distance leaf animation is made here.
+
+### Finite next priorities and result
+
+1. **Treat the failed/slow ordinary runtime as a blocking integration issue.** Restore the required PC/touch route coverage and responsive execution before considering e188 publishable. The local art gains are not a substitute for those checks.
+2. **Restore visible foliage mass within the performance budget.** Evaluate species-appropriate branch/leaf grouping, placement, canopy layering and distant readability in the actual approach/mobile/encounter views. Merely validating centimeter-sized isolated leaves is insufficient, and blindly multiplying expensive geometry is not a supported resolution of the present slowdown.
+3. **Improve the dominant world surfaces and forms.** Give the rock's sides/base a convincing irregular form and terrain contact, and give soil/path edges visible natural transitions and varied low-scale set dressing. Retain the now clearer shrine construction and route composition.
+4. **Complete the finite character repairs already identified:** collar/torso connection, warden covering boundary, shoulder/topknot assembly and the separately pending closed-hakama work, then verify the same normal and action views at the repaired runtime. Do not count unseen later code as closed defects.
+
+**Result:** e188 has real local improvements in anatomy, shrine construction and paving. The ordinary images still do not support the requested PS4-reference-level integrated appearance, and visible foliage mass has worsened. The runtime is additionally blocked by the supplied failed/incomplete CI and slowdown status. This is a source-known diagnosis, not a scored anonymous benchmark; formal quality elements, continuous-motion naturalness, audio and physical-device performance remain unmeasured.
+
+### Original and metadata hashes
+
+| File relative to current `.review/34978382509/fresh/` | SHA-256 |
+|---|---|
+| `title.png` | `15443ae3bdf920901b120ae40963a8a999141ef87846cd6175eeafc5468768d1` |
+| `encounter.png` | `f088783855e43eec3c973e32a4696bbf2db4da6382d9acff2409d8e44876a402` |
+| `mobile.png` | `6c27c11e73de9e4efac12eed7aaafc65cf084d6e5eb21720a83cff6068fbc5d6` |
+| `desktop-right-victory.png` | `d33b51c93cb9143a9bb92f201eb120d7fb35dc94651de3514a31025180f7c215` |
+| `derived/desktop-right-fork-to-signal.mp4` | `84a156620c857b1d7fe8a501a5318fb026558df8067b43023d18cfd06201c734` |
+| `build-fingerprint.json` | `39b83d3123b38bd2b1b436a66d1c56ea90ea99e81913f16ddc1f30227cf585d4` |
+| `browser-report.json` | `ff30aee28f8e4720626c7fd5e0a8fbec633088e833293128cf8ccf1625fbf55f` |
+| `route-matrix-report.json` | `708a28005892b969d33793bfd09cf139e1c7092178f0eaeeb9e9fa53f87dd91a` |
+| `recording-report.json` | `096f4d9298243b14f3df53599dda650080fb48ba4e638e54817090e80885e8e0` |
+| `derived/desktop-right-fixed-five.json` | `5ec27d19518b7e610e35579cfc39d32acc425afb00cc271dc0f17f47bb0210db` |
+
+Reopened acf0 originals from `.review/34971788118/fresh/`:
+
+| File | SHA-256 |
+|---|---|
+| `title.png` | `5e5edaf1a46ab467bf4782a7240a02df0b2ec5a3b1c31d55a34f1c8da02d5aaa` |
+| `encounter.png` | `761615c5f4126c0845a3dd37d4e8e45c6bacaa7bef7f75578aa801bbdba5d23d` |
+| `mobile.png` | `0b90edc6192c0ec980a3892df9c2d2b05ad51c48cb3c97ebee8c5fb15be7b66a` |
+| `desktop-right-victory.png` | `6ec7477a2fc23caaed6a7df71e2f8c55c03d15f2df18991745c4e01ca4561e75` |
+
+Displayed decoded samples of the exact current MP4 (PNG hashes refer to the lossless decoded inspection files):
+
+| Source frame | Relative seconds | PNG SHA-256 |
+|---|---|---|
+| 0 | 0 | `77dea9f5ef3a1698016916c733ca933eaba6d1dabc4fbcb13f3a7f9e044922b0` |
+| 250 | 10 | `8a5b243877b1c87122a5897b11cbc3fa7b99c93089b5df9c0a7c69b58d5792b9` |
+| 500 | 20 | `fd6a40ff9460de36e0cf9cada505590791924638b4ad06064ac4d10550c64a83` |
+| 750 | 30 | `549bacc2285af7a39f89faa05734fea6d64d716c8c392beb8492a212e0994575` |
+| 1000 | 40 | `032e23698e71c0f849c291aa24e4844fb581abff134496902130bdd1ca2049d9` |
+| 1250 | 50 | `657c8ef41e635b830af0bddd54f8342b65783f9747b9cd394c0f862082b88c52` |
+| 1500 | 60 | `730fb0e04a90d33ae09637d70b31b6f888323c74fadd73dbd1ad5480381469c9` |
+| 1750 | 70 | `a48edb31cc84fc4e732ca0c2820a3593719542b22f5d67d539529837fb165121` |
+| 2000 | 80 | `ec9f3950b1ae46f91da13705eb1e9c1ba417b4b32f177ed110eaf469e3962d3c` |
+| 2250 | 90 | `6728592fd3d8810149b6e44f3b4943aa5033df529cf5c16108d3d1e99cfafb69` |
+| 2500 | 100 | `dd40ccca0d05a33851baedf844f651007c91ed5cdf4dfc9ae5953de46355a343` |
+| 2750 | 110 | `9509d6d8baf6c44020106cb7fbb879d115c89938cc13f0f324e768e6f11aeee3` |
+| 3000 | 120 | `739ccb6b27a2ee17c91d0f43e1d5ef882819e32a05d9d71bed49a7b5fdb8465b` |
+| 3250 | 130 | `64cd71994c84aca16ac09dbd885ef9b9ee4be66d1af5a965117b5ab556fadbbf` |
+| 3337 | 133.48 | `4a009905426c70c1d455f4c4f74d31128599e13f5e5581184c1614bc95b046ba` |
+
+Repository change scope: this owned evidence file only. No runtime, other author evidence, stage, commit, remote or automation changes. Ordinary e188 review appended at: 2026-09-15T14:26:30.326046+00:00
+
+
+## Recovered original-recording tail: visible signal and ending — e188201
+
+### Receipt and inspection scope
+
+- Received authorized recovery CI **34982421501**, referring to existing source CI **34978382509**, runtime **e18820165d6008fedfca28d2cc7073a9c4b74b28**. This is additional material from the already-recorded game, **not a new runtime render, character repair or performance repair**.
+- Reported original source is `desktop-right-continuous.webm`, duration **196.72 s**, SHA-256 **9086ff0cf575ad72a9485427478e4ba00f213f2a88f2d5e8bb28af60549c2596**. The integrator/CI reports original full decoding and recovery ZIP/SHA/CRC verification successful. This reviewer did not independently fetch or fully decode that absent original WebM in this task; the locally supplied recovered PNGs and tail were inspected.
+- Local received files: `.review/34982421501/raw-tail/report.json`, `raw-184.png`, `raw-188.png`, `raw-192.png`, `raw-196.png`, and `tail.mp4`. All four original decoded PNGs were personally displayed at original 1280×720 detail. SHA-256 of each supplied file was computed locally.
+- Tail metadata: H.264 **1280×720, 25 encoded fps, 24.00 seconds, 600 frames**, video stream only. The report identifies its source start as raw time **172.72 s**. Independently ran ffmpeg over the **entire supplied tail** to a null sink: exit 0, no decode errors.
+- Personally displayed eight additional unscaled decoded tail frames at relative times **0, 8, 16, 20, 21, 22, 23, 23.96 s**, indices **0, 200, 400, 500, 525, 550, 575, 599**. These are finite native image samples, not continuous perceptual playback of all 600 frames. Temporary decoded files were created outside the repository; only this owned evidence record was edited in the repository.
+
+### What is actually visible
+
+| Supplied original / selected tail time | Direct observation |
+|---|---|
+| `raw-184.png` | Player stands at the shrine; the hanging lamp is dark. The top-left instruction asks for the signal action. No ending overlay is visible. |
+| `raw-188.png`, `raw-192.png` | The same dark lamp and signal-action instruction remain. The player and defeated enemy are visible. These images do not show completed visible signaling despite being later than the reported state-event timestamp. |
+| `raw-196.png` | The hanging lamp emits a clearly visible warm yellow light; nearby timber/lattice receives a warm glow. The large ending overlay and restart button are simultaneously visible. This is direct visible completion in the original recording's later frames. |
+| Tail t=0, 8, 16 s | Final encounter/defeat, approach and then the dark-lamp signal-action state appear in sequence across these samples. |
+| Tail t=20, 21, 22, 23, 23.96 s | The ending overlay is visible in all five selected samples. Warm illumination is visible on the hanging lamp, with intensity differing between the selected frames; t=20, 22, 23 and the last frame show it especially clearly. The last supplied tail frame therefore includes both the lit destination lamp and the ending screen. |
+
+The first ending image among these chosen tail samples is **relative t=20 s**. Adding the reported cut start gives a nominal raw position of **about 192.72 s**. That mapping is source/tail metadata, not an independently measured first visible-transition timestamp. `raw-192.png` remains dark, while the t=20 tail sample already shows light and ending; no exact first changed frame is claimed. The originally reported signal telemetry offset **176.548 s is not treated as a visible-completion time**, nor is a precise display/input latency inferred from subtracting those timestamps.
+
+### Updated coverage conclusion, without changing prior quality status
+
+The missing evidence is now supplied: **the existing e188 PC-right original recording does contain visible destination illumination and an ending screen in its later tail**. This adds firsthand visible support beyond the earlier standalone victory PNG and event metadata.
+
+The previous **133.52 s / 3,338-frame derived `desktop-right-fork-to-signal.mp4`** still ends in the final decisive-hit scene and still omits the later visible light/ending. Its original coverage judgment remains correct; the recovered tail supplements it rather than retroactively adding frames to that short file. No new gameplay execution occurred in the recovery.
+
+This confirmation does not establish the complete unseen PC-left or touch routes, does not repair e188's failed/incomplete CI or slowdown, and does not apply any later character/clothing/performance change. The previously identified ordinary-world, foliage and character defects remain. The overall visual target is still unmet; formal ten-element/source-blind quality, natural motion, audio, response latency and physical-device performance remain **not measured**. Only the finite visible-ending coverage gap described above is closed for this recovered PC-right original.
+
+### Supplied-file hashes
+
+| Relative file under `.review/34982421501/raw-tail/` | SHA-256 |
+|---|---|
+| `report.json` | `b57226e83dfa04fc1d09ff806c0c363f185bff32a423783bf5dfab71bdafbad4` |
+| `raw-184.png` | `7fdb0972ebec401a350e4a4df183efacdc3755504c63f8f221f5fc6b827f5887` |
+| `raw-188.png` | `3f3dec663aa33539baec509031add2d8c9ca215c90b5cb3c33e1565612bc6d8d` |
+| `raw-192.png` | `10f47781cce0a6d4a0c664246194dbe7a015b86960c64bd4eca6dac6fa55e539` |
+| `raw-196.png` | `0e219da483f8e5f5df9b3415ae4a116710d40126e596fcbeb5c2912ec393799f` |
+| `tail.mp4` | `9935c6464a4dd487b8e16f1dc8e6b919835c56486bdeb9b172b5cd33cc81fb39` |
+
+Additional tail frames personally displayed:
+
+| Tail frame | Relative seconds | Decoded PNG SHA-256 |
+|---|---|---|
+| 0 | 0 | `73dc6c572fe940e97b53913bde588e984f916e009534a78d7a17d715f43f1d92` |
+| 200 | 8 | `5c16fcc469635003adb3879860d0dc4ba273e8d6bdb4daa85d9cd8d712871287` |
+| 400 | 16 | `fb326521c9d4cb011c86f0743ef48cfdbbbacce9431005e74cb0028f49a6893d` |
+| 500 | 20 | `70feee3d42402f9a765d672f57cd5a6cf34754db392f8f141d8963ab2eaf8b74` |
+| 525 | 21 | `08fcbb4ca3c8ac1a7fe83b067e0cd9f0f79ce94c4ae597e9244ce69949315f7c` |
+| 550 | 22 | `9d5731a55aeb2774cd69f6425e405def4871685d8cc07f067a6e82a02e87143a` |
+| 575 | 23 | `094f0f736529edb558a426dd5e430e5b0187d78f4f41c58185f8c4e29ca468c0` |
+| 599 | 23.96 | `478a16d9b83da4b8e8e056d319d1486b5b8112e3cb1d9cec994242594e1fb323` |
+
+Repository change scope: this owned evidence file only; no runtime/other author edits, staging, commit, remote or automation actions. Recovered-tail review appended at: 2026-09-15T14:41:07.885566+00:00

@@ -1,0 +1,140 @@
+{
+  "owner": "/root/game2_ultra_art_sound_physics",
+  "runnerRevision": "9ce35e327cffd7dfbc74d9c9b4ab57169e7e9aab",
+  "ci": 34982421501,
+  "jobs": {
+    "baseline": {
+      "id": 104425829942,
+      "result": "success"
+    },
+    "candidate": {
+      "id": 104425829879,
+      "result": "failure",
+      "failure": "Owned browser close exceeded10000ms; owned browser was killed. All 13+6+6 samples and full.png existed before cleanup failure."
+    },
+    "rawTail": {
+      "id": 104425829687,
+      "result": "success"
+    }
+  },
+  "gpuTimingProxyRejected": true,
+  "reason": "gl.finish returned median0ms while queued full-frame acquisition took7.025s baseline and16.913s candidate. Chromium source finish calls Flush; these API call timings are not completed GPU render times. Synchronizing via actual pixel readback is required before comparing completed frames.",
+  "primarySource": "https://chromium.googlesource.com/chromium/src/third_party/+/master/blink/renderer/modules/webgl/webgl_rendering_context_base.cc",
+  "primarySourceLimit": "Current official source inspected; exact141.0.7390.37 tag retrieval was unavailable. Observed runtime behavior is consistent; no exact-tag assertion.",
+  "validObservations": {
+    "cpuCallMedianMs": {
+      "acf0": 11.75,
+      "e188": 14.35
+    },
+    "screenshotWaitMs": {
+      "acf0": 7025.551922,
+      "e188": 16913.162486
+    },
+    "scope": "CPU/driver submit call times and screenshot acquisition waits only. Not isolated GPU execution, completed-frame throughput or physical-device performance."
+  },
+  "rawTailVisibleEvidence": {
+    "runtime": "e18820165d6008fedfca28d2cc7073a9c4b74b28",
+    "rawSha256": "9086ff0cf575ad72a9485427478e4ba00f213f2a88f2d5e8bb28af60549c2596",
+    "darkAtSeconds": [
+      184,
+      188,
+      192
+    ],
+    "litAndEndingObservedAtSeconds": 196,
+    "tailFullDecode": "passed24s600frames",
+    "independentReview": "20260915-independent-art-revision.md",
+    "scope": "Confirms visible PC-right ending later in original recording. Does not repair the old truncated derived clip or failures on other routes. Earliest visible timing and response latency not measured."
+  },
+  "originalReports": {
+    "render-profile-baseline": {
+      "path": "AI_DEVELOPMENT/EVIDENCE/20260915-render-profile-original/render-profile-baseline.json",
+      "sha256": "eecb297dfd4262ddd73894e2c163e282b04bc62fb7544571e78f653a9ca2a763",
+      "envelope": {
+        "version": "render-profile-baseline",
+        "runnerRevision": "9ce35e327cffd7dfbc74d9c9b4ab57169e7e9aab",
+        "run": "34982421501",
+        "bytes": 657144,
+        "sha256": "13e39babbb9a14c114eb0f63bc918aac5add314066ea2c1c04967d40bbe8532a",
+        "files": [
+          {
+            "path": "report.json",
+            "bytes": 69004,
+            "sha256": "eecb297dfd4262ddd73894e2c163e282b04bc62fb7544571e78f653a9ca2a763"
+          },
+          {
+            "path": "full.png",
+            "bytes": 647140,
+            "sha256": "f00eeb892729a2e46ae9b370fddb49394aae025128dd410183673ee79bdac824"
+          }
+        ]
+      }
+    },
+    "render-profile-candidate": {
+      "path": "AI_DEVELOPMENT/EVIDENCE/20260915-render-profile-original/render-profile-candidate.json",
+      "sha256": "61cca5cdf1899aaae42687b2a1dd0ab7d3536091d0369081f4a4b4b58854aef8",
+      "envelope": {
+        "version": "render-profile-candidate",
+        "runnerRevision": "9ce35e327cffd7dfbc74d9c9b4ab57169e7e9aab",
+        "run": "34982421501",
+        "bytes": 639172,
+        "sha256": "dadb6f0baae2874fb7e1c02e91bb7e6b34bdfaa8b35fe64e7f8f8d7c0fce6bcb",
+        "files": [
+          {
+            "path": "report.json",
+            "bytes": 99371,
+            "sha256": "61cca5cdf1899aaae42687b2a1dd0ab7d3536091d0369081f4a4b4b58854aef8"
+          },
+          {
+            "path": "full.png",
+            "bytes": 622817,
+            "sha256": "d2e2b5a318adcb94e0d20bd956fbca02576d30938ecc690fa397fd1b923f6eaa"
+          }
+        ]
+      }
+    },
+    "raw-tail": {
+      "path": "AI_DEVELOPMENT/EVIDENCE/20260915-render-profile-original/raw-tail.json",
+      "sha256": "b57226e83dfa04fc1d09ff806c0c363f185bff32a423783bf5dfab71bdafbad4",
+      "envelope": {
+        "version": "raw-tail",
+        "runnerRevision": "9ce35e327cffd7dfbc74d9c9b4ab57169e7e9aab",
+        "run": "34982421501",
+        "bytes": 4304347,
+        "sha256": "7b6f7898215cebd006c77c57dbc4a66665505f538c2f061831b59779417168c9",
+        "files": [
+          {
+            "path": "report.json",
+            "bytes": 862,
+            "sha256": "b57226e83dfa04fc1d09ff806c0c363f185bff32a423783bf5dfab71bdafbad4"
+          },
+          {
+            "path": "tail.mp4",
+            "bytes": 1439784,
+            "sha256": "9935c6464a4dd487b8e16f1dc8e6b919835c56486bdeb9b172b5cd33cc81fb39"
+          },
+          {
+            "path": "raw-184.png",
+            "bytes": 829202,
+            "sha256": "7fdb0972ebec401a350e4a4df183efacdc3755504c63f8f221f5fc6b827f5887"
+          },
+          {
+            "path": "raw-188.png",
+            "bytes": 878953,
+            "sha256": "3f3dec663aa33539baec509031add2d8c9ca215c90b5cb3c33e1565612bc6d8d"
+          },
+          {
+            "path": "raw-192.png",
+            "bytes": 675593,
+            "sha256": "10f47781cce0a6d4a0c664246194dbe7a015b86960c64bd4eca6dac6fa55e539"
+          },
+          {
+            "path": "raw-196.png",
+            "bytes": 498222,
+            "sha256": "0e219da483f8e5f5df9b3415ae4a116710d40126e596fcbeb5c2912ec393799f"
+          }
+        ]
+      }
+    }
+  },
+  "productionChanges": "none in this diagnostic commit; e188 remains rejected from publication"
+}

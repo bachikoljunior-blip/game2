@@ -313,3 +313,180 @@ This reviewer independently generated **one actual integrated Node scene, 236 me
 Current callers await the helper sequentially within their test process. Because it temporarily replaces shared globals and yields while awaiting readiness, it is **not a guarantee of safe concurrent helper calls inside one process**; no such concurrent call was found in the reviewed callers. The success/failure restoration result concerns the actual sequential usage. The helper does not persist its fake document or alter the separately run production browser.
 
 **Finding:** no blocker/major was found in this bounded apparatus repair. It preserves the distinction between geometry-only Node checks and production image readiness. This single-scene result is not a full-suite PASS, browser decode result, rendered quality finding, or a closure of the existing character/art findings. Only this owned evidence file was edited by the reviewer. All 10 formal elements remain **not measured**; deadline **2026-09-20T07:51:53Z** is unchanged.
+
+## Closed-hakama candidate source review — 2026-09-15
+
+The integrator assigned the same independent Ultra reviewer the cloth repair **`f869fc24b2bc0143e33eda8d104fe474f16cd1b7`**, based on the first CC0 candidate **`1e7eed79e7dec1ce28470c77c1fb93a74e40cd15`**. Its nine-file delta was present in the canonical checkout over **`e18820165d6008fedfca28d2cc7073a9c4b74b28`**. The three runtime files matched the frozen author commit before and after this review. The concurrent whole-scene capture timeout investigation was assigned elsewhere and was not diagnosed or attributed to cloth by this reviewer.
+
+| Frozen runtime file | SHA-256 |
+| --- | --- |
+| `fresh/character-rig.js` | `7ab85050957c92c1dab84ff560ea51ab9a2420bf94b7a156d483c3071a55c667` |
+| `fresh/character-sculpt.js` | `f608c38f6f2e3b8fb9b02b52a3b1aac8cdde1a46e34242535ec1c1a00983eb4c` |
+| `fresh/character-motion.js` | `488d5f2f8994272e5473f36b5ed7dc7ba8427caa4e079ce1092b9df6b74a009b` |
+
+### Implementation and test meaning
+
+Each leg now has front/back semicircular surfaces meeting at the side seams, with a rolled inner hem. The four indexed meshes contain **2,592 current vertices**. Below the fixed waist, their centreline and cross-section rotation follow the actual thigh and calf matrices; the existing cloth driver, world-down sag, and local thigh/calf capsule projections affect only the cloth. The floor pass uses the current transformed cloth box for its optional terrain maximum early-out, then updates current vertex positions against actual terrain. The old whole-panel path remains available when the new rest-surface data is absent.
+
+Source inspection confirmed that actor input, authored pose tracks/action times, leg IK, native arm grasp-offset rules, and weapon construction/trajectory were not edited. The dynamic surface directly owns its Mesh, sets the position update flag, recomputes normals and box/sphere bounds, and aliases `userData.contactPositions` to the exact current position buffer. Consequently the ordinary visible/depth passes and the existing CPU contact scan consume the same geometry; this is not a GPU-only deformation with a stale CPU proxy. Pause and settled-death early returns occur before the cloth mutation path.
+
+The three new tests use actual knee and cloth intersections at the specified running/falling fixture times. They assert that a ray genuinely hits the leg and that its corresponding cloth is in front of it; their success is stronger than merely checking for any cloth hit. They also check current contact/position equality, finite normal coverage, current bounds, a fixed waistband, and pause/retry behavior. Their finite camera rays do **not** prove coverage of the whole leg from all angles, absence of self-intersection, or a natural silhouette. No existing test threshold was relaxed by this delta.
+
+### Independently performed checks
+
+- `node --test fresh/character-cloth.test.mjs fresh/character-motion.test.mjs`: **23/23 PASS**, no failures/skips/cancellations, 7.99 s. The author's separate 51-test and four-test terrain results were read as author evidence, not substituted for these independently executed checks. A complete terrain/full suite was not repeated.
+- Reviewer-authored stdin code sampled **150 frames / 388,800 current cloth vertices**: running and death on the flat route and sun-ring shoulder, plus broken stance on the shoulder. It compared the real terrain function with its `maximumInRect` optimization against an otherwise identical wrapper without that method. **All motion metrics, cloth positions, and cloth normals matched exactly.** This checks the optional bound's result preservation, not a timing improvement.
+- Every sampled current contact array was the same array as the draw positions, every vertex was inside its current box, and every normal was finite and nonzero; minimum normal length was approximately **0.9999999543**. Minimum sampled cloth clearance over actual terrain was **+0.0029999984 m**. The maximum paired front/back seam-position gap was approximately **3.35e-17 m**.
+- The exact preserved 1e7 rig/sculpt/motion sources were loaded in memory for a compatibility comparison. Across **270 frames in nine states**, running the new motion code on the old rig produced **identical complete world matrices and motion metrics** to the old motion code, confirming the fallback rather than only reading its branch.
+- Comparing the actual new cloth rig with the preserved old rig, **240 non-death frames** retained identical common articulated-joint matrices and motion metrics. The sword world matrix matched in **all 270 frames**, including death; the 30 sampled death frames also had zero body-position difference. These finite observations support unchanged leg/weapon/timing behavior, without making a universal contact or geometry claim.
+
+### Concrete remaining seam-normal concern
+
+The front/back seam positions coincide, but the two meshes compute normals separately. The additional seam check found a maximum normal difference of approximately **15.0° at running frame 14**, **138.9° at flat-ground death frame 10**, and **159.0° at sun-ring death frame 13**. The last case is the right leg, row 11, front boundary column 0; world point approximately `(-11.112925,1.076544,7.371242)` for actor origin `(-11.2,7)`, yaw `.7`. Front/back local normals there are approximately `(-.331,.942,.054)` and `(.603,-.787,.131)`. At the previously identified flat-ground death frame 12, the maximum seam difference is approximately **93.0°**.
+
+This is a concrete discontinuity to inspect in the native death silhouette and shading. Large differences may coincide with a sharp local fold; the static diagnostic alone does not determine whether it becomes an objectionable visible line or folded-over surface. It was returned immediately to the integrator. The current construction does not solve cloth self-collision, and no blanket claim of smooth normals or all-view body coverage is made. Averaging a seam's normals alone would not establish that any underlying fold geometry is sound.
+
+**Finding:** no new source-known blocker/major was established in this bounded technical review; the seam-normal concern remains explicit. The author's reported additional **0.9–1.3 ms per actor/frame** is retained as a local Node result, not independently rebenchmarked or interpreted as browser/mobile performance here. No new WebGL cloth frame was viewed. The earlier independently observed running-knee and fallen-board **visual major is not declared closed** by these source tests or the author's CPU projections. Its closure requires the exact integrated candidate's actual run/death media, including the seam locations above. The CC0 face-guard concern and other native-art limits are unchanged. Only this owned evidence file was edited by the reviewer; no production, remote, staging or automation changes were made. All 10 formal elements remain **not measured**; deadline **2026-09-20T07:51:53Z** is unchanged.
+
+
+## First CC0 candidate actual motion media review — e188 / CI 34978382509
+
+This review used the recovered original media at `.review/34978382509/experience/motion-study/`, whose report identifies **`e18820165d6008fedfca28d2cc7073a9c4b74b28`**. The integrator reports retrieval of these owned artifact bytes from the ordinary CI job log with ZIP/CRC/SHA checks. This reviewer independently hashed the received report and every original MP4, decoded every video, and inspected the finite native frames below. The artifact retrieval itself was performed by the integrator. The media contain the first CC0 head/neck/hands candidate; **neither the closed-hakama f869 repair nor the later collar/shoulder/face-guard c824 repair is present**. The source reviewed above and these media must not be combined into a visual closure of either later candidate.
+
+The exact e188 Git objects independently yielded these character runtime SHA-256 values: rig **`5266988e51e0f49aaa30beb69fc55a1d6922cc0805bffe01de9f31ff4e1fa47a`**, motion **`0f47020978f7b651d865479a108ced355d55faf5f4d574c4d996e5f1e8442352`**, native data **`b0300de3b9e1a554af7d4586dff412857e262c9a4e88ffb3510b14dbb8ca001b`**. This avoids attributing the current working tree's later cloth or anatomy changes to the older film. The report SHA-256 is **`0900910642ffff819a0b045b1b2e0d30243718764c4f72ead2c3754b5eb7046b`**.
+
+### Independent decode and exact visual sample
+
+`ffprobe -count_frames` independently confirmed **14 clips / 474 frames / 39.5 seconds**, all **960×540, 12 fps**. All 14 originals passed `ffmpeg -v error -xerror -i <original> -f null -` with no error output. The report's own `fullDecode:passed` was not used as a substitute for this independent execution. Original media hashes remained unchanged after inspection.
+
+The reviewer individually viewed **94 distinct native, unscaled extracted frames across all 14 clips**, including consecutive running frames 12–15 and falling frames 9–12. Frame numbers below are **zero-based**, and each exact displayed time is **frame / 12 seconds**. There was **no continuous playback and no audio listening**. Full decoding of 474 frames does not establish that every frame's content was visually examined. The review also directly revisited three previously inspected acf frames—run 14, death 12, victory 18—for a **source-known, non-blind diagnostic comparison**. Those revisits are not included in the 94 new-frame count.
+
+| Original clip | Decoded frames | Independently viewed zero-based frames | Original SHA-256 |
+| --- | ---: | --- | --- |
+| `attack.mp4` | 36 | 0, 3, 6, 12, 18, 24, 30, 35 | `f792e00db03d06db74925bffabef5b58d24162377d61d99607b301e32cee8f77` |
+| `block.mp4` | 24 | 0, 3, 6, 12, 18, 23 | `676dca42e8dec96b4c6d0260f904e4ac841f70f1ba375cb12c1c0a90a315841b` |
+| `broken.mp4` | 30 | 0, 6, 12, 18, 24, 29 | `b39a70b9907f5741b742d8d78c294e400408cadad0d1240eff003b0f4ae215fb` |
+| `death.mp4` | 36 | 0, 3, 6, 9, 10, 11, 12, 15, 18, 24, 35 | `ff066e8b6a1638712385d55adbda8f54a2b70e9a3450f4a94bbb5ca3c465349c` |
+| `dodge.mp4` | 24 | 0, 3, 6, 12, 18, 23 | `907798213b7530953605ee282fceddee7cbcfdb50a1e7ad89819a92bae260a47` |
+| `guard.mp4` | 24 | 0, 6, 12, 23 | `f788666b3b3b9b301a937981154f215aab1de20fe800d58957007f80baae4450` |
+| `hit.mp4` | 24 | 0, 3, 6, 12, 18, 23 | `ad19b2f54f0fa7518fd7caca8b1bc81858801d9beb59c0103bcdd74c57f4f5ea` |
+| `idle.mp4` | 36 | 0, 18, 35 | `f0de382f0f31786d0fc68da6c3b735c497bb6d712724e2b692061b405db22884` |
+| `parry.mp4` | 24 | 0, 3, 6, 12, 18, 23 | `010b9b5b279c763512ed5dc9d5033bd5ea6b314190081c11d924d224cc70c3d3` |
+| `start-run-stop.mp4` | 48 | 0, 6, 10, 12, 13, 14, 15, 18, 24, 32, 40, 47 | `89fdd232815ec03a14987fad3170add7157f74011de398a9ff8804fa3d127c35` |
+| `turn.mp4` | 36 | 0, 9, 18, 27, 35 | `b48cd5095483b62a059fa86159ce892da29ea7bbe3746894315e488390fbf46c` |
+| `victory.mp4` | 48 | 0, 6, 12, 18, 24, 30, 36, 42, 47 | `e6dc16a69d3f738ef7bfa46e211e426302aaacd08d7c53410b51a15d3764bb93` |
+| `wind.mp4` | 48 | 0, 12, 24, 36, 47 | `18e6cda9134ab3919a797bf215ac1d978772ae4ac17d509e80ac653604fd72b6` |
+| `windup-attack.mp4` | 36 | 0, 6, 12, 18, 24, 30, 35 | `29dbcd685d24c3f2a2c2f345953d10b03c1b76153567d382269139685c3d2119` |
+
+The extraction/index directory is `/workspace/scratch/27301e95ee53/independent-motion-view-34978382509/`. Its `independent-view-index.json` records every original file's byte size, probe result and hash, plus every extracted frame's exact time/hash and viewed flag. Its final SHA-256 is **`da8286fc189c1eef02fcec1d7f53a47026f0072f23b4d8ac2b90baa35a59caf8`**. No scale, repainting, interpolation or contrast adjustment was applied to the inspected PNGs. Extraction and the index were stored separately from the preserved original films.
+
+### Character findings within these samples
+
+- **The existing open-hakama visual major persists.** At run frame **13 / 1.0833 s**, the dark knee appears as an oval patch in the blue front panel; at frame **14 / 1.1667 s**, the lifted thigh/knee projects in front of the straight hanging panel. Death frames **9–12 / .75–1.00 s** retain the thin blue hems projecting outward as rigid fins. The same failure pattern is visible in the explicitly revisited acf samples. This is not evidence against the unfilmed f869 repair, and that repair is not declared successful by these older media.
+- The visible native head remains associated with the neck/body through the sampled run, front-to-side/back turn, windup, hit, broken stance and early fall poses. No newly detached head, separated hand, inverted knee or grossly displaced sword was established in these **finite** samples. The late fallen head is largely hidden by the torso/legs from this camera; absence of a visible head in those views is not independently classified as disappearance or ground penetration. The samples do not show its hidden contact surface.
+- Guard, windup and attack samples show the hands around the hilt; victory frames **6/12** show the raised sword, **18/24** the turn toward the waist, and **30/36/42/47** the sheathed ending. Death samples show the sword lowering and then lying separately near the fallen actor. These observations establish only the visible large-scale attachment sequence; they do not establish exact finger-to-wrap contact, collision-free sheathing, hand relaxation after release, or the quality of motion between sampled frames. Windup frames 6 and 24 place the hands/hilt in front of the face from the inspection camera; 2D overlap alone does not establish penetration.
+- The roughly 220-pixel standing figure, with a face only a few tens of pixels high and much smaller fingers, limits this motion medium's ability to judge collar seams, skin/eye/hair texture, grip details or face-guard normal defects. Only the player is inspected here. The other three character faces, helmet/warden guard, underside/back contacts and actual four-character combat are not covered. The later author-reported collar/shoulder repairs remain unviewed in native media.
+
+### Additional actual landscape concern
+
+The direct **acf versus e188 run frame 14** comparison shows a conspicuous background difference: the earlier bamboo carries readily visible leaf clusters, while the e188 view is dominated by long bare-looking stems with extremely thin horizontal lines or dots where foliage would be expected. The e188 guard, victory and five wind samples show the same weak foliage readability. This was reported immediately to the integrator as a **visible landscape regression candidate requiring investigation**. Changes in source, geometry, shading and scene assets coexist between revisions, so this review does not assert that the leaves were deleted, that a particular shader caused it, or that every leaf is affected. The optional wind samples show pointed foreground grass, broad dark ground shadows, lanterns and paving, but do not establish beam/leaf physical correctness, foreground transparency behavior, or environmental quality acceptance. This concern is separate from CC0 anatomy and does not constitute a new head/hand collision finding.
+
+**Bounded result:** all 14 received videos decoded successfully, and 94 actual native frames were independently inspected. No additional large character attachment/collision blocker was established beyond the known open-hakama major in this finite view; the foliage appearance concern remains explicit. The integrator reports the ordinary fresh route was cancelled after its 211-test pass when the subsequent capture did not complete before its deadline, while the experience job's input/exploration/audio/14-motion steps succeeded. This review neither re-verifies that entire CI status nor calls the complete CI successful or the slowdown resolved. The authored 12-fps isolated study uses synthetic states and an inspection camera; it is not real-time gameplay, real-device FPS, a normal-input route evaluation, or a formal reference comparison. No audio was heard. All 10 formal elements remain **not measured**, and deadline **2026-09-20T07:51:53Z** is unchanged. Only this owned evidence file was edited in the repository; no runtime, remote, staging or automation changes were made by the reviewer.
+
+
+## Collar, shoulder and face-guard candidate c824 — independent technical review
+
+**Disposition: a concrete moving-neck opening was found; the integrator placed c824 adoption on hold.** This is a source/geometry finding, not a new native-image judgment. The assigned frozen source is **`c824c1a61ba3e78c6a7c46d140d2b7ef256288c1`**, immediately after **`f869fc24b2bc0143e33eda8d104fe474f16cd1b7`**, in `/workspace/scratch/27301e95ee53/game2-mpfb-pilot`. The isolated checkout's HEAD matched c824 and its tracked files were unchanged. The corresponding canonical runtime files matched those Git objects. The canonical diagnostic HEAD and its separate capture-runner changes were not used as the character source identifier. The prior e188 film does not contain c824 and supplies no proof of this repair's behavior.
+
+| Frozen reviewed file | SHA-256 |
+| --- | --- |
+| `fresh/character-rig.js` | `c46614da78db499e726b2a0a6456b95714081cb4ef60fbf18d88ea2ac5137348` |
+| `fresh/character-sculpt.js` | `89c5045e3760230948b1b0b6f6ee3d12d3512dbd61bc733b198bca80e3713689` |
+| `fresh/character-assets.js` | `9c644cf2a8cda1021e12a47213054c0b414d90cc5426cf5ecb8f20fc9474d3a3` |
+| `fresh/character-assets/native-data.js` | `18b4a2265516c11ef7a71da2ff47de00f172598acc58d1d6f4f0daf8c2fa3dc4` |
+| `fresh/character-tools/derive-mpfb.mjs` | `deebea6f837630bde10e47a30fd0c64628aaef5221e2f0abd53e8bce48daf5c9` |
+| `fresh/character-tailoring.test.mjs` | `547af0fc21568165a7ce6dcf4acf7e8da3d1104922c74cbdd544543cf6c704f0` |
+| unchanged `fresh/character-motion.js` | `488d5f2f8994272e5473f36b5ed7dc7ba8427caa4e079ce1092b9df6b74a009b` |
+
+### Major technical finding: the rotating neck cut leaves an opening above the fixed collar
+
+`tailoredHead()` removes the original lower skin at a cut nominally **7 mm below** the collar neckline. The clipped skin follows the neck joint; the collar is attached to the chest. The clearance is adequate for the inspected idle pose but insufficient for existing authored neck rotations. Checking 231 near-cut vertices over seven authored states at .05-second intervals found the cut rising approximately **12.34 mm above the neckline in broken stance at age .30**, **7.27 mm in death near .50**, **6.23 mm in victory near 1.45**, and **5.20 mm during stagger near .05**. These heights are geometric relations in the chest/neck frame, not image pixel sizes or a measured penetration depth.
+
+The reviewer then checked the **complete generated player rig**, advanced with the real `updateCharacterRig()` at 1/60-second increments. For each pose, **64 directions × 51 heights = 3,264 rays** traveled from outside the neck toward its axis. A defect sample required both of these conditions: the ray hit **no mesh anywhere in the complete candidate rig**, while the same ray hit the **original unclipped head** at the exact same `neck.matrixWorld`. This includes potential occlusion by the collar, tunic, arms, armour and all other actor meshes; it is not a standalone collar test. The positive-control head uses **FrontSide**, matching the production skin's face-culling setting. A preceding DoubleSide control yielded the same counts and was explicitly repeated with FrontSide to avoid a permissive positive control.
+
+| Actual sampled state | Actor age, seconds | Rays per pose | Candidate misses with original-head positive hit |
+| --- | ---: | ---: | ---: |
+| idle | .30 | 3,264 | 0 |
+| broken | .30 | 3,264 | 139 |
+| dead | .50 | 3,264 | 84 |
+| victory | 1.45 | 3,264 | 49 |
+| stagger | .05 | 3,264 | 51 |
+
+Thus the final FrontSide control covers **16,320 finite ray configurations / five poses**. A concrete front-facing broken-stance example is ray origin **`(-.0402068298,1.0742587477,-.3457899789)`**, direction **`(.1141934800,.4429518354,.8892432292)`**, near 0, far .2 m. The complete c824 rig returns no hit; the original head returns a front-facing hit on face **6589** at approximately **`(-.0255741234,1.1310184170,-.2318427108)`**. The actor origin is `(0,0)`, yaw 0, on the default flat ground. This supplies a concrete reproducible opening, not merely an assumption from the relative cut height.
+
+The four new tailoring tests check neckline/hem support at rest and therefore miss this existing-motion failure. Closing or hiding the cut only at rest does not repair the moving attachment. The finding was returned immediately as a **Major technical candidate** against the repair's neck-continuity purpose, and the integrator explicitly put adoption on hold and assigned the next author repair. How prominent the opening appears in the next native camera/light configuration remains **unmeasured**. No production edit or extra approval flow was introduced by the reviewer.
+
+### Separate local face-guard intersection residual
+
+Independent inspection of the warden's **4,112-triangle** guard found **zero nonfinite attributes, degenerate triangles, negative face-versus-average-normal triangles, or invalid oriented indexed edges**. Every indexed edge has two incident faces with opposite edge directions, and its signed volume is positive. The same checks passed all **eight 596-triangle shoulder shells** (both sides, rows 0–3). This is useful closed-surface and orientation evidence; it is not a guarantee of clearance from the body or smooth shading.
+
+A separate guard/head clearance investigation initially used **2,949 radial probes** at the inner vertices and inner-triangle centroids. A -15.51 mm radial result was **not retained as penetration depth**: the ray crosses the front and rear of the projecting ear before reaching the cheek, so a nearest radial surface alone does not identify solid-body penetration. The reviewer explicitly corrected this interpretation with the integrator.
+
+To test actual contact, all **6,168 unique guard edges** were cast as finite segments against the real original head triangles. They yielded **28 surface-crossing hits**, including both outer and inner guard edges near the two upper side rims. Example outer-edge crossings on edge `(1026,1027)` lie at approximately **`(.085873273,.135895741,-.020823044)`** and **`(.081650713,.136048838,-.018190056)`**, on head faces 3896 and 3625. The corresponding left-side crossings occur around X = -.082 to -.086. This is a concrete surface-intersection residual near the ears/upper cheeks, independent of the guard's otherwise valid topology. Its depth and visual severity were **not established**; the 28 results are edge/surface crossing hits, not 28 independent visible flaws or an exhaustive triangle-pair intersection count. It was returned for the next native side/three-quarter views rather than declared visually resolved.
+
+### Preserved source and independently executed existing tests
+
+The reviewer parsed both frozen native-data versions and compared every field. **All four original head, eye, hair and brow position/normal/UV/index/source arrays, profiles and bounds are identical; both posed hands, grip offsets and landmarks are identical; all non-figure data are identical. Only the figures' mask data changed.** The worn head is a new clipped runtime derivative, so preservation of the stored original head must not be described as an unchanged rendered neckline.
+
+All four original texture PNGs were byte-identical to f869, retaining their previously recorded SHA-256 values. `character-motion.js`, `main.js` and the provenance file were byte-identical. The entire `createNativeCharacterResources()` implementation, including texture materials, loading/readiness and failure logic, was also byte-identical. The changes introduce no new image/network dependency or readiness bypass. The new synchronous collar-fitting helper samples the original neck with rays and caches its ring by data object; its temporary fitting geometry/material are disposed. Its startup cost was not independently benchmarked here.
+
+`node --test fresh/character-tailoring.test.mjs fresh/character-assets.test.mjs` independently completed **9/9 PASS**, no failures/skips/cancellations, **2.84 s**. These include four new actual-surface checks for shoulder support/closed edges, the rest neckline and tunic seam, the guard's clear nose and closed rim, and the hair knot ahead of its uncapped winding band; the five asset tests cover native eye-facing geometry, hand lengths/clearance, actual grasp trajectories, free-wrist exclusions and texture readiness/failure. They were read for their actual assertions; none proves the moving neckline remains closed. The author's **55 + 4 terrain PASS** remains author evidence and was not substituted for this independent result. No complete suite, build, terrain grid or performance benchmark was repeated. The reviewed source diff passed whitespace checks.
+
+The next exact repaired candidate needs native **broken .30, death .50, victory 1.45 and stagger .05** views of the front/back neckline, plus both side/three-quarter warden ears and upper guard rims. Shoulder attachment should also be viewed with raised arms, and the small hair knot from above/back. The earlier cloth seam-normal concern and run/death visual closure remain separate open work. None of the earlier e188 motion observations is applied to c824 as an acceptance result. All 10 formal elements remain **not measured**; deadline **2026-09-20T07:51:53Z** is unchanged.
+
+### Read-only reproduction of the complete-rig neckline finding
+
+Run the following stdin script from an exact c824 checkout with its existing dependencies. It writes no file and does not modify geometry; the original head is a separate positive-control mesh. Expected counts in order are **0,139,84,49,51**. The fixed state inputs are a finite synthetic geometry diagnostic, not a normal-input gameplay claim.
+
+```bash
+node --input-type=module <<'JS'
+import * as T from 'three';
+import {createCharacterRig,createCharacterResources} from './fresh/character-rig.js';
+import {nativeFigure,nativeGeometry} from './fresh/character-assets.js';
+import {updateCharacterRig} from './fresh/character-motion.js';
+const resources=createCharacterResources();
+const controlMaterial=new T.MeshBasicMaterial({side:T.FrontSide});
+for(const [state,age] of [
+  ['idle',.3],['broken',.3],['dead',.5],['victory',1.45],['stagger',.05]
+]){
+  const rig=createCharacterRig('player',resources);
+  const actor={id:'player',x:0,z:0,yaw:0,hp:state==='dead'?0:100,
+    state:state==='victory'?'idle':state,age:0};
+  const world={time:0,mode:state==='victory'?'victory':
+    state==='dead'?'defeat':'playing',events:[],locked:null};
+  for(let t=0;t<=age+1e-8;t+=1/60){
+    actor.age=t;world.time=t;
+    updateCharacterRig(rig,actor,world,1/60);
+  }
+  rig.root.updateMatrixWorld(true);
+  const control=new T.Mesh(nativeGeometry(nativeFigure('player').head),controlMaterial);
+  control.matrixAutoUpdate=false;
+  control.matrix.copy(rig.neck.matrixWorld);
+  control.updateMatrixWorld(true);
+  let gaps=0;
+  for(let i=0;i<64;i++)for(let j=0;j<51;j++){
+    const a=i/64*Math.PI*2,y=-.03+j*.001;
+    const axis=new T.Vector3(Math.sin(a),0,Math.cos(a));
+    const origin=rig.chest.localToWorld(axis.multiplyScalar(.2)
+      .add(new T.Vector3(0,y+.315,.01)));
+    const target=rig.chest.localToWorld(new T.Vector3(0,y+.315,.01));
+    const ray=new T.Raycaster(origin,target.sub(origin).normalize(),0,.2);
+    if(ray.intersectObject(rig.root,true).length===0 &&
+       ray.intersectObject(control,false).length>0)gaps++;
+  }
+  console.log({state,age,rays:3264,gaps});
+}
+JS
+```
+
+Only this owned evidence file was edited in the repository. No author source, native asset, runtime test, remote, staging or automation file was changed. The integrator requested the bounded review end after recording these findings; no additional discretionary checks were started afterward.

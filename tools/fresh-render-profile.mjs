@@ -56,11 +56,28 @@ function browserProfile(createPresentation,createWorld,needsTextures){
     if(!leaves.length)throw new Error('No production leafPivot.w > 0.5 drawables found');
     state.leafScan.scope='Whole drawables containing at least one leafPivot.w > 0.5 vertex, including mixed woody side branches; not isolated leaf triangles';
     state.leafScan.meshCount=leaves.length;state.leafScan.triangles=state.leafScan.meshes.reduce((sum,m)=>sum+m.triangles,0);
-    const gl=view.renderer.getContext();if(typeof gl.finish!=='function')throw new Error('Real WebGL finish is required');
+    const gl=view.renderer.getContext();if(typeof gl.readPixels!=='function'||typeof gl.getError!=='function')throw new Error('Real synchronous WebGL pixel readback is required');
     state.gl={version:gl.getParameter(gl.VERSION),vendor:gl.getParameter(gl.VENDOR),renderer:gl.getParameter(gl.RENDERER)};
     const debug=gl.getExtension('WEBGL_debug_renderer_info');if(debug)state.gl.unmaskedRenderer=gl.getParameter(debug.UNMASKED_RENDERER_WEBGL);
     state.viewport={width:innerWidth,height:innerHeight,devicePixelRatio,rendererPixelRatio:view.renderer.getPixelRatio(),drawingBuffer:[gl.drawingBufferWidth,gl.drawingBufferHeight]};
-    if(innerWidth!==960||innerHeight!==720||devicePixelRatio!==1||view.renderer.getPixelRatio()!==1)throw new Error('Viewport/DPR mismatch');
+    if(innerWidth!==960||innerHeight!==720||devicePixelRatio!==1||view.renderer.getPixelRatio()!==1||gl.drawingBufferWidth!==960||gl.drawingBufferHeight!==720)throw new Error('Viewport/DPR/drawing-buffer mismatch');
+    const width=gl.drawingBufferWidth,height=gl.drawingBufferHeight,pixelCount=width*height,pixels=new Uint8Array(pixelCount*4);
+    state.readback={width,height,format:'RGBA',type:'UNSIGNED_BYTE',bytes:pixels.byteLength,bufferAllocations:1,
+      scope:'Synchronous full drawing-buffer pixels: pending GPU work plus synchronization/IPC and 2,764,800-byte transfer; not a pure GPU timer. Stats use bottom-left pixel coordinates. Buffer reset and CPU analysis are timed separately.'};
+    const analyzePixels=()=>{
+      const min=[255,255,255,255],max=[0,0,0,0],sum=[0,0,0,0],sumSquares=[0,0,0,0];
+      let nonzeroRgbPixels=0,nonzeroAlphaPixels=0,opaquePixels=0,rgbDifferentFromFirst=0;
+      for(let i=0;i<pixels.length;i+=4){
+        if(pixels[i]||pixels[i+1]||pixels[i+2])nonzeroRgbPixels++;
+        if(pixels[i+3])nonzeroAlphaPixels++;if(pixels[i+3]===255)opaquePixels++;
+        if(pixels[i]!==pixels[0]||pixels[i+1]!==pixels[1]||pixels[i+2]!==pixels[2])rgbDifferentFromFirst++;
+        for(let c=0;c<4;c++){const value=pixels[i+c];min[c]=Math.min(min[c],value);max[c]=Math.max(max[c],value);sum[c]+=value;sumSquares[c]+=value*value;}
+      }
+      const mean=sum.map(value=>value/pixelCount),variance=sumSquares.map((value,c)=>Math.max(0,value/pixelCount-mean[c]*mean[c]));
+      const representativePixels=[[0,0],[width-1,0],[0,height-1],[width-1,height-1],[width/2,height/2],[width/4,height/4],[3*width/4,3*height/4],[width/2,height/4]].map(([x,y])=>({x,y,rgba:Array.from(pixels.subarray((y*width+x)*4,(y*width+x)*4+4))}));
+      return {pixelCount,nonzeroRgbPixels,nonzeroAlphaPixels,opaquePixels,rgbDifferentFromFirst,min,max,mean,variance,representativePixels,
+        nontrivial:nonzeroRgbPixels>0&&nonzeroAlphaPixels>0&&rgbDifferentFromFirst>0};
+    };
     originalRender=view.renderer.render;
     view.renderer.render=function(...args){
       if(variant==='full')return Reflect.apply(originalRender,this,args);
@@ -78,12 +95,33 @@ function browserProfile(createPresentation,createWorld,needsTextures){
     window.renderProfileFrame=frame=>{
       if(!Number.isInteger(frame)||frame<0||frame>12)throw new Error('Bounded frame index required');
       world.time=frame/60;for(const actor of [world.player,...world.enemies])actor.age=frame/60;
-      const before=clock();view.render(world,1/60,0,{animate:true});const rendered=clock();
-      gl.finish();const finished=clock();
-      const sample={variant,frame,worldTime:world.time,cpuRenderMs:rendered-before,finishWaitMs:finished-rendered,totalWallMs:finished-before,
-        render:{...view.renderer.info.render},memory:{...view.renderer.info.memory},programs:view.renderer.info.programs?.length,
-        camera:view.camera.position.toArray(),cameraQuaternion:view.camera.quaternion.toArray(),contextLost:gl.isContextLost()};
-      state.samples.push(sample);if(sample.contextLost)throw new Error('WebGL context lost');return sample;
+      const sample={variant,frame,worldTime:world.time,result:'running',gl:{}};state.samples.push(sample);
+      try{
+        sample.gl.beforeError=gl.getError();sample.gl.beforeContextLost=gl.isContextLost();
+        if(sample.gl.beforeError!==gl.NO_ERROR||sample.gl.beforeContextLost)throw new Error('WebGL error/context loss before render');
+        if(gl.drawingBufferWidth!==width||gl.drawingBufferHeight!==height)throw new Error('Drawing-buffer dimensions changed');
+        // Zero reused storage so a rejected/no-op read cannot pass on prior pixels.
+        const reset=clock();pixels.fill(0);sample.bufferResetCpuMs=clock()-reset;
+        const before=clock();view.render(world,1/60,0,{animate:true});const rendered=clock();
+        sample.cpuRenderMs=rendered-before;
+        const readStart=clock();
+        try{gl.readPixels(0,0,width,height,gl.RGBA,gl.UNSIGNED_BYTE,pixels);}
+        finally{const readEnd=clock();sample.readbackWallMs=readEnd-readStart;sample.totalWallMs=sample.cpuRenderMs+sample.readbackWallMs;}
+        sample.gl.afterError=gl.getError();sample.gl.afterContextLost=gl.isContextLost();
+        sample.gl.defaultReadFramebuffer=gl.getParameter(gl.READ_FRAMEBUFFER_BINDING??gl.FRAMEBUFFER_BINDING)===null;
+        sample.render={...view.renderer.info.render};sample.memory={...view.renderer.info.memory};sample.programs=view.renderer.info.programs?.length;
+        sample.camera=view.camera.position.toArray();sample.cameraQuaternion=view.camera.quaternion.toArray();sample.contextLost=sample.gl.afterContextLost;
+        const analysis=clock();sample.pixels=analyzePixels();sample.pixelAnalysisCpuMs=clock()-analysis;
+        if(sample.gl.afterError!==gl.NO_ERROR||sample.contextLost)throw new Error('WebGL error/context loss after readPixels');
+        if(!sample.gl.defaultReadFramebuffer)throw new Error('Pixel readback was not from the default drawing buffer');
+        if(!sample.pixels.nontrivial)throw new Error('Pixel readback is transparent, zero, or spatially uniform RGB');
+        sample.result='measured';
+      }catch(error){
+        sample.result='failed';sample.error=String(error?.stack||error);state.status='failed';state.errors.push(sample.error);
+        try{sample.gl.failureError=gl.getError();sample.gl.failureContextLost=gl.isContextLost();}
+        catch(statusError){sample.gl.statusError=String(statusError);}
+      }
+      return sample;
     };
     state.status='ready';
   })().catch(fail);
@@ -100,7 +138,7 @@ async function treeFiles(root,folder=root){
   return result.sort((a,b)=>a.path.localeCompare(b.path));
 }
 function summary(samples){
-  const result={};for(const key of ['cpuRenderMs','finishWaitMs','totalWallMs']){
+  const result={};for(const key of ['cpuRenderMs','readbackWallMs','totalWallMs','bufferResetCpuMs','pixelAnalysisCpuMs']){
     const values=samples.map(s=>s[key]).sort((a,b)=>a-b);result[key]={min:values[0],median:values.length%2?values[(values.length-1)/2]:(values[values.length/2-1]+values[values.length/2])/2,max:values.at(-1)};
   }return result;
 }
@@ -109,10 +147,11 @@ async function main(){
   const variants=(process.env.PROFILE_VARIANTS||'full,no-leaf-shadows,no-leaves').split(',');
   assert.ok(variants[0]==='full'&&new Set(variants).size===variants.length&&variants.every(v=>['full','no-leaf-shadows','no-leaves'].includes(v)),'PROFILE_VARIANTS must start with full and use unique known variants');
   await mkdir(out,{recursive:true});
-  const report={schemaVersion:1,result:'running',startedAt:new Date().toISOString(),sourceRoot,variants,viewport:{width:960,height:720,dpr:1},
+  const report={schemaVersion:2,result:'running',startedAt:new Date().toISOString(),sourceRoot,variants,viewport:{width:960,height:720,dpr:1},
     apparatusSha256:hash(await readFile(fileURLToPath(import.meta.url))),limits:{operationMs:60000,fullFrames:13,diagnosticFramesEach:6},
     scope:'Production createPresentation/createWorld, built by Vite, Chromium SwiftShader. Fixed initial world and normal animation/camera. Diagnostic flags never enter the source runtime. Not physical-device performance or visual quality acceptance.',
-    formulas:{cpuRenderMs:'t_after_view_render - t_before_view_render; JS plus any driver/compiler blocking inside render, not pure CPU execution',finishWaitMs:'t_after_gl_finish - t_after_view_render; additional WebGL completion wait including synchronization/IPC, not isolated GPU execution time',totalWallMs:'cpuRenderMs + finishWaitMs',authoredTime:'world.time = frame / 60; dt = 1/60; actor age = frame/60; no simulation advance',firstFrame:'full frame 0 includes first renderer shader/program compilation and first draw; initial WebGL construction and asset loading are reported separately',variants:'Each begins with a fresh createWorld + beginWorld at the same positions. Six frames use time 0..5/60. These are diagnostic samples, not twelve-frame warmed benchmark equivalents; programs/textures may be cached from full. Leaf ray/physics CPU work remains active.'},
+    retiredMeasurement:{finishWaitMs:'Invalid as a GPU-completion proxy: Chromium current source maps finish to Flush. Historical measurements are preserved separately; this is not a verified Chromium 141 tag claim.'},
+    formulas:{cpuRenderMs:'t_after_view_render - t_before_view_render; JS plus any driver/compiler blocking inside render, not pure CPU execution',readbackWallMs:'t_after_readPixels - t_before_readPixels; actual full RGBA drawing-buffer readback, pending GPU work plus synchronization/IPC and 2,764,800-byte transfer; not pure GPU time',totalWallMs:'cpuRenderMs + readbackWallMs; excludes buffer reset, GL status queries, and pixel analysis',bufferResetCpuMs:'Zeroing the same allocated RGBA buffer before rendering; outside render/readback timing',pixelAnalysisCpuMs:'Full CPU pixel statistics after readback timing; raw pixels are not returned over JSON',authoredTime:'world.time = frame / 60; dt = 1/60; actor age = frame/60; no simulation advance',firstFrame:'full frame 0 includes first renderer shader/program compilation, first draw and its readback; initial WebGL construction and asset loading are reported separately',variants:'Each begins with a fresh createWorld + beginWorld at the same positions. Six frames use time 0..5/60. These are diagnostic samples, not twelve-frame warmed benchmark equivalents; programs/textures may be cached from full. Leaf ray/physics CPU work remains active.'},
     cases:[],errors:[],consoleErrors:[],consoleWarnings:[],pageErrors:[],requestFailures:[],cleanup:{}};
   const persist=()=>writeFile(resolve(out,'report.json'),JSON.stringify(report,null,2)+'\n');
   let temporary,server,browserServer,browser,page,abandonPage=false;const buildOnly=process.argv.includes('--build-only');
@@ -151,7 +190,8 @@ async function main(){
       const count=variant==='full'?13:6;
       for(let frame=0;frame<count;frame++){
         const started=performance.now();const sample=await evaluate(i=>window.renderProfileFrame(i),frame,`${variant} frame ${frame}`);
-        sample.nodeRoundTripWallMs=performance.now()-started;item.samples.push(sample);await persist();
+        sample.nodeRoundTripWallMs=performance.now()-started;item.samples.push(sample);
+        if(sample.result!=='measured')item.result='failed';await persist();assert.equal(sample.result,'measured',sample.error||'Frame readback failed');
       }
       if(variant==='full'){
         item.firstCompileFrame=item.samples[0];item.warm12Summary=summary(item.samples.slice(1));
@@ -187,7 +227,7 @@ async function main(){
 if(process.argv.includes('--self-check')){
   // Parse the exact browser body without executing any browser/runtime code.
   new vm.Script('('+browserProfile.toString()+')');
-  assert.deepEqual(summary([{cpuRenderMs:1,finishWaitMs:2,totalWallMs:3},{cpuRenderMs:3,finishWaitMs:4,totalWallMs:7}]).totalWallMs,{min:3,median:5,max:7});
+  assert.deepEqual(summary([{cpuRenderMs:1,readbackWallMs:2,totalWallMs:3,bufferResetCpuMs:1,pixelAnalysisCpuMs:2},{cpuRenderMs:3,readbackWallMs:4,totalWallMs:7,bufferResetCpuMs:3,pixelAnalysisCpuMs:4}]).totalWallMs,{min:3,median:5,max:7});
   assert.ok(glDiagnostic('WebGL: INVALID_OPERATION: texImage2D'));assert.equal(glDiagnostic('GPU stall due to ReadPixels'),false);
   assert.equal(await bounded(Promise.resolve(17),20,'positive'),17);
   await assert.rejects(bounded(new Promise(()=>{}),5,'timeout'),/exceeded 5ms/);
@@ -195,23 +235,52 @@ if(process.argv.includes('--self-check')){
   // checks mutation/restoration and failure paths; it is not a rendering test.
   const mesh={isMesh:true,name:'mixed-leaf-and-twig',uuid:'fixture',visible:true,castShadow:true,
     geometry:{attributes:{leafPivot:{count:6,getW:i=>i<3?1:0},position:{count:6}}}};
-  let ticks=0,throwDraw=false;const observed=[];
-  const gl={finish(){},getParameter(){return 'fixture';},getExtension(){return null;},isContextLost(){return false;},drawingBufferWidth:960,drawingBufferHeight:720};
+  let ticks=0,throwDraw=false,readMode='normal',readCalls=0,allocationCount=0,firstBuffer,pendingError=0,contextLost=false,readFramebuffer=null;
+  const observed=[];
+  class CountedUint8Array extends Uint8Array{constructor(...args){super(...args);allocationCount++;}static get [Symbol.species](){return Uint8Array;}}
+  const gl={NO_ERROR:0,RGBA:0x1908,UNSIGNED_BYTE:0x1401,READ_FRAMEBUFFER_BINDING:0x8caa,
+    getParameter(parameter){return parameter===this.READ_FRAMEBUFFER_BINDING?readFramebuffer:'fixture';},getExtension(){return null;},
+    getError(){const error=pendingError;pendingError=0;return error;},isContextLost(){return contextLost;},drawingBufferWidth:960,drawingBufferHeight:720,
+    readPixels(x,y,width,height,format,type,target){
+      readCalls++;assert.deepEqual([x,y,width,height,format,type],[0,0,960,720,this.RGBA,this.UNSIGNED_BYTE]);
+      assert.equal(target.byteLength,2764800);if(firstBuffer)assert.equal(target,firstBuffer);else firstBuffer=target;
+      assert.equal(target.every(value=>value===0),true,'buffer reset must prevent stale-pixel success');
+      if(readMode==='throw')throw new Error('fixture readPixels failure');
+      if(readMode==='noop')return;
+      target.fill(readMode==='transparent'?0:255);if(readMode!=='uniform')target[0]=readCalls;
+      if(readMode==='gl-error')pendingError=0x0502;if(readMode==='context-lost')contextLost=true;
+    }};
   const draw=function(){observed.push({visible:mesh.visible,castShadow:mesh.castShadow});if(throwDraw)throw new Error('fixture draw failure');};
   const renderer={render:draw,getContext:()=>gl,getPixelRatio:()=>1,info:{render:{calls:1},memory:{},programs:[]}};
   const view={renderer,scene:{traverse:visit=>visit(mesh)},camera:{position:{toArray:()=>[0,0,0]},quaternion:{toArray:()=>[0,0,0,1]}},
     actorDiagnostics:()=>({rigs:{player:{},sentinel:{},retainer:{},warden:{}}}),beginWorld(){},render(){return renderer.render();}};
-  const context={window:{},document:{querySelector:()=>({})},performance:{now:()=>++ticks},innerWidth:960,innerHeight:720,devicePixelRatio:1,addEventListener(){},
+  const context={window:{},document:{querySelector:()=>({})},performance:{now:()=>++ticks},innerWidth:960,innerHeight:720,devicePixelRatio:1,addEventListener(){},Uint8Array:CountedUint8Array,
     createPresentation:()=>view,createWorld:()=>({time:0,mode:'playing',player:{x:0,z:18},enemies:[{id:'a',x:0,z:1},{id:'b',x:-3,z:-9},{id:'c',x:3,z:-16}]})};
   vm.runInNewContext('('+browserProfile.toString()+')(createPresentation,createWorld,false)',context);
   const api=context.window;assert.equal(api.renderProfileState.status,'ready');assert.equal(api.renderProfileState.leafScan.meshes[0].mixed,true);assert.equal(api.renderProfileState.leafScan.triangles,2);
   api.renderProfileBegin('full');mesh.castShadow=false;const sample=api.renderProfileFrame(0);
-  assert.deepEqual(observed.at(-1),{visible:true,castShadow:false});assert.equal(sample.totalWallMs,sample.cpuRenderMs+sample.finishWaitMs);
+  assert.deepEqual(observed.at(-1),{visible:true,castShadow:false});assert.equal(sample.result,'measured');assert.equal(sample.totalWallMs,sample.cpuRenderMs+sample.readbackWallMs);
+  assert.equal(sample.readbackWallMs,1);assert.equal(sample.pixelAnalysisCpuMs,1);assert.equal(sample.bufferResetCpuMs,1);
+  assert.equal(sample.pixels.pixelCount,691200);assert.equal(sample.pixels.nonzeroAlphaPixels,691200);assert.equal(sample.pixels.nontrivial,true);
+  assert.equal(sample.pixels.representativePixels.length,8);assert.ok(sample.pixels.variance[0]>0);assert.equal(sample.gl.defaultReadFramebuffer,true);
+  assert.ok(JSON.stringify(sample).length<5000,'raw 2.76 MB pixel buffer must not cross JSON');assert.equal(allocationCount,1);
   api.renderProfileBegin('no-leaf-shadows');api.renderProfileFrame(0);
   assert.deepEqual(observed.at(-1),{visible:true,castShadow:false});assert.equal(mesh.castShadow,true);
   api.renderProfileBegin('no-leaves');api.renderProfileFrame(0);
   assert.deepEqual(observed.at(-1),{visible:false,castShadow:true});assert.equal(mesh.visible,true);
-  throwDraw=true;assert.throws(()=>api.renderProfileFrame(1),/fixture draw failure/);assert.equal(mesh.visible,true);assert.equal(mesh.castShadow,true);
+  throwDraw=true;const drawFailure=api.renderProfileFrame(1);assert.equal(drawFailure.result,'failed');assert.match(drawFailure.error,/fixture draw failure/);assert.equal(mesh.visible,true);assert.equal(mesh.castShadow,true);
+  throwDraw=false;
+  for(const mode of ['noop','uniform','transparent','gl-error','throw','context-lost']){
+    readMode=mode;contextLost=false;const failed=api.renderProfileFrame(2);
+    assert.equal(failed.result,'failed',mode);assert.equal(mesh.visible,true);assert.equal(mesh.castShadow,true);
+    if(mode==='gl-error')assert.equal(failed.gl.afterError,0x0502);
+    if(mode==='throw')assert.match(failed.error,/fixture readPixels failure/);
+    if(mode==='context-lost')assert.equal(failed.gl.afterContextLost,true);
+  }
+  contextLost=false;readMode='normal';readFramebuffer={};assert.equal(api.renderProfileFrame(3).result,'failed');readFramebuffer=null;
+  pendingError=0x0500;const previousReads=readCalls;assert.equal(api.renderProfileFrame(4).result,'failed');assert.equal(readCalls,previousReads,'prior GL errors fail without rendering/readback');
+  gl.drawingBufferWidth=959;assert.equal(api.renderProfileFrame(5).result,'failed');gl.drawingBufferWidth=960;
+  assert.equal(api.renderProfileFrame(6).result,'measured');assert.equal(allocationCount,1,'all frames reuse the one pixel allocation');
   assert.throws(()=>api.renderProfileFrame(13),/Bounded frame/);assert.equal(api.renderProfileRestore().restored,true);assert.equal(renderer.render,draw);
-  console.log(JSON.stringify({result:'passed',scope:'static browser-body parse, summary, diagnostic classifier, bounded promises and exact page-body fake-renderer restoration/failure checks only; no Chrome or WebGL'}));
+  console.log(JSON.stringify({result:'passed',readbackCalls:readCalls,pixelBufferAllocations:allocationCount,scope:'static browser-body parse, summary, diagnostic classifier, bounded promises and exact page-body fake-renderer/readPixels buffer, statistics, GL error/context, blank-pixel and restoration/failure checks only; no Chrome or WebGL'}));
 }else await main();
