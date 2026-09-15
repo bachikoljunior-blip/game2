@@ -1,0 +1,44 @@
+name: Read back exact fresh CI media
+on:
+  push:
+    branches: [codex/game2-rebuild-20260913]
+    paths: ['.github/workflows/fresh-media-readback.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  figures:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        version: [before, after]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          repository: bachikoljunior-blip/game2
+          run-id: 34969080023
+          name: fresh-figures-037fd9d10d35453695bb92da8ed47649e1405eae
+          path: media
+      - name: Read original captured bytes with their digest
+        env:
+          MEDIA_VERSION: ${{ matrix.version }}
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import io, zipfile, hashlib, json, os, base64
+          root = Path('media')
+          version = os.environ['MEDIA_VERSION']
+          files = sorted(p for p in root.rglob('*') if p.is_file() and version in p.parts)
+          assert files, 'Requested original capture is missing'
+          archive = io.BytesIO()
+          with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as z:
+            for p in files: z.write(p, p.relative_to(root))
+          raw = archive.getvalue()
+          print('MEDIA_ARCHIVE_BEGIN ' + json.dumps({'version':version,'run':34969080023,'source':'037fd9d10d35453695bb92da8ed47649e1405eae','bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest(),'files':[str(p.relative_to(root)) for p in files]}))
+          encoded = base64.b64encode(raw).decode('ascii')
+          for start in range(0, len(encoded), 12000): print('MEDIA_BYTES ' + encoded[start:start+12000])
+          print('MEDIA_ARCHIVE_END')
+          PY
