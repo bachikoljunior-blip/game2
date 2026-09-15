@@ -1,0 +1,347 @@
+{
+  "at": "2026-09-15T13:24:27.492124+00:00",
+  "runtime": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+  "remote": {
+    "run": {
+      "id": 34971788118,
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+      "html_url": "https://github.com/bachikoljunior-blip/game2/actions/runs/34971788118",
+      "updated_at": "2026-09-15T13:15:14Z"
+    },
+    "artifacts": [
+      {
+        "archive_download_url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10398082480/zip",
+        "created_at": "2026-09-15T13:14:59Z",
+        "digest": "sha256:852825761e075728094d9a1507d25ee21b99f8494b5962cdd06ef73463275bdc",
+        "expired": false,
+        "expires_at": "2026-12-14T12:55:41Z",
+        "id": 10398082480,
+        "name": "fresh-experience-acf0f9ec86996245ad712d6adc72e5d6159f6711",
+        "size_in_bytes": 74746179,
+        "updated_at": "2026-09-15T13:14:59Z",
+        "url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10398082480",
+        "workflow_run": {
+          "head_branch": "codex/game2-rebuild-20260913",
+          "head_repository_id": 1316876624,
+          "head_sha": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+          "id": 34971788118,
+          "repository_id": 1316876624
+        }
+      },
+      {
+        "archive_download_url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10397968361/zip",
+        "created_at": "2026-09-15T13:09:50Z",
+        "digest": "sha256:7f7e46d466bfa22118b3e13c36e365bcee3254e25ee39bf7d0acb87acadb2f3c",
+        "expired": false,
+        "expires_at": "2026-12-14T12:55:41Z",
+        "id": 10397968361,
+        "name": "fresh-game-acf0f9ec86996245ad712d6adc72e5d6159f6711",
+        "size_in_bytes": 103583408,
+        "updated_at": "2026-09-15T13:09:50Z",
+        "url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10397968361",
+        "workflow_run": {
+          "head_branch": "codex/game2-rebuild-20260913",
+          "head_repository_id": 1316876624,
+          "head_sha": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+          "id": 34971788118,
+          "repository_id": 1316876624
+        }
+      },
+      {
+        "archive_download_url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10397819276/zip",
+        "created_at": "2026-09-15T13:11:57Z",
+        "digest": "sha256:6169373259f1be191667459e5c74e2f940c6fcc7fe0324747681d0a1ba7f2b71",
+        "expired": false,
+        "expires_at": "2026-12-14T12:55:41Z",
+        "id": 10397819276,
+        "name": "fresh-art-acf0f9ec86996245ad712d6adc72e5d6159f6711",
+        "size_in_bytes": 23615750,
+        "updated_at": "2026-09-15T13:11:57Z",
+        "url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10397819276",
+        "workflow_run": {
+          "head_branch": "codex/game2-rebuild-20260913",
+          "head_repository_id": 1316876624,
+          "head_sha": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+          "id": 34971788118,
+          "repository_id": 1316876624
+        }
+      },
+      {
+        "archive_download_url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10397179795/zip",
+        "created_at": "2026-09-15T12:56:44Z",
+        "digest": "sha256:983945d478bc34da57849da064067106362d93c55212e19aca3c69958434d99e",
+        "expired": false,
+        "expires_at": "2026-12-14T12:55:41Z",
+        "id": 10397179795,
+        "name": "fresh-figures-acf0f9ec86996245ad712d6adc72e5d6159f6711",
+        "size_in_bytes": 4923998,
+        "updated_at": "2026-09-15T12:56:44Z",
+        "url": "https://api.github.com/repos/bachikoljunior-blip/game2/actions/artifacts/10397179795",
+        "workflow_run": {
+          "head_branch": "codex/game2-rebuild-20260913",
+          "head_repository_id": 1316876624,
+          "head_sha": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+          "id": 34971788118,
+          "repository_id": 1316876624
+        }
+      }
+    ]
+  },
+  "jobResults": [
+    {
+      "id": 104389572336,
+      "name": "fresh",
+      "result": "success"
+    },
+    {
+      "id": 104389572069,
+      "name": "experience",
+      "result": "success"
+    },
+    {
+      "id": 104389572346,
+      "name": "vegetation",
+      "result": "success"
+    },
+    {
+      "id": 104389572402,
+      "name": "art",
+      "result": "success"
+    }
+  ],
+  "units": {
+    "passed": 198,
+    "failed": 0,
+    "source": "actual fresh job TAP summary"
+  },
+  "browser": {
+    "result": "passed",
+    "checks": [
+      "generated ridge, two route surfaces, stone-lamp and wind-cloth landmarks share the route contract",
+      "real start and keyboard movement through torii",
+      "real click causes enemy HP loss",
+      "near torii post fades while its collision remains authored",
+      "pause freezes simulation and resumes",
+      "WebGL loss/restore and resume",
+      "death and real retry restore player",
+      "real-input full combat, postcombat arrival, signal, ending and clean retry",
+      "mobile simultaneous guard/lock release preserves guard; cancel releases",
+      "mobile joystick movement and cancel stop",
+      "portrait victory result panel keeps readable copy and retry in viewport",
+      "touch-only full combat, arrival, signal, ending and clean retry"
+    ],
+    "errors": [],
+    "durationsMs": {
+      "desktop": 167204,
+      "mobilePreflight": 17333,
+      "mobile": 147497
+    },
+    "matrixResult": "passed",
+    "matrixErrors": [],
+    "routes": [
+      "PC-left",
+      "touch-right",
+      "PC-right",
+      "touch-left"
+    ]
+  },
+  "videoIntegrity": {
+    "result": "passed",
+    "apparatusFailures": [],
+    "recordingFailures": [],
+    "rawCount": 4,
+    "rawAllDecoded": true,
+    "derived": [
+      {
+        "file": "derived/desktop-fork-to-signal.mp4",
+        "sha256": "95c180ebedfa9dec622f78309f3ebd2f8b36fc743f033f50d712e0b74ed17480",
+        "bytes": 4516789,
+        "durationSeconds": 76.4,
+        "fullDecode": "passed",
+        "touchViewportCrop": null
+      },
+      {
+        "file": "derived/touch-fork-to-signal.mp4",
+        "sha256": "b27ceaa156aa96e7c433536eb738ee5457494ec7294c2bd3c104faa4f2ca242b",
+        "bytes": 4497243,
+        "durationSeconds": 79.24,
+        "fullDecode": "passed",
+        "touchViewportCrop": {
+          "source": "844x844",
+          "crop": "844x390+0+0",
+          "output": "960x540 with 48px top/bottom padding"
+        }
+      },
+      {
+        "file": "derived/desktop-right-fork-to-signal.mp4",
+        "sha256": "ec46e60e10466664b43d80aa5e1fdc363ca2024a818ee7e6204fff6189e6f146",
+        "bytes": 3463580,
+        "durationSeconds": 63.04,
+        "fullDecode": "passed",
+        "touchViewportCrop": null
+      },
+      {
+        "file": "derived/touch-left-fork-to-signal.mp4",
+        "sha256": "1234c2285283c8a8cf861f9faef3cb8210db8d1fe321b47de1123e24f2a8f7bd",
+        "bytes": 6417490,
+        "durationSeconds": 112,
+        "fullDecode": "passed",
+        "touchViewportCrop": {
+          "source": "844x844",
+          "crop": "844x390+0+0",
+          "output": "960x540 with 48px top/bottom padding"
+        }
+      }
+    ]
+  },
+  "experience": {
+    "result": "passed",
+    "checks": [
+      "touch short gesture: no attack",
+      "touch vertical gesture: no attack",
+      "touch long gesture: no attack",
+      "touch return gesture: no attack",
+      "native touch cancel causes no attack",
+      "two canvas fingers cannot synthesize an attack",
+      "lost canvas pointer capture cannot attack",
+      "guard survives camera swipe and dedicated attack; own cancellation releases it",
+      "desktop drag rotates without attack; click attacks once",
+      "ordinary keyboard circuit water: both discoveries and loop completion",
+      "ordinary keyboard circuit ridge: both discoveries and loop completion",
+      "ordinary keyboard circuit memory: both discoveries and loop completion"
+    ],
+    "exploration": [
+      {
+        "id": "water",
+        "name": "水音の小径",
+        "result": "passed",
+        "visitedPointCount": 9,
+        "finalState": "retained in original experience-report.json with hash below"
+      },
+      {
+        "id": "ridge",
+        "name": "夕風の尾根",
+        "result": "passed",
+        "visitedPointCount": 9,
+        "finalState": "retained in original experience-report.json with hash below"
+      },
+      {
+        "id": "memory",
+        "name": "社裏の古道",
+        "result": "passed",
+        "visitedPointCount": 9,
+        "finalState": "retained in original experience-report.json with hash below"
+      }
+    ],
+    "errors": []
+  },
+  "motion": {
+    "result": "passed",
+    "cases": 14,
+    "frames": 474,
+    "errors": [],
+    "fullDecodes": 14
+  },
+  "vegetation": {
+    "result": "passed",
+    "cases": 3,
+    "frames": 360,
+    "errors": [],
+    "fullDecodes": 3
+  },
+  "build": {
+    "sourceRevision": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+    "freshTree": "7b4ca3643630ee9420ce2423b69190ac80ed8db4",
+    "files": [
+      {
+        "path": "assets/index-CaXCJhF9.js",
+        "bytes": 647956,
+        "sha256": "9d31fc3c31d7ea109209501b782aa1c201ab35b6dfd9346b48923e6a34903656"
+      },
+      {
+        "path": "assets/index-Ck_X98_2.css",
+        "bytes": 6472,
+        "sha256": "7c991e93c0471bdc554ebd9e79cd027afc380ee964520eb5fbc278319f16da3d"
+      },
+      {
+        "path": "index.html",
+        "bytes": 1772,
+        "sha256": "d9992c78c9209c2035e6279443e754cdba7ab38e5ee0de0048761f0b35cd433b"
+      }
+    ],
+    "scope": "Hashes of the exact fresh-dist production build used by this revision browser verification."
+  },
+  "originalReportHashes": [
+    {
+      "path": "fresh/browser-report.json",
+      "bytes": 392061,
+      "sha256": "363bd1a2fa6336160f1a141f60025796f658c0906b4b02a59eece9ce691dd93d"
+    },
+    {
+      "path": "fresh/route-matrix-report.json",
+      "bytes": 184396,
+      "sha256": "19f69a1f57acbebadada5bd42034c94a359922aa1e92e01ef9ea0c1da450d6f7"
+    },
+    {
+      "path": "fresh/recording-report.json",
+      "bytes": 48233,
+      "sha256": "574adf9289b7d3cce92f70a0438b8649b61656837d4ff49c45855cab06526be2"
+    },
+    {
+      "path": "fresh/build-fingerprint.json",
+      "bytes": 715,
+      "sha256": "2e789866e6a09ebfc9551362194e6ca4ac4ff84f7346c5db8388728c5fdecd14"
+    },
+    {
+      "path": "experience/experience-report.json",
+      "bytes": 124115,
+      "sha256": "e148d72ca81e62534f7d3fc1c1dc78dc99725cd9197cf6bfe23b66abad321bc1"
+    },
+    {
+      "path": "experience/motion-study/report.json",
+      "bytes": 3216003,
+      "sha256": "8c57ec480c6ab87ac1ae045db3863af11531c48555b50d9d25b369ff18c971ac"
+    },
+    {
+      "path": "experience/audio/actual-capture-report.json",
+      "bytes": 6785,
+      "sha256": "dc307d826c6e9675133bdda8cb9caeb16aea4a722b708bf70094c77a86810790"
+    },
+    {
+      "path": "vegetation/report.json",
+      "bytes": 264115,
+      "sha256": "7b102e57420d9af0e31886a6f07896a44624652fa8359deea9de0b74748f81ad"
+    }
+  ],
+  "readback": [
+    {
+      "group": "fresh",
+      "bytes": 3575297,
+      "sha256": "77e27f8a3bb147a733af9845e725ddbe6792b5a6a516b4ba3275082d04e9299b",
+      "run": "34971788118",
+      "runnerRevision": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+      "job": "fresh"
+    },
+    {
+      "group": "experience",
+      "bytes": 7692503,
+      "sha256": "6755f46eed0713ab10b87e8376931b845dcd8db69a300422a04879641cb9021c",
+      "run": "34971788118",
+      "runnerRevision": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+      "job": "experience"
+    },
+    {
+      "group": "vegetation",
+      "bytes": 9024578,
+      "sha256": "482b0c4db20a86eb997338390e9aebe8607ffdb3b3ecb3a9ce267e3d78f4298a",
+      "run": "34971788118",
+      "runnerRevision": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+      "job": "vegetation"
+    }
+  ],
+  "nativeReview": "Known-source technical/art review: repaired major static neck/shoulder/forearm/skirt holes, but mechanical shoulders/collar, mannequin face/hair and primitive normal-scene rock/shrine/materials remain. PS4 target not achieved. Actual motion and audio verification are separate author evidence.",
+  "publication": "Not yet main-integrated or published; public preview still previous a672 build.",
+  "scope": "Technical CI and media integrity only. No physical-device measurement, supported perceptual listening, valid source-blind reference comparison or whole-product completion."
+}

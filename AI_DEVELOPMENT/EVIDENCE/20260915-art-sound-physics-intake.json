@@ -270,5 +270,42 @@
       "scope": "Preserve3000ms limit on starting inputs; always read result of final sent pulse once. Late observation is explicitly recorded, not proof of actual acceptance latency."
     },
     "higherQualityMethod": "Official CC0 MPFB anatomy acquired for concrete material evaluation; not yet incorporated into runtime."
+  },
+  "anatomicalMethodChange": {
+    "at": "2026-09-15T13:21:07.518215+00:00",
+    "basis": "Actual acf0 native close/whole images close earlier holes but retain mechanical shoulder/collar and mannequin face/hair; ordinary scenes retain primitive rock/shrine masses. PS4 target includes normal scene appearance.",
+    "authorization": "Existing blanket scope permits legal material selection and implementation; integrator method decision, not invented user material directive.",
+    "materialsEvidence": "AI_DEVELOPMENT/EVIDENCE/20260915-cc0-character-material-acquisition.md",
+    "pilots": [
+      {
+        "owner": "/root/game2_ultra_art_sound_physics/character_art",
+        "tool": "collaboration.followup_task",
+        "existingAcceptedUltraSpawnRetained": true,
+        "worktree": "game2-mpfb-pilot",
+        "base": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+        "status": "4 head-neck meshes, helper-fitted eyes/hair and weighted grip-baked native hands derived; runtime connection underway; native not measured",
+        "editScope": "isolated character assets/converter/licenses/rig/sculpt/readiness; arm-target gripOffset only in motion; no remote writes"
+      },
+      {
+        "owner": "/root/game2_ultra_art_sound_physics/vegetation_physics",
+        "tool": "collaboration.followup_task",
+        "existingAcceptedUltraSpawnRetained": true,
+        "worktree": "game2-foliage-pilot",
+        "base": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+        "status": "physical-scale leaves and tree/bamboo tips implemented; support count2317 and coefficients retained; fixtures/camera/CPU verification underway",
+        "editScope": "isolated vegetation geometry/material/bind/capture/proxy/tests; no remote writes"
+      },
+      {
+        "owner": "/root/game2_ultra_art_sound_physics/c06_reference_material",
+        "tool": "collaboration.followup_task",
+        "existingAcceptedUltraSpawnRetained": true,
+        "worktree": "game2-scene-art",
+        "base": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+        "status": "bounded scene-art task delivered after actual normal-image review; implementation not yet received",
+        "editScope": "nonvegetation/noncharacter rock/shrine/stone/ground material only; collision,terrainheight,route,UI preserved; no remote writes"
+      }
+    ],
+    "scope": "Integration/native/PS4 acceptance not yet claimed; each actual author must return own evidence",
+    "remainingHours": 114.51263382916667
   }
 }

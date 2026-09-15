@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-15T12:28:10.626132+00:00",
+  "updatedAt": "2026-09-15T13:24:27.492124+00:00",
   "phase": "fresh-art-sound-physics-revision",
   "userInstruction": "一旦ゲーム自体はゼロから作り直してくれる？",
   "activeBranch": "codex/game2-rebuild-20260913",
@@ -15,7 +15,7 @@
     "oldPr": 10,
     "optionalRebuildRouting": "ec2480166809f57fa623929bec0fbcb4d5a623a2"
   },
-  "continuation": "Integrate the bounded audio, vegetation mechanics and coherent character surfaces; inspect exact-source native media, complete required CI, publish matching preview, verify actual served bytes and controls.",
+  "continuation": "Complete isolated CC0 character, foliage and limited scene-art pilots; independently inspect source, native close/whole/normal views and motion, run exact-source CI, integrate PR24 and publish byte-matched preview, then verify all public assets and PC/touch input.",
   "status": "not measured",
   "publication": "Same-byte verified a672 preview published at https://bachikoljunior-blip.github.io/game2/preview/ through PR22/maina213ed5. Pages34961958960 and actual publicCI34962622024 pass. Existing root/docs/public preserved. Whole-product quality remains not measured.",
   "procedureAuthority": "Fixed instructions and explicit user directives govern. Tests, task plans and architecture documents are tools chosen by the AI, not additional fixed rules.",
@@ -140,7 +140,17 @@
     "previewEvidence": "AI_DEVELOPMENT/EVIDENCE/20260915-public-preview-verified.json",
     "finalPublicVerification": "db20986a/CI34962622024 completed success; direct public bytes,PC/touch render/start and separated input. CloudBrowser WebGL limitation recorded independently."
   },
-  "pendingCandidate": null,
+  "pendingCandidate": {
+    "sourceRevision": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+    "ci": 34971788118,
+    "fresh": "success",
+    "art": "success",
+    "vegetation": "success",
+    "experience": "success",
+    "public": "not updated this task",
+    "nextMethod": "CC0 anatomical, physical-scale foliage and limited scene-art pilots; native acceptance pending",
+    "ciEvidence": "AI_DEVELOPMENT/EVIDENCE/20260915-ci-34971788118-candidate.json"
+  },
   "preview": {
     "url": "https://bachikoljunior-blip.github.io/game2/preview/",
     "status": "published; actual public bytes/render/input verified",
@@ -149,5 +159,14 @@
     "evidence": "AI_DEVELOPMENT/EVIDENCE/20260915-public-preview-verified.json"
   },
   "latestPresentationRequest": "どんだけ風吹いてんの？おと。足音重すぎ木の葉っぱとみきの揺れ方は違うし物理を考えて揺れ方考えるべき。人の造形もおざなりps4のげーむのビジュアルくらいのクオリティにして",
-  "activeForegroundEvidence": "AI_DEVELOPMENT/EVIDENCE/20260915-art-sound-physics-intake.json"
+  "activeForegroundEvidence": "AI_DEVELOPMENT/EVIDENCE/20260915-art-sound-physics-intake.json",
+  "currentForegroundExecution": {
+    "owner": "/root/game2_ultra_art_sound_physics",
+    "source": "acf0f9ec86996245ad712d6adc72e5d6159f6711",
+    "main": "b06ade1ad5ab8b72de9bb9996f323a063f5db5ef",
+    "pr": 24,
+    "mode": "authorized foreground; no automation changes",
+    "evidence": "AI_DEVELOPMENT/EVIDENCE/20260915-art-sound-physics-intake.json",
+    "remainingHours": 114.51263382916667
+  }
 }
