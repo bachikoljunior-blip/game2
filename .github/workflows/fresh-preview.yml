@@ -1,0 +1,38 @@
+name: Public fresh preview verification
+on:
+  push:
+    branches: [codex/game2-rebuild-20260913]
+    paths: ['tools/verify-fresh-preview.mjs', '.github/workflows/fresh-preview.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: public-fresh-preview-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  public-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Preserve the verified runtime and published package
+        run: |
+          git diff --exit-code a6722c5cf7b1933f1956c6c33ec4edc6adf47640 HEAD -- fresh index.html docs public src package.json package-lock.json vite.config.js vite.single.config.js
+          git diff --exit-code 82f4a6b3efce0275a93b1127a89adec34e2b66bc HEAD -- preview
+      - run: npx playwright install --with-deps chromium
+      - name: Verify actual public bytes, rendering and input
+        run: node tools/verify-fresh-preview.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: public-fresh-preview-${{ github.sha }}
+          path: AI_DEVELOPMENT/EVIDENCE/fresh-public-preview/
+          if-no-files-found: error
+          retention-days: 90
